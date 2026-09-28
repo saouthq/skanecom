@@ -1,0 +1,99 @@
+# Prototype « vitrine Maymar sur Cloudflare Workers » — phase 2 du prototype
+# (docs/cadrage/02-infrastructure.md §8, prototype/vitrine-workers/RAPPORT.md).
+#
+# Lancement manuel uniquement. Actions :
+#   deployer  — déploie le faux Supabase (sain), puis la vitrine, puis mesure
+#   panne     — redéploie le faux Supabase en panne (503), puis mesure
+#   retablir  — redéploie le faux Supabase sain, puis mesure
+#   supprimer — supprime les trois Workers du prototype
+#
+# Secrets requis (Settings → Secrets and variables → Actions) :
+#   CLOUDFLARE_API_TOKEN  — jeton créé avec le modèle « Edit Cloudflare Workers »
+#   CLOUDFLARE_ACCOUNT_ID — identifiant du compte Cloudflare
+name: Prototype vitrine (Cloudflare Workers)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "deployer, panne, retablir ou supprimer"
+        required: true
+        default: deployer
+        type: choice
+        options: [deployer, panne, retablir, supprimer]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prototype-vitrine
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CI: "true"
+
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Vérifier les secrets
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Ajoutez les secrets CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID au dépôt."
+            exit 1
+          fi
+
+      - name: Supprimer les Workers du prototype
+        if: inputs.action == 'supprimer'
+        run: |
+          for w in skanecom-prototype-vitrine skanecom-prototype-vitrine-response-store skanecom-faux-supabase; do
+            npx -y wrangler@4 delete --name "$w" --force || echo "::warning::$w introuvable ou déjà supprimé"
+          done
+
+      - name: Déployer le faux Supabase
+        if: inputs.action != 'supprimer'
+        working-directory: prototype/faux-supabase
+        run: |
+          PANNE=0
+          if [ "${{ inputs.action }}" = "panne" ]; then PANNE=1; fi
+          npx -y wrangler@4 deploy --var "PANNE:$PANNE" 2>&1 | tee deploy.log
+          URL=$(grep -oE 'https://skanecom-faux-supabase\.[a-z0-9-]+\.workers\.dev' deploy.log | head -1)
+          if [ -z "$URL" ]; then echo "::error::URL du faux Supabase introuvable"; exit 1; fi
+          SOUS_DOMAINE=${URL#https://skanecom-faux-supabase.}
+          echo "FAUX_SUPABASE_URL=$URL" >> "$GITHUB_ENV"
+          echo "VITRINE_URL=https://skanecom-prototype-vitrine.$SOUS_DOMAINE" >> "$GITHUB_ENV"
+          echo "Faux Supabase : $URL (PANNE=$PANNE)"
+          curl -s -o /dev/null -w "Contrôle du faux Supabase : HTTP %{http_code}\n" "$URL/rest/v1/categories" || true
+
+      - name: Compiler et déployer la vitrine
+        if: inputs.action == 'deployer'
+        working-directory: prototype/vitrine-workers
+        run: |
+          export NEXT_PUBLIC_SUPABASE_URL="$FAUX_SUPABASE_URL"
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="cle-factice-prototype"
+          export NEXT_PUBLIC_SITE_URL="$VITRINE_URL"
+          bun install --frozen-lockfile
+          bun run build:vinext
+          bun run deploy:response-store
+          bun run deploy:vinext -- --skip-build
+
+      - name: Mesurer
+        if: inputs.action != 'supprimer'
+        working-directory: prototype/vitrine-workers
+        run: |
+          sleep 15
+          echo "Vitrine : $VITRINE_URL"
+          bash scripts/mesure.sh "$VITRINE_URL" "Action : ${{ inputs.action }} — mesuré depuis un serveur GitHub (pas depuis la Tunisie)" | tee -a "$GITHUB_STEP_SUMMARY"

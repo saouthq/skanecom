@@ -60,7 +60,15 @@
 | Coût réel par million de requêtes (Workers + Response Store + R2) | Il faut la facturation réelle |
 | Images (Cloudflare Images) | Il faut un compte |
 
-**Ce qu'il faut pour la phase 2 :**
+**Phase 2 prête à lancer (28/09/2026).**
+- Le bucket R2 du cache (`skanecom-prototype-vitrine-response-store-cache-bodies`) a été créé sur le compte Cloudflare.
+- Un faux Supabase déployable en Worker, avec un interrupteur de panne, est dans `prototype/faux-supabase/`. Il permet de refaire le test de coupure chez Cloudflare sans base réelle.
+- Le workflow `.github/workflows/prototype-vitrine.yml` enchaîne tout : déploiement, mesures, panne simulée, rétablissement et suppression.
+- L'accès Cloudflare de l'assistant sait créer du stockage, mais **pas déployer du code** : c'est pour ça que le déploiement passe par GitHub Actions.
+
+Il ne manque que deux secrets GitHub : `CLOUDFLARE_API_TOKEN` (modèle « Edit Cloudflare Workers ») et `CLOUDFLARE_ACCOUNT_ID`.
+
+**Ce qu'il fallait pour la phase 2 (analyse initiale) :**
 - **Un jeton d'API Cloudflare**, modèle « Edit Cloudflare Workers », et l'autorisation d'accéder à `api.cloudflare.com` depuis l'environnement. L'alternative : lancer le déploiement depuis ton ordinateur (`bun run build:vinext`, puis `bun run deploy:response-store`, puis `bun run deploy:vinext`).
 - **Une base joignable.** Soit on réactive le projet Supabase de Maymar, soit on crée le projet de la **cellule 1 de SkanEcom** (décision D13) et on y rejoue les migrations.
 
