@@ -94,7 +94,11 @@
    - `https://maymar.tn` par défaut dans `layout.tsx`, `robots.ts` et `sitemap.ts`.
    - Clé du panier `maymar.panier.v1`, en-tête `x-application-name: maymar-vitrine`.
    - Tout cela vient désormais de la boutique résolue.
-10. **Images dans Supabase Storage.**
+10. **Fiches produit et pages rayon jamais mises en cache** (trouvé par le prototype du 28/09).
+    - Sur une route à segment dynamique (`/produit/[slug]`), `revalidate = 300` ne suffit pas : Next.js exige aussi `generateStaticParams`, sans quoi chaque visite interroge la base.
+    - Correction : `generateStaticParams` qui renvoie une liste vide (génération à la première visite, puis cache).
+    - Les pages qui lisent les filtres dans l'adresse (catalogue, rayon, recherche) restent dynamiques : à repenser dans le thème.
+11. **Images dans Supabase Storage.**
     - Si Supabase tombe, les vitrines perdent leurs photos.
     - Les images passent sur R2, servies par la façade (voir `02-infrastructure.md`, §2).
 

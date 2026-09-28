@@ -1,0 +1,193 @@
+/* ============================================================================
+   MAYMAR — jetons de marque
+   Noah (brand) · 2026-08-10 · v1
+
+   MODE CLAIR D'ABORD. C'est le mode de nos demos et de l'oeil neuf.
+   Aucun bloc `prefers-color-scheme: dark` ici, et c'est deliberе :
+   voir "Ce qu'Alex doit neutraliser" dans brand-guidelines.md.
+
+   Comment s'en servir (Tailwind 4, aucune config JS) — dans src/app/globals.css :
+       @import "tailwindcss";
+       @import "../../docs/brand/tokens.css";
+
+   Les polices sont cablees par `next/font` dans layout.tsx (snippet dans les
+   guidelines). Ce fichier ne fait AUCUN @import de Google Fonts : deux chemins
+   de chargement concurrents = FOUT, doubles requetes et decalage de mise en page.
+   Les var(--font-*) ci-dessous sont celles que next/font expose ; les familles
+   nommees derriere servent de filet si le cablage n'est pas encore fait.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   1. PRIMITIVES — la matiere. Aucune de ces valeurs ne s'ecrit dans un composant.
+   Les noms disent la MATIERE, pas l'usage : un composant utilise la couche 2.
+   Ratios WCAG mesures : `python3 docs/brand/verifie-contraste.py` (ce script LIT
+   ce fichier — modifier un hex ici, c'est declencher sa propre verification).
+   --------------------------------------------------------------------------- */
+:root {
+  /* Fonds et surfaces — la chaux des murs tunisiens, jamais un gris froid */
+  --maymar-chaux:         #FBF8F3;  /* fond de page */
+  --maymar-blanc:         #FFFFFF;  /* cartes, surfaces posees */
+  --maymar-sable:         #F3EDE2;  /* surface secondaire, lignes alternees */
+  --maymar-pierre:        #E4DBCC;  /* filets, separateurs DECORATIFS */
+  --maymar-pierre-fort:   #C9BCA6;  /* filet appuye, survol */
+  --maymar-contour-champ: #9C8B6E;  /* bordure de champ — 3:1 exige (WCAG 1.4.11) */
+
+  /* Encre — bleu de nuit. Texte et action principale. */
+  --maymar-encre:         #10243A;
+  --maymar-encre-doux:    #4C5A6B;  /* texte secondaire, legendes */
+
+  /* Laiton — le cuivre des souks. ACCENT, jamais une surface entiere. */
+  --maymar-laiton:        #8A6224;  /* accent sur fond clair */
+  --maymar-laiton-clair:  #B98B3E;  /* accent sur fond ENCRE (le laiton y echoue : 2.89) */
+
+  /* Etats — teintes de terre, pas les rouges/verts d'usine */
+  --maymar-olive:         #4A6B3A;  /* succes, en stock */
+  --maymar-terre:         #A8432E;  /* erreur, refus a la livraison */
+  --maymar-ambre:         #8A6512;  /* alerte, stock faible */
+
+  /* Rayons — l'arc du monogramme donne le vocabulaire.
+     Ils vivent ICI et pas seulement dans @theme : un navigateur ignore les
+     at-regles qu'il ne connait pas, donc tout ce qui n'existe que dans @theme
+     est introuvable pour du CSS ecrit a la main. Mesure : les trois classes du
+     bas de ce fichier rendaient un rayon de 0px tant que c'etait le cas. */
+  --maymar-radius-net:   0.125rem;  /* 2  — puces, filets */
+  --maymar-radius-doux:  0.375rem;  /* 6  — champs, badges */
+  --maymar-radius-carte: 0.625rem;  /* 10 — cartes produit */
+  --maymar-radius-bloc:  1rem;      /* 16 — panneaux, feuilles mobiles */
+  --maymar-radius-arc:  62.5rem;    /* 1000 — plein cintre : voir .maymar-arc */
+
+  /* Ombres — teintees a l'encre, jamais du noir pur.
+     Du noir pur sur un fond chaud fait un halo gris sale. */
+  --maymar-shadow-pose:    0 1px 2px rgb(16 36 58 / 0.05), 0 1px 1px rgb(16 36 58 / 0.04);
+  --maymar-shadow-carte:   0 1px 3px rgb(16 36 58 / 0.06), 0 8px 20px -8px rgb(16 36 58 / 0.10);
+  --maymar-shadow-releve:  0 2px 6px rgb(16 36 58 / 0.07), 0 18px 36px -14px rgb(16 36 58 / 0.16);
+  --maymar-shadow-feuille: 0 -2px 8px rgb(16 36 58 / 0.06), 0 -24px 48px -24px rgb(16 36 58 / 0.20);
+
+  /* Familles typographiques (voir couche 2 pour l'usage) */
+  --maymar-font-display: var(--font-young-serif, "Young Serif"), Georgia, "Times New Roman", serif;
+  --maymar-font-texte:   var(--font-plex-sans, "IBM Plex Sans"), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --maymar-font-mono:    var(--font-plex-mono, "IBM Plex Mono"), ui-monospace, "SF Mono", monospace;
+}
+
+/* JOUR ARABE — bascule preparee des maintenant (exigence PRD : RTL prete jour 1).
+   Rien a rechercher le jour ou l'arabe s'active : poser dir="rtl" suffit.
+   Young Serif n'a pas d'arabe ; Reem Kufi (kufique geometrique) est son pendant
+   et partage sa charpente. IBM Plex Sans Arabic est LA MEME famille que le texte. */
+[dir="rtl"] {
+  --maymar-font-display: var(--font-reem-kufi, "Reem Kufi"), "Noto Kufi Arabic", serif;
+  --maymar-font-texte:   var(--font-plex-arabic, "IBM Plex Sans Arabic"), "Noto Sans Arabic", sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   2. JETONS SEMANTIQUES — ce que Tailwind expose en utilitaires.
+   `inline` fait pointer les utilitaires sur les var() : la bascule [dir="rtl"]
+   ci-dessus traverse donc jusqu'aux classes, sans recompilation.
+   --------------------------------------------------------------------------- */
+@theme inline {
+  /* --- Couleurs : bg-fond, text-encre, border-filet, bg-primaire ... --- */
+  --color-fond:            var(--maymar-chaux);
+  --color-surface:         var(--maymar-blanc);
+  --color-surface-2:       var(--maymar-sable);
+  --color-filet:           var(--maymar-pierre);
+  --color-filet-fort:      var(--maymar-pierre-fort);
+  --color-contour-champ:   var(--maymar-contour-champ);
+
+  --color-encre:           var(--maymar-encre);
+  --color-encre-doux:      var(--maymar-encre-doux);
+
+  --color-primaire:        var(--maymar-encre);        /* bouton d'action */
+  --color-sur-primaire:    var(--maymar-blanc);
+  --color-accent:          var(--maymar-laiton);       /* sur fond clair */
+  --color-accent-inverse:  var(--maymar-laiton-clair);  /* sur fond encre */
+  --color-sur-accent:      var(--maymar-blanc);
+
+  --color-succes:          var(--maymar-olive);
+  --color-erreur:          var(--maymar-terre);
+  --color-alerte:          var(--maymar-ambre);
+  --color-sur-etat:        var(--maymar-blanc);
+
+  /* --- Polices : font-display, font-texte, font-mono --- */
+  --font-display: var(--maymar-font-display);
+  --font-texte:   var(--maymar-font-texte);
+  --font-mono:    var(--maymar-font-mono);
+
+  /* --- Echelle typographique -------------------------------------------
+     Young Serif n'existe QU'EN 400. La hierarchie se fait donc a la TAILLE
+     et a l'espace, jamais au gras : `font-display font-bold` est un faux gras
+     synthetique, laid et interdit (voir guidelines).
+     Interlignage serre sur les grands corps, aere sur le texte courant.      */
+  --text-legende:   0.75rem;   --text-legende--line-height: 1.45;   /* 12 — mentions */
+  --text-etiquette: 0.8125rem; --text-etiquette--line-height: 1.4;  /* 13 — libelles, badges */
+  --text-petit:     0.875rem;  --text-petit--line-height: 1.55;     /* 14 */
+  --text-courant:   1rem;      --text-courant--line-height: 1.65;   /* 16 — plancher mobile */
+  --text-ample:     1.125rem;  --text-ample--line-height: 1.6;      /* 18 — chapo */
+  --text-t4:        1.375rem;  --text-t4--line-height: 1.35;        /* 22 */
+  --text-t3:        1.75rem;   --text-t3--line-height: 1.25;        /* 28 */
+  --text-t2:        2.25rem;   --text-t2--line-height: 1.15;        /* 36 */
+  --text-t1:        3rem;      --text-t1--line-height: 1.08;        /* 48 */
+  --text-heros:     4rem;      --text-heros--line-height: 1.02;     /* 64 — un par page */
+
+  --tracking-titre:   -0.015em;  /* Young Serif se resserre un peu en grand */
+  --tracking-capitale: 0.1em;    /* petites capitales, etiquettes */
+
+  /* --- Rayons : rounded-doux, rounded-carte ... ------------------------- */
+  --radius-net:    var(--maymar-radius-net);
+  --radius-doux:   var(--maymar-radius-doux);
+  --radius-carte:  var(--maymar-radius-carte);
+  --radius-bloc:   var(--maymar-radius-bloc);
+  --radius-arc:    var(--maymar-radius-arc);
+
+  /* --- Ombres : shadow-carte, shadow-releve ... ------------------------- */
+  --shadow-pose:    var(--maymar-shadow-pose);
+  --shadow-carte:   var(--maymar-shadow-carte);
+  --shadow-releve:  var(--maymar-shadow-releve);
+  --shadow-feuille: var(--maymar-shadow-feuille);
+}
+
+/* ---------------------------------------------------------------------------
+   3. TROIS GESTES DE MARQUE — le strict minimum qu'on ne peut pas confier
+   a la memoire de chacun. Tout le reste appartient aux composants.
+   --------------------------------------------------------------------------- */
+
+/* Les prix. Mesure : les chiffres d'IBM Plex Sans sont DEJA de largeur egale
+   ("111,000" et "888,000" font tous deux 154.89 px en rendu reel), donc les
+   colonnes de prix s'alignent sans reglage. On pose quand meme tabular-nums :
+   c'est la ceinture si la famille de secours prend le relais. */
+.maymar-prix {
+  font-family: var(--maymar-font-texte);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Le plein cintre du monogramme, reutilisable : vignette produit, bandeau,
+   niche de categorie.
+   Rayons PHYSIQUES a dessein : la forme est symetrique gauche/droite, donc le
+   passage en RTL ne change rien — les longhands logiques n'apporteraient ici
+   qu'une compatibilite plus etroite pour zero benefice. Les proprietes
+   logiques restent la regle pour les MARGES et les ESPACEMENTS (cf. charte). */
+.maymar-arc {
+  border-radius: var(--maymar-radius-arc) var(--maymar-radius-arc)
+                 var(--maymar-radius-doux) var(--maymar-radius-doux);
+}
+
+/* Anneau de focus visible partout — jamais `outline: none` sans remplacant.
+   Laiton sur clair, laiton-clair sur encre : la seconde regle existe parce que
+   laiton/encre ne mesure que 2.89:1 (verifie-contraste.py l'assert en INTERDIT). */
+.maymar-focus:focus-visible,
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--maymar-laiton);
+  outline-offset: 2px;
+  border-radius: var(--maymar-radius-doux);
+}
+.maymar-sur-encre :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline-color: var(--maymar-laiton-clair);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

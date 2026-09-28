@@ -505,6 +505,14 @@ Sources : [ministère des Technologies, CTI](https://www.mtc.gov.tn/fileadmin/In
 4. Détail favorable : on n'a pas besoin du `proxy.ts` de Next.js, puisque c'est la façade qui trouve la boutique à partir du domaine.
 5. **Si le prototype échoue, on passe au plan B (option A)** : Vercel derrière la façade. On ne perd rien, puisque domaines, façade, R2 et tampon restent chez Cloudflare.
 
+**Résultat de la phase 1, en local (28/09/2026)** : **réussie**, détail dans [`prototype/vitrine-workers/RAPPORT.md`](../../prototype/vitrine-workers/RAPPORT.md).
+- vinext annonce 95 % de compatibilité, sans aucun blocage.
+- La compilation passe, et le Worker pèse 0,47 Mo compressé pour une limite de 10 Mo.
+- Les 8 pages s'affichent justes dans workerd.
+- **Base coupée, une fiche déjà en cache reste servie.**
+
+La phase 2, sur Cloudflare, attend un jeton de déploiement et une base joignable : c'est elle qui mesurera la vitesse depuis Tunis, le cache de production, Hyperdrive et le coût réel.
+
 ## 9. Ce qu'on construit, et quand
 
 Les étapes correspondent à la feuille de route du PRD.

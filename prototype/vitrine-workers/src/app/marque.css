@@ -1,0 +1,755 @@
+/* ============================================================================
+   MAYMAR — LES GESTES DE MARQUE (habillage)
+
+   Repris des maquettes de Lina (docs/maquettes/maquette.css), traduits pour
+   l'application. RÈGLE ABSOLUE : aucune valeur de couleur, de rayon ou d'ombre
+   n'est écrite ici — tout passe par les primitives `--maymar-*` de
+   docs/brand/tokens.css. Échanger tokens.css échange donc la direction
+   visuelle du site entier, sans toucher une ligne de composant.
+
+   Les composants React n'emploient que : les utilitaires Tailwind dérivés des
+   jetons (bg-fond, text-encre, rounded-carte, shadow-carte, text-t2…) et les
+   classes ci-dessous.
+   ========================================================================== */
+
+/* ==========================================================================
+   MISE EN PAGE
+   ========================================================================== */
+.enveloppe {
+  max-inline-size: var(--maymar-large);
+  margin-inline: auto;
+  padding-inline: var(--maymar-marge);
+}
+
+.section { padding-block: 3rem; }
+@media (min-width: 900px) { .section { padding-block: 4rem; } }
+
+.filet { border: 0; border-block-start: 1px solid var(--maymar-pierre); margin: 0; }
+
+/* Le filet « marqué » : 40 px de laiton en tête de ligne. Un seul geste de
+   couleur, répété — c'est lui qui coud toutes les pages entre elles. */
+.filet-marque {
+  border: 0; block-size: 1px; margin: 0;
+  background:
+    linear-gradient(to right, var(--maymar-laiton) 0 40px, transparent 40px) left / 100% 1px no-repeat,
+    var(--maymar-pierre);
+}
+
+/* Étiquette de section : numéro laiton + petites capitales interlettrées.
+   Sans interlettrage, des capitales de 13 px sont illisibles (charte §7). */
+.etiquette {
+  display: flex; align-items: baseline; gap: 0.75rem;
+  font-size: 0.8125rem; line-height: 1.4;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--maymar-encre-doux);
+}
+.etiquette b { font-weight: 500; color: var(--maymar-laiton); font-variant-numeric: tabular-nums; }
+
+.chapo {
+  font-size: 1.125rem; line-height: 1.6;
+  color: var(--maymar-encre-doux); max-inline-size: 46ch;
+}
+
+.saut-contenu {
+  position: absolute; inset-inline-start: 1rem; inset-block-start: -100px; z-index: 100;
+  background: var(--maymar-encre); color: var(--maymar-blanc);
+  padding: 0.5rem 1rem; border-radius: var(--maymar-radius-doux);
+  transition: inset-block-start .18s ease-out;
+}
+.saut-contenu:focus { inset-block-start: 0.5rem; }
+
+.fil {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+  font-size: 0.875rem; color: var(--maymar-encre-doux);
+}
+.fil a:hover { color: var(--maymar-encre); box-shadow: inset 0 -1px 0 var(--maymar-laiton); }
+.fil svg { opacity: .5; }
+
+/* ==========================================================================
+   L'ARCADE — le geste de marque. Le plein cintre du monogramme tient TOUTES
+   les images du site : hero, vignette de rayon, carte produit, galerie.
+   Une seule forme, cinq échelles.
+   ========================================================================== */
+.arc {
+  /* ⚠️ `display: block` n'est PAS décoratif. La niche est un <span> : laissé en
+     `inline`, il IGNORE aspect-ratio et hauteur, se réduit à 0 px de haut (son
+     seul contenu est en position absolue), la photo disparaît et la petite
+     niche du hero remonte par-dessus le texte. Mesuré à l'image par le juge
+     visuel le 11/08, aux deux largeurs. Dans les maquettes de Lina le défaut
+     n'existait pas : chaque .arc y était enfant direct d'une grille ou d'un
+     flex, qui blockifie ses enfants. */
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--maymar-radius-arc) var(--maymar-radius-arc)
+                 var(--maymar-radius-doux) var(--maymar-radius-doux);
+  background:
+    radial-gradient(62% 46% at 50% 46%, var(--maymar-blanc) 0%, transparent 74%),
+    linear-gradient(178deg, var(--maymar-sable) 0%, var(--maymar-pierre) 100%);
+  box-shadow: inset 0 0 0 1px var(--maymar-pierre-fort);
+  isolation: isolate;
+}
+
+/* Filet intérieur : redouble l'arc à 10 px du bord. C'est le liseré d'une
+   niche, pas une bordure de composant. */
+.arc::before {
+  content: "";
+  position: absolute; inset: 10px;
+  border: 1px solid color-mix(in srgb, var(--maymar-pierre-fort) 70%, transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* La tablette : l'objet POSE dessus. C'est elle qui fait lire une niche
+   habitée plutôt qu'un pictogramme qui flotte. */
+.arc::after {
+  content: "";
+  position: absolute; inset-inline: 15%; inset-block-end: 15%;
+  block-size: 1px; background: var(--maymar-pierre-fort); opacity: .85;
+  pointer-events: none;
+}
+.arc:has(img)::after { display: none; }          /* pas de tablette sous une photo */
+
+.arc .silhouette {
+  position: absolute;
+  inset-inline: 0; margin-inline: auto;
+  inset-block-end: 15%;
+  inline-size: 74%; block-size: auto;
+  color: var(--maymar-encre);
+  opacity: 0.66;                                  /* franc : un objet, pas un fantôme */
+  transition: opacity .3s ease-out;
+}
+.arc .filigrane {                                 /* monogramme, très discret */
+  position: absolute;
+  inline-size: 26%;
+  inset-block-start: 9%; inset-inline-start: 8%;
+  color: var(--maymar-encre); opacity: 0.07;
+}
+
+/* PHOTO DÉTOURÉE (fond déjà retiré) : elle se pose DANS la niche, entière.
+   En `cover` elle remplirait le cadre, le plein cintre disparaîtrait et le
+   produit se ferait couper — mesuré par Lina sur la valise jaune.
+   Le fond de la photo vaut #FBF8F2, la chaux à un point près : la niche prend
+   donc ce fond, plus aucun rectangle visible. Une ombre au sol pose l'objet. */
+.arc-detoure {
+  background:
+    radial-gradient(42% 7% at 50% 84%, color-mix(in srgb, var(--maymar-encre) 16%, transparent) 0%, transparent 70%),
+    var(--maymar-chaux);
+}
+.arc-detoure img {
+  position: absolute; inset: 6% 4% 10%;
+  inline-size: auto; block-size: auto;
+  max-inline-size: 92%; max-block-size: 84%;
+  margin: auto; object-fit: contain;
+  /* `darken` et non `multiply` : le fond de la photo détourée vaut 251,248,239,
+     la chaux 251,248,243 — presque la même. `multiply` les MULTIPLIE (247…) et
+     dessine donc un rectangle plus sombre que la niche, visible à grande
+     échelle. `darken` prend le minimum canal par canal : le fond disparaît,
+     le produit saturé, lui, ne bouge pas. Mesuré à l'image le 11/08. */
+  mix-blend-mode: darken;
+}
+/* Le liseré de niche s'efface quand elle porte une PHOTO : à grande échelle,
+   un filet à 70 % dessine une boîte autour de l'image au lieu de doubler
+   l'arc (constaté à l'image le 11/08). Sur une niche vide il garde toute sa
+   force — c'est lui qui fait la niche. */
+.arc:has(img)::before { border-color: color-mix(in srgb, var(--maymar-pierre-fort) 28%, transparent); }
+
+/* ---------------------------------------------------------------------------
+   L'ÉTAT D'ATTENTE — une niche de produit sans photo (décision Luna, 11/08).
+   Aplat sable calme, monogramme en filigrane très bas, une mention courte.
+   Ni pictogramme, ni image cassée, ni excuse : la maison dit qu'elle attend
+   ses photos, et le dit avec de la tenue. Le jour où `produit_images` se
+   remplit, cet état disparaît de lui-même.
+   --------------------------------------------------------------------------- */
+.arc-attente {
+  background: linear-gradient(178deg, var(--maymar-sable) 0%, var(--maymar-chaux) 100%);
+}
+.arc-attente::after { display: none; }          /* pas de tablette sans objet posé */
+.filigrane-attente {
+  position: absolute;
+  inset-inline: 0; margin-inline: auto;
+  inset-block: 50%; translate: 0 -58%;
+  inline-size: 34%;
+  color: var(--maymar-encre); opacity: 0.06;
+}
+.mention-attente {
+  position: absolute; inset-inline: 0.75rem; inset-block-end: 62px;
+  text-align: center;
+  font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--maymar-encre-doux); opacity: .75;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Mention de matière posée en bas de niche : la niche RENSEIGNE au lieu de
+   s'excuser d'être sans photo. */
+.arc-etiquette {
+  position: absolute; inset-block-end: 10px;
+  inset-inline-start: 12px; inset-inline-end: 58px;   /* jamais sous le rond */
+  font-size: 0.75rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--maymar-encre-doux);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* L'affordance : un rond posé dans la niche. Toujours visible — une carte qui
+   n'est cliquable qu'au survol ne l'est pas sur une capture. */
+.aller {
+  position: absolute; inset-block-end: 12px; inset-inline-end: 12px;
+  inline-size: 38px; block-size: 38px;
+  display: grid; place-items: center;
+  background: var(--maymar-blanc); color: var(--maymar-encre);
+  border: 1px solid var(--maymar-pierre-fort); border-radius: 50%;
+  box-shadow: var(--maymar-shadow-pose);
+  transition: background-color .2s ease-out, color .2s ease-out, transform .2s ease-out;
+}
+
+/* ==========================================================================
+   CARTE PRODUIT
+   ========================================================================== */
+.grille-produits {
+  display: grid; gap: 1.5rem 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 700px)  { .grille-produits { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem 1.5rem; } }
+@media (min-width: 1100px) { .grille-produits { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* Trois pièces = trois colonnes au large, UNE au mobile. À 390, deux colonnes
+   donnaient 2 cartes serrées + 1 pleine largeur : deux gabarits pour trois
+   produits équivalents (relevé par le juge visuel sur la maquette). */
+.grille-trois { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 700px) { .grille-trois { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.produit { display: flex; flex-direction: column; gap: 0.75rem; block-size: 100%; }
+.produit .arc {
+  aspect-ratio: 3 / 4;
+  transition: transform .3s cubic-bezier(.22,.61,.36,1), box-shadow .3s ease-out;
+}
+.produit:hover .arc {
+  transform: translateY(-4px);
+  box-shadow: var(--maymar-shadow-releve), inset 0 0 0 1px var(--maymar-pierre-fort);
+}
+.produit:hover .silhouette { opacity: .24; }
+.produit:hover .aller { background: var(--maymar-encre); color: var(--maymar-blanc); transform: translateX(3px); }
+.produit .arc img { transition: transform .5s cubic-bezier(.22,.61,.36,1); }
+.produit:hover .arc img { transform: scale(1.035); }
+
+/* Les prix s'alignent d'une carte à l'autre même quand un nom passe sur deux
+   lignes : sans ça, une grille ondule et se lit mal. */
+.produit h3 { font-size: 1.375rem; line-height: 1.2; min-block-size: 2.4em; }
+.produit .rang {
+  margin-block-start: auto;
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding-block-start: 0.5rem; border-block-start: 1px solid var(--maymar-pierre);
+}
+.produit .categorie {
+  font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--maymar-laiton);
+}
+
+/* Les coloris, en pastilles. La charte à la lettre : « la marque est une
+   charpente, la couleur vient des produits ». Le texte à côté porte le sens —
+   jamais la couleur seule. */
+.coloris { display: flex; align-items: center; gap: 5px; }
+.coloris i {
+  inline-size: 13px; block-size: 13px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--maymar-encre) 22%, transparent);
+}
+.coloris span { font-size: 0.75rem; color: var(--maymar-encre-doux); margin-inline-start: 3px; }
+
+/* ==========================================================================
+   BOUTONS — l'action principale est ENCRE (15.72:1). Le laiton reste un
+   accent, jamais un aplat de bouton (charte §6).
+   ========================================================================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-block-size: 48px; padding-inline: 1.5rem;
+  border: 1px solid transparent; border-radius: var(--maymar-radius-doux);
+  font-size: 1rem; font-weight: 500; cursor: pointer;
+  transition: background-color .18s ease-out, color .18s ease-out,
+              border-color .18s ease-out, transform .18s ease-out, box-shadow .18s ease-out;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primaire { background: var(--maymar-encre); color: var(--maymar-blanc); box-shadow: var(--maymar-shadow-pose); }
+.btn-primaire:hover { background: color-mix(in srgb, var(--maymar-encre) 88%, var(--maymar-laiton)); box-shadow: var(--maymar-shadow-carte); }
+.btn-second { background: transparent; color: var(--maymar-encre); border-color: var(--maymar-pierre-fort); }
+.btn-second:hover { border-color: var(--maymar-encre); background: color-mix(in srgb, var(--maymar-sable) 60%, transparent); }
+.btn-lien {
+  min-block-size: 44px; padding: 0; border: 0; background: none;
+  color: var(--maymar-encre); box-shadow: inset 0 -1px 0 var(--maymar-laiton);
+  border-radius: 0;
+}
+.btn-lien:hover { box-shadow: inset 0 -2px 0 var(--maymar-laiton); }
+.btn-bloc { inline-size: 100%; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* Sélecteur de quantité — cibles de 48 px : le pouce d'abord (mobile au même
+   niveau d'exigence que le desktop, PRD §3). */
+.qte {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--maymar-pierre-fort); border-radius: var(--maymar-radius-doux);
+  background: var(--maymar-blanc);
+}
+.qte button {
+  inline-size: 46px; block-size: 48px;
+  background: none; border: 0; cursor: pointer; font-size: 1.125rem;
+}
+.qte button[disabled] { opacity: .35; cursor: not-allowed; }
+.qte > span { inline-size: 40px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* ==========================================================================
+   PRIX & ÉTATS
+   ========================================================================== */
+.prix { font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "tnum" 1, "lnum" 1; }
+.prix-fort { font-size: 1.375rem; font-weight: 500; }
+.prix .dev { font-size: .72em; color: var(--maymar-encre-doux); margin-inline-start: .25em; letter-spacing: .04em; }
+
+/* L'état ne passe JAMAIS par la seule couleur : un mot, une forme, une teinte
+   (charte §6). Le point ne lève que l'ambiguïté au survol rapide. */
+.etat {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.8125rem; font-weight: 500;
+  padding: 4px 0.5rem 4px 7px;
+  border-radius: var(--maymar-radius-net);
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.etat::before { content: ""; inline-size: 6px; block-size: 6px; background: currentColor; border-radius: 50%; }
+.etat-faible  { color: var(--maymar-ambre); }
+.etat-rupture { color: var(--maymar-encre-doux); }
+.etat-refus   { color: var(--maymar-terre); }
+
+/* ⚠️ « En stock » n'est PAS un badge de même poids. Sur une grille de huit
+   produits, huit pastilles équivalentes ne signalent plus rien (défaut mesuré
+   le 05/08 : ~55 pastilles de poids identique). L'état NORMAL se dit en texte
+   calme ; seule l'exception — stock faible, rupture — mérite un cadre. */
+.dispo {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.8125rem; font-weight: 500; color: var(--maymar-olive);
+}
+/* Sur une GRILLE, même « En stock » en olive répété huit fois redevient le
+   bruit qu'on combat (le juge visuel a compté quatre marques vertes de poids
+   identique le 11/08). Sur une carte, l'état normal est donc un simple mot
+   gris ; l'exception — stock faible, rupture — garde seule son cadre. */
+.dispo-discret { color: var(--maymar-encre-doux); font-weight: 400; }
+.dispo svg { flex: none; }
+
+/* ==========================================================================
+   CHAMPS — bordure = contour-champ (3:1, WCAG 1.4.11). `pierre` y est
+   INTERDIT (1.30:1).
+   ========================================================================== */
+.champ { display: flex; flex-direction: column; gap: 6px; }
+.champ > label { font-size: 0.8125rem; font-weight: 500; color: var(--maymar-encre); }
+.champ input, .champ select {
+  min-block-size: 48px;
+  padding: 0.5rem 0.75rem;
+  background: var(--maymar-blanc);
+  border: 1px solid var(--maymar-contour-champ);
+  border-radius: var(--maymar-radius-doux);
+  font-size: 1rem;                      /* 16 px : sous ce seuil iOS zoome */
+  transition: border-color .15s ease-out;
+}
+.champ input:hover, .champ select:hover { border-color: var(--maymar-encre-doux); }
+.champ input:focus-visible, .champ select:focus-visible { border-color: var(--maymar-encre); }
+
+/* ==========================================================================
+   EN-TÊTE / PIED
+   ========================================================================== */
+.entete {
+  position: sticky; inset-block-start: 0; z-index: 40;
+  background: var(--maymar-chaux);
+  border-block-end: 1px solid var(--maymar-pierre);
+}
+.entete-rang { display: flex; align-items: center; gap: 1.5rem; min-block-size: 72px; }
+
+/* Le logo est un FICHIER (charte §5) : masque, jamais un texte re-composé.
+   Il prend la couleur du texte parent — une seule source pour toutes les
+   surfaces, y compris le pied en encre. */
+.marque {
+  display: block; inline-size: 132px; aspect-ratio: 749.733 / 100;
+  background-color: currentColor;
+  -webkit-mask: url("/marque/logo.svg") no-repeat center / contain;
+          mask: url("/marque/logo.svg") no-repeat center / contain;
+}
+
+.nav { display: none; gap: 1.5rem; margin-inline-start: 1rem; }
+.nav a {
+  position: relative; padding-block: 0.5rem;
+  font-size: 0.875rem; letter-spacing: .01em; color: var(--maymar-encre);
+}
+.nav a::after {
+  content: ""; position: absolute; inset-inline: 0; inset-block-end: 2px;
+  block-size: 1px; background: var(--maymar-laiton);
+  transform: scaleX(0); transform-origin: inline-start;
+  transition: transform .22s cubic-bezier(.22,.61,.36,1);
+}
+.nav a:hover::after, .nav a[aria-current]::after { transform: scaleX(1); }
+.nav a[aria-current] { color: var(--maymar-laiton); }
+
+.entete-actions { display: flex; align-items: center; gap: 0.25rem; margin-inline-start: auto; }
+.icone-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  inline-size: 44px; block-size: 44px;
+  background: none; border: 0; border-radius: var(--maymar-radius-doux); cursor: pointer;
+  transition: background-color .15s ease-out;
+}
+.icone-btn:hover { background: var(--maymar-sable); }
+
+@media (min-width: 900px) { .nav { display: flex; } .cache-desktop { display: none !important; } }
+@media (max-width: 899px) { .cache-mobile { display: none !important; } }
+
+.pied { background: var(--maymar-encre); color: var(--maymar-blanc); }
+.pied a { color: color-mix(in srgb, var(--maymar-blanc) 78%, transparent); }
+.pied a:hover { color: var(--maymar-laiton-clair); }
+.pied .titre-col {
+  font-size: 0.8125rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--maymar-laiton-clair);
+  margin-block-end: 0.75rem;
+}
+.pied-grille { display: grid; gap: 2rem; padding-block: 3rem 2rem; }
+.pied-grille ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; font-size: 0.875rem; }
+.pied-bas {
+  display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem;
+  justify-content: space-between; align-items: center;
+  padding-block: 1.5rem;
+  border-block-start: 1px solid color-mix(in srgb, var(--maymar-blanc) 16%, transparent);
+  font-size: 0.75rem; color: color-mix(in srgb, var(--maymar-blanc) 60%, transparent);
+}
+/* Trois colonnes réelles (marque · catalogue · commander) : la grille en
+   comptait quatre et laissait le quart droit vide à 1440 (juge visuel, 11/08). */
+@media (min-width: 800px) { .pied-grille { grid-template-columns: 1.6fr 1fr 1.2fr; gap: 3rem; } }
+
+/* ==========================================================================
+   SURFACE ENCRE — toute surface encre porte `.maymar-sur-encre` (tokens.css) :
+   l'accent y devient laiton-clair (laiton sur encre = 2.89:1, INTERDIT) et
+   l'anneau de focus bascule avec lui.
+   ========================================================================== */
+.sur-encre { background: var(--maymar-encre); color: var(--maymar-blanc); }
+.sur-encre .doux,
+.sur-encre .legende { color: color-mix(in srgb, var(--maymar-blanc) 72%, transparent); }
+.sur-encre .etiquette { color: color-mix(in srgb, var(--maymar-blanc) 70%, transparent); }
+.sur-encre .etiquette b { color: var(--maymar-laiton-clair); }
+
+/* ==========================================================================
+   COMPOSITIONS DE PAGE — reprises des maquettes de Lina.
+   ========================================================================== */
+
+/* La légende, en petit corps discret. */
+.legende { font-size: 0.75rem; line-height: 1.45; color: var(--maymar-encre-doux); }
+
+/* Les trois faits sous le hero : une ligne, pas un bloc — le détail de chacun
+   est donné plus bas dans la page, le redire ici faisait doublon (relevé par
+   le juge visuel sur la maquette). */
+.fait { display: flex; align-items: center; gap: 0.5rem; }
+.fait::before {
+  content: ""; flex: none; inline-size: 5px; block-size: 5px;
+  background: var(--maymar-laiton);
+}
+
+/* La petite niche qui chevauche la grande, dans le hero. */
+.niche-petite {
+  position: absolute; inline-size: 40%; aspect-ratio: 3 / 4;
+  inset-block-end: -22px; inset-inline-start: 0;
+  box-shadow: var(--maymar-shadow-releve), inset 0 0 0 1px var(--maymar-pierre-fort);
+}
+@media (min-width: 900px) {
+  .niche-petite { inset-inline-start: -52px; inset-block-end: -46px; }
+}
+
+/* LE REGISTRE — l'index des rayons, tenu comme un sommaire de livre. */
+.registre { border-block-start: 1px solid var(--maymar-pierre); }
+.registre a {
+  display: grid; grid-template-columns: auto 52px 1fr auto;
+  align-items: center; gap: 1rem;
+  padding-block: 0.75rem;
+  border-block-end: 1px solid var(--maymar-pierre);
+  transition: background-color .2s ease-out, padding-inline .25s cubic-bezier(.22,.61,.36,1);
+}
+.registre a:hover { background: color-mix(in srgb, var(--maymar-sable) 55%, transparent); padding-inline: 0.75rem; }
+.registre .num { font-size: 0.75rem; color: var(--maymar-laiton); font-variant-numeric: tabular-nums; }
+.registre .vignette { aspect-ratio: 4 / 5; }
+.registre .vignette::after { display: none; }        /* pas de tablette à cette échelle */
+.registre .vignette .silhouette { inline-size: 58%; inset-block-end: 12%; }
+.registre h3 { font-size: 1.375rem; }
+.registre .compte { display: block; font-size: 0.875rem; color: var(--maymar-encre-doux); }
+.registre .fleche { color: var(--maymar-encre-doux); transition: transform .25s cubic-bezier(.22,.61,.36,1); }
+.registre a:hover .fleche { transform: translateX(5px); color: var(--maymar-laiton); }
+/* La dernière ligne du sommaire EST le lien « tout le catalogue » : elle ferme
+   la liste au lieu de flotter en marge. */
+.registre .tout { background: var(--maymar-sable); }
+.registre .tout h3 { color: var(--maymar-laiton); }
+@media (min-width: 900px) {
+  .registre h3, .registre .tout h3 { font-size: 1.75rem; }
+  .registre .vignette { inline-size: 60px; }
+}
+
+/* LA FICHE PRODUIT ========================================================= */
+.fiche { display: grid; gap: 2rem; padding-block: 1.5rem 3rem; align-items: start; }
+@media (min-width: 1000px) {
+  .fiche { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 4rem; }
+  /* L'ordre du DOM sert le MOBILE (galerie → décision → détail). Sur desktop,
+     la grille remet le détail sous la galerie, dans la colonne de l'objet. */
+  .fiche > .galerie        { grid-column: 1; grid-row: 1; }
+  .fiche > .decision       { grid-column: 2; grid-row: 1 / span 2; }
+  .fiche > .detail-galerie { grid-column: 1; grid-row: 2; }
+}
+
+.galerie { display: grid; gap: 0.75rem; }
+.galerie .grande { aspect-ratio: 3 / 4; }
+.vues { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.vues .arc { aspect-ratio: 1 / 1; }
+.vues .arc::after { display: none; }
+@media (min-width: 1000px) { .galerie { position: sticky; inset-block-start: 96px; } }
+
+.decision > * + * { margin-block-start: 1rem; }
+.marque-tierce {
+  display: inline-flex; align-items: baseline; gap: 0.5rem;
+  font-size: 0.875rem; color: var(--maymar-encre-doux);
+}
+.marque-tierce b { font-weight: 500; color: var(--maymar-encre); }
+
+.ligne-prix { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem; }
+.ligne-prix .prix { font-size: 1.75rem; }
+
+.variante > h2 {
+  font-family: var(--maymar-font-texte); font-size: 0.8125rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--maymar-encre-doux); margin-block-end: 0.75rem;
+}
+.variante > h2 .choisi { text-transform: none; letter-spacing: 0; color: var(--maymar-encre); }
+.choix { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.choix button {
+  min-block-size: 48px; min-inline-size: 48px; padding-inline: 1rem;
+  background: var(--maymar-blanc); border: 1px solid var(--maymar-pierre-fort);
+  border-radius: var(--maymar-radius-doux); cursor: pointer; font-size: 0.875rem;
+  transition: border-color .15s ease-out, box-shadow .15s ease-out;
+}
+.choix button:hover:not([disabled]) { border-color: var(--maymar-encre); }
+.choix button[aria-pressed="true"] { border-color: var(--maymar-encre); box-shadow: 0 0 0 1px var(--maymar-encre); }
+/* Une déclinaison en rupture reste VISIBLE et barrée : la masquer ferait
+   croire qu'elle n'existe pas, et le client la chercherait ailleurs. */
+.choix button[disabled] {
+  cursor: not-allowed; color: var(--maymar-encre-doux); background: var(--maymar-sable);
+  border-style: dashed; text-decoration: line-through;
+}
+.choix .pastille-couleur { display: inline-flex; align-items: center; gap: 0.5rem; padding-inline: 0.75rem; }
+/* Le prix de l'option, quand c'est cet axe qui le fait varier. Discret : il
+   renseigne, il ne concurrence pas le prix principal. */
+.choix button { display: inline-flex; align-items: center; gap: 0.5rem; }
+.prix-option {
+  font-size: 0.75rem; color: var(--maymar-encre-doux);
+  font-variant-numeric: tabular-nums;
+  padding-inline-start: 0.5rem; margin-inline-start: 0.125rem;
+  border-inline-start: 1px solid var(--maymar-pierre);
+}
+.choix .pastille-couleur i {
+  inline-size: 18px; block-size: 18px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--maymar-encre) 25%, transparent);
+}
+
+.achat { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+
+/* Ce qui fait décider : quatre faits, jamais quatre promesses. */
+.rassure {
+  list-style: none; margin: 0; padding: 0;
+  border: 1px solid var(--maymar-pierre); border-radius: var(--maymar-radius-carte);
+  background: var(--maymar-blanc); overflow: hidden;
+}
+.rassure li { display: flex; gap: 0.75rem; padding: 0.75rem 1rem; border-block-start: 1px solid var(--maymar-pierre); }
+.rassure li:first-child { border-block-start: 0; }
+.rassure svg { flex: none; margin-block-start: 2px; color: var(--maymar-laiton); }
+.rassure b { display: block; font-size: 0.875rem; font-weight: 500; }
+.rassure span span { font-size: 0.875rem; color: var(--maymar-encre-doux); }
+
+.detail { display: grid; gap: 2rem; padding-block: 2rem 3rem; border-block-start: 1px solid var(--maymar-pierre); }
+@media (min-width: 900px) { .detail { grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); gap: 4rem; align-items: start; } }
+/* Le détail (description, livraison, retour) vit SOUS la galerie, à côté de
+   l'objet : la colonne de gauche restait vide sur toute la hauteur du bloc
+   d'achat (juge visuel, 11/08). */
+.detail-galerie { margin-block-start: 1.5rem; }
+/* Sur mobile, une niche EN ATTENTE de photo ne prend pas un demi-écran avant
+   même le nom du produit : elle se réduit à une vignette centrée (juge visuel,
+   11/08 — « l'œil tombe d'abord sur un grand cadre vide »). Avec une vraie
+   photo, elle garde toute sa place : c'est le produit qu'on vient voir. */
+@media (max-width: 999px) {
+  .galerie .arc-attente { max-inline-size: 11rem; margin-inline: auto; }
+}
+@media (min-width: 1000px) { .detail-galerie { margin-block-start: 0; } }
+
+.coup-oeil {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+  margin: 0; padding-block-start: 1rem;
+  border-block-start: 1px solid var(--maymar-pierre);
+}
+.coup-oeil dt {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--maymar-encre-doux);
+}
+.coup-oeil dd { margin: 4px 0 0; font-size: 1.125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.specs { inline-size: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.specs th, .specs td {
+  text-align: start; padding: 0.75rem 0;
+  border-block-end: 1px solid var(--maymar-pierre); vertical-align: top;
+}
+.specs th { font-weight: 400; color: var(--maymar-encre-doux); inline-size: 42%; }
+
+details.pli { border-block-end: 1px solid var(--maymar-pierre); }
+details.pli > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding-block: 1rem; cursor: pointer; list-style: none; font-weight: 500;
+}
+details.pli > summary::-webkit-details-marker { display: none; }
+details.pli > summary::after { content: "+"; font-size: 1.375rem; color: var(--maymar-laiton); line-height: 1; }
+details.pli[open] > summary::after { content: "–"; }
+details.pli p { padding-block-end: 1rem; font-size: 0.875rem; color: var(--maymar-encre-doux); max-inline-size: 60ch; }
+
+/* La carte « voir tout le rayon » qui ferme une grille de suggestions. */
+.vers-rayon .arc { display: grid; place-items: center; background: var(--maymar-sable); }
+.vers-rayon .arc::after { display: none; }
+.vers-rayon .mot {
+  position: relative; display: grid; justify-items: center; gap: 0.5rem;
+  color: var(--maymar-laiton); font-size: 0.875rem; text-align: center; padding-inline: 1rem;
+}
+.vers-rayon .mot .n {
+  font-family: var(--maymar-font-display); font-size: 3rem; line-height: 1;
+  color: var(--maymar-encre);
+}
+.vers-rayon:hover .arc { background: color-mix(in srgb, var(--maymar-pierre) 45%, var(--maymar-sable)); }
+
+/* BARRE D'ACHAT MOBILE — l'action reste à portée de pouce, mais seulement
+   quand le bloc d'achat est sorti du champ (sinon elle le double et recouvre
+   le titre : mesuré par le juge visuel le 11/08). */
+.achat-mobile {
+  position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 45;
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem var(--maymar-marge) calc(0.75rem + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--maymar-chaux) 94%, transparent);
+  backdrop-filter: blur(10px);
+  border-block-start: 1px solid var(--maymar-pierre);
+  animation: leve .25s ease-out both;
+}
+@media (min-width: 1000px) { .achat-mobile { display: none; } }
+
+/* La barre est FIXE : sans cale, elle recouvre en permanence la dernière ligne
+   du pied de page (mention légale et devise), constaté à l'image le 11/08.
+   `:has` fait apparaître la cale seulement quand la barre est là — donc jamais
+   sur les pages qui n'en ont pas, et jamais en desktop. */
+@media (max-width: 999px) {
+  body:has(.achat-mobile) .pied {
+    /* 5.5rem : la barre mesure 73 px au rendu réel — une cale calculée au
+       plus juste laissait la dernière ligne affleurer d'un pixel (mesuré). */
+    padding-block-end: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* LE LISTING — colonne de filtres à gauche en desktop, feuille dépliable en
+   mobile. Le mobile n'est pas une réduction : c'est l'autre moitié du travail
+   (PRD §3, backoffice et vitrine au même niveau d'exigence). */
+.listing { display: grid; gap: 2rem; align-items: start; }
+@media (min-width: 1000px) { .listing { grid-template-columns: 236px minmax(0, 1fr); gap: 4rem; } }
+@media (min-width: 1000px) { .filtres { position: sticky; inset-block-start: 96px; } }
+
+.filtres-mobile { margin-block-end: 1rem; }
+.filtres-mobile > summary { list-style: none; }
+.filtres-mobile > summary::-webkit-details-marker { display: none; }
+
+.groupe { padding-block: 1rem; border-block-start: 1px solid var(--maymar-pierre); }
+.groupe > h3 {
+  font-family: var(--maymar-font-texte); font-size: 0.8125rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--maymar-encre-doux); margin-block-end: 0.75rem;
+}
+.opt {
+  display: flex; align-items: center; gap: 0.75rem;
+  min-block-size: 36px; cursor: pointer; font-size: 0.875rem;
+}
+.opt input { inline-size: 18px; block-size: 18px; accent-color: var(--maymar-encre); margin: 0; }
+.opt .n {
+  margin-inline-start: auto; color: var(--maymar-encre-doux);
+  font-size: 0.75rem; font-variant-numeric: tabular-nums;
+}
+/* Éteint : une combinaison sans résultat se VOIT et ne se clique pas. */
+.opt.eteint {
+  color: var(--maymar-encre-doux); opacity: .5; cursor: not-allowed;
+  text-decoration: line-through; text-decoration-color: var(--maymar-pierre-fort);
+}
+
+.pastilles-couleur { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pc {
+  position: relative; inline-size: 44px; block-size: 44px;
+  display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--maymar-pierre); border-radius: var(--maymar-radius-doux);
+  background: var(--maymar-blanc);
+}
+.pc i {
+  inline-size: 20px; block-size: 20px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--maymar-encre) 25%, transparent);
+}
+.pc-active { border-color: var(--maymar-encre); box-shadow: 0 0 0 1px var(--maymar-encre); }
+.pc.eteint { opacity: .4; cursor: not-allowed; }
+.pc:has(input:focus-visible) { outline: 2px solid var(--maymar-laiton); outline-offset: 2px; }
+
+.prix-bornes { display: flex; align-items: center; gap: 0.5rem; }
+.prix-bornes input {
+  inline-size: 100%; min-block-size: 44px; padding-inline: 0.5rem;
+  border: 1px solid var(--maymar-contour-champ); border-radius: var(--maymar-radius-doux);
+  background: var(--maymar-blanc); font-size: 1rem;
+}
+
+.outils {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+  padding-block: 0.75rem; margin-block-end: 1.5rem;
+  border-block: 1px solid var(--maymar-pierre);
+}
+.outils .compte { font-size: 0.875rem; color: var(--maymar-encre-doux); font-variant-numeric: tabular-nums; }
+.outils .compte b { color: var(--maymar-encre); font-weight: 500; }
+.outils select {
+  min-block-size: 44px; padding-inline: 0.75rem; font-size: 1rem;
+  background: var(--maymar-blanc);
+  border: 1px solid var(--maymar-contour-champ); border-radius: var(--maymar-radius-doux);
+}
+
+.actifs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-block-end: 1rem; }
+.puce {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  min-block-size: 40px; padding-inline: 0.75rem;
+  background: var(--maymar-sable); border: 1px solid var(--maymar-pierre-fort);
+  border-radius: var(--maymar-radius-doux); font-size: 0.8125rem; cursor: pointer;
+}
+.puce:hover { border-color: var(--maymar-encre); }
+.puce b { font-weight: 500; }
+
+/* LA MARCHE À SUIVRE — trois temps, sur la bande encre. */
+.marche { display: grid; gap: 1.5rem; margin-block-start: 2rem; }
+/* À 1440, le titre occupait la gauche et la moitié droite restait vide
+   (juge visuel, 11/08) : la bande devient deux colonnes — le propos à gauche,
+   les trois temps à droite. */
+@media (min-width: 1100px) {
+  /* Le propos et le rappel Konnect partagent la première ligne ; les trois
+     temps prennent toute la largeur en dessous. */
+  .bande-paiement > .tete-bande {
+    display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 4rem; align-items: end;
+  }
+}
+.marche > div { padding-block-start: 1rem; border-block-start: 1px solid color-mix(in srgb, var(--maymar-blanc) 20%, transparent); }
+.marche .num {
+  font-family: var(--maymar-font-display); font-size: 1.75rem;
+  color: var(--maymar-laiton-clair); line-height: 1;
+}
+.marche h3 { font-size: 1.375rem; margin-block: 0.75rem 0.5rem; }
+.marche p {
+  font-size: 0.875rem; max-inline-size: 52ch;
+  color: color-mix(in srgb, var(--maymar-blanc) 74%, transparent);
+}
+@media (min-width: 800px) { .marche { grid-template-columns: repeat(3, 1fr); gap: 3rem; } }
+
+/* ==========================================================================
+   MOUVEMENT — une seule chorégraphie : la page se lève, décalée.
+   `both` garde l'état final ; sous prefers-reduced-motion, tokens.css réduit
+   la durée à 0.01 ms et l'élément apparaît simplement posé.
+   ========================================================================== */
+@keyframes leve      { from { opacity: 0; transform: translateY(16px); }            to { opacity: 1; transform: none; } }
+@keyframes ouvre-arc { from { opacity: 0; transform: translateY(24px) scale(.985); } to { opacity: 1; transform: none; } }
+[data-leve] { animation: leve .72s cubic-bezier(.22,.61,.36,1) both; animation-delay: var(--d, 0s); }
+[data-arc]  { animation: ouvre-arc .9s cubic-bezier(.22,.61,.36,1) both; animation-delay: var(--d, 0s); }
