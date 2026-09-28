@@ -17,12 +17,12 @@
 2. **Une seule plateforme, découpée en « cellules ».** Toutes les boutiques partagent le même code. Leurs données vivent dans des cellules : une cellule, c'est une base Postgres qui porte un groupe de boutiques. On lance avec une cellule. Quand elle se remplit, on en ouvre une autre sans rien réécrire. C'est le principe des *pods* de Shopify.
 3. **Tout ce qui est lent ou externe passe par une file d'attente** : SMS, WhatsApp, livreurs, e-mails, instantanés, exports. En paiement à la livraison (COD), une commande est une simple demande qui n'exige aucune validation bancaire. On peut donc **la prendre même base arrêtée** et l'enregistrer au retour. Le COD, qui semble archaïque, devient ici un atout de résilience.
 
-**Pile recommandée : option A.**
-- **Cloudflare en façade** : DNS, CDN, domaines des clients, Worker de façade, images sur R2, file de secours des commandes.
-- **Vercel** pour l'application Next.js : vitrine, backoffice, API.
+**Pile retenue (Skander, 28/09/2026) : tout sur Cloudflare, sauf les données.**
+- **Cloudflare** pour tout ce qui sert et calcule : DNS, CDN, domaines des clients, Worker de façade, **application Next.js sur Workers** (vitrine, backoffice, API), images sur R2, files d'attente et tampon de commandes.
 - **Supabase** pour Postgres et l'authentification, en région Paris (eu-west-3).
+- **Vercel n'est plus nécessaire.** Il reste le plan B si le prototype de l'étape 1 montre que Next.js tourne mal sur Workers (§8).
 
-Le seul choix difficile à défaire, c'est l'acteur qui porte les domaines des clients. On le place chez Cloudflare dès le premier jour. L'application derrière reste remplaçable.
+Le seul choix difficile à défaire, c'est l'acteur qui porte les domaines des clients : Cloudflare, dès le premier jour. L'application et la base restent déplaçables. Le code Next.js et Postgres sont standards, et R2 est compatible S3.
 
 **Objectifs de disponibilité mensuelle :**
 
@@ -34,7 +34,7 @@ Le seul choix difficile à défaire, c'est l'acteur qui porte les domaines des c
 
 **Aucune commande acceptée n'est perdue.**
 
-**Le risque n°1 n'est pas technique.** Nos fournisseurs se paient en dollars. Or la carte technologique internationale (CTI) d'une société est plafonnée à **10 000 TND par an**, soit environ 3 390 $. Une carte refusée, c'est la mise en pause des projets Supabase, puis l'arrêt des déploiements Vercel au bout de 14 jours : **toutes les boutiques tombent en même temps** (§7). Il faut obtenir le **label Startup Act** avant d'atteindre environ 300 boutiques.
+**Le risque n°1 n'est pas technique.** Nos fournisseurs se paient en dollars. Or la carte technologique internationale (CTI) d'une société est plafonnée à **10 000 TND par an**, soit environ 3 390 $. Une carte refusée, c'est la mise en pause des projets Supabase, et le retour de Cloudflare en offre gratuite au bout de 5 jours, avec les services payants à l'usage suspendus : **toutes les boutiques tombent en même temps** (§7). Avoir deux fournisseurs au lieu de trois réduit ce risque sans le supprimer. Il faut obtenir le **label Startup Act** avant d'atteindre environ 300 boutiques.
 
 ---
 
@@ -99,7 +99,7 @@ flowchart LR
     F --- R
     F --- Q
   end
-  F -->|si en ligne| V[Application Next.js<br/>Vercel]
+  F -->|si en ligne| V[Application Next.js<br/>Cloudflare Workers]
   V --> S1[(Cellule 1<br/>Supabase Postgres<br/>Paris)]
   V -.-> S2[(Cellule 2…<br/>plus tard)]
   S1 --> O[Files de travail<br/>SMS · WhatsApp · livreurs ·<br/>e-mails · instantanés]
@@ -112,7 +112,7 @@ flowchart LR
 | DNS et domaines | `skanecom.tn`, domaine des vitrines, domaines des clients, certificats | Cloudflare (+ Cloudflare for SaaS) | Panne mondiale de Cloudflare | Tout est inaccessible (voir §4.4) |
 | Façade | Trouve la boutique à partir du domaine, sert le cache, applique les replis, prend les commandes en mode dégradé, limite les abus | Cloudflare Workers | idem | idem |
 | Images | Stockage et redimensionnement des photos produit | Cloudflare R2 + Images | Panne R2 | Images absentes, texte et prix visibles |
-| Application | Rendu des pages, backoffice, API, logique métier | Vercel (Next.js) | Panne Vercel ou déploiement cassé | **Rien** : la façade sert le cache et les instantanés |
+| Application | Rendu des pages, backoffice, API, logique métier | Cloudflare Workers (Next.js via vinext ou OpenNext, §8) | Déploiement cassé ou bug applicatif | **Rien** : la façade sert le cache et les instantanés |
 | Données | Boutiques, catalogue, stock, commandes, clients, comptes | Supabase Postgres + Auth, Paris | Panne Supabase ou de la région | **Rien pour consulter** ; commandes mises en tampon |
 | Travail asynchrone | SMS, WhatsApp, livreurs, e-mails, instantanés, exports | Outbox Postgres + Supabase Queues (pgmq), consommateurs planifiés | Panne des consommateurs | Rien : les messages attendent et partent au retour |
 | Plan de contrôle | Comptes marchands, abonnements, factures, annuaire des cellules | Schéma `plateforme` (dans la cellule 1 au début, isolé ensuite) | — | — |
@@ -167,7 +167,7 @@ flowchart LR
 | | Lancement (Maymar + bêta, ≤ 100 boutiques) | 1 000 boutiques | 10 000+ boutiques |
 |---|---|---|---|
 | Façade | Worker : routage, cache, replis, tampon de commandes | + limites fines par boutique, règles anti-robots | Idem, offre Cloudflare supérieure si nécessaire |
-| Application | Vercel, une région (Paris ou Francfort, proche de la base) | Idem, capacités augmentées | Idem, ou origine déplacée si les coûts l'exigent |
+| Application | Workers, placés près de la base pour les routes qui l'interrogent beaucoup (Smart Placement) ; connexion à Postgres via Hyperdrive | Idem | Idem, par cellule |
 | Données | 1 cellule, instance Small ou Medium | 1 cellule plus grosse + réplica en lecture pour le backoffice | 4-6 cellules, plan de contrôle séparé |
 | Files | pgmq + consommateurs planifiés | Idem, consommateurs parallèles par type | Idem, par cellule |
 | Domaines personnalisés | Aucun (Maymar excepté) | Cloudflare for SaaS (100 inclus, puis 0,10 $/mois par domaine) | Idem (jusqu'à 50 000 hors Enterprise) |
@@ -218,13 +218,13 @@ Acheteur valide son panier
 |---|---|---|---|---|
 | **Base Supabase indisponible** | Boutique normale (cache et instantanés), commande « reçue, on vous appelle » | Backoffice indisponible, bandeau d'incident | Tampon de commandes, page de statut mise à jour | Quand Supabase revient ; rejeu en quelques minutes |
 | **Région AWS Paris perdue** | Idem | Idem, plus longtemps | Idem | Restauration dans une autre région depuis la sauvegarde hors fournisseur : **≤ 24 h** |
-| **Vercel indisponible** | Boutique normale (cache et instantanés), commandes en tampon | Backoffice indisponible | Idem | Quand Vercel revient |
-| **Notre déploiement est cassé** | Idem : la façade sert le cache | Idem | Retour immédiat à la version précédente (rollback Vercel) | **< 5 min** |
+| **Application en erreur** (bug, dépendance cassée) | Boutique normale (cache et instantanés), commandes en tampon | Backoffice indisponible | La façade bascule sur ses filets | Correctif ou retour arrière |
+| **Notre déploiement est cassé** | Idem : la façade sert le cache | Idem | Retour immédiat à la version précédente (versions et déploiement progressif des Workers) | **< 5 min** |
 | **Migration de base destructive** | Rien en consultation | Données faussées | Règles de migration (§4.6) + restauration à un instant donné (PITR) | **≤ 4 h** |
 | **Paiement en ligne (Konnect/Flouci) en panne ou gelé** | Seul le COD est proposé | Alerte | Disjoncteur par PSP (erreurs + page de statut du PSP) | Automatique |
 | **API d'un livreur en panne ou limitée** | Rien | Colis « en attente d'envoi » | La file réessaie avec des délais croissants ; bordereau PDF en repli manuel | Automatique |
 | **SMS ou WhatsApp en panne** | Rien, ou message reçu plus tard | Confirmations retardées | Bascule sur le canal de secours (autre fournisseur SMS, appel manuel) | Automatique |
-| **Carte refusée chez un fournisseur** | Rien au début, puis **tout tombe** (Supabase en pause, Vercel à J+14) | — | Alertes sur le plafond CTI et les échéances ; 2 cartes de 2 banques ; crédits Supabase prépayés (§7) | Prévention |
+| **Carte refusée chez un fournisseur** | Rien au début, puis **tout tombe** (Supabase en pause, Cloudflare en offre gratuite à J+5) | — | Alertes sur le plafond CTI et les échéances ; 2 cartes de 2 banques ; crédits Supabase prépayés (§7) | Prévention |
 | **Domaine .tn expiré ou incident chez l'ATI** | Plus rien sous `.tn` | — | Domaine des vitrines en gTLD indépendant de l'ATI ; renouvellement pluriannuel ; alerte d'expiration | Prévention |
 | **Attaque DDoS ou robots** | Rien, ou un défi anti-robots (Turnstile) au paiement | Rien | Protection Cloudflare, limites de la façade | Automatique |
 | **Fuite de données entre boutiques** | — | — | Prévention par conception (§5) ; sinon procédure d'incident et notification | Voir le runbook |
@@ -337,7 +337,7 @@ Acheteur valide son panier
 | Besoin | Outil (proposition) | Coût |
 |---|---|---|
 | Erreurs applicatives | Sentry | Offre gratuite au début |
-| Journaux et métriques | Vercel, Cloudflare, Supabase (tableau de bord et métriques exportables) | Inclus |
+| Journaux et métriques | Cloudflare (Workers Logs), Supabase (tableau de bord et métriques exportables) | Inclus |
 | Sondes externes + page de statut | OpenStatus ou Better Stack | Offre gratuite ou modeste au début |
 | **Parcours d'achat synthétique** : une commande test toutes les 5 min, par cellule, sur une boutique interne | Script planifié | Quasi nul |
 
@@ -383,13 +383,14 @@ Tous ces montants sont **à reconfirmer** sur les grilles officielles au moment 
 
 | Poste | Lancement (≤ 100 boutiques) | 1 000 boutiques | 10 000 boutiques |
 |---|---|---|---|
-| Vercel (Pro, 1-3 sièges + usage) | 20-60 | 100-400 | 1 000-4 000 (Enterprise probable) |
 | Supabase (Pro + calcul + PITR) | 30-150 | 250-600 | 2 000-6 000 (4-6 cellules) |
-| Cloudflare (Workers, R2, Images, for SaaS) | 5-40 | 100-300 | 1 000-3 000 |
+| Cloudflare (Workers payant, R2, Images, files, Durable Objects, for SaaS) | 5-50 | 100-350 | 1 000-3 500 |
 | Observabilité et page de statut | 0-30 | 50-150 | 300-1 000 |
-| **Total** | **≈ 60-200** | **≈ 500-1 500** | **≈ 5 000-15 000** |
+| **Total** | **≈ 40-200** | **≈ 400-1 100** | **≈ 3 500-10 500** |
 
-**Pourquoi Cloudflare et R2 devant, en un chiffre.** À 1 000 boutiques, on transfère environ 26 To par mois (§1.2). L'offre Vercel Pro inclut environ 1 To, puis facture le transfert au Go (ordre de 0,15 $/Go, **à reconfirmer**). Servir les images et les pages directement depuis Vercel coûterait donc de l'ordre de **3 500 $ par mois rien qu'en bande passante**. C'est davantage que tout le plafond annuel de la CTI d'une société. Avec R2 (sans frais de sortie) et le cache Cloudflare, ce poste devient marginal.
+**Repères Cloudflare (à reconfirmer).** L'offre Workers payante coûte 5 $/mois et inclut 10 millions de requêtes, puis environ 0,30 $ par million. À 1 000 boutiques, environ 90 millions de requêtes par mois passent par la façade, soit de l'ordre de 25 $ plus le temps de calcul. La bande passante du CDN n'est pas facturée, et R2 n'a pas de frais de sortie.
+
+**Ce que coûterait Vercel en plus (option A, plan B).** 20 à 60 $/mois au lancement, 100 à 400 à 1 000 boutiques, 1 000 à 4 000 à 10 000. Et s'il servait lui-même images et pages, sans Cloudflare devant, ce serait bien pire. À 1 000 boutiques, on transfère environ 26 To par mois (§1.2). Vercel Pro inclut environ 1 To, puis facture de l'ordre de 0,15 $ par Go (**à reconfirmer**) : **environ 3 500 $ par mois rien qu'en bande passante**, plus que tout le plafond annuel de la CTI d'une société.
 
 ### 7.2 Le plafond de change, contrainte dure
 
@@ -403,7 +404,6 @@ Sources : [ministère des Technologies, CTI](https://www.mtc.gov.tn/fileadmin/In
 
 **Ce qui se passe en cas d'impayé** (vérifié dans la doc des fournisseurs) :
 - **Supabase** met les projets en pause ([FAQ facturation](https://supabase.com/docs/guides/platform/billing-faq)).
-- **Vercel** met les déploiements en pause au bout de 14 jours ([doc](https://vercel.com/docs/plans/pro-plan/billing)).
 - **Cloudflare** repasse en offre gratuite au bout de 5 jours ([doc](https://developers.cloudflare.com/billing/troubleshoot/troubleshoot-failed-payments/)).
 
 **Parades, à mettre en place avant l'étape 2 :**
@@ -414,33 +414,53 @@ Sources : [ministère des Technologies, CTI](https://www.mtc.gov.tn/fileadmin/In
 5. **Écrire la procédure « carte refusée ».**
 6. **Garder en réserve une option d'hébergement en Tunisie**, payée en dinars, pour une partie des services : instantanés, sauvegardes, voire données personnelles si l'INPDP l'exige. L'architecture le permet parce que les couches sont séparées.
 
-**Le rapport coût/revenu reste sain**, à titre d'illustration seulement. Avec les fourchettes de prix *non validées* de l'étude de marché, l'abonnement moyen tourne autour de 107 TND par mois (répartition 70/25/5). À 1 000 boutiques, cela fait environ 107 000 TND par mois, soit environ 36 000 $. L'infrastructure pèse alors 1,5 à 4 % du revenu. **Le problème n'est pas le montant, c'est la possibilité légale de payer.**
+**Le rapport coût/revenu reste sain**, à titre d'illustration seulement. Avec les fourchettes de prix *non validées* de l'étude de marché, l'abonnement moyen tourne autour de 107 TND par mois (répartition 70/25/5). À 1 000 boutiques, cela fait environ 107 000 TND par mois, soit environ 36 000 $. L'infrastructure pèse alors 1 à 3 % du revenu. **Le problème n'est pas le montant, c'est la possibilité légale de payer.**
 
 ---
 
-## 8. Options étudiées
+## 8. Options étudiées et choix
 
-| Critère | **A. Cloudflare en façade + Vercel + Supabase (reco)** | B. Tout Vercel + Supabase | C. Tout Cloudflare (Workers) + Supabase |
-|---|---|---|---|
-| Vitrine si la base tombe | Oui (cache, instantanés) | Oui pour les pages déjà générées : Next.js garde la dernière version si la régénération échoue | Oui |
-| Vitrine si l'hébergeur de l'application tombe | **Oui** (façade indépendante de Vercel) | Non | Façade et application chez le même fournisseur |
-| Commandes si la base tombe | Oui (tampon en bordure) | Partiel (Vercel Queues, si Vercel est vivant) | Oui |
-| Bande passante (images, pages) | Faible (cache + R2) | **Élevée au-delà du forfait** | Faible |
-| Compatibilité avec le code Maymar (Next.js 16) | Totale | Totale | **Risquée.** Cloudflare recommande désormais *vinext*, une réimplémentation de Next.js sur Vite, pour les nouvelles apps ; OpenNext reste pour l'existant ([doc](https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/)) |
-| Fournisseurs à payer en dollars | 3 | 2 | 2 |
-| Complexité à maintenir | Moyenne (un Worker de façade) | Faible | Moyenne à forte |
-| Ce qui est réversible | L'application peut passer de Vercel à Workers plus tard sans toucher aux domaines clients | Changer de façade plus tard = migrer tous les domaines clients | — |
+| Critère | A. Cloudflare en façade + Vercel + Supabase | B. Tout Vercel + Supabase | **C. Cloudflare (façade + application) + Supabase : retenue** | D. 100 % Cloudflare, base D1 comprise |
+|---|---|---|---|---|
+| Vitrine si la base tombe | Oui (cache, instantanés) | Oui pour les pages déjà générées | **Oui** (cache, instantanés) | Oui |
+| Vitrine si l'application plante | Oui | Oui pour les pages en cache | **Oui** (la façade sert ses filets) | Oui |
+| Commandes si la base tombe | Oui (tampon en bordure) | Partiel (Vercel Queues, si Vercel est vivant) | **Oui** (tampon en bordure) | Sans objet (base chez Cloudflare) |
+| Bande passante | Faible | **Élevée au-delà du forfait** | **Faible** | Faible |
+| Fournisseurs payés en dollars | 3 | 2 | **2** | 1 |
+| Coût à 1 000 boutiques (§7.1) | ≈ 500-1 500 $/mois | Le plus cher | **≈ 400-1 100 $/mois** | Le plus bas |
+| Reprise du code Maymar (Next.js 16) | Totale | Totale | **Bonne, à prouver** : vinext (bêta, recommandé par Cloudflare, `vinext init` sur une app Next.js 16 existante) ou OpenNext ([doc](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/)) | Idem C, **plus la réécriture de toute la logique en base** |
+| Base de données | Postgres | Postgres | **Postgres** | SQLite (D1) : ni RLS ni fonctions SQL ; stock, commandes et refus à réécrire dans le code ; authentification à construire soi-même |
+| Point unique de défaillance | Cloudflare | Vercel | Cloudflare | Cloudflare, **données comprises** |
 
-**Pourquoi A.**
-- C'est la seule option qui répond aux **deux** exigences, y compris quand l'hébergeur de l'application tombe.
-- Elle maîtrise le poste de coût qui explose en premier, la bande passante.
-- Elle place le choix irréversible, les domaines des clients, chez l'acteur le plus solide sur ce métier.
+**Pourquoi C (décision de Skander du 28/09/2026, que je recommande aussi).**
+- **Vercel ne sert plus à rien** une fois la façade chez Cloudflare. Cloudflare exécute aussi l'application. On retire un fournisseur, une facture en dollars et le montage délicat « proxy devant Vercel ».
+- **La résilience ne baisse pas.** Dans l'option A, une panne mondiale de Cloudflare coupait déjà tout. Les quatre filets et le tampon de commandes restent identiques.
+- **C'est l'option la moins chère avec une base solide.** Bande passante non facturée, requêtes à quelques centimes le million.
+- **Les données restent chez Supabase, pour quatre raisons :**
+  1. Postgres est le bon outil pour du commerce : transactions, contraintes, RLS.
+  2. Le moteur de Maymar y est déjà écrit : réservation de stock, cycle de commande, refus.
+  3. On garde l'authentification (codes SMS, double facteur), les sauvegardes et le PITR.
+  4. Les données ne sont pas chez le même fournisseur que la façade : un problème de compte ou de facturation chez l'un n'efface pas l'autre.
+- **L'application parle à Supabase par Hyperdrive** (pool de connexions de Cloudflare) ou par l'API REST de Supabase. Smart Placement place les routes gourmandes en requêtes près de la base, à Paris.
 
-**À vérifier en prototype (étape 1).**
-- Vercel ne recommande pas de mettre un proxy devant ses déploiements (pare-feu, cache, visibilité). Il faut mesurer l'effet réel et verrouiller l'accès direct à l'origine par un en-tête secret.
-- Il faut confirmer si un domaine *wildcard* sur Vercel impose les serveurs DNS de Vercel. Avec la façade Cloudflare, le *wildcard* est porté par Cloudflare et la question disparaît.
+**Pourquoi pas D (tout Cloudflare, base D1 comprise).** L'idée est séduisante : une base par boutique donne une isolation parfaite, et c'est presque gratuit à petite échelle. Mais :
+- il faudrait réécrire toute la logique de Maymar sans RLS ni fonctions SQL ;
+- il faudrait construire l'authentification soi-même ;
+- il faudrait appliquer chaque migration à des milliers de bases ;
+- on mettrait tous les œufs, données comprises, dans le même panier.
 
----
+À reconsidérer pour des usages ciblés (annuaire, instantanés), pas pour le cœur.
+
+**La condition : un prototype au début de l'étape 1, qui sert de porte de décision.**
+1. Porter la vitrine Maymar sur Workers avec vinext (`vinext check`, puis `vinext init`), ou OpenNext si vinext bloque.
+2. Mesurer :
+   - la compatibilité ;
+   - le cache et l'ISR ;
+   - les images et les polices ;
+   - le temps de réponse depuis la Tunisie ;
+   - le coût par million de requêtes.
+3. Détail favorable : on n'a pas besoin du `proxy.ts` de Next.js, puisque c'est la façade qui trouve la boutique à partir du domaine.
+4. **Si le prototype échoue, on passe au plan B (option A)** : Vercel derrière la façade. On ne perd rien, puisque domaines, façade, R2 et tampon restent chez Cloudflare.
 
 ## 9. Ce qu'on construit, et quand
 
@@ -448,7 +468,7 @@ Les étapes correspondent à la feuille de route du PRD.
 
 | Étape | Infrastructure livrée | Preuve de fin |
 |---|---|---|
-| **1. Socle** | Modèle multi-boutique (`boutique_id`, FK composites, RLS), tests d'isolation en CI, annuaire, Worker de façade v1 (routage, cache, en-têtes réécrits, `stale-if-error`), images sur R2, outbox + files, export quotidien hors fournisseur, Sentry | Deux boutiques de test isolées, tests verts ; application coupée → vitrines toujours servies |
+| **1. Socle** | **Prototype Next.js sur Workers (porte de décision, §8)**, modèle multi-boutique (`boutique_id`, FK composites, RLS), tests d'isolation en CI, annuaire, Worker de façade v1 (routage, cache, en-têtes réécrits, `stale-if-error`), images sur R2, outbox + files, export quotidien hors fournisseur, Sentry | Deux boutiques de test isolées, tests verts ; application coupée → vitrines toujours servies |
 | **2. Maymar en ligne** | Instantanés R2 + page de secours, tampon de commandes et rejeu, page de statut, parcours synthétique, premier exercice de restauration, parades de change en place | De vraies commandes livrées ; exercice de panne réussi sur la cellule interne |
 | **3. Bêta privée** | Limites par boutique et quotas par offre, Turnstile, KYC léger, runbooks, PITR | 10-20 commerçants, aucune fuite, SLO tenus pendant 1 mois |
 | **4. Lancement public** | Domaines personnalisés (Cloudflare for SaaS), domaine des vitrines sur la Public Suffix List, test de charge au pic, exercice de panne, liste de contrôle du §5.5 complète | Test de charge réussi ; label Startup déposé ; INPDP déposé |
@@ -456,11 +476,46 @@ Les étapes correspondent à la feuille de route du PRD.
 
 ---
 
-## 10. Questions ouvertes et points à vérifier
+## 10. Les outils recommandés
 
-1. **Vercel derrière Cloudflare** : coût réel, pare-feu, verrouillage de l'origine. À prototyper.
+Règle : **le moins d'outils possible, chacun remplaçable**, et d'abord ce qui est déjà inclus chez Cloudflare et Supabase. Pas de Kubernetes, pas de serveurs à gérer, pas de microservices.
+
+| Besoin | Outil | Pourquoi |
+|---|---|---|
+| Langage, dépôt | TypeScript partout, un seul dépôt (bun, déjà utilisé par Maymar) | Une seule langue pour la vitrine, le backoffice, la façade et les scripts |
+| Vitrine et backoffice | Next.js 16 + React 19 + Tailwind 4 (repris de Maymar), sur Workers via vinext ou OpenNext | Reprise du code existant |
+| Façade | Worker Cloudflare dédié, avec KV (annuaire), R2 (instantanés, images), Durable Objects (tampon de commandes) | §2 et §4 |
+| Base, authentification | Supabase : Postgres, Auth (codes SMS, double facteur), Vault (secrets par boutique), Queues (pgmq), pg_cron | Tout est déjà inclus ; migrations avec la CLI Supabase |
+| Accès à la base depuis Workers | Hyperdrive (pool de connexions) + fonctions SQL pour les écritures | Transactions courtes, logique métier dans la base comme dans Maymar |
+| Recherche | Postgres plein texte en v1 | Un moteur dédié seulement si les mesures l'exigent |
+| Tests | Vitest (unitaires), **pgTAP (isolation entre boutiques)**, Playwright (parcours d'achat), k6 (charge) | Les tests d'isolation bloquent la livraison |
+| Intégration et déploiement | GitHub Actions → versions Workers avec URL de prévisualisation, déploiement progressif, retour arrière | Rien à héberger soi-même |
+| Erreurs | Sentry (offre gratuite au début) | Standard, compatible Workers |
+| Sondes externes et page de statut | OpenStatus ou Better Stack | Hébergés hors de notre infrastructure |
+| Mesure d'audience des vitrines | Cloudflare Web Analytics | Gratuit, sans cookie |
+| SMS et codes | Agrégateur tunisien payé en TND (WinSMS, TunisieSMS), un fournisseur international en secours | Moins cher et sans change |
+| WhatsApp | API Cloud de Meta, en direct | Confirmation des commandes COD |
+| E-mails transactionnels | Un service d'envoi standard (Resend, Brevo…), à choisir à l'étape 2 | Secondaire en Tunisie, où WhatsApp domine |
+| Paiement en ligne | Konnect et Flouci, sur le compte de chaque commerçant | SkanEcom ne détient jamais les fonds |
+| Factures d'abonnement | Module maison + intermédiaire TTN (TEIF) | Obligation légale |
+| Anti-robots | Cloudflare Turnstile + limites de la façade | Inclus |
+
+**Ce qu'on ne fait pas maintenant, même si c'est tentant :**
+- plusieurs cellules avant d'en avoir besoin ;
+- plusieurs CDN ;
+- une base D1 pour le cœur ;
+- un éditeur de pages libre ;
+- des applications mobiles.
+
+On **conçoit** pour 10 000 boutiques (`boutique_id` partout, façade, files), mais on **construit** pour les 20 premières.
+
+---
+
+## 11. Questions ouvertes et points à vérifier
+
+1. **Next.js sur Workers** : vinext (bêta) ou OpenNext ? Compatibilité du code Maymar, cache, images. À trancher par le prototype du §8 ; sinon plan B Vercel.
 2. **Tampon de commandes** : Durable Objects ou Queues ? Temps de rejeu mesuré ? À prototyper.
-3. **Grilles tarifaires exactes** (Vercel, Supabase, PITR, Cloudflare Images) au moment de l'achat.
+3. **Grilles tarifaires exactes** (Cloudflare Workers, Images, Durable Objects ; Supabase, PITR) au moment de l'achat.
 4. **Taille réelle d'une cellule** : à calibrer par test de charge sur les données de Maymar.
 5. **Hébergement tunisien de repli** (données personnelles, sauvegardes) : quels fournisseurs, quel prix en TND ? Utile si l'INPDP refuse ou durcit les conditions.
 6. **Réévaluation multi-CDN** à 1 000 boutiques.
@@ -469,6 +524,7 @@ Les étapes correspondent à la feuille de route du PRD.
 
 - Étude marché et écosystème du 28/09/2026 (extraits dans `01-prd-v0.md` et `04-risques-et-decisions.md`)
 - Cloudflare : [Cache-Control et stale-if-error](https://developers.cloudflare.com/cache/concepts/cache-control/), [Workers Cache](https://developers.cloudflare.com/workers/cache/configuration/), [Cloudflare for SaaS, offres](https://developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/plans/), [OpenNext et vinext](https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/), [impayés](https://developers.cloudflare.com/billing/troubleshoot/troubleshoot-failed-payments/)
-- Vercel : [en-têtes de cache](https://vercel.com/docs/caching/cache-control-headers), [plateformes multi-boutiques](https://vercel.com/docs/platforms/multi-tenant-platforms/quickstart), [facturation Pro](https://vercel.com/docs/plans/pro-plan/billing)
+- Cloudflare, Next.js sur Workers : [vinext](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/)
+- Vercel (plan B) : [en-têtes de cache](https://vercel.com/docs/caching/cache-control-headers), [plateformes multi-boutiques](https://vercel.com/docs/platforms/multi-tenant-platforms/quickstart), [facturation Pro](https://vercel.com/docs/plans/pro-plan/billing)
 - Supabase : [connexions et poolers](https://supabase.com/docs/guides/database/connecting-to-postgres), [FAQ facturation](https://supabase.com/docs/guides/platform/billing-faq), [crédits](https://supabase.com/docs/guides/platform/credits)
 - Shopify, architecture en *pods* : blog d'ingénierie de Shopify (« A Pods Architecture to Allow Shopify to Scale »)

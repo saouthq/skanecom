@@ -15,13 +15,13 @@
 | 28/09/2026 | Nom : **SkanEcom** | Skander |
 | 28/09/2026 | **Maymar est le client n°1** | Skander |
 | 28/09/2026 | Avant la v1, **cadrage de l'infrastructure** : tenir la charge, rester ouvert en cas de panne | Skander |
+| 28/09/2026 | **D1 — Hébergement : Cloudflare pour tout ce qui sert et calcule (façade, application Next.js sur Workers, R2, files), Supabase pour les données.** Vercel n'est gardé qu'en plan B si le prototype Next.js sur Workers échoue (`02-infrastructure.md`, §8) | Skander |
+| 28/09/2026 | **D2 — Domaine des vitrines gratuites** : un domaine dédié, séparé de `skanecom.tn` et inscrit sur la Public Suffix List. `skanecom.tn` porte le site commercial et le backoffice. Nom du domaine des vitrines à choisir | Skander |
 
 ## 2. Décisions à trancher
 
 | # | Question | Options | Recommandation | Pourquoi |
 |---|---|---|---|---|
-| D1 | **Pile d'hébergement** | A. Cloudflare en façade + Vercel + Supabase · B. Tout Vercel + Supabase · C. Tout Cloudflare + Supabase | **A** | Seule option qui garde les vitrines ouvertes quand l'hébergeur de l'application tombe ; maîtrise la bande passante ; l'application reste remplaçable (`02-infrastructure.md`, §8) |
-| D2 | **Domaine des vitrines gratuites** | `.tn` (ex. `boutique.skanecom.tn`) · gTLD dédié inscrit sur la Public Suffix List (ex. `boutique.skanecom.shop`, nom à choisir) | **gTLD dédié, sur la Public Suffix List** | Isole les cookies et la réputation de chaque boutique (une boutique frauduleuse ne fait pas bloquer tout SkanEcom), ne dépend pas de l'ATI, sert de domaine de secours. `skanecom.tn` reste le site et le backoffice |
 | D3 | **Commission sur les ventes** | 0 % · 0,3 % façon Converty · à la commande livrée | **0 %** | Difficile à encaisser sur du COD ; argument commercial face à Converty et YouCan |
 | D4 | **Ordre d'acquisition** | Établis d'abord · petits d'abord · les deux en même temps | **Établis et vendeurs à volume d'abord ; Starter dès le lancement, sans gratuit** | Ils paient, ont le plus mal (agences, refus), et sont peu nombreux : ça convient à l'équipe |
 | D5 | **Prix des paliers** | Fourchettes Starter 39-59, Pro 149-199, Business 399-790 TND/mois | **Valider par 10 à 15 entretiens** avant de fixer | Aucun prix n'est validé par le marché |
@@ -38,7 +38,7 @@
 
 | # | Risque | Probabilité | Impact | Parade | Étape |
 |---|---|---|---|---|---|
-| R1 | **Carte refusée ou plafond CTI atteint** → Supabase en pause, Vercel à l'arrêt à J+14 : **toutes les boutiques tombent** | Élevée sans label, dès quelques centaines de boutiques | Critique | Label Startup Act, crédits Supabase prépayés (> 3 mois), 2 cartes de 2 banques, alertes à 70 % du plafond, procédure écrite | 0-2 |
+| R1 | **Carte refusée ou plafond CTI atteint** → Supabase en pause, Cloudflare en offre gratuite à J+5 : **toutes les boutiques tombent** | Élevée sans label, dès quelques centaines de boutiques | Critique | Label Startup Act, crédits Supabase prépayés (> 3 mois), 2 cartes de 2 banques, alertes à 70 % du plafond, procédure écrite | 0-2 |
 | R2 | **Guerre des prix** (Converty, e-Tijara gratuits) | Élevée | Élevé | Vendre des résultats chiffrés (refus évités, disponibilité, image de marque), pas des fonctions ; cibler les établis | 0 |
 | R3 | **Transfert de données sans autorisation INPDP** | Certaine si rien n'est fait | Élevé (pénal) | Dossier préparé à l'étape 0 et déposé avant l'étape 3 ; avocat ; consentements ; option d'hébergement en Tunisie gardée en réserve | 0-3 |
 | R4 | **Fuite de données entre boutiques** | Moyenne sans garde-fous | Critique (confiance) | FK composites, RLS par boutique, tests d'isolation qui bloquent la livraison, cache jamais partagé pour l'authentifié | 1 |
@@ -57,10 +57,10 @@
 
 | Action | Qui | Coût |
 |---|---|---|
-| Réserver `skanecom.com` (libre au 28/09/2026, vérifié) et `skanecom.tn` (bureau agréé ATI, ≤ 3 jours ouvrables) ; choisir le domaine des vitrines | Skander | Quelques dizaines de TND/an |
+| Réserver `skanecom.com` (libre au 28/09/2026, vérifié) et `skanecom.tn` (bureau agréé ATI, ≤ 3 jours ouvrables) ; **choisir et réserver le domaine des vitrines** (D2) | Skander | Quelques dizaines de TND/an |
 | Déposer la marque SkanEcom à l'INNORPI | Skander | À vérifier |
 | Monter le dossier **Startup Act** | Skander (+ comptable) | — |
-| Tester une **CTI société** chez Vercel, Supabase et Cloudflare avec un petit montant | Skander | Symbolique |
+| Tester une **CTI société** chez Supabase et Cloudflare avec un petit montant | Skander | Symbolique |
 | Préparer le dossier **INPDP** (finalités, données, destinataires, garanties) | Agent + avocat | Honoraires |
 | Lister les questions pour l'avocat (INPDP, BCT, circulaire 2026-10) et le comptable (TVA, retenues, TTN) | Agent | — |
 | Mener **10 à 15 entretiens** d'entreprises (dont l'associé importateur de Maymar) sur les prix, les douleurs et les livreurs utilisés | Skander + agent | Temps |
