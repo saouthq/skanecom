@@ -33,6 +33,7 @@
 | D11 | **Identité visuelle SkanEcom** | Confier à Noah et Lina · autre | **Noah (identité) + Lina (design)**, comme pour Maymar | Même exigence : « le plus beau site qu'on ait fait » |
 | D12 | **Premiers transporteurs à intégrer** | Intigo, First Delivery, Navex, Aramex, Rapid-Poste… | **3 à 5, choisis avec les premiers commerçants** | Les API sont hétérogènes ; mieux vaut intégrer ceux que les clients utilisent déjà |
 | D13 | **Nouveau repo et nouveau projet Supabase** | Réutiliser le projet Supabase de Maymar · en créer un | **Nouveau projet** (cellule 1) ; Maymar y est migré | Schéma incompatible (mono-boutique) ; on repart propre |
+| D14 | **Paiement en ligne pendant une panne de notre base** | Masqué (COD proposé à la place) · accepté avec vérification au rejeu | **Masqué en v1 ; accepté plus tard, en réglage par boutique** | En v1, zéro risque d'encaisser sans pouvoir livrer. Les confirmations de paiement ne sont jamais perdues dans les deux cas (`02-infrastructure.md`, §4.2) |
 
 ## 3. Registre des risques
 

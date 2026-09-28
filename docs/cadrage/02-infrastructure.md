@@ -222,7 +222,17 @@ Acheteur valide son panier
 ```
 
 - **Pourquoi c'est acceptable en COD.** Aucun argent ne bouge au moment de la commande. La confirmation téléphonique a lieu de toute façon plus tard : c'est déjà le cycle de Maymar.
-- **Le paiement en ligne est masqué automatiquement en mode dégradé.** Seul le COD reste proposé. Même règle quand un prestataire de paiement (PSP) est en panne ou gelé (voir le PRD : précédent Paymee).
+- **Paiement en ligne (Konnect, Flouci) en v1 : masqué en mode dégradé.** Pendant une panne de la base, l'acheteur se voit proposer le paiement à la livraison : on ne perd pas la vente, seulement le mode de paiement. Même règle quand un prestataire de paiement (PSP) est en panne ou gelé (voir le PRD : précédent Paymee).
+- **Aucune confirmation de paiement n'est perdue, dès la v1.**
+  - Les notifications de Konnect et Flouci (webhooks) arrivent **à la façade**, pas directement à la base. Elles sont écrites dans le tampon durable (UE) avant tout traitement, puis appliquées par la file.
+  - Un **rapprochement automatique** interroge le PSP pour chaque paiement resté « en cours » au-delà de quelques minutes. Le PSP est la source de vérité.
+  - Un acheteur qui a payé juste avant ou pendant une panne voit toujours sa commande marquée payée.
+- **Plus tard, en réglage par boutique : accepter le paiement en ligne pendant une panne.** C'est faisable. La commande est mise en tampon avec le statut « paiement en cours », et le rejeu vérifie le paiement auprès du PSP. Il faut trois conditions :
+  1. des identifiants PSP de la boutique disponibles en bordure, chiffrés ;
+  2. une vérification du statut auprès du PSP au rejeu ;
+  3. une procédure de remboursement si le stock manque au retour (API de remboursement de Konnect à vérifier).
+
+  Ce n'est pas en v1, parce que c'est le cas où une erreur coûte de l'argent à l'acheteur.
 - **Survente possible, mais bornée.** Elle ne peut dépasser que ce qui a été commandé pendant la panne. Elle se règle à l'appel de confirmation, ce qui est moins grave qu'une boutique fermée.
 - **À prototyper à l'étape 1.** Durable Objects restreints à l'UE (préférés : ordre garanti par boutique, stockage durable, localisation UE vérifiée), Cloudflare Queues seulement pour acheminer ensuite. Mesure du temps de rejeu.
 
@@ -236,6 +246,7 @@ Acheteur valide son panier
 | **Notre déploiement est cassé** | Idem : la façade sert le cache, partagé entre versions (§4.1) | Idem | Retour immédiat à la version précédente (versions et déploiement progressif des Workers) | **< 5 min** |
 | **Migration de base destructive** | Rien en consultation | Données faussées | Règles de migration (§4.6) + restauration à un instant donné (PITR) | **≤ 4 h** |
 | **Paiement en ligne (Konnect/Flouci) en panne ou gelé** | Seul le COD est proposé | Alerte | Disjoncteur par PSP (erreurs + page de statut du PSP) | Automatique |
+| **Notification de paiement reçue pendant une panne de la base** | Rien : sa commande sera marquée payée | Rien | Notification gardée dans le tampon de la façade, appliquée au retour ; rapprochement auprès du PSP | Automatique |
 | **API d'un livreur en panne ou limitée** | Rien | Colis « en attente d'envoi » | La file réessaie avec des délais croissants ; bordereau PDF en repli manuel | Automatique |
 | **SMS ou WhatsApp en panne** | Rien, ou message reçu plus tard | Confirmations retardées | Bascule sur le canal de secours (autre fournisseur SMS, appel manuel) | Automatique |
 | **Carte refusée chez un fournisseur** | Rien au début, puis **tout tombe** (Supabase en pause, Cloudflare en offre gratuite à J+5) | — | Alertes sur le plafond CTI et les échéances ; 2 cartes de 2 banques ; crédits Supabase prépayés (§7) | Prévention |
