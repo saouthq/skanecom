@@ -79,7 +79,7 @@ Une façade en cache absorbe ce pic sans effort. Sans cache, c'est la base parta
 1. **La facture de bande passante, avant la technique.** Voir le §7 : c'est la raison principale de mettre Cloudflare et R2 devant.
 2. **Les pages non mises en cache martelées par des robots** : recherche, filtres, calcul du panier.
 3. **Les requêtes lourdes du backoffice sur la base partagée** : exports, statistiques, listes de 10 000 commandes.
-4. **L'épuisement des connexions Postgres** par les fonctions serverless.
+4. **L'épuisement des connexions Postgres** par des milliers d'exécutions simultanées de Workers. D'où Hyperdrive, le pool de connexions de Cloudflare.
 5. **Les limites des API tierces.** L'API de First Delivery, par exemple, accepte 1 requête toutes les 10 s et 100 colis par envoi ([doc First Delivery](https://www.firstdeliverygroup.com/api/v2/documentation)).
 6. **La contention sur une variante très demandée.** C'est le cas le moins inquiétant : voir le §3.3.
 
@@ -90,21 +90,24 @@ Une façade en cache absorbe ce pic sans effort. Sans cache, c'est la base parta
 ```mermaid
 flowchart LR
   A[Acheteur<br/>mobile 4G] --> F
-  subgraph CF[Cloudflare — la façade]
-    F[Worker de façade<br/>routage par domaine,<br/>cache, limites]
+  M[Commerçant<br/>backoffice] --> F
+  subgraph CF[Cloudflare]
+    F[Worker de façade<br/>routage par domaine,<br/>limites, replis]
     K[(Annuaire<br/>domaine → boutique → cellule<br/>KV)]
     R[(Instantanés des vitrines<br/>+ images — R2)]
-    Q[(Tampon de commandes<br/>Durable Objects)]
+    Q[(Tampon de commandes<br/>Durable Objects, UE)]
+    V[Application Next.js<br/>Workers + cache]
+    W[Files d'attente<br/>Cloudflare Queues]
     F --- K
     F --- R
     F --- Q
+    F -->|liaison de service| V
+    Q -->|rejeu au retour| V
+    V --> W
   end
-  F -->|si en ligne| V[Application Next.js<br/>Cloudflare Workers]
-  V --> S1[(Cellule 1<br/>Supabase Postgres<br/>Paris)]
+  V -->|Hyperdrive| S1[(Cellule 1<br/>Supabase Postgres + Auth<br/>Paris)]
   V -.-> S2[(Cellule 2…<br/>plus tard)]
-  S1 --> O[Files de travail<br/>SMS · WhatsApp · livreurs ·<br/>e-mails · instantanés]
-  Q -->|rejeu au retour| V
-  M[Commerçant<br/>backoffice] --> V
+  W --> X[SMS · WhatsApp · livreurs ·<br/>e-mails · instantanés]
 ```
 
 | Couche | Rôle | Fournisseur (reco) | Tombe si… | Impact pour l'acheteur |
@@ -114,10 +117,18 @@ flowchart LR
 | Images | Stockage et redimensionnement des photos produit | Cloudflare R2 + Images | Panne R2 | Images absentes, texte et prix visibles |
 | Application | Rendu des pages, backoffice, API, logique métier | Cloudflare Workers (Next.js via vinext ou OpenNext, §8) | Déploiement cassé ou bug applicatif | **Rien** : la façade sert le cache et les instantanés |
 | Données | Boutiques, catalogue, stock, commandes, clients, comptes | Supabase Postgres + Auth, Paris | Panne Supabase ou de la région | **Rien pour consulter** ; commandes mises en tampon |
-| Travail asynchrone | SMS, WhatsApp, livreurs, e-mails, instantanés, exports | Outbox Postgres + Supabase Queues (pgmq), consommateurs planifiés | Panne des consommateurs | Rien : les messages attendent et partent au retour |
+| Travail asynchrone | SMS, WhatsApp, livreurs, e-mails, instantanés, exports | Table *outbox* dans Postgres (écrite dans la même transaction que la commande) → Cloudflare Queues (livraison, réessais, débit limité) ; un balayage planifié rattrape ce qui n'est pas parti | Panne des consommateurs | Rien : les messages attendent et partent au retour |
 | Plan de contrôle | Comptes marchands, abonnements, factures, annuaire des cellules | Schéma `plateforme` (dans la cellule 1 au début, isolé ensuite) | — | — |
 
 **Pourquoi les images ne sont pas dans Supabase Storage** (où Maymar les prévoyait) : si Supabase tombe, une vitrine sans photos ne vend pas. Sur R2, les images sont servies par la même bordure que les pages, sans frais de sortie de données.
+
+**Comment la façade parle à l'application.**
+- La façade et l'application sont deux Workers du même compte. La façade appelle l'application par une *liaison de service* : un appel interne, sans passer par Internet. Elle lui transmet l'identifiant de la boutique et de sa cellule dans `ctx.props`.
+- L'application a deux points d'entrée séparés :
+  - **vitrine** : pages publiques, mises en cache ;
+  - **backoffice** : sur `skanecom.tn`, **jamais mis en cache**, derrière l'authentification.
+
+  Un bug ou une purge dans l'un ne touche pas l'autre.
 
 ---
 
@@ -125,8 +136,10 @@ flowchart LR
 
 ### 3.1 La lecture ne touche pas la base
 
-- Les pages de vitrine sont **générées puis mises en cache à la bordure** : accueil, rayons, fiches produit. La clé de cache est `domaine + chemin`. Objectif : **95 % au moins des pages vues servies par le cache**.
-- **L'invalidation se fait par boutique, pas par minuterie.** Quand un commerçant modifie un prix, l'application purge les étiquettes `boutique:<id>` et `produit:<id>`. Maymar régénère aujourd'hui toutes les 5 minutes (`revalidate = 300`). En multi-boutique, on passe à des durées longues avec purge ciblée.
+- Les pages de vitrine sont **générées puis mises en cache à la bordure** (Workers Caching) : accueil, rayons, fiches produit. Objectif : **95 % au moins des pages vues servies par le cache**.
+- **Piège vérifié dans la doc Cloudflare.** Le cache de Workers appartient au Worker, et **sa clé n'inclut pas le domaine**. `boutique-a.../accueil` et `boutique-b.../accueil` partageraient la même entrée. La façade doit donc passer l'identifiant de la boutique à l'application dans `ctx.props`, qui fait partie de la clé ([doc Cloudflare](https://developers.cloudflare.com/workers/cache/cache-keys/)). Un test automatique vérifie à chaque livraison que deux boutiques ne reçoivent jamais la même page.
+- **L'invalidation se fait par boutique, pas par minuterie.** Quand un commerçant modifie un prix, l'application purge les étiquettes `boutique:<id>` et `produit:<id>` (`ctx.cache.purge`). Maymar régénère aujourd'hui toutes les 5 minutes (`revalidate = 300`). En multi-boutique, on passe à des durées longues avec purge ciblée.
+- **Les purges sont limitées.** Celles de Workers Caching suivent les limites de l'offre gratuite, quelle que soit l'offre payée ([doc](https://developers.cloudflare.com/workers/cache/purge/)). On **regroupe donc les purges** : une par boutique toutes les 30 à 60 secondes, avec plusieurs étiquettes par appel. On garde une durée de vie de quelques minutes en filet, pour que la fraîcheur ne dépende jamais d'une seule purge.
 - **Le prix et le stock affichés sont « presque frais ».** Le **prix et le stock réels sont recalculés par la base au moment de la commande**. C'est déjà le contrat de Maymar : aucune commande n'est créée côté navigateur (`commandes.sql`, décision de sécurité).
 - **Recherche et filtres** : cache court à la bordure, clé = requête normalisée, limitation de débit par adresse IP. La recherche plein texte reste dans Postgres en v1. Un moteur dédié (Typesense ou Meilisearch) ne sera ajouté que si les mesures l'exigent.
 
@@ -138,7 +151,7 @@ flowchart LR
 | Quotas par offre (produits, employés, SMS/mois, exports/jour) | Application (réglages de l'offre) | Coûts maîtrisés, voir le principe « tout est réglage » du PRD |
 | Délai maximal par requête SQL et par rôle (`statement_timeout`) | Postgres | Une requête qui dérape est coupée, elle ne bloque pas la base |
 | Exports, statistiques et imports **toujours en tâche de fond** | Files | Le backoffice ne fait jamais tourner une requête de 30 s |
-| Pool de connexions en mode transaction | Pooler Supabase ([doc](https://supabase.com/docs/guides/database/connecting-to-postgres)) | Les fonctions serverless ne saturent pas les connexions |
+| Pool de connexions | Hyperdrive (Cloudflare) devant Postgres ; pooler Supabase ([doc](https://supabase.com/docs/guides/database/connecting-to-postgres)) | Les Workers ne saturent pas les connexions |
 | **Cellule dédiée** pour un client Business qui l'exige | Cellules | L'équivalent du « serveur dédié » de TikTak PRO, sans serveur à gérer |
 
 ### 3.3 Les écritures : courtes, locales, sans appel externe
@@ -169,7 +182,7 @@ flowchart LR
 | Façade | Worker : routage, cache, replis, tampon de commandes | + limites fines par boutique, règles anti-robots | Idem, offre Cloudflare supérieure si nécessaire |
 | Application | Workers, placés près de la base pour les routes qui l'interrogent beaucoup (Smart Placement) ; connexion à Postgres via Hyperdrive | Idem | Idem, par cellule |
 | Données | 1 cellule, instance Small ou Medium | 1 cellule plus grosse + réplica en lecture pour le backoffice | 4-6 cellules, plan de contrôle séparé |
-| Files | pgmq + consommateurs planifiés | Idem, consommateurs parallèles par type | Idem, par cellule |
+| Files | *Outbox* Postgres + Cloudflare Queues | Idem, consommateurs parallèles par type | Idem, par cellule |
 | Domaines personnalisés | Aucun (Maymar excepté) | Cloudflare for SaaS (100 inclus, puis 0,10 $/mois par domaine) | Idem (jusqu'à 50 000 hors Enterprise) |
 | Exploitation | Tableaux de bord, alertes, page de statut | + test de charge trimestriel, exercice de panne | + astreinte structurée |
 
@@ -179,17 +192,18 @@ Chiffres Cloudflare for SaaS : [doc Cloudflare](https://developers.cloudflare.co
 
 ## 4. Exigence 2 — les sites marchent encore quand le système tombe
 
-### 4.1 Quatre filets pour la consultation
+### 4.1 Cinq paliers pour la consultation, dont trois de secours
 
-À chaque requête d'une page de vitrine, la façade descend cette échelle et s'arrête au premier palier qui répond :
+À chaque requête d'une page de vitrine, la façade descend cette échelle et s'arrête au premier palier qui répond. Les paliers 1 et 2 sont le cas normal ; les paliers 3 à 5 sont les secours :
 
 1. **Cache frais** : la page est en cache et à jour. C'est le cas normal.
 2. **Application** : la page est régénérée par l'application, mise en cache, puis servie.
 3. **Cache périmé** : l'application renvoie une erreur 5xx ou dépasse le délai. La façade sert la dernière version en cache, même vieille de plusieurs heures. Mécanisme standard `stale-if-error` ([doc Cloudflare](https://developers.cloudflare.com/cache/concepts/cache-control/)).
+   **Réglage obligatoire.** Par défaut, chaque version déployée du Worker a son propre cache. Juste après un déploiement cassé, il n'y aurait donc rien de périmé à servir. On active le partage du cache entre versions (`cross_version_cache`) et on purge par étiquette après chaque déploiement qui change l'affichage ([doc Cloudflare](https://developers.cloudflare.com/workers/cache/configuration/)).
 4. **Instantané** : la page n'est pas en cache (page rarement vue, cache vidé). La façade sert l'**instantané R2** de la boutique. C'est un HTML statique de chaque page publique, régénéré en tâche de fond après chaque modification du catalogue.
 5. **Page de secours** : ni cache ni instantané. Une page simple, aux couleurs de la boutique, avec son numéro WhatsApp et son téléphone : « Notre boutique revient dans quelques minutes, écrivez-nous. »
 
-**Détail technique décisif, vérifié dans la doc Cloudflare.** `stale-if-error` ne fonctionne qu'**en l'absence de `s-maxage`, `must-revalidate` ou `proxy-revalidate`**. Il ne se déclenche que sur les erreurs 5xx, pas sur les 404 ([doc Workers Cache](https://developers.cloudflare.com/workers/cache/configuration/)). Or Next.js pose `s-maxage` par défaut sur ses pages en ISR. **La façade doit donc réécrire les en-têtes de cache** au lieu de se fier à ceux de l'application. On le teste en coupant volontairement l'origine (§6.3).
+**Détail technique décisif, vérifié dans la doc Cloudflare.** `stale-if-error` ne fonctionne qu'**en l'absence de `s-maxage`, `must-revalidate` ou `proxy-revalidate`**. Il ne se déclenche que sur les erreurs 5xx, pas sur les 404 ([doc Workers Cache](https://developers.cloudflare.com/workers/cache/configuration/)). Or Next.js pose `s-maxage` par défaut sur ses pages en ISR. **Il faut donc réécrire ces en-têtes avant la mise en cache** (`Cache-Control` avec `max-age` + `stale-if-error`, sans `s-maxage`), dans un intergiciel commun de l'application, à valider au prototype. On le teste en coupant volontairement l'application (§6.3).
 
 ### 4.2 Prendre les commandes même base arrêtée (COD)
 
@@ -199,7 +213,7 @@ Acheteur valide son panier
        oui → commande normale (transaction SQL, stock réservé, numéro définitif)
        non → mode dégradé :
              1. prix recalculés depuis l'instantané signé de la boutique (pas depuis le navigateur)
-             2. commande écrite dans le tampon durable de la boutique (Durable Object), avec sa clé d'idempotence
+             2. commande écrite dans le tampon durable de la boutique (Durable Object **restreint à l'UE** : il contient nom, téléphone et adresse), avec sa clé d'idempotence
              3. l'acheteur voit : « Commande reçue. Le vendeur vous appelle pour confirmer. » + numéro provisoire
        au retour de la base → rejeu automatique, dans l'ordre d'arrivée :
              - création de la vraie commande, réservation du stock
@@ -210,7 +224,7 @@ Acheteur valide son panier
 - **Pourquoi c'est acceptable en COD.** Aucun argent ne bouge au moment de la commande. La confirmation téléphonique a lieu de toute façon plus tard : c'est déjà le cycle de Maymar.
 - **Le paiement en ligne est masqué automatiquement en mode dégradé.** Seul le COD reste proposé. Même règle quand un prestataire de paiement (PSP) est en panne ou gelé (voir le PRD : précédent Paymee).
 - **Survente possible, mais bornée.** Elle ne peut dépasser que ce qui a été commandé pendant la panne. Elle se règle à l'appel de confirmation, ce qui est moins grave qu'une boutique fermée.
-- **À prototyper à l'étape 1.** Choix entre Durable Objects (ordre garanti par boutique, stockage durable) et Cloudflare Queues. Mesure du temps de rejeu.
+- **À prototyper à l'étape 1.** Durable Objects restreints à l'UE (préférés : ordre garanti par boutique, stockage durable, localisation UE vérifiée), Cloudflare Queues seulement pour acheminer ensuite. Mesure du temps de rejeu.
 
 ### 4.3 Matrice des pannes
 
@@ -218,8 +232,8 @@ Acheteur valide son panier
 |---|---|---|---|---|
 | **Base Supabase indisponible** | Boutique normale (cache et instantanés), commande « reçue, on vous appelle » | Backoffice indisponible, bandeau d'incident | Tampon de commandes, page de statut mise à jour | Quand Supabase revient ; rejeu en quelques minutes |
 | **Région AWS Paris perdue** | Idem | Idem, plus longtemps | Idem | Restauration dans une autre région depuis la sauvegarde hors fournisseur : **≤ 24 h** |
-| **Application en erreur** (bug, dépendance cassée) | Boutique normale (cache et instantanés), commandes en tampon | Backoffice indisponible | La façade bascule sur ses filets | Correctif ou retour arrière |
-| **Notre déploiement est cassé** | Idem : la façade sert le cache | Idem | Retour immédiat à la version précédente (versions et déploiement progressif des Workers) | **< 5 min** |
+| **Application en erreur** (bug, dépendance cassée) | Boutique normale (cache et instantanés), commandes en tampon | Backoffice indisponible | La façade bascule sur ses paliers de secours | Correctif ou retour arrière |
+| **Notre déploiement est cassé** | Idem : la façade sert le cache, partagé entre versions (§4.1) | Idem | Retour immédiat à la version précédente (versions et déploiement progressif des Workers) | **< 5 min** |
 | **Migration de base destructive** | Rien en consultation | Données faussées | Règles de migration (§4.6) + restauration à un instant donné (PITR) | **≤ 4 h** |
 | **Paiement en ligne (Konnect/Flouci) en panne ou gelé** | Seul le COD est proposé | Alerte | Disjoncteur par PSP (erreurs + page de statut du PSP) | Automatique |
 | **API d'un livreur en panne ou limitée** | Rien | Colis « en attente d'envoi » | La file réessaie avec des délais croissants ; bordereau PDF en repli manuel | Automatique |
@@ -248,7 +262,7 @@ Acheteur valide son panier
 | Commandes pendant une panne | Tampon durable en bordure | **0** | Rejeu en quelques minutes |
 | Base, cas courant | Sauvegardes quotidiennes Supabase (offre Pro) | 24 h | ≤ 4 h |
 | Base, dès l'étape 3 | **Restauration à un instant donné (PITR, option payante Supabase)** | Quelques minutes | ≤ 4 h |
-| Base, perte du fournisseur ou de la région | **Export quotidien chiffré vers R2** (autre fournisseur) | 24 h | ≤ 24 h |
+| Base, perte du fournisseur ou de la région | **Export quotidien chiffré vers R2**, dans un compartiment restreint à l'UE. `pg_dump` est lancé par une tâche planifiée GitHub Actions : un Worker ne peut pas le faire | 24 h | ≤ 24 h |
 | Une seule boutique (erreur du commerçant ou de notre part) | **Export logique quotidien par boutique** | 24 h (quelques minutes avec PITR + extraction) | ≤ 2 h, sans toucher aux autres boutiques |
 | Images | R2, versionnage des objets | 0 | — |
 
@@ -264,7 +278,7 @@ Acheteur valide son panier
   - production.
 - **Migrations en deux temps** (*expand / contract*). On ajoute d'abord, on bascule le code, puis on retire lors d'une version ultérieure. Jamais de `DROP` ni de renommage dans la même livraison que le code qui en dépend. Sur une base partagée par des milliers de boutiques, on n'accepte aucun verrou de table long : index créés en `CONCURRENTLY`, délais de verrou courts.
 - **Les nouveautés passent par des réglages** (le principe du projet). On les active boutique par boutique, d'abord sur Maymar.
-- **Déploiement progressif par cellule**, avec retour arrière immédiat.
+- **Déploiement progressif** : d'abord un petit pourcentage du trafic, cellule par cellule, avec retour arrière immédiat. Purge du cache par étiquette seulement une fois la nouvelle version validée.
 - **Gel des déploiements** pendant les pics connus : dernière semaine du Ramadan, veille de l'Aïd, premiers jours des soldes.
 
 ### 4.7 Communiquer pendant une crise
@@ -290,7 +304,7 @@ Acheteur valide son panier
 
 - **Le cache qui fuit.** Une page de backoffice ou de compte client en cache partagé serait servie à quelqu'un d'autre. Règles :
   - la façade ne met jamais en cache une réponse qui porte un cookie de session ou un en-tête `Authorization` ;
-  - la clé de cache inclut toujours le domaine ;
+  - l'identifiant de la boutique fait toujours partie de la clé de cache (`ctx.props`, §3.1) ;
   - le backoffice est sur un domaine à part.
 - **Les domaines.** Il faut séparer le domaine de la plateforme (`skanecom.tn` : site commercial et backoffice) du **domaine des vitrines gratuites**, et déclarer ce dernier sur la [Public Suffix List](https://publicsuffix.org/), comme Shopify l'a fait avec `myshopify.com`. Deux effets :
   - une boutique ne peut pas lire les cookies d'une autre ;
@@ -303,7 +317,9 @@ Acheteur valide son panier
 ### 5.3 Identité
 
 - **Commerçants** : authentification à deux facteurs **obligatoire** pour les propriétaires et administrateurs de boutique. Supabase Auth gère le TOTP.
-- **Acheteurs** : connexion par code SMS ou WhatsApp, ou par lien e-mail. Le compte obligatoire ou l'achat en invité est un **réglage de chaque boutique** (Maymar : compte obligatoire).
+- **Acheteurs.** Connexion par **code à usage unique** envoyé par SMS ou WhatsApp, ou par e-mail. Le compte obligatoire ou l'achat en invité est un **réglage de chaque boutique** (Maymar : compte obligatoire).
+  - On utilise des **codes plutôt que des liens de connexion** : les liens exigent de déclarer chaque domaine de boutique comme adresse de retour autorisée, ce qui n'est pas tenable avec des milliers de domaines.
+  - Les codes partent par le *Send SMS Hook* de Supabase Auth, qui permet un fournisseur régional et WhatsApp, avec repli ([doc Supabase](https://supabase.com/docs/guides/auth/auth-hooks/send-sms-hook)). On le branche sur l'agrégateur tunisien payé en dinars.
 - **Une identité par personne, des données par boutique.** Un même numéro peut acheter dans deux boutiques. Chaque commerçant ne voit que « ses » clients (table `clients` par boutique).
 - **Identifiants PSP et livreurs** : chiffrés par boutique (Supabase Vault). Jamais visibles en clair dans le backoffice après leur saisie.
 
@@ -314,18 +330,27 @@ Acheteur valide son panier
 - **Signalement et retrait.** Procédure écrite, délai de traitement, trace dans le journal d'audit.
 - **Journal d'audit** de toutes les actions sensibles : rôles, réglages, remboursements, exports, suppressions, accès du support.
 
-### 5.5 Liste de contrôle avant d'ouvrir l'inscription au public
+### 5.5 Où vivent les données personnelles
+
+Nom, téléphone, adresse et commandes des acheteurs vivent :
+- dans la base Supabase, à Paris ;
+- dans le tampon de commandes (Durable Objects **restreints à l'UE**) ;
+- dans les sauvegardes (compartiment R2 **restreint à l'UE**).
+
+Workers KV ne propose pas de restriction géographique : il ne contient **aucune donnée personnelle**, seulement l'annuaire domaine → boutique → cellule. Les journaux des Workers ne doivent pas en contenir non plus. C'est ce périmètre, UE uniquement, qu'on déclare à l'INPDP. Sources : [Durable Objects](https://developers.cloudflare.com/durable-objects/reference/data-location/), [R2](https://developers.cloudflare.com/r2/reference/data-location/), [compatibilité](https://developers.cloudflare.com/data-localization/compatibility/).
+
+### 5.6 Liste de contrôle avant d'ouvrir l'inscription au public
 
 - [ ] Tests d'isolation pgTAP verts sur toutes les tables et fonctions
 - [ ] Aucune clé `service_role` accessible au navigateur ; revue de toutes les fonctions `SECURITY DEFINER`
 - [ ] Double authentification obligatoire pour les administrateurs de boutique
 - [ ] Domaine des vitrines séparé, demande d'inscription à la Public Suffix List déposée
-- [ ] Façade : pas de cache sur les réponses authentifiées (test automatique)
+- [ ] Façade : pas de cache sur les réponses authentifiées, identifiant de boutique dans la clé de cache (tests automatiques)
 - [ ] Turnstile et limites de débit actifs sur l'inscription, la connexion, le paiement
 - [ ] Identifiants PSP et livreurs chiffrés
 - [ ] Journal d'audit actif
 - [ ] Sauvegarde hors fournisseur + exercice de restauration réussi
-- [ ] Autorisation de l'INPDP pour le transfert des données vers la France déposée, obtenue si possible (voir le PRD, §9)
+- [ ] Autorisation de l'INPDP pour le transfert des données vers l'UE (France) déposée, obtenue si possible (voir le PRD, §9 et le §5.5 ci-dessus)
 - [ ] Procédure d'incident et de notification écrite
 
 ---
@@ -340,6 +365,7 @@ Acheteur valide son panier
 | Journaux et métriques | Cloudflare (Workers Logs), Supabase (tableau de bord et métriques exportables) | Inclus |
 | Sondes externes + page de statut | OpenStatus ou Better Stack | Offre gratuite ou modeste au début |
 | **Parcours d'achat synthétique** : une commande test toutes les 5 min, par cellule, sur une boutique interne | Script planifié | Quasi nul |
+| **Pages servies périmées** (`Cf-Cache-Status: STALE`) | Alerte sur leur proportion | Par défaut, Cloudflare sert du périmé sans limite de durée quand l'application plante : les clients ne voient rien, donc il faut que nous, on le voie |
 
 ### 6.2 Réagir
 
@@ -388,7 +414,12 @@ Tous ces montants sont **à reconfirmer** sur les grilles officielles au moment 
 | Observabilité et page de statut | 0-30 | 50-150 | 300-1 000 |
 | **Total** | **≈ 40-200** | **≈ 400-1 100** | **≈ 3 500-10 500** |
 
-**Repères Cloudflare (à reconfirmer).** L'offre Workers payante coûte 5 $/mois et inclut 10 millions de requêtes, puis environ 0,30 $ par million. À 1 000 boutiques, environ 90 millions de requêtes par mois passent par la façade, soit de l'ordre de 25 $ plus le temps de calcul. La bande passante du CDN n'est pas facturée, et R2 n'a pas de frais de sortie.
+**Repères Cloudflare** (vérifiés sur la [grille Workers](https://developers.cloudflare.com/workers/platform/pricing/) le 28/09/2026) :
+- L'offre Workers payante coûte 5 $/mois et inclut 10 millions de requêtes, puis 0,30 $ par million, et 30 millions de ms de calcul, puis 0,02 $ par million de ms.
+- Pas de frais de bande passante.
+- **Une page vue compte deux requêtes** : la façade, puis l'appel à l'application. Les réponses servies depuis le cache sont facturées comme des requêtes, mais sans temps de calcul.
+- À 1 000 boutiques, environ 90 millions de pages vues par mois donnent environ 180 millions de requêtes, soit **de l'ordre de 50 $ plus le calcul**.
+- **Piège : les journaux.** Workers Logs inclut 20 millions d'événements par mois, puis 0,60 $ par million. Journaliser chaque requête coûterait plus cher que les requêtes elles-mêmes : on **échantillonne**.
 
 **Ce que coûterait Vercel en plus (option A, plan B).** 20 à 60 $/mois au lancement, 100 à 400 à 1 000 boutiques, 1 000 à 4 000 à 10 000. Et s'il servait lui-même images et pages, sans Cloudflare devant, ce serait bien pire. À 1 000 boutiques, on transfère environ 26 To par mois (§1.2). Vercel Pro inclut environ 1 To, puis facture de l'ordre de 0,15 $ par Go (**à reconfirmer**) : **environ 3 500 $ par mois rien qu'en bande passante**, plus que tout le plafond annuel de la CTI d'une société.
 
@@ -423,7 +454,7 @@ Sources : [ministère des Technologies, CTI](https://www.mtc.gov.tn/fileadmin/In
 | Critère | A. Cloudflare en façade + Vercel + Supabase | B. Tout Vercel + Supabase | **C. Cloudflare (façade + application) + Supabase : retenue** | D. 100 % Cloudflare, base D1 comprise |
 |---|---|---|---|---|
 | Vitrine si la base tombe | Oui (cache, instantanés) | Oui pour les pages déjà générées | **Oui** (cache, instantanés) | Oui |
-| Vitrine si l'application plante | Oui | Oui pour les pages en cache | **Oui** (la façade sert ses filets) | Oui |
+| Vitrine si l'application plante | Oui | Oui pour les pages en cache | **Oui** (la façade sert ses paliers de secours) | Oui |
 | Commandes si la base tombe | Oui (tampon en bordure) | Partiel (Vercel Queues, si Vercel est vivant) | **Oui** (tampon en bordure) | Sans objet (base chez Cloudflare) |
 | Bande passante | Faible | **Élevée au-delà du forfait** | **Faible** | Faible |
 | Fournisseurs payés en dollars | 3 | 2 | **2** | 1 |
@@ -434,7 +465,7 @@ Sources : [ministère des Technologies, CTI](https://www.mtc.gov.tn/fileadmin/In
 
 **Pourquoi C (décision de Skander du 28/09/2026, que je recommande aussi).**
 - **Vercel ne sert plus à rien** une fois la façade chez Cloudflare. Cloudflare exécute aussi l'application. On retire un fournisseur, une facture en dollars et le montage délicat « proxy devant Vercel ».
-- **La résilience ne baisse pas.** Dans l'option A, une panne mondiale de Cloudflare coupait déjà tout. Les quatre filets et le tampon de commandes restent identiques.
+- **La résilience ne baisse pas.** Dans l'option A, une panne mondiale de Cloudflare coupait déjà tout. Les paliers de secours et le tampon de commandes restent identiques.
 - **C'est l'option la moins chère avec une base solide.** Bande passante non facturée, requêtes à quelques centimes le million.
 - **Les données restent chez Supabase, pour quatre raisons :**
   1. Postgres est le bon outil pour du commerce : transactions, contraintes, RLS.
@@ -459,8 +490,9 @@ Sources : [ministère des Technologies, CTI](https://www.mtc.gov.tn/fileadmin/In
    - les images et les polices ;
    - le temps de réponse depuis la Tunisie ;
    - le coût par million de requêtes.
-3. Détail favorable : on n'a pas besoin du `proxy.ts` de Next.js, puisque c'est la façade qui trouve la boutique à partir du domaine.
-4. **Si le prototype échoue, on passe au plan B (option A)** : Vercel derrière la façade. On ne perd rien, puisque domaines, façade, R2 et tampon restent chez Cloudflare.
+3. Vérifier que l'application tient dans la **limite de taille d'un Worker** (10 Mo compressés sur l'offre payante).
+4. Détail favorable : on n'a pas besoin du `proxy.ts` de Next.js, puisque c'est la façade qui trouve la boutique à partir du domaine.
+5. **Si le prototype échoue, on passe au plan B (option A)** : Vercel derrière la façade. On ne perd rien, puisque domaines, façade, R2 et tampon restent chez Cloudflare.
 
 ## 9. Ce qu'on construit, et quand
 
@@ -468,10 +500,10 @@ Les étapes correspondent à la feuille de route du PRD.
 
 | Étape | Infrastructure livrée | Preuve de fin |
 |---|---|---|
-| **1. Socle** | **Prototype Next.js sur Workers (porte de décision, §8)**, modèle multi-boutique (`boutique_id`, FK composites, RLS), tests d'isolation en CI, annuaire, Worker de façade v1 (routage, cache, en-têtes réécrits, `stale-if-error`), images sur R2, outbox + files, export quotidien hors fournisseur, Sentry | Deux boutiques de test isolées, tests verts ; application coupée → vitrines toujours servies |
+| **1. Socle** | **Prototype Next.js sur Workers (porte de décision, §8)**, modèle multi-boutique (`boutique_id`, FK composites, RLS), tests d'isolation en CI, annuaire, Worker de façade v1 (routage, clé de cache par boutique, cache partagé entre versions, en-têtes réécrits, `stale-if-error`), images sur R2, outbox + files, export quotidien hors fournisseur, Sentry | Deux boutiques de test isolées, tests verts ; application coupée → vitrines toujours servies |
 | **2. Maymar en ligne** | Instantanés R2 + page de secours, tampon de commandes et rejeu, page de statut, parcours synthétique, premier exercice de restauration, parades de change en place | De vraies commandes livrées ; exercice de panne réussi sur la cellule interne |
 | **3. Bêta privée** | Limites par boutique et quotas par offre, Turnstile, KYC léger, runbooks, PITR | 10-20 commerçants, aucune fuite, SLO tenus pendant 1 mois |
-| **4. Lancement public** | Domaines personnalisés (Cloudflare for SaaS), domaine des vitrines sur la Public Suffix List, test de charge au pic, exercice de panne, liste de contrôle du §5.5 complète | Test de charge réussi ; label Startup déposé ; INPDP déposé |
+| **4. Lancement public** | Domaines personnalisés (Cloudflare for SaaS), domaine des vitrines sur la Public Suffix List, test de charge au pic, exercice de panne, liste de contrôle du §5.6 complète | Test de charge réussi ; label Startup déposé ; INPDP déposé |
 | **5. Entreprises** | Réplica en lecture pour le backoffice et les statistiques, cellule dédiée sur demande, API publique à débit limité, webhooks signés | Un client établi en production |
 
 ---
@@ -485,7 +517,8 @@ Règle : **le moins d'outils possible, chacun remplaçable**, et d'abord ce qui 
 | Langage, dépôt | TypeScript partout, un seul dépôt (bun, déjà utilisé par Maymar) | Une seule langue pour la vitrine, le backoffice, la façade et les scripts |
 | Vitrine et backoffice | Next.js 16 + React 19 + Tailwind 4 (repris de Maymar), sur Workers via vinext ou OpenNext | Reprise du code existant |
 | Façade | Worker Cloudflare dédié, avec KV (annuaire), R2 (instantanés, images), Durable Objects (tampon de commandes) | §2 et §4 |
-| Base, authentification | Supabase : Postgres, Auth (codes SMS, double facteur), Vault (secrets par boutique), Queues (pgmq), pg_cron | Tout est déjà inclus ; migrations avec la CLI Supabase |
+| Base, authentification | Supabase : Postgres, Auth (codes SMS, double facteur), Vault (secrets par boutique), pg_cron (maintenance) | Tout est déjà inclus ; migrations avec la CLI Supabase |
+| Files d'attente | *Outbox* Postgres + Cloudflare Queues | Envoi fiable sans rien perdre si un fournisseur (SMS, livreur) est lent |
 | Accès à la base depuis Workers | Hyperdrive (pool de connexions) + fonctions SQL pour les écritures | Transactions courtes, logique métier dans la base comme dans Maymar |
 | Recherche | Postgres plein texte en v1 | Un moteur dédié seulement si les mesures l'exigent |
 | Tests | Vitest (unitaires), **pgTAP (isolation entre boutiques)**, Playwright (parcours d'achat), k6 (charge) | Les tests d'isolation bloquent la livraison |
@@ -493,7 +526,7 @@ Règle : **le moins d'outils possible, chacun remplaçable**, et d'abord ce qui 
 | Erreurs | Sentry (offre gratuite au début) | Standard, compatible Workers |
 | Sondes externes et page de statut | OpenStatus ou Better Stack | Hébergés hors de notre infrastructure |
 | Mesure d'audience des vitrines | Cloudflare Web Analytics | Gratuit, sans cookie |
-| SMS et codes | Agrégateur tunisien payé en TND (WinSMS, TunisieSMS), un fournisseur international en secours | Moins cher et sans change |
+| SMS et codes | Agrégateur tunisien payé en TND (WinSMS, TunisieSMS), branché sur le *Send SMS Hook* de Supabase Auth ; un fournisseur international en secours | Moins cher et sans change |
 | WhatsApp | API Cloud de Meta, en direct | Confirmation des commandes COD |
 | E-mails transactionnels | Un service d'envoi standard (Resend, Brevo…), à choisir à l'étape 2 | Secondaire en Tunisie, où WhatsApp domine |
 | Paiement en ligne | Konnect et Flouci, sur le compte de chaque commerçant | SkanEcom ne détient jamais les fonds |
@@ -514,11 +547,14 @@ On **conçoit** pour 10 000 boutiques (`boutique_id` partout, façade, files), m
 ## 11. Questions ouvertes et points à vérifier
 
 1. **Next.js sur Workers** : vinext (bêta) ou OpenNext ? Compatibilité du code Maymar, cache, images. À trancher par le prototype du §8 ; sinon plan B Vercel.
-2. **Tampon de commandes** : Durable Objects ou Queues ? Temps de rejeu mesuré ? À prototyper.
+2. **Tampon de commandes** : Durable Objects restreints à l'UE (préférés). Temps de rejeu à mesurer au prototype.
 3. **Grilles tarifaires exactes** (Cloudflare Workers, Images, Durable Objects ; Supabase, PITR) au moment de l'achat.
 4. **Taille réelle d'une cellule** : à calibrer par test de charge sur les données de Maymar.
 5. **Hébergement tunisien de repli** (données personnelles, sauvegardes) : quels fournisseurs, quel prix en TND ? Utile si l'INPDP refuse ou durcit les conditions.
 6. **Réévaluation multi-CDN** à 1 000 boutiques.
+7. **Authentification quand il y aura plusieurs cellules.** Aujourd'hui, Supabase Auth vit dans la cellule 1. Avant d'ouvrir la cellule 2, il faut décider : authentification centralisée dans le plan de contrôle, avec des jetons reconnus par toutes les cellules, ou une authentification par cellule. À concevoir avant l'étape 5.
+8. **Limites exactes des purges de cache** sur l'offre gratuite. Calibrer le regroupement des purges (§3.1).
+9. **Nom du domaine des vitrines** (domaine dédié décidé le 28/09). Recommandation : un gTLD, pour ne pas dépendre de l'ATI (§4.3).
 
 ## Sources principales
 

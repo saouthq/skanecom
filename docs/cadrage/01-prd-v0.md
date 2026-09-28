@@ -1,7 +1,7 @@
 # SkanEcom — PRD v0
 
 > Statut : **brouillon v0, à valider par Skander**. Rédigé le 28/09/2026.
-> Décisions déjà prises par Skander (28/09) : plateforme **en autonomie** (self-service) ; **marché tunisien** d'abord ; cibles : **petits vendeurs ET entreprises établies** ; nom : **SkanEcom** ; **Maymar est le client n°1**.
+> Décisions déjà prises par Skander (28/09) : plateforme **en autonomie** (self-service) ; **marché tunisien** d'abord ; cibles : **petits vendeurs ET entreprises établies** ; nom : **SkanEcom** ; **Maymar est le client n°1** ; hébergement **Cloudflare + Supabase** ; **domaine dédié aux vitrines gratuites**, séparé de `skanecom.tn`.
 > Documents liés :
 > - [`02-infrastructure.md`](02-infrastructure.md) : tenir la charge, rester ouvert ;
 > - [`03-reprise-maymar.md`](03-reprise-maymar.md) : ce qu'on garde du code Maymar ;
@@ -207,7 +207,7 @@ Priorités : **M** = indispensable au lancement public · **S** = souhaité au l
 
 | Sujet | Obligation | Quand |
 |---|---|---|
-| **Données personnelles** (loi 2004-63) | Déclaration à l'INPDP + **autorisation préalable de transfert** (serveurs en France), sous peine d'1 an de prison et 5 000 TND ; silence au-delà d'un mois = refus implicite | **Avant la première boutique tierce** (étape 3) |
+| **Données personnelles** (loi 2004-63) | Déclaration à l'INPDP + **autorisation préalable de transfert** vers l'UE (base à Paris, tampon et sauvegardes restreints à l'UE : `02-infrastructure.md`, §5.5), sous peine d'1 an de prison et 5 000 TND ; silence au-delà d'un mois = refus implicite | **Avant la première boutique tierce** (étape 3) |
 | Accord de sous-traitance | Le commerçant est responsable de traitement, SkanEcom sous-traitant | Étape 3 |
 | **Facture électronique** | Adhésion à TTN, certificat de signature, intermédiaire API | Avant la première facture payante |
 | Change | Label Startup Act (plafond CTI de 100 000 TND/an), 2 cartes, crédits prépayés | Dès l'étape 2 (voir `02-infrastructure.md`, §7) |
@@ -241,6 +241,6 @@ On ne donne pas de dates avant la fin du cadrage. Chaque étape a un critère de
 2. Commission sur les ventes : on confirme **zéro commission** ?
 3. Ordre d'acquisition : on confirme **établis et vendeurs à volume d'abord**, Starter sans gratuit ?
 4. Installation assistée payante : oui ou non ?
-5. Domaine des vitrines gratuites : `.tn` ou gTLD sur la Public Suffix List (voir le doc 04) ?
+5. Nom du domaine des vitrines gratuites (domaine dédié décidé le 28/09) : lequel réserver ?
 6. Qui porte les démarches (INPDP, Startup Act, TTN, INNORPI) ? Faut-il un avocat et un comptable dès maintenant ?
 7. Catalogue partagé fournisseur → revendeurs : faut-il en parler à l'associé de Maymar ?

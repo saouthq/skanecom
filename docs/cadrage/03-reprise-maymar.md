@@ -87,7 +87,7 @@
    - Correction : la façade applique des limites, les requêtes filtrent toujours par `boutique_id`, avec des index composites `(boutique_id, …)`.
    - Les brouillons restent protégés par la RLS.
 8. **Cache non partitionné.**
-   - `revalidate = 300` sur les pages : en multi-boutique, la clé de cache doit inclure la boutique.
+   - `revalidate = 300` sur les pages : en multi-boutique, la clé de cache doit inclure la boutique. Attention, le cache de Workers **n'inclut pas le domaine** : la façade passe l'identifiant de boutique dans `ctx.props` (voir `02-infrastructure.md`, §3.1).
    - L'invalidation se fait par étiquette `boutique:<id>` (voir `02-infrastructure.md`, §3.1).
 9. **Valeurs Maymar en dur dans le front.**
    - 185 mentions de « maymar » dans `src/` (grep du 28/09/2026).
@@ -158,7 +158,7 @@
 
 | Aujourd'hui (Maymar) | Demain (SkanEcom) |
 |---|---|
-| Une boutique, des variables d'environnement | La boutique est **résolue à partir du domaine** par la façade ; l'application reçoit un en-tête signé (identifiant de boutique, cellule) |
+| Une boutique, des variables d'environnement | La boutique est **résolue à partir du domaine** par la façade ; l'application reçoit l'identifiant de boutique et de cellule dans `ctx.props`, par liaison de service entre Workers |
 | `revalidate = 300` | Pages en cache à durée longue, **purge par étiquettes** `boutique:<id>`, `produit:<id>` |
 | Jetons `--maymar-*` écrits dans `tokens.css` | Jetons `--theme-*` générés depuis la configuration de thème de la boutique ; thème n°1 = charte Maymar |
 | Accueil écrit en dur (sections Maymar) | Accueil composé de **sections configurables** : bandeau, rayons, produits mis en avant, réassurance, texte, galerie |

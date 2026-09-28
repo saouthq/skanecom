@@ -41,8 +41,8 @@
 | R1 | **Carte refusée ou plafond CTI atteint** → Supabase en pause, Cloudflare en offre gratuite à J+5 : **toutes les boutiques tombent** | Élevée sans label, dès quelques centaines de boutiques | Critique | Label Startup Act, crédits Supabase prépayés (> 3 mois), 2 cartes de 2 banques, alertes à 70 % du plafond, procédure écrite | 0-2 |
 | R2 | **Guerre des prix** (Converty, e-Tijara gratuits) | Élevée | Élevé | Vendre des résultats chiffrés (refus évités, disponibilité, image de marque), pas des fonctions ; cibler les établis | 0 |
 | R3 | **Transfert de données sans autorisation INPDP** | Certaine si rien n'est fait | Élevé (pénal) | Dossier préparé à l'étape 0 et déposé avant l'étape 3 ; avocat ; consentements ; option d'hébergement en Tunisie gardée en réserve | 0-3 |
-| R4 | **Fuite de données entre boutiques** | Moyenne sans garde-fous | Critique (confiance) | FK composites, RLS par boutique, tests d'isolation qui bloquent la livraison, cache jamais partagé pour l'authentifié | 1 |
-| R5 | **Panne de la base ou de l'application** | Moyenne | Élevé | Façade, 4 filets, tampon de commandes (`02-infrastructure.md`, §4) | 1-2 |
+| R4 | **Fuite de données entre boutiques** | Moyenne sans garde-fous | Critique (confiance) | FK composites, RLS par boutique, tests d'isolation qui bloquent la livraison, cache jamais partagé pour l'authentifié, **identifiant de boutique dans la clé de cache** (le cache de Workers n'inclut pas le domaine) | 1 |
+| R5 | **Panne de la base ou de l'application** | Moyenne | Élevé | Façade, paliers de secours (cache périmé, instantané, page de secours), tampon de commandes (`02-infrastructure.md`, §4) | 1-2 |
 | R6 | **Panne mondiale de Cloudflare** | Faible | Critique | Accepté en v1 ; réévaluation multi-CDN à 1 000 boutiques | 4-5 |
 | R7 | **Facture de bande passante qui explose** | Élevée sans cache | Élevé | Images sur R2, pages en cache à la bordure (`02-infrastructure.md`, §7) | 1 |
 | R8 | **Gel ou panne d'un prestataire de paiement** (précédent Paymee) | Moyenne | Moyen | Fonds jamais détenus par SkanEcom, plusieurs PSP, disjoncteur, COD toujours disponible | 1-3 |
