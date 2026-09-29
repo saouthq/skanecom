@@ -13,6 +13,10 @@
 # Console locale : http://console.localhost:4200, administrateur
 # admin@skanecom.test, mot de passe « console-locale-skanecom » (base locale
 # seulement). La double authentification se règle à la première connexion.
+# Backoffice des boutiques, même adresse, mot de passe « equipe-locale-skanecom » :
+#   gerant@maymar.test (propriétaire, double authentification),
+#   appels@maymar.test (confirmation), prepa@quincaillerie.test (préparation),
+#   gerant@selma.test (propriétaire).
 #
 # Prérequis : la base locale (outils/base-locale.sh reinit) et Node.
 # Adresse : http://127.0.0.1:54321 (comme `supabase start`).
@@ -30,6 +34,9 @@ BASE=${BASE_LOCALE_NOM:-skanecom}
 SECRET_DEV="secret-de-developpement-skanecom-local-uniquement"
 ADMIN_EMAIL=admin@skanecom.test
 ADMIN_MDP=console-locale-skanecom
+EQUIPE_MDP=equipe-locale-skanecom
+# courriel:boutique:rôle — l'équipe de développement des boutiques de démo.
+EQUIPE="gerant@maymar.test:maymar:proprietaire appels@maymar.test:maymar:confirmateur prepa@quincaillerie.test:quincaillerie-demo:preparateur gerant@selma.test:maison-selma:proprietaire"
 . "$RACINE/outils/gotrue.sh"
 
 mkdir -p "$OUTILS"
@@ -129,6 +136,7 @@ ENV
     if curl -sf -o /dev/null "http://127.0.0.1:54321/rest/v1/gouvernorats?select=code&limit=1" -H "apikey: $(jeton anon)" &&
        curl -sf -o /dev/null "http://127.0.0.1:54321/auth/v1/health"; then
       admin_de_developpement
+      equipe_de_developpement
       echo "API locale prête : http://127.0.0.1:54321 (clés dans .outils/api-locale.env)"
       return
     fi
@@ -149,6 +157,24 @@ admin_de_developpement() {
     insert into plateforme.administrateurs (user_id, role)
     select id, 'super_admin' from auth.users where email = '$ADMIN_EMAIL'
     on conflict (user_id) do nothing;" > /dev/null
+}
+
+# L'équipe des boutiques de démo : comptes créés par GoTrue, puis inscrits
+# dans plateforme.membres (une boutique absente du jeu de démo est ignorée).
+equipe_de_developpement() {
+  local cle; cle=$(jeton service_role)
+  local ligne email slug role
+  for ligne in $EQUIPE; do
+    IFS=: read -r email slug role <<< "$ligne"
+    curl -s -o /dev/null -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
+      -H "apikey: $cle" -H "authorization: Bearer $cle" -H "content-type: application/json" \
+      -d "{\"email\":\"$email\",\"password\":\"$EQUIPE_MDP\",\"email_confirm\":true}"
+    psql -X -q -h 127.0.0.1 -p "$PORT_BASE" -U postgres -d "$BASE" -v ON_ERROR_STOP=1 -c "
+      insert into plateforme.membres (boutique_id, user_id, role)
+      select b.id, u.id, '$role' from plateforme.boutiques b, auth.users u
+      where b.slug = '$slug' and u.email = '$email'
+      on conflict do nothing;" > /dev/null
+  done
 }
 
 case "${1:-}" in

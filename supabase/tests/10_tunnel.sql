@@ -364,7 +364,7 @@ select is((select count(*) from public.commande_lignes where boutique_id = tests
 
 -- Après une commande, les gestes de l'équipe gardent leur auteur.
 reset role; select tests.connecte('confirm_a');
-update public.commandes set statut = 'confirmee' where numero = (select numero from nouvelle) and boutique_id = tests.id('A');
+select public.gestion_appel(tests.id('A'), (select numero from nouvelle), 'appel', 'confirmee');
 reset role;
 select is((select e.auteur_id from public.commande_evenements e join public.commandes c on c.id = e.commande_id
            where c.numero = (select numero from nouvelle) and c.boutique_id = tests.id('A') and e.statut_apres = 'confirmee'),

@@ -7,7 +7,7 @@ import { Coche } from "@/components/Icones";
 import { Prix } from "@/components/Prix";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { supabase } from "@/lib/supabase";
-import { COOKIE_COMMANDE, prenomDe, telephoneLisible, type CommandeSuivie } from "@/lib/commande";
+import { COOKIE_COMMANDE, lieu, prenomDe, telephoneLisible, type CommandeSuivie } from "@/lib/commande";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
@@ -160,8 +160,8 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
                 </>
               ) : null}
               <br />
-              {l.ville}
-              {l.code_postal ? ` ${l.code_postal}` : ""}, {l.gouvernorat}
+              {l.code_postal ? `${l.code_postal} ` : ""}
+              {lieu(l.ville, l.gouvernorat)}
               <br />
               <bdi>{telephoneLisible(commande.contact.telephone)}</bdi>
             </address>

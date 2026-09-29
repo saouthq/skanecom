@@ -2,15 +2,15 @@
 -- 03 · Rôles dans une boutique
 -- =====================================================================
 --   lecture      lit tout, n'écrit rien
---   preparateur  fait avancer les commandes, saisit les mouvements de stock
---   confirmateur fait avancer les commandes, gère les fiches clients
+--   preparateur  expédie les commandes, saisit les mouvements de stock
+--   confirmateur confirme les commandes, gère les fiches clients
 --   admin / proprietaire : catalogue, stock, zones, réglages
 -- Et pour tous : le stock, le journal et l'historique ne s'écrivent que par
 -- les fonctions de la base ; une commande ne se crée que côté serveur.
 begin;
 \ir outils.psql
 
-select plan(21);
+select plan(22);
 
 -- ---------------------------------------------------------------------
 -- lecture
@@ -29,7 +29,7 @@ select throws_ok(
 reset role;
 select is((select count(*) from public.produits where nom_fr = 'modifié par lecture'), 0::bigint,
   'lecture ne modifie pas le catalogue');
-select is((select count(*) from public.commandes where statut = 'confirmee'), 0::bigint,
+select is((select count(*) from public.commandes where boutique_id = tests.id('A') and statut = 'confirmee'), 0::bigint,
   'lecture ne fait pas avancer les commandes');
 
 -- ---------------------------------------------------------------------
@@ -46,8 +46,15 @@ select throws_ok(
   '42501', null, 'le préparateur de A ne saisit pas de mouvement dans B');
 
 reset role;
-select is((select statut::text from public.commandes where id = tests.id('commande_a')), 'confirmee',
-  'le préparateur fait avancer une commande');
+select is((select statut::text from public.commandes where id = tests.id('commande_a')), 'recue',
+  'une commande n''avance plus par un UPDATE direct, même par l''équipe : elle passe par les fonctions de gestion');
+update public.commandes set statut = 'confirmee' where id = tests.id('commande_a');
+select tests.connecte('prepa_a');
+select lives_ok(
+  format($$ select public.gestion_expedier(%L, %L, 'confirmee') $$, tests.id('A'),
+         (select numero from public.commandes where id = tests.id('commande_a'))),
+  'le préparateur expédie une commande confirmée');
+reset role;
 select is((select count(*) from public.produits where nom_fr = 'modifié par prépa'), 0::bigint,
   'le préparateur ne modifie pas le catalogue');
 select is((select count(*) from public.clients where note_interne = 'note du prépa'), 0::bigint,

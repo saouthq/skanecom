@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { acces, clientSession } from "@/lib/console/session";
+import { acces, accesEquipe, clientSession } from "@/lib/console/session";
 import { FormulaireCode } from "./FormulaireCode";
 
 export const metadata: Metadata = { title: "Double authentification" };
 
 /* ============================================================================
-   LA DOUBLE AUTHENTIFICATION — obligatoire pour la console (infra §5.3).
+   LA DOUBLE AUTHENTIFICATION — obligatoire pour la console (infra §5.3) et
+   pour les propriétaires et administrateurs d'une boutique (PRD B7).
 
    · Pas encore de facteur : on en crée un (TOTP, GoTrue) et on montre son
      QR code à scanner avec Google Authenticator, Aegis, 1Password… plus la
@@ -18,8 +19,15 @@ export const metadata: Metadata = { title: "Double authentification" };
 export default async function DoubleAuthentification({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
   const a = await acces();
   if (a.etat === "anonyme") redirect("/connexion");
-  if (a.etat === "refuse") redirect("/refuse");
   if (a.etat === "ok") redirect("/");
+  if (a.etat === "refuse") {
+    // Pas administrateur : un membre de boutique dont le rôle l'exige passe
+    // ici ; les autres vont directement à leur backoffice.
+    const e = await accesEquipe();
+    if (e.etat === "anonyme") redirect("/connexion");
+    if (e.etat === "aucune") redirect("/refuse");
+    if (e.etat === "ok") redirect("/gestion");
+  }
   const { erreur } = await searchParams;
 
   const sb = await clientSession();

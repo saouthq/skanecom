@@ -286,8 +286,10 @@ begin
     raise exception 'Cette boutique n''a pas de thème' using errcode = 'no_data_found';
   end if;
   if v_version <> p_version then
+    -- Pas le code 40001 (serialization_failure) : PostgREST rejoue d'office
+    -- une transaction en conflit de sérialisation, sans fin ici.
     raise exception 'Le thème a été modifié entre-temps (version % au lieu de %) : rechargez la page', v_version, p_version
-      using errcode = 'serialization_failure';
+      using errcode = 'check_violation', hint = 'version';
   end if;
 
   update public.themes t set

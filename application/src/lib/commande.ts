@@ -101,6 +101,13 @@ export function telephoneLisible(numero: string): string {
   return `+216 ${huit.slice(0, 2)} ${huit.slice(2, 5)} ${huit.slice(5)}`;
 }
 
+/** « Sfax » plutôt que « Sfax, Sfax » quand la ville porte le nom de son
+ *  gouvernorat ; « La Marsa, Tunis » sinon. */
+export function lieu(ville: string, gouvernorat: string): string {
+  const pareil = ville.trim().localeCompare(gouvernorat.trim(), "fr", { sensitivity: "base" }) === 0;
+  return pareil ? ville.trim() : `${ville.trim()}, ${gouvernorat}`;
+}
+
 /** Le prénom, pour « Merci, Amel. » : le premier mot du nom saisi. */
 export function prenomDe(nom: string): string {
   return nom.trim().split(/\s+/)[0] ?? nom;

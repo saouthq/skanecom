@@ -72,6 +72,8 @@ outils/essayer.sh
 
 **Sur téléphone** : dans Chrome ou Edge, F12 puis l'icône téléphone (« Toggle device toolbar »), choisir un modèle et recharger : menu en tiroir, galerie à faire glisser, barre d'achat collante en bas de la fiche. (Un vrai téléphone ne peut pas joindre la vitrine : elle reste sur ta machine.)
 
+**Backoffice** — http://console.localhost:4200, mot de passe `equipe-locale-skanecom` : `appels@maymar.test` (confirmation des commandes) ou `gerant@maymar.test` (propriétaire, double authentification à la première connexion). Les onze commandes de démonstration de Maymar : appeler, confirmer, expédier, noter une livraison ou un refus.
+
 **Console** — http://console.localhost:4200, `admin@skanecom.test`, mot de passe `console-locale-skanecom` (base locale seulement). À la première connexion, scanner le QR code avec une application d'authentification (Google Authenticator, Microsoft Authenticator, 1Password…) et saisir le code. Ensuite : créer une boutique et son domaine, l'ouvrir, régler sa marque (gabarit, couleurs, polices, textes) avec l'aperçu, importer un catalogue (le modèle CSV se télécharge depuis la page d'import).
 
 ## 4. Les vérifications automatiques
@@ -79,12 +81,13 @@ outils/essayer.sh
 Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
 
 ```bash
-outils/base-locale.sh tester                   # 275 tests de la base (isolation des boutiques, vitrine, console, import, commande)
+outils/base-locale.sh tester                   # 315 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice)
 outils/essai-vitrine.sh                        # 25 essais : les boutiques ne se mélangent jamais, le tunnel n'est jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)
 bun run parcours                               # le testeur « humain » : souris, clavier, téléphone
 bun run parcours:commande                      # une vraie commande dans chaque gabarit (base fraîche : outils/essayer.sh)
+bun run parcours:gestion                       # l'équipe de Maymar traite ses commandes au backoffice
 bun run apercu                                 # captures des pages clés des trois boutiques
 ```
 

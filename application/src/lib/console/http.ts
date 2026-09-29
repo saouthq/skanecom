@@ -43,16 +43,15 @@ export async function ecriture(
 }
 
 /** Message lisible d'une erreur de la base (contraintes, droits, version). */
-export function messageBase(erreur: { code?: string; message?: string } | null): string {
+export function messageBase(erreur: { code?: string; message?: string; hint?: string } | null): string {
   if (!erreur) return "Erreur inconnue";
+  if (erreur.hint === "version") return "Quelqu'un a enregistré entre-temps : rechargez la page avant de recommencer.";
   switch (erreur.code) {
     case "23505":
       return "Déjà pris : cet identifiant ou ce domaine appartient à une autre boutique.";
     case "23514":
     case "22P02":
       return `Valeur refusée par la base : ${erreur.message ?? ""}`;
-    case "40001":
-      return "Quelqu'un a enregistré entre-temps : rechargez la page avant de recommencer.";
     case "42501":
       return "Action refusée : vous n'êtes pas administrateur de la plateforme.";
     default:

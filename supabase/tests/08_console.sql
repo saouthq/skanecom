@@ -104,9 +104,9 @@ select results_eq($$ select t.couleurs ->> 'accent', t.polices ->> 'titres', t.t
 select throws_ok(format($$ select public.console_modifier_theme(%L, (select id from plateforme.boutiques where slug = 'essai-console'), 2,
                                    '{"couleurs": {"accent": "red;}</style>"}}') $$, tests.id('admin_plateforme')),
   '23514', null, 'une couleur hors #RRGGBB est refusée par la base, quelle que soit la console');
-select throws_ok(format($$ select public.console_modifier_theme(%L, (select id from plateforme.boutiques where slug = 'essai-console'), 1,
+select throws_like(format($$ select public.console_modifier_theme(%L, (select id from plateforme.boutiques where slug = 'essai-console'), 1,
                                    '{"textes": {"resume_fr": "Écrase tout"}}') $$, tests.id('admin_plateforme')),
-  '40001', null, 'un formulaire périmé (version 1 alors que la base est en 2) n''écrase pas le travail d''un autre');
+  '%modifié entre-temps%', 'un formulaire périmé (version 1 alors que la base est en 2) n''écrase pas le travail d''un autre');
 select throws_ok(format($$ select public.console_modifier_theme(%L, (select id from plateforme.boutiques where slug = 'essai-console'), 2,
                                    '{"logo_chemin": "essai-a/marque/logo.svg"}') $$, tests.id('admin_plateforme')),
   '23514', null, 'les champs hors marque (fichiers, sections) ne passent pas par ce réglage');

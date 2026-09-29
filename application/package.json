@@ -14,7 +14,8 @@
     "lint": "eslint src essais",
     "parcours:console": "node essais/parcours-console.mjs",
     "apercu": "node essais/apercu.mjs",
-    "parcours:commande": "node essais/parcours-commande.mjs"
+    "parcours:commande": "node essais/parcours-commande.mjs",
+    "parcours:gestion": "node essais/parcours-gestion.mjs"
   },
   "dependencies": {
     "@cloudflare/workers-response-store": "^1.0.0",

@@ -543,3 +543,104 @@ insert into public.themes (boutique_id, code, textes, sections) values
      {"type": "selection", "nombre": 4, "rayon": "homme",
       "textes": {"titre_fr": "Homme"}},
      {"type": "engagements"}]');
+
+
+-- ---------------------------------------------------------------------
+-- Maymar : commandes de démonstration, pour le backoffice
+-- ---------------------------------------------------------------------
+-- Onze commandes « passées sur la vitrine » ces trois dernières semaines, à
+-- toutes les étapes du cycle : trois à confirmer (dont un client qui a déjà
+-- refusé un colis, et un appel resté sans réponse), deux à préparer, une
+-- chez le livreur, des livrées, une refusée, une annulée. Le chiffrage est
+-- celui de la base (private.chiffre_commande) ; les triggers réservent et
+-- rendent le stock, numérotent, tracent. Les dates de l'historique sont
+-- ensuite recalées sur le récit (le jeu de démo tourne sous postgres).
+do $$
+declare
+  b constant uuid := '00000000-0000-4000-8000-000000000001';
+  c record;
+  v_client   uuid;
+  v_commande uuid;
+  v_devis    jsonb;
+  t0         timestamptz;
+begin
+  for c in select * from (values
+    ( 1, 'Mohamed Ali Trabelsi', '+21698321456', '14 rue de Palestine',                         'Sfax',      'sfax',      'VAL-ABS-55-BLE', 1, 28800, 'livree'),
+    ( 2, 'Mohamed Ali Trabelsi', '+21698321456', '14 rue de Palestine',                         'Sfax',      'sfax',      'VAL-SPL-55-NOI', 1, 17280, 'refusee'),
+    ( 3, 'Nadia Belhaj',         '+21623119065', '5 rue du Lac Léman',                          'Ben Arous', 'ben-arous', 'VAL-ABS-55-NOI', 1,  4300, 'annulee'),
+    ( 4, 'Walid Ferchichi',      '+21658440921', 'Cité El Khadra, bloc 12',                     'Tunis',     'tunis',     'VAL-SPL-65-NOI', 1,  3900, 'refusee'),
+    ( 5, 'Amira Chaabane',       '+21621778804', '3 rue de Marseille',                          'Tunis',     'tunis',     'VAL-ABS-55-BLE', 1,  3000, 'livree'),
+    ( 6, 'Youssef Hamdi',        '+21697552018', 'Route de Tunis km 3',                         'Monastir',  'monastir',  'VAL-SPL-55-NOI', 1,  1700, 'expediee'),
+    ( 7, 'Ines Gharbi',          '+21629904512', '22 rue Ibn Khaldoun',                         'Tunis',     'tunis',     'VAL-SET3-NOI',   1,  1500, 'confirmee'),
+    ( 8, 'Karim Jlassi',         '+21650113377', '7 avenue de la République',                   'Nabeul',    'nabeul',    'VAL-ABS-65-NOI', 1,  1260, 'confirmee'),
+    ( 9, 'Sarra Ben Youssef',    '+21622487190', 'Cité Ennasr 2, immeuble Yasmine, 3e étage',   'Ariana',    'ariana',    'VAL-BUS-55-NOI', 1,   310, 'recue'),
+    (10, 'Mohamed Ali Trabelsi', '+21698321456', '14 rue de Palestine',                         'Sfax',      'sfax',      'VAL-SPL-65-NOI', 2,   130, 'recue'),
+    (11, 'Hela Mansour',         '+21655666777', 'Avenue Habib Bourguiba, résidence Le Lac, bloc B', 'Sousse', 'sousse', 'VAL-ABS-55-NOI', 1,    25, 'recue')
+  ) as t(n, nom, tel, ligne1, ville, gouv, sku, qte, minutes, statut)
+  order by n
+  loop
+    t0 := now() - make_interval(mins => c.minutes);
+
+    select id into v_client from public.clients where boutique_id = b and telephone = c.tel and user_id is null;
+    if v_client is null then
+      insert into public.clients (boutique_id, nom, telephone, created_at) values (b, c.nom, c.tel, t0) returning id into v_client;
+    end if;
+
+    v_devis := private.chiffre_commande(b,
+      jsonb_build_array(jsonb_build_object('variante_id', (select v.id from public.variantes v where v.boutique_id = b and v.sku = c.sku), 'quantite', c.qte)),
+      c.gouv);
+
+    insert into public.commandes (boutique_id, origine, client_id, contact_nom, contact_telephone,
+                                  livraison_ligne1, livraison_ville, livraison_gouvernorat, livraison_zone_nom,
+                                  sous_total_millimes, frais_livraison_millimes, total_millimes, created_at)
+    values (b, 'vitrine', v_client, c.nom, c.tel, c.ligne1, c.ville, c.gouv, v_devis -> 'zone' ->> 'nom_fr',
+            (v_devis ->> 'sous_total_millimes')::bigint, (v_devis ->> 'frais_livraison_millimes')::bigint,
+            (v_devis ->> 'total_millimes')::bigint, t0)
+    returning id into v_commande;
+
+    insert into public.commande_lignes (boutique_id, commande_id, variante_id, produit_nom, variante_libelle, sku,
+                                        prix_unitaire_millimes, quantite, total_ligne_millimes)
+    select b, v_commande, (l ->> 'variante_id')::uuid, l ->> 'produit_nom', l ->> 'variante_libelle', l ->> 'sku',
+           (l ->> 'prix_unitaire_millimes')::bigint, (l ->> 'quantite')::integer, (l ->> 'total_ligne_millimes')::bigint
+    from jsonb_array_elements(v_devis -> 'lignes') l;
+
+    -- Le chemin jusqu'à l'étape du récit.
+    if c.statut in ('confirmee', 'expediee', 'livree', 'refusee') then
+      insert into public.confirmations (boutique_id, commande_id, canal, resultat, created_at)
+      values (b, v_commande, 'appel', 'confirmee', t0 + interval '45 minutes');
+      update public.commandes set statut = 'confirmee' where id = v_commande;
+    end if;
+    if c.statut in ('expediee', 'livree', 'refusee') then
+      update public.commandes set statut = 'expediee', transporteur = 'Aramex', numero_suivi = 'TN' || (48210000 + c.n * 137)
+       where id = v_commande;
+    end if;
+    if c.statut = 'livree' then
+      update public.commandes set statut = 'livree', statut_paiement = 'paye' where id = v_commande;
+    elsif c.statut = 'refusee' then
+      update public.commandes set statut = 'refusee', refus_origine = 'client', refus_commentaire = 'Absent au deuxième passage'
+       where id = v_commande;
+    elsif c.statut = 'annulee' then
+      update public.commandes set statut = 'annulee', motif_annulation = 'Commande passée deux fois' where id = v_commande;
+    end if;
+    if c.n = 9 then
+      insert into public.confirmations (boutique_id, commande_id, canal, resultat, note, created_at)
+      values (b, v_commande, 'appel', 'injoignable', 'Messagerie, rappeler en fin de journée', t0 + interval '50 minutes');
+    end if;
+
+    -- L'historique recalé : confirmée 45 min après, expédiée 20 h après,
+    -- livrée ou refusée 44 h après, annulée 2 h après.
+    update public.commande_evenements e
+       set created_at = t0 + case e.statut_apres
+             when 'recue' then interval '0' when 'confirmee' then interval '45 minutes'
+             when 'expediee' then interval '20 hours' when 'annulee' then interval '2 hours'
+             else interval '44 hours' end
+     where e.commande_id = v_commande;
+    update public.commandes
+       set confirmee_at = case when confirmee_at is not null then t0 + interval '45 minutes' end,
+           expediee_at  = case when expediee_at  is not null then t0 + interval '20 hours' end,
+           livree_at    = case when livree_at    is not null then t0 + interval '44 hours' end,
+           cloturee_at  = case when cloturee_at  is not null then t0 + case statut when 'annulee' then interval '2 hours' else interval '44 hours' end end
+     where id = v_commande;
+  end loop;
+end
+$$;

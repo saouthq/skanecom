@@ -233,6 +233,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 - `commande_suivie` : la commande pour qui a son numéro et son jeton (seule l'empreinte SHA-256 du jeton est gardée) ;
 - les gestes du système (commande de la vitrine, confirmation automatique) n'ont pas d'auteur dans les journaux : l'identifiant de l'acheteur n'y entre pas.
 
+**Puis le backoffice des commandes** (migration 09, `20260929100800_gestion_commandes.sql`, 39 tests dans `supabase/tests/11_gestion.sql`) : `confirmations` (chaque tentative : canal, résultat, note, auteur) et les gestes de l'équipe par fonctions (`gestion_appel`, `gestion_annuler`, `gestion_expedier`, `gestion_livrer`, `gestion_refuser`, `gestion_note`), avec le rôle de chacun et l'étape attendue ; la liste et la fiche pour l'équipe (`gestion_liste_commandes`, `gestion_commande`). L'UPDATE direct des commandes par l'API est retiré.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
-- avec le backoffice : `confirmations`, `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.
+- avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.
