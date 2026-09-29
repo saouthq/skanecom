@@ -247,6 +247,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les pages légales et le consentement** (migration 15, `20260929101400_vitrine_legal.sql`, 12 tests dans `supabase/tests/17_legal.sql`) : réglages publics `legal.*` (identité légale, rétractation bornée à 10 jours ouvrables au moins par un trigger, frais de retour, référence INPDP) ; colonne `commandes.conditions_acceptees` ; `passer_commande` redéfinie (même signature) : elle exige `contact.accepte_conditions = true` (indice « conditions ») et garde le modèle, le délai et la date.
 
+**Puis l'équipe gérée par le propriétaire** (migration 16, `20260929101500_gestion_equipe.sql`, 18 tests dans `supabase/tests/18_equipe_boutique.sql`) : règles communes `private.equipe_ajouter`, `equipe_modifier`, `equipe_tracer_lien` (les `console_*` de la migration 10 les appellent désormais) ; `gestion_equipe`, `gestion_compte`, `gestion_ajouter_membre`, `gestion_modifier_membre`, `gestion_lien_membre` pour le propriétaire ; `private.compte_de_la_seule_boutique` : pas de lien d'accès depuis un backoffice pour un compte qui sert ailleurs.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

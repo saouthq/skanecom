@@ -35,6 +35,9 @@ export default async function BackofficeBoutique({
             { href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes", exact: true, aussi: [`/gestion/${slug}/commandes/`] },
             { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
             { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },
+            ...(boutique.role === "proprietaire" || boutique.role === "admin"
+              ? [{ href: `/gestion/${slug}/equipe`, libelle: "Équipe", icone: "equipe" as const }]
+              : []),
             { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
           ],
         },

@@ -457,6 +457,10 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .rg-zone-nom { grid-column: 1 / -1; }
 }
 
+/* ---- Équipe ---- */
+.eq-vous { margin-inline-start: .5rem; vertical-align: 1px; }
+.eq-ailleurs { align-self: center; white-space: nowrap; }
+
 /* ---- Clients ---- */
 .cl-ligne-lien { grid-template-areas: "img nom prix" "img etat date"; }
 .cl-initiale { grid-area: img; inline-size: 40px; block-size: 40px; border-radius: 999px; font-size: .8125rem; }

@@ -719,6 +719,58 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie(!(await page.locator("h1").innerText()).includes("Bloqué"), "rétabli, sans motif à donner");
   });
 
+  /* ---------------- L'équipe (B7) ---------------- */
+  const vendeur = `vendeur-${Date.now().toString(36)}@maymar.test`;
+  let lienVendeur = "";
+  await etape("le propriétaire invite un employé, sans passer par SkanEcom", async () => {
+    await page.goto(`${C}/gestion/maymar`, { waitUntil: "networkidle" });
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Équipe" }));
+    await page.waitForURL(/\/gestion\/maymar\/equipe$/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".membre", { hasText: "gerant@maymar.test" }).innerText()).includes("Vous"), "le propriétaire se voit dans son équipe");
+    verifie(await page.locator(".membre", { hasText: "gerant@maymar.test" }).getByRole("button", { name: "Retirer l'accès" }).count() === 0,
+      "il ne peut pas se retirer lui-même l'accès");
+    await clic(page, page.locator("#email"));
+    await tape(page, vendeur);
+    await clic(page, page.locator(".role-choix", { hasText: "Préparation" }));
+    await envoie(page.getByRole("button", { name: "Inviter" }));
+    verifie((await ok()).includes("est invité (Préparation)"), `« ${await ok()} »`);
+    lienVendeur = (await page.locator("#lien-acces").inputValue()).trim();
+    verifie(new URL(lienVendeur).pathname === "/bienvenue" && (new URL(lienVendeur).searchParams.get("jeton") ?? "").length > 40,
+      "un lien d'invitation, à transmettre par WhatsApp");
+    verifie((await page.locator(".membre", { hasText: vendeur }).innerText()).includes("Invitation en attente"), "l'employé est en attente");
+    await capture(page, "gestion-equipe");
+  });
+
+  await etape("l'employé ouvre son lien et arrive dans le backoffice", async () => {
+    const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
+    const p = await tel.newPage();
+    t.espion(p, "vendeur", attendue);
+    await p.goto(lienVendeur, { waitUntil: "networkidle" });
+    await p.locator("#mot_de_passe").fill("le colis part demain");
+    await p.locator("#confirmation").fill("le colis part demain");
+    await p.getByRole("button", { name: "Enregistrer et entrer" }).tap();
+    await p.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    verifie(true, "son mot de passe choisi, il entre dans le backoffice de Maymar");
+    await p.goto(`${C}/gestion/maymar/equipe`, { waitUntil: "networkidle" });
+    verifie(/\/gestion\/maymar$/.test(p.url()), "la page de l'équipe n'est pas pour la préparation");
+    await tel.close();
+    await page.reload({ waitUntil: "networkidle" });
+    verifie((await page.locator(".membre", { hasText: vendeur }).innerText()).includes("Actif"), "chez le propriétaire, l'invitation est acceptée");
+    verifie(await page.locator("#lien-acces").count() === 0, "le lien qui a servi n'est plus affiché");
+  });
+
+  await etape("changer son rôle, puis lui retirer l'accès", async () => {
+    await page.locator(".membre", { hasText: vendeur }).locator("select[name=role]").selectOption("confirmateur");
+    await envoie(page.locator(".membre", { hasText: vendeur }).getByRole("button", { name: "Changer" }));
+    verifie((await ok()).includes("passe en « Confirmation »"), `« ${await ok()} »`);
+    await envoie(page.locator(".membre", { hasText: vendeur }).getByRole("button", { name: "Retirer l'accès" }));
+    verifie((await ok()).includes("n'a plus accès"), `« ${await ok()} »`);
+    await page.locator(".membre", { hasText: "gerant@maymar.test" }).locator("select[name=role]").selectOption("admin");
+    await envoie(page.locator(".membre", { hasText: "gerant@maymar.test" }).getByRole("button", { name: "Changer" }));
+    verifie((await page.getByRole("alert").innerText()).includes("au moins un propriétaire actif"), "le seul propriétaire ne se rétrograde pas");
+  });
+
   await etape("la fiche client sur téléphone", async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(ficheClient, { waitUntil: "networkidle" });

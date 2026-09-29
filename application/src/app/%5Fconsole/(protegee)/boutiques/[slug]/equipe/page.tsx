@@ -6,7 +6,7 @@ import { dateJournal } from "@/lib/console/libelles";
 import { COOKIE_LIEN, ROLES_EQUIPE, VALIDITE_LIEN, cheminEquipe, lienWhatsAppPartage, messageLien, type LienRemis, type MembreEquipe } from "@/lib/console/equipe";
 import { boutiqueDe, equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
-import { BoutonCopier } from "./BoutonCopier";
+import { BoutonCopier } from "@/components/console/BoutonCopier";
 import { initiales } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 
