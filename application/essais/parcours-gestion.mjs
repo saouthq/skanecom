@@ -664,6 +664,24 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await vitrine.close();
   });
 
+  await etape("les données de la boutique, dans un tableur", async () => {
+    await page.goto(`${C}/gestion/maymar/reglages#t-donnees`, { waitUntil: "networkidle" });
+    const donnees = page.locator("section:has(#t-donnees)");
+    verifie(await donnees.getByRole("link", { name: /Télécharger/ }).count() === 5, "cinq exports : commandes, articles, clients, catalogue, stock");
+    const [telechargement] = await Promise.all([
+      page.waitForEvent("download"),
+      clic(page, donnees.locator(".rg-export", { hasText: "Commandes" }).first().getByRole("link")),
+    ]);
+    verifie(/^maymar-commandes-\d{4}-\d{2}-\d{2}\.csv$/.test(telechargement.suggestedFilename()), `un fichier nommé ${telechargement.suggestedFilename()}`);
+    const { readFile } = await import("node:fs/promises");
+    const texte = await readFile(await telechargement.path(), "utf8");
+    const lignes = texte.replace(/^﻿/, "").trim().split("\r\n");
+    verifie(texte.startsWith("﻿") && lignes[0].startsWith("Numéro;Date;Statut;"), "UTF-8 avec BOM, point-virgule : Excel l'ouvre tel quel, accents compris");
+    verifie(lignes.length === 12 && lignes.slice(1).every((l) => l.startsWith("MAY-")), `les onze commandes de Maymar, une par ligne (${lignes.length - 1})`);
+    verifie(/;\d+,\d{3};/.test(lignes[1]), "les montants en « 189,000 »");
+    await capture(page, "gestion-donnees");
+  });
+
   /* ---------------- Les clients ---------------- */
   await etape("les clients : qui soigner, de qui se méfier", async () => {
     await clic(page, page.locator(".app-cote").getByRole("link", { name: "Clients" }));
@@ -864,6 +882,14 @@ console.log("\n== 4. Le préparateur d'une autre boutique ==");
     const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/reglages/enregistrer", { section: "commandes", "compte.obligatoire": "0" });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("propriétaire"),
       `même en postant le formulaire à la main, la base refuse (${r.status})`);
+  });
+
+  await etape("l'export des données, pas pour lui", async () => {
+    await page.goto(`${C}/gestion/quincaillerie-demo/reglages`, { waitUntil: "networkidle" });
+    verifie(await page.locator("#t-donnees").count() === 0, "pas de section « Vos données »");
+    await page.goto(`${C}/gestion/quincaillerie-demo/export/clients`, { waitUntil: "networkidle" });
+    verifie(decodeURIComponent(page.url().replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur exportent"),
+      "l'adresse de l'export, tapée à la main : la base refuse");
   });
 
   await etape("les clients : il voit, il ne juge pas", async () => {

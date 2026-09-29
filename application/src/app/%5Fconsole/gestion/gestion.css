@@ -432,6 +432,11 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .rg-gouv:has(option[value=""]:checked) label::after { content: "·"; margin-inline-start: .375rem; color: var(--ui-ambre); font-weight: 700; }
 
 .rg-indispo { opacity: .75; cursor: default; background: var(--ui-survol); }
+.rg-exports { display: grid; }
+.rg-export { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; padding-block: .75rem; border-block-end: 1px solid var(--ui-bord-leger); }
+.rg-export:first-child { padding-block-start: 0; }
+.rg-export-texte { display: grid; gap: .0625rem; min-inline-size: 0; }
+.rg-export-texte b { font-weight: 500; }
 .console .rg-manque { background: var(--ui-ambre-fond); border-color: var(--ui-ambre-bord); color: #78350F; }
 .rg-indispo b .ui-etat { margin-inline-start: .375rem; vertical-align: 1px; }
 .rg-lignes { display: grid; gap: .125rem; }

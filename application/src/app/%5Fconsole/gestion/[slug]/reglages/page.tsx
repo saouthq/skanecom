@@ -7,6 +7,7 @@ import { quand } from "@/lib/gestion/libelles";
 import { PEUT_MODIFIER } from "@/lib/gestion/catalogue";
 import { lignesJournal, montantChamp, type EtatReglages, type Reglage } from "@/lib/gestion/reglages";
 import { CHAMPS_LEGAUX } from "@/lib/legal";
+import { EXPORTS } from "@/lib/gestion/export";
 
 export const metadata: Metadata = { title: "Réglages" };
 
@@ -419,6 +420,29 @@ export default async function Reglages({
                 <Pied modifie={modifie} />
               </form>
             </Section>
+
+            {/* ---------------- Vos données (B8) ---------------- */}
+            {modifie ? (
+              <Section id="donnees" icone="importer" titre="Vos données"
+                description="Tout ce que la boutique a enregistré, dans un tableur : ses données sont à elle, elle les emporte quand elle veut.">
+                <ul className="rg-exports" role="list">
+                  {Object.entries(EXPORTS).map(([cle, x]) => (
+                    <li key={cle} className="rg-export">
+                      <span className="rg-export-texte">
+                        <b>{x.titre}</b>
+                        <span className="aide">{x.aide}</span>
+                      </span>
+                      <a className="btn btn-second btn-petit" href={`/gestion/${slug}/export/${cle}`} download>
+                        <Icone nom="fichier" taille={14} /> Télécharger (CSV)
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <p className="aide rg-fixe mt-4">
+                  <Icone nom="bouclier" taille={14} /> Ces fichiers contiennent les coordonnées de vos clients : gardez-les pour vous. Chaque export est noté au journal.
+                </p>
+              </Section>
+            ) : null}
           </div>
 
           <aside className="pile rg-aside">
@@ -450,6 +474,7 @@ export default async function Reglages({
                   ["paiement", "Paiement", "billet"],
                   ["vitrine", "Vitrine et contact", "boutique"],
                   ["legal", "Informations légales", "fichier"],
+                  ...(modifie ? [["donnees", "Vos données", "importer"]] : []),
                   ["journal", "Journal", "journal"],
                 ].map(([id, titre, icone]) => (
                   <li key={id}>
