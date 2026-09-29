@@ -72,11 +72,15 @@ jobs:
         working-directory: application
         run: |
           set -a; . ../.outils/api-locale.env; set +a
-          setsid bun run start --port 4200 > ../.outils/vitrine.log 2>&1 < /dev/null &
+          # --host : sans lui, le serveur n'écoute que sur « localhost », qui
+          # vaut ::1 (IPv6) sur les machines GitHub, et 127.0.0.1 ne répond pas.
+          setsid bun run start --port 4200 --host 127.0.0.1 > ../.outils/vitrine.log 2>&1 < /dev/null &
+          pret=non
           for _ in $(seq 1 60); do
-            curl -s -o /dev/null -H "Host: maymar.localhost" http://127.0.0.1:4200/ && break
+            curl -s -o /dev/null -H "Host: maymar.localhost" http://127.0.0.1:4200/ && { pret=oui; break; }
             sleep 1
           done
+          if [ "$pret" != oui ]; then echo "::error::La vitrine ne répond pas sur 127.0.0.1:4200 après 60 s"; exit 1; fi
           ../outils/essai-vitrine.sh http://127.0.0.1:4200
 
       - name: Journal de la vitrine en cas d'échec

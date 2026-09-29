@@ -5,7 +5,7 @@
 # Prérequis (fait par la CI, .github/workflows/vitrine.yml) :
 #   outils/base-locale.sh reinit        base locale avec le jeu de démo
 #   outils/api-locale.sh demarrer       API locale
-#   application compilée et lancée      (cd application && bun run build && bun run start --port 4200)
+#   application compilée et lancée      (cd application && bun run build && bun run start --port 4200 --host 127.0.0.1)
 #
 #   outils/essai-vitrine.sh [http://127.0.0.1:4200]
 set -u

@@ -56,7 +56,7 @@ Base locale et API locale d'abord (voir ci-dessus), puis :
 outils/api-locale.sh demarrer                  # PostgREST sous /rest/v1 et fichiers de démo, sur :54321
 cd application && bun install
 set -a; . ../.outils/api-locale.env; set +a    # adresses et clés de développement
-bun run build && bun run start --port 4200     # la vitrine compilée, dans workerd
+bun run build && bun run start --port 4200 --host 127.0.0.1   # la vitrine compilée, dans workerd
 ```
 
 Ouvrir http://maymar.localhost:4200 et http://quincaillerie.localhost:4200 : la même application sert les deux boutiques, chacune avec son thème. `outils/essai-vitrine.sh` vérifie en 16 essais qu'elles ne se mélangent jamais ; la CI le lance à chaque modification (`.github/workflows/vitrine.yml`).
