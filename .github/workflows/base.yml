@@ -1,0 +1,68 @@
+# Base de données SkanEcom : migrations et tests pgTAP (isolation entre
+# boutiques, rôles, intégrité, commandes, API). Un test rouge bloque la
+# fusion (docs/cadrage/02-infrastructure.md §5.1).
+#
+# Deux tâches, mêmes tests :
+#   supabase     sur la vraie image Postgres de Supabase (CLI `supabase db start`)
+#   base-simulee sur un Postgres ordinaire avec outils/supabase-simule.sql,
+#                la base locale des développeurs (outils/base-locale.sh).
+# Si seule la seconde passe, la simulation a dérivé de Supabase.
+name: Base de données
+
+on:
+  push:
+    paths:
+      - "supabase/**"
+      - "outils/**"
+      - ".github/workflows/base.yml"
+  pull_request:
+    paths:
+      - "supabase/**"
+      - "outils/**"
+      - ".github/workflows/base.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  supabase:
+    name: Tests sur l'image Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Démarrer la base Supabase (migrations et jeu de démo)
+        run: supabase db start
+
+      - name: Installer pg_prove
+        run: sudo apt-get update -q && sudo apt-get install -y -q libtap-parser-sourcehandler-pgtap-perl
+
+      - name: Tests pgTAP
+        run: pg_prove -d "postgresql://postgres:postgres@127.0.0.1:54322/postgres" --ext .sql -r supabase/tests
+
+  base-simulee:
+    name: Tests sur la base locale simulée
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Installer Postgres 16, pgTAP et pg_prove
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-16 postgresql-16-pgtap libtap-parser-sourcehandler-pgtap-perl
+          sudo systemctl stop postgresql || true
+
+      - name: Base locale (simulation, migrations, jeu de démo)
+        env:
+          PG_BIN: /usr/lib/postgresql/16/bin
+        run: outils/base-locale.sh reinit
+
+      - name: Tests pgTAP
+        run: outils/base-locale.sh tester

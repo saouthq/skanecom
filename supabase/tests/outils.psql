@@ -1,0 +1,198 @@
+-- =====================================================================
+-- Outils communs des tests pgTAP (inclus par chaque fichier : \ir outils.psql)
+-- =====================================================================
+-- Chaque fichier de test tourne dans UNE transaction annulée à la fin : le
+-- jeu d'essai ci-dessous n'existe que le temps du fichier.
+--
+-- Changer d'utilisateur :
+--   reset role; select tests.connecte('proprio_a');   -- membre, client…
+--   reset role; select tests.anonyme();               -- visiteur de la vitrine
+--   reset role; select tests.service();               -- clé service_role
+-- `reset role` revient au superutilisateur, qui contourne la RLS.
+--
+-- Jeu d'essai :
+--   boutique A « essai-a » (active), B « essai-b » (active),
+--   C « essai-suspendue » (suspendue, avec un produit publié) ;
+--   (identifiants distincts de ceux du jeu de démo supabase/seed.sql, que la
+--   CI charge aussi) ;
+--   équipe de A : proprio_a, lecture_a, prepa_a, confirm_a ; de B : proprio_b ;
+--   multi : admin dans A, lecture dans B ; inconnu : connecté, sans rôle ;
+--   client_a : client de A ; client_ab : client de A et de B ;
+--   un invité (sans compte) dans A.
+-- =====================================================================
+
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+
+create schema tests;
+grant usage on schema tests to anon, authenticated, service_role;
+
+create table tests.ids (nom text primary key, id uuid not null default gen_random_uuid());
+grant select on tests.ids to anon, authenticated, service_role;
+
+-- Résultats relevés sous un rôle, comparés ensuite sous le superutilisateur.
+create table tests.vus (qui text, nom_table text, n bigint);
+grant insert, select on tests.vus to anon, authenticated, service_role;
+
+create function tests.id(p_nom text) returns uuid
+language sql stable as $$ select id from tests.ids where nom = p_nom $$;
+
+create function tests.nouvel_id(p_nom text) returns uuid
+language sql as $$ insert into tests.ids (nom) values (p_nom) returning id $$;
+
+create function tests.cree_utilisateur(p_nom text) returns uuid
+language sql as $$
+  insert into auth.users (id, email, raw_user_meta_data)
+  values (tests.nouvel_id(p_nom), p_nom || '@tests.skanecom.local', '{}'::jsonb)
+  returning id
+$$;
+
+create function tests.connecte(p_nom text) returns void
+language plpgsql as $$
+begin
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', tests.id(p_nom), 'role', 'authenticated')::text, true);
+end;
+$$;
+
+create function tests.anonyme() returns void
+language plpgsql as $$
+begin
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role": "anon"}', true);
+end;
+$$;
+
+create function tests.service() returns void
+language plpgsql as $$
+begin
+  perform set_config('role', 'service_role', true);
+  perform set_config('request.jwt.claims', '{"role": "service_role"}', true);
+end;
+$$;
+
+-- Nombre de lignes d'une boutique visibles par le rôle courant, pour CHAQUE
+-- table de public qui porte boutique_id : une table ajoutée demain est
+-- couverte sans toucher aux tests.
+create function tests.lignes_visibles(p_boutique_id uuid)
+returns table (nom_table text, n bigint)
+language plpgsql as $$
+declare
+  t record;
+begin
+  for t in
+    select c.relname
+    from pg_class c
+    join pg_namespace s on s.oid = c.relnamespace
+    join pg_attribute a on a.attrelid = c.oid and a.attname = 'boutique_id' and not a.attisdropped
+    where s.nspname = 'public' and c.relkind in ('r', 'p')
+    order by c.relname
+  loop
+    nom_table := t.relname;
+    execute format('select count(*) from public.%I where boutique_id = $1', t.relname)
+      into n using p_boutique_id;
+    return next;
+  end loop;
+end;
+$$;
+
+grant execute on all functions in schema tests to anon, authenticated, service_role;
+
+
+-- ---------------------------------------------------------------------
+-- Jeu d'essai (écrit en superutilisateur)
+-- ---------------------------------------------------------------------
+insert into plateforme.boutiques (id, slug, nom, statut) values
+  (tests.nouvel_id('A'), 'essai-a',         'Essai A',         'active'),
+  (tests.nouvel_id('B'), 'essai-b',         'Essai B',         'active'),
+  (tests.nouvel_id('C'), 'essai-suspendue', 'Essai suspendue', 'suspendue');
+
+insert into plateforme.domaines (hote, boutique_id, type, principal) values
+  ('essai-a.test',           tests.id('A'), 'personnalise', true),
+  ('www.essai-a.test',       tests.id('A'), 'personnalise', false),
+  ('essai-b.test',           tests.id('B'), 'personnalise', true);
+
+do $$
+begin
+  perform tests.cree_utilisateur(u) from unnest(array[
+    'proprio_a', 'lecture_a', 'prepa_a', 'confirm_a', 'proprio_b', 'multi',
+    'inconnu', 'client_a', 'client_ab', 'admin_plateforme']) u;
+end
+$$;
+
+insert into plateforme.membres (boutique_id, user_id, role) values
+  (tests.id('A'), tests.id('proprio_a'), 'proprietaire'),
+  (tests.id('A'), tests.id('lecture_a'), 'lecture'),
+  (tests.id('A'), tests.id('prepa_a'),   'preparateur'),
+  (tests.id('A'), tests.id('confirm_a'), 'confirmateur'),
+  (tests.id('B'), tests.id('proprio_b'), 'proprietaire'),
+  (tests.id('A'), tests.id('multi'),     'admin'),
+  (tests.id('B'), tests.id('multi'),     'lecture');
+
+insert into plateforme.administrateurs (user_id, role) values (tests.id('admin_plateforme'), 'super_admin');
+
+-- Réglages : A en frais par zone, B avec un préfixe de commande.
+insert into public.reglages (boutique_id, cle, valeur) values
+  (tests.id('A'), 'livraison.mode_frais', '"zone"'),
+  (tests.id('A'), 'commande.prefixe_numero', '"MAY"'),
+  (tests.id('B'), 'commande.prefixe_numero', '"QSF"');
+
+-- Zones
+insert into public.zones_livraison (id, boutique_id, nom_fr, frais_millimes) values
+  (tests.nouvel_id('zone_a'), tests.id('A'), 'Grand Tunis', 6000),
+  (tests.nouvel_id('zone_b'), tests.id('B'), 'Sfax',        5000);
+insert into public.zones_gouvernorats (boutique_id, gouvernorat_code, zone_id) values
+  (tests.id('A'), 'tunis', tests.id('zone_a')),
+  (tests.id('B'), 'sfax',  tests.id('zone_b'));
+
+-- Catalogue : le même slug « valise-cabine » et le même SKU dans A et B.
+insert into public.categories (id, boutique_id, slug, nom_fr, actif) values
+  (tests.nouvel_id('cat_a'),        tests.id('A'), 'valises',        'Valises',  true),
+  (tests.nouvel_id('cat_a_inactive'), tests.id('A'), 'archives',     'Archives', false),
+  (tests.nouvel_id('cat_b'),        tests.id('B'), 'valises',        'Valises',  true),
+  (tests.nouvel_id('cat_c'),        tests.id('C'), 'rayon',          'Rayon',    true);
+
+insert into public.produits (id, boutique_id, categorie_id, slug, nom_fr, publie) values
+  (tests.nouvel_id('produit_a'),           tests.id('A'), tests.id('cat_a'), 'valise-cabine', 'Valise cabine', true),
+  (tests.nouvel_id('produit_a_brouillon'), tests.id('A'), tests.id('cat_a'), 'brouillon',     'Brouillon',     false),
+  (tests.nouvel_id('produit_b'),           tests.id('B'), tests.id('cat_b'), 'valise-cabine', 'Valise cabine B', true),
+  (tests.nouvel_id('produit_c'),           tests.id('C'), tests.id('cat_c'), 'produit-c',     'Produit C',     true);
+
+insert into public.produit_options (boutique_id, produit_id, cle, label_fr) values
+  (tests.id('A'), tests.id('produit_a'), 'couleur', 'Couleur'),
+  (tests.id('B'), tests.id('produit_b'), 'couleur', 'Couleur');
+
+insert into public.variantes (id, boutique_id, produit_id, sku, options, prix_millimes, stock, actif) values
+  (tests.nouvel_id('variante_a'),          tests.id('A'), tests.id('produit_a'),           'VAL-55-NOIR', '{"couleur": "Noir"}',  189000, 5, true),
+  (tests.nouvel_id('variante_a_inactive'), tests.id('A'), tests.id('produit_a'),           'VAL-55-OR',   '{"couleur": "Or"}',    189000, 0, false),
+  (tests.nouvel_id('variante_a_brouillon'), tests.id('A'), tests.id('produit_a_brouillon'), 'BROUILLON-1', '{}',                  1000,   1, true),
+  (tests.nouvel_id('variante_b'),          tests.id('B'), tests.id('produit_b'),           'VAL-55-NOIR', '{"couleur": "Noir"}',  99000,  3, true),
+  (tests.nouvel_id('variante_c'),          tests.id('C'), tests.id('produit_c'),           'C-1',         '{}',                  1000,   1, true);
+
+insert into public.produit_images (boutique_id, produit_id, variante_id, chemin) values
+  (tests.id('A'), tests.id('produit_a'), tests.id('variante_a'), 'essai-a/valise-noire.webp'),
+  (tests.id('B'), tests.id('produit_b'), null,                   'essai-b/valise.webp');
+
+-- Clients : client_ab achète dans A et dans B, avec une fiche dans chacune.
+insert into public.clients (id, boutique_id, user_id, nom, telephone) values
+  (tests.nouvel_id('fiche_client_a'),    tests.id('A'), tests.id('client_a'),  'Client A',    '+21620000001'),
+  (tests.nouvel_id('fiche_client_ab_a'), tests.id('A'), tests.id('client_ab'), 'Client AB',   '+21620000002'),
+  (tests.nouvel_id('fiche_client_ab_b'), tests.id('B'), tests.id('client_ab'), 'Client AB',   '+21620000002'),
+  (tests.nouvel_id('fiche_invite_a'),    tests.id('A'), null,                  'Invité',      '+21620000003');
+
+insert into public.adresses (boutique_id, client_id, nom_destinataire, telephone, ligne1, ville, gouvernorat_code, par_defaut) values
+  (tests.id('A'), tests.id('fiche_client_a'),    'Client A',  '+21620000001', '1 rue de Rome', 'Tunis', 'tunis', true),
+  (tests.id('B'), tests.id('fiche_client_ab_b'), 'Client AB', '+21620000002', '2 rue de Sfax', 'Sfax',  'sfax',  true);
+
+-- Commandes : une par client et par boutique, chacune avec une ligne.
+insert into public.commandes (id, boutique_id, client_id, contact_nom, contact_telephone,
+                              livraison_ligne1, livraison_ville, livraison_gouvernorat) values
+  (tests.nouvel_id('commande_a'),    tests.id('A'), tests.id('fiche_client_a'),    'Client A',  '+21620000001', '1 rue de Rome', 'Tunis', 'tunis'),
+  (tests.nouvel_id('commande_ab_a'), tests.id('A'), tests.id('fiche_client_ab_a'), 'Client AB', '+21620000002', '3 rue Ibn Khaldoun', 'Tunis', 'tunis'),
+  (tests.nouvel_id('commande_ab_b'), tests.id('B'), tests.id('fiche_client_ab_b'), 'Client AB', '+21620000002', '2 rue de Sfax', 'Sfax', 'sfax');
+
+insert into public.commande_lignes (boutique_id, commande_id, variante_id, produit_nom, prix_unitaire_millimes, quantite, total_ligne_millimes) values
+  (tests.id('A'), tests.id('commande_a'),    tests.id('variante_a'), 'Valise cabine',   189000, 1, 189000),
+  (tests.id('A'), tests.id('commande_ab_a'), tests.id('variante_a'), 'Valise cabine',   189000, 1, 189000),
+  (tests.id('B'), tests.id('commande_ab_b'), tests.id('variante_b'), 'Valise cabine B', 99000,  1, 99000);
