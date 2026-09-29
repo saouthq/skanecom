@@ -227,17 +227,22 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
 
   await etape("la veille : le compteur, et l'alerte d'une nouvelle commande", async () => {
     // Un poste où les notifications sont permises ; on garde trace de celles
-    // que la page crée.
+    // que la page crée. L'API du navigateur est remplacée par un témoin : le
+    // Chromium sans tête de la CI (headless shell) refuse toute notification,
+    // permission accordée ou non. Ce qu'on vérifie, c'est ce que la page en
+    // fait : l'état « Alertes activées », puis la bonne notification.
     const veille = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR", permissions: ["notifications"] });
     await veille.addCookies(await ctx.cookies());
     await veille.addInitScript(() => {
-      const N = window.Notification;
       window.__notifs = [];
-      window.Notification = class extends N {
+      window.Notification = class {
+        static get permission() { return "granted"; }
+        static requestPermission() { return Promise.resolve("granted"); }
         constructor(titre, options) {
-          super(titre, options);
+          this.onclick = null;
           window.__notifs.push(`${titre} — ${options?.body ?? ""}`);
         }
+        close() {}
       };
     });
     const p = await veille.newPage();
