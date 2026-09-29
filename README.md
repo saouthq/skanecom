@@ -6,3 +6,4 @@ Boutique en ligne clé en main, en marque blanche, pour les entreprises tunisien
 
 - Cadrage : [`docs/cadrage/`](docs/cadrage/README.md) — PRD, infrastructure, reprise de Maymar, décisions et risques.
 - Prototype : [`prototype/vitrine-workers/RAPPORT.md`](prototype/vitrine-workers/RAPPORT.md) — la vitrine Maymar sur Cloudflare Workers, phase locale réussie.
+- Pour reprendre le développement : [`docs/SUITE-DEV.md`](docs/SUITE-DEV.md).
