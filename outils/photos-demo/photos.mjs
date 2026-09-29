@@ -92,7 +92,7 @@ async function final() {
       mkdirSync(path.dirname(cible), { recursive: true });
       // Recadrage au rapport voulu (hauteur / largeur), puis WebP.
       const recadre = rapport ? ["-resize", `${w}x${Math.round(w * rapport)}^`, "-gravity", gravite, "-extent", `${w}x${Math.round(w * rapport)}`] : ["-resize", `${w}x`];
-      execFileSync("convert", [original, "-auto-orient", "-strip", ...recadre, "-quality", "78", cible]);
+      execFileSync("convert", [original, "-auto-orient", "-colorspace", "sRGB", "-strip", ...recadre, "-unsharp", "0x0.6", "-quality", "78", "-define", "webp:method=6", cible]);
     }
     const qui = p.creator ? (p.creator_url ? `[${p.creator}](${p.creator_url})` : p.creator) : "—";
     credits.push(`| \`${chemin}\` | ${qui} | ${p.license.toUpperCase()} | [${p.source}](${p.foreign_landing_url}) |`);

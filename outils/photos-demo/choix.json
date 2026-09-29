@@ -1,4 +1,436 @@
 {
-  "_": "Photos retenues : { boutique, id Unsplash, chemin de destination sans extension, largeurs }. Modifier ce fichier relance le workflow, qui télécharge les photos en WebP dans supabase/fichiers-demo/ et met à jour CREDITS.md.",
-  "photos": []
+ "_": "Photos retenues (Openverse, CC0 / domaine public) : { id Openverse, chemin de destination sans extension (sous le dossier de la boutique), largeurs, rapport hauteur/largeur, gravité du recadrage }. Chaque largeur donne <chemin>-<largeur>.webp ; la base référence la plus grande, la vitrine en déduit la moitié pour le srcset. Modifier ce fichier relance le workflow « Photos de démonstration ».",
+ "photos": [
+  {
+   "id": "073e5751-e248-4a1d-add4-0bfd7e6d4f69",
+   "chemin": "maison-selma/accueil/hero",
+   "largeurs": [
+    2000,
+    1000
+   ]
+  },
+  {
+   "id": "073e5751-e248-4a1d-add4-0bfd7e6d4f69",
+   "chemin": "maison-selma/accueil/hero-portrait",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25,
+   "gravite": "West"
+  },
+  {
+   "id": "19d0ebd1-cb19-4b82-a331-79bb03b5793b",
+   "chemin": "maison-selma/accueil/palmiers",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "6033e34a-c972-4659-af6f-0fbfed5e8806",
+   "chemin": "maison-selma/produits/robe-bretelles-terracotta-1",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "2e888aff-4151-44f0-8113-4af7f0804e4b",
+   "chemin": "maison-selma/produits/robe-bretelles-terracotta-2",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "62c9ba0c-3538-4ff8-b0e4-c7761fb3a56a",
+   "chemin": "maison-selma/produits/robe-bretelles-terracotta-3",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "8043ea7e-aa5b-411f-b36e-776e239d9855",
+   "chemin": "maison-selma/produits/robe-longue-boheme",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "52a640dc-f545-429a-94d9-bdb0aed5858b",
+   "chemin": "maison-selma/produits/robe-midi-grise",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "57e96074-195d-4392-8a22-298f2965efa4",
+   "chemin": "maison-selma/produits/robe-chemise-vichy",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "53e2fff0-46f7-471c-a08d-65b12b55cad3",
+   "chemin": "maison-selma/produits/robe-longue-satin-rose",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "1b39c651-f54e-473e-8ed0-5cb7fd391349",
+   "chemin": "maison-selma/produits/robe-pois-marine",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "e672d3a0-0d3c-4bfc-8aa3-86b69f97b7ff",
+   "chemin": "maison-selma/produits/combinaison-fleurie",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "11cacf5f-eae2-4c5d-b296-473711a8e720",
+   "chemin": "maison-selma/produits/robe-pull-sable",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "1a01da53-c969-408e-aa50-b44fb7ba5652",
+   "chemin": "maison-selma/produits/pull-laine-olive-1",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "8b2edbbb-a180-4e99-9e79-f377f005f38d",
+   "chemin": "maison-selma/produits/pull-laine-olive-2",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "088eb9ff-50b8-467f-969b-be66288e1b2d",
+   "chemin": "maison-selma/produits/gilet-maille-chine",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "a93f7462-f920-4fd0-872a-2f929c33f2db",
+   "chemin": "maison-selma/produits/pull-cotes-ecru",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "a64c127a-b97c-46d3-ac5e-3613f567c667",
+   "chemin": "maison-selma/produits/chemise-popeline-blanche",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "54f7f37d-f851-4368-872e-44e8c7b4f25a",
+   "chemin": "maison-selma/produits/chemise-lin-ample",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "fa7bf4b9-7d34-4261-ac50-ececac2abc10",
+   "chemin": "maison-selma/produits/polo-pique-marine-1",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "e6163f8c-0435-4ee0-8d0f-930b6b63dfd3",
+   "chemin": "maison-selma/produits/polo-pique-marine-2",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "2c13fd03-056d-4a3a-a409-db4841f12189",
+   "chemin": "maison-selma/produits/blazer-laine",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "cbc65279-7b35-4893-8e97-3c8dd2670ae1",
+   "chemin": "maison-selma/produits/pull-col-rond-marine",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "40b1b1ad-667f-4947-909b-99dfa441f930",
+   "chemin": "maison-selma/produits/derbies-cuir-fauve",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "ec716ff8-ecdb-4ea3-9778-2de6816efc2e",
+   "chemin": "maison-selma/produits/chaussures-cuir-noir",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "3e413e9e-4570-4468-81ed-4579c1332f55",
+   "chemin": "maison-selma/produits/sac-cuir-cognac",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "3c49e881-0ba9-4f73-931d-4ac9c8f723b3",
+   "chemin": "maymar/accueil/aeroport",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25,
+   "gravite": "West"
+  },
+  {
+   "id": "502b1380-51b7-4dc6-bae7-108e8cfe1fd2",
+   "chemin": "maymar/accueil/depart",
+   "largeurs": [
+    2000,
+    1000
+   ]
+  },
+  {
+   "id": "0a4e4448-67fc-4565-8c02-f84b67b147a7",
+   "chemin": "quincaillerie-demo/accueil/chantier",
+   "largeurs": [
+    2000,
+    1000
+   ]
+  },
+  {
+   "id": "2cd0354a-9be1-44cd-b018-dd6fce39b30b",
+   "chemin": "quincaillerie-demo/rayons/perceuses",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 0.75
+  },
+  {
+   "id": "b45f867c-f40f-43d8-8003-35913b4572a3",
+   "chemin": "quincaillerie-demo/rayons/scies",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 0.75
+  },
+  {
+   "id": "64ef2ad9-f2b5-4561-8f01-97732eb3b0e2",
+   "chemin": "quincaillerie-demo/rayons/outillage-a-main",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 0.75
+  },
+  {
+   "id": "6b82da29-7eeb-4279-97c0-ea942849d9ae",
+   "chemin": "quincaillerie-demo/rayons/visserie",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 0.75
+  },
+  {
+   "id": "0454b4b2-d541-45d6-9a95-002f7c8f796f",
+   "chemin": "quincaillerie-demo/rayons/protection",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 0.75
+  },
+  {
+   "id": "8cf42569-36af-4a26-a7b8-c860fa69b974",
+   "chemin": "quincaillerie-demo/produits/perceuse-visseuse",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "1dbb3784-6a01-4e79-8bd4-c800d7d68869",
+   "chemin": "quincaillerie-demo/produits/perceuse-percussion",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "bf73c9b1-ebb0-43a0-b286-1f89570ae7ae",
+   "chemin": "quincaillerie-demo/produits/coffret-forets",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "e69a6f82-b127-4e58-a86d-64474535155f",
+   "chemin": "quincaillerie-demo/produits/forets-metal",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "c817561a-894c-4101-b3cb-9c17b8f8f55f",
+   "chemin": "quincaillerie-demo/produits/embouts-vissage",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "acf01eef-2ee2-485a-a936-3e1550752e80",
+   "chemin": "quincaillerie-demo/produits/scie-circulaire",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "0501e6f8-4711-43b6-854b-8154994a4030",
+   "chemin": "quincaillerie-demo/produits/lame-scie-circulaire",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "d1a2d337-8c91-4943-9e5e-713f52a85433",
+   "chemin": "quincaillerie-demo/produits/coffret-douilles",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "978469b0-03de-486f-a321-23886e04c60b",
+   "chemin": "quincaillerie-demo/produits/jeu-cles-mixtes",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "9306674f-e102-4721-919a-bf17742a5b28",
+   "chemin": "quincaillerie-demo/produits/vis-bois",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "235035ac-d7a3-45cb-867d-481a09cd718e",
+   "chemin": "quincaillerie-demo/produits/vis-placo",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "f669980b-8d07-41f9-aa9c-68300d18ad71",
+   "chemin": "quincaillerie-demo/produits/assortiment-visserie",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "6d191fb4-be7e-435a-8577-04ba3b3c674e",
+   "chemin": "quincaillerie-demo/produits/gants-protection",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  },
+  {
+   "id": "4cbb155a-9ad7-4855-9e53-15b7498017c7",
+   "chemin": "quincaillerie-demo/produits/casque-chantier",
+   "largeurs": [
+    1000,
+    500
+   ],
+   "rapport": 1
+  }
+ ]
 }
