@@ -4,3 +4,4 @@ node_modules/
 .vinext/
 .env*
 .base-locale/
+.outils/

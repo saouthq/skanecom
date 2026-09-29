@@ -35,7 +35,7 @@ select throws_ok(
          tests.id('A'), tests.id('zone_b')),
   '23503', null, 'un gouvernorat de A ne se rattache pas à une zone de B');
 select throws_ok(
-  format($$ insert into public.produit_images (boutique_id, produit_id, variante_id, chemin) values (%L, %L, %L, 'x') $$,
+  format($$ insert into public.produit_images (boutique_id, produit_id, variante_id, chemin) values (%L, %L, %L, 'essai-a/photo.webp') $$,
          tests.id('A'), tests.id('produit_a'), tests.id('variante_b')),
   '23503', null, 'une photo de A ne s''accroche pas à une variante de B');
 

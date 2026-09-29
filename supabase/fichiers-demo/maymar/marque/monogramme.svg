@@ -1,0 +1,8 @@
+<!-- Maymar — Noah (brand) 2026-08. Trace vectoriel, aucun bitmap.
+     Lettres : Young Serif (SIL OFL 1.1), contours convertis en chemins.
+     La couleur suit currentColor : une seule source pour toutes les surfaces. -->
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maymar"
+     viewBox="10 6 100 88" fill="currentColor">
+  <title>Maymar — monogramme</title>
+  <path d="M 10.00 94.00 L 10.00 6.00 L 36.00 6.00 L 60.00 66.00 L 84.00 6.00 L 110.00 6.00 L 110.00 94.00 L 91.00 94.00 L 91.00 75.18 A 15 15 0 1 0 71.00 75.18 L 71.00 94.00 L 49.00 94.00 L 49.00 75.18 A 15 15 0 1 0 29.00 75.18 L 29.00 94.00 Z"/>
+</svg>

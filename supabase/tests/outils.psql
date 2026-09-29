@@ -198,3 +198,8 @@ insert into public.commande_lignes (boutique_id, commande_id, variante_id, produ
   (tests.id('A'), tests.id('commande_a'),    tests.id('variante_a'), 'Valise cabine',   189000, 1, 189000),
   (tests.id('A'), tests.id('commande_ab_a'), tests.id('variante_a'), 'Valise cabine',   189000, 1, 189000),
   (tests.id('B'), tests.id('commande_ab_b'), tests.id('variante_b'), 'Valise cabine B', 99000,  1, 99000);
+
+-- Thèmes : A garde le thème n°1 avec son accent, B prend le thème technique.
+insert into public.themes (boutique_id, code, couleurs, textes) values
+  (tests.id('A'), 'premium_sobre',       '{"accent": "#8A6224"}', '{"resume_fr": "Bagages choisis pour durer."}'),
+  (tests.id('B'), 'catalogue_technique', '{"accent": "#FEBD17", "encre": "#1A1A1A"}', '{}');

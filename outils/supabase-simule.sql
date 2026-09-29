@@ -8,7 +8,8 @@
 --     possède la base et joue les migrations et les tests. Une migration qui
 --     demanderait un droit de superutilisateur échoue donc aussi en local ;
 --   · les rôles `anon`, `authenticated` et `service_role` (ce dernier
---     contourne la RLS), dont `postgres` est membre ;
+--     contourne la RLS), dont `postgres` est membre, et `authenticator`, le
+--     rôle de connexion de l'API (outils/api-locale.sh) ;
 --   · `auth.users` réduite aux colonnes que nous utilisons ;
 --   · `auth.uid()`, `auth.role()` et `auth.jwt()`, qui lisent les claims du
 --     jeton dans `request.jwt.claims`, exactement comme PostgREST les pose ;
@@ -31,10 +32,16 @@ begin
   if not exists (select 1 from pg_roles where rolname = 'service_role') then
     create role service_role nologin noinherit bypassrls;
   end if;
+  -- Le rôle sous lequel l'API (PostgREST) se connecte, avant de prendre le
+  -- rôle du jeton : anon, authenticated ou service_role.
+  if not exists (select 1 from pg_roles where rolname = 'authenticator') then
+    create role authenticator login noinherit;
+  end if;
 end
 $$;
 
 grant anon, authenticated, service_role to postgres;
+grant anon, authenticated, service_role to authenticator;
 
 create schema if not exists extensions authorization postgres;
 grant usage on schema extensions to anon, authenticated, service_role;

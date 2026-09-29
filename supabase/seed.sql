@@ -158,3 +158,40 @@ from (values
   ('00000000-0000-4000-8003-000000000012', 'VBF-4X40-B', '{"dimension":"4 × 40 mm","conditionnement":"Boîte de 200"}', 22000::bigint, null::bigint, 25, 1000, 2::smallint),
   ('00000000-0000-4000-8003-000000000012', 'VBF-5X60-U', '{"dimension":"5 × 60 mm","conditionnement":"Unité"}', 250::bigint,    null::bigint, 500,    9, 3::smallint)
 ) as v(produit_id, sku, options, prix_millimes, prix_barre_millimes, stock, poids_grammes, position);
+
+
+-- ---------------------------------------------------------------------
+-- Thèmes. Les fichiers sont dans supabase/fichiers-demo/, rangés comme sur
+-- R2 (`<slug>/…`), et servis en local par outils/api-locale.sh.
+-- ---------------------------------------------------------------------
+-- Maymar : thème n°1, sa propre charte (couleurs par défaut du thème).
+insert into public.themes (boutique_id, code, logo_chemin, logo_ratio, monogramme_chemin, favicon_chemin, textes, sections) values
+  ('00000000-0000-4000-8000-000000000001', 'premium_sobre',
+   'maymar/marque/logo.svg', 7.497, 'maymar/marque/monogramme.svg', 'maymar/marque/favicon.svg',
+   '{"resume_fr": "Bagages et accessoires choisis pour durer. Stock réel, livraison dans toute la Tunisie.",
+     "seo_titre_fr": "Maymar — bagages et accessoires, paiement à la livraison",
+     "seo_description_fr": "Bagages et accessoires en stock à Tunis. Paiement à la livraison, partout en Tunisie.",
+     "origine_fr": "Tunis",
+     "politique_retour_fr": "Après acceptation, un échange reste possible sous 7 jours, article non utilisé."}',
+   '[{"type": "hero",
+      "textes": {"etiquette_fr": "Bagages et accessoires",
+                 "titre_fr": "Des pièces\nqui tiennent.",
+                 "chapo_fr": "Une sélection courte, choisie pour durer. Vous voyez le stock réel, vous payez au livreur.",
+                 "cartel_fr": "Valise rigide quatre roues — une pièce de notre stock, à Tunis.",
+                 "image_alt_fr": "Valise rigide à quatre roues, coque jaune, photographiée dans notre stock à Tunis"},
+      "image": {"chemin": "maymar/accueil/valise-jaune-1200.webp", "detouree": true}},
+     {"type": "rayons",
+      "textes": {"etiquette_fr": "Le registre", "titre_fr": "Le catalogue, rayon par rayon."}},
+     {"type": "selection", "nombre": 4,
+      "textes": {"etiquette_fr": "En boutique", "titre_fr": "Ce qui est en boutique aujourd''hui."}},
+     {"type": "comment_ca_marche"}]');
+
+-- Quincaillerie : thème n°2 « catalogue technique », jaune et noir, sans
+-- logo (le nom s'affiche) et sections par défaut du thème.
+insert into public.themes (boutique_id, code, couleurs, polices, textes) values
+  ('00000000-0000-4000-8000-000000000002', 'catalogue_technique',
+   '{"fond": "#F7F7F5", "surface": "#FFFFFF", "surface_2": "#EFEFEA", "filet": "#DADAD3", "filet_fort": "#B5B5AC",
+     "encre": "#16181B", "encre_doux": "#4A4F57", "accent": "#8C6A00", "accent_clair": "#F2B705"}',
+   '{"titres": "archivo"}',
+   '{"resume_fr": "Outillage, visserie et quincaillerie pour les particuliers et les pros. Retrait en magasin ou livraison.",
+     "origine_fr": "Sfax"}');
