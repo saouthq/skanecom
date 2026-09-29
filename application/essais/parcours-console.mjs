@@ -541,6 +541,80 @@ await etape("la vitrine montre le catalogue importé", async () => {
   await vitrine.close();
 });
 
+/* Le dossier de photos d'un fournisseur, zippé : nommées d'après les
+   références, une sans référence, et le fichier caché que laisse macOS. */
+const photo = (nom) => demo(`quincaillerie-demo/produits/${nom}-1000.webp`);
+const ZIP_PHOTOS = Buffer.from(zipSync({
+  "photos-fournisseur/PP18-KIT.webp": photo("perceuse-percussion"),
+  "photos-fournisseur/PP18-KIT-2.webp": photo("perceuse-visseuse"),
+  "photos-fournisseur/PP18-SEULE.webp": photo("perceuse-percussion"),
+  "photos-fournisseur/DT125-U.webp": photo("lame-scie-circulaire"),
+  "photos-fournisseur/sans-reference.webp": photo("casque-chantier"),
+  "__MACOSX/photos-fournisseur/._PP18-KIT.webp": strToU8("métadonnées"),
+}));
+const deposeZip = (p) => p.locator(".pi-entree").setInputFiles({ name: "photos-fournisseur.zip", mimeType: "application/zip", buffer: ZIP_PHOTOS });
+
+await etape("les photos à l'import : le rapport avant l'envoi", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/import`, { waitUntil: "networkidle" });
+  await clic(page, page.getByRole("link", { name: "Déposer les photos" }));
+  await page.waitForURL(new RegExp(`/boutiques/${SLUG}/import/photos$`));
+  await page.waitForLoadState("networkidle");
+  verifie((await page.locator(".sous-tete").innerText()).includes("2 produits, dont 2 sans photo"), "la page compte les produits sans photo");
+  await deposeZip(page);
+  await page.locator(".pi-bilan").waitFor();
+  const bilan = (await page.locator(".pi-bilan-texte").innerText()).replace(/\s+/g, " ");
+  verifie(bilan.includes("4 photos pour 2 produits") && bilan.includes("1 fichier sans produit"),
+    `le .zip lu dans le navigateur, rapproché par les références : « ${bilan} »`);
+  const perceuse = (await page.locator(".pi-groupe", { hasText: "Perceuse" }).innerText()).replace(/\s+/g, " ");
+  verifie(perceuse.includes("3 photos") && perceuse.includes("Kit 2 batteries") && perceuse.includes("Machine seule"),
+    `chaque photo attitrée à sa déclinaison : « ${perceuse} »`);
+  await page.locator(".pi-details summary", { hasText: "sans produit" }).click();
+  verifie((await page.locator(".pi-details", { hasText: "sans produit" }).innerText()).includes("sans-reference.webp"),
+    "le fichier sans produit est nommé, avec de quoi le renommer");
+  verifie(!(await page.locator(".pi-rapport").innerText()).includes("._PP18-KIT"), "le fichier caché de macOS est écarté");
+  await capture(page, "console-photos-rapport", true);
+});
+
+await etape("les photos à l'import : l'envoi, puis la vitrine", async () => {
+  await clic(page, page.getByRole("button", { name: "Envoyer 4 photos" }));
+  await page.locator("#t-pi-fin").waitFor({ timeout: 60_000 });
+  verifie((await page.locator("#t-pi-fin").innerText()).includes("4 photos ajoutées à 2 produits"), "4 photos ajoutées à 2 produits");
+  await page.waitForLoadState("networkidle");
+  verifie((await page.locator(".pi-lot").first().innerText()).includes("4 photos · 2 produits"), "l'envoi figure dans les envois précédents, compté");
+  const vitrine = await ctx.newPage();
+  await vitrine.goto(VITRINE + "/categorie/disques", { waitUntil: "networkidle" });
+  const src = await vitrine.locator("main img").first().getAttribute("src");
+  verifie(Boolean(src) && decodeURIComponent(src).includes("/produits/"), "la vitrine montre le disque avec sa photo");
+  await capture(vitrine, "vitrine-photos-importees");
+  await vitrine.close();
+});
+
+await etape("les photos à l'import : renvoyer le même dossier ne double rien ; retirer l'envoi", async () => {
+  await clic(page, page.getByRole("button", { name: "Déposer d'autres photos" }));
+  await deposeZip(page);
+  await page.locator(".pi-bilan").waitFor();
+  verifie((await page.locator(".pi-bilan-texte").innerText()).includes("2 produits ont déjà des photos")
+    && await page.getByRole("button", { name: "Rien à envoyer" }).isDisabled(), "le même dossier une seconde fois : rien à envoyer");
+  await clic(page, page.locator(".pi-completer input"));
+  verifie(await page.getByRole("button", { name: "Envoyer 4 photos" }).count() === 1, "« compléter aussi » les proposerait de nouveau, en connaissance de cause");
+  await clic(page, page.getByRole("button", { name: "Tout retirer" }));
+  await clic(page, page.locator(".pi-lot").first().locator("summary"));
+  await clic(page, page.getByRole("button", { name: "Oui, retirer" }));
+  await page.waitForURL(/ok=/);
+  verifie((await page.getByRole("status").innerText()).includes("4 photos retirées de 2 produits"), `« ${await page.getByRole("status").innerText()} »`);
+  verifie((await page.locator(".pi-lot").first().innerText()).includes("Retiré"), "l'envoi est marqué retiré, avec son auteur");
+  verifie((await page.locator(".sous-tete").innerText()).includes("dont 2 sans photo"), "les deux produits sont de nouveau sans photo");
+  // Le dossier, de nouveau : la boutique garde ses photos pour la suite.
+  await deposeZip(page);
+  await page.locator(".pi-bilan").waitFor();
+  await clic(page, page.getByRole("button", { name: "Envoyer 4 photos" }));
+  await page.locator("#t-pi-fin").waitFor({ timeout: 60_000 });
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  verifie(journal.filter((l) => l.includes("Photos importées")).length === 2 && journal.some((l) => l.includes("Photos d'un import retirées")),
+    "au journal : un envoi, une ligne ; le retrait aussi");
+});
+
 await etape("la liste de mise en place", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
   const carte = page.locator("section:has(#t-mise-en-place)");

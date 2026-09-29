@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIMITE_LIGNES } from "@/lib/console/import";
+import Link from "next/link";
+import { Icone } from "@/components/console/Icone";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   return { title: `Import · ${(await params).slug}` };
@@ -40,6 +42,18 @@ export default async function Import({ params, searchParams }: {
         </div>
         <button type="submit" className="btn btn-primaire">Vérifier le fichier</button>
       </form>
+
+      <section className="carte mt-5" aria-labelledby="t-photos">
+        <div className="carte-tete">
+          <div>
+            <h2 id="t-photos" className="carte-titre-icone"><Icone nom="photo" /> Les photos des produits</h2>
+            <p>Le dossier de photos du fournisseur (ou son .zip), nommées d&apos;après les références : la console les range sous leurs produits.</p>
+          </div>
+        </div>
+        <div className="carte-pied">
+          <Link href={`/boutiques/${slug}/import/photos`} className="btn btn-second">Déposer les photos</Link>
+        </div>
+      </section>
 
       <section className="carte mt-5" aria-labelledby="t-format">
         <h2 id="t-format">Le format</h2>

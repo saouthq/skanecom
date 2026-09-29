@@ -267,6 +267,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis l'accès support** (migration 25, `20260929102400_console_support.sql`, 35 tests dans `supabase/tests/26_support.sql`) : `plateforme.acces_support` (titulaire, mode `lecture` ou `admin`, motif, échéance, fermeture ; au plus un accès non refermé par administrateur et par boutique) ; `private.supports_ouverts()` (accès ouverts de l'utilisateur connecté, en aal2, titulaire toujours administrateur), repris par `private.est_membre` et `private.mes_boutiques` ; `mes_acces()` rend aussi les accès support (échéance, motif) ; `console_ouvrir_support`, `console_fermer_support`, `console_acces_support` ; `gestion_acces_support` et `gestion_fermer_support` pour le propriétaire. Tracé au journal (`support.ouvert`, `support.ferme`).
 
+**Puis les photos à l'import** (migration 26, `20260929102500_console_photos_import.sql`, 20 tests dans `supabase/tests/27_photos_import.sql`) : `produit_images.lot_import` et `plateforme.lots_photos` (un lot par envoi de la console, tracé une fois au journal, retirable) ; `console_references(boutique)` (le catalogue à rapprocher : produits, photos, références des déclinaisons), `console_ajouter_photo(acteur, boutique, lot, produit, déclinaison, chemin, texte)`, `console_lots_photos(boutique)` et `console_retirer_lot_photos(acteur, boutique, lot)`, qui rend les fichiers à effacer.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

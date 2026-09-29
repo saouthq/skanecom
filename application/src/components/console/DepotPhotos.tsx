@@ -30,7 +30,7 @@ function versBlob(canvas: HTMLCanvasElement, type: string, qualite: number): Pro
 
 /** La photo réduite ; l'originale si le navigateur ne sait pas la lire
  *  (le serveur dira alors ce qui ne va pas). */
-async function reduire(fichier: File): Promise<Blob> {
+export async function reduire(fichier: File): Promise<Blob> {
   let image: ImageBitmap;
   try {
     image = await createImageBitmap(fichier, { imageOrientation: "from-image" });
@@ -55,7 +55,7 @@ async function reduire(fichier: File): Promise<Blob> {
 
 const rien = () => () => {};
 
-function nomPour(fichier: File, blob: Blob): string {
+export function nomPour(fichier: File, blob: Blob): string {
   const base = fichier.name.replace(/\.[^.]+$/, "") || "photo";
   return blob === fichier ? fichier.name : `${base}.${blob.type === "image/webp" ? "webp" : "jpg"}`;
 }

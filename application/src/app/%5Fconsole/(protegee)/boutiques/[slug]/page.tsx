@@ -32,6 +32,8 @@ const ACTIONS: Record<string, string> = {
   "mise_en_place.faite": "Étape de mise en place faite",
   "mise_en_place.a_faire": "Étape de mise en place à refaire",
   "catalogue.importer": "Catalogue importé",
+  "catalogue.photos": "Photos importées",
+  "catalogue.photos_retirees": "Photos d'un import retirées",
   "equipe.ajouter": "Membre invité",
   "equipe.modifier": "Accès modifié",
   "equipe.lien": "Lien d'accès remis",
@@ -144,7 +146,8 @@ export default async function FicheBoutique({ params, searchParams }: {
                           : j.action === "theme.image" && j.cible ? (REGLES[j.cible as Emplacement]?.titre ?? j.cible)
                           : j.action.startsWith("module.") && j.cible ? (LIBELLES_MODULES[j.cible] ?? j.cible)
                           : j.action.startsWith("mise_en_place.") && j.cible ? (ETAPES_MISE_EN_PLACE[j.cible as CleEtape]?.titre ?? j.cible)
-                          : j.action.startsWith("support.") && j.cible ? (MODES_SUPPORT[j.cible as ModeSupport]?.titre ?? j.cible) : (j.cible ?? "")}</td>
+                          : j.action.startsWith("support.") && j.cible ? (MODES_SUPPORT[j.cible as ModeSupport]?.titre ?? j.cible)
+                          : j.action.startsWith("catalogue.photos") ? "" : (j.cible ?? "")}</td>
                         <td>
                           {j.acteur ? (
                             <span className="inline-flex items-center gap-2 whitespace-nowrap">
