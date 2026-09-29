@@ -261,6 +261,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis le retrait en magasin** (migration 22, `20260929102100_vitrine_retrait.sql`, 25 tests dans `supabase/tests/24_retrait.sql`) : `commandes.mode_livraison` (`domicile` ou `retrait`) ; l'adresse de livraison n'est plus obligatoire qu'à domicile (contrainte `commandes_adresse_a_domicile`) ; réglages `retrait.*` du module `retrait_magasin` (bornés par `private.valide_reglages_retrait`) ; `private.magasin(boutique)` et `private.retrait_propose(boutique)` ; `private.chiffre_commande` prend le mode (retrait : gratuit) ; `devis_commande(boutique, lignes, gouvernorat, mode)` ; `passer_commande`, `commande_suivie`, `gestion_liste_commandes`, `gestion_commande`, `gestion_bordereaux` et `gestion_export` reprises pour le mode. Une commande en retrait suit le cycle d'une livraison : « expédiée » y est « prête au retrait », « livrée » « retirée », « refusée » « non retirée ».
 
+**Puis « mes commandes »** (migration 23, `20260929102200_vitrine_mes_commandes.sql`, tests dans `02_isolation.sql` et `06_api.sql`) : les policies de lecture du client sur `commandes`, `commande_lignes`, `commande_evenements` et `clients` sont retirées (elles exposaient les notes et l'historique de l'équipe) ; `mes_commandes(boutique)` rend au client connecté ses commandes, sans rien de ce que l'équipe en écrit. Le carnet d'adresses (`adresses`) reste lisible par son propriétaire.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

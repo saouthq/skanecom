@@ -65,8 +65,9 @@ select is(public.inscrire_client(tests.id('A'), 'Nouveau nom', '+21620000009'), 
   'une deuxième inscription dans la même boutique met à jour la même fiche');
 select throws_ok(format($$ select public.inscrire_client(%L, 'x', 'x') $$, tests.id('C')), 'P0002', null,
   'on ne devient pas client d''une boutique suspendue');
-select results_eq('select nom, nb_commandes from public.clients', $$ values ('Nouveau nom'::text, 0) $$,
-  'l''acheteur lit sa fiche, et seulement la sienne');
+reset role;
+select results_eq(format('select nom, nb_commandes from public.clients where id = %L', :'fiche_id'), $$ values ('Nouveau nom'::text, 0) $$,
+  'la fiche porte le nouveau nom (l''acheteur ne la lit plus lui-même : migration 23)');
 
 -- ---------------------------------------------------------------------
 -- Mouvements de stock

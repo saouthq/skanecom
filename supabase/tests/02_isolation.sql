@@ -8,7 +8,7 @@
 begin;
 \ir outils.psql
 
-select plan(24);
+select plan(26);
 
 -- ---------------------------------------------------------------------
 -- Relevés : qui voit combien de lignes de quelle boutique
@@ -119,24 +119,36 @@ select throws_ok(
 
 
 -- ---------------------------------------------------------------------
--- Clients : chacun ne voit que ce qui est à lui
+-- Clients : chacun ne voit que ce qui est à lui, par mes_commandes
+-- (migration 23) — jamais les tables de l'équipe, où sont ses notes
 -- ---------------------------------------------------------------------
-reset role; select tests.connecte('client_a');
-select results_eq('select id from public.commandes', format('select %L::uuid', tests.id('commande_a')),
+reset role;
+select (select numero from public.commandes where id = tests.id('commande_a')) as num_a,
+       (select numero from public.commandes where id = tests.id('commande_ab_a')) as num_ab_a,
+       (select numero from public.commandes where id = tests.id('commande_ab_b')) as num_ab_b \gset
+select tests.connecte('client_a');
+select results_eq($$ select c ->> 'numero' from jsonb_array_elements(public.mes_commandes(tests.id('A'))) c $$,
+  format('select %L::text', :'num_a'),
   'client_a ne voit que sa commande');
-select results_eq('select id from public.clients', format('select %L::uuid', tests.id('fiche_client_a')),
-  'client_a ne voit que sa fiche client');
+select is((select count(*) from public.commandes) + (select count(*) from public.clients)
+          + (select count(*) from public.commande_lignes) + (select count(*) from public.commande_evenements), 0::bigint,
+  'client_a ne lit ni les commandes, ni les fiches, ni les lignes, ni l''historique : ce que l''équipe en écrit reste à l''équipe');
 select throws_ok(
   format($$ insert into public.adresses (boutique_id, client_id, nom_destinataire, telephone, ligne1, ville, gouvernorat_code)
             values (%L, %L, 'x', 'x', 'x', 'x', 'tunis') $$, tests.id('A'), tests.id('fiche_client_ab_a')),
   '42501', null, 'client_a n''ajoute pas d''adresse sur la fiche d''un autre client');
 
 reset role; select tests.connecte('client_ab');
-select set_eq('select id from public.commandes',
-  format('select unnest(array[%L, %L]::uuid[])', tests.id('commande_ab_a'), tests.id('commande_ab_b')),
+select set_eq($$ select c ->> 'numero' from jsonb_array_elements(public.mes_commandes(tests.id('A')) || public.mes_commandes(tests.id('B'))) c $$,
+  format('select unnest(array[%L, %L]::text[])', :'num_ab_a', :'num_ab_b'),
   'client_ab voit ses commandes dans A et dans B, et seulement elles');
-select is((select count(*) from public.commande_lignes), 2::bigint,
+select is((select sum(jsonb_array_length(c -> 'lignes'))::int from jsonb_array_elements(public.mes_commandes(tests.id('A')) || public.mes_commandes(tests.id('B'))) c), 2,
   'client_ab voit les lignes de ses deux commandes, et seulement elles');
+select ok(not exists (select 1 from jsonb_array_elements(public.mes_commandes(tests.id('A'))) c
+                       where c ? 'note_interne' or c ? 'refus_commentaire' or c ? 'motif_annulation' or c ? 'historique'),
+  'mes_commandes ne rend rien de ce que l''équipe écrit');
+reset role; select tests.anonyme();
+select throws_ok($$ select public.mes_commandes(tests.id('A')) $$, '42501', null, 'un visiteur sans compte n''a pas de commandes à lire');
 
 select * from finish();
 rollback;

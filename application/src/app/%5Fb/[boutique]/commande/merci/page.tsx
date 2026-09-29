@@ -114,7 +114,10 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
                 </li>
               ))}
             </ol>
-            <a className="btn btn-primaire merci-continuer" href="/">{t.commande.continuer}</a>
+            <p className="merci-actions">
+              <a className="btn btn-primaire merci-continuer" href="/">{t.commande.continuer}</a>
+              {cadre.reglages["compte.obligatoire"] !== false ? <a className="btn-lien" href="/compte">{t.compte.suivre}</a> : null}
+            </p>
           </div>
 
           <div className="merci-recap">

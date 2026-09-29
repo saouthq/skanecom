@@ -268,6 +268,29 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await capture(page, "quincaillerie-merci");
   });
 
+  await etape("mes commandes : la commande, où la retirer ; puis un autre numéro", async () => {
+    await clic(page, page.locator(".merci-actions").getByRole("link", { name: "Suivre mes commandes" }));
+    await page.waitForURL(/\/compte$/);
+    await page.locator(".compte-carte").first().waitFor({ timeout: 8000 });
+    const carte = await page.locator(".compte-carte").first().innerText();
+    verifie(carte.includes(`QDS-${annee}-00001`) && carte.includes("À retirer : Route de Tunis, km 3, Sfax")
+      && carte.includes("La boutique vous appelle pour la confirmer"),
+      "sa commande, où la retirer, et où elle en est");
+    verifie((await page.locator(".compte-identite").innerText()).includes("+216 98 765 432"), "connecté avec le numéro confirmé au tunnel");
+    await capture(page, "quincaillerie-mes-commandes");
+    // Un autre numéro, sans commande : la connexion par SMS, puis la liste vide.
+    await clic(page, page.getByRole("button", { name: "Se déconnecter" }));
+    await page.locator(".compte-connexion").waitFor();
+    await clic(page, page.getByLabel("Téléphone"));
+    await tape(page, "22 333 444");
+    await clic(page, page.getByRole("button", { name: "Recevoir le code" }));
+    await page.getByLabel("Code reçu par SMS").waitFor();
+    await tape(page, await codeRecu("22333444"));
+    await page.locator(".compte-vide").waitFor({ timeout: 8000 });
+    verifie((await page.locator(".compte-vide").innerText()).includes("Aucune commande"), "un numéro sans commande : la page le dit, et propose le catalogue");
+    await capture(page, "quincaillerie-mes-commandes-vide");
+  });
+
   await etape("les conditions de vente, gabarit technique", async () => {
     await page.goto(Q + "/conditions-de-vente", { waitUntil: "networkidle" });
     verifie((await page.locator("main").innerText()).includes("offerte à partir de 500,000"), "le seuil de livraison offerte de la quincaillerie");

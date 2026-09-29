@@ -22,6 +22,7 @@
 @import "./technique.css";
 @import "./tunnel.css";
 @import "./legal.css";
+@import "./compte.css";
 
 :root {
   --theme-marge: 1rem;      /* gouttière mobile : 16 px */

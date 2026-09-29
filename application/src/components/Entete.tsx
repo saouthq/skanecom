@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bulle, Loupe } from "./Icones";
+import { Bulle, Loupe, Personne } from "./Icones";
 import { BoutonPanier } from "./BoutonPanier";
 import { NavRayons } from "./NavRayons";
 import { EnteteDefilant, MenuMobile, type EntreeMenu } from "./EnteteClient";
@@ -46,6 +46,12 @@ function racines(cadre: Cadre): Record<string, string> {
   return sortie;
 }
 
+/** Les acheteurs ont-ils un compte (numéro confirmé par SMS) ? C'est le cas
+ *  tant que la boutique n'accepte pas les commandes en invité. */
+function avecComptes(cadre: Cadre): boolean {
+  return cadre.reglages["compte.obligatoire"] !== false;
+}
+
 function entreesMenu(cadre: Cadre): EntreeMenu[] {
   return [
     ...cadre.racines.map((c) => ({
@@ -58,6 +64,7 @@ function entreesMenu(cadre: Cadre): EntreeMenu[] {
     })),
     { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue },
     { cle: "recherche", href: "/recherche", nom: t.commun.rechercher },
+    ...(avecComptes(cadre) ? [{ cle: "compte", href: "/compte", nom: t.compte.lien }] : []),
   ];
 }
 
@@ -105,6 +112,11 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
             <Link className="icone-btn" href="/recherche" aria-label={t.commun.rechercher}>
               <Loupe />
             </Link>
+            {avecComptes(cadre) ? (
+              <Link className="icone-btn cache-mobile" href="/compte" aria-label={t.compte.lien}>
+                <Personne />
+              </Link>
+            ) : null}
             <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} />
           </div>
         </div>
@@ -154,6 +166,12 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
                 <Bulle taille={22} />
                 <span>{t.annonce.conseil}</span>
               </a>
+            ) : null}
+            {avecComptes(cadre) ? (
+              <Link className="te-action cache-mobile" href="/compte">
+                <Personne taille={22} />
+                <span>{t.compte.lien}</span>
+              </Link>
             ) : null}
             <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} />
           </div>

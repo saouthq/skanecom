@@ -74,6 +74,8 @@ verifie "commander exige une page de la boutique (même origine)" \
 verifie "sans compte, la commande est refusée (compte obligatoire par défaut)" \
   'poste $S /commande/passer "{\"cle\":\"essai-http-sans-compte-01\",\"lignes\":[{\"variante_id\":\"$VARIANTE_SELMA\",\"quantite\":1}],\"contact\":{\"nom\":\"Essai\",\"telephone\":\"20123456\"},\"livraison\":{\"ligne1\":\"1 rue de Rome\",\"ville\":\"Tunis\",\"gouvernorat\":\"tunis\"},\"total\":1}" oui | grep -q "\"raison\":\"compte\""'
 verifie "la page de fin ne montre rien sans le jeton de la commande" 'corps $S /commande/merci | grep -q "Aucune commande récente"'
+verifie "mes commandes : jamais en cache ni indexée, rien de personnel dans la page servie" \
+  'e=$(entetes $S /compte); echo "$e" | grep -qi "^cache-control: private, no-store" && echo "$e" | grep -qi "^x-robots-tag: noindex" && corps $S /compte | grep -q "Mes commandes" && ! corps $S /compte | grep -q "+216"'
 
 echo
 if [ "$echecs" -eq 0 ]; then echo "Vitrine : tous les essais passent."; else echo "Vitrine : $echecs échec(s)."; exit 1; fi

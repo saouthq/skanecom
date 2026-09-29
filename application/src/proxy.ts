@@ -80,9 +80,10 @@ export async function proxy(request: NextRequest) {
       const reponse = NextResponse.rewrite(
         new URL(`/_b/${resolution.slug}${pathname === "/" ? "" : pathname}${search}`, request.url),
       );
-      // Le tunnel de commande est propre à chaque acheteur : jamais en cache,
-      // jamais indexé, et l'adresse ne part pas chez un site tiers.
-      if (pathname === "/commande" || pathname.startsWith("/commande/")) {
+      // Le tunnel de commande et le compte sont propres à chaque acheteur :
+      // jamais en cache, jamais indexés, et l'adresse ne part pas chez un
+      // site tiers.
+      if (pathname === "/commande" || pathname.startsWith("/commande/") || pathname === "/compte") {
         reponse.headers.set("cache-control", "private, no-store");
         reponse.headers.set("x-robots-tag", "noindex, nofollow");
         reponse.headers.set("referrer-policy", "same-origin");

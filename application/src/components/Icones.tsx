@@ -148,6 +148,15 @@ export function Bulle({ taille = 18, className }: Props) {
   );
 }
 
+export function Personne({ taille = 20, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
+    </svg>
+  );
+}
+
 export function Grille({ taille = 18, className }: Props) {
   return (
     <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={1.7}>
