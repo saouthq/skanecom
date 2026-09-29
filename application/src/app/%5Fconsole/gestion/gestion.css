@@ -432,6 +432,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .rg-gouv:has(option[value=""]:checked) label::after { content: "·"; margin-inline-start: .375rem; color: var(--ui-ambre); font-weight: 700; }
 
 .rg-indispo { opacity: .75; cursor: default; background: var(--ui-survol); }
+.console .rg-manque { background: var(--ui-ambre-fond); border-color: var(--ui-ambre-bord); color: #78350F; }
 .rg-indispo b .ui-etat { margin-inline-start: .375rem; vertical-align: 1px; }
 .rg-lignes { display: grid; gap: .125rem; }
 .rg-aside { align-self: stretch; }

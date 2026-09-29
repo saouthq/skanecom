@@ -104,6 +104,19 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
     await capture(page, "selma-commande-remplie-pleine", true);
   });
 
+  await etape("les conditions de vente, acceptées explicitement", async () => {
+    await clic(page, page.locator(".tunnel-bouton"));
+    await pause(300);
+    verifie((await page.locator(".tunnel-alerte").innerText()).includes("acceptez les conditions de vente"), "sans la case cochée, la commande ne part pas");
+    verifie(await page.evaluate(() => document.activeElement?.getAttribute("type")) === "checkbox", "le focus va à la case à cocher");
+    const conditions = page.locator(".tunnel-conditions");
+    verifie((await conditions.innerText()).includes("rétracter dans les 10 jours ouvrables"), "le délai de rétractation est rappelé");
+    verifie(await conditions.locator("a[href='/conditions-de-vente']").count() === 1 && await conditions.locator("a[href='/confidentialite']").count() === 1,
+      "les conditions et la politique de confidentialité sont à un clic");
+    await capture(page, "selma-commande-conditions");
+    await clic(page, conditions.locator("input[type=checkbox]"));
+  });
+
   await etape("confirmer : la page de fin", async () => {
     await clic(page, page.locator(".tunnel-bouton"));
     await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
@@ -123,6 +136,32 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
   await etape("revenir sur /commande : panier vide", async () => {
     await page.goto(S + "/commande", { waitUntil: "networkidle" });
     verifie((await page.locator(".tunnel-vide").innerText()).includes("Votre panier est vide"), "le tunnel dit que le panier est vide");
+  });
+
+  await etape("les pages légales, depuis le pied de page", async () => {
+    await page.goto(S + "/", { waitUntil: "networkidle" });
+    const pied = page.locator("footer .pied-legal");
+    verifie((await pied.locator("a").allInnerTexts()).join(" · ") === "Conditions de vente · Mentions légales · Confidentialité",
+      "le pied de page mène aux trois pages");
+    await clic(page, pied.getByRole("link", { name: "Conditions de vente" }));
+    await page.waitForURL(/\/conditions-de-vente$/);
+    await page.waitForLoadState("networkidle");
+    await pause(1200); // (le défilement en douceur remonte la page)
+    verifie(await page.evaluate(() => window.scrollY) < 10, `la page s'ouvre en haut (${await page.evaluate(() => window.scrollY)})`);
+    const cgv = await page.locator("main").innerText();
+    verifie((await page.locator("h1").innerText()) === "Conditions de vente", "les conditions de vente");
+    verifie(cgv.includes("10 jours ouvrables") && cgv.includes("loi n° 2000-83"), "la rétractation, selon la loi n° 2000-83");
+    verifie(cgv.includes("à la livraison, en espèces") && cgv.includes("Les frais de livraison sont de 7,000"), "ce que fait vraiment la boutique : paiement à la livraison, 7,000 TND de livraison");
+    verifie(cgv.includes("refuser le colis"), "le refus à la livraison est dit");
+    await capture(page, "selma-conditions-de-vente");
+    await capture(page, "selma-conditions-de-vente-pleine", true);
+    await page.goto(S + "/mentions-legales", { waitUntil: "networkidle" });
+    verifie((await page.locator("main").innerText()).includes("Maison Selma") && (await page.locator("main").innerText()).includes("SkanEcom"),
+      "les mentions légales : l'éditeur et la plateforme");
+    await page.goto(S + "/confidentialite", { waitUntil: "networkidle" });
+    const conf = await page.locator("main").innerText();
+    verifie(conf.includes("2004-63") && conf.includes("Union européenne"), "la confidentialité : la loi, et où sont les données");
+    verifie(!conf.includes("INPDP), sous la référence"), "aucune déclaration INPDP n'est annoncée tant qu'elle n'est pas renseignée");
   });
   await ctx.close();
 }
@@ -165,6 +204,13 @@ console.log("\n== 2. Maison Selma, sur téléphone ==");
     note("INFO  ", `focus après l'envoi : ${actif}`);
     await capture(page, "selma-telephone-erreurs", true);
   });
+
+  await etape("une page légale sur téléphone", async () => {
+    await page.goto(S + "/conditions-de-vente", { waitUntil: "networkidle" });
+    const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    verifie(!deborde, "rien ne déborde en largeur");
+    await capture(page, "selma-telephone-conditions");
+  });
   await ctx.close();
 }
 
@@ -192,12 +238,19 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await remplitAdresse(page, { nom: "Karim Trabelsi", adresse: "Route de Gabès km 4", ville: "Sfax", gouvernorat: "Sfax" });
     note("INFO  ", `livraison : ${(await page.locator(".tunnel-livraison").innerText()).replace(/\s+/g, " ")}`);
     await capture(page, "quincaillerie-commande-remplie");
+    await clic(page, page.locator(".tunnel-conditions input[type=checkbox]"));
     await clic(page, page.locator(".tunnel-bouton"));
     await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
     await page.locator(".merci").waitFor();
     await pause(400);
     verifie((await page.locator(".merci").innerText()).includes(`QDS-${annee}-00001`), "numéro de commande de la quincaillerie (son préfixe, son compteur)");
     await capture(page, "quincaillerie-merci");
+  });
+
+  await etape("les conditions de vente, gabarit technique", async () => {
+    await page.goto(Q + "/conditions-de-vente", { waitUntil: "networkidle" });
+    verifie((await page.locator("main").innerText()).includes("offerte à partir de 500,000"), "le seuil de livraison offerte de la quincaillerie");
+    await capture(page, "quincaillerie-conditions-de-vente");
   });
   await ctx.close();
 }

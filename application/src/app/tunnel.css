@@ -120,6 +120,16 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 .tunnel-rappel { margin: -.25rem 0 0; }
 
 .tunnel-envoi { display: grid; gap: .75rem; padding-block-start: 1.25rem; border-block-start: 1px solid var(--theme-filet); }
+
+/* L'accord aux conditions de vente : une case franche, les liens lisibles. */
+.tunnel-conditions { display: grid; gap: .375rem; margin-block-end: .25rem; }
+.tunnel-conditions label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: .75rem; font-size: .9375rem; line-height: 1.45; cursor: pointer; }
+.tunnel-conditions input { inline-size: 20px; block-size: 20px; margin: .0625rem 0 0; accent-color: var(--theme-encre); cursor: pointer; }
+.tunnel-conditions a { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.tunnel-conditions a:hover { text-decoration-thickness: 2px; }
+.tunnel-conditions .legende { margin: 0; padding-inline-start: 2rem; }
+.tunnel-conditions .champ-erreur { padding-inline-start: 2rem; }
+.tunnel-conditions[data-invalide] input { outline: 2px solid var(--theme-erreur); outline-offset: 2px; }
 .tunnel-bouton { justify-content: space-between; min-block-size: 58px; padding-inline: 1.5rem; font-size: .9375rem; }
 .tunnel-bouton .prix .dev { color: inherit; opacity: .75; }
 .tunnel-bouton[aria-busy] { justify-content: center; }

@@ -1,0 +1,89 @@
+/* ============================================================================
+   LES PAGES LÉGALES — conditions de vente, mentions légales, confidentialité
+   (components/PageLegale.tsx). Communes aux deux gabarits : elles prennent
+   leurs couleurs, leurs polices et leurs arrondis dans les jetons du thème.
+
+   Un texte long qui se lit : une colonne de 68 caractères, des sections
+   numérotées, un sommaire qui reste à portée sur grand écran.
+   ========================================================================== */
+
+.legal-page { padding-block: 2.5rem 4rem; }
+@media (min-width: 1100px) { .legal-page { padding-block: 4rem 6rem; } }
+
+.legal-tete { padding-block-end: 2rem; border-block-end: 1px solid var(--theme-filet); }
+.legal-tete > * { max-inline-size: 48rem; }
+.legal-surtitre { margin: 0 0 .75rem; font-size: .8125rem; font-weight: 500; color: var(--theme-encre-doux); }
+.legal-tete h1 { margin: 0; font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.75rem); line-height: 1.02; letter-spacing: -.02em; }
+.legal-version { margin: 1rem 0 0; font-size: .8125rem; color: var(--theme-encre-doux); }
+.legal-intro { margin-block-start: 1.25rem; font-size: 1.0625rem; line-height: 1.6; color: var(--theme-encre); max-inline-size: 60ch; }
+.legal-intro p { margin: 0; }
+
+.legal-corps { display: grid; gap: 2rem; padding-block-start: 2rem; }
+@media (min-width: 1000px) {
+  .legal-corps { grid-template-columns: 15rem minmax(0, 1fr); gap: 4rem; padding-block-start: 3rem; }
+}
+
+.legal-sommaire { align-self: start; }
+@media (min-width: 1000px) { .legal-sommaire { position: sticky; inset-block-start: 6.5rem; } }
+.legal-sommaire-titre { margin: 0 0 .75rem; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.legal-sommaire ol { display: grid; gap: .125rem; margin: 0; padding: 0; list-style: none; }
+.legal-sommaire a {
+  display: flex; gap: .625rem; padding: .375rem .5rem; margin-inline: -.5rem; border-radius: var(--theme-radius-doux);
+  font-size: .875rem; line-height: 1.35; color: var(--theme-encre-doux); transition: color .15s, background-color .15s;
+}
+.legal-sommaire a span { font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--theme-encre-doux) 70%, transparent); }
+.legal-sommaire a:hover { color: var(--theme-encre); background: var(--theme-surface-2, color-mix(in srgb, var(--theme-encre) 4%, transparent)); }
+/* Sur téléphone, le sommaire se range en une bande de puces. */
+@media (max-width: 999px) {
+  .legal-sommaire ol { display: flex; flex-wrap: wrap; gap: .375rem; }
+  .legal-sommaire a { margin: 0; padding: .375rem .75rem; border: 1px solid var(--theme-filet); border-radius: 999px; font-size: .8125rem; }
+  .legal-sommaire a span { display: none; }
+}
+
+.legal-texte { display: grid; gap: 2.75rem; max-inline-size: 44rem; }
+.legal-texte section { scroll-margin-block-start: 6.5rem; }
+.legal-texte h2 {
+  display: flex; align-items: baseline; gap: .875rem; margin: 0 0 1rem;
+  font-size: clamp(1.375rem, 1.2rem + .6vw, 1.75rem); line-height: 1.15; letter-spacing: -.01em;
+}
+.legal-num { font-family: var(--theme-font-texte); font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--theme-accent); letter-spacing: .02em; }
+.legal-texte p, .legal-texte li { font-size: 1rem; line-height: 1.7; color: var(--theme-encre); max-inline-size: 68ch; }
+.legal-texte p { margin: 0 0 .875rem; }
+.legal-texte p:last-child { margin-block-end: 0; }
+.legal-texte a { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.legal-texte b { font-weight: 600; }
+
+.legal-liste, .legal-etapes { display: grid; gap: .5rem; margin: 0 0 1rem; padding-inline-start: 1.25rem; }
+.legal-etapes { counter-reset: etape; list-style: none; padding-inline-start: 0; }
+.legal-etapes li { position: relative; padding-inline-start: 2.25rem; counter-increment: etape; }
+.legal-etapes li::before {
+  content: counter(etape); position: absolute; inset-inline-start: 0; inset-block-start: .125rem;
+  display: grid; place-items: center; inline-size: 1.5rem; block-size: 1.5rem; border-radius: 999px;
+  background: var(--theme-encre); color: var(--theme-fond); font-size: .75rem; font-weight: 600;
+}
+
+.legal-fiche { display: grid; margin: 0; border-block-start: 1px solid var(--theme-filet); }
+.legal-fiche > div { display: grid; gap: .125rem 1.5rem; padding-block: .75rem; border-block-end: 1px solid var(--theme-filet); }
+@media (min-width: 600px) { .legal-fiche > div { grid-template-columns: 13rem minmax(0, 1fr); } }
+.legal-fiche dt { font-size: .875rem; color: var(--theme-encre-doux); }
+.legal-fiche dd { margin: 0; font-size: 1rem; }
+
+.legal-table { inline-size: 100%; margin: .5rem 0 1rem; border-collapse: collapse; font-size: .9375rem; }
+.legal-table caption { caption-side: top; text-align: start; padding-block-end: .5rem; font-size: .8125rem; color: var(--theme-encre-doux); }
+.legal-table th, .legal-table td { padding: .625rem .75rem .625rem 0; text-align: start; border-block-end: 1px solid var(--theme-filet); }
+.legal-table thead th { font-size: .75rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.legal-table tbody th { font-weight: 500; }
+.legal-table td { font-variant-numeric: tabular-nums; }
+
+.legal-pied { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.5rem; margin-block-start: 4rem; padding-block-start: 1.5rem; border-block-start: 1px solid var(--theme-filet); }
+.legal-pied p { margin: 0; font-size: .8125rem; color: var(--theme-encre-doux); }
+.legal-pied ul { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 0; padding: 0; list-style: none; }
+.legal-pied a { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+
+/* Le gabarit technique : des titres francs, sans empattement. */
+html[data-gabarit="technique"] .legal-tete h1 { font-weight: 800; font-stretch: 80%; letter-spacing: -.01em; }
+html[data-gabarit="technique"] .legal-texte h2 { font-weight: 700; }
+html[data-gabarit="technique"] .legal-num { color: var(--theme-encre-doux); }
+
+/* Le pied de toutes les pages : les trois liens légaux. */
+.pied-legal { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; }

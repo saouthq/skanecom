@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Gabarit } from "@/components/Gabarit";
 import { Tunnel } from "@/components/Tunnel";
 import { cadre as chargeCadre } from "@/lib/boutique";
+import { identiteLegale } from "@/lib/legal";
 import { supabase } from "@/lib/supabase";
 import { t } from "@/lib/i18n";
 
@@ -40,6 +41,7 @@ export default async function Commande({ params }: { params: Promise<{ boutique:
         rappel={cadre.livraison.rappel}
         cod={cadre.livraison.cod}
         gouvernorats={(gouvernorats ?? []).map((g) => ({ code: g.code as string, nom: g.nom_fr as string }))}
+        retractationJours={identiteLegale(cadre).retractationJours}
       />
     </Gabarit>
   );

@@ -65,6 +65,17 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
     { cle: "contact.whatsapp", genre: "numero" },
     { cle: "contact.telephone", genre: "numero" },
   ],
+  legal: [
+    { cle: "legal.raison_sociale", genre: "texte" },
+    { cle: "legal.forme_juridique", genre: "texte" },
+    { cle: "legal.adresse", genre: "texte" },
+    { cle: "legal.identifiant_rne", genre: "texte" },
+    { cle: "legal.matricule_fiscal", genre: "texte" },
+    { cle: "legal.email", genre: "texte" },
+    { cle: "legal.retractation_jours", genre: "entier" },
+    { cle: "legal.retour_frais", genre: "choix" },
+    { cle: "legal.inpdp_reference", genre: "texte" },
+  ],
 };
 
 export const TITRES_SECTIONS: Record<string, string> = {
@@ -72,6 +83,7 @@ export const TITRES_SECTIONS: Record<string, string> = {
   livraison: "Livraison",
   paiement: "Paiement",
   vitrine: "Vitrine et contact",
+  legal: "Informations légales",
 };
 
 /** « 21 612 345 » → « 21621612345 » : chiffres seuls, indicatif tunisien
@@ -144,6 +156,15 @@ const LIBELLES_COURTS: Record<string, string> = {
   "catalogue.afficher_prix_barres": "Prix barrés",
   "contact.whatsapp": "WhatsApp",
   "contact.telephone": "Téléphone",
+  "legal.raison_sociale": "Raison sociale",
+  "legal.forme_juridique": "Forme juridique",
+  "legal.adresse": "Adresse du siège",
+  "legal.identifiant_rne": "Identifiant RNE",
+  "legal.matricule_fiscal": "Matricule fiscal",
+  "legal.email": "Courriel",
+  "legal.retractation_jours": "Rétractation",
+  "legal.retour_frais": "Frais de retour",
+  "legal.inpdp_reference": "Déclaration INPDP",
 };
 
 function lisible(cle: string, v: unknown): string {
@@ -153,6 +174,8 @@ function lisible(cle: string, v: unknown): string {
   if (cle === "livraison.seuil_gratuite_millimes") return Number(v) > 0 ? `${formateMontant(Number(v))} TND` : "jamais";
   if (cle.endsWith("_millimes")) return `${formateMontant(Number(v ?? 0))} TND`;
   if (cle === "commande.max_en_attente") return Number(v) > 0 ? String(v) : "sans limite";
+  if (cle === "legal.retractation_jours") return `${v} jours ouvrables`;
+  if (cle === "legal.retour_frais") return v === "boutique" ? "offerts par la boutique" : "à la charge du client";
   if (typeof v === "boolean") return v ? "oui" : "non";
   return v === "" || v === null || v === undefined ? "vide" : String(v);
 }

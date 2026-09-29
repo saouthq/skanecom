@@ -38,10 +38,10 @@ export type Devis = {
 /** Les raisons de refus de la base, plus deux de la vitrine. */
 export type Raison =
   | "boutique" | "cle" | "panier" | "contact" | "adresse" | "compte" | "stock" | "total"
-  | "en_attente" | "bloque" | "paiement" | "reseau" | "inconnue";
+  | "en_attente" | "bloque" | "paiement" | "conditions" | "reseau" | "inconnue";
 
 const RAISONS: Raison[] = [
-  "boutique", "cle", "panier", "contact", "adresse", "compte", "stock", "total", "en_attente", "bloque", "paiement",
+  "boutique", "cle", "panier", "contact", "adresse", "compte", "stock", "total", "en_attente", "bloque", "paiement", "conditions",
 ];
 
 export function raisonDe(indice: string | null | undefined): Raison {

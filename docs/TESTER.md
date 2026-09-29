@@ -68,7 +68,7 @@ outils/essayer.sh
 
 **Maymar** : l'accueil, puis la fiche « Valise rigide ABS 4 roues » : choisir Grande 75 cm et Bordeaux — cette combinaison est épuisée, la fiche le dit et le bouton se désactive. Une valeur épuisée dans toutes ses combinaisons reste visible mais barrée : la taille M du combishort (Maison Selma), les forets de 10 mm (quincaillerie).
 
-**Commander** (les trois boutiques) : dans le panier, **Commander**. Saisir un numéro tunisien (par exemple 20 123 456) et « Recevoir le code » : aucun SMS ne part, le code s'écrit dans `.outils/sms.log` (`tail -f .outils/sms.log` dans un autre terminal). Taper les 6 chiffres confirme le numéro ; choisir le gouvernorat fait apparaître les frais et le délai ; « Confirmer la commande » mène à la page de fin (numéro de commande, appel de confirmation, montant à régler au livreur).
+**Commander** (les trois boutiques) : dans le panier, **Commander**. Saisir un numéro tunisien (par exemple 20 123 456) et « Recevoir le code » : aucun SMS ne part, le code s'écrit dans `.outils/sms.log` (`tail -f .outils/sms.log` dans un autre terminal). Taper les 6 chiffres confirme le numéro ; choisir le gouvernorat fait apparaître les frais et le délai ; cocher « J'ai lu et j'accepte les conditions de vente », puis « Confirmer la commande » mène à la page de fin (numéro de commande, appel de confirmation, montant à régler au livreur).
 
 **Sur téléphone** : dans Chrome ou Edge, F12 puis l'icône téléphone (« Toggle device toolbar »), choisir un modèle et recharger : menu en tiroir, galerie à faire glisser, barre d'achat collante en bas de la fiche. (Un vrai téléphone ne peut pas joindre la vitrine : elle reste sur ta machine.)
 
@@ -83,7 +83,7 @@ outils/essayer.sh
 Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
 
 ```bash
-outils/base-locale.sh tester                   # 462 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients)
+outils/base-locale.sh tester                   # 474 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales)
 outils/essai-vitrine.sh                        # 25 essais : les boutiques ne se mélangent jamais, le tunnel n'est jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)

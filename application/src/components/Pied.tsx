@@ -4,15 +4,16 @@ import { Billets, Bulle, Camion, Magasin, Retour } from "./Icones";
 import { champ, t } from "@/lib/i18n";
 import { texte } from "@/lib/theme";
 import { lienConseil } from "@/lib/faits";
+import { PAGES_LEGALES } from "@/lib/legal";
 import type { Cadre } from "@/lib/boutique";
 
 /* ============================================================================
    PIED DE PAGE — un par gabarit.
 
    Deux règles tenues ici, contre l'habitude :
-   1. AUCUN lien mort : pas de « Conditions de vente » ni de « Mentions
-      légales » tant que ces pages n'existent pas. Les colonnes de service
-      portent des FAITS, et ces faits viennent des réglages, jamais du code.
+   1. AUCUN lien mort : chaque lien mène à une page qui existe. Les colonnes
+      de service portent des FAITS, et ces faits viennent des réglages, jamais
+      du code ; les pages légales (lib/legal.ts) aussi.
    2. Les rayons listés sont les rayons RÉELS de la boutique.
    ========================================================================== */
 
@@ -42,6 +43,11 @@ function Droits({ cadre }: { cadre: Cadre }) {
   return (
     <>
       <span>{t.pied.droits(new Date().getFullYear(), cadre.boutique.nom, texte(cadre.theme.textes, "origine") || undefined)}</span>
+      <nav className="pied-legal" aria-label={t.pied.legal}>
+        {PAGES_LEGALES.map((p) => (
+          <Link key={p.chemin} href={p.chemin}>{p.titre}</Link>
+        ))}
+      </nav>
       <span>{t.pied.devise}</span>
     </>
   );

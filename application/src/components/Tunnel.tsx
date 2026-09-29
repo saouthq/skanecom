@@ -73,6 +73,7 @@ export function Tunnel({
   rappel,
   cod,
   gouvernorats,
+  retractationJours,
 }: {
   gabarit: CodeTheme;
   boutiqueId: string;
@@ -81,6 +82,7 @@ export function Tunnel({
   rappel: boolean;
   cod: boolean;
   gouvernorats: Gouvernorat[];
+  retractationJours: number;
 }) {
   const id = useId();
   const router = useRouter();
@@ -90,6 +92,8 @@ export function Tunnel({
   const [alerte, setAlerte] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [recapOuvert, setRecapOuvert] = useState(false);
+  const [accepte, setAccepte] = useState(false);
+  const refConditions = useRef<HTMLInputElement>(null);
 
   // Le devis de la base.
   const [devis, setDevis] = useState<Devis | null>(null);
@@ -289,6 +293,9 @@ export function Tunnel({
       case "contact":
       case "adresse":
         return setAlerte(message);
+      case "conditions":
+        setAccepte(false);
+        return setAlerte(t.commande.conditionsRequises);
       default:
         return setAlerte(t.commande.erreur);
     }
@@ -302,6 +309,12 @@ export function Tunnel({
     if (premiere) {
       setAlerte(t.commande.aCorriger);
       refs.current[premiere]?.focus();
+      return;
+    }
+    // L'accord explicite aux conditions de vente : la base le revérifie.
+    if (!accepte) {
+      setAlerte(t.commande.conditionsRequises);
+      refConditions.current?.focus();
       return;
     }
     if (!devis || !devis.complet || devis.total_millimes === null) {
@@ -322,7 +335,7 @@ export function Tunnel({
         body: JSON.stringify({
           cle: cleDeCommande(boutique, cleLignes),
           lignes,
-          contact: { nom: champs.nom.trim(), telephone },
+          contact: { nom: champs.nom.trim(), telephone, accepte_conditions: accepte },
           livraison: {
             ligne1: champs.ligne1.trim(),
             ligne2: champs.ligne2.trim() || null,
@@ -626,6 +639,26 @@ export function Tunnel({
         </fieldset>
 
         <div className="tunnel-envoi">
+          <div className="tunnel-conditions" data-invalide={tentee && !accepte ? "" : undefined}>
+            <label>
+              <input
+                type="checkbox"
+                ref={refConditions}
+                checked={accepte}
+                onChange={(e) => setAccepte(e.target.checked)}
+                aria-invalid={tentee && !accepte ? true : undefined}
+                aria-describedby={`${id}-conditions-aide ${id}-conditions-erreur`}
+              />
+              <span>
+                {t.commande.conditionsAvant}{" "}
+                <a href="/conditions-de-vente" target="_blank" rel="noopener">{t.commande.conditionsLien}</a>{" "}
+                {t.commande.conditionsEt}{" "}
+                <a href="/confidentialite" target="_blank" rel="noopener">{t.commande.confidentialiteLien}</a>.
+              </span>
+            </label>
+            <p id={`${id}-conditions-aide`} className="legende">{t.commande.retractation(retractationJours)}</p>
+            <p id={`${id}-conditions-erreur`} className="champ-erreur">{tentee && !accepte ? t.commande.conditionsManquantes : ""}</p>
+          </div>
           <button type="submit" className="btn btn-primaire btn-bloc tunnel-bouton" disabled={envoi || !cod} aria-busy={envoi || undefined}>
             <span>{envoi ? t.commande.envoi : t.commande.confirmer}</span>
             {devis?.total_millimes != null && !envoi ? <Prix millimes={devis.total_millimes} /> : null}

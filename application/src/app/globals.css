@@ -10,7 +10,8 @@
    4. editorial.css et technique.css — chaque gabarit, sous
                       `html[data-gabarit="…"]` : l'un ne déborde jamais sur
                       l'autre ;
-   5. tunnel.css    — la commande et sa page de fin, retouchées par gabarit.
+   5. tunnel.css    — la commande et sa page de fin, retouchées par gabarit ;
+      legal.css     — les pages légales (conditions, mentions, confidentialité).
    ========================================================================== */
 
 @import "tailwindcss";
@@ -20,6 +21,7 @@
 @import "./editorial.css";
 @import "./technique.css";
 @import "./tunnel.css";
+@import "./legal.css";
 
 :root {
   --theme-marge: 1rem;      /* gouttière mobile : 16 px */

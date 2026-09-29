@@ -6,6 +6,7 @@ import { formateMontant } from "@/lib/prix";
 import { quand } from "@/lib/gestion/libelles";
 import { PEUT_MODIFIER } from "@/lib/gestion/catalogue";
 import { lignesJournal, montantChamp, type EtatReglages, type Reglage } from "@/lib/gestion/reglages";
+import { CHAMPS_LEGAUX } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Réglages" };
 
@@ -97,6 +98,7 @@ export default async function Reglages({
   const konnect = r.get("paiement.konnect_actif");
   const maintenant = new Date();
   const prefixe = String(v("commande.prefixe_numero") ?? "");
+  const manquants = CHAMPS_LEGAUX.filter((c) => !String(v(c.cle) ?? "").trim()).map((c) => c.libelle);
 
   return (
     <>
@@ -348,6 +350,75 @@ export default async function Reglages({
                 <Pied modifie={modifie} />
               </form>
             </Section>
+
+            {/* ---------------- Informations légales ---------------- */}
+            <Section id="legal" icone="fichier" titre="Informations légales"
+              description="Elles composent les mentions légales, les conditions de vente et la politique de confidentialité de la boutique, que l'acheteur accepte en commandant.">
+              <form action={action} method="post">
+                <input type="hidden" name="section" value="legal" />
+                <fieldset className="pile rg-corps" disabled={!modifie}>
+                  {manquants.length ? (
+                    <p className="message rg-manque">
+                      À compléter avant d&apos;ouvrir : {manquants.join(", ")}. Tant qu&apos;elles manquent, ces lignes sont absentes des pages légales.
+                    </p>
+                  ) : (
+                    <p className="message message-succes">L&apos;identité légale est complète.</p>
+                  )}
+                  <div className="grille-champs">
+                    <div className="champ">
+                      <label htmlFor="raison_sociale">Raison sociale</label>
+                      <input id="raison_sociale" name="legal.raison_sociale" defaultValue={String(v("legal.raison_sociale") ?? "")} maxLength={300} placeholder="Ex. Maymar SARL" />
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="forme_juridique">Forme juridique <span className="discret">(facultatif)</span></label>
+                      <input id="forme_juridique" name="legal.forme_juridique" defaultValue={String(v("legal.forme_juridique") ?? "")} maxLength={300} placeholder="SARL, SUARL, entreprise individuelle…" />
+                    </div>
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="adresse_legale">Adresse du siège</label>
+                    <input id="adresse_legale" name="legal.adresse" defaultValue={String(v("legal.adresse") ?? "")} maxLength={300} placeholder="Ex. 12 rue de Marseille, 1000 Tunis" />
+                  </div>
+                  <div className="grille-champs">
+                    <div className="champ">
+                      <label htmlFor="rne">Identifiant unique (RNE)</label>
+                      <input id="rne" name="legal.identifiant_rne" defaultValue={String(v("legal.identifiant_rne") ?? "")} maxLength={300} />
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="matricule">Matricule fiscal</label>
+                      <input id="matricule" name="legal.matricule_fiscal" defaultValue={String(v("legal.matricule_fiscal") ?? "")} maxLength={300} />
+                    </div>
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="email_legal">Courriel de la boutique</label>
+                    <input id="email_legal" name="legal.email" type="email" defaultValue={String(v("legal.email") ?? "")} maxLength={300} placeholder="contact@maboutique.tn" />
+                    <span className="aide">Pour les réclamations, la rétractation et les demandes sur les données personnelles.</span>
+                  </div>
+                  <div className="grille-champs">
+                    <div className="champ">
+                      <label htmlFor="retractation">Délai de rétractation <span className="discret">jours ouvrables</span></label>
+                      <input id="retractation" name="legal.retractation_jours" type="number" min={10} max={60} defaultValue={Number(v("legal.retractation_jours") ?? 10)} />
+                      <span className="aide">Dix au moins (loi n° 2000-83), à compter de la réception.</span>
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="retour_frais">Frais de retour</label>
+                      <select id="retour_frais" name="legal.retour_frais" className="entree" defaultValue={String(v("legal.retour_frais") ?? "client")}>
+                        <option value="client">À la charge du client (la règle)</option>
+                        <option value="boutique">Offerts par la boutique</option>
+                      </select>
+                      <span className="aide">En cas de rétractation.</span>
+                    </div>
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="inpdp">Référence de la déclaration INPDP <span className="discret">(une fois faite)</span></label>
+                    <input id="inpdp" name="legal.inpdp_reference" defaultValue={String(v("legal.inpdp_reference") ?? "")} maxLength={300} />
+                  </div>
+                  <p className="aide rg-fixe">
+                    <Icone nom="alerte" taille={14} /> Modèle proposé par SkanEcom : faites relire vos pages légales par votre conseil avant d&apos;ouvrir la boutique.
+                  </p>
+                </fieldset>
+                <Pied modifie={modifie} />
+              </form>
+            </Section>
           </div>
 
           <aside className="pile rg-aside">
@@ -378,6 +449,7 @@ export default async function Reglages({
                   ["gouvernorats", "Gouvernorats", "domaine"],
                   ["paiement", "Paiement", "billet"],
                   ["vitrine", "Vitrine et contact", "boutique"],
+                  ["legal", "Informations légales", "fichier"],
                   ["journal", "Journal", "journal"],
                 ].map(([id, titre, icone]) => (
                   <li key={id}>

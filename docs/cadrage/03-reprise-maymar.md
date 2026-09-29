@@ -245,6 +245,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les clients** (migration 14, `20260929101300_gestion_clients.sql`, 22 tests dans `supabase/tests/16_clients.sql`) : la policy d'UPDATE direct des fiches clients est retirée (les compteurs de refus ne se touchent plus) ; `gestion_liste_clients` (filtres, recherche par numéro, compteurs), `gestion_client` (par identifiant ou par numéro : chiffres, commandes, adresses, journal), `gestion_confiance_client` (normal, surveillé, bloqué ; motif exigé, journal d'audit), `gestion_note_client`.
 
+**Puis les pages légales et le consentement** (migration 15, `20260929101400_vitrine_legal.sql`, 12 tests dans `supabase/tests/17_legal.sql`) : réglages publics `legal.*` (identité légale, rétractation bornée à 10 jours ouvrables au moins par un trigger, frais de retour, référence INPDP) ; colonne `commandes.conditions_acceptees` ; `passer_commande` redéfinie (même signature) : elle exige `contact.accepte_conditions = true` (indice « conditions ») et garde le modèle, le délai et la date.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

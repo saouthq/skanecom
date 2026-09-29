@@ -16,8 +16,9 @@ grant insert, select on tests.resultats to anon, authenticated, service_role;
 create function tests.panier(p_variante uuid, p_quantite integer) returns jsonb
 language sql as $$ select jsonb_build_array(jsonb_build_object('variante_id', p_variante, 'quantite', p_quantite)) $$;
 
+-- (l'acheteur a coché « j'accepte les conditions de vente » : migration 15)
 create function tests.contact(p_telephone text) returns jsonb
-language sql as $$ select jsonb_build_object('nom', 'Amel Ben Salah', 'telephone', p_telephone) $$;
+language sql as $$ select jsonb_build_object('nom', 'Amel Ben Salah', 'telephone', p_telephone, 'accepte_conditions', true) $$;
 
 create function tests.adresse(p_gouvernorat text default 'tunis') returns jsonb
 language sql as $$ select jsonb_build_object('ligne1', '12 rue de Marseille', 'ville', 'Tunis', 'gouvernorat', p_gouvernorat) $$;

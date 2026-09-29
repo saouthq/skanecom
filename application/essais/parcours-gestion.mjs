@@ -636,6 +636,34 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie(await fraisPour("sfax") === 7000 && await fraisPour("tunis", 320000) === 7000, "de nouveau le même tarif partout, jamais offert");
   });
 
+  await etape("les informations légales, jusqu'aux pages de la vitrine", async () => {
+    const legal = section("legal");
+    verifie((await legal.innerText()).includes("À compléter avant d'ouvrir"), "ce qui manque est signalé");
+    await legal.locator("#retractation").fill("5");
+    const avant = page.url();
+    await clic(page, legal.getByRole("button", { name: "Enregistrer" }));
+    await pause(500);
+    verifie(await legal.locator("#retractation").evaluate((e) => e.validity.rangeUnderflow) && page.url() === avant,
+      "moins de 10 jours de rétractation : le formulaire ne part pas (et la base refuserait : 17_legal.sql)");
+    await section("legal").locator("#raison_sociale").fill("Maymar SARL");
+    await section("legal").locator("#adresse_legale").fill("Avenue Habib Bourguiba, 1000 Tunis");
+    await section("legal").locator("#email_legal").fill("contact@maymar.test");
+    await section("legal").locator("#retractation").fill("14");
+    await section("legal").locator("#retour_frais").selectOption("boutique");
+    await envoie(section("legal").getByRole("button", { name: "Enregistrer" }));
+    verifie((await ok()).includes("Réglages enregistrés"), `« ${await ok()} »`);
+    verifie((await section("legal").innerText()).includes("identifiant RNE, matricule fiscal"), "il reste l'identifiant RNE et le matricule fiscal");
+    const vitrine = await ctx.newPage();
+    await vitrine.goto(`${t.adresse("maymar.localhost")}/mentions-legales`, { waitUntil: "networkidle" });
+    const mentions = await vitrine.locator("main").innerText();
+    verifie(mentions.includes("Maymar SARL") && mentions.includes("Avenue Habib Bourguiba"), "les mentions légales de la vitrine les reprennent");
+    await vitrine.goto(`${t.adresse("maymar.localhost")}/conditions-de-vente`, { waitUntil: "networkidle" });
+    const cgv = await vitrine.locator("main").innerText();
+    verifie(cgv.includes("14 jours ouvrables") && cgv.includes("pris en charge par la boutique") && cgv.includes("contact@maymar.test"),
+      "les conditions de vente aussi : 14 jours, retour offert, le courriel");
+    await vitrine.close();
+  });
+
   /* ---------------- Les clients ---------------- */
   await etape("les clients : qui soigner, de qui se méfier", async () => {
     await clic(page, page.locator(".app-cote").getByRole("link", { name: "Clients" }));
