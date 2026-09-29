@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
-# API locale SkanEcom : PostgREST (le moteur de l'API de Supabase) devant la
-# base locale, plus un relais qui l'expose sous /rest/v1 comme Supabase.
-# L'application tourne alors contre le vrai schéma, sans Docker.
+# API locale SkanEcom : PostgREST (le moteur de l'API de Supabase) et GoTrue
+# (son serveur d'authentification) devant la base locale, plus un relais qui
+# les expose sous /rest/v1 et /auth/v1 comme Supabase. L'application tourne
+# alors contre le vrai schéma et la vraie authentification, sans Docker.
 #
-#   outils/api-locale.sh demarrer   télécharge PostgREST au besoin, démarre l'API
-#                                   et écrit les clés dans .outils/api-locale.env
+#   outils/api-locale.sh demarrer   télécharge PostgREST et GoTrue au besoin,
+#                                   démarre l'API, crée l'administrateur de
+#                                   développement de la console et écrit les
+#                                   clés dans .outils/api-locale.env
 #   outils/api-locale.sh arreter    arrête l'API
+#
+# Console locale : http://console.localhost:4200, administrateur
+# admin@skanecom.test, mot de passe « console-locale-skanecom » (base locale
+# seulement). La double authentification se règle à la première connexion.
 #
 # Prérequis : la base locale (outils/base-locale.sh reinit) et Node.
 # Adresse : http://127.0.0.1:54321 (comme `supabase start`).
@@ -21,6 +28,9 @@ EMPREINTE=9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c
 PORT_BASE=${BASE_LOCALE_PORT:-54322}
 BASE=${BASE_LOCALE_NOM:-skanecom}
 SECRET_DEV="secret-de-developpement-skanecom-local-uniquement"
+ADMIN_EMAIL=admin@skanecom.test
+ADMIN_MDP=console-locale-skanecom
+. "$RACINE/outils/gotrue.sh"
 
 mkdir -p "$OUTILS"
 
@@ -44,7 +54,7 @@ jeton() {
 }
 
 arreter() {
-  for p in postgrest relais; do
+  for p in postgrest gotrue relais; do
     if [ -f "$OUTILS/$p.pid" ]; then kill "$(cat "$OUTILS/$p.pid")" 2> /dev/null || true; rm -f "$OUTILS/$p.pid"; fi
   done
 }
@@ -63,6 +73,16 @@ server-port = 54330
 CONF
   setsid "$OUTILS/postgrest" "$OUTILS/postgrest.conf" > "$OUTILS/postgrest.log" 2>&1 < /dev/null &
   echo $! > "$OUTILS/postgrest.pid"
+  telecharger_gotrue
+  (
+    gotrue_env "$PORT_BASE" "$BASE"
+    export GOTRUE_API_HOST=127.0.0.1 GOTRUE_API_PORT=54340
+    export GOTRUE_EXTERNAL_EMAIL_ENABLED=true GOTRUE_MAILER_AUTOCONFIRM=true
+    export GOTRUE_MFA_TOTP_ENROLL_ENABLED=true GOTRUE_MFA_TOTP_VERIFY_ENABLED=true
+    export GOTRUE_LOG_LEVEL=warn
+    setsid "$GOTRUE_DOSSIER/auth" serve > "$OUTILS/gotrue.log" 2>&1 < /dev/null &
+    echo $! > "$OUTILS/gotrue.pid"
+  )
   setsid node "$RACINE/outils/relais-rest.mjs" > "$OUTILS/relais.log" 2>&1 < /dev/null &
   echo $! > "$OUTILS/relais.pid"
 
@@ -73,16 +93,30 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=$(jeton anon)
 SUPABASE_SERVICE_ROLE_KEY=$(jeton service_role)
 ENV
 
-  for _ in $(seq 1 40); do
-    if curl -s -o /dev/null "http://127.0.0.1:54321/rest/v1/gouvernorats?select=code&limit=1" \
-         -H "apikey: $(jeton anon)"; then
+  for _ in $(seq 1 80); do
+    if curl -sf -o /dev/null "http://127.0.0.1:54321/rest/v1/gouvernorats?select=code&limit=1" -H "apikey: $(jeton anon)" &&
+       curl -sf -o /dev/null "http://127.0.0.1:54321/auth/v1/health"; then
+      admin_de_developpement
       echo "API locale prête : http://127.0.0.1:54321 (clés dans .outils/api-locale.env)"
       return
     fi
     sleep 0.25
   done
-  echo "L'API ne répond pas : voir .outils/postgrest.log" >&2
+  echo "L'API ne répond pas : voir .outils/postgrest.log et .outils/gotrue.log" >&2
   exit 1
+}
+
+# L'administrateur de la console locale, créé par GoTrue lui-même (API
+# d'administration), puis inscrit dans plateforme.administrateurs.
+admin_de_developpement() {
+  local cle; cle=$(jeton service_role)
+  curl -s -o /dev/null -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
+    -H "apikey: $cle" -H "authorization: Bearer $cle" -H "content-type: application/json" \
+    -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_MDP\",\"email_confirm\":true}"
+  psql -X -q -h 127.0.0.1 -p "$PORT_BASE" -U postgres -d "$BASE" -v ON_ERROR_STOP=1 -c "
+    insert into plateforme.administrateurs (user_id, role)
+    select id, 'super_admin' from auth.users where email = '$ADMIN_EMAIL'
+    on conflict (user_id) do nothing;" > /dev/null
 }
 
 case "${1:-}" in

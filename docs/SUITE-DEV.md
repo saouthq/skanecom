@@ -44,6 +44,8 @@ outils/base-locale.sh tester    # les 163 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 
+Le schéma `auth` est construit par **GoTrue**, le vrai serveur d'authentification de Supabase (`outils/gotrue.sh`, binaire téléchargé et vérifié à la première utilisation) : mêmes tables, mêmes fonctions `auth.uid()` / `auth.jwt()`, mêmes droits que chez Supabase. `outils/api-locale.sh demarrer` le lance aussi sous `/auth/v1` : connexion par mot de passe et double authentification réelles, aucun faux login de développement.
+
 La base écoute sur `127.0.0.1:54322`, comme celle de la CLI Supabase. Comme chez Supabase, `postgres` n'y est **pas** superutilisateur (c'est `supabase_admin`) : une migration qui demanderait un droit de superutilisateur échoue en local comme en production. Le jeu de démo (`supabase/seed.sql`) contient deux boutiques, `maymar` et `quincaillerie-demo`, avec les domaines `maymar.localhost` et `quincaillerie.localhost`. Avec Docker, `supabase db start` donne la vraie base Supabase ; c'est ce que fait la CI.
 
 **Ajouter une table de boutique** : `boutique_id` NOT NULL vers `plateforme.boutiques`, `unique (boutique_id, id)`, clés étrangères composites, trigger `private.boutique_immuable`, RLS. Le fichier `supabase/tests/01_structure.sql` le vérifie sur toutes les tables, et `02_isolation.sql` compare automatiquement ce que chaque rôle voit de chaque boutique : une nouvelle table est couverte sans écrire de test.

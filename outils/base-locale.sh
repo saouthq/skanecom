@@ -8,8 +8,9 @@
 # les tests tournent sous `postgres`.
 #
 #   outils/base-locale.sh demarrer          crée le cluster au besoin et le démarre
-#   outils/base-locale.sh reinit [--vide]   recrée la base : simulation, migrations,
-#                                           puis jeu de démo (sauf --vide)
+#   outils/base-locale.sh reinit [--vide]   recrée la base : simulation, schéma auth
+#                                           (GoTrue), migrations, puis jeu de démo
+#                                           (sauf --vide)
 #   outils/base-locale.sh tester            lance les tests pgTAP de supabase/tests
 #   outils/base-locale.sh psql              ouvre psql sur la base (rôle postgres)
 #   outils/base-locale.sh arreter           arrête le serveur
@@ -23,6 +24,7 @@ RACINE=$(cd "$(dirname "$0")/.." && pwd)
 PORT=${BASE_LOCALE_PORT:-54322}
 BASE=${BASE_LOCALE_NOM:-skanecom}
 BIN=${PG_BIN:-$(pg_config --bindir)}
+. "$RACINE/outils/gotrue.sh"
 
 # Postgres refuse de tourner en root : dans ce cas on passe par l'utilisateur
 # système « postgres », et le cluster vit dans /tmp où il peut écrire.
@@ -69,6 +71,11 @@ reinit() {
     -c "drop database if exists $BASE with (force)" \
     -c "create database $BASE owner postgres"
   psql_en supabase_admin -d "$BASE" -f "$RACINE/outils/supabase-simule.sql"
+  # Le schéma auth, par GoTrue lui-même, comme chez Supabase.
+  telecharger_gotrue
+  echo "  schéma auth (migrations de GoTrue $GOTRUE_VERSION)"
+  (gotrue_env "$PORT" "$BASE" && "$GOTRUE_DOSSIER/auth" migrate > "$RACINE/.outils/gotrue-migrate.log" 2>&1) || {
+    echo "Migrations de GoTrue en échec : voir .outils/gotrue-migrate.log" >&2; exit 1; }
   shopt -s nullglob
   for f in "$RACINE"/supabase/migrations/*.sql; do
     echo "  migration $(basename "$f")"

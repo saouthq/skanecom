@@ -10,9 +10,8 @@
 --   · les rôles `anon`, `authenticated` et `service_role` (ce dernier
 --     contourne la RLS), dont `postgres` est membre, et `authenticator`, le
 --     rôle de connexion de l'API (outils/api-locale.sh) ;
---   · `auth.users` réduite aux colonnes que nous utilisons ;
---   · `auth.uid()`, `auth.role()` et `auth.jwt()`, qui lisent les claims du
---     jeton dans `request.jwt.claims`, exactement comme PostgREST les pose ;
+--   · le schéma `auth`, prêt pour les migrations de GoTrue, qui créent
+--     auth.users, auth.uid(), auth.jwt()… comme sur Supabase ;
 --   · le schéma `extensions` avec pgTAP, et les droits par défaut du schéma
 --     `public`.
 --
@@ -47,55 +46,27 @@ create schema if not exists extensions authorization postgres;
 grant usage on schema extensions to anon, authenticated, service_role;
 create extension if not exists pgtap with schema extensions;
 
-create schema if not exists auth;
+-- Le schéma `auth` : comme dans l'image Supabase, il appartient à
+-- supabase_admin et GoTrue (le serveur d'authentification de Supabase) y crée
+-- ses tables et ses fonctions (auth.users, auth.uid(), auth.jwt()…) sous le
+-- rôle supabase_auth_admin — outils/base-locale.sh lance ses migrations juste
+-- après ce fichier. `postgres` reçoit tous les droits sur ce que GoTrue crée,
+-- comme chez Supabase (migration 20211115181400 de supabase/postgres).
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    create role supabase_auth_admin noinherit createrole login noreplication;
+  end if;
+end
+$$;
+
+create schema if not exists auth authorization supabase_admin;
+grant all privileges on schema auth to supabase_auth_admin;
+alter role supabase_auth_admin set search_path = auth;
 grant usage on schema auth to postgres, anon, authenticated, service_role;
-
-create table if not exists auth.users (
-  id                 uuid primary key,
-  email              text,
-  phone              text,
-  raw_user_meta_data jsonb,
-  raw_app_meta_data  jsonb,
-  created_at         timestamptz default now(),
-  updated_at         timestamptz default now()
-);
-
-grant all on auth.users to postgres, service_role;
-
-create or replace function auth.uid()
-returns uuid
-language sql
-stable
-as $$
-  select coalesce(
-    nullif(current_setting('request.jwt.claim.sub', true), ''),
-    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
-  )::uuid
-$$;
-
-create or replace function auth.role()
-returns text
-language sql
-stable
-as $$
-  select coalesce(
-    nullif(current_setting('request.jwt.claim.role', true), ''),
-    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
-  )::text
-$$;
-
-create or replace function auth.jwt()
-returns jsonb
-language sql
-stable
-as $$
-  select coalesce(
-    nullif(current_setting('request.jwt.claim', true), ''),
-    nullif(current_setting('request.jwt.claims', true), '')
-  )::jsonb
-$$;
-
-grant execute on function auth.uid(), auth.role(), auth.jwt() to postgres, anon, authenticated, service_role;
+alter default privileges for role supabase_auth_admin in schema auth grant all on tables    to postgres;
+alter default privileges for role supabase_auth_admin in schema auth grant all on sequences to postgres;
+alter default privileges for role supabase_auth_admin in schema auth grant all on routines  to postgres;
 
 -- Droits par défaut du schéma public sur ce que crée `postgres`, comme chez
 -- Supabase : la RLS, et elle seule, décide de ce que voient anon et
