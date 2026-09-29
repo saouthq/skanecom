@@ -455,3 +455,47 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .rg-zone-champs, .rg-zone-ajout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .rg-zone-nom { grid-column: 1 / -1; }
 }
+
+/* ---- Clients ---- */
+.cl-ligne-lien { grid-template-areas: "img nom prix" "img etat date"; }
+.cl-initiale { grid-area: img; inline-size: 40px; block-size: 40px; border-radius: 999px; font-size: .8125rem; }
+.cl-ligne-etat { grid-area: etat; display: flex; flex-wrap: wrap; gap: .375rem; }
+.cl-ligne-cmd { display: none; font-size: .8125rem; color: var(--ui-texte-2); }
+.cl-ligne-date { grid-area: date; justify-self: end; font-size: .8125rem; color: var(--ui-texte-3); white-space: nowrap; }
+@media (min-width: 900px) {
+  .cl-ligne-lien {
+    grid-template-columns: 40px minmax(0, 2fr) 9rem 10rem 9.5rem 8.5rem;
+    grid-template-areas: "img nom etat cmd date prix";
+  }
+  .cl-ligne-cmd { display: block; grid-area: cmd; }
+  .cl-ligne-date { justify-self: start; }
+}
+.chiffre-cle[data-alerte] dd { color: var(--ui-rouge); }
+.cl-taux { margin-block-start: .125rem; }
+.cl-niveaux { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.cl-niveaux .choix-carte[data-niveau="surveille"]:has(input:checked) { border-color: var(--ui-ambre); box-shadow: 0 0 0 1px var(--ui-ambre); background: var(--ui-ambre-fond); }
+.cl-niveaux .choix-carte[data-niveau="bloque"]:has(input:checked) { border-color: var(--ui-rouge); box-shadow: 0 0 0 1px var(--ui-rouge); background: var(--ui-rouge-fond); }
+.console .carte-plate > .carte-tete { padding: 1.25rem 1.25rem 0; margin-block-end: .875rem; }
+@media (min-width: 700px) { .console .carte-plate > .carte-tete { padding-inline: 1.5rem; } }
+.cl-commandes { display: grid; }
+.cl-commandes > li { border-block-start: 1px solid var(--ui-bord-leger); }
+.cl-commande {
+  display: grid; align-items: center; gap: .25rem .75rem; padding: .75rem 1.25rem;
+  grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "num statut total" "detail detail detail";
+  transition: background-color .12s;
+}
+.cl-commande:hover { background: var(--ui-survol); }
+.cl-commande-num { grid-area: num; font-weight: 500; }
+.cl-commande .bo-statut { grid-area: statut; justify-self: start; }
+.cl-commande-detail { grid-area: detail; font-size: .8125rem; color: var(--ui-texte-3); }
+.cl-commande-refus { color: var(--ui-rouge); }
+.cl-commande-total { grid-area: total; font-weight: 500; white-space: nowrap; }
+@media (min-width: 700px) {
+  .cl-commande { padding-inline: 1.5rem; grid-template-columns: 10.5rem 7rem minmax(0, 1fr) auto; grid-template-areas: "num statut detail total"; }
+}
+.cl-vide { padding: 0 1.25rem 1.25rem; }
+.cl-adresses { display: grid; gap: .875rem; }
+.cl-adresses > li { display: grid; gap: .0625rem; font-size: .875rem; }
+.cl-defaut { margin-inline-start: .5rem; vertical-align: 1px; }
+.bo-client-depuis { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.bo-client-depuis .lien { display: inline-flex; align-items: center; gap: .25rem; font-weight: 500; }

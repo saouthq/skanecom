@@ -64,14 +64,15 @@ select is((select count(*) from public.clients where note_interne = 'note du pr�
 -- confirmateur
 -- ---------------------------------------------------------------------
 reset role; select tests.connecte('confirm_a');
-update public.clients set niveau_risque = 'surveille' where id = tests.id('fiche_invite_a');
+update public.clients set nb_refus = 0, niveau_risque = 'bloque' where id = tests.id('fiche_invite_a');
+select public.gestion_confiance_client(tests.id('A'), tests.id('fiche_invite_a'), 'surveille', 'Deux appels sans réponse');
 select throws_ok(
   format($$ select public.mouvement_stock(%L, %L, 1, 'reception') $$, tests.id('A'), tests.id('variante_a')),
   '42501', null, 'le confirmateur ne saisit pas de mouvement de stock');
 
 reset role;
 select is((select niveau_risque from public.clients where id = tests.id('fiche_invite_a')), 'surveille',
-  'le confirmateur gère les fiches clients');
+  'le confirmateur gère les fiches clients, par la fonction de gestion (un UPDATE direct ne passe plus)');
 
 -- ---------------------------------------------------------------------
 -- propriétaire

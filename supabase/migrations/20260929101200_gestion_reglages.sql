@@ -1,5 +1,5 @@
 -- =====================================================================
--- SkanEcom — 13 · BACKOFFICE : LES RÉGLAGES DE LA BOUTIQUE (PRD §6.2 B9)
+-- SkanEcom — 13 · BACKOFFICE : LES RÉGLAGES DE LA BOUTIQUE (PRD §6.2)
 -- =====================================================================
 -- « Quand t'as un doute, fais les deux et mets-le en réglage » : compte
 -- obligatoire ou invité, confirmation téléphonique ou automatique, frais

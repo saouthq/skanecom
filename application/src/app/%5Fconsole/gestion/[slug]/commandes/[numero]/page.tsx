@@ -516,7 +516,10 @@ export default async function FicheCommande({
                       <span className="ui-etat ui-etat-rouge">{f.client.niveau_risque === "bloque" ? "Bloqué" : "Surveillé"}</span>
                     ) : null}
                   </p>
-                  <p className="text-petit discret mt-3">Client depuis le {new Date(f.client.depuis).toLocaleDateString("fr-FR", { timeZone: "Africa/Tunis" })}</p>
+                  <p className="text-petit discret mt-3 bo-client-depuis">
+                    Client depuis le {new Date(f.client.depuis).toLocaleDateString("fr-FR", { timeZone: "Africa/Tunis" })}
+                    <Link href={`/gestion/${slug}/clients/${f.client.telephone.replace(/\D/g, "")}`} className="lien">Voir sa fiche <Icone nom="droite" taille={12} /></Link>
+                  </p>
                 </>
               ) : null}
               {f.autres.length > 0 ? (

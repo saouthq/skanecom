@@ -243,6 +243,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les réglages de la boutique** (migration 13, `20260929101200_gestion_reglages.sql`, 30 tests dans `supabase/tests/15_reglages.sql`) : colonne `modifiable_boutique` au catalogue des réglages (le préfixe des numéros reste à la plateforme) ; `gestion_reglages` (valeurs, défauts, modules, zones, gouvernorats, journal), `gestion_enregistrer_reglages` (valeur égale au défaut = ligne effacée ; bornes ; au moins un moyen de paiement ; journal d'audit), `gestion_enregistrer_zone`, `gestion_supprimer_zone`, `gestion_rattacher_gouvernorats`.
 
+**Puis les clients** (migration 14, `20260929101300_gestion_clients.sql`, 22 tests dans `supabase/tests/16_clients.sql`) : la policy d'UPDATE direct des fiches clients est retirée (les compteurs de refus ne se touchent plus) ; `gestion_liste_clients` (filtres, recherche par numéro, compteurs), `gestion_client` (par identifiant ou par numéro : chiffres, commandes, adresses, journal), `gestion_confiance_client` (normal, surveillé, bloqué ; motif exigé, journal d'audit), `gestion_note_client`.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

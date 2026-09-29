@@ -635,6 +635,70 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await envoie(section("livraison").getByRole("button", { name: "Enregistrer" }));
     verifie(await fraisPour("sfax") === 7000 && await fraisPour("tunis", 320000) === 7000, "de nouveau le même tarif partout, jamais offert");
   });
+
+  /* ---------------- Les clients ---------------- */
+  await etape("les clients : qui soigner, de qui se méfier", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Clients" }));
+    await page.waitForURL(/\/gestion\/maymar\/clients$/);
+    await page.waitForLoadState("networkidle");
+    const n = await page.locator(".cat-ligne").count();
+    verifie(n >= 5, `les clients de Maymar, ceux qui ont commandé récemment d'abord (${n})`);
+    const refus = Number((await page.locator(".onglets a", { hasText: "Avec refus" }).innerText()).match(/\d+/)?.[0] ?? 0);
+    await page.goto(`${C}/gestion/maymar/clients?filtre=refus`, { waitUntil: "networkidle" });
+    const lignes = await page.locator(".cat-ligne").count();
+    verifie(refus >= 1 && lignes === refus && (await page.locator(".cl-liste").innerText()).includes("refus"),
+      `l'onglet « Avec refus » : ${refus} client(s), dont celui du colis refusé tout à l'heure, chacun avec son compte de refus`);
+    await capture(page, "gestion-clients");
+  });
+
+  let ficheClient = "";
+  await etape("depuis une commande, la fiche du client", async () => {
+    await ouvre(page, 6);
+    await clic(page, page.getByRole("link", { name: /Voir sa fiche/ }));
+    await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+    await page.waitForLoadState("networkidle");
+    ficheClient = page.url();
+    verifie(true, "le lien par numéro mène à la fiche (adresse canonique)");
+    verifie((await page.locator(".chiffre-cle", { hasText: "Refus" }).innerText()).includes("1"), "un refus, compté par la base");
+    verifie((await page.locator(".cl-commande", { hasText: num(6) }).innerText()).includes("Refusée"), "la commande refusée est dans son historique");
+    await capture(page, "gestion-client", true);
+  });
+
+  await etape("bloquer un client, motif à l'appui", async () => {
+    const confiance = page.locator("section:has(#t-confiance)");
+    await clic(page, confiance.getByText("Bloqué", { exact: true }));
+    await envoie(confiance.getByRole("button", { name: "Enregistrer" }));
+    verifie((await page.getByRole("alert").innerText()).includes("Dites pourquoi"), "sans motif, pas de blocage");
+    await clic(page, page.locator("section:has(#t-confiance)").getByText("Bloqué", { exact: true }));
+    await clic(page, page.locator("#motif"));
+    await tape(page, "Colis refusé à la porte, ne répond plus");
+    await envoie(page.locator("section:has(#t-confiance)").getByRole("button", { name: "Enregistrer" }));
+    verifie((await ok()).includes("Client bloqué"), `« ${await ok()} »`);
+    verifie((await page.locator("h1").innerText()).includes("Bloqué"), "la fiche le dit en tête");
+    verifie((await page.locator("section:has(#t-journal)").innerText()).includes("Colis refusé à la porte"), "le motif reste au journal");
+    await page.goto(`${C}/gestion/maymar/clients?filtre=bloques`, { waitUntil: "networkidle" });
+    verifie(await page.locator(".cat-ligne").count() === 1, "il est dans l'onglet des bloqués");
+  });
+
+  await etape("la note de l'équipe, puis rétablir", async () => {
+    await page.goto(ficheClient, { waitUntil: "networkidle" });
+    await clic(page, page.locator("#note"));
+    await tape(page, "Rappeler avant toute nouvelle commande");
+    await envoie(page.getByRole("button", { name: "Enregistrer la note" }));
+    verifie((await page.locator("#note").inputValue()) === "Rappeler avant toute nouvelle commande", "la note est gardée");
+    await clic(page, page.locator("section:has(#t-confiance)").getByText("Normal", { exact: true }));
+    await envoie(page.locator("section:has(#t-confiance)").getByRole("button", { name: "Enregistrer" }));
+    verifie(!(await page.locator("h1").innerText()).includes("Bloqué"), "rétabli, sans motif à donner");
+  });
+
+  await etape("la fiche client sur téléphone", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(ficheClient, { waitUntil: "networkidle" });
+    const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    verifie(!deborde, "rien ne déborde en largeur");
+    await capture(page, "gestion-client-telephone");
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
   await ctx.close();
 }
 
@@ -720,6 +784,25 @@ console.log("\n== 4. Le préparateur d'une autre boutique ==");
     const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/reglages/enregistrer", { section: "commandes", "compte.obligatoire": "0" });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("propriétaire"),
       `même en postant le formulaire à la main, la base refuse (${r.status})`);
+  });
+
+  await etape("les clients : il voit, il ne juge pas", async () => {
+    await page.goto(`${C}/gestion/quincaillerie-demo/clients`, { waitUntil: "networkidle" });
+    verifie((await page.locator("h1").innerText()).includes("Clients"), "la liste des clients s'ouvre");
+    const premier = page.locator(".cl-ligne-lien").first();
+    if (await premier.count()) {
+      await clic(page, premier);
+      await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/);
+      await page.waitForLoadState("networkidle");
+      verifie(await page.locator("input[name=niveau]").count() === 0 && await page.locator("#note").count() === 0,
+        "la fiche, sans le réglage de confiance ni la note");
+      const id = new URL(page.url()).pathname.split("/").pop();
+      const r = await posteBrut(ctx, `/gestion/quincaillerie-demo/clients/${id}/action`, { action: "confiance", niveau: "bloque", motif: "Essai" });
+      verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("relation client"),
+        `bloquer à la main : la base refuse (${r.status})`);
+    } else {
+      verifie((await page.locator(".vide").innerText()).includes("Personne"), "aucun client : la liste le dit");
+    }
   });
   await ctx.close();
 }
