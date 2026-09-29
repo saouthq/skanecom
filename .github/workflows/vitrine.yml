@@ -107,6 +107,12 @@ jobs:
           set -a; . ../.outils/api-locale.env; set +a
           bun run parcours:console
 
+      - name: Aperçu des trois boutiques
+        working-directory: application
+        env:
+          CAPTURES: ${{ github.workspace }}/.outils/captures/apercu
+        run: bun run apercu
+
       - name: Captures du parcours
         if: always()
         uses: actions/upload-artifact@v4

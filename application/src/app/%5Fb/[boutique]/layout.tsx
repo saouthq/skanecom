@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Young_Serif, IBM_Plex_Sans, IBM_Plex_Sans_Arabic, Reem_Kufi, Archivo } from "next/font/google";
 import "../../globals.css";
 import { chargeCadre } from "@/lib/boutique";
 import { feuilleDuTheme, texte } from "@/lib/theme";
@@ -19,17 +18,13 @@ import { Pied } from "@/components/Pied";
    couleurs, polices, rayons, logo — et pose l'en-tête et le pied, communs à
    toutes les pages. Une boutique inconnue ou inactive donne 404.
 
-   Polices : câblées par `next/font` — JAMAIS un @import Google dans le CSS
-   (deux chemins de chargement concurrents = texte invisible et décalage de
-   mise en page). Seules celles du thème n°1 sont préchargées ; Archivo (thème
-   technique) et les familles arabes se chargent à l'usage.
-   ========================================================================== */
+   `data-gabarit` sur <html> choisit la feuille du gabarit (editorial.css ou
+   technique.css) ; l'en-tête, le pied et les pages choisissent leurs
+   composants d'après le même code.
 
-const youngSerif = Young_Serif({ weight: "400", subsets: ["latin", "latin-ext"], variable: "--font-young-serif", display: "swap" });
-const plexSans = IBM_Plex_Sans({ weight: ["400", "500", "600"], subsets: ["latin", "latin-ext"], variable: "--font-plex-sans", display: "swap" });
-const archivo = Archivo({ weight: ["500", "600", "700"], subsets: ["latin", "latin-ext"], variable: "--font-archivo", display: "swap", preload: false });
-const plexArabe = IBM_Plex_Sans_Arabic({ weight: ["400", "600"], subsets: ["arabic"], variable: "--font-plex-arabic", display: "swap", preload: false });
-const kufi = Reem_Kufi({ subsets: ["arabic"], variable: "--font-reem-kufi", display: "swap", preload: false });
+   Polices : servies par l'application (app/polices.css, @fontsource),
+   jamais par Google ; chaque famille ne se charge que si le thème l'emploie.
+   ========================================================================== */
 
 type Props = { children: React.ReactNode; params: Promise<{ boutique: string }> };
 
@@ -64,8 +59,9 @@ export default async function RacineBoutique({ children, params }: Props) {
       lang={langue}
       dir={directionDe(langue)}
       data-boutique={cadre.boutique.slug}
+      data-gabarit={cadre.theme.code}
       data-monogramme={cadre.theme.monogramme ? "" : undefined}
-      className={`${youngSerif.variable} ${plexSans.variable} ${archivo.variable} ${plexArabe.variable} ${kufi.variable} h-full`}
+      className="h-full"
     >
       <head>
         <style dangerouslySetInnerHTML={{ __html: feuilleDuTheme(cadre.theme, urlFichier) }} />

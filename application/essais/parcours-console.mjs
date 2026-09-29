@@ -217,7 +217,7 @@ await etape("créer la boutique", async () => {
   await clic(page, page.locator("#nom")); await tape(page, "Outillage Pro Démo");
   await clic(page, page.locator("#slug")); await tape(page, SLUG);
   await clic(page, page.locator("#hote")); await tape(page, HOTE);
-  await clic(page, page.getByLabel(/Catalogue technique/));
+  await clic(page, page.getByLabel(/^Technique/));
   await capture(page, "console-nouvelle-boutique");
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(new RegExp(`/boutiques/${SLUG}`));
@@ -361,7 +361,7 @@ await etape("la vitrine montre le catalogue importé", async () => {
   const texte = await vitrine.locator("main").innerText();
   verifie(texte.includes("Perceuse à percussion 18 V") && texte.includes("329,000"), "le rayon Perceuses montre la perceuse, à partir de 329,000 TND");
   await capture(vitrine, "vitrine-catalogue-importe");
-  await clic(vitrine, vitrine.locator(".grille-produits a").first());
+  await clic(vitrine, vitrine.locator(".te-carte-lien").first());
   await vitrine.waitForURL(/\/produit\//);
   await vitrine.waitForLoadState("networkidle");
   await clic(vitrine, vitrine.getByRole("button", { name: /^Kit 2 batteries/ }));
@@ -378,11 +378,11 @@ console.log("\n== 3. Les portes ==");
 await etape("un formulaire posté depuis un autre site est refusé", async () => {
   const r = await brut(ctx, "POST", "/nouvelle-boutique/creer", {
     entetes: { origin: "https://site-pirate.example" },
-    formulaire: { nom: "Pirate", slug: `pirate-${SUFFIXE}`, hote: `pirate-${SUFFIXE}.localhost`, theme: "premium_sobre" },
+    formulaire: { nom: "Pirate", slug: `pirate-${SUFFIXE}`, hote: `pirate-${SUFFIXE}.localhost`, theme: "editorial" },
   });
   verifie(r.status === 403, `origine étrangère, même avec la session de l'administrateur : HTTP ${r.status}`);
   const r2 = await brut(ctx, "POST", "/nouvelle-boutique/creer", {
-    formulaire: { nom: "Sans origine", slug: `sans-origine-${SUFFIXE}`, hote: `sans-origine-${SUFFIXE}.localhost`, theme: "premium_sobre" },
+    formulaire: { nom: "Sans origine", slug: `sans-origine-${SUFFIXE}`, hote: `sans-origine-${SUFFIXE}.localhost`, theme: "editorial" },
   });
   verifie(r2.status === 403, `sans en-tête Origin : HTTP ${r2.status}`);
 });

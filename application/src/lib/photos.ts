@@ -46,3 +46,11 @@ export function photosProduit(produit: Produit): { src: string; alt: string }[] 
     alt: champ(image, "alt") || champ(produit, "nom"),
   }));
 }
+
+/** La deuxième photo du produit (sans variante attitrée), révélée au survol
+ *  d'une carte. `null` si le produit n'en a qu'une. */
+export function photoSurvol(produit: Produit): { src: string; alt: string } | null {
+  const communes = (produit.images ?? []).filter((i) => i.variante_id === null);
+  const seconde = communes[1];
+  return seconde ? { src: urlFichier(seconde.chemin), alt: "" } : null;
+}

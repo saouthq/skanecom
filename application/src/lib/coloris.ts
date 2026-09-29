@@ -36,6 +36,16 @@ const COLORIS: Record<string, string> = {
   violet: "#5B4470",
   argent: "#B9BCC0",
   or: "#B08D4F",
+  terracotta: "#B4553A",
+  "écru": "#EEE7D7",
+  sable: "#D8C6A5",
+  "gris perle": "#CBC9C4",
+  "gris chiné": "#9B9B97",
+  "rose poudré": "#E3B8B3",
+  "vichy noir": "#4A4A4A",
+  "noir fleuri": "#2A2A30",
+  fauve: "#B07A45",
+  "bleu ciel": "#A9C6E3",
 };
 
 /** Pastille neutre quand le coloris n'est pas encore cartographié : jamais un

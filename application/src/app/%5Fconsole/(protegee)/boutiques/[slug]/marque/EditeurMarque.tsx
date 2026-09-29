@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { JETONS_COULEUR, themeDeLaBoutique, type CodeTheme, type JetonCouleur, type Police } from "@/lib/theme";
-import { GROUPES_COULEURS, POLICES_TITRES, TEXTES_MARQUE } from "./champs";
+import { gabaritDe, GABARITS, JETONS_COULEUR, pilePolice, themeDeLaBoutique, type CodeTheme, type JetonCouleur, type Police } from "@/lib/theme";
+import { GROUPES_COULEURS, POLICES_TEXTE, POLICES_TITRES, TEXTES_MARQUE } from "./champs";
 
 /* ============================================================================
    L'ÉDITEUR DE MARQUE — formulaire ordinaire (il s'enregistre sans
@@ -10,46 +10,47 @@ import { GROUPES_COULEURS, POLICES_TITRES, TEXTES_MARQUE } from "./champs";
    modifiés sont posés en variables CSS sur l'aperçu seul, qui emploie les
    mêmes classes que la vitrine.
 
-   Une couleur égale à celle du thème n'est pas enregistrée comme
-   personnalisée : changer de thème de départ garde alors des couleurs
-   cohérentes.
+   Une couleur égale à celle du gabarit n'est pas enregistrée comme
+   personnalisée : changer de gabarit garde alors des couleurs cohérentes.
    ========================================================================== */
 
 export type ThemeEdite = {
   code: CodeTheme;
   version: number;
   couleurs: Partial<Record<JetonCouleur, string>>;
-  polices: { titres?: Police };
+  polices: { titres?: Police; texte?: Police };
   textes: Record<string, string>;
   logo_mode: "masque" | "image";
   logo_chemin: string | null;
 };
 
-const PILES: Record<Police, string> = {
-  "young-serif": 'var(--font-young-serif), Georgia, serif',
-  "plex-sans": 'var(--font-plex-sans), system-ui, sans-serif',
-  archivo: 'var(--font-archivo), system-ui, sans-serif',
+const LIBELLES_GABARITS: Record<CodeTheme, string> = {
+  editorial: "Éditorial — grandes images, typographie de magazine (mode, bagages)",
+  technique: "Technique — recherche, références, stock chiffré (outillage, quincaillerie)",
 };
 
 const defautsDe = (code: CodeTheme) => themeDeLaBoutique({ code });
 
 export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; boutiqueId: string; nom: string; theme: ThemeEdite }) {
-  const [code, setCode] = useState<CodeTheme>(theme.code);
+  const [code, setCode] = useState<CodeTheme>(gabaritDe(theme.code));
   const defauts = useMemo(() => defautsDe(code), [code]);
   const [couleurs, setCouleurs] = useState<Partial<Record<JetonCouleur, string>>>(theme.couleurs ?? {});
   const [titres, setTitres] = useState<Police | "">(theme.polices?.titres ?? "");
+  const [corps, setCorps] = useState<Police | "">(theme.polices?.texte ?? "");
   const [textes, setTextes] = useState<Record<string, string>>(theme.textes ?? {});
 
   const couleur = (j: JetonCouleur) => (couleurs[j] ?? defauts.couleurs[j]).toUpperCase();
   const police = (titres || defauts.polices.titres) as Police;
+  const policeTexte = (corps || defauts.polices.texte) as Police;
   const change = (j: JetonCouleur, v: string) => setCouleurs((c) => ({ ...c, [j]: v.toUpperCase() }));
   const retire = (j: JetonCouleur) => setCouleurs((c) => { const n = { ...c }; delete n[j]; return n; });
 
   const variables = Object.fromEntries([
     ...JETONS_COULEUR.map((j) => [`--theme-${j.replace("_", "-")}`, couleur(j)]),
-    ["--theme-font-display", PILES[police]],
-    ["--theme-radius-carte", defauts.rayons.carte],
-    ["--theme-radius-doux", defauts.rayons.doux],
+    ["--theme-font-display", pilePolice(police)],
+    ["--theme-font-texte", pilePolice(policeTexte)],
+    ["--theme-radius-carte", defauts.angles.carte],
+    ["--theme-radius-doux", defauts.angles.doux],
   ]) as React.CSSProperties;
 
   return (
@@ -59,20 +60,27 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
 
       <div className="grid gap-5">
         <section className="carte formulaire" aria-labelledby="t-theme">
-          <h2 id="t-theme">Thème de départ</h2>
-          <div className="deux-colonnes">
-            {(["premium_sobre", "catalogue_technique"] as const).map((c) => (
+          <h2 id="t-theme">Gabarit</h2>
+          <div className="grid gap-1">
+            {GABARITS.map((c) => (
               <label key={c} className="opt">
                 <input type="radio" name="code" value={c} checked={code === c} onChange={() => setCode(c)} />
-                {c === "premium_sobre" ? "Premium sobre (arcs, empattements)" : "Catalogue technique (angles vifs)"}
+                {LIBELLES_GABARITS[c]}
               </label>
             ))}
           </div>
           <div className="champ">
             <label htmlFor="polices_titres">Police des titres</label>
             <select id="polices_titres" name="polices_titres" value={titres} onChange={(e) => setTitres(e.target.value as Police | "")}>
-              <option value="">Celle du thème ({POLICES_TITRES.find((p) => p.valeur === defauts.polices.titres)?.libelle.split(" —")[0]})</option>
+              <option value="">Celle du gabarit ({POLICES_TITRES.find((p) => p.valeur === defauts.polices.titres)?.libelle.split(" —")[0]})</option>
               {POLICES_TITRES.map((p) => <option key={p.valeur} value={p.valeur}>{p.libelle}</option>)}
+            </select>
+          </div>
+          <div className="champ">
+            <label htmlFor="polices_texte">Police du texte</label>
+            <select id="polices_texte" name="polices_texte" value={corps} onChange={(e) => setCorps(e.target.value as Police | "")}>
+              <option value="">Celle du gabarit ({POLICES_TEXTE.find((p) => p.valeur === defauts.polices.texte)?.libelle.split(" —")[0]})</option>
+              {POLICES_TEXTE.map((p) => <option key={p.valeur} value={p.valeur}>{p.libelle}</option>)}
             </select>
           </div>
           {theme.logo_chemin ? (
@@ -90,7 +98,7 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
 
         <section className="carte formulaire" aria-labelledby="t-couleurs">
           <h2 id="t-couleurs">Couleurs</h2>
-          <p className="aide">Une couleur laissée à la valeur du thème n&apos;est pas personnalisée.</p>
+          <p className="aide">Une couleur laissée à la valeur du gabarit n&apos;est pas personnalisée.</p>
           {GROUPES_COULEURS.map((g) => (
             <fieldset key={g.titre} className="grid gap-3">
               <legend className="text-petit font-medium text-encre-doux">{g.titre}</legend>
@@ -108,7 +116,7 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
                       pattern="#[0-9A-Fa-f]{6}" maxLength={7} className="w-28 font-mono text-petit px-2 py-2 border border-contour-champ rounded-doux bg-surface" />
                     {/* Place réservée même sans personnalisation : les champs restent alignés. */}
                     <button type="button" className={`btn-lien text-petit w-20 ${perso ? "" : "invisible"}`} onClick={() => retire(cle)}
-                      tabIndex={perso ? 0 : -1} aria-hidden={!perso} aria-label={`${libelle} : revenir à la couleur du thème`}>
+                      tabIndex={perso ? 0 : -1} aria-hidden={!perso} aria-label={`${libelle} : revenir à la couleur du gabarit`}>
                       Rétablir
                     </button>
                   </div>
@@ -143,15 +151,15 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
       {/* L'APERÇU : les classes de la vitrine, les jetons en cours. */}
       <aside className="lg:sticky lg:top-6" aria-label="Aperçu de la vitrine">
         <p className="text-petit text-encre-doux mb-2">Aperçu</p>
-        <div className="apercu border border-filet-fort rounded-carte overflow-hidden" style={variables} data-apercu>
+        <div className="apercu border border-filet-fort rounded-carte overflow-hidden font-texte" style={variables} data-apercu data-apercu-gabarit={code}>
           <div className="bg-fond text-encre">
             <div className="flex items-center justify-between px-4 py-3 border-b border-filet">
               <span className="font-display text-[1.125rem]">{nom}</span>
               <span className="text-legende text-encre-doux">Catalogue · Panier</span>
             </div>
             <div className="px-4 py-5">
-              <p className="etiquette"><b>01</b> <span>Accueil</span></p>
-              <p className="font-display text-[1.625rem] leading-tight mt-2">Bienvenue chez {nom}.</p>
+              <p className="etiquette">{code === "technique" ? "Outillage et quincaillerie" : "Nouvelle collection"}</p>
+              <p className={`font-display leading-tight mt-2 ${code === "technique" ? "text-[1.5rem] font-extrabold uppercase" : "text-[1.875rem]"}`}>Bienvenue chez {nom}.</p>
               <p className="text-petit text-encre-doux mt-2">{textes.resume_fr || "La présentation courte de la boutique s'affiche ici."}</p>
               <span className="btn btn-primaire mt-4 pointer-events-none">Voir le catalogue</span>
             </div>

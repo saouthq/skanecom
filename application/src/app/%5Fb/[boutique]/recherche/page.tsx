@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Gabarit } from "@/components/Gabarit";
 import { CarteProduit } from "@/components/CarteProduit";
-import { Fleche, Loupe } from "@/components/Icones";
+import { EnteteListe } from "@/components/EnteteListe";
+import { Loupe } from "@/components/Icones";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { listeProduits } from "@/lib/catalogue";
 import { t } from "@/lib/i18n";
@@ -28,44 +29,38 @@ export default async function Recherche({
   const requete = (q ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
   const liste = requete.length >= 2 ? await listeProduits(cadre.boutique.id, { q: requete }, "pertinence", 1, 48) : null;
   const n = liste?.total ?? 0;
+  const gabarit = cadre.theme.code;
 
   return (
     <Gabarit>
-      <nav className="fil pt-4" aria-label={t.commun.filAriane}>
-        <Link href="/">{t.commun.accueil}</Link>
-        <Fleche taille={14} className="rtl:-scale-x-100" />
-        <span aria-current="page" className="text-encre">{t.recherche.titre}</span>
-      </nav>
-
-      <header className="pt-6 pb-8">
-        <h1 className="text-t2 md:text-t1">{t.recherche.titre}</h1>
-
-        <form action="/recherche" method="get" className="flex flex-wrap gap-3 mt-6 max-w-[36rem]">
-          <div className="champ flex-1 min-w-[16rem]">
-            <label htmlFor="q" className="sr-only">{t.recherche.champAria}</label>
-            <input id="q" name="q" type="search" defaultValue={requete} placeholder={t.recherche.placeholder} autoComplete="off" />
-          </div>
+      <EnteteListe gabarit={gabarit} fil={[{ nom: t.recherche.titre }]} titre={t.recherche.titre}>
+        <form action="/recherche" method="get" role="search" className="recherche-page">
+          <label htmlFor="q" className="sr-only">
+            {t.recherche.champAria}
+          </label>
+          <input id="q" name="q" type="search" defaultValue={requete} placeholder={t.recherche.placeholder} autoComplete="off" enterKeyHint="search" />
           <button type="submit" className="btn btn-primaire">
             <Loupe taille={18} />
             {t.recherche.lancer}
           </button>
         </form>
-
-        <p className="text-petit text-encre-doux mt-4">
+        <p className="recherche-bilan" aria-live="polite">
           {liste ? t.recherche.resultats(n, requete) : t.recherche.invite}
         </p>
-      </header>
+      </EnteteListe>
 
       {liste && liste.produits.length > 0 ? (
-        <div className="grille-produits pb-12">
-          {liste.produits.map((p) => (
-            <CarteProduit key={p.id} produit={p} />
+        <div className={`${gabarit === "technique" ? "te-grille" : "ed-grille"} recherche-resultats`}>
+          {liste.produits.map((p, i) => (
+            <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} prioritaire={i < 4} />
           ))}
         </div>
       ) : liste ? (
-        <div className="border border-filet rounded-carte bg-surface p-8 mb-12">
-          <p className="text-petit text-encre-doux max-w-[46ch]">{t.recherche.videTexte}</p>
-          <Link className="btn btn-second mt-6" href="/catalogue">{t.commun.voirLeCatalogue}</Link>
+        <div className="listing-vide">
+          <p>{t.recherche.videTexte}</p>
+          <Link className="btn btn-second" href="/catalogue">
+            {t.commun.voirLeCatalogue}
+          </Link>
         </div>
       ) : null}
     </Gabarit>

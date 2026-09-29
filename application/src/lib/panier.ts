@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   clePanier,
   PANIER_EVENEMENT,
+  PANIER_OUVRIR,
   PANIER_VIDE,
   ajouteLigne,
   changeQuantite,
@@ -48,6 +49,11 @@ function ecrit(panier: Panier): void {
 
 export function ajouteAuPanier(ligne: Omit<LignePanier, "ajouteLe">, stockMax: number): void {
   ecrit(ajouteLigne(lit(), ligne, stockMax));
+}
+
+/** Ouvre le tiroir du panier (posé dans l'en-tête), après un ajout. */
+export function ouvrePanier(): void {
+  window.dispatchEvent(new CustomEvent(PANIER_OUVRIR));
 }
 
 export function retireDuPanier(varianteId: string): void {

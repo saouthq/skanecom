@@ -12,10 +12,18 @@
     "deploy": "vinext-cloudflare deploy",
     "parcours": "node essais/parcours-humain.mjs",
     "lint": "eslint src essais",
-    "parcours:console": "node essais/parcours-console.mjs"
+    "parcours:console": "node essais/parcours-console.mjs",
+    "apercu": "node essais/apercu.mjs"
   },
   "dependencies": {
     "@cloudflare/workers-response-store": "^1.0.0",
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
+    "@fontsource/reem-kufi": "^5.3.0",
+    "@fontsource/young-serif": "^5.3.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.112.2",
     "@vinext/cloudflare": "^1.0.0",

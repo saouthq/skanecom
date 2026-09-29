@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Niche } from "./Niche";
+import { Photo } from "./Photo";
 import { Prix } from "./Prix";
 import { EtatStock } from "./EtatStock";
-import { Fleche } from "./Icones";
+import { AjoutRapide } from "./AjoutRapide";
 import { couleurDeColoris } from "@/lib/coloris";
 import { champ, t } from "@/lib/i18n";
-import { urlPhoto } from "@/lib/photos";
+import { photoSurvol, urlPhoto } from "@/lib/photos";
+import { formatePrix } from "@/lib/prix";
 import {
   coloris as colorisDe,
   etatProduit,
@@ -15,89 +16,164 @@ import {
   valeursAxe,
   type Produit,
 } from "@/lib/catalogue";
+import type { CodeTheme } from "@/lib/theme";
 
 /* ============================================================================
-   CARTE PRODUIT — l'unité qui compose toutes les grilles.
+   CARTE PRODUIT — l'unité de toutes les grilles, une par gabarit.
 
-   Tout ce qu'elle affiche est CALCULÉ : le prix est le plus bas des variantes
-   réelles (jamais `prix_min_millimes`, champ d'affichage qui peut dériver), le
-   nombre de coloris et de tailles vient des variantes, l'état vient du stock.
-   Aucun nombre n'est écrit à la main.
+   · ÉDITORIALE : la photo d'abord (4:5, la deuxième au survol), le nom et le
+     prix en petit, les coloris en pastilles. Rien d'autre : l'image vend.
+   · TECHNIQUE : la fiche en miniature — marque, nom, référence, stock CHIFFRÉ,
+     prix TTC, et l'ajout direct quand il n'y a qu'une déclinaison.
 
-   ⚠️ Tant qu'aucune photo produit n'existe, quatre valises rendent quatre
-   silhouettes IDENTIQUES : la carte doit alors dire par le TEXTE ce que
-   l'image ne distingue pas (le juge visuel du 11/08 : « impossible de
-   distinguer la valise souple du set de 3 sans lire »). D'où la ligne de
-   déclinaisons et le « dès » quand les variantes n'ont pas le même prix.
+   Tout ce qu'elle affiche est CALCULÉ depuis les variantes : prix le plus bas
+   (jamais un champ d'affichage qui dérive), nombre de coloris et de tailles,
+   état du stock. Aucun nombre n'est écrit à la main.
    ========================================================================== */
 
-export function CarteProduit({
-  produit,
-  tailles,
-  avecRayon = true,
-}: {
+type Props = {
   produit: Produit;
+  gabarit: CodeTheme;
   tailles?: string;
-  /** Faux quand toute la grille appartient au même rayon : « VALISES » écrit
-   *  quatre fois sous quatre valises n'informe personne (juge visuel, 11/08). */
-  avecRayon?: boolean;
-}) {
+  /** Réglage `catalogue.afficher_prix_barres` de la boutique. */
+  prixBarres?: boolean;
+  /** Priorité de chargement : les premières cartes visibles seulement. */
+  prioritaire?: boolean;
+};
+
+/** Le plus fort écart prix barré / prix parmi les variantes, en %. */
+function remise(produit: Produit): number | null {
+  let meilleure = 0;
+  for (const v of produit.variantes) {
+    if (v.prix_barre_millimes && v.prix_barre_millimes > v.prix_millimes) {
+      meilleure = Math.max(meilleure, Math.round((1 - v.prix_millimes / v.prix_barre_millimes) * 100));
+    }
+  }
+  return meilleure > 0 ? meilleure : null;
+}
+
+/** « 3 tailles · 2 versions » : les axes autres que la couleur, résumés. */
+function declinaisons(produit: Produit): string[] {
+  return produit.options
+    .filter((axe) => axe.cle !== "couleur")
+    .map((axe) => {
+      const n = valeursAxe(produit, axe.cle).length;
+      return n > 1 ? `${n} ${champ(axe, "label").toLowerCase()}s` : null;
+    })
+    .filter((d): d is string => d !== null);
+}
+
+export function CarteProduit(props: Props) {
+  return props.gabarit === "technique" ? <CarteTechnique {...props} /> : <CarteEditoriale {...props} />;
+}
+
+function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = false }: Props) {
+  const prix = prixDepuis(produit);
+  const prixHaut = prixJusqua(produit);
+  const etat = etatProduit(produit);
+  const couleurs = colorisDe(produit);
+  const reduction = prixBarres ? remise(produit) : null;
+  const marqueur =
+    etat === "rupture" ? t.stock.epuise : etat === "faible" ? t.stock.faible(stockTotal(produit)) : reduction ? `−${reduction} %` : null;
+  const autres = declinaisons(produit);
+
+  return (
+    <Link className="ed-carte" href={`/produit/${produit.slug}`}>
+      <Photo
+        photo={urlPhoto(produit)}
+        survol={photoSurvol(produit)}
+        tailles={tailles ?? "(min-width: 1100px) 24vw, (min-width: 700px) 32vw, 48vw"}
+        prioritaire={prioritaire}
+      >
+        {marqueur ? <span className="ed-marqueur" data-etat={etat}>{marqueur}</span> : null}
+      </Photo>
+      <span className="ed-carte-corps">
+        <span className="ed-carte-ligne">
+          <h3 className="ed-carte-nom">{champ(produit, "nom")}</h3>
+          {prix !== null ? (
+            <span className="ed-carte-prix">
+              {prixHaut !== null && prixHaut > prix ? <span className="dès">{t.catalogue.aPartirDe}</span> : null}
+              <Prix millimes={prix} />
+            </span>
+          ) : null}
+        </span>
+        {couleurs.length > 1 ? (
+          <span className="ed-coloris" aria-label={couleurs.join(", ")}>
+            {couleurs.slice(0, 5).map((c) => (
+              <i key={c} style={{ background: couleurDeColoris(c) }} aria-hidden="true" />
+            ))}
+            {couleurs.length > 5 ? <span aria-hidden="true">+{couleurs.length - 5}</span> : null}
+          </span>
+        ) : couleurs.length === 1 || autres.length > 0 ? (
+          <span className="ed-carte-detail">{[couleurs[0], ...autres].filter(Boolean).join(" · ")}</span>
+        ) : null}
+      </span>
+    </Link>
+  );
+}
+
+function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = false }: Props) {
   const prix = prixDepuis(produit);
   const prixHaut = prixJusqua(produit);
   const etat = etatProduit(produit);
   const restant = stockTotal(produit);
-  const couleurs = colorisDe(produit);
+  const reduction = prixBarres ? remise(produit) : null;
+  const unique = produit.variantes.length === 1 ? produit.variantes[0] : null;
   const photo = urlPhoto(produit);
-  const rayon = champ(produit.categorie, "nom");
-
-  /* Les autres axes que la couleur, résumés : « 3 tailles ». C'est ce qui
-     sépare visuellement une valise cabine d'un set de trois. */
-  const declinaisons = produit.options
-    .filter((axe) => axe.cle !== "couleur")
-    .map((axe) => {
-      const n = valeursAxe(produit, axe.cle).length;
-      return `${n} ${champ(axe, "label").toLowerCase()}${n > 1 ? "s" : ""}`;
-    });
+  const nom = champ(produit, "nom");
+  const autres = declinaisons(produit);
+  const couleurs = colorisDe(produit);
+  const prixBarre = unique && prixBarres && unique.prix_barre_millimes ? unique.prix_barre_millimes : null;
 
   return (
-    <Link className="produit theme-focus" href={`/produit/${produit.slug}`}>
-      <Niche
-        photo={photo}
-        mention={produit.marque ?? undefined}
-        tailles={tailles}
-      >
-        <span className="aller" aria-hidden="true">
-          <Fleche taille={17} className="rtl:-scale-x-100" />
+    <article className="te-carte">
+      <Link className="te-carte-lien" href={`/produit/${produit.slug}`}>
+        <Photo photo={photo} ratio="1 / 1" tailles={tailles ?? "(min-width: 1100px) 20vw, (min-width: 700px) 30vw, 48vw"} prioritaire={prioritaire}>
+          {reduction ? <span className="te-remise">−{reduction} %</span> : null}
+        </Photo>
+        {produit.marque ? <span className="te-carte-marque">{produit.marque}</span> : null}
+        <h3 className="te-carte-nom">{nom}</h3>
+        <span className="te-carte-ref">
+          {unique ? (
+            <>
+              {t.produit.refCourte} <bdi>{unique.sku}</bdi>
+            </>
+          ) : (
+            [couleurs.length > 1 ? t.catalogue.colorisN(couleurs.length) : null, ...autres].filter(Boolean).join(" · ") ||
+            t.produit.declinaisons
+          )}
         </span>
-      </Niche>
-
-      {avecRayon && rayon ? <span className="categorie">{rayon}</span> : null}
-      <h3>{champ(produit, "nom")}</h3>
-
-      {couleurs.length > 0 || declinaisons.length > 0 ? (
-        <span className="coloris" aria-label={couleurs.length > 0 ? couleurs.join(", ") : undefined}>
-          {couleurs.slice(0, 4).map((c) => (
-            <i key={c} style={{ background: couleurDeColoris(c) }} aria-hidden="true" />
-          ))}
-          <span>
-            {[couleurs.length > 0 ? couleurs.join(", ") : null, ...declinaisons]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-        </span>
-      ) : null}
-
-      <span className="rang">
+      </Link>
+      <div className="te-carte-bas">
+        <EtatStock etat={etat} restant={restant} />
         {prix !== null ? (
-          <span className="flex items-baseline gap-1">
-            {prixHaut !== null && prixHaut > prix ? (
-              <span className="text-legende text-encre-doux">{t.catalogue.aPartirDe}</span>
-            ) : null}
+          <p className="te-carte-prix">
+            {prixHaut !== null && prixHaut > prix ? <span className="dès">{t.catalogue.aPartirDe}</span> : null}
             <Prix millimes={prix} fort />
-          </span>
+            <span className="ttc">{t.produit.ttc}</span>
+            {prixBarre ? <s className="prix-barre">{formatePrix(prixBarre)}</s> : null}
+          </p>
         ) : null}
-        <EtatStock etat={etat} restant={restant} discret />
-      </span>
-    </Link>
+        {unique && unique.stock > 0 ? (
+          <AjoutRapide
+            ligne={{
+              varianteId: unique.id,
+              produitSlug: produit.slug,
+              sku: unique.sku,
+              libelle: nom,
+              quantite: 1,
+              prixMillimesAjout: unique.prix_millimes,
+              ...(produit.images[0]?.chemin ? { image: produit.images[0].chemin } : {}),
+            }}
+            stock={unique.stock}
+            nom={nom}
+          />
+        ) : (
+          <Link className="btn btn-second btn-bloc te-carte-choisir" href={`/produit/${produit.slug}`} aria-label={`${t.produit.choisir} — ${nom}`}>
+            {etat === "rupture" ? t.produit.voir : t.produit.choisir}
+          </Link>
+        )}
+      </div>
+    </article>
   );
 }

@@ -1,0 +1,366 @@
+/* ============================================================================
+   LE SOCLE — ce que partagent les deux gabarits et la console.
+   Chaque gabarit l'affine sous `html[data-gabarit="…"]` (editorial.css,
+   technique.css) : ici, la mécanique ; là-bas, le caractère.
+   Propriétés LOGIQUES (inline/block) partout : la bascule en arabe (RTL) ne
+   demande rien de plus que `dir="rtl"`.
+   ========================================================================== */
+
+/* --- Mise en page ------------------------------------------------------- */
+.enveloppe {
+  inline-size: 100%;
+  max-inline-size: var(--theme-large);
+  margin-inline: auto;
+  padding-inline: var(--theme-marge);
+}
+.section { padding-block: clamp(3rem, 7vw, 6.5rem); }
+
+.saut-contenu {
+  position: absolute; inset-inline-start: 1rem; inset-block-start: -10rem; z-index: 100;
+  padding: .75rem 1rem; background: var(--theme-encre); color: var(--theme-fond);
+}
+.saut-contenu:focus { inset-block-start: 1rem; }
+
+.sr-only {
+  position: absolute; inline-size: 1px; block-size: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* --- Textes ------------------------------------------------------------- */
+.etiquette {
+  display: inline-flex; align-items: center; gap: .5rem;
+  font-family: var(--theme-font-texte); font-size: .75rem; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--theme-encre-doux);
+}
+.etiquette b { color: var(--theme-accent); font-weight: 600; }
+.chapo { font-size: 1.0625rem; line-height: 1.6; color: var(--theme-encre-doux); max-inline-size: 42ch; }
+.legende { font-size: .8125rem; color: var(--theme-encre-doux); }
+.lien-souligne {
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .25em;
+  transition: text-decoration-color .2s var(--theme-courbe);
+}
+.lien-souligne:hover { text-decoration-color: transparent; }
+
+/* --- Boutons ------------------------------------------------------------ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-block-size: 48px; padding: .75rem 1.5rem;
+  border: 1px solid transparent; border-radius: var(--theme-radius-doux);
+  font-family: var(--theme-font-texte); font-size: .9375rem; font-weight: 500; line-height: 1.2;
+  cursor: pointer; text-align: center; white-space: nowrap;
+  transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe), border-color .2s var(--theme-courbe), opacity .2s;
+}
+.btn-primaire { background: var(--theme-encre); color: var(--theme-fond); }
+.btn-primaire:hover { background: color-mix(in srgb, var(--theme-encre) 86%, var(--theme-fond)); }
+.btn-second { background: transparent; color: var(--theme-encre); border-color: var(--theme-encre); }
+.btn-second:hover { background: var(--theme-encre); color: var(--theme-fond); }
+.btn-clair { background: var(--theme-surface); color: var(--theme-encre); }
+.btn-clair:hover { background: var(--theme-fond); }
+.btn-bloc { inline-size: 100%; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .42; cursor: not-allowed; }
+.btn-lien {
+  background: none; border: 0; padding: 0; cursor: pointer; color: inherit;
+  text-decoration: underline; text-underline-offset: .25em; text-decoration-thickness: 1px;
+}
+.icone-btn {
+  display: inline-grid; place-items: center; position: relative;
+  inline-size: 44px; block-size: 44px; background: none; border: 0; cursor: pointer; color: inherit;
+  border-radius: var(--theme-radius-doux);
+}
+
+/* --- Champs ------------------------------------------------------------- */
+.champ { display: flex; flex-direction: column; gap: 6px; }
+.champ > label, .champ > legend { font-size: .8125rem; font-weight: 500; color: var(--theme-encre); }
+.champ input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+.champ select, .champ textarea {
+  min-block-size: 48px; padding: .625rem .875rem;
+  background: var(--theme-surface); border: 1px solid var(--theme-contour-champ);
+  border-radius: var(--theme-radius-doux); font-size: 1rem;  /* 16 px : sous ce seuil iOS zoome */
+}
+.champ input:hover, .champ select:hover { border-color: var(--theme-encre-doux); }
+.champ input:focus-visible, .champ select:focus-visible, .champ textarea:focus-visible { border-color: var(--theme-encre); }
+
+.opt {
+  display: flex; align-items: center; gap: .625rem; min-block-size: 36px;
+  font-size: .9375rem; cursor: pointer;
+}
+.opt input[type="checkbox"], .opt input[type="radio"] {
+  inline-size: 18px; block-size: 18px; accent-color: var(--theme-encre); flex: none;
+}
+.opt .n { margin-inline-start: auto; font-size: .75rem; color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; }
+.opt.eteint { opacity: .4; cursor: not-allowed; }
+
+/* --- Prix et états ------------------------------------------------------ */
+.prix { font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+.prix .dev { margin-inline-start: .25em; font-size: .78em; letter-spacing: .02em; color: var(--theme-encre-doux); }
+.prix-fort { font-size: 1.375rem; font-weight: 500; }
+.prix-barre { color: var(--theme-encre-doux); text-decoration: line-through; font-variant-numeric: tabular-nums; }
+
+.etat {
+  display: inline-flex; align-items: center; gap: .375rem;
+  font-size: .75rem; font-weight: 500; letter-spacing: .02em; white-space: nowrap;
+}
+.etat::before { content: ""; inline-size: .45rem; block-size: .45rem; border-radius: 50%; background: currentColor; }
+.etat-stock { color: var(--theme-succes); }
+.etat-faible { color: var(--theme-alerte); }
+.etat-rupture { color: var(--theme-erreur); }
+.dispo { display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; color: var(--theme-succes); }
+
+/* --- Quantité ----------------------------------------------------------- */
+.qte {
+  display: inline-grid; grid-template-columns: 44px 2.5rem 44px; align-items: center;
+  border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux); background: var(--theme-surface);
+}
+.qte button { block-size: 46px; background: none; border: 0; cursor: pointer; font-size: 1.125rem; }
+.qte button:disabled { opacity: .3; cursor: not-allowed; }
+.qte span { text-align: center; font-variant-numeric: tabular-nums; }
+
+/* --- Puces (filtres actifs) --------------------------------------------- */
+.puces { display: flex; flex-wrap: wrap; gap: .5rem; }
+.puce {
+  display: inline-flex; align-items: center; gap: .5rem; padding: .375rem .75rem;
+  border: 1px solid var(--theme-filet-fort); border-radius: 999px; font-size: .8125rem; background: var(--theme-surface);
+}
+.puce:hover { border-color: var(--theme-encre); }
+
+/* --- Pastilles de couleur ------------------------------------------------ */
+.pastille {
+  display: inline-block; inline-size: .75rem; block-size: .75rem; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-encre) 18%, transparent);
+}
+
+/* --- Tiroirs (panier, menu, filtres) ------------------------------------ */
+.tiroir { position: fixed; inset: 0; z-index: 60; display: flex; }
+.tiroir-voile {
+  position: absolute; inset: 0; border: 0; cursor: pointer;
+  background: color-mix(in srgb, var(--theme-encre) 42%, transparent);
+  animation: tiroir-voile .25s var(--theme-courbe);
+}
+.tiroir-panneau {
+  position: relative; display: flex; flex-direction: column; inline-size: min(28rem, 100%);
+  block-size: 100%; background: var(--theme-fond); box-shadow: var(--theme-shadow-releve);
+  animation: tiroir-droite .32s var(--theme-courbe);
+}
+.tiroir[data-cote="fin"] { justify-content: flex-end; }
+.tiroir[data-cote="debut"] .tiroir-panneau { animation-name: tiroir-gauche; }
+.tiroir-tete {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 1rem var(--theme-marge); border-block-end: 1px solid var(--theme-filet);
+}
+.tiroir-corps { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 1rem var(--theme-marge); }
+.tiroir-pied { padding: 1rem var(--theme-marge) 1.25rem; border-block-start: 1px solid var(--theme-filet); background: var(--theme-fond); }
+@keyframes tiroir-voile { from { opacity: 0; } }
+@keyframes tiroir-droite { from { transform: translateX(100%); } }
+@keyframes tiroir-gauche { from { transform: translateX(-100%); } }
+[dir="rtl"] .tiroir-panneau { animation-name: tiroir-gauche; }
+[dir="rtl"] .tiroir[data-cote="debut"] .tiroir-panneau { animation-name: tiroir-droite; }
+
+/* --- Pli (accordéon <details>) ------------------------------------------- */
+.pli { border-block-end: 1px solid var(--theme-filet); }
+.pli > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  min-block-size: 56px; cursor: pointer; list-style: none; font-weight: 500;
+}
+.pli > summary::-webkit-details-marker { display: none; }
+.pli > summary::after { content: "+"; font-size: 1.25rem; font-weight: 300; transition: transform .2s var(--theme-courbe); }
+.pli[open] > summary::after { transform: rotate(45deg); }
+.pli > div { padding-block-end: 1.25rem; color: var(--theme-encre-doux); font-size: .9375rem; }
+
+/* --- Barre d'achat collante (mobile) ------------------------------------- */
+.achat-mobile {
+  position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 45;
+  display: flex; align-items: center; gap: 1rem; padding: .75rem var(--theme-marge) calc(.75rem + env(safe-area-inset-bottom));
+  background: var(--theme-fond); border-block-start: 1px solid var(--theme-filet); box-shadow: var(--theme-shadow-feuille);
+}
+@media (min-width: 900px) { .achat-mobile { display: none; } }
+@media (min-width: 900px) { .cache-desktop { display: none !important; } }
+@media (max-width: 899px) { .cache-mobile { display: none !important; } }
+
+/* --- Images -------------------------------------------------------------- */
+.cadre-image { position: relative; display: block; overflow: hidden; background: var(--theme-surface-2); }
+.cadre-image img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.cadre-image.detoure img { object-fit: contain; padding: 8%; mix-blend-mode: darken; }
+.cadre-image .photo-survol { opacity: 0; transition: opacity .5s var(--theme-courbe); }
+.attente-photo {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .875rem;
+  font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; color: var(--theme-encre-doux);
+}
+/* Le monogramme de la boutique en filigrane, s'il existe (thème). */
+.attente-photo .filigrane { display: none; }
+html[data-monogramme] .attente-photo .filigrane {
+  display: block; inline-size: 28%; aspect-ratio: 1; background-color: currentColor; opacity: .22;
+  -webkit-mask: var(--theme-monogramme) center / contain no-repeat; mask: var(--theme-monogramme) center / contain no-repeat;
+}
+picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+/* --- Marque --------------------------------------------------------------- */
+.marque {
+  display: block; block-size: var(--logo-h, 1.5rem); inline-size: calc(var(--logo-h, 1.5rem) * var(--theme-logo-ratio, 5));
+  max-inline-size: 100%; background-color: currentColor;
+  -webkit-mask: var(--theme-logo) center / contain no-repeat; mask: var(--theme-logo) center / contain no-repeat;
+}
+.marque-image { display: block; block-size: var(--logo-h, 1.5rem); inline-size: auto; }
+.marque-texte { display: block; font-family: var(--theme-font-display); font-size: 1.5rem; line-height: 1; white-space: nowrap; }
+.marque.marque-geante { inline-size: 100%; block-size: auto; aspect-ratio: var(--theme-logo-ratio, 5); }
+.marque-image.marque-geante { inline-size: 100%; block-size: auto; }
+.marque-texte.marque-geante {
+  font-size: clamp(3.25rem, 16vw, 17rem); line-height: .85; letter-spacing: -.02em; text-align: center; overflow: hidden;
+}
+
+/* --- Fil d'Ariane --------------------------------------------------------- */
+.fil ol { display: flex; flex-wrap: wrap; gap: .25rem .5rem; list-style: none; margin: 0; padding: 0; font-size: .75rem; color: var(--theme-encre-doux); }
+.fil li + li::before { content: "/"; margin-inline-end: .5rem; color: var(--theme-filet-fort); }
+.fil a:hover { color: var(--theme-encre); text-decoration: underline; text-underline-offset: .2em; }
+.fil [aria-current] { color: var(--theme-encre); }
+
+/* --- Listes : outils, puces, pagination, vide ----------------------------- */
+.listing-outils { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding-block: .75rem; }
+.listing-outils .compte { margin: 0; font-size: .8125rem; color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; }
+.listing-outils form { margin-inline-start: auto; }
+.listing-outils label { font-size: .8125rem; color: var(--theme-encre-doux); }
+.listing-outils select {
+  min-block-size: 40px; padding: .375rem 2rem .375rem .75rem; border: 1px solid var(--theme-filet-fort);
+  border-radius: var(--theme-radius-doux); background: var(--theme-surface); font-size: .875rem; cursor: pointer;
+}
+.listing-puces { align-items: center; padding-block: .25rem 1rem; }
+.btn-filtrer {
+  display: inline-flex; align-items: center; gap: .5rem; min-block-size: 40px; padding: .375rem 1rem;
+  background: var(--theme-surface); border: 1px solid var(--theme-filet-fort); border-radius: var(--theme-radius-doux);
+  font-size: .875rem; font-weight: 500; cursor: pointer;
+}
+.btn-filtrer:hover { border-color: var(--theme-encre); }
+.btn-filtrer-n {
+  display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding-inline: .3rem;
+  border-radius: 999px; background: var(--theme-encre); color: var(--theme-fond); font-size: .6875rem; font-variant-numeric: tabular-nums;
+}
+.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-block: 3rem 1rem; }
+.listing-fin { display: flex; flex-direction: column; align-items: center; gap: .75rem; margin-block: 3rem 1rem; }
+.listing-vide {
+  display: flex; flex-direction: column; align-items: center; gap: .75rem; text-align: center;
+  padding: 3rem 1.5rem; margin-block: 1rem 2rem; border: 1px solid var(--theme-filet); background: var(--theme-surface);
+  border-radius: var(--theme-radius-carte);
+}
+.listing-vide h2, .listing-vide h3 { font-size: 1.375rem; }
+.listing-vide p { max-inline-size: 44ch; color: var(--theme-encre-doux); font-size: .9375rem; }
+.sous-rayons { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 1.25rem 0 0; padding: 0; }
+.sous-rayons a {
+  display: inline-flex; align-items: center; gap: .5rem; min-block-size: 36px; padding: .375rem .875rem;
+  border: 1px solid var(--theme-filet-fort); border-radius: 999px; font-size: .8125rem; background: var(--theme-surface);
+}
+.sous-rayons a:hover { border-color: var(--theme-encre); }
+.sous-rayons .n { color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; }
+
+/* --- Recherche ------------------------------------------------------------- */
+.recherche-page { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: 1.25rem; max-inline-size: 40rem; }
+.recherche-page input {
+  flex: 1 1 16rem; min-block-size: 48px; padding: .625rem 1rem; font-size: 1rem;
+  border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux); background: var(--theme-surface);
+}
+.recherche-bilan { margin-block: 1rem 0; font-size: .875rem; color: var(--theme-encre-doux); }
+.recherche-resultats { margin-block: 1rem 3rem; }
+
+/* --- Formulaire de filtres ------------------------------------------------- */
+.filtres-form .groupe { padding-block: 1.125rem; border-block-end: 1px solid var(--theme-filet); }
+.filtres-form .groupe:first-of-type { padding-block-start: .25rem; }
+.filtres-form h3 {
+  margin-block-end: .625rem; font-family: var(--theme-font-texte); font-size: .75rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.pastilles-couleur { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pastilles-couleur .pc {
+  display: grid; place-items: center; inline-size: 36px; block-size: 36px; border-radius: 50%; cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--theme-filet);
+}
+.pastilles-couleur .pc i { inline-size: 26px; block-size: 26px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-encre) 16%, transparent); }
+.pastilles-couleur .pc-active { box-shadow: inset 0 0 0 2px var(--theme-encre); }
+.pastilles-couleur .pc.eteint { opacity: .3; cursor: not-allowed; }
+.pastilles-couleur .pc:has(input:focus-visible) { outline: 2px solid var(--theme-encre); outline-offset: 2px; }
+.prix-bornes { display: flex; align-items: center; gap: .5rem; }
+.prix-bornes input {
+  inline-size: 100%; min-block-size: 44px; padding: .5rem .75rem; font-size: 1rem;
+  border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux); background: var(--theme-surface);
+}
+.filtres-actions { display: grid; gap: .5rem; padding-block: 1.25rem; }
+.tiroir .filtres-actions {
+  position: sticky; inset-block-end: 0; z-index: 1; margin-inline: calc(-1 * var(--theme-marge));
+  padding: 1rem var(--theme-marge) calc(1rem + env(safe-area-inset-bottom)); background: var(--theme-fond);
+  border-block-start: 1px solid var(--theme-filet);
+}
+.tiroir-filtres .tiroir-corps { padding-block-end: 0; }
+
+/* --- Tiroirs : contenus ------------------------------------------------------ */
+.tiroir-titre { font-size: 1.25rem; line-height: 1.2; }
+.tiroir[data-instantane] .tiroir-panneau, .tiroir[data-instantane] .tiroir-voile { animation: none; }
+.tiroir-menu .tiroir-panneau { inline-size: min(24rem, 88vw); }
+.menu-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; }
+.menu-liste > li > a { display: block; padding-block: .5rem; font-size: 1.5rem; line-height: 1.2; font-family: var(--theme-font-display); }
+.menu-liste a[aria-current] { text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+.menu-sous-liste { list-style: none; margin: 0 0 .5rem; padding: 0 0 0 .125rem; display: grid; gap: .125rem; }
+.menu-sous-liste a { display: block; padding-block: .375rem; font-size: .9375rem; color: var(--theme-encre-doux); }
+.menu-faits { list-style: none; margin: 0; padding: 0; display: grid; gap: .375rem; font-size: .8125rem; color: var(--theme-encre-doux); }
+
+.panier-vide { padding-block: 2rem; display: grid; gap: .5rem; }
+.panier-lignes { list-style: none; margin: 0; padding: 0; }
+.panier-ligne { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 1rem; padding-block: 1rem; border-block-end: 1px solid var(--theme-filet); }
+.panier-vignette { position: relative; display: block; aspect-ratio: 4 / 5; background: var(--theme-surface-2); overflow: hidden; border-radius: var(--theme-radius-net); }
+.panier-vignette img { object-fit: cover; }
+.panier-ligne-corps { display: flex; flex-direction: column; gap: .25rem; min-inline-size: 0; }
+.panier-ligne-tete { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
+.panier-libelle { font-size: .875rem; line-height: 1.35; }
+.panier-libelle:hover { text-decoration: underline; text-underline-offset: .2em; }
+.panier-ligne-tete .prix { font-size: .875rem; }
+.panier-ligne-actions { display: flex; align-items: center; gap: 1rem; margin-block-start: .5rem; }
+.qte-petite { grid-template-columns: 36px 2rem 36px; }
+.qte-petite button { block-size: 34px; font-size: 1rem; }
+.panier-total { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: .875rem; }
+.tiroir-panier .tiroir-pied { display: grid; gap: .5rem; }
+.tiroir-panier .tiroir-pied .btn { margin-block-start: .5rem; }
+.jauge-livraison { padding-block: .25rem 1rem; border-block-end: 1px solid var(--theme-filet); font-size: .8125rem; }
+.jauge-livraison p { margin-block-end: .5rem; }
+.jauge { display: block; block-size: 4px; background: var(--theme-filet); border-radius: 2px; overflow: hidden; }
+.jauge > span { display: block; block-size: 100%; background: var(--theme-encre); transition: inline-size .4s var(--theme-courbe); }
+
+/* --- Bouton du panier (en-tête) ------------------------------------------- */
+.bouton-panier {
+  position: relative; display: inline-flex; align-items: center; gap: .375rem; min-block-size: 44px; min-inline-size: 44px;
+  justify-content: center; padding-inline: .5rem; background: none; border: 0; cursor: pointer; color: inherit;
+}
+
+/* --- Bloc d'achat de la fiche --------------------------------------------- */
+.fiche-achat { display: flex; flex-direction: column; gap: 1.25rem; }
+.fiche-prix { display: flex; align-items: baseline; flex-wrap: wrap; gap: .25rem .75rem; }
+.fiche-prix .prix-fort { font-size: 1.5rem; }
+.ttc { font-size: .75rem; font-weight: 600; color: var(--theme-encre-doux); letter-spacing: .04em; }
+.axe { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+.axe legend { display: flex; gap: .5rem; margin-block-end: .625rem; padding: 0; font-size: .8125rem; font-weight: 500; }
+.axe legend .choisi { color: var(--theme-encre-doux); font-weight: 400; }
+.axe-note { margin-block-start: .5rem; }
+.valeurs { display: flex; flex-wrap: wrap; gap: .5rem; }
+.valeur {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: .125rem;
+  min-block-size: 44px; min-inline-size: 3rem; padding: .5rem 1rem; cursor: pointer;
+  background: var(--theme-surface); border: 1px solid var(--theme-filet-fort); border-radius: var(--theme-radius-doux);
+  font-size: .875rem; line-height: 1.2; transition: border-color .15s, box-shadow .15s;
+}
+.valeur:hover:not(:disabled) { border-color: var(--theme-encre); }
+.valeur[aria-pressed="true"] { border-color: var(--theme-encre); box-shadow: inset 0 0 0 1px var(--theme-encre); }
+.valeur:disabled { cursor: not-allowed; color: var(--theme-encre-doux); background: var(--theme-surface-2); text-decoration: line-through; }
+.valeur .prix-option { font-size: .75rem; color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; }
+.valeurs-couleur { gap: .375rem; }
+.valeur-couleur { min-inline-size: 0; inline-size: 40px; block-size: 40px; min-block-size: 40px; padding: 3px; border-radius: 50%; border-color: transparent; background: transparent; }
+.valeur-couleur i { display: block; inline-size: 100%; block-size: 100%; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-encre) 16%, transparent); }
+.valeur-couleur[aria-pressed="true"] { border-color: var(--theme-encre); box-shadow: none; }
+.valeur-couleur:disabled { background: transparent; position: relative; }
+.valeur-couleur:disabled::after { content: ""; position: absolute; inset: 50% 4px auto; block-size: 1px; background: var(--theme-encre); transform: rotate(-45deg); }
+.valeur-couleur:disabled i { opacity: .35; }
+.fiche-indisponible { padding: 1rem; background: var(--theme-surface-2); border-radius: var(--theme-radius-doux); font-size: .875rem; }
+.achat { display: flex; gap: .75rem; }
+.btn-ajout { flex: 1; min-inline-size: 0; }
+.fiche-note { margin-block-start: -.5rem; }
+
+/* --- Caractéristiques ------------------------------------------------------- */
+.caracteristiques { margin: 0; display: grid; }
+.caracteristiques > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1rem; padding-block: .625rem; border-block-end: 1px solid var(--theme-filet); font-size: .875rem; }
+.caracteristiques dt { color: var(--theme-encre-doux); }
+.caracteristiques dd { margin: 0; }
+.plis { border-block-start: 1px solid var(--theme-filet); }

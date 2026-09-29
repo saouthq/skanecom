@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Archivo, IBM_Plex_Sans, Young_Serif } from "next/font/google";
 import "../globals.css";
 import "./console.css";
 import { feuilleDuTheme, themeDeLaBoutique } from "@/lib/theme";
@@ -13,14 +12,13 @@ import { feuilleDuTheme, themeDeLaBoutique } from "@/lib/theme";
    boutique. Jamais en cache, jamais indexée (le proxy pose les en-têtes).
    ========================================================================== */
 
-const plexSans = IBM_Plex_Sans({ weight: ["400", "500", "600"], subsets: ["latin", "latin-ext"], variable: "--font-plex-sans", display: "swap" });
-// Pour l'aperçu de la marque : les polices de titres qu'une boutique peut choisir.
-const youngSerif = Young_Serif({ weight: "400", subsets: ["latin", "latin-ext"], variable: "--font-young-serif", display: "swap", preload: false });
-const archivo = Archivo({ weight: ["500", "600", "700"], subsets: ["latin", "latin-ext"], variable: "--font-archivo", display: "swap", preload: false });
-
+/* Toutes les familles sont déclarées (app/polices.css) : l'aperçu de la
+   marque montre celles qu'une boutique peut choisir. Aucune n'est chargée
+   avant d'être employée. La console ne pose pas `data-gabarit` : elle ne
+   prend que le socle commun (socle.css). */
 const THEME_CONSOLE = themeDeLaBoutique({
-  code: "catalogue_technique",
-  polices: { titres: "plex-sans" },
+  code: "technique",
+  polices: { titres: "plex-sans", texte: "plex-sans" },
   couleurs: {
     fond: "#F4F5F7", surface: "#FFFFFF", surface_2: "#ECEEF2", filet: "#DCE0E6", filet_fort: "#B6BDC8",
     contour_champ: "#8792A2", encre: "#121826", encre_doux: "#4A5568", accent: "#1E4FD8", accent_clair: "#6E8FF0",
@@ -38,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function RacineConsole({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" dir="ltr" className={`${plexSans.variable} ${youngSerif.variable} ${archivo.variable} h-full`}>
+    <html lang="fr" dir="ltr" className="h-full">
       <head>
         <style dangerouslySetInnerHTML={{ __html: feuilleDuTheme(THEME_CONSOLE, (c) => c) }} />
       </head>

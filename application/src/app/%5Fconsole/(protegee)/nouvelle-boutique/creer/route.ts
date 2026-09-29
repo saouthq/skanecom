@@ -7,7 +7,7 @@ export async function POST(req: Request) {
       nom: String(formulaire.get("nom") ?? "").trim(),
       slug: String(formulaire.get("slug") ?? "").trim().toLowerCase(),
       hote: String(formulaire.get("hote") ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
-      theme: String(formulaire.get("theme") ?? "premium_sobre"),
+      theme: formulaire.get("theme") === "technique" ? "technique" : "editorial",
     };
     const { error } = await clientService(ip).rpc("console_creer_boutique", {
       p_acteur: user.id,

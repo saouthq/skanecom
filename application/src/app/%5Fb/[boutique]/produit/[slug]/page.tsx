@@ -2,23 +2,37 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Gabarit } from "@/components/Gabarit";
-import { Niche } from "@/components/Niche";
 import { CarteProduit } from "@/components/CarteProduit";
 import { FicheAchat } from "@/components/FicheAchat";
+import { FilAriane, type Etape } from "@/components/FilAriane";
+import { GalerieEditoriale, GalerieVignettes } from "@/components/Galerie";
 import { FournisseurSelection } from "@/components/SelectionVariante";
 import { SpecsVariante } from "@/components/SpecsVariante";
-import { Billets, Camion, Fleche, Retour } from "@/components/Icones";
-import { cadre as chargeCadre } from "@/lib/boutique";
-import { chargeProduit, listeProduits, prixDepuis } from "@/lib/catalogue";
-import { photosProduit, urlPhoto } from "@/lib/photos";
+import { Billets, Bulle, Camion, Magasin, Retour, Telephone } from "@/components/Icones";
+import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
+import { chargeProduit, listeProduits, prixDepuis, type Produit } from "@/lib/catalogue";
+import { photosProduit } from "@/lib/photos";
 import { formatePrix, prixDecimal } from "@/lib/prix";
+import { lienConseil } from "@/lib/faits";
 import { texte } from "@/lib/theme";
 import { champ, t } from "@/lib/i18n";
 
-/* La fiche est générée à la première visite puis servie depuis le cache :
+/* ============================================================================
+   LA FICHE PRODUIT — une par gabarit.
+
+   · ÉDITORIALE : les photos en grand à gauche, le bloc d'achat collant à
+     droite, le détail replié en accordéons. On regarde, puis on choisit.
+   · TECHNIQUE : galerie à vignettes, bloc d'achat dense (référence, stock
+     chiffré, prix TTC), puis description et tableau de caractéristiques
+     en clair — ce qu'un artisan vient vérifier.
+
+   Tout ce qui est dit du service (délai, frais, paiement, retrait, conseil)
+   vient d'un réglage ou d'un module actif, jamais du code.
+
+   La fiche est générée à la première visite puis servie depuis le cache :
    `generateStaticParams` vide est indispensable, sans lui une route à
-   segment dynamique n'est jamais mise en cache (découverte n°1 du
-   prototype). */
+   segment dynamique n'est jamais mise en cache.
+   ========================================================================== */
 export const revalidate = 300;
 
 export async function generateStaticParams() {
@@ -38,6 +52,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const description =
     produit.meta_description_fr ??
     (prix !== null ? t.seo.produitDescription(nom, formatePrix(prix)) : champ(produit, "description"));
+  const image = photosProduit(produit)[0];
 
   return {
     // Un titre SEO saisi au backoffice est gardé tel quel, sans le gabarit du
@@ -45,8 +60,25 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: produit.meta_titre_fr ? { absolute: produit.meta_titre_fr } : nom,
     description,
     alternates: { canonical: `/produit/${slug}` },
-    openGraph: { type: "website", title: nom, description },
+    openGraph: { type: "website", title: nom, description, ...(image ? { images: [{ url: image.src, alt: image.alt }] } : {}) },
   };
+}
+
+/** Ce qui rassure, ligne à ligne — chaque ligne vient d'un réglage réel. */
+function rassurances(cadre: Cadre) {
+  return [
+    cadre.modules.includes("retrait_magasin")
+      ? { cle: "retrait", icone: <Magasin />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte }
+      : null,
+    cadre.livraison.delai ? { cle: "livraison", icone: <Camion />, titre: cadre.livraison.delai, texte: cadre.livraison.frais ?? "" } : null,
+    cadre.livraison.cod
+      ? { cle: "cod", icone: <Billets />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte }
+      : null,
+    cadre.livraison.cod && cadre.livraison.rappel
+      ? { cle: "rappel", icone: <Telephone />, titre: t.produit.confirmationTelephonique, texte: t.produit.confirmationTelephoniqueTexte }
+      : null,
+    { cle: "refus", icone: <Retour />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
+  ].filter((r) => r !== null);
 }
 
 export default async function FicheProduit({ params }: Params) {
@@ -57,18 +89,19 @@ export default async function FicheProduit({ params }: Params) {
 
   const nom = champ(produit, "nom");
   const rayon = produit.categorie;
-  const photos = photosProduit(produit);
-  const principale = urlPhoto(produit);
-  const origine = texte(cadre.theme.textes, "origine") || undefined;
-  const politiqueRetour = texte(cadre.theme.textes, "politique_retour");
+  const gabarit = cadre.theme.code;
 
-  /* Trois voisins du même rayon, pris par la base : la grille en compte trois
-     par ligne. */
+  /* Des voisins du même rayon, pris par la base. */
   const voisins = (
-    await listeProduits(cadre.boutique.id, rayon ? { rayon: rayon.slug } : {}, "selection", 1, 4)
+    await listeProduits(cadre.boutique.id, rayon ? { rayon: rayon.slug } : {}, "selection", 1, gabarit === "technique" ? 6 : 5)
   ).produits
     .filter((p) => p.id !== produit.id)
-    .slice(0, 3);
+    .slice(0, gabarit === "technique" ? 5 : 4);
+
+  const fil: Etape[] = [
+    ...(rayon ? [{ nom: champ(rayon, "nom"), href: `/categorie/${rayon.slug}` }] : [{ nom: t.commun.toutLeCatalogue, href: "/catalogue" }]),
+    { nom },
+  ];
 
   /* Données structurées : ce qui fait apparaître le prix et la disponibilité
      dans un résultat Google. */
@@ -77,6 +110,7 @@ export default async function FicheProduit({ params }: Params) {
     "@type": "Product",
     name: nom,
     description: champ(produit, "description"),
+    image: photosProduit(produit).map((p) => p.src),
     brand: produit.marque ? { "@type": "Brand", name: produit.marque } : undefined,
     category: rayon ? champ(rayon, "nom") : undefined,
     offers: produit.variantes.map((v) => ({
@@ -89,131 +123,155 @@ export default async function FicheProduit({ params }: Params) {
   };
 
   return (
-    <Gabarit>
-      <nav className="fil pt-4" aria-label={t.commun.filAriane}>
-        <Link href="/">{t.commun.accueil}</Link>
-        <Fleche taille={14} className="rtl:-scale-x-100" />
-        {rayon ? (
-          <>
-            <Link href={`/categorie/${rayon.slug}`}>{champ(rayon, "nom")}</Link>
-            <Fleche taille={14} className="rtl:-scale-x-100" />
-          </>
-        ) : null}
-        <span aria-current="page" className="text-encre">{nom}</span>
-      </nav>
-
-      <FournisseurSelection produit={produit}>
-        <div className="fiche">
-          <div className="galerie">
-            <Niche
-              photo={principale}
-              /* Sans photo, une niche pleine largeur ferait 800 px de vide. */
-              className={principale ? "grande" : "grande max-w-[22rem]"}
-              prioritaire
-              tailles="(min-width: 1000px) 48vw, 92vw"
-            />
-            {photos.length > 1 ? (
-              <div className="vues" aria-label={t.produit.galerieAria}>
-                {photos.slice(0, 3).map((photo) => (
-                  <Niche key={photo.src} photo={photo} tailles="16vw" />
-                ))}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="decision">
-            {rayon ? (
-              <p className="etiquette m-0">
-                <b>—</b> <span>{champ(rayon, "nom")}</span>
-              </p>
-            ) : null}
-            <h1 className="text-t2 md:text-t1 mt-3">{nom}</h1>
-
-            {produit.marque ? (
-              <p className="marque-tierce">
-                {t.produit.marque} : <b>{produit.marque}</b>
-              </p>
-            ) : null}
-
-            <FicheAchat produit={produit} prixBarres={cadre.prixBarres} />
-
-            {/* CE QUI FAIT DÉCIDER — chaque ligne vient d'un réglage réel. */}
-            <ul className="rassure">
-              {cadre.livraison.delai ? (
-                <li>
-                  <Camion />
-                  <span>
-                    <b>{cadre.livraison.delai}</b>
-                    <span>{cadre.livraison.frais}</span>
-                  </span>
-                </li>
-              ) : null}
-              {cadre.livraison.cod ? (
-                <li>
-                  <Billets />
-                  <span>
-                    <b>{t.produit.payezALaLivraison}</b>
-                    <span>{t.produit.payezALaLivraisonTexte}</span>
-                  </span>
-                </li>
-              ) : null}
-              <li>
-                <Retour />
-                <span>
-                  <b>{t.produit.refusPossible}</b>
-                  <span>{t.produit.refusPossibleTexte}</span>
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="detail-galerie">
-            <SpecsVariante />
-
-            <details className="pli" open>
-              <summary>{t.produit.description}</summary>
-              <p>{champ(produit, "description")}</p>
-            </details>
-            {cadre.livraison.delai ? (
-              <details className="pli">
-                <summary>{t.produit.livraisonEtDelais}</summary>
-                <p>{cadre.livraison.rappel ? t.produit.expeditionAvecRappel(origine) : t.produit.expeditionTexte(origine)}</p>
-              </details>
-            ) : null}
-            <details className="pli">
-              <summary>{t.produit.retourEtRefus}</summary>
-              <p>{[t.produit.retourEtRefusTexte, politiqueRetour].filter(Boolean).join(" ")}</p>
-            </details>
-          </div>
-        </div>
-      </FournisseurSelection>
+    <Gabarit className={gabarit === "technique" ? "enveloppe flex-1" : "flex-1"}>
+      {gabarit === "technique" ? (
+        <FicheTechnique cadre={cadre} produit={produit} fil={fil} />
+      ) : (
+        <FicheEditoriale cadre={cadre} produit={produit} fil={fil} />
+      )}
 
       {voisins.length > 0 ? (
-        <section className="section pt-0">
-          <hr className="filet-marque" />
-          <div className="mt-6 mb-8">
-            <p className="etiquette">
-              <b>—</b> <span>{t.produit.aussiEnBoutique}</span>
-            </p>
-            <h2 className="text-t3 mt-3">{t.produit.aussiEnBoutiqueTitre}</h2>
+        <section className={gabarit === "technique" ? "te-section" : "enveloppe ed-section"}>
+          <div className={gabarit === "technique" ? "te-section-tete" : "ed-section-tete"}>
+            <h2>{gabarit === "technique" ? t.produit.memeRayon : t.produit.vousAimerez}</h2>
+            {rayon ? (
+              <Link className="lien-souligne" href={`/categorie/${rayon.slug}`}>
+                {t.commun.voirLeRayon}
+              </Link>
+            ) : null}
           </div>
-          <div className="grille-produits grille-trois">
+          <div className={gabarit === "technique" ? "te-grille te-grille-rang" : "ed-grille"}>
             {voisins.map((p) => (
-              <CarteProduit key={p.id} produit={p} tailles="(min-width: 700px) 30vw, 92vw" />
+              <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} />
             ))}
           </div>
-          {rayon ? (
-            <p className="mt-8">
-              <Link className="btn btn-second" href={`/categorie/${rayon.slug}`}>
-                {t.commun.voirLeRayon} — {champ(rayon, "nom")}
-                <Fleche taille={18} className="rtl:-scale-x-100" />
-              </Link>
-            </p>
-          ) : null}
         </section>
       ) : null}
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(donnees).replace(/</g, "\\u003c") }} />
     </Gabarit>
+  );
+}
+
+function FicheEditoriale({ cadre, produit, fil }: { cadre: Cadre; produit: Produit; fil: Etape[] }) {
+  const origine = texte(cadre.theme.textes, "origine") || undefined;
+  const politiqueRetour = texte(cadre.theme.textes, "politique_retour");
+  const description = champ(produit, "description");
+  const lignes = rassurances(cadre).filter((r) => r.cle !== "rappel").slice(0, 3);
+
+  return (
+    <FournisseurSelection produit={produit}>
+      <div className="ed-fiche">
+        <GalerieEditoriale photos={photosProduit(produit)} />
+
+        <div className="ed-fiche-panneau">
+          <div className="ed-fiche-collant">
+            <FilAriane etapes={fil} />
+            {produit.marque ? <p className="etiquette">{produit.marque}</p> : null}
+            <h1>{champ(produit, "nom")}</h1>
+            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} />
+
+            <ul className="ed-rassure">
+              {lignes.map((r) => (
+                <li key={r.cle}>
+                  {r.icone}
+                  <span>
+                    <b>{r.titre}</b> {r.texte}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="plis">
+              {description ? (
+                <details className="pli" open>
+                  <summary>{t.produit.description}</summary>
+                  <div>
+                    <p>{description}</p>
+                  </div>
+                </details>
+              ) : null}
+              <details className="pli">
+                <summary>{t.produit.caracteristiques}</summary>
+                <div>
+                  <SpecsVariante />
+                </div>
+              </details>
+              {cadre.livraison.delai ? (
+                <details className="pli">
+                  <summary>{t.produit.livraisonEtDelais}</summary>
+                  <div>
+                    <p>{cadre.livraison.rappel ? t.produit.expeditionAvecRappel(origine) : t.produit.expeditionTexte(origine)}</p>
+                  </div>
+                </details>
+              ) : null}
+              <details className="pli">
+                <summary>{t.produit.retourEtRefus}</summary>
+                <div>
+                  <p>{[t.produit.retourEtRefusTexte, politiqueRetour].filter(Boolean).join(" ")}</p>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+    </FournisseurSelection>
+  );
+}
+
+function FicheTechnique({ cadre, produit, fil }: { cadre: Cadre; produit: Produit; fil: Etape[] }) {
+  const conseil = lienConseil(cadre);
+  const description = champ(produit, "description");
+  const rayon = produit.categorie ? champ(produit.categorie, "nom") : null;
+
+  return (
+    <FournisseurSelection produit={produit}>
+      <FilAriane etapes={fil} />
+      <div className="te-fiche">
+        <GalerieVignettes photos={photosProduit(produit)} />
+
+        <div className="te-fiche-achat">
+          {produit.marque ? <p className="te-fiche-marque">{produit.marque}</p> : null}
+          <h1>{champ(produit, "nom")}</h1>
+          <SpecsVariante mode="ref" />
+          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} />
+
+          <ul className="te-rassure">
+            {rassurances(cadre).map((r) => (
+              <li key={r.cle}>
+                {r.icone}
+                <span>
+                  <b>{r.titre}</b>
+                  <span>{r.texte}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {conseil ? (
+            <a className="te-conseil" href={conseil} target="_blank" rel="noopener noreferrer">
+              <Bulle taille={22} />
+              <span>
+                <b>{t.produit.conseil}</b>
+                <span>{t.produit.conseilTexte}</span>
+              </span>
+            </a>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="te-fiche-details">
+        {description ? (
+          <section>
+            <h2>{t.produit.description}</h2>
+            <p>{description}</p>
+          </section>
+        ) : null}
+        <section>
+          <h2>{t.produit.caracteristiques}</h2>
+          <SpecsVariante marque={produit.marque} rayon={rayon} />
+        </section>
+      </div>
+    </FournisseurSelection>
   );
 }

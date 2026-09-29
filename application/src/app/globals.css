@@ -1,36 +1,30 @@
 /* ============================================================================
-   SKANECOM — feuille racine de la vitrine
+   SKANECOM — feuille racine (vitrine et console).
 
-   ORDRE VOLONTAIRE (ne pas permuter) :
-   1. tailwindcss        — le moteur
-   2. theme.css          — les jetons par défaut (thème n°1) ; chaque boutique
-                          remplace les siens par la balise <style> du layout
-   3. marque.css         — les gestes de marque (arc, boutons, états, champs)
-
-   ⚠️ CE FICHIER ET theme.css SONT L'HABILLAGE. Changer la direction visuelle
-   du site = échanger theme.css (et au besoin marque.css). AUCUN composant de
-   src/components ne porte une valeur de couleur, de rayon ou d'ombre en dur :
-   ils n'emploient que les utilitaires dérivés des jetons (bg-fond, text-encre,
-   rounded-carte, shadow-carte, text-t2, font-display…).
-
-   Le squelette create-next-app est neutralisé ici :
-   - le bloc `prefers-color-scheme: dark` est SUPPRIMÉ (la charte est claire
-     d'abord, et oeil-neuf force le mode clair : il ne l'attraperait jamais) ;
-   - `font-family: Arial` est remplacé par la police de la charte.
+   ORDRE VOLONTAIRE :
+   1. tailwindcss   — le moteur ;
+   2. polices.css   — les @font-face (@fontsource), chargés à l'usage ;
+      theme.css     — les jetons (défauts du gabarit éditorial) ;
+   3. socle.css     — ce que partagent les gabarits et la console : boutons,
+                      champs, tiroirs, prix, états, puces ;
+   4. editorial.css et technique.css — chaque gabarit, sous
+                      `html[data-gabarit="…"]` : l'un ne déborde jamais sur
+                      l'autre.
    ========================================================================== */
 
 @import "tailwindcss";
+@import "./polices.css";
 @import "./theme.css";
-@import "./marque.css";
+@import "./socle.css";
+@import "./editorial.css";
+@import "./technique.css";
 
-/* --- Jetons propres à l'application (rythme, gouttières) ------------------
-   Les valeurs de MARQUE ne s'écrivent jamais ici : elles viennent de theme.css. */
 :root {
-  --theme-marge: 1.5rem;    /* gouttière mobile */
-  --theme-large: 76rem;     /* largeur de contenu */
+  --theme-marge: 1rem;      /* gouttière mobile : 16 px */
+  --theme-large: 90rem;     /* 1440 px de contenu */
 }
-@media (min-width: 900px)  { :root { --theme-marge: 3rem; } }
-@media (min-width: 1300px) { :root { --theme-marge: 4.5rem; } }
+@media (min-width: 700px)  { :root { --theme-marge: 1.5rem; } }
+@media (min-width: 1100px) { :root { --theme-marge: 2.5rem; } }
 
 @theme inline {
   --spacing-marge: var(--theme-marge);
@@ -38,34 +32,20 @@
 }
 
 @layer base {
-  html {
-    -webkit-text-size-adjust: 100%;
-    scroll-behavior: smooth;
-  }
-
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     background-color: var(--theme-fond);
     color: var(--theme-encre);
     font-family: var(--theme-font-texte);
     font-size: 1rem;
-    line-height: 1.65;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
-
-  /* Titrage : Young Serif n'existe QU'EN 400. La hiérarchie se fait à la
-     taille et à l'espace — `font-synthesis-weight: none` interdit au moteur
-     de fabriquer un faux gras (charte §7). */
-  h1, h2, h3 {
-    font-family: var(--theme-font-display);
-    font-weight: 400;
-    font-synthesis-weight: none;
-    letter-spacing: -0.015em;
-    text-wrap: balance;
-  }
-
+  h1, h2, h3, h4 { font-family: var(--theme-font-display); font-weight: 400; text-wrap: balance; }
+  p { text-wrap: pretty; }
   a { color: inherit; text-decoration: none; }
-  img, svg { display: block; max-inline-size: 100%; }
+  img, svg, video { display: block; max-inline-size: 100%; }
   button, input, select, textarea { font: inherit; color: inherit; }
-
-  ::selection { background-color: var(--theme-accent); color: var(--theme-surface); }
+  ::selection { background-color: var(--theme-encre); color: var(--theme-fond); }
 }

@@ -167,7 +167,7 @@ create function public.console_creer_boutique(
   p_slug   text,
   p_nom    text,
   p_hote   text,
-  p_theme  text default 'premium_sobre',
+  p_theme  text default 'editorial',
   p_langue text default 'fr'
 )
 returns uuid

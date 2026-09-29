@@ -64,9 +64,12 @@ revoke execute on function private.valide_chemins_catalogue()     from public, a
 -- ---------------------------------------------------------------------
 -- Thème de chaque boutique
 -- ---------------------------------------------------------------------
--- Le code est le même pour toutes les boutiques ; le thème l'habille. Le
--- thème n°1 « premium_sobre » est la charte de Maymar ; le n°2
--- « catalogue_technique » vise l'outillage et la quincaillerie (D19).
+-- Le code est le même pour toutes les boutiques ; le thème l'habille. Son
+-- `code` est le GABARIT, c'est-à-dire la structure des pages :
+--   · editorial — mode, bagages, maroquinerie : grandes images, peu de mots ;
+--   · technique — outillage, quincaillerie : grille dense, fiches techniques.
+-- La boutique règle par-dessus ses couleurs, ses polices, ses textes et ses
+-- sections d'accueil.
 --
 -- SÉCURITÉ : les couleurs et les polices finissent dans une balise <style>
 -- de chaque page. Une valeur libre permettrait d'y injecter du CSS, voire de
@@ -77,8 +80,8 @@ revoke execute on function private.valide_chemins_catalogue()     from public, a
 --              boutique.
 create table public.themes (
   boutique_id       uuid primary key references plateforme.boutiques (id) on delete cascade,
-  code              text not null default 'premium_sobre'
-                    check (code in ('premium_sobre', 'catalogue_technique')),
+  code              text not null default 'editorial'
+                    check (code in ('editorial', 'technique')),
   couleurs          jsonb not null default '{}'::jsonb,
   polices           jsonb not null default '{}'::jsonb,
   logo_chemin       text,
@@ -100,7 +103,7 @@ comment on column public.themes.couleurs is
 comment on column public.themes.textes is
   'Textes de marque, par langue : {"resume_fr": "…", "resume_ar": "…"}.';
 comment on column public.themes.sections is
-  'Sections de l''accueil, dans l''ordre : [{"type": "hero", "textes": {...}, "image": {"chemin": "...", "detouree": true}}, …]. NULL = les sections par défaut du thème.';
+  'Sections de l''accueil, dans l''ordre : [{"type": "hero", "textes": {...}, "image": {"chemin": "...", "chemin_portrait": "...", "detouree": true}}, …]. NULL = les sections par défaut du thème.';
 
 create function private.valide_textes(p_textes jsonb, p_ou text)
 returns void
@@ -152,8 +155,8 @@ begin
     raise exception 'themes.polices : un objet est attendu' using errcode = 'check_violation';
   end if;
   for e in select * from jsonb_each(new.polices) loop
-    if not ((e.key = 'titres' and e.value in ('"young-serif"', '"plex-sans"', '"archivo"'))
-            or (e.key = 'texte' and e.value in ('"plex-sans"'))) then
+    if not ((e.key = 'titres' and e.value in ('"instrument-serif"', '"instrument-sans"', '"archivo"', '"young-serif"', '"plex-sans"'))
+            or (e.key = 'texte' and e.value in ('"instrument-sans"', '"archivo"', '"plex-sans"'))) then
       raise exception 'themes.polices : « % » = % n''est pas une police disponible', e.key, e.value
         using errcode = 'check_violation';
     end if;
@@ -174,8 +177,8 @@ begin
     end if;
     for s in select * from jsonb_array_elements(new.sections) loop
       if jsonb_typeof(s) <> 'object'
-         or coalesce(s ->> 'type', '') not in ('hero', 'rayons', 'selection', 'comment_ca_marche', 'texte')
-         or exists (select 1 from jsonb_object_keys(s) k where k not in ('type', 'textes', 'image', 'nombre')) then
+         or coalesce(s ->> 'type', '') not in ('hero', 'rayons', 'selection', 'editorial', 'engagements', 'texte')
+         or exists (select 1 from jsonb_object_keys(s) k where k not in ('type', 'textes', 'image', 'nombre', 'lien', 'rayon')) then
         raise exception 'themes.sections : section invalide %', s using errcode = 'check_violation';
       end if;
       if s ? 'textes' then
@@ -183,14 +186,24 @@ begin
       end if;
       if s ? 'image' then
         if jsonb_typeof(s -> 'image') <> 'object'
-           or exists (select 1 from jsonb_object_keys(s -> 'image') k where k not in ('chemin', 'detouree'))
+           or exists (select 1 from jsonb_object_keys(s -> 'image') k where k not in ('chemin', 'chemin_portrait', 'detouree'))
            or (s -> 'image' ? 'detouree' and jsonb_typeof(s -> 'image' -> 'detouree') <> 'boolean') then
           raise exception 'themes.sections : image invalide %', s -> 'image' using errcode = 'check_violation';
         end if;
         perform private.valide_chemin(new.boutique_id, s -> 'image' ->> 'chemin');
+        -- Le cadrage portrait, pour les téléphones (facultatif).
+        perform private.valide_chemin(new.boutique_id, s -> 'image' ->> 'chemin_portrait');
       end if;
       if s ? 'nombre' and (jsonb_typeof(s -> 'nombre') <> 'number' or (s ->> 'nombre')::numeric not between 1 and 24) then
         raise exception 'themes.sections : nombre entre 1 et 24' using errcode = 'check_violation';
+      end if;
+      -- Un lien reste DANS la boutique : un chemin, jamais une autre origine.
+      if s ? 'lien' and (jsonb_typeof(s -> 'lien') <> 'string' or (s ->> 'lien') !~ '^/[A-Za-z0-9/_=~%.-]*$'
+                         or (s ->> 'lien') like '//%' or (s ->> 'lien') like '%..%') then
+        raise exception 'themes.sections : lien interne attendu (« /categorie/… »), pas %', s -> 'lien' using errcode = 'check_violation';
+      end if;
+      if s ? 'rayon' and (jsonb_typeof(s -> 'rayon') <> 'string' or (s ->> 'rayon') !~ '^[a-z0-9]+(-[a-z0-9]+)*$') then
+        raise exception 'themes.sections : identifiant de rayon invalide %', s -> 'rayon' using errcode = 'check_violation';
       end if;
     end loop;
   end if;

@@ -29,6 +29,22 @@ import type { Liste, OptionAxe } from "@/lib/catalogue";
    et ne se coche pas : on prévient l'erreur au lieu de l'annoncer après.
    ========================================================================== */
 
+const TAILLES = ["XXS", "XS", "XS/S", "S", "S/M", "M", "M/L", "L", "L/XL", "XL", "XXL", "3XL"];
+
+/** Les valeurs d'un axe dans l'ordre où on les lit : les tailles de XS à XL,
+ *  les mesures du plus petit au plus grand (4 mm, 6 mm, 10 mm). Sinon, l'ordre
+ *  de la base. */
+export function ordreNaturel<T extends { valeur: string }>(options: T[]): T[] {
+  const rang = (v: string) => TAILLES.indexOf(v.trim().toUpperCase());
+  if (options.every((o) => rang(o.valeur) >= 0)) return [...options].sort((a, b) => rang(a.valeur) - rang(b.valeur));
+  const nombre = (v: string) => Number.parseFloat(v.replace(",", "."));
+  if (options.every((o) => Number.isFinite(nombre(o.valeur)))) return [...options].sort((a, b) => nombre(a.valeur) - nombre(b.valeur));
+  return options;
+}
+
+/** Demande de fermeture du tiroir de filtres (« Voir les résultats »). */
+export const FERMER_FEUILLE = "skanecom:filtres-fermer";
+
 export function libelleAxe(cle: string, axes: OptionAxe[]): string {
   const axe = axes.find((a) => a.cle === cle);
   return (axe && champ(axe, "label")) || t.catalogue.axes[cle] || cle.charAt(0).toUpperCase() + cle.slice(1).replace(/_/g, " ");
@@ -40,6 +56,7 @@ export function FormulaireFiltres({
   valeurs,
   prefixe,
   avecRayons,
+  resultats,
 }: {
   /** L'adresse de la liste sans filtres : /catalogue ou /categorie/<slug>. */
   base: string;
@@ -49,6 +66,8 @@ export function FormulaireFiltres({
    *  les identifiants doivent rester uniques dans la page. */
   prefixe: string;
   avecRayons: boolean;
+  /** Nombre de résultats de la liste courante, dit sur le bouton. */
+  resultats?: number;
 }) {
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
@@ -72,21 +91,26 @@ export function FormulaireFiltres({
 
   /** Applique un état : les bornes de prix saisies voyagent avec lui, même
    *  si on n'a pas encore cliqué sur « Appliquer ». */
-  const applique = (f: Filtres) => {
+  const applique = (f: Filtres, declencheur?: EventTarget | null) => {
     const suivant = { ...f, minDinars: nombre(min), maxDinars: nombre(max), page: 1 };
     setChoix(suivant);
-    noteReprise(`filtres-${prefixe}`, form.current);
+    if (declencheur instanceof HTMLElement && declencheur.hasAttribute("data-voir")) {
+      // « Voir les résultats » : on veut la liste, pas le tiroir.
+      window.dispatchEvent(new CustomEvent(FERMER_FEUILLE));
+    } else {
+      noteReprise(`filtres-${prefixe}`, form.current, declencheur);
+    }
     router.push(cheminFiltres(base, suivant), { scroll: false });
   };
 
-  const bascule = (cle: string, valeur: string, coche: boolean) => {
+  const bascule = (cle: string, valeur: string, coche: boolean, declencheur: EventTarget) => {
     const liste = choix.options[cle] ?? [];
-    applique({ ...choix, options: { ...choix.options, [cle]: coche ? [...liste, valeur] : liste.filter((v) => v !== valeur) } });
+    applique({ ...choix, options: { ...choix.options, [cle]: coche ? [...liste, valeur] : liste.filter((v) => v !== valeur) } }, declencheur);
   };
 
-  const envoie = (e: FormEvent) => {
+  const envoie = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    applique(choix);
+    applique(choix, (e.nativeEvent as SubmitEvent).submitter);
   };
 
   // Les axes déclarés d'abord, dans leur ordre ; puis ceux sans déclaration.
@@ -118,7 +142,7 @@ export function FormulaireFiltres({
       ) : null}
 
       {cles.map((cle) => {
-        const options = facettes.options[cle] ?? [];
+        const options = ordreNaturel(facettes.options[cle] ?? []);
         const choisies = choix.options[cle] ?? [];
         if (options.length < 2 && choisies.length === 0) return null;
         const estCouleur = cle === "couleur";
@@ -136,14 +160,14 @@ export function FormulaireFiltres({
                     title={`${o.valeur} — ${o.compte}`}
                   >
                     <input type="checkbox" name={`a.${cle}`} value={o.valeur} checked={coche}
-                      disabled={eteint} onChange={(e) => bascule(cle, o.valeur, e.target.checked)} className="sr-only" />
+                      disabled={eteint} onChange={(e) => bascule(cle, o.valeur, e.target.checked, e.target)} className="sr-only" />
                     <i style={{ background: couleurDeColoris(o.valeur) }} aria-hidden="true" />
                     <span className="sr-only">{o.valeur}</span>
                   </label>
                 ) : (
                   <label key={o.valeur} className={`opt${eteint ? " eteint" : ""}`}>
                     <input type="checkbox" name={`a.${cle}`} value={o.valeur} checked={coche}
-                      disabled={eteint} onChange={(e) => bascule(cle, o.valeur, e.target.checked)} />
+                      disabled={eteint} onChange={(e) => bascule(cle, o.valeur, e.target.checked, e.target)} />
                     {o.valeur}
                     <span className="n">{o.compte}</span>
                   </label>
@@ -176,16 +200,17 @@ export function FormulaireFiltres({
         <h3>{t.catalogue.disponibilite}</h3>
         <label className="opt">
           <input type="checkbox" name="stock" value="1" checked={choix.enStock}
-            onChange={(e) => applique({ ...choix, enStock: e.target.checked })} />
+            onChange={(e) => applique({ ...choix, enStock: e.target.checked }, e.target)} />
           {t.catalogue.enStockSeulement}
         </label>
       </div>
 
-      <div className="groupe grid gap-2 border-b border-filet">
+      <div className="filtres-actions">
         {/* Sans JavaScript, c'est ce bouton qui applique les filtres ; avec, il
-            sert aux bornes de prix (on ne soumet pas à chaque frappe). */}
-        <button type="submit" className="btn btn-primaire btn-bloc">
-          {t.catalogue.appliquer}
+            sert aux bornes de prix (on ne soumet pas à chaque frappe) et
+            referme le tiroir. */}
+        <button type="submit" className="btn btn-primaire btn-bloc" data-voir>
+          {resultats !== undefined ? t.catalogue.voirResultats(resultats) : t.catalogue.appliquer}
         </button>
         <Link className="btn btn-second btn-bloc" href={base} scroll={false}>
           {t.catalogue.toutEffacer}

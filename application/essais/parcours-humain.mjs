@@ -5,9 +5,10 @@ import { creeTesteur } from "./testeur.mjs";
    tape au clavier avec des pauses, passe au téléphone, et regarde l'écran.
 
    Il complète outils/essai-vitrine.sh (qui vérifie les RÉPONSES du serveur) :
-   ici on vérifie ce qu'une personne vit — le focus au clavier, la page qui ne
-   saute pas, la feuille de filtres qui reste ouverte, le tiroir du panier qui
-   garde le focus, l'en-tête présent partout. Chaque étape laisse une capture.
+   ici on vérifie ce qu'une personne vit, dans les DEUX gabarits — l'en-tête
+   posé sur la photo d'ouverture, le tiroir de filtres qui se rouvre après
+   chaque case, le focus au clavier, le panier qui s'ouvre après un ajout,
+   la barre d'achat du téléphone. Chaque étape laisse une capture.
 
      cd application && bun run parcours            # vitrine sur 127.0.0.1:4200
      CAPTURES=dossier CHROMIUM=/chemin/chrome bun run parcours
@@ -20,188 +21,117 @@ const t = creeTesteur();
 const { pause, note, verifie, capture, clic, tape, etape } = t;
 const M = t.adresse("maymar.localhost");
 const Q = t.adresse("quincaillerie.localhost");
-// La page introuvable est visitée exprès.
-const espion = (page, nom) => t.espion(page, nom, (url) => url.includes("/produit/perceuse"));
+const S = t.adresse("mode.localhost");
+// Les pages introuvables sont visitées exprès.
+const espion = (page, nom) => t.espion(page, nom, (url) => /\/produit\/(perceuse|robe-)/.test(url));
 const navigateur = await t.navigateur();
+const compte = (page) => page.locator("header .bouton-panier-compte").innerText().catch(() => "");
+const tiroirOuvert = (page, classe) => page.locator(`.tiroir.${classe}[role=dialog]`).isVisible().catch(() => false);
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 1. Maymar, à la souris, sur ordinateur ==");
+console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
 {
-  const ctx = await navigateur.newContext({ viewport: { width: 1366, height: 850 }, locale: "fr-FR" });
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
-  espion(page, "maymar-souris");
+  espion(page, "selma-souris");
 
-  await etape("accueil", async () => {
-    await page.goto(M + "/", { waitUntil: "networkidle" });
-    await capture(page, "maymar-accueil");
-    await capture(page, "maymar-accueil-complete", true);
-    verifie((await page.title()).includes("Maymar"), `titre de l'onglet : « ${await page.title()} »`);
-  });
-
-  await etape("menu vers le catalogue", async () => {
-    const lien = page.getByRole("navigation", { name: /principale/i }).getByRole("link", { name: /catalogue/i });
-    await lien.hover(); await pause(300);
-    await capture(page, "maymar-survol-menu");
-    await clic(page, lien);
-    await page.waitForURL(/\/catalogue$/);
+  await etape("accueil : l'en-tête posé sur la photo", async () => {
+    await page.goto(S + "/", { waitUntil: "networkidle" });
+    await capture(page, "selma-accueil");
+    const entete = page.locator("header.ed-entete");
+    verifie(await entete.getAttribute("data-transparent") !== null, "en haut de page, l'en-tête est transparent sur la photo");
+    await page.mouse.wheel(0, 700); await pause(600);
+    verifie(await entete.getAttribute("data-transparent") === null, "après défilement, l'en-tête redevient opaque");
+    await capture(page, "selma-accueil-defile");
+    await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 100)); } });
     await page.waitForLoadState("networkidle");
-    await capture(page, "maymar-catalogue");
-    verifie(true, `catalogue ouvert : ${await page.locator(".compte").innerText()}`);
+    await capture(page, "selma-accueil-complete", true);
+    const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    verifie(!deborde, "pas de défilement horizontal");
   });
 
-  await etape("filtre couleur Bordeaux", async () => {
-    const pastille = page.locator("aside label[title^='Bordeaux']");
-    await page.mouse.wheel(0, 250); await pause(400);
-    const avant = await page.evaluate(() => window.scrollY);
-    await clic(page, pastille);
-    await page.waitForURL(/couleur=Bordeaux/);
+  await etape("collection « Robes » depuis l'accueil", async () => {
+    await page.evaluate(() => window.scrollTo(0, 0)); await pause(300);
+    const tuile = page.locator(".ed-collections a", { hasText: "Robes" });
+    await clic(page, tuile);
+    await page.waitForURL(/\/categorie\/robes$/);
     await page.waitForLoadState("networkidle");
-    await capture(page, "maymar-filtre-bordeaux");
-    verifie(page.url().endsWith("/catalogue/couleur=Bordeaux"), `adresse : ${page.url()}`);
-    const apres = await page.evaluate(() => window.scrollY);
-    verifie(Math.abs(apres - avant) < 40, `la page ne remonte pas en haut (défilement ${avant} → ${apres})`);
-    verifie(await page.locator(".puce", { hasText: "Bordeaux" }).count() === 1, "la puce « Bordeaux » apparaît");
+    await capture(page, "selma-rayon-robes");
+    verifie(await page.getByRole("navigation", { name: /principale/i }).getByRole("link", { name: "Robes" }).getAttribute("aria-current") === "page", "le rayon ouvert est marqué dans l'en-tête");
   });
 
-  await etape("filtre taille Cabine", async () => {
-    await clic(page, page.locator("aside label.opt", { hasText: "Cabine 55 cm" }));
-    await page.waitForURL(/taille=/);
+  await etape("survol d'une carte : la deuxième photo", async () => {
+    const carte = page.locator(".ed-carte", { hasText: "Robe à bretelles en lin" });
+    await carte.scrollIntoViewIfNeeded();
+    const b = await carte.boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 3, { steps: 10 });
+    await pause(800);
+    const opacite = await carte.locator(".photo-survol").evaluate((e) => getComputedStyle(e).opacity);
+    verifie(opacite === "1", `au survol, la deuxième photo apparaît (opacité ${opacite})`);
+    await capture(page, "selma-survol-carte");
+  });
+
+  await etape("tiroir de filtres : cocher, il se rouvre", async () => {
+    await clic(page, page.locator(".btn-filtrer"));
+    await pause(400);
+    verifie(await tiroirOuvert(page, "tiroir-filtres"), "« Filtrer » ouvre le tiroir");
+    await capture(page, "selma-filtres-ouverts");
+    await clic(page, page.locator(".tiroir-filtres label.opt", { hasText: /^M/ }).first());
+    await page.waitForURL(/taille=M/);
     await page.waitForLoadState("networkidle");
-    await capture(page, "maymar-filtre-bordeaux-cabine");
-    verifie(/couleur=Bordeaux\/taille=Cabine%2055%20cm$/.test(page.url()), `les deux filtres gardés : ${page.url()}`);
+    await pause(400);
+    verifie(await tiroirOuvert(page, "tiroir-filtres"), "après la case, le tiroir est toujours ouvert");
+    await capture(page, "selma-filtre-taille-m");
+    const bouton = page.locator(".tiroir-filtres button[data-voir]");
+    note("INFO  ", `bouton du tiroir : « ${(await bouton.innerText()).trim()} »`);
+    await clic(page, bouton);
+    await pause(500);
+    verifie(!(await tiroirOuvert(page, "tiroir-filtres")), "« Voir les résultats » referme le tiroir");
+    verifie(await page.locator(".puce", { hasText: "M" }).count() >= 1, "la puce du filtre apparaît");
+    await capture(page, "selma-resultats-taille-m");
   });
 
-  await etape("tri prix croissant", async () => {
-    const tri = page.locator("select#tri");
-    await clic(page, tri);
-    await tri.selectOption("prix-asc");
+  await etape("tri par prix croissant", async () => {
+    await page.locator("select#tri").selectOption("prix-asc");
     await page.waitForURL(/tri=prix-asc/);
     await page.waitForLoadState("networkidle");
-    verifie(page.url().includes("couleur=Bordeaux") && page.url().includes("taille="), `trier ne défait pas les filtres : ${page.url()}`);
-    verifie(await tri.inputValue() === "prix-asc", "le menu de tri affiche « prix croissant »");
+    const prix = await page.locator(".ed-carte-prix .prix").allInnerTexts();
+    const nombres = prix.map((p) => Number(p.replace(/[^\d,]/g, "").replace(",", ".")));
+    verifie(nombres.every((n, i) => i === 0 || n >= nombres[i - 1]), `prix dans l'ordre : ${nombres.join(" ≤ ")}`);
+    verifie(page.url().includes("taille=M"), "le tri garde le filtre");
   });
 
-  await etape("retirer la puce Bordeaux", async () => {
-    await clic(page, page.locator(".puce", { hasText: "Bordeaux" }));
-    await page.waitForURL((u) => !u.href.includes("Bordeaux"));
-    await page.waitForLoadState("networkidle");
-    verifie(page.url().includes("taille=") && page.url().includes("tri=prix-asc"), `seul Bordeaux est retiré : ${page.url()}`);
-  });
-
-  await etape("prix minimum au clavier + Appliquer", async () => {
-    const min = page.locator("aside input[name=min]");
-    await clic(page, min);
-    await tape(page, "200");
-    await clic(page, page.locator("aside button[type=submit]"));
-    await page.waitForURL(/prix=200-/);
-    await page.waitForLoadState("networkidle");
-    await capture(page, "maymar-prix-min-200");
-    verifie(true, `prix appliqué : ${page.url()} — ${await page.locator(".compte").innerText()}`);
-  });
-
-  await etape("liste vide : la page ne se décale pas", async () => {
-    const x = await page.evaluate(() => [document.querySelector("header .enveloppe").getBoundingClientRect().left, document.querySelector("main").getBoundingClientRect().left]);
-    verifie(Math.abs(x[0] - x[1]) < 2, `bord gauche en-tête ${Math.round(x[0])} px / contenu ${Math.round(x[1])} px`);
-  });
-
-  await etape("retour arrière", async () => {
-    await page.goBack();
-    await page.waitForURL((u) => !u.href.includes("prix="));
-    await pause(500);
-    const coche = await page.locator("aside label.opt", { hasText: "Cabine 55 cm" }).locator("input").isChecked();
-    const min = await page.locator("aside input[name=min]").inputValue();
-    verifie(coche && min === "", `après « précédent » (${page.url().replace(M, "")}) : Cabine cochée ${coche}, prix min « ${min} »`);
-    await page.goForward();
-    await page.waitForURL(/prix=200-/);
-  });
-
-  await etape("tout effacer", async () => {
-    await clic(page, page.locator("aside").getByRole("link", { name: /effacer/i }));
-    await page.waitForURL(/\/catalogue$/);
-    verifie(true, "« Tout effacer » ramène au catalogue nu");
-  });
-
-  await etape("ouvrir une fiche depuis la grille", async () => {
-    const carte = page.locator(".grille-produits a").filter({ hasText: /rigide ABS/i }).first();
-    await carte.hover(); await pause(400);
-    await capture(page, "maymar-survol-carte");
-    await clic(page, carte);
-    await page.waitForURL(/\/produit\//);
-    await page.waitForLoadState("networkidle");
-    await capture(page, "maymar-fiche");
-  });
-
-  await etape("choisir Bordeaux + Grande (épuisée)", async () => {
-    await clic(page, page.getByRole("button", { name: /^Bordeaux/ }));
-    await clic(page, page.getByRole("button", { name: /^Grande 75 cm/ }));
-    await pause(300);
-    await capture(page, "maymar-fiche-bordeaux-grande-epuisee");
-    const bouton = page.getByRole("button", { name: /ajouter au panier/i });
-    verifie(await bouton.isDisabled(), "Bordeaux en 75 cm (stock 0) : bouton « Ajouter » inactif");
-  });
-
-  await etape("Cabine ×3 au panier", async () => {
-    await clic(page, page.getByRole("button", { name: /^Cabine 55 cm/ }));
-    const plus = page.locator(".achat").getByRole("button", { name: /ajouter un article/i });
-    await clic(page, plus); await clic(page, plus);
-    verifie((await page.locator(".achat .qte span").innerText()) === "3", "la quantité monte à 3");
-    await clic(page, page.locator(".achat").getByRole("button", { name: /ajouter au panier/i }));
-    await pause(400);
-    await capture(page, "maymar-ajoute-au-panier");
-    const pastille = page.locator("header button[aria-expanded] span");
-    verifie((await pastille.innerText().catch(() => "")) === "3", `pastille du panier : « ${await pastille.innerText().catch(() => "rien")} »`);
-  });
-
-  await etape("tiroir du panier", async () => {
-    await clic(page, page.locator("header button[aria-expanded]"));
-    await pause(400);
-    await capture(page, "maymar-tiroir-panier");
-    const dlg = page.getByRole("dialog");
-    await clic(page, dlg.getByRole("button", { name: /ajouter un article/i }));
-    verifie((await dlg.locator(".qte span").innerText()) === "4", "« + » dans le tiroir : 4");
+  await etape("fiche : choisir une taille, mettre au panier", async () => {
+    await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
+    await capture(page, "selma-fiche");
+    await clic(page, page.locator(".valeur", { hasText: /^M$/ }));
+    verifie((await page.locator(".axe legend .choisi").last().innerText()) === "M", "la taille choisie est affichée");
+    await clic(page, page.locator(".achat .btn-ajout"));
+    await pause(600);
+    verifie(await tiroirOuvert(page, "tiroir-panier"), "après l'ajout, le tiroir du panier s'ouvre");
+    const ligne = page.locator(".tiroir-panier .panier-ligne");
+    verifie(await ligne.count() === 1 && (await ligne.innerText()).includes("Robe à bretelles en lin · Terracotta, M"), "la ligne dit le produit et sa déclinaison");
+    verifie(await ligne.locator(".panier-vignette img").count() === 1, "la ligne a sa vignette");
+    note("INFO  ", `jauge : ${(await page.locator(".jauge-livraison p").innerText().catch(() => "(absente)")).trim()}`);
+    await capture(page, "selma-tiroir-panier");
+    await clic(page, page.locator(".tiroir-panier").getByRole("button", { name: /ajouter un article/i }));
+    verifie((await ligne.locator(".qte span").innerText()) === "2", "« + » dans le tiroir : 2");
     await page.keyboard.press("Escape");
-    await pause(200);
-    verifie(await page.getByRole("dialog").count() === 0, "Échap ferme le tiroir");
+    await pause(300);
+    verifie(!(await tiroirOuvert(page, "tiroir-panier")), "Échap ferme le tiroir");
+    verifie((await compte(page)) === "2", "le compteur de l'en-tête dit 2");
   });
 
   await etape("le panier survit au rechargement", async () => {
     await page.reload({ waitUntil: "networkidle" });
     await pause(300);
-    verifie((await page.locator("header button[aria-expanded] span").innerText().catch(() => "")) === "4", "après rechargement, 4 articles");
-  });
-
-  await etape("recherche « cabine »", async () => {
-    await clic(page, page.locator("header").getByRole("link", { name: /rechercher/i }));
-    await page.waitForURL(/\/recherche/);
-    await clic(page, page.locator("input#q"));
-    await tape(page, "cabine");
-    await page.keyboard.press("Enter");
-    await page.waitForURL(/q=cabine/);
-    await page.waitForLoadState("networkidle");
-    await capture(page, "maymar-recherche-cabine");
-    verifie(await page.locator(".grille-produits > *").count() > 0, `résultats : ${await page.locator("header p").last().innerText()}`);
-  });
-
-  await etape("recherche avec faute « valsie »", async () => {
-    await page.locator("input#q").fill("");
-    await clic(page, page.locator("input#q"));
-    await tape(page, "valsie");
-    await page.keyboard.press("Enter");
-    await page.waitForURL(/q=valsie/);
-    await page.waitForLoadState("networkidle");
-    await capture(page, "maymar-recherche-faute");
-    note("INFO  ", `faute de frappe : ${await page.locator("header p").last().innerText()}`);
-  });
-
-  await etape("recherche de la perceuse (autre boutique)", async () => {
-    await page.goto(M + "/recherche?q=perceuse", { waitUntil: "networkidle" });
-    verifie(await page.locator(".grille-produits > *").count() === 0, "la perceuse de la quincaillerie n'apparaît pas chez Maymar");
+    verifie((await compte(page)) === "2", "après rechargement, 2 articles");
   });
 
   await etape("page introuvable", async () => {
-    await page.goto(M + "/produit/perceuse-visseuse-18v", { waitUntil: "networkidle" });
-    await capture(page, "maymar-404");
-    verifie(await page.locator("header .marque").count() === 1 && await page.locator("footer").count() === 1, "la page introuvable garde l'en-tête et le pied de Maymar");
+    await page.goto(S + "/produit/perceuse-visseuse-14v", { waitUntil: "networkidle" });
+    await capture(page, "selma-404");
+    verifie(await page.locator("header.ed-entete").count() === 1 && await page.locator("footer.ed-pied").count() === 1, "la page introuvable garde l'en-tête et le pied de la boutique");
   });
   await ctx.close();
 }
@@ -214,15 +144,24 @@ console.log("\n== 2. Maymar, au clavier seul ==");
   espion(page, "maymar-clavier");
   const focus = () => page.evaluate(() => {
     const e = document.activeElement;
-    if (!e || e === document.body) return { nom: "(rien)", visible: false };
+    if (!e || e === document.body) return { nom: "(rien)", visible: false, dansTiroir: false };
     const s = getComputedStyle(e);
     const visible = (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0) || (s.boxShadow && s.boxShadow !== "none");
-    const nom = (e.getAttribute("aria-label") || e.innerText || e.getAttribute("name") || e.tagName).trim().replace(/\s+/g, " ").slice(0, 40);
-    return { nom: `${e.tagName.toLowerCase()} « ${nom} »`, visible };
+    // textContent, pas innerText : les capitales de la CSS ne comptent pas.
+    const nom = (e.getAttribute("aria-label") || e.closest("label")?.textContent || e.textContent || e.getAttribute("name") || e.tagName).trim().replace(/\s+/g, " ").slice(0, 50);
+    return { nom: `${e.tagName.toLowerCase()} « ${nom} »`, visible, dansTiroir: Boolean(e.closest("[role=dialog]")) };
   });
+  const tabJusqua = async (test, max = 40) => {
+    for (let i = 0; i < max; i++) {
+      await page.keyboard.press("Tab");
+      if (test(await focus())) return true;
+    }
+    return false;
+  };
 
   await etape("tabulations sur l'accueil", async () => {
     await page.goto(M + "/", { waitUntil: "networkidle" });
+    await capture(page, "maymar-accueil");
     const vus = [];
     for (let i = 0; i < 9; i++) {
       await page.keyboard.press("Tab"); await pause(120);
@@ -234,177 +173,214 @@ console.log("\n== 2. Maymar, au clavier seul ==");
     verifie(!vus.some((v) => v.includes("INVISIBLE")), "le focus est toujours visible");
   });
 
-  await etape("aller au catalogue au clavier", async () => {
-    await page.goto(M + "/", { waitUntil: "networkidle" });
-    for (let i = 0; i < 20; i++) {
-      await page.keyboard.press("Tab");
-      if ((await focus()).nom.toLowerCase().includes("catalogue")) break;
-    }
+  await etape("catalogue, tiroir de filtres au clavier", async () => {
+    await page.goto(M + "/catalogue", { waitUntil: "networkidle" });
+    verifie(await tabJusqua((f) => f.nom.includes("Filtrer")), "Tab atteint « Filtrer »");
     await page.keyboard.press("Enter");
-    await page.waitForURL(/\/catalogue/);
-    await page.waitForLoadState("networkidle");
-    verifie(true, "Entrée sur « Tout le catalogue » ouvre le catalogue");
-  });
-
-  await etape("cocher un filtre à la barre d'espace", async () => {
-    for (let i = 0; i < 40; i++) {
-      await page.keyboard.press("Tab");
-      const f = await focus();
-      if (f.nom.includes("taille") || (await page.evaluate(() => document.activeElement?.closest("label")?.innerText ?? "")).includes("Moyenne")) break;
-    }
+    await pause(400);
+    const f1 = await focus();
+    verifie(f1.dansTiroir && f1.nom.includes("Fermer"), `à l'ouverture, le focus va sur : ${f1.nom}`);
+    verifie(await tabJusqua((f) => f.nom.includes("Cabine 55 cm")), "Tab atteint la case « Cabine 55 cm »");
     await capture(page, "clavier-focus-filtre");
     await page.keyboard.press("Space");
     await page.waitForURL(/taille=/, { timeout: 5000 });
     await page.waitForLoadState("networkidle");
-    verifie(true, `Espace coche et filtre : ${page.url()}`);
-    await pause(300);
-    const f = await focus();
-    verifie(f.nom.includes("a.taille") || f.nom.includes("Cabine"), `après le filtre, le focus reste sur : ${f.nom}`);
+    await pause(400);
+    const f2 = await focus();
+    verifie(await tiroirOuvert(page, "tiroir-filtres") && f2.nom.includes("Cabine"), `après le filtre, tiroir rouvert et focus sur : ${f2.nom}`);
     await capture(page, "clavier-focus-garde-apres-filtre");
     await page.keyboard.press("Space");
     await page.waitForURL((u) => !u.href.includes("taille="), { timeout: 5000 });
+    await pause(400);
+    verifie((await focus()).nom.includes("Cabine"), "Espace à nouveau : le filtre est retiré, le focus reste");
+    const sorties = [];
+    for (let i = 0; i < 25; i++) {
+      await page.keyboard.press("Tab");
+      if (!(await focus()).dansTiroir) sorties.push((await focus()).nom);
+    }
+    verifie(sorties.length === 0, sorties.length ? `Tab sort du tiroir : ${sorties[0]}` : "Tab reste dans le tiroir de filtres");
+    await page.keyboard.press("Escape");
     await pause(300);
-    verifie((await focus()).nom.includes("a.taille"), "Espace à nouveau : le filtre est retiré, le focus reste");
+    verifie((await focus()).nom.includes("Filtrer"), `après Échap, le focus revient sur : ${(await focus()).nom}`);
   });
 
   await etape("fiche, déclinaison et panier au clavier", async () => {
     await page.goto(M + "/produit/valise-souple-extensible", { waitUntil: "networkidle" });
-    for (let i = 0; i < 40; i++) {
-      await page.keyboard.press("Tab");
-      if ((await focus()).nom.startsWith("button « Gris")) break;
-    }
+    verifie(await tabJusqua((f) => f.nom.startsWith("button « Gris")), "Tab atteint le coloris « Gris »");
     await page.keyboard.press("Enter");
-    for (let i = 0; i < 10; i++) {
-      await page.keyboard.press("Tab");
-      if ((await focus()).nom.includes("Ajouter au panier")) break;
-    }
+    verifie(await tabJusqua((f) => f.nom.includes("Ajouter au panier"), 12), "Tab atteint « Ajouter au panier »");
     await capture(page, "clavier-focus-ajouter");
     await page.keyboard.press("Enter");
-    await pause(300);
-    verifie((await page.locator("header button[aria-expanded] span").innerText().catch(() => "")) === "1", "Entrée sur « Ajouter » : 1 article");
-  });
-
-  await etape("tiroir du panier au clavier", async () => {
-    await page.locator("header button[aria-expanded]").focus();
-    await page.keyboard.press("Enter");
-    await pause(300);
-    const f1 = await focus();
-    verifie(f1.nom.includes("Fermer"), `à l'ouverture, le focus va sur : ${f1.nom}`);
-    const sorties = [];
-    for (let i = 0; i < 8; i++) {
-      await page.keyboard.press("Tab");
-      const dedans = await page.evaluate(() => Boolean(document.activeElement?.closest("[role=dialog]")));
-      if (!dedans) sorties.push((await focus()).nom);
-    }
-    verifie(sorties.length === 0, sorties.length ? `Tab sort du tiroir vers la page derrière : ${sorties[0]}` : "Tab reste dans le tiroir");
+    await pause(500);
+    const f = await focus();
+    verifie(await tiroirOuvert(page, "tiroir-panier") && f.dansTiroir, `Entrée sur « Ajouter » : le tiroir s'ouvre, focus sur ${f.nom}`);
     await capture(page, "clavier-tiroir");
     await page.keyboard.press("Escape");
-    await pause(200);
-    const f2 = await focus();
-    verifie(f2.nom.toLowerCase().includes("panier"), `après Échap, le focus revient sur : ${f2.nom}`);
+    await pause(300);
+    verifie(/Ajout/.test((await focus()).nom), `après Échap, le focus revient sur : ${(await focus()).nom}`);
+    verifie((await compte(page)) === "1", "le compteur dit 1");
+  });
+
+  await etape("page introuvable", async () => {
+    await page.goto(M + "/produit/perceuse-visseuse-14v", { waitUntil: "networkidle" });
+    await capture(page, "maymar-404");
+    verifie(await page.locator("header .marque").count() === 1 && await page.locator("footer").count() === 1, "la page introuvable garde l'en-tête et le pied de Maymar");
   });
   await ctx.close();
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 3. Maymar sur téléphone (tactile) ==");
+console.log("\n== 3. Sur téléphone (tactile) ==");
 {
   const ctx = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
   const page = await ctx.newPage();
-  espion(page, "maymar-mobile");
-  await etape("accueil mobile", async () => {
-    await page.goto(M + "/", { waitUntil: "networkidle" });
-    await capture(page, "mobile-maymar-accueil");
-    await capture(page, "mobile-maymar-accueil-complete", true);
+  espion(page, "mobile");
+
+  await etape("Selma : accueil et menu", async () => {
+    await page.goto(S + "/", { waitUntil: "networkidle" });
+    await capture(page, "mobile-selma-accueil");
     const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     verifie(!deborde, "pas de défilement horizontal");
-    const nav = page.getByRole("navigation", { name: /principale/i });
-    verifie(await nav.isVisible(), "les rayons sont visibles dans l'en-tête du téléphone");
-    await nav.getByRole("link", { name: "Valises" }).tap();
-    await page.waitForURL(/\/categorie\/valises/);
+    await page.getByRole("button", { name: /ouvrir le menu/i }).tap();
+    await pause(500);
+    verifie(await tiroirOuvert(page, "tiroir-menu"), "le bouton menu ouvre le tiroir des rayons");
+    await capture(page, "mobile-selma-menu");
+    await page.locator(".tiroir-menu").getByRole("link", { name: "Maille" }).tap();
+    await page.waitForURL(/\/categorie\/maille/);
     await page.waitForLoadState("networkidle");
-    await capture(page, "mobile-rayon-valises");
-    verifie(await nav.getByRole("link", { name: "Valises" }).getAttribute("aria-current") === "page", "le rayon ouvert est marqué dans le menu");
+    await pause(300);
+    verifie(!(await tiroirOuvert(page, "tiroir-menu")), "le menu se referme en arrivant sur le rayon");
+    await capture(page, "mobile-selma-maille");
   });
-  await etape("feuille de filtres mobile", async () => {
+
+  await etape("Selma : galerie au doigt", async () => {
+    await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
+    await page.locator(".ed-galerie-piste").evaluate((p) => p.scrollTo({ left: p.clientWidth, behavior: "instant" }));
+    await pause(500);
+    verifie((await page.locator(".ed-galerie-compteur").innerText()).replace(/\s/g, "") === "2/3", "faire glisser la galerie : le compteur passe à 2 / 3");
+    await capture(page, "mobile-selma-galerie");
+  });
+
+  await etape("Maymar : tiroir de filtres au doigt", async () => {
     await page.goto(M + "/catalogue", { waitUntil: "networkidle" });
-    await page.locator("details.filtres-mobile summary").tap();
-    await pause(400);
+    await page.locator(".btn-filtrer").tap();
+    await pause(500);
     await capture(page, "mobile-filtres-ouverts");
-    await page.locator("details.filtres-mobile label[title^='Noir']").tap();
+    await page.locator(".tiroir-filtres label[title^='Noir']").tap();
     await page.waitForURL(/couleur=Noir/);
     await page.waitForLoadState("networkidle");
-    await pause(400);
+    await pause(500);
+    const ouvert = await tiroirOuvert(page, "tiroir-filtres");
+    verifie(ouvert, "le tiroir reste ouvert pour cocher la suivante");
     await capture(page, "mobile-filtre-noir");
-    const ouverte = await page.locator("details.filtres-mobile").evaluate((d) => d.open);
-    verifie(ouverte, "la feuille de filtres reste ouverte pour cocher la suivante");
-    if (ouverte) {
-      await page.locator("details.filtres-mobile label.opt", { hasText: "Cabine 55 cm" }).tap();
+    if (ouvert) {
+      await page.locator(".tiroir-filtres label.opt", { hasText: "Cabine 55 cm" }).tap();
       await page.waitForURL(/taille=/);
-      await pause(400);
+      await pause(500);
       verifie(/couleur=Noir\/taille=Cabine/.test(page.url()), `deux filtres au doigt : ${page.url().replace(M, "")}`);
-      await page.locator("details.filtres-mobile summary").tap();
-      await pause(300);
-      await capture(page, "mobile-deux-filtres-feuille-fermee");
+      await page.locator(".tiroir-filtres button[data-voir]").tap();
+      await pause(500);
+      verifie(!(await tiroirOuvert(page, "tiroir-filtres")), "« Voir les résultats » referme le tiroir");
+      await capture(page, "mobile-deux-filtres");
     }
   });
-  await etape("fiche mobile et barre collante", async () => {
+
+  await etape("Maymar : fiche et barre collante", async () => {
     await page.goto(M + "/produit/valise-rigide-abs-4-roues", { waitUntil: "networkidle" });
     await capture(page, "mobile-fiche");
-    await page.mouse.wheel(0, 1400); await pause(700);
-    await page.evaluate(() => window.scrollBy(0, 1400)); await pause(700);
+    await page.evaluate(() => window.scrollBy(0, 1800)); await pause(700);
     await capture(page, "mobile-fiche-barre-collante");
     verifie(await page.locator(".achat-mobile").isVisible(), "la barre d'achat collante apparaît quand le bloc d'achat sort de l'écran");
     await page.locator(".achat-mobile button").tap();
-    await pause(400);
-    verifie((await page.locator("header button[aria-expanded] span").innerText().catch(() => "")) === "1", "« Ajouter » de la barre collante : 1 article au panier");
+    await pause(500);
+    verifie(await tiroirOuvert(page, "tiroir-panier"), "« Ajouter » de la barre : le tiroir du panier s'ouvre");
+    await capture(page, "mobile-tiroir-panier");
+    await page.locator(".tiroir-panier [data-fermer]").tap();
+    await pause(300);
+    verifie((await compte(page)) === "1", "1 article au panier");
+  });
+
+  await etape("Quincaillerie : recherche dans l'en-tête", async () => {
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
+    await capture(page, "mobile-quinca-accueil");
+    await page.locator("#q-entete").tap();
+    await tape(page, "casque");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/recherche\?q=casque/);
+    await page.waitForLoadState("networkidle");
+    await capture(page, "mobile-quinca-recherche");
+    verifie(await page.locator(".te-carte").count() >= 1, `recherche « casque » : ${(await page.locator(".recherche-bilan").innerText()).trim()}`);
   });
   await ctx.close();
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 4. Quincaillerie, à la souris ==");
+console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
 {
-  const ctx = await navigateur.newContext({ viewport: { width: 1366, height: 850 }, locale: "fr-FR" });
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "quinca");
+
   await etape("accueil", async () => {
     await page.goto(Q + "/", { waitUntil: "networkidle" });
     await capture(page, "quinca-accueil");
+    await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 100)); } });
+    await page.waitForLoadState("networkidle");
     await capture(page, "quinca-accueil-complete", true);
   });
-  await etape("rayon depuis le menu", async () => {
-    const liens = page.getByRole("navigation", { name: /principale/i }).getByRole("link");
-    note("INFO  ", `rayons du menu : ${(await liens.allInnerTexts()).join(", ")}`);
-    await clic(page, liens.first());
-    await page.waitForURL(/\/categorie\//);
+
+  await etape("recherche d'une référence", async () => {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await clic(page, page.locator("#q-entete"));
+    await tape(page, "PV14");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/q=PV14/);
+    await page.waitForLoadState("networkidle");
+    await capture(page, "quinca-recherche-reference");
+    verifie((await page.locator(".recherche-bilan").innerText()).includes("Une pièce trouvée"), "la référence PV14 trouve la perceuse");
+  });
+
+  await etape("rayon depuis la barre des rayons", async () => {
+    const nav = page.getByRole("navigation", { name: /principale/i });
+    note("INFO  ", `rayons : ${(await nav.getByRole("link").allInnerTexts()).join(", ")}`);
+    await clic(page, nav.getByRole("link", { name: "Outillage électroportatif" }));
+    await page.waitForURL(/\/categorie\/outillage$/);
     await page.waitForLoadState("networkidle");
     await capture(page, "quinca-rayon");
+    verifie(await page.locator("aside.te-filtres").isVisible(), "la colonne de filtres est là sur grand écran");
   });
-  await etape("filtre dimension 4 × 40 mm", async () => {
-    await page.goto(Q + "/catalogue", { waitUntil: "networkidle" });
-    const opt = page.locator("aside label.opt", { hasText: "4 × 40 mm" });
-    if (await opt.count() === 0) { note("INFO  ", "pas de filtre dimension au catalogue (moins de 2 valeurs ?)"); return; }
+
+  await etape("filtre dans la colonne : « 6 mm »", async () => {
+    const opt = page.locator("aside.te-filtres label.opt", { hasText: "6 mm" });
     await clic(page, opt);
-    await page.waitForURL(/dimension=/);
+    await page.waitForURL(/diametre=6/);
     await page.waitForLoadState("networkidle");
-    await capture(page, "quinca-filtre-dimension");
-    verifie(true, `${page.url()} — ${await page.locator(".compte").innerText()}`);
+    await pause(300);
+    await capture(page, "quinca-filtre-diametre");
+    verifie(await page.locator(".te-carte").count() === 1, `${(await page.locator(".compte").innerText()).trim()}`);
   });
+
+  await etape("ajout direct depuis une carte", async () => {
+    await page.goto(Q + "/categorie/outillage-a-main", { waitUntil: "networkidle" });
+    const bouton = page.locator(".te-carte", { hasText: "Coffret de douilles" }).locator(".te-carte-ajout");
+    await clic(page, bouton);
+    await pause(500);
+    verifie(await tiroirOuvert(page, "tiroir-panier"), "« Ajouter » sur la carte : le tiroir du panier s'ouvre");
+    await capture(page, "quinca-ajout-rapide");
+    await page.keyboard.press("Escape");
+  });
+
   await etape("fiche perceuse, kit, panier", async () => {
-    await page.goto(Q + "/catalogue", { waitUntil: "networkidle" });
-    await clic(page, page.locator(".grille-produits a").filter({ hasText: /perceuse/i }).first());
-    await page.waitForURL(/\/produit\//);
-    await page.waitForLoadState("networkidle");
+    await page.goto(Q + "/produit/perceuse-visseuse-14v", { waitUntil: "networkidle" });
     await clic(page, page.getByRole("button", { name: /^Kit 2 batteries/ }));
+    verifie((await page.locator(".ref-variante").innerText()).includes("PV14-KIT2"), "la référence suit la version choisie");
     await capture(page, "quinca-fiche-kit");
-    await clic(page, page.getByRole("button", { name: /ajouter au panier/i }));
-    await pause(300);
-    await clic(page, page.locator("header button[aria-expanded]"));
-    await pause(300);
+    await clic(page, page.locator(".achat .btn-ajout"));
+    await pause(500);
     await capture(page, "quinca-tiroir-panier");
-    const lignes = await page.getByRole("dialog").locator("li").allInnerTexts();
-    verifie(lignes.length === 1 && !lignes[0].includes("Valise"), `panier de la quincaillerie : ${lignes.map((l) => l.split("\n")[0]).join(" / ")}`);
+    const lignes = await page.locator(".tiroir-panier .panier-ligne").allInnerTexts();
+    verifie(lignes.length === 2 && !lignes.some((l) => l.includes("Valise") || l.includes("Robe")), `panier de la quincaillerie : ${lignes.map((l) => l.split("\n")[0]).join(" / ")}`);
+    note("INFO  ", `jauge : ${(await page.locator(".jauge-livraison p").innerText().catch(() => "(absente)")).trim()}`);
   });
   await ctx.close();
 }

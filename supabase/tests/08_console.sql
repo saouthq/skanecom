@@ -51,7 +51,7 @@ select throws_ok(format($$ select public.console_creer_boutique(%L, 'essai-conso
 -- C1 · création
 select set_config('request.headers', '{"x-console-ip": "198.51.100.7"}', true);
 select isnt(public.console_creer_boutique(tests.id('admin_plateforme'), ' Essai-Console ', ' Essai console ',
-                                          ' Essai-Console.TEST ', 'catalogue_technique'),
+                                          ' Essai-Console.TEST ', 'technique'),
   null, 'l''administrateur crée une boutique');
 select is((select statut::text from plateforme.boutiques where slug = 'essai-console'), 'en_preparation',
   'elle naît en préparation (la vitrine ne la sert pas encore)');
@@ -59,7 +59,7 @@ select results_eq($$ select hote, principal from plateforme.domaines d
                      join plateforme.boutiques b on b.id = d.boutique_id where b.slug = 'essai-console' $$,
   $$ values ('essai-console.test'::text, true) $$, 'son domaine est enregistré, en minuscules, comme principal');
 select is((select t.code from public.themes t join plateforme.boutiques b on b.id = t.boutique_id where b.slug = 'essai-console'),
-  'catalogue_technique', 'elle reçoit le thème de départ choisi');
+  'technique', 'elle reçoit le thème de départ choisi');
 select results_eq($$ select j.action, j.acteur, host(j.ip) from plateforme.journal_audit j
                      join plateforme.boutiques b on b.id = j.boutique_id where b.slug = 'essai-console' $$,
   format($$ values ('boutique.creer'::text, %L::uuid, '198.51.100.7'::text) $$, tests.id('admin_plateforme')),
@@ -118,7 +118,7 @@ select is((select jsonb_array_length(public.console_boutique('essai-console') ->
   'la fiche de la boutique liste ses deux domaines');
 select ok((select jsonb_array_length(public.console_boutique('essai-console') -> 'journal') >= 4),
   'la fiche de la boutique montre son journal');
-select ok(exists (select 1 from public.console_boutiques() where slug = 'essai-console' and statut = 'active' and theme = 'catalogue_technique'),
+select ok(exists (select 1 from public.console_boutiques() where slug = 'essai-console' and statut = 'active' and theme = 'technique'),
   'le tableau de bord montre la nouvelle boutique, ouverte, avec son thème');
 
 -- Une IP illisible n'empêche jamais la trace

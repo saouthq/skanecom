@@ -1,6 +1,6 @@
 import { clientService } from "@/lib/console/service";
 import { ecriture, messageBase, vers, versAvecErreur } from "@/lib/console/http";
-import { JETONS_COULEUR, themeDeLaBoutique, type CodeTheme } from "@/lib/theme";
+import { gabaritDe, JETONS_COULEUR, POLICES_TEXTE, themeDeLaBoutique, type CodeTheme } from "@/lib/theme";
 import { TEXTES_MARQUE } from "../champs";
 
 /* Construit le thème à partir du formulaire : seules les couleurs qui
@@ -15,7 +15,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const { data: fiche, error: lecture } = await service.rpc("console_boutique", { p_slug: slug });
     if (lecture || !fiche?.theme) return versAvecErreur(retour, messageBase(lecture));
 
-    const code = (String(formulaire.get("code") ?? fiche.theme.code) === "catalogue_technique" ? "catalogue_technique" : "premium_sobre") as CodeTheme;
+    const code: CodeTheme = gabaritDe(formulaire.get("code") ?? fiche.theme.code);
     const defauts = themeDeLaBoutique({ code });
 
     const couleurs: Record<string, string> = {};
@@ -25,7 +25,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     }
 
     const titres = String(formulaire.get("polices_titres") ?? "");
-    const polices = titres && titres !== defauts.polices.titres ? { titres } : {};
+    const texte = String(formulaire.get("polices_texte") ?? "");
+    const polices = {
+      ...(titres && titres !== defauts.polices.titres ? { titres } : {}),
+      ...(texte && texte !== defauts.polices.texte && (POLICES_TEXTE as string[]).includes(texte) ? { texte } : {}),
+    };
 
     const textes: Record<string, string> = { ...(fiche.theme.textes ?? {}) };
     for (const { cle } of TEXTES_MARQUE) {

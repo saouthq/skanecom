@@ -6,8 +6,8 @@ export const LIBELLES_STATUT: Record<string, string> = {
 };
 
 export const LIBELLES_THEME: Record<string, string> = {
-  premium_sobre: "Premium sobre",
-  catalogue_technique: "Catalogue technique",
+  editorial: "Éditorial",
+  technique: "Technique",
 };
 
 /** L'adresse publique d'un domaine. En local, les boutiques sont servies sur

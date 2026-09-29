@@ -33,14 +33,14 @@ export default async function NouvelleBoutique({ searchParams }: {
           <p id="aide-hote" className="aide">Sans « https:// ». D&apos;autres domaines (www., ancien domaine) s&apos;ajoutent sur la fiche de la boutique.</p>
         </div>
         <fieldset className="champ">
-          <legend className="text-petit font-medium">Thème de départ</legend>
+          <legend className="text-petit font-medium">Gabarit</legend>
           <label className="opt">
-            <input type="radio" name="theme" value="premium_sobre" defaultChecked={(v.theme ?? "premium_sobre") === "premium_sobre"} />
-            Premium sobre — mode, bagages, maroquinerie (celui de Maymar)
+            <input type="radio" name="theme" value="editorial" defaultChecked={(v.theme ?? "editorial") !== "technique"} />
+            Éditorial — mode, bagages, maroquinerie : grandes images, typographie de magazine
           </label>
           <label className="opt">
-            <input type="radio" name="theme" value="catalogue_technique" defaultChecked={v.theme === "catalogue_technique"} />
-            Catalogue technique — outillage, quincaillerie, grands catalogues
+            <input type="radio" name="theme" value="technique" defaultChecked={v.theme === "technique"} />
+            Technique — outillage, quincaillerie, grands catalogues : recherche, références, stock chiffré
           </label>
         </fieldset>
         <button type="submit" className="btn btn-primaire">Créer la boutique</button>

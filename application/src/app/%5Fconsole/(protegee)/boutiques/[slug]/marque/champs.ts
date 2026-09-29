@@ -13,11 +13,16 @@ export const GROUPES_COULEURS: { titre: string; jetons: { cle: JetonCouleur; lib
   { titre: "États", jetons: [{ cle: "succes", libelle: "En stock" }, { cle: "erreur", libelle: "Erreur" }, { cle: "alerte", libelle: "Stock faible" }] },
 ];
 
-export const POLICES_TITRES: { valeur: Police; libelle: string }[] = [
-  { valeur: "young-serif", libelle: "Young Serif — empattements, chaleureuse" },
-  { valeur: "plex-sans", libelle: "IBM Plex Sans — sobre, lisible" },
-  { valeur: "archivo", libelle: "Archivo — technique, affirmée" },
+export const POLICES: { valeur: Police; libelle: string; texte: boolean }[] = [
+  { valeur: "instrument-serif", libelle: "Instrument Serif — magazine, élégante", texte: false },
+  { valeur: "instrument-sans", libelle: "Instrument Sans — nette, contemporaine", texte: true },
+  { valeur: "archivo", libelle: "Archivo — technique, condensée", texte: true },
+  { valeur: "young-serif", libelle: "Young Serif — empattements, chaleureuse", texte: false },
+  { valeur: "plex-sans", libelle: "IBM Plex Sans — sobre, lisible", texte: true },
 ];
+
+export const POLICES_TITRES = POLICES;
+export const POLICES_TEXTE = POLICES.filter((p) => p.texte);
 
 export const TEXTES_MARQUE: { cle: string; libelle: string; aide: string; long?: boolean; max: number }[] = [
   { cle: "resume_fr", libelle: "Présentation courte", aide: "Pied de page et partages. Deux phrases.", long: true, max: 300 },

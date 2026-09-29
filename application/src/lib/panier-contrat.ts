@@ -41,6 +41,9 @@ export const PANIER_VERSION = 1;
  *  bougerait pas après un ajout. */
 export const PANIER_EVENEMENT = "skanecom:panier";
 
+/** Demande d'ouverture du tiroir (après un ajout) : l'en-tête l'écoute. */
+export const PANIER_OUVRIR = "skanecom:panier-ouvrir";
+
 export type LignePanier = {
   /** L'unité vendue, stockée et facturée : `variantes.id` (schéma Iris).
    *  C'est la clé d'unicité d'une ligne — jamais le produit. */
@@ -59,6 +62,9 @@ export type LignePanier = {
   prixMillimesAjout: number;
   /** ISO 8601. Sert au tunnel pour périmer un panier trop vieux s'il le veut. */
   ajouteLe: string;
+  /** COPIE D'AFFICHAGE, facultative : le chemin de la vignette (fichier de la
+   *  boutique, `<slug>/…`). Un chemin douteux est ignoré à la lecture. */
+  image?: string;
 };
 
 export type Panier = {
@@ -143,7 +149,11 @@ export function litPanier(brut: string | null): Panier {
         l.quantite > 0 &&
         Number.isFinite(l?.prixMillimesAjout),
     );
-    return { version: PANIER_VERSION, lignes, majLe: objet.majLe ?? "" };
+    const propres = lignes.map((l) => {
+      const { image, ...reste } = l;
+      return typeof image === "string" && /^[a-z0-9][a-z0-9/_.-]*$/.test(image) && !image.includes("..") ? { ...reste, image } : reste;
+    });
+    return { version: PANIER_VERSION, lignes: propres, majLe: objet.majLe ?? "" };
   } catch {
     return PANIER_VIDE;
   }

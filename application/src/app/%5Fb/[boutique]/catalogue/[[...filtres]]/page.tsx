@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Gabarit } from "@/components/Gabarit";
 import { Listing } from "@/components/Listing";
-import { Fleche } from "@/components/Icones";
+import { EnteteListe } from "@/components/EnteteListe";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { listeProduits } from "@/lib/catalogue";
 import { cheminFiltres, estCanonique, litSegments, nombreFiltresActifs, versCriteres } from "@/lib/filtres";
-import { t } from "@/lib/i18n";
+import { champ, t } from "@/lib/i18n";
 
 /* Tout le catalogue, filtres dans le chemin (lib/filtres.ts) : chaque liste
    filtrée est une page mise en cache, servie même pendant une panne de la base. */
@@ -43,21 +42,22 @@ export default async function Catalogue({ params }: Params) {
 
   return (
     <Gabarit>
-      <nav className="fil pt-4" aria-label={t.commun.filAriane}>
-        <Link href="/">{t.commun.accueil}</Link>
-        <Fleche taille={14} className="rtl:-scale-x-100" />
-        <span aria-current="page" className="text-encre">{t.catalogue.titre}</span>
-      </nav>
-
-      <header className="pt-6 pb-8">
-        <p className="etiquette">
-          <b>—</b> <span>{t.catalogue.etiquette}</span>
-        </p>
-        <h1 className="text-t2 md:text-t1 mt-3">{t.catalogue.titre}</h1>
-        <p className="chapo mt-4">{t.catalogue.chapo}</p>
-      </header>
-
-      <Listing liste={liste} filtres={f} base="/catalogue" corpus={cadre.boutique.nb_produits} avecRayons />
+      <EnteteListe
+        gabarit={cadre.theme.code}
+        fil={[{ nom: t.catalogue.titre }]}
+        titre={t.catalogue.titre}
+        chapo={cadre.theme.code === "technique" ? t.catalogue.chapo : null}
+        sousRayons={cadre.racines.map((c) => ({ slug: c.slug, nom: champ(c, "nom") }))}
+      />
+      <Listing
+        liste={liste}
+        filtres={f}
+        base="/catalogue"
+        corpus={cadre.boutique.nb_produits}
+        avecRayons
+        gabarit={cadre.theme.code}
+        prixBarres={cadre.prixBarres}
+      />
     </Gabarit>
   );
 }

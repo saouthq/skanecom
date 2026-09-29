@@ -37,6 +37,20 @@ export const fr = {
     /** Décision Luna du 11/08 : une maison qui attend ses photos le dit avec
      *  de la tenue, plutôt que d'exhiber un pictogramme. */
     photoAVenir: "Photo à venir",
+    menu: "Menu",
+    ouvrirMenu: "Ouvrir le menu",
+    fermerMenu: "Fermer le menu",
+    tousLesRayons: "Tous les rayons",
+    toutVoir: "Tout voir",
+    decouvrir: "Découvrir",
+  },
+
+  /** Le bandeau d'annonce, au-dessus de l'en-tête : des FAITS de réglage. */
+  annonce: {
+    cod: "Paiement à la livraison, partout en Tunisie",
+    livraisonOfferte: (seuil: string) => `Livraison offerte dès ${seuil} d'achat`,
+    retrait: "Retrait en magasin",
+    conseil: "Conseil sur WhatsApp",
   },
 
   accueil: {
@@ -85,6 +99,16 @@ export const fr = {
       texte: "La commande part en préparation dès qu'elle est enregistrée.",
     },
     konnectEteint: "Le paiement par carte arrivera plus tard. Aujourd'hui, tout se règle à la livraison.",
+
+    /* Gabarit éditorial */
+    collectionsTitre: "Les collections",
+    selectionTitreEditorial: "La sélection",
+    recitLien: "Découvrir",
+    /* Gabarit technique */
+    rayonsTitreTechnique: "Nos rayons",
+    selectionTitreTechnique: "Les références du moment",
+    heroCta: "Voir le catalogue",
+    engagementsTitre: "Commander, simplement",
   },
 
   catalogue: {
@@ -98,6 +122,7 @@ export const fr = {
     toutEffacer: "Tout effacer",
     retirerLesFiltres: "Retirer les filtres",
     appliquer: "Voir les résultats",
+    voirResultats: (n: number) => (n > 1 ? `Voir les ${n} résultats` : n === 1 ? "Voir le résultat" : "Aucun résultat"),
     rayon: "Rayon",
     /** Libellé d'un axe de variante quand la fiche n'en donne pas. */
     axes: { couleur: "Couleur", taille: "Taille", version: "Version", conditionnement: "Conditionnement" } as Record<string, string>,
@@ -134,6 +159,10 @@ export const fr = {
     retirerLeFiltre: (valeur: string) => `Retirer le filtre ${valeur}`,
     /** Compte de modèles d'un rayon, sur la page d'accueil */
     modeles: (n: number) => (n > 1 ? `${n} modèles` : `${n} modèle`),
+    /** Même compte, dit comme un catalogue technique. */
+    references: (n: number) => (n > 1 ? `${n} références` : `${n} référence`),
+    resultats: (n: number) => (n > 1 ? `${n} résultats` : `${n} résultat`),
+    colorisN: (n: number) => `${n} coloris`,
   },
 
   produit: {
@@ -177,6 +206,20 @@ export const fr = {
     confirmationTelephonique: "On vous rappelle avant d'expédier",
     confirmationTelephoniqueTexte:
       "Un appel confirme l'adresse et la disponibilité avant la préparation du colis.",
+    vousAimerez: "Vous aimerez aussi",
+    memeRayon: "Dans le même rayon",
+    ttc: "TTC",
+    refCourte: "Réf.",
+    voir: "Voir le produit",
+    ajouter: "Ajouter",
+    choisir: "Choisir",
+    photoN: (i: number, n: number) => `Photo ${i} sur ${n}`,
+    retraitMagasin: "Retrait en magasin",
+    retraitMagasinTexte: "Commandez en ligne, récupérez au comptoir.",
+    conseil: "Besoin d'un conseil ?",
+    conseilTexte: "Posez votre question sur WhatsApp, on vous répond.",
+    conseilLien: "Écrire sur WhatsApp",
+    livraisonTitre: "Livraison",
   },
 
   stock: {
@@ -244,6 +287,9 @@ export const fr = {
     continuer: "Continuer mes achats",
     fermer: "Fermer le panier",
     ajoute: "Ajouté au panier",
+    titreCompte: (n: number) => `Panier (${n})`,
+    resteAvantGratuite: (montant: string) => `Plus que ${montant} pour la livraison offerte.`,
+    gratuiteAtteinte: "La livraison vous est offerte.",
   },
 
   pied: {
@@ -258,6 +304,8 @@ export const fr = {
     mentions: "Mentions légales",
     droits: (annee: number, nom: string, origine?: string) => `© ${annee} ${nom}${origine ? ` — ${origine}` : ""}`,
     devise: "Prix en dinars tunisiens (TND), toutes taxes comprises.",
+    services: "Services",
+    contact: "Contact",
   },
 
   seo: {

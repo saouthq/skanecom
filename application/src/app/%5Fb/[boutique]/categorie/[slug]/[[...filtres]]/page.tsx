@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Gabarit } from "@/components/Gabarit";
 import { Listing } from "@/components/Listing";
-import { Fleche } from "@/components/Icones";
+import { EnteteListe } from "@/components/EnteteListe";
 import { cadre as chargeCadre, descendance } from "@/lib/boutique";
 import { listeProduits } from "@/lib/catalogue";
 import { cheminFiltres, estCanonique, litSegments, nombreFiltresActifs, versCriteres } from "@/lib/filtres";
@@ -51,43 +50,29 @@ export default async function Rayon({ params }: Params) {
 
   return (
     <Gabarit>
-      <nav className="fil pt-4" aria-label={t.commun.filAriane}>
-        <Link href="/">{t.commun.accueil}</Link>
-        <Fleche taille={14} className="rtl:-scale-x-100" />
-        <Link href="/catalogue">{t.commun.toutLeCatalogue}</Link>
-        <Fleche taille={14} className="rtl:-scale-x-100" />
-        {parent ? (
-          <>
-            <Link href={`/categorie/${parent.slug}`}>{champ(parent, "nom")}</Link>
-            <Fleche taille={14} className="rtl:-scale-x-100" />
-          </>
-        ) : null}
-        <span aria-current="page" className="text-encre">{nom}</span>
-      </nav>
-
-      <header className="pt-6 pb-8">
-        <p className="etiquette">
-          <b>—</b> <span>{t.catalogue.modeles(famille.reduce((n, c) => n + (c.nb_produits ?? 0), 0))}</span>
-        </p>
-        <h1 className="text-t2 md:text-t1 mt-3">{nom}</h1>
-        {champ(categorie, "description") ? <p className="chapo mt-4">{champ(categorie, "description")}</p> : null}
-        {sousRayons.length > 0 ? (
-          <div className="actifs mt-6">
-            {sousRayons.map((c) => (
-              <Link key={c.slug} className="puce" href={`/categorie/${c.slug}`}>
-                <b>{champ(c, "nom")}</b>
-              </Link>
-            ))}
-          </div>
-        ) : null}
-      </header>
-
+      <EnteteListe
+        gabarit={cadre.theme.code}
+        fil={[
+          { nom: t.commun.toutLeCatalogue, href: "/catalogue" },
+          ...(parent ? [{ nom: champ(parent, "nom"), href: `/categorie/${parent.slug}` }] : []),
+          { nom },
+        ]}
+        titre={nom}
+        chapo={champ(categorie, "description")}
+        sousRayons={sousRayons.map((c) => ({
+          slug: c.slug,
+          nom: champ(c, "nom"),
+          compte: descendance(cadre.categories, c.slug).reduce((n, d) => n + (d.nb_produits ?? 0), 0),
+        }))}
+      />
       <Listing
         liste={liste}
         filtres={f}
         base={base}
         corpus={famille.reduce((n, c) => n + (c.nb_produits ?? 0), 0)}
         avecRayons={false}
+        gabarit={cadre.theme.code}
+        prixBarres={cadre.prixBarres}
       />
     </Gabarit>
   );

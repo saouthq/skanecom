@@ -1,188 +1,116 @@
 /* ============================================================================
-   SKANECOM — jetons du thème, valeurs par défaut du thème n°1 « premium_sobre »
-   (la charte de Maymar, Noah, 10/08/2026). Chaque boutique remplace ces
-   valeurs par celles de son thème : lib/theme.ts écrit une balise <style>
-   dans le layout, qui passe après cette feuille.
+   SKANECOM — les jetons. Valeurs par défaut = gabarit « editorial » ; chaque
+   boutique remplace les siennes par la balise <style> du layout (lib/theme.ts),
+   qui passe après cette feuille.
 
-   MODE CLAIR D'ABORD. C'est le mode de nos demos et de l'oeil neuf.
-   Aucun bloc `prefers-color-scheme: dark` ici, et c'est deliberе :
-   voir "Ce qu'Alex doit neutraliser" dans brand-guidelines.md.
+   Deux couches :
+   1. les PRIMITIVES `--theme-*` (couleurs, angles, ombres, polices), seules
+      valeurs écrites à la main, lues par tout le CSS ;
+   2. les jetons SÉMANTIQUES Tailwind (`bg-fond`, `text-encre`, `rounded-carte`…)
+      qui pointent dessus.
+   Aucun composant n'écrit une couleur : il emploie la couche 2, ou les classes
+   des feuilles de gabarit (editorial.css, technique.css).
 
-   Comment s'en servir (Tailwind 4, aucune config JS) — dans src/app/globals.css :
-       @import "tailwindcss";
-       @import "./theme.css";
-
-   Les polices sont cablees par `next/font` dans layout.tsx (snippet dans les
-   guidelines). Ce fichier ne fait AUCUN @import de Google Fonts : deux chemins
-   de chargement concurrents = FOUT, doubles requetes et decalage de mise en page.
-   Les var(--font-*) ci-dessous sont celles que next/font expose ; les familles
-   nommees derriere servent de filet si le cablage n'est pas encore fait.
+   Mode clair seulement : pas de `prefers-color-scheme: dark` (les boutiques
+   choisissent leur palette ; un mode sombre imposé la trahirait).
    ========================================================================== */
 
-/* ---------------------------------------------------------------------------
-   1. PRIMITIVES — la matiere. Aucune de ces valeurs ne s'ecrit dans un composant.
-   Les noms disent la MATIERE, pas l'usage : un composant utilise la couche 2.
-   Ratios WCAG mesures : `python3 docs/brand/verifie-contraste.py` (ce script LIT
-   ce fichier — modifier un hex ici, c'est declencher sa propre verification).
-   --------------------------------------------------------------------------- */
 :root {
-  /* Fonds et surfaces — la chaux des murs tunisiens, jamais un gris froid */
-  --theme-fond:         #FBF8F3;  /* fond de page */
-  --theme-surface:         #FFFFFF;  /* cartes, surfaces posees */
-  --theme-surface-2:         #F3EDE2;  /* surface secondaire, lignes alternees */
-  --theme-filet:        #E4DBCC;  /* filets, separateurs DECORATIFS */
-  --theme-filet-fort:   #C9BCA6;  /* filet appuye, survol */
-  --theme-contour-champ: #9C8B6E;  /* bordure de champ — 3:1 exige (WCAG 1.4.11) */
+  --theme-fond:          #FAF8F5;
+  --theme-surface:       #FFFFFF;
+  --theme-surface-2:     #F2EEE8;
+  --theme-filet:         #E7E2DA;
+  --theme-filet-fort:    #CFC8BD;
+  --theme-contour-champ: #8F877B;   /* bordure de champ : 3:1 exigé (WCAG 1.4.11) */
+  --theme-encre:         #141414;
+  --theme-encre-doux:    #5F5A53;
+  --theme-accent:        #7A5A3A;
+  --theme-accent-clair:  #C9A882;   /* l'accent sur fond encre */
+  --theme-succes:        #3D6B47;
+  --theme-erreur:        #A33A2B;
+  --theme-alerte:        #8A6112;
 
-  /* Encre — bleu de nuit. Texte et action principale. */
-  --theme-encre:         #10243A;
-  --theme-encre-doux:    #4C5A6B;  /* texte secondaire, legendes */
+  --theme-radius-net:   0;
+  --theme-radius-doux:  0;
+  --theme-radius-carte: 0;
+  --theme-radius-bloc:  0;
+  --theme-radius-arc:   0;
 
-  /* Laiton — le cuivre des souks. ACCENT, jamais une surface entiere. */
-  --theme-accent:        #8A6224;  /* accent sur fond clair */
-  --theme-accent-clair:  #B98B3E;  /* accent sur fond ENCRE (le laiton y echoue : 2.89) */
-
-  /* Etats — teintes de terre, pas les rouges/verts d'usine */
-  --theme-succes:         #4A6B3A;  /* succes, en stock */
-  --theme-erreur:         #A8432E;  /* erreur, refus a la livraison */
-  --theme-alerte:         #8A6512;  /* alerte, stock faible */
-
-  /* Rayons — l'arc du monogramme donne le vocabulaire.
-     Ils vivent ICI et pas seulement dans @theme : un navigateur ignore les
-     at-regles qu'il ne connait pas, donc tout ce qui n'existe que dans @theme
-     est introuvable pour du CSS ecrit a la main. Mesure : les trois classes du
-     bas de ce fichier rendaient un rayon de 0px tant que c'etait le cas. */
-  --theme-radius-net:   0.125rem;  /* 2  — puces, filets */
-  --theme-radius-doux:  0.375rem;  /* 6  — champs, badges */
-  --theme-radius-carte: 0.625rem;  /* 10 — cartes produit */
-  --theme-radius-bloc:  1rem;      /* 16 — panneaux, feuilles mobiles */
-  --theme-radius-arc:  62.5rem;    /* 1000 — plein cintre : voir .theme-arc */
-
-  /* Ombres — teintees a l'encre, jamais du noir pur.
-     Du noir pur sur un fond chaud fait un halo gris sale. */
-  --theme-shadow-pose:    0 1px 2px color-mix(in srgb, var(--theme-encre) 5%, transparent), 0 1px 1px color-mix(in srgb, var(--theme-encre) 4%, transparent);
-  --theme-shadow-carte:   0 1px 3px color-mix(in srgb, var(--theme-encre) 6%, transparent), 0 8px 20px -8px color-mix(in srgb, var(--theme-encre) 10%, transparent);
-  --theme-shadow-releve:  0 2px 6px color-mix(in srgb, var(--theme-encre) 7%, transparent), 0 18px 36px -14px color-mix(in srgb, var(--theme-encre) 16%, transparent);
+  /* Ombres teintées à l'encre, jamais du noir pur. */
+  --theme-shadow-pose:    0 1px 2px color-mix(in srgb, var(--theme-encre) 6%, transparent);
+  --theme-shadow-carte:   0 1px 3px color-mix(in srgb, var(--theme-encre) 6%, transparent), 0 10px 24px -12px color-mix(in srgb, var(--theme-encre) 14%, transparent);
+  --theme-shadow-releve:  0 2px 8px color-mix(in srgb, var(--theme-encre) 8%, transparent), 0 24px 48px -18px color-mix(in srgb, var(--theme-encre) 22%, transparent);
   --theme-shadow-feuille: 0 -2px 8px color-mix(in srgb, var(--theme-encre) 6%, transparent), 0 -24px 48px -24px color-mix(in srgb, var(--theme-encre) 20%, transparent);
 
-  /* Familles typographiques (voir couche 2 pour l'usage) */
-  --theme-font-display: var(--font-young-serif, "Young Serif"), Georgia, "Times New Roman", serif;
-  --theme-font-texte:   var(--font-plex-sans, "IBM Plex Sans"), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --theme-font-mono:    var(--font-plex-mono, "IBM Plex Mono"), ui-monospace, "SF Mono", monospace;
+  --theme-font-display: var(--font-instrument-serif), "Instrument Serif", Georgia, serif;
+  --theme-font-texte:   var(--font-instrument-sans), "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --theme-font-mono:    ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Mouvement : une seule courbe, des durées courtes. */
+  --theme-courbe: cubic-bezier(.2, .7, .2, 1);
 }
 
-/* JOUR ARABE — bascule preparee des maintenant (exigence PRD : RTL prete jour 1).
-   Rien a rechercher le jour ou l'arabe s'active : poser dir="rtl" suffit.
-   Young Serif n'a pas d'arabe ; Reem Kufi (kufique geometrique) est son pendant
-   et partage sa charpente. IBM Plex Sans Arabic est LA MEME famille que le texte. */
 [dir="rtl"] {
-  --theme-font-display: var(--font-reem-kufi, "Reem Kufi"), "Noto Kufi Arabic", serif;
-  --theme-font-texte:   var(--font-plex-arabic, "IBM Plex Sans Arabic"), "Noto Sans Arabic", sans-serif;
+  --theme-font-display: var(--font-reem-kufi), "Reem Kufi", "Noto Kufi Arabic", serif;
+  --theme-font-texte:   var(--font-plex-arabic), "IBM Plex Sans Arabic", "Noto Sans Arabic", sans-serif;
 }
 
-/* ---------------------------------------------------------------------------
-   2. JETONS SEMANTIQUES — ce que Tailwind expose en utilitaires.
-   `inline` fait pointer les utilitaires sur les var() : la bascule [dir="rtl"]
-   ci-dessus traverse donc jusqu'aux classes, sans recompilation.
-   --------------------------------------------------------------------------- */
 @theme inline {
-  /* --- Couleurs : bg-fond, text-encre, border-filet, bg-primaire ... --- */
   --color-fond:            var(--theme-fond);
   --color-surface:         var(--theme-surface);
   --color-surface-2:       var(--theme-surface-2);
   --color-filet:           var(--theme-filet);
   --color-filet-fort:      var(--theme-filet-fort);
   --color-contour-champ:   var(--theme-contour-champ);
-
   --color-encre:           var(--theme-encre);
   --color-encre-doux:      var(--theme-encre-doux);
-
-  --color-primaire:        var(--theme-encre);        /* bouton d'action */
+  --color-primaire:        var(--theme-encre);
   --color-sur-primaire:    var(--theme-surface);
-  --color-accent:          var(--theme-accent);       /* sur fond clair */
-  --color-accent-inverse:  var(--theme-accent-clair);  /* sur fond encre */
+  --color-accent:          var(--theme-accent);
+  --color-accent-inverse:  var(--theme-accent-clair);
   --color-sur-accent:      var(--theme-surface);
-
   --color-succes:          var(--theme-succes);
   --color-erreur:          var(--theme-erreur);
   --color-alerte:          var(--theme-alerte);
   --color-sur-etat:        var(--theme-surface);
 
-  /* --- Polices : font-display, font-texte, font-mono --- */
   --font-display: var(--theme-font-display);
   --font-texte:   var(--theme-font-texte);
   --font-mono:    var(--theme-font-mono);
 
-  /* --- Echelle typographique -------------------------------------------
-     Young Serif n'existe QU'EN 400. La hierarchie se fait donc a la TAILLE
-     et a l'espace, jamais au gras : `font-display font-bold` est un faux gras
-     synthetique, laid et interdit (voir guidelines).
-     Interlignage serre sur les grands corps, aere sur le texte courant.      */
-  --text-legende:   0.75rem;   --text-legende--line-height: 1.45;   /* 12 — mentions */
-  --text-etiquette: 0.8125rem; --text-etiquette--line-height: 1.4;  /* 13 — libelles, badges */
-  --text-petit:     0.875rem;  --text-petit--line-height: 1.55;     /* 14 */
-  --text-courant:   1rem;      --text-courant--line-height: 1.65;   /* 16 — plancher mobile */
-  --text-ample:     1.125rem;  --text-ample--line-height: 1.6;      /* 18 — chapo */
-  --text-t4:        1.375rem;  --text-t4--line-height: 1.35;        /* 22 */
-  --text-t3:        1.75rem;   --text-t3--line-height: 1.25;        /* 28 */
-  --text-t2:        2.25rem;   --text-t2--line-height: 1.15;        /* 36 */
-  --text-t1:        3rem;      --text-t1--line-height: 1.08;        /* 48 */
-  --text-heros:     4rem;      --text-heros--line-height: 1.02;     /* 64 — un par page */
+  --text-legende:   0.75rem;   --text-legende--line-height: 1.45;
+  --text-etiquette: 0.8125rem; --text-etiquette--line-height: 1.4;
+  --text-petit:     0.875rem;  --text-petit--line-height: 1.55;
+  --text-courant:   1rem;      --text-courant--line-height: 1.6;
+  --text-ample:     1.125rem;  --text-ample--line-height: 1.6;
+  --text-t4:        1.375rem;  --text-t4--line-height: 1.3;
+  --text-t3:        1.75rem;   --text-t3--line-height: 1.2;
+  --text-t2:        2.25rem;   --text-t2--line-height: 1.1;
+  --text-t1:        3rem;      --text-t1--line-height: 1.05;
+  --text-heros:     4.5rem;    --text-heros--line-height: 1;
 
-  --tracking-titre:   -0.015em;  /* Young Serif se resserre un peu en grand */
-  --tracking-capitale: 0.1em;    /* petites capitales, etiquettes */
-
-  /* --- Rayons : rounded-doux, rounded-carte ... ------------------------- */
   --radius-net:    var(--theme-radius-net);
   --radius-doux:   var(--theme-radius-doux);
   --radius-carte:  var(--theme-radius-carte);
   --radius-bloc:   var(--theme-radius-bloc);
   --radius-arc:    var(--theme-radius-arc);
 
-  /* --- Ombres : shadow-carte, shadow-releve ... ------------------------- */
   --shadow-pose:    var(--theme-shadow-pose);
   --shadow-carte:   var(--theme-shadow-carte);
   --shadow-releve:  var(--theme-shadow-releve);
   --shadow-feuille: var(--theme-shadow-feuille);
 }
 
-/* ---------------------------------------------------------------------------
-   3. TROIS GESTES DE MARQUE — le strict minimum qu'on ne peut pas confier
-   a la memoire de chacun. Tout le reste appartient aux composants.
-   --------------------------------------------------------------------------- */
+/* Les prix : chiffres de largeur égale, pour que les colonnes s'alignent. */
+.theme-prix { font-variant-numeric: tabular-nums lining-nums; }
 
-/* Les prix. Mesure : les chiffres d'IBM Plex Sans sont DEJA de largeur egale
-   ("111,000" et "888,000" font tous deux 154.89 px en rendu reel), donc les
-   colonnes de prix s'alignent sans reglage. On pose quand meme tabular-nums :
-   c'est la ceinture si la famille de secours prend le relais. */
-.theme-prix {
-  font-family: var(--theme-font-texte);
-  font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "tnum" 1, "lnum" 1;
+/* Anneau de focus visible partout — jamais `outline: none` sans remplaçant. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--theme-encre);
+  outline-offset: 3px;
 }
-
-/* Le plein cintre du monogramme, reutilisable : vignette produit, bandeau,
-   niche de categorie.
-   Rayons PHYSIQUES a dessein : la forme est symetrique gauche/droite, donc le
-   passage en RTL ne change rien — les longhands logiques n'apporteraient ici
-   qu'une compatibilite plus etroite pour zero benefice. Les proprietes
-   logiques restent la regle pour les MARGES et les ESPACEMENTS (cf. charte). */
-.theme-arc {
-  border-radius: var(--theme-radius-arc) var(--theme-radius-arc)
-                 var(--theme-radius-doux) var(--theme-radius-doux);
-}
-
-/* Anneau de focus visible partout — jamais `outline: none` sans remplacant.
-   Laiton sur clair, laiton-clair sur encre : la seconde regle existe parce que
-   laiton/encre ne mesure que 2.89:1 (verifie-contraste.py l'assert en INTERDIT). */
-.theme-focus:focus-visible,
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--theme-accent);
-  outline-offset: 2px;
-  border-radius: var(--theme-radius-doux);
-}
-.theme-sur-encre :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline-color: var(--theme-accent-clair);
+.sur-encre :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline-color: var(--theme-surface);
 }
 
 @media (prefers-reduced-motion: reduce) {

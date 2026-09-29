@@ -1,0 +1,272 @@
+/* ============================================================================
+   GABARIT TECHNIQUE — outillage, quincaillerie, matériel professionnel.
+   Références : Festool, Hilti, Milwaukee, Würth, Toolstation.
+
+   Le caractère : un outil de travail. En-tête sombre et grande recherche,
+   titres condensés (Archivo, largeur réduite), grille dense de cartes
+   blanches, références et stock CHIFFRÉ partout, un seul accent (jaune de
+   chantier) qui se lit en FOND — bouton jaune, texte encre — jamais en
+   texte sur blanc (contraste insuffisant).
+
+   Les classes `.te-*` ne servent que ce gabarit ; ce qui retouche le socle
+   est sous `html[data-gabarit="technique"]`.
+   ========================================================================== */
+
+html[data-gabarit="technique"] { --entete-h: 7.25rem; }
+@media (min-width: 900px) { html[data-gabarit="technique"] { --entete-h: 7.5rem; } }
+
+html[data-gabarit="technique"] :where(h1, h2, h3) { font-weight: 800; font-stretch: 86%; letter-spacing: -.005em; line-height: 1.08; }
+
+html[data-gabarit="technique"] .btn { font-weight: 700; font-size: .9375rem; }
+html[data-gabarit="technique"] .btn-primaire { background: var(--theme-accent); color: var(--theme-encre); }
+html[data-gabarit="technique"] .btn-primaire:hover { background: color-mix(in srgb, var(--theme-accent) 86%, var(--theme-encre)); }
+html[data-gabarit="technique"] .btn-primaire:disabled { background: var(--theme-surface-2); color: var(--theme-encre-doux); opacity: 1; }
+html[data-gabarit="technique"] .btn-second { background: var(--theme-surface); border-color: var(--theme-filet-fort); }
+html[data-gabarit="technique"] .btn-second:hover { background: var(--theme-surface); color: var(--theme-encre); border-color: var(--theme-encre); }
+html[data-gabarit="technique"] .etiquette { font-weight: 700; letter-spacing: .06em; }
+html[data-gabarit="technique"] .tiroir-titre { font-size: 1.125rem; text-transform: uppercase; letter-spacing: .02em; }
+html[data-gabarit="technique"] .menu-liste > li > a { font-family: var(--theme-font-texte); font-size: 1.0625rem; font-weight: 700; padding-block: .625rem; border-block-end: 1px solid var(--theme-filet); }
+html[data-gabarit="technique"] .jauge > span { background: var(--theme-succes); }
+html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent); color: var(--theme-encre); font-weight: 700; }
+
+/* --- Barre de services ------------------------------------------------------ */
+.te-utilitaire { background: var(--theme-encre); color: color-mix(in srgb, var(--theme-surface) 76%, transparent); border-block-end: 1px solid color-mix(in srgb, var(--theme-surface) 12%, transparent); }
+.te-utilitaire ul { display: flex; justify-content: center; gap: .5rem 2rem; margin: 0 auto; padding-block: .4rem; list-style: none; font-size: .75rem; font-weight: 500; }
+.te-utilitaire li { display: inline-flex; align-items: center; gap: .5rem; }
+.te-utilitaire li::before { content: ""; inline-size: .375rem; block-size: .375rem; border-radius: 50%; background: var(--theme-accent); }
+@media (min-width: 900px) { .te-utilitaire ul { justify-content: flex-start; } }
+
+/* --- En-tête ---------------------------------------------------------------- */
+.te-entete { position: sticky; inset-block-start: 0; z-index: 40; background: var(--theme-encre); color: var(--theme-surface); }
+.te-entete :focus-visible { outline-color: var(--theme-accent); }
+.te-entete-rang {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "menu logo fin" "recherche recherche recherche";
+  align-items: center; gap: .5rem .75rem; padding-block: .5rem .75rem;
+}
+.te-menu { grid-area: menu; margin-inline-start: -.625rem; }
+.te-logo { grid-area: logo; --logo-h: 1.375rem; justify-self: start; }
+.te-logo .marque-texte { font-family: var(--theme-font-display); font-weight: 800; font-stretch: 72%; font-size: 1.375rem; text-transform: uppercase; letter-spacing: .01em; }
+.te-entete-fin { grid-area: fin; display: flex; align-items: center; gap: 1.25rem; justify-content: flex-end; }
+.te-recherche {
+  grid-area: recherche; display: flex; block-size: 44px; overflow: hidden;
+  background: var(--theme-surface); color: var(--theme-encre); border-radius: var(--theme-radius-doux);
+}
+.te-recherche:focus-within { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+.te-recherche input { flex: 1; min-inline-size: 0; padding-inline: 1rem; border: 0; background: transparent; font-size: 1rem; }
+.te-recherche input:focus-visible { outline: none; }
+.te-recherche input::placeholder { color: var(--theme-encre-doux); }
+.te-recherche button { display: grid; place-items: center; inline-size: 52px; border: 0; background: var(--theme-accent); color: var(--theme-encre); cursor: pointer; }
+.te-recherche button:hover { background: color-mix(in srgb, var(--theme-accent) 86%, var(--theme-encre)); }
+@media (min-width: 900px) {
+  .te-entete-rang { grid-template-columns: auto minmax(0, 46rem) auto; grid-template-areas: "logo recherche fin"; justify-content: space-between; gap: 2.5rem; padding-block: .875rem; }
+  .te-logo { --logo-h: 1.625rem; }
+  .te-logo .marque-texte { font-size: 1.625rem; }
+  .te-recherche { block-size: 48px; }
+}
+.te-action { display: inline-flex; align-items: center; gap: .5rem; font-size: .8125rem; font-weight: 600; line-height: 1.2; }
+.te-action:hover span { text-decoration: underline; text-underline-offset: .2em; }
+.bouton-panier[data-gabarit-panier="technique"] { gap: .5rem; padding-inline: .25rem; font-weight: 600; font-size: .8125rem; }
+.bouton-panier[data-gabarit-panier="technique"] .bouton-panier-texte { display: none; }
+.bouton-panier[data-gabarit-panier="technique"] .bouton-panier-compte {
+  position: absolute; inset-block-start: 2px; inset-inline-start: 22px; min-inline-size: 18px; block-size: 18px; padding-inline: 4px;
+  display: grid; place-items: center; border-radius: 999px; background: var(--theme-accent); color: var(--theme-encre);
+  font-size: .6875rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.bouton-panier[data-gabarit-panier="technique"] .bouton-panier-compte[data-compte="0"] { display: none; }
+@media (min-width: 900px) { .bouton-panier[data-gabarit-panier="technique"] .bouton-panier-texte { display: inline; } }
+
+.te-barre-rayons { background: var(--theme-surface); color: var(--theme-encre); border-block-end: 1px solid var(--theme-filet); }
+.te-nav { display: flex; overflow-x: auto; scrollbar-width: none; }
+.te-nav a {
+  display: block; padding: .8125rem 1rem; font-size: .875rem; font-weight: 700; white-space: nowrap;
+  box-shadow: inset 0 -3px 0 transparent; transition: box-shadow .15s, background-color .15s;
+}
+.te-nav a:first-child { margin-inline-start: -1rem; }
+.te-nav a:hover { background: var(--theme-surface-2); }
+.te-nav a[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--theme-accent); }
+.te-entete .te-nav :focus-visible { outline-color: var(--theme-encre); outline-offset: -3px; }
+
+/* --- Bannière --------------------------------------------------------------- */
+.te-banniere {
+  position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end;
+  min-block-size: 24rem; margin-block-start: 1rem; background: var(--theme-encre); color: var(--theme-surface);
+  border-radius: var(--theme-radius-bloc);
+}
+.te-banniere-image, .te-banniere-image img { position: absolute; inset: 0; z-index: -2; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.te-banniere[data-image]::after {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(to top, color-mix(in srgb, var(--theme-encre) 92%, transparent) 10%, color-mix(in srgb, var(--theme-encre) 40%, transparent) 60%, color-mix(in srgb, var(--theme-encre) 15%, transparent));
+}
+.te-banniere-contenu { padding: 1.75rem 1.25rem; max-inline-size: 42rem; }
+.te-surtitre {
+  display: inline-block; margin: 0; padding: .25rem .5rem; background: var(--theme-accent); color: var(--theme-encre);
+  border-radius: var(--theme-radius-net); font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+}
+.te-banniere h1 { margin-block: 1rem .75rem; font-size: clamp(2.375rem, 6vw, 4.75rem); font-stretch: 72%; line-height: .94; text-transform: uppercase; letter-spacing: 0; }
+.te-banniere-chapo { max-inline-size: 46ch; color: color-mix(in srgb, var(--theme-surface) 84%, transparent); font-size: 1rem; }
+.te-banniere-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.5rem; margin-block-start: 1.5rem; }
+.te-banniere-actions .btn { min-block-size: 52px; padding-inline: 1.5rem; }
+.te-banniere-compte { font-size: .875rem; font-weight: 600; color: color-mix(in srgb, var(--theme-surface) 80%, transparent); }
+@media (min-width: 900px) {
+  .te-banniere { min-block-size: 30rem; align-items: center; }
+  .te-banniere[data-image]::after {
+    background: linear-gradient(to right, color-mix(in srgb, var(--theme-encre) 94%, transparent) 20%, color-mix(in srgb, var(--theme-encre) 55%, transparent) 55%, transparent 85%);
+  }
+  .te-banniere-contenu { padding: 3.5rem; }
+}
+
+/* --- Sections --------------------------------------------------------------- */
+.te-section { margin-block: clamp(2.25rem, 5vw, 3.75rem); }
+.te-section-tete {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  margin-block-end: 1.25rem; padding-block-end: .625rem; border-block-end: 2px solid var(--theme-encre);
+}
+.te-section-tete h2 { font-size: clamp(1.375rem, 2.4vw, 1.875rem); text-transform: uppercase; font-stretch: 78%; }
+.te-lien-fleche { display: inline-flex; align-items: center; gap: .375rem; font-size: .875rem; font-weight: 700; white-space: nowrap; }
+.te-lien-fleche:hover { text-decoration: underline; text-underline-offset: .2em; }
+
+.te-rayons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; list-style: none; margin: 0; padding: 0; }
+@media (min-width: 700px) { .te-rayons { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .875rem; } }
+@media (min-width: 1100px) { .te-rayons { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.te-rayon {
+  display: flex; flex-direction: column; block-size: 100%; overflow: hidden; background: var(--theme-surface);
+  border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); transition: border-color .15s, box-shadow .15s;
+}
+.te-rayon:hover { border-color: var(--theme-encre); box-shadow: var(--theme-shadow-carte); }
+.te-rayon img { transition: transform .6s var(--theme-courbe); }
+.te-rayon:hover img { transform: scale(1.04); }
+.te-rayon-corps { display: flex; flex-direction: column; gap: .125rem; padding: .75rem .875rem 1rem; }
+.te-rayon-parent { font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.te-rayon-nom { font-family: var(--theme-font-display); font-size: 1.0625rem; font-weight: 800; font-stretch: 86%; line-height: 1.2; }
+.te-rayon-compte { font-size: .8125rem; color: var(--theme-encre-doux); }
+
+.te-services { display: grid; gap: .75rem; list-style: none; margin: 0; padding: 0; }
+@media (min-width: 700px) { .te-services { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .te-services { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.te-services li {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .375rem; padding: 1.25rem;
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+.te-services svg, .te-pied-services svg { box-sizing: content-box; padding: .5rem; margin-block-end: .375rem; border-radius: 50%; background: var(--theme-accent); color: var(--theme-encre); flex: none; }
+.te-services b { font-size: 1rem; font-weight: 800; }
+.te-services span { font-size: .875rem; color: var(--theme-encre-doux); }
+.te-services .te-lien-fleche { margin-block-start: .25rem; }
+
+.te-bandeau { display: grid; gap: 1.5rem; align-items: center; padding: 1.25rem; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-bloc); }
+.te-bandeau h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); text-transform: uppercase; font-stretch: 76%; margin-block-end: .75rem; }
+.te-bandeau p { color: var(--theme-encre-doux); margin-block-end: 1rem; }
+@media (min-width: 900px) { .te-bandeau { grid-template-columns: 1fr 1fr; gap: 3rem; padding: 1.5rem; } }
+.te-texte h2 { font-size: 1.5rem; margin-block-end: .75rem; }
+.te-texte p { max-inline-size: 70ch; color: var(--theme-encre-doux); }
+
+/* --- Grille et carte -------------------------------------------------------- */
+.te-grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+@media (min-width: 700px) { .te-grille { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; } }
+@media (min-width: 1100px) { .te-grille { grid-template-columns: repeat(4, minmax(0, 1fr)); } .te-grille-rang { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+.te-carte {
+  position: relative; display: flex; flex-direction: column; gap: .625rem; padding: .625rem;
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+  transition: border-color .15s, box-shadow .15s;
+}
+.te-carte:hover { border-color: var(--theme-filet-fort); box-shadow: var(--theme-shadow-carte); }
+.te-carte .cadre-image { background: var(--theme-surface-2); border-radius: var(--theme-radius-net); }
+.te-carte-lien { display: flex; flex-direction: column; gap: .3rem; }
+.te-carte-lien .cadre-image { margin-block-end: .375rem; }
+.te-carte-marque { font-size: .6875rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.te-carte-nom {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-block-size: 2.5em;
+  font-family: var(--theme-font-texte); font-size: .9375rem; font-weight: 650; font-stretch: 100%; line-height: 1.3; letter-spacing: 0;
+}
+.te-carte-lien:hover .te-carte-nom { text-decoration: underline; text-underline-offset: .15em; }
+.te-carte-ref { font-family: var(--theme-font-mono); font-size: .6875rem; color: var(--theme-encre-doux); }
+.te-carte-bas { display: flex; flex-direction: column; gap: .5rem; margin-block-start: auto; }
+.te-carte-bas .dispo, .te-carte-bas .etat { font-size: .75rem; font-weight: 600; }
+.te-carte-prix { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .375rem; margin: 0; }
+.te-carte-prix .prix-fort { font-size: 1.25rem; font-weight: 800; }
+.te-carte-prix .dès { font-size: .75rem; color: var(--theme-encre-doux); }
+.te-carte-prix .prix-barre { flex-basis: 100%; font-size: .75rem; }
+.te-carte .btn { min-block-size: 42px; padding: .5rem .75rem; font-size: .875rem; }
+.te-remise {
+  position: absolute; z-index: 1; inset-block-start: .5rem; inset-inline-start: .5rem; padding: .125rem .4rem;
+  background: var(--theme-erreur); color: var(--theme-surface); border-radius: var(--theme-radius-net); font-size: .75rem; font-weight: 800;
+}
+
+/* --- Listes ----------------------------------------------------------------- */
+.te-entete-liste { padding-block: 1.25rem .75rem; }
+.te-entete-liste h1 { margin-block-start: .875rem; font-size: clamp(1.875rem, 4vw, 2.75rem); text-transform: uppercase; font-stretch: 76%; }
+.te-entete-liste .chapo { margin-block-start: .5rem; max-inline-size: 70ch; font-size: .9375rem; }
+.te-entete-liste .sous-rayons a { border-radius: var(--theme-radius-doux); font-weight: 600; }
+.te-listing { display: grid; gap: 1rem; padding-block-end: 2rem; }
+@media (min-width: 900px) {
+  .te-listing { grid-template-columns: 15.5rem minmax(0, 1fr); gap: 2rem; align-items: start; }
+  .te-filtres { position: sticky; inset-block-start: calc(var(--entete-h) + 1rem); max-block-size: calc(100svh - var(--entete-h) - 2rem); overflow-y: auto; padding-inline-end: .5rem; }
+}
+.te-filtres-titre { margin: 0 0 .25rem; padding-block: .75rem; font-weight: 800; text-transform: uppercase; font-size: .875rem; border-block-end: 2px solid var(--theme-encre); }
+.te-listing .listing-outils { padding-block-start: 0; }
+
+/* --- Fiche produit ---------------------------------------------------------- */
+html[data-gabarit="technique"] .fil { padding-block: 1.25rem .25rem; }
+.te-fiche { display: grid; gap: 1.5rem; margin-block: 1rem 2rem; }
+@media (min-width: 1000px) { .te-fiche { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 3rem; align-items: start; } }
+.te-galerie-principale .cadre-image { background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-bloc); }
+.te-galerie-vignettes { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .625rem; }
+.te-galerie-vignettes button { inline-size: 4.5rem; padding: 0; background: none; border: 2px solid var(--theme-filet); border-radius: var(--theme-radius-doux); overflow: hidden; cursor: pointer; }
+.te-galerie-vignettes button[aria-pressed="true"] { border-color: var(--theme-encre); }
+@media (min-width: 1000px) { .te-galerie { position: sticky; inset-block-start: calc(var(--entete-h) + 1rem); } }
+.te-fiche-marque { margin: 0 0 .375rem; font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.te-fiche-achat h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+.ref-variante { margin-block: .5rem 1.25rem; font-family: var(--theme-font-mono); font-size: .8125rem; color: var(--theme-encre-doux); }
+.te-fiche-achat .fiche-achat { padding-block-start: 1.25rem; border-block-start: 1px solid var(--theme-filet); }
+html[data-gabarit="technique"] .fiche-prix .prix-fort { font-size: 2.125rem; font-weight: 800; letter-spacing: -.01em; }
+html[data-gabarit="technique"] .fiche-stock .dispo, html[data-gabarit="technique"] .fiche-stock .etat { font-size: .875rem; font-weight: 700; }
+html[data-gabarit="technique"] .axe legend { font-weight: 700; }
+html[data-gabarit="technique"] .valeur { font-weight: 600; align-items: flex-start; padding: .625rem .875rem; }
+html[data-gabarit="technique"] .valeur[aria-pressed="true"] { border-color: var(--theme-encre); box-shadow: inset 0 0 0 1px var(--theme-encre); background: color-mix(in srgb, var(--theme-accent) 10%, var(--theme-surface)); }
+html[data-gabarit="technique"] .btn-ajout { min-block-size: 54px; font-size: 1rem; }
+.te-rassure { display: grid; margin: 1.5rem 0 0; padding: 0 1rem; list-style: none; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-bloc); }
+.te-rassure li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .875rem; align-items: start; padding-block: .875rem; border-block-end: 1px solid var(--theme-filet); }
+.te-rassure li:last-child { border-block-end: 0; }
+.te-rassure b { display: block; font-size: .875rem; }
+.te-rassure span span { display: block; font-size: .8125rem; color: var(--theme-encre-doux); }
+.te-conseil {
+  display: flex; gap: .875rem; align-items: center; margin-block-start: .75rem; padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--theme-succes) 35%, var(--theme-surface)); border-radius: var(--theme-radius-bloc);
+  background: color-mix(in srgb, var(--theme-succes) 7%, var(--theme-surface)); color: var(--theme-encre);
+}
+.te-conseil svg { color: var(--theme-succes); flex: none; }
+.te-conseil b { display: block; font-size: .9375rem; }
+.te-conseil span span { display: block; font-size: .8125rem; color: var(--theme-encre-doux); }
+.te-conseil:hover b { text-decoration: underline; text-underline-offset: .2em; }
+.te-fiche-details { display: grid; gap: 2rem; margin-block: 2.5rem; }
+@media (min-width: 900px) { .te-fiche-details { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3rem; } }
+.te-fiche-details h2 { margin-block-end: 1rem; padding-block-end: .5rem; border-block-end: 2px solid var(--theme-encre); font-size: 1.25rem; text-transform: uppercase; font-stretch: 80%; }
+.te-fiche-details p { color: var(--theme-encre-doux); max-inline-size: 65ch; }
+html[data-gabarit="technique"] .caracteristiques > div { padding: .625rem .75rem; border: 0; }
+html[data-gabarit="technique"] .caracteristiques > div:nth-child(odd) { background: var(--theme-surface-2); }
+html[data-gabarit="technique"] .caracteristiques dd { font-weight: 600; }
+
+/* --- Pied de page ----------------------------------------------------------- */
+.te-pied { margin-block-start: 3rem; background: var(--theme-encre); color: color-mix(in srgb, var(--theme-surface) 76%, transparent); }
+.te-pied :focus-visible { outline-color: var(--theme-accent); }
+.te-pied-services { background: var(--theme-surface); color: var(--theme-encre); border-block: 1px solid var(--theme-filet); }
+.te-pied-services ul { display: grid; gap: 1.25rem; margin: 0 auto; padding-block: 1.5rem; list-style: none; }
+@media (min-width: 700px) { .te-pied-services ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .te-pied-services ul { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.te-pied-services li { display: flex; gap: .875rem; align-items: flex-start; }
+.te-pied-services svg { margin: 0; }
+.te-pied-services b { display: block; font-size: .875rem; }
+.te-pied-services span span { display: block; font-size: .8125rem; color: var(--theme-encre-doux); }
+.te-pied-grille { display: grid; gap: 2rem; padding-block: 2.5rem; }
+@media (min-width: 700px) { .te-pied-grille { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); } }
+.te-pied .marque, .te-pied .marque-texte { color: var(--theme-surface); }
+.te-pied .marque-texte { font-weight: 800; font-stretch: 72%; text-transform: uppercase; font-size: 1.5rem; }
+.te-pied-resume { margin-block-start: 1rem; max-inline-size: 36ch; font-size: .875rem; }
+.te-pied-titre { margin-block-end: .75rem; color: var(--theme-surface); font-size: .8125rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.te-pied ul { display: grid; gap: .5rem; list-style: none; margin: 0; padding: 0; font-size: .875rem; }
+.te-pied a:hover { color: var(--theme-accent); }
+.te-pied-conseil { display: inline-flex; align-items: center; gap: .5rem; font-size: .875rem; font-weight: 600; color: var(--theme-surface); }
+.te-pied-bas {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 2rem; padding-block: 1.25rem 1.75rem;
+  border-block-start: 1px solid color-mix(in srgb, var(--theme-surface) 14%, transparent); font-size: .75rem;
+}

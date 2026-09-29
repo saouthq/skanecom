@@ -112,3 +112,58 @@ export function Telephone({ taille = 18, className }: Props) {
     </svg>
   );
 }
+
+export function Menu({ taille = 22, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <path d="M3 7h18M3 12h18M3 17h18" />
+    </svg>
+  );
+}
+
+export function Chevron({ taille = 16, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={1.8}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+export function Magasin({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={1.7}>
+      <path d="M4 10v10h16V10" />
+      <path d="M3 10 5 4h14l2 6c0 1.4-1.1 2.5-2.5 2.5S16 11.4 16 10c0 1.4-1.8 2.5-4 2.5S8 11.4 8 10c0 1.4-1.1 2.5-2.5 2.5S3 11.4 3 10Z" />
+      <path d="M10 20v-5h4v5" />
+    </svg>
+  );
+}
+
+export function Bulle({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={1.7}>
+      <path d="M4 20l1.3-3.9A8 8 0 1 1 8 19l-4 1Z" />
+      <path d="M9 10h6M9 13.5h4" />
+    </svg>
+  );
+}
+
+export function Grille({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={1.7}>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1" />
+    </svg>
+  );
+}
+
+export function Bouclier({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={1.7}>
+      <path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}

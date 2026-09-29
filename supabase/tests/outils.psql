@@ -201,5 +201,5 @@ insert into public.commande_lignes (boutique_id, commande_id, variante_id, produ
 
 -- Thèmes : A garde le thème n°1 avec son accent, B prend le thème technique.
 insert into public.themes (boutique_id, code, couleurs, textes) values
-  (tests.id('A'), 'premium_sobre',       '{"accent": "#8A6224"}', '{"resume_fr": "Bagages choisis pour durer."}'),
-  (tests.id('B'), 'catalogue_technique', '{"accent": "#FEBD17", "encre": "#1A1A1A"}', '{}');
+  (tests.id('A'), 'editorial',           '{"accent": "#8A6224"}', '{"resume_fr": "Bagages choisis pour durer."}'),
+  (tests.id('B'), 'technique',           '{"accent": "#FEBD17", "encre": "#1A1A1A"}', '{}');

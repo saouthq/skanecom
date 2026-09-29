@@ -1,0 +1,306 @@
+/* ============================================================================
+   GABARIT ÉDITORIAL — mode, bagages, maroquinerie, maison.
+   Références : COS, Arket, Sézane, Toteme, Rimowa.
+
+   Le caractère : beaucoup d'image, peu de mots, une typographie de magazine
+   (titres en Instrument Serif, texte en Instrument Sans), des angles droits,
+   des filets fins, aucune ombre. L'interface se tait pour laisser parler la
+   marchandise.
+
+   Les classes `.ed-*` ne servent que ce gabarit ; ce qui retouche le socle
+   est sous `html[data-gabarit="editorial"]`.
+   ========================================================================== */
+
+html[data-gabarit="editorial"] {
+  --entete-h: 3.5rem;
+}
+@media (min-width: 900px) {
+  html[data-gabarit="editorial"] { --entete-h: 4.5rem; }
+}
+
+html[data-gabarit="editorial"] :where(h1, h2, h3) { letter-spacing: -.01em; line-height: 1.05; }
+
+/* Boutons : petites capitales espacées, comme une étiquette de vêtement. */
+html[data-gabarit="editorial"] .btn {
+  min-block-size: 50px; padding-inline: 2rem; font-size: .75rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+html[data-gabarit="editorial"] .btn-filtrer { border-color: var(--theme-encre); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
+html[data-gabarit="editorial"] .tiroir-titre { font-size: 1.75rem; }
+html[data-gabarit="editorial"] .tiroir-panier .tiroir-titre { font-size: 1.5rem; }
+
+/* --- Bandeau d'annonce ----------------------------------------------------- */
+.ed-annonce { background: var(--theme-encre); color: var(--theme-fond); }
+.ed-annonce p {
+  display: flex; justify-content: center; gap: 3rem; margin: 0; padding: .5rem var(--theme-marge);
+  font-size: .6875rem; letter-spacing: .12em; text-transform: uppercase; text-align: center;
+}
+
+/* --- En-tête --------------------------------------------------------------- */
+.ed-entete {
+  position: sticky; inset-block-start: 0; z-index: 40;
+  background: var(--theme-fond); color: var(--theme-encre); border-block-end: 1px solid var(--theme-filet);
+  transition: background-color .35s var(--theme-courbe), color .35s var(--theme-courbe), border-color .35s var(--theme-courbe);
+}
+/* Posé sur la photo d'ouverture : transparent, texte clair — tant qu'on ne
+   défile pas, ne le survole pas, n'y entre pas au clavier. */
+.ed-entete[data-transparent]:not(:hover):not(:focus-within) {
+  background: transparent; color: var(--theme-surface); border-color: transparent;
+}
+.ed-entete[data-transparent]:not(:hover):not(:focus-within) :focus-visible { outline-color: var(--theme-surface); }
+.ed-entete-rang {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 1rem;
+  block-size: var(--entete-h);
+}
+.ed-entete-debut { display: flex; align-items: center; min-inline-size: 0; margin-inline-start: -.625rem; }
+.ed-entete-fin { display: flex; align-items: center; justify-content: flex-end; gap: .125rem; margin-inline-end: -.5rem; }
+.ed-logo { --logo-h: 1.125rem; display: flex; justify-content: center; }
+.ed-logo .marque-texte { font-size: 1.5rem; letter-spacing: .01em; }
+@media (min-width: 900px) {
+  .ed-entete-debut { margin-inline-start: 0; }
+  .ed-logo { --logo-h: 1.375rem; }
+  .ed-logo .marque-texte { font-size: 1.875rem; }
+}
+.ed-nav { display: flex; gap: 1.75rem; min-inline-size: 0; overflow: hidden; }
+.ed-nav a {
+  padding-block: .5rem; font-size: .75rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size .3s var(--theme-courbe);
+}
+.ed-nav a:hover, .ed-nav a[aria-current="page"] { background-size: 100% 1px; }
+/* Sous 1 280 px, quatre entrées : au-delà, elles mordraient sur le logo. */
+@media (max-width: 1279px) { .ed-nav { gap: 1.25rem; } .ed-nav a:nth-child(n+5) { display: none; } }
+
+/* Le panier : « Panier (2) » en toutes lettres sur grand écran, une icône et
+   une pastille sur téléphone. */
+.bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-texte { display: none; }
+.bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-compte {
+  position: absolute; inset-block-start: 6px; inset-inline-end: 4px; min-inline-size: 16px; block-size: 16px; padding-inline: 4px;
+  display: grid; place-items: center; border-radius: 999px; background: currentColor; font-size: .625rem; font-variant-numeric: tabular-nums;
+}
+.bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-compte[data-compte="0"] { display: none; }
+@media (min-width: 900px) {
+  .bouton-panier[data-gabarit-panier="editorial"] svg { display: none; }
+  .bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-texte,
+  .bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-compte[data-compte] {
+    display: inline; position: static; background: none; min-inline-size: 0; block-size: auto; padding: 0;
+    font-size: .75rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  }
+  .bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-compte::before { content: "("; }
+  .bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-compte::after { content: ")"; }
+  .bouton-panier[data-gabarit-panier="editorial"] { gap: .25rem; padding-inline: .75rem; }
+}
+/* La pastille est pleine (currentColor) : son chiffre prend la couleur du fond. */
+.bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-compte { color: var(--theme-fond); }
+@media (min-width: 900px) {
+  .bouton-panier[data-gabarit-panier="editorial"] .bouton-panier-compte { color: inherit; }
+}
+.ed-entete[data-transparent]:not(:hover):not(:focus-within) .bouton-panier-compte { color: var(--theme-encre); }
+@media (min-width: 900px) {
+  .ed-entete[data-transparent]:not(:hover):not(:focus-within) .bouton-panier-compte { color: inherit; }
+}
+
+/* --- Sections de l'accueil ------------------------------------------------ */
+.ed-section { margin-block: clamp(3.5rem, 7vw, 6.5rem); }
+.ed-section-tete { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin-block-end: 1.75rem; }
+.ed-section-tete h2 { font-size: clamp(2rem, 3.4vw, 3rem); margin-block-start: .375rem; }
+.ed-section-tete .lien-souligne { font-size: .8125rem; white-space: nowrap; padding-block-end: .375rem; }
+
+/* Ouverture pleine page, posée sous l'en-tête transparent. */
+.ed-ouverture {
+  position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: flex-end;
+  min-block-size: min(88svh, 58rem); background: var(--theme-encre); color: var(--theme-surface);
+}
+.ed-ouverture[data-premiere] { margin-block-start: calc(-1 * var(--entete-h)); }
+.ed-ouverture-image, .ed-ouverture-image img { position: absolute; inset: 0; z-index: -2; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.ed-ouverture-voile {
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(to top, color-mix(in srgb, var(--theme-encre) 62%, transparent) 0%, color-mix(in srgb, var(--theme-encre) 12%, transparent) 48%, transparent 70%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--theme-encre) 30%, transparent), transparent 22%);
+}
+.ed-ouverture-contenu { padding-block: 6rem 2.75rem; }
+.ed-ouverture .etiquette { color: color-mix(in srgb, var(--theme-surface) 88%, transparent); }
+.ed-ouverture h1 { max-inline-size: 11ch; margin-block: .75rem 0; font-size: clamp(3.25rem, 9vw, 8rem); line-height: .9; letter-spacing: -.025em; }
+.ed-ouverture .chapo { margin-block-start: 1.25rem; max-inline-size: 34ch; color: color-mix(in srgb, var(--theme-surface) 86%, transparent); }
+.ed-ouverture-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; margin-block-start: 2rem; }
+.ed-ouverture-actions .lien-souligne { font-size: .8125rem; letter-spacing: .06em; }
+@media (min-width: 900px) {
+  .ed-ouverture-contenu { padding-block-end: 4.5rem; }
+}
+
+/* Ouverture sur socle (photo détourée) : le produit posé sur un aplat. */
+.ed-ouverture-socle { padding-block: 1.5rem 0; }
+.ed-ouverture-socle-grille { display: grid; gap: 2rem; }
+.ed-ouverture-texte h1 { margin-block: .75rem 0; font-size: clamp(3rem, 7.5vw, 7rem); line-height: .92; letter-spacing: -.02em; }
+.ed-ouverture-texte .chapo { margin-block-start: 1.25rem; }
+.ed-ouverture-texte .ed-ouverture-actions { flex-direction: column; align-items: flex-start; gap: .875rem; }
+.ed-socle { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 5; padding: 12% 10%; background: var(--theme-surface-2); }
+/* « darken » : un fond blanc cassé sous le produit prend exactement la
+   couleur du socle (min par canal) ; le produit, plus sombre, ne bouge pas. */
+.ed-socle img { inline-size: 100%; block-size: 100%; object-fit: contain; mix-blend-mode: darken; }
+.ed-cartel { position: absolute; inset-inline: 1.25rem; inset-block-end: 1rem; margin: 0; font-size: .75rem; color: var(--theme-encre-doux); }
+@media (min-width: 900px) {
+  .ed-ouverture-socle { padding-block: 2rem 0; }
+  .ed-ouverture-socle-grille {
+    grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); align-items: center; gap: clamp(3rem, 6vw, 7rem);
+    min-block-size: calc(100svh - var(--entete-h) - 5rem);
+  }
+  .ed-socle { aspect-ratio: auto; block-size: min(46rem, calc(100svh - var(--entete-h) - 7rem)); }
+}
+
+.ed-ouverture-texte-seul { padding-block: clamp(4rem, 12vw, 9rem) clamp(2rem, 6vw, 4rem); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1.25rem; }
+.ed-ouverture-texte-seul h1 { font-size: clamp(3rem, 8vw, 7rem); line-height: .92; }
+
+/* Les collections : grandes vignettes ; bande à faire glisser sur téléphone. */
+.ed-collections {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 70%; gap: .75rem; list-style: none;
+  margin: 0 calc(-1 * var(--theme-marge)); padding: 0 var(--theme-marge); overflow-x: auto;
+  scroll-snap-type: x mandatory; scroll-padding-inline: var(--theme-marge); scrollbar-width: none;
+}
+.ed-collections::-webkit-scrollbar { display: none; }
+.ed-collections > li { scroll-snap-align: start; }
+@media (min-width: 700px) {
+  .ed-collections { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; overflow: visible; }
+  .ed-collections[data-n="2"], .ed-collections[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .ed-collections[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ed-collections[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+.ed-collection { display: flex; flex-direction: column; gap: .375rem; }
+.ed-collection .cadre-image { margin-block-end: .5rem; }
+.ed-collection img { transition: transform 1.2s var(--theme-courbe); }
+.ed-collection:hover img { transform: scale(1.035); }
+.ed-collection-nom { font-family: var(--theme-font-display); font-size: 1.625rem; line-height: 1.1; }
+
+/* Le récit : image et texte, bord à bord. */
+.ed-recit { display: grid; margin-block: clamp(3.5rem, 8vw, 7rem); background: var(--theme-surface-2); }
+.ed-recit-texte { padding: 2.5rem var(--theme-marge) 3rem; display: flex; flex-direction: column; align-items: flex-start; gap: 1.25rem; }
+.ed-recit-texte h2 { font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: .95; }
+.ed-recit-texte .chapo { max-inline-size: 38ch; }
+.ed-recit-texte .lien-souligne { font-size: .8125rem; letter-spacing: .08em; text-transform: uppercase; }
+@media (min-width: 900px) {
+  .ed-recit { grid-template-columns: 1fr 1fr; align-items: center; }
+  .ed-recit[data-inverse] .ed-recit-image { order: 2; }
+  .ed-recit[data-sans-image] { grid-template-columns: 1fr; }
+  .ed-recit-texte { padding: 3rem clamp(2.5rem, 7vw, 8rem); }
+}
+
+/* Les engagements, en une ligne. */
+.ed-engagements { margin-block: clamp(3rem, 6vw, 5rem) 0; border-block: 1px solid var(--theme-filet); }
+.ed-engagements ul { display: grid; gap: 1.75rem; list-style: none; margin: 0; padding-block: 2.5rem; }
+.ed-engagements li { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: .875rem; row-gap: .125rem; align-items: start; }
+.ed-engagements svg { grid-row: span 2; margin-block-start: .125rem; }
+.ed-engagements b { font-weight: 500; font-size: .875rem; }
+.ed-engagements span { font-size: .8125rem; color: var(--theme-encre-doux); line-height: 1.5; }
+@media (min-width: 700px) { .ed-engagements ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .ed-engagements ul { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.5rem; } }
+
+.ed-texte { max-inline-size: 48rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.ed-texte h2 { font-size: clamp(2rem, 4vw, 3.25rem); }
+
+/* --- Grille et carte -------------------------------------------------------- */
+.ed-grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.25rem .5rem; }
+@media (min-width: 700px) { .ed-grille { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.75rem .75rem; } }
+@media (min-width: 1100px) { .ed-grille { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3.25rem 1rem; } }
+
+.ed-carte { display: flex; flex-direction: column; gap: .875rem; }
+.ed-carte .photo-principale { transition: transform 1.4s var(--theme-courbe); }
+@media (hover: hover) {
+  .ed-carte:hover .photo-survol { opacity: 1; }
+  .ed-carte:hover .photo-principale { transform: scale(1.02); }
+}
+.ed-carte-corps { display: flex; flex-direction: column; gap: .5rem; }
+.ed-carte-ligne { display: flex; flex-direction: column; gap: .125rem; }
+.ed-carte-nom { font-family: var(--theme-font-texte); font-size: .875rem; font-weight: 400; line-height: 1.35; letter-spacing: 0; }
+.ed-carte-prix { font-size: .875rem; color: var(--theme-encre); white-space: nowrap; }
+.ed-carte-prix .dès { margin-inline-end: .25rem; font-size: .75rem; color: var(--theme-encre-doux); }
+.ed-carte:hover .ed-carte-nom { text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+@media (min-width: 700px) {
+  .ed-carte-ligne { flex-direction: row; justify-content: space-between; align-items: baseline; gap: 1rem; }
+}
+.ed-coloris { display: flex; align-items: center; gap: .375rem; font-size: .6875rem; color: var(--theme-encre-doux); }
+.ed-coloris i { inline-size: .625rem; block-size: .625rem; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-encre) 18%, transparent); }
+.ed-carte-detail { font-size: .75rem; color: var(--theme-encre-doux); }
+.ed-marqueur {
+  position: absolute; z-index: 1; inset-block-start: .625rem; inset-inline-start: .625rem;
+  padding: .25rem .5rem; background: var(--theme-fond); color: var(--theme-encre);
+  font-size: .625rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+}
+.ed-marqueur[data-etat="rupture"] { color: var(--theme-encre-doux); }
+
+/* --- Listes ----------------------------------------------------------------- */
+.ed-entete-liste { padding-block: 1.5rem 2rem; text-align: center; }
+.ed-entete-liste .fil ol { justify-content: center; }
+.ed-entete-liste h1 { margin-block-start: 1.75rem; font-size: clamp(2.75rem, 7vw, 5.5rem); line-height: .95; letter-spacing: -.02em; }
+.ed-entete-liste .chapo { margin: 1rem auto 0; }
+.ed-entete-liste .sous-rayons { justify-content: center; }
+.ed-entete-liste .recherche-page { margin-inline: auto; }
+.ed-entete-liste .sous-rayons a { border-radius: 0; border-color: transparent; background: none; text-decoration: underline; text-underline-offset: .3em; text-decoration-color: var(--theme-filet-fort); }
+.ed-entete-liste .sous-rayons a:hover { text-decoration-color: currentColor; }
+
+.ed-listing .listing-outils {
+  position: sticky; inset-block-start: var(--entete-h); z-index: 20; margin-block-end: 1.25rem;
+  background: var(--theme-fond); border-block: 1px solid var(--theme-filet);
+}
+@media (min-width: 700px) {
+  .ed-listing .listing-outils { display: grid; grid-template-columns: 1fr auto 1fr; }
+  .ed-listing .listing-outils .btn-filtrer { justify-self: start; }
+}
+html[data-gabarit="editorial"] .listing-outils select { border-color: transparent; background: none; padding-inline-end: .5rem; font-size: .8125rem; }
+
+/* --- Fiche produit ---------------------------------------------------------- */
+.ed-fiche { display: grid; }
+@media (min-width: 900px) {
+  .ed-fiche { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
+}
+.ed-galerie { position: relative; }
+.ed-galerie-piste {
+  display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain;
+}
+.ed-galerie-piste::-webkit-scrollbar { display: none; }
+.ed-galerie-vue { flex: 0 0 100%; scroll-snap-align: start; }
+.ed-galerie-compteur {
+  position: absolute; inset-block-end: .75rem; inset-inline-end: .75rem; margin: 0; padding: .125rem .5rem;
+  background: var(--theme-fond); font-size: .6875rem; letter-spacing: .08em; font-variant-numeric: tabular-nums;
+}
+@media (min-width: 900px) {
+  .ed-galerie-piste { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; overflow: visible; }
+  .ed-galerie-piste[data-impair] > :first-child { grid-column: 1 / -1; }
+}
+.ed-fiche-panneau { padding: 1.5rem var(--theme-marge) 0; }
+.ed-fiche-collant { display: flex; flex-direction: column; gap: 1rem; }
+.ed-fiche-collant h1 { font-size: clamp(2.125rem, 3.2vw, 3rem); line-height: 1; }
+.ed-fiche-collant .etiquette { margin-block-start: .75rem; }
+@media (min-width: 900px) {
+  .ed-fiche-panneau { padding: 2.5rem clamp(2rem, 4.5vw, 5rem) 0; }
+  .ed-fiche-collant { position: sticky; inset-block-start: calc(var(--entete-h) + 2.5rem); max-inline-size: 30rem; }
+}
+html[data-gabarit="editorial"] .fiche-prix .prix-fort { font-size: 1.125rem; font-weight: 400; }
+html[data-gabarit="editorial"] .fiche-stock { font-size: .8125rem; margin-block: -.5rem -.25rem; }
+html[data-gabarit="editorial"] .valeur { border-radius: 0; min-inline-size: 3.25rem; font-size: .8125rem; }
+html[data-gabarit="editorial"] .btn-ajout { min-block-size: 54px; }
+html[data-gabarit="editorial"] .qte { border-color: var(--theme-filet-fort); }
+.ed-rassure { list-style: none; margin: .5rem 0 0; padding: 1rem 0 0; display: grid; gap: .75rem; border-block-start: 1px solid var(--theme-filet); }
+.ed-rassure li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .75rem; align-items: start; font-size: .8125rem; color: var(--theme-encre-doux); line-height: 1.5; }
+.ed-rassure b { font-weight: 500; color: var(--theme-encre); }
+html[data-gabarit="editorial"] .plis { margin-block-start: .5rem; }
+html[data-gabarit="editorial"] .pli > summary { font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+
+/* --- Pied de page ----------------------------------------------------------- */
+.ed-pied { margin-block-start: clamp(4rem, 8vw, 7rem); border-block-start: 1px solid var(--theme-filet); }
+/* L'accueil finit par les engagements (filet bas) : le pied s'y colle. */
+main:has(> .ed-engagements:last-child) + .ed-pied { margin-block-start: 0; border-block-start: 0; }
+.ed-pied-grille { display: grid; gap: 2.25rem; padding-block: 3rem 1rem; }
+@media (min-width: 700px) { .ed-pied-grille { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 3rem; } }
+.ed-pied-intro p { max-inline-size: 22ch; font-family: var(--theme-font-display); font-size: 1.625rem; line-height: 1.15; }
+.ed-pied-titre { margin-block-end: .875rem; font-size: .6875rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.ed-pied ul { display: grid; gap: .5rem; list-style: none; margin: 0; padding: 0; font-size: .875rem; }
+.ed-pied a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.ed-pied-faits { color: var(--theme-encre-doux); }
+.ed-pied-marque { padding-block: 2.5rem 1.5rem; }
+.ed-pied-bas {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 2rem; padding-block: 1.25rem 2rem;
+  border-block-start: 1px solid var(--theme-filet); font-size: .75rem; color: var(--theme-encre-doux);
+}

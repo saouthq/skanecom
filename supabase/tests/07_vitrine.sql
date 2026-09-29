@@ -4,7 +4,7 @@
 begin;
 \ir outils.psql
 
-select plan(37);
+select plan(39);
 
 -- ---------------------------------------------------------------------
 -- Catalogue d'essai plus riche dans A : rayons sur deux niveaux, un produit
@@ -125,6 +125,10 @@ select throws_like($$ update public.themes set couleurs = '{"accent": "red;}</st
   '%doit valoir #RRGGBB%', 'une couleur qui n''est pas #RRGGBB est refusée (injection dans la balise <style>)');
 select throws_like(format($$ update public.themes set sections = '[{"type": "hero", "image": {"chemin": "essai-b/photo.webp"}}]' where boutique_id = %L $$, tests.id('A')),
   'Chemin de fichier invalide%', 'une section ne montre pas une image rangée chez une autre boutique');
+select throws_like(format($$ update public.themes set sections = '[{"type": "hero", "lien": "//site-pirate.example/"}]' where boutique_id = %L $$, tests.id('A')),
+  '%lien interne attendu%', 'un lien de section ne mène jamais hors de la boutique (« //autre-site »)');
+select throws_like(format($$ update public.themes set sections = '[{"type": "editorial", "lien": "https://site-pirate.example/"}]' where boutique_id = %L $$, tests.id('A')),
+  '%lien interne attendu%', 'ni vers une autre origine (« https://… »)');
 
 reset role;
 select * from finish();

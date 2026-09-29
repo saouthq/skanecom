@@ -17,11 +17,13 @@ export function NavRayons({
   liens,
   racineDe,
   libelle,
+  className = "nav",
 }: {
   liens: LienRayon[];
   /** slug d'un rayon (tous niveaux) → slug de son rayon de premier niveau. */
   racineDe: Record<string, string>;
   libelle: string;
+  className?: string;
 }) {
   // Le préfixe interne /_b/<boutique> n'est jamais montré, mais on ne compte
   // pas sur le cadre pour l'avoir retiré.
@@ -35,7 +37,7 @@ export function NavRayons({
         : undefined;
 
   return (
-    <nav className="nav" aria-label={libelle}>
+    <nav className={className} aria-label={libelle}>
       {liens.map((l) => (
         <Link key={l.cle} href={l.href} aria-current={actif === l.cle ? "page" : undefined}>
           {l.nom}
