@@ -41,10 +41,11 @@ async function candidats() {
   const tmp = path.join(RACINE, ".outils/photos-tmp");
   rmSync(tmp, { recursive: true, force: true });
   const index = {};
-  for (const [groupe, { q, rapport }] of Object.entries(groupes)) {
+  for (const [groupe, { q, rapport, sources }] of Object.entries(groupes)) {
     if (groupe === "_") continue;
-    const params = new URLSearchParams({ q, license: "cc0,pdm", page_size: "20", mature: "false", size: "large" });
+    const params = new URLSearchParams({ q, license: "cc0,pdm", page_size: "20", mature: "false" });
     if (rapport) params.set("aspect_ratio", rapport);
+    if (sources) params.set("source", sources);
     let resultats = [];
     try {
       ({ results: resultats } = await json(`${API}/?${params}`));

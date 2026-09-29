@@ -1,18 +1,67 @@
 {
-  "_": "Recherches Openverse (images sous CC0 ou domaine public, sans condition), par boutique et par usage. Modifier ce fichier relance le workflow « Photos de démonstration », qui dépose une planche contact par groupe dans candidats/.",
-  "mode--femme": { "q": "woman fashion dress", "rapport": "tall" },
-  "mode--chemise": { "q": "woman white shirt", "rapport": "tall" },
-  "mode--homme": { "q": "man fashion shirt", "rapport": "tall" },
-  "mode--maille": { "q": "sweater knit", "rapport": "tall" },
-  "mode--editorial": { "q": "fashion model street", "rapport": "wide" },
-  "mode--sac": { "q": "leather handbag", "rapport": "square" },
-  "mode--chaussures": { "q": "leather shoes", "rapport": "square" },
-  "bagages--valise": { "q": "suitcase", "rapport": "tall" },
-  "bagages--voyage": { "q": "luggage travel airport", "rapport": "wide" },
-  "bagages--sac": { "q": "travel bag duffel", "rapport": "square" },
-  "outillage--perceuse": { "q": "drill power tool", "rapport": "square" },
-  "outillage--scie": { "q": "saw woodworking", "rapport": "wide" },
-  "outillage--atelier": { "q": "workshop tools", "rapport": "wide" },
-  "outillage--chantier": { "q": "construction worker", "rapport": "wide" },
-  "outillage--visserie": { "q": "screws bolts", "rapport": "square" }
+  "_": "Recherches Openverse (sources professionnelles : StockSnap, nappy, rawpixel) (images sous CC0 ou domaine public, sans condition), par boutique et par usage. Modifier ce fichier relance le workflow « Photos de démonstration », qui dépose une planche contact par groupe dans candidats/.",
+  "mode--femme": {
+    "q": "woman dress fashion",
+    "sources": "stocksnap,nappy,rawpixel",
+    "rapport": "tall"
+  },
+  "mode--chemise": {
+    "q": "woman shirt fashion",
+    "sources": "stocksnap,nappy,rawpixel",
+    "rapport": "tall"
+  },
+  "mode--homme": {
+    "q": "man fashion style",
+    "sources": "stocksnap,nappy,rawpixel",
+    "rapport": "tall"
+  },
+  "mode--maille": {
+    "q": "sweater fashion",
+    "sources": "stocksnap,nappy,rawpixel",
+    "rapport": "tall"
+  },
+  "mode--editorial": {
+    "q": "fashion model",
+    "sources": "stocksnap,nappy,rawpixel",
+    "rapport": "wide"
+  },
+  "mode--sac": {
+    "q": "handbag",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "mode--chaussures": {
+    "q": "shoes",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "bagages--valise": {
+    "q": "suitcase",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "bagages--voyage": {
+    "q": "travel luggage",
+    "sources": "stocksnap,nappy,rawpixel",
+    "rapport": "wide"
+  },
+  "outillage--perceuse": {
+    "q": "drill",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "outillage--scie": {
+    "q": "saw",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "outillage--atelier": {
+    "q": "workshop tools",
+    "sources": "stocksnap,nappy,rawpixel",
+    "rapport": "wide"
+  },
+  "outillage--chantier": {
+    "q": "construction worker",
+    "sources": "stocksnap,nappy,rawpixel",
+    "rapport": "wide"
+  },
+  "outillage--visserie": {
+    "q": "screws",
+    "sources": "stocksnap,nappy,rawpixel"
+  }
 }
