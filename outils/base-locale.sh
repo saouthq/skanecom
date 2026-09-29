@@ -77,6 +77,8 @@ reinit() {
   psql_en supabase_admin -d postgres \
     -c "drop database if exists $BASE with (force)" \
     -c "create database $BASE owner postgres"
+  # Les fichiers déposés en local (le relais tient lieu de R2) suivent la base.
+  rm -rf "$RACINE/.outils/fichiers"
   psql_en supabase_admin -d "$BASE" -f "$RACINE/outils/supabase-simule.sql"
   # Le schéma auth, par GoTrue lui-même, comme chez Supabase.
   telecharger_gotrue

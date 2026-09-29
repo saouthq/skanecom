@@ -122,7 +122,9 @@ CONF
     setsid "$GOTRUE_DOSSIER/auth" serve > "$OUTILS/gotrue.log" 2>&1 < /dev/null &
     echo $! > "$OUTILS/gotrue.pid"
   )
-  setsid node "$RACINE/outils/relais-rest.mjs" > "$OUTILS/relais.log" 2>&1 < /dev/null &
+  # La clé de dépôt des fichiers (le relais tient lieu de R2) : l'application
+  # la présente, c'est sa clé de service (src/lib/gestion/fichiers.ts).
+  FICHIERS_DEPOT_CLE="$(jeton service_role)" setsid node "$RACINE/outils/relais-rest.mjs" > "$OUTILS/relais.log" 2>&1 < /dev/null &
   echo $! > "$OUTILS/relais.pid"
 
   cat > "$OUTILS/api-locale.env" <<ENV

@@ -7,13 +7,17 @@
 // Il sert aussi les fichiers de démonstration (supabase/fichiers-demo), rangés
 // comme sur R2 :
 //   http://127.0.0.1:54321/fichiers/maymar/marque/logo.svg
+// et tient lieu de R2 pour les fichiers que déposent le backoffice et la
+// console (photos des produits) : PUT et DELETE sous /fichiers/, avec la clé
+// de dépôt (FICHIERS_DEPOT_CLE, donnée par outils/api-locale.sh), rangés dans
+// .outils/fichiers/ (hors dépôt), servis avant les fichiers de démonstration.
 // Et il tient lieu de fournisseur de SMS : GoTrue lui confie les codes de
 // connexion (crochet « Send SMS »), il les note dans .outils/sms.log au lieu
 // de les envoyer. Les essais relisent le dernier code d'un numéro :
 //   http://127.0.0.1:54321/sms-dev/dernier?telephone=21620123456
 // Lancé par outils/api-locale.sh. Jamais en production.
 import http from "node:http";
-import { appendFile, readFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,6 +27,9 @@ const AMONTS = [
   { prefixe: "/auth/v1", port: Number(process.env.GOTRUE_PORT ?? 54340), nom: "GoTrue" },
 ];
 const FICHIERS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../supabase/fichiers-demo");
+const DEPOSES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.outils/fichiers");
+const CLE_DEPOT = process.env.FICHIERS_DEPOT_CLE ?? "";
+const TAILLE_MAX = 12 * 1024 * 1024;
 const TYPES = { ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
 
 const JOURNAL_SMS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.outils/sms.log");
@@ -53,19 +60,56 @@ function dernierSms(url, res) {
   res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify({ code }));
 }
 
+/** Le chemin d'un fichier sous un dossier racine, ou null s'il en sort. */
+function sous(racine, url) {
+  const chemin = path.resolve(racine, decodeURIComponent(url.slice("/fichiers/".length).split("?")[0]));
+  return chemin.startsWith(racine + path.sep) ? chemin : null;
+}
+
 async function sertFichier(url, res) {
-  const chemin = path.resolve(FICHIERS, decodeURIComponent(url.slice("/fichiers/".length).split("?")[0]));
-  if (!chemin.startsWith(FICHIERS + path.sep)) return res.writeHead(403).end();
-  try {
-    const contenu = await readFile(chemin);
-    res.writeHead(200, {
-      "content-type": TYPES[path.extname(chemin)] ?? "application/octet-stream",
-      "cache-control": "public, max-age=300",
-    });
-    res.end(contenu);
-  } catch {
-    res.writeHead(404).end();
+  for (const racine of [DEPOSES, FICHIERS]) {
+    const chemin = sous(racine, url);
+    if (!chemin) return res.writeHead(403).end();
+    try {
+      const contenu = await readFile(chemin);
+      res.writeHead(200, {
+        "content-type": TYPES[path.extname(chemin)] ?? "application/octet-stream",
+        "cache-control": "public, max-age=300",
+      });
+      return res.end(contenu);
+    } catch {
+      // pas dans ce dossier : le suivant
+    }
   }
+  res.writeHead(404).end();
+}
+
+/* Le dépôt, comme un PUT ou un DELETE sur R2. Seuls les fichiers déposés
+   s'effacent : ceux de démonstration restent. */
+function deposeFichier(req, res) {
+  if (!CLE_DEPOT || req.headers["x-depot-cle"] !== CLE_DEPOT) return res.writeHead(401).end();
+  const chemin = sous(DEPOSES, req.url);
+  if (!chemin) return res.writeHead(403).end();
+  if (req.method === "DELETE") {
+    rm(chemin, { force: true }).then(() => res.writeHead(204).end(), () => res.writeHead(500).end());
+    return;
+  }
+  const morceaux = [];
+  let taille = 0;
+  req.on("data", (m) => {
+    taille += m.length;
+    if (taille > TAILLE_MAX) req.destroy();
+    else morceaux.push(m);
+  });
+  req.on("end", async () => {
+    try {
+      await mkdir(path.dirname(chemin), { recursive: true });
+      await writeFile(chemin, Buffer.concat(morceaux));
+      res.writeHead(201).end();
+    } catch {
+      res.writeHead(500).end();
+    }
+  });
 }
 
 http
@@ -76,6 +120,7 @@ http
     res.setHeader("Access-Control-Allow-Headers", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
     if (req.method === "OPTIONS") return res.writeHead(204).end();
+    if (req.url.startsWith("/fichiers/") && (req.method === "PUT" || req.method === "DELETE")) return deposeFichier(req, res);
     if (req.url.startsWith("/fichiers/")) return sertFichier(req.url, res);
     if (req.url === "/sms-dev" && req.method === "POST") return recoitSms(req, res);
     if (req.url.startsWith("/sms-dev/dernier") && req.method === "GET") return dernierSms(req.url, res);

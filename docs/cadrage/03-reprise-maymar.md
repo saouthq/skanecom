@@ -239,6 +239,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis le catalogue et le stock au backoffice** (migration 11, `20260929101000_gestion_catalogue.sql`, 39 tests dans `supabase/tests/13_catalogue.sql`) : `gestion_liste_produits` (filtres, recherche, compteurs), `gestion_produit` (fiche, déclinaisons, axes, rayons, trente derniers mouvements), `gestion_enregistrer_produit` (version attendue : pas d'écrasement à l'aveugle ; pas de publication sans déclinaison en vente), `gestion_enregistrer_variante` (prix, prix barré, seuil, mise en vente ; la dernière déclinaison en vente d'un produit publié reste), `gestion_mouvement_stock` (réception, inventaire, casse, toujours par `mouvement_stock`, donc au journal), `gestion_ajouter_variante`, `gestion_creer_produit` (brouillon, adresse libre). Rôles : propriétaire et administrateur modifient, la préparation tient le stock.
 
+**Puis les photos des produits** (migration 12, `20260929101100_gestion_photos.sql`, 24 tests dans `supabase/tests/14_photos.sql`) : `gestion_ajouter_photo` (sous `<slug>/produits/`, douze au plus), `gestion_modifier_photo` (légende, déclinaison du même produit), `gestion_deplacer_photo` (avant, après, en première ; ordre sans trou), `gestion_retirer_photo` (rend le chemin, et s'il n'est plus utilisé dans la boutique). Les fichiers : liaison R2 `FICHIERS` en production, le relais local en développement (`application/src/lib/gestion/fichiers.ts`).
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

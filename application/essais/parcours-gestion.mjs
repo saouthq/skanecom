@@ -11,10 +11,11 @@ import { creeTesteur } from "./testeur.mjs";
    2. Le gérant (propriétaire, double authentification) : expédier, livrer,
       refuser à la livraison avec son origine, annuler, noter ; puis le
       catalogue : un arrivage, un inventaire, un prix, une couleur de plus,
-      un produit neuf mis en vitrine, deux écrans sur la même fiche.
+      un produit neuf mis en vitrine, ses photos (réduites avant l'envoi,
+      rangées, légendées, retirées), deux écrans sur la même fiche.
    3. Le même employé sur téléphone.
    4. Le préparateur d'une autre boutique : pas de bouton de confirmation ;
-      au catalogue, le stock mais pas les fiches.
+      au catalogue, le stock mais pas les fiches ni les photos.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -88,6 +89,27 @@ async function posteBrut(contexte, chemin, formulaire) {
     req.on("error", ko);
     req.end(corps);
   });
+}
+
+/* Un fichier servi par le relais local (qui tient lieu de R2). */
+async function fichierLocal(chemin) {
+  const r = await fetch(`http://127.0.0.1:54321/fichiers/${chemin}`);
+  return { status: r.status, type: r.headers.get("content-type") ?? "", octets: r.ok ? new Uint8Array(await r.arrayBuffer()) : new Uint8Array() };
+}
+
+/* Largeur et hauteur d'un WebP (VP8, VP8L ou VP8X). */
+function tailleWebp(o) {
+  const quatre = String.fromCharCode(...o.subarray(12, 16));
+  if (quatre === "VP8X") return [1 + (o[24] | (o[25] << 8) | (o[26] << 16)), 1 + (o[27] | (o[28] << 8) | (o[29] << 16))];
+  if (quatre === "VP8L") { const b = o[21] | (o[22] << 8) | (o[23] << 16) | (o[24] << 24); return [1 + (b & 0x3fff), 1 + ((b >> 14) & 0x3fff)]; }
+  return [(o[26] | (o[27] << 8)) & 0x3fff, (o[28] | (o[29] << 8)) & 0x3fff];
+}
+
+/* Le chemin R2 d'une vignette, lu dans l'adresse de l'optimiseur d'images. */
+async function cheminDe(vignette) {
+  const src = await vignette.locator("img").first().getAttribute("src");
+  const brut = new URL(src, "http://x").searchParams.get("url") ?? src;
+  return decodeURIComponent(brut).replace(/^.*\/fichiers\//, "");
 }
 
 async function ouvre(page, n) {
@@ -369,6 +391,127 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie((await page.locator("h1").innerText()).includes("En vitrine"), "la fiche le montre");
   });
 
+  /* ---------------- Les photos ---------------- */
+  const vignettes = () => page.locator(".ph:not(.ph-ajout)");
+  const photoDePhone = (texte, couleur) => page.evaluate(([t, c]) => {
+    // Une « photo de téléphone » : 3 000 × 2 250, en JPEG.
+    const canvas = document.createElement("canvas");
+    canvas.width = 3000; canvas.height = 2250;
+    const g = canvas.getContext("2d");
+    const d = g.createLinearGradient(0, 0, 3000, 2250);
+    d.addColorStop(0, c); d.addColorStop(1, "#1f1f23");
+    g.fillStyle = d; g.fillRect(0, 0, 3000, 2250);
+    g.fillStyle = "rgba(255,255,255,.85)"; g.font = "bold 260px sans-serif"; g.fillText(t, 220, 1250);
+    return canvas.toDataURL("image/jpeg", 0.95).split(",")[1];
+  }, [texte, couleur]).then((b64) => Buffer.from(b64, "base64"));
+
+  const cheminsRetires = [];
+  await etape("des photos de téléphone, réduites avant l'envoi", async () => {
+    verifie((await page.locator("#t-photos").locator("xpath=ancestor::section").innerText()).includes("photo à venir"),
+      "sans photo, la fiche dit ce que montre la vitrine");
+    const face = await photoDePhone("FACE", "#8a6f4d");
+    const dos = await photoDePhone("DOS", "#3d5a6c");
+    note("INFO  ", `deux photos de 3 000 × 2 250 px : ${Math.round(face.length / 1024)} Ko et ${Math.round(dos.length / 1024)} Ko`);
+    await page.locator("#t-photos").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -96));
+    await capture(page, "gestion-photos-vide");
+    await Promise.all([
+      page.waitForEvent("load", { timeout: 30000 }),
+      page.locator(".depot-entree").setInputFiles([
+        { name: "IMG_2041.jpg", mimeType: "image/jpeg", buffer: face },
+        { name: "IMG_2042.jpg", mimeType: "image/jpeg", buffer: dos },
+      ]),
+    ]);
+    await page.waitForLoadState("networkidle");
+    verifie((await ok()).includes("2 photos ajoutées"), `« ${await ok()} »`);
+    verifie(await vignettes().count() === 2, "deux vignettes");
+    verifie((await vignettes().first().innerText()).includes("Principale"), "la première est la photo principale");
+    const chemin = await cheminDe(vignettes().first());
+    verifie(/^maymar\/produits\/[0-9a-f-]{36}\/[0-9a-f]{12}\.webp$/.test(chemin), `rangée dans le dossier de la boutique : ${chemin}`);
+    const f = await fichierLocal(chemin);
+    const [l, h] = f.status === 200 ? tailleWebp(f.octets) : [0, 0];
+    verifie(f.status === 200 && f.type === "image/webp", `déposée, en WebP (${f.status}, ${f.type})`);
+    verifie(l === 2000 && h === 1500 && f.octets.length < face.length / 3,
+      `réduite dans le navigateur : ${l} × ${h}, ${Math.round(f.octets.length / 1024)} Ko au lieu de ${Math.round(face.length / 1024)}`);
+    await page.evaluate(() => window.scrollBy(0, -96));
+    await capture(page, "gestion-photos");
+  });
+
+  await etape("ranger les photos", async () => {
+    const [a, b] = [await cheminDe(vignettes().nth(0)), await cheminDe(vignettes().nth(1))];
+    await envoie(vignettes().first().getByRole("button", { name: /reculer d'un cran/ }));
+    verifie((await ok()).includes("Ordre des photos enregistré"), `« ${await ok()} »`);
+    verifie(await cheminDe(vignettes().nth(0)) === b && await cheminDe(vignettes().nth(1)) === a, "les deux photos ont changé de place");
+    await clic(page, vignettes().nth(1).locator(".ph-image"));
+    const feuille = page.locator(".ph-feuille:popover-open");
+    await feuille.waitFor();
+    verifie((await feuille.locator("h3").innerText()).includes("Photo 2 sur 2"), "une photo touchée ouvre sa feuille");
+    await envoie(feuille.getByRole("button", { name: "Mettre en premier" }));
+    verifie((await ok()).includes("Photo mise en premier"), `« ${await ok()} »`);
+    verifie(await cheminDe(vignettes().nth(0)) === a, "la face revient en première");
+  });
+
+  await etape("légender une photo, l'attitrer à une taille", async () => {
+    await clic(page, vignettes().nth(1).locator(".ph-image"));
+    const feuille = page.locator(".ph-feuille:popover-open");
+    await feuille.waitFor();
+    await clic(page, feuille.locator("input[name=alt]"));
+    await tape(page, "Housse, vue de dos");
+    await feuille.locator("select[name=variante_id]").selectOption({ label: "M" });
+    await capture(page, "gestion-photo-feuille");
+    await envoie(feuille.getByRole("button", { name: "Enregistrer" }));
+    verifie((await ok()).includes("Photo enregistrée"), `« ${await ok()} »`);
+    verifie((await vignettes().nth(1).locator(".ph-var").innerText()) === "M", "la vignette dit pour quelle taille elle est montrée");
+    verifie((await vignettes().nth(1).locator("img").first().getAttribute("alt")) === "Housse, vue de dos", "avec sa légende");
+  });
+
+  await etape("les photos sur téléphone", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator("#t-photos").scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, -72));
+    await capture(page, "gestion-photos-telephone");
+    await clic(page, vignettes().first().locator(".ph-image"));
+    const feuille = page.locator(".ph-feuille:popover-open");
+    await feuille.waitFor();
+    const boite = await feuille.boundingBox();
+    verifie(boite && boite.width <= 390 && boite.y + boite.height <= 845, `la feuille tient dans l'écran (${Math.round(boite?.width ?? 0)} × ${Math.round(boite?.height ?? 0)})`);
+    await capture(page, "gestion-photo-feuille-telephone");
+    await page.keyboard.press("Escape");
+    verifie(await page.locator(".ph-feuille:popover-open").count() === 0, "Échap la referme");
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
+
+  await etape("un fichier qui n'est pas une photo", async () => {
+    await Promise.all([
+      page.waitForEvent("load", { timeout: 30000 }),
+      page.locator(".depot-entree").setInputFiles([{ name: "facture.jpg", mimeType: "image/jpeg", buffer: Buffer.from("Ceci n'est pas une photo.") }]),
+    ]);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.getByRole("alert").innerText()).includes("n'est pas une photo JPEG, PNG ou WebP"), "refusé, d'après son contenu (pas son nom)");
+    verifie(await vignettes().count() === 2, "rien n'est ajouté");
+  });
+
+  await etape("retirer une photo", async () => {
+    const chemin = await cheminDe(vignettes().nth(1));
+    await clic(page, vignettes().nth(1).locator(".ph-image"));
+    const feuille = page.locator(".ph-feuille:popover-open");
+    await feuille.waitFor();
+    await envoie(feuille.getByRole("button", { name: "Retirer la photo" }));
+    verifie((await ok()).includes("Photo retirée"), `« ${await ok()} »`);
+    verifie(await vignettes().count() === 1, "il en reste une");
+    verifie((await fichierLocal(chemin)).status === 404, "le fichier a quitté le dépôt");
+    cheminsRetires.push(chemin);
+  });
+
+  await etape("la vitrine montre la photo", async () => {
+    const chemin = await cheminDe(vignettes().first());
+    const vitrine = await ctx.newPage();
+    await vitrine.goto(`${t.adresse("maymar.localhost")}/produit/housse-de-protection`, { waitUntil: "networkidle" });
+    const srcs = await vitrine.locator("main img").evaluateAll((imgs) => imgs.map((i) => i.getAttribute("src") ?? ""));
+    verifie(srcs.some((s) => decodeURIComponent(s).includes(chemin)), "la fiche de la vitrine affiche la photo déposée");
+    await vitrine.close();
+  });
+
   await etape("deux écrans sur la même fiche : pas d'écrasement", async () => {
     const autre = await navigateur.newContext({ viewport: { width: 1280, height: 860 }, locale: "fr-FR" });
     await autre.addCookies(await ctx.cookies());
@@ -452,6 +595,10 @@ console.log("\n== 4. Le préparateur d'une autre boutique ==");
     verifie(await page.locator(".var-stock").count() > 0 && await page.locator(".var-prix").count() === 0,
       "les mouvements de stock, sans les prix");
     verifie(await page.getByRole("button", { name: "Enregistrer la fiche" }).count() === 0, "la fiche en lecture seule");
+    verifie(await page.locator(".depot, .ph-barre, .ph-feuille").count() === 0, "ni dépôt ni rangement des photos");
+    const photo = await posteBrut(ctx, `${new URL(page.url()).pathname}/photos`, { action: "retirer", image_id: "00000000-0000-0000-0000-000000000000" });
+    verifie(photo.status === 303 && decodeURIComponent(photo.location.replace(/\+/g, " ")).includes("rôle"),
+      `retirer une photo à la main : refusé aussi (${photo.status})`);
     const r = await posteBrut(ctx, `${new URL(page.url()).pathname}/action`, { action: "fiche", nom: "Pirate", version: "" });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("rôle"),
       `même en postant le formulaire à la main, la base refuse (${r.status})`);

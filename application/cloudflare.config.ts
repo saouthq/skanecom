@@ -27,6 +27,10 @@ export default defineConfig({
       ...responseStore.applicationWorker.env,
       ASSETS: bindings.assets(),
       IMAGES: bindings.images(),
+      // Photos des produits déposées par le backoffice (src/lib/gestion/fichiers.ts),
+      // servies au public par le domaine du bucket (NEXT_PUBLIC_FICHIERS_URL).
+      // En local, c'est le relais qui en tient lieu.
+      FICHIERS: bindings.r2({ name: "skanecom-fichiers" }),
       // La clé service_role, pour la console seule (src/lib/console/service.ts).
       // Production : `wrangler secret put SUPABASE_SERVICE_ROLE_KEY` ; local :
       // application/.dev.vars, écrit par outils/api-locale.sh.

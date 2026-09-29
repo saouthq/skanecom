@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { DepotPhotos } from "@/components/console/DepotPhotos";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { urlFichier } from "@/lib/photos";
@@ -24,11 +25,12 @@ export const metadata: Metadata = { title: "Produit" };
 /* ============================================================================
    LA FICHE PRODUIT AU BACKOFFICE — dans l'ordre des gestes du quotidien :
 
-   1. les déclinaisons et leur STOCK (réception d'un arrivage, inventaire,
+   1. les photos (la première est celle des listes de la vitrine) ;
+   2. les déclinaisons et leur STOCK (réception d'un arrivage, inventaire,
       casse) et leurs prix ;
-   2. une déclinaison de plus (une couleur, une taille) ;
-   3. la fiche : nom, description, marque, rayon, en vitrine ou non ;
-   4. l'historique des mouvements de stock.
+   3. une déclinaison de plus (une couleur, une taille) ;
+   4. la fiche : nom, description, marque, rayon, en vitrine ou non ;
+   5. l'historique des mouvements de stock.
 
    La base revérifie chaque geste (supabase/migrations/…_gestion_catalogue.sql) ;
    l'écran ne propose que ce que le rôle permet.
@@ -52,6 +54,8 @@ export default async function FicheProduitBackoffice({
   const modifie = PEUT_MODIFIER.includes(boutique.role);
   const stocke = PEUT_STOCKER.includes(boutique.role);
   const action = `/gestion/${slug}/produits/${f.id}/action`;
+  const actionPhotos = `/gestion/${slug}/produits/${f.id}/photos`;
+  const libelleDe = new Map(f.variantes.map((v) => [v.id, v.libelle ?? v.sku]));
   const actives = f.variantes.filter((v) => v.actif);
   const stockTotal = actives.reduce((n, v) => n + v.stock, 0);
   const prixMin = actives.length ? Math.min(...actives.map((v) => v.prix)) : null;
@@ -84,6 +88,129 @@ export default async function FicheProduitBackoffice({
 
         <div className="grille-2">
           <div className="pile">
+            {/* ---------------- Photos ---------------- */}
+            <section className="carte" aria-labelledby="t-photos">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-photos" className="carte-titre-icone">
+                    <Icone nom="photo" /> Photos
+                    {f.images.length ? <span className="compte-onglet">{f.images.length}</span> : null}
+                  </h2>
+                  <p>
+                    {f.images.length
+                      ? "La première est celle des listes de la vitrine. Touchez une photo pour la légender ou l'attitrer à une déclinaison."
+                      : "Sans photo, la vitrine affiche « photo à venir » avec le nom du produit."}
+                  </p>
+                </div>
+              </div>
+              {f.images.length === 0 && !modifie ? (
+                <div className="vide" style={{ padding: "1.75rem 1rem" }}>
+                  <span className="vide-icone"><Icone nom="photo" taille={18} /></span>
+                  <strong>Pas encore de photo</strong>
+                  <p className="text-petit">Le propriétaire ou un administrateur peut en ajouter.</p>
+                </div>
+              ) : (
+                <ul className={f.images.length ? "ph-grille" : "ph-grille ph-grille-vide"} role="list">
+                  {f.images.map((img, i) => {
+                    const dernier = i === f.images.length - 1;
+                    const numero = `Photo ${i + 1} sur ${f.images.length}`;
+                    return (
+                      <li key={img.id} className="ph" id={`ph-${img.id}`}>
+                        {modifie ? (
+                          <button type="button" className="ph-image" popoverTarget={`ph-feuille-${img.id}`} aria-label={`${numero} : modifier`}>
+                            <Image src={urlFichier(img.chemin)} alt={img.alt ?? ""} fill sizes="(min-width: 1024px) 180px, 45vw" />
+                            {i === 0 ? <span className="ph-badge">Principale</span> : null}
+                            {img.variante_id ? <span className="ph-var">{libelleDe.get(img.variante_id)}</span> : null}
+                            <span className="ph-crayon" aria-hidden="true"><Icone nom="crayon" taille={14} /></span>
+                          </button>
+                        ) : (
+                          <span className="ph-image">
+                            <Image src={urlFichier(img.chemin)} alt={img.alt ?? ""} fill sizes="(min-width: 1024px) 180px, 45vw" />
+                            {i === 0 ? <span className="ph-badge">Principale</span> : null}
+                            {img.variante_id ? <span className="ph-var">{libelleDe.get(img.variante_id)}</span> : null}
+                          </span>
+                        )}
+                        {modifie ? (
+                          <>
+                            <form action={actionPhotos} method="post" className="ph-barre">
+                              <input type="hidden" name="action" value="deplacer" />
+                              <input type="hidden" name="image_id" value={img.id} />
+                              <button name="vers" value="avant" className="btn-icone" disabled={i === 0} aria-label={`${numero} : avancer d'un cran`}>
+                                <Icone nom="gauche" />
+                              </button>
+                              <span className="ph-rang" aria-hidden="true">{i + 1}</span>
+                              <button name="vers" value="apres" className="btn-icone" disabled={dernier} aria-label={`${numero} : reculer d'un cran`}>
+                                <Icone nom="droite" />
+                              </button>
+                            </form>
+
+                            <div popover="auto" id={`ph-feuille-${img.id}`} className="ph-feuille" role="dialog" aria-labelledby={`ph-titre-${img.id}`}>
+                              <div className="ph-feuille-image">
+                                <Image src={urlFichier(img.chemin)} alt="" fill sizes="(min-width: 700px) 320px, 90vw" />
+                              </div>
+                              <div className="ph-feuille-corps">
+                                <div className="ph-feuille-tete">
+                                  <h3 id={`ph-titre-${img.id}`}>{numero}{i === 0 ? " · principale" : ""}</h3>
+                                  <button type="button" className="btn-icone" popoverTarget={`ph-feuille-${img.id}`} popoverTargetAction="hide" aria-label="Fermer">
+                                    <Icone nom="croix" />
+                                  </button>
+                                </div>
+                                <form action={actionPhotos} method="post" className="pile" style={{ gap: ".875rem" }}>
+                                  <input type="hidden" name="action" value="modifier" />
+                                  <input type="hidden" name="image_id" value={img.id} />
+                                  <label className="champ">
+                                    <span>Ce qu&apos;on voit <span className="discret">(facultatif)</span></span>
+                                    <input className="entree" name="alt" defaultValue={img.alt ?? ""} maxLength={200} placeholder="Ex. Valise noire, vue de face" />
+                                    <span className="aide">Lu à voix haute aux personnes aveugles, et lu par Google.</span>
+                                  </label>
+                                  {f.variantes.length > 1 ? (
+                                    <label className="champ">
+                                      <span>Montrée pour</span>
+                                      <select className="entree" name="variante_id" defaultValue={img.variante_id ?? ""}>
+                                        <option value="">Tout le produit</option>
+                                        {f.variantes.map((v) => (
+                                          <option key={v.id} value={v.id}>{v.libelle ?? v.sku}</option>
+                                        ))}
+                                      </select>
+                                      <span className="aide">Attitrée à une déclinaison, elle s&apos;affiche quand le client la choisit.</span>
+                                    </label>
+                                  ) : null}
+                                  <div><button className="btn btn-primaire">Enregistrer</button></div>
+                                </form>
+                                <div className="ph-feuille-pied">
+                                  {i > 0 ? (
+                                    <form action={actionPhotos} method="post">
+                                      <input type="hidden" name="action" value="deplacer" />
+                                      <input type="hidden" name="image_id" value={img.id} />
+                                      <button name="vers" value="premiere" className="btn btn-second btn-petit">
+                                        <Icone nom="etoile" taille={14} /> Mettre en premier
+                                      </button>
+                                    </form>
+                                  ) : <span />}
+                                  <form action={actionPhotos} method="post">
+                                    <input type="hidden" name="action" value="retirer" />
+                                    <input type="hidden" name="image_id" value={img.id} />
+                                    <button className="btn btn-fantome btn-petit ph-retirer">
+                                      <Icone nom="corbeille" taille={14} /> Retirer la photo
+                                    </button>
+                                  </form>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                  {modifie && f.images.length < 12 ? (
+                    <li className={f.images.length ? "ph ph-ajout" : "ph-ajout ph-ajout-large"}>
+                      <DepotPhotos action={actionPhotos} restantes={12 - f.images.length} large={f.images.length === 0} />
+                    </li>
+                  ) : null}
+                </ul>
+              )}
+            </section>
+
             {/* ---------------- Déclinaisons et stock ---------------- */}
             <section className="carte" aria-labelledby="t-declinaisons">
               <div className="carte-tete">
@@ -293,25 +420,6 @@ export default async function FicheProduitBackoffice({
           </div>
 
           <aside className="pile">
-            <section className="carte" aria-labelledby="t-photos">
-              <h2 id="t-photos" className="carte-titre-icone"><Icone nom="apercu" /> Photos</h2>
-              {f.images.length === 0 ? (
-                <div className="vide mt-3" style={{ padding: "1.75rem 1rem" }}>
-                  <span className="vide-icone"><Icone nom="colis" taille={18} /></span>
-                  <strong>Pas encore de photo</strong>
-                  <p className="text-petit">La vitrine affiche « photo à venir » avec le nom du produit.</p>
-                </div>
-              ) : (
-                <ul className="photos-grille mt-3" role="list">
-                  {f.images.map((img) => (
-                    <li key={img.id} className="photo-vignette">
-                      <Image src={urlFichier(img.chemin)} alt={img.alt ?? ""} fill sizes="120px" />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
             <section className="carte" aria-labelledby="t-resume">
               <h2 id="t-resume" className="carte-titre-icone"><Icone nom="apercu" /> En bref</h2>
               <dl className="liste-def mt-3">
