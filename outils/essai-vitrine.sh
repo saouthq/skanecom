@@ -44,7 +44,7 @@ verifie "chaque boutique a son nom dans ses titres" \
 verifie "la recherche d'une référence reste dans sa boutique" \
   'corps $Q "/recherche?q=PV14" | grep -q "Une pièce trouvée" && corps $M "/recherche?q=PV14" | grep -q "Aucune pièce trouvée"'
 verifie "le formulaire de filtres mène à l'adresse canonique" \
-  '[ "$(curl -s -o /dev/null -w "%{redirect_url}" -H "Host: $M" "$B/filtrer?base=/catalogue&a.couleur=Noir&a.couleur=Bordeaux&stock=1")" = "http://$M/catalogue/couleur=Bordeaux~Noir/stock" ]'
+  '[ "$(curl -s -D - -o /dev/null -H "Host: $M" "$B/filtrer?base=/catalogue&a.couleur=Noir&a.couleur=Bordeaux&stock=1" | tr -d "\r" | sed -n "s/^[Ll]ocation: //p")" = "/catalogue/couleur=Bordeaux~Noir/stock" ]'
 verifie "une liste filtrée est filtrée par la base" 'corps $M "/catalogue/couleur=Gris" | grep -q "1 modèle sur 4"'
 verifie "une liste filtrée est mise en cache" \
   'sleep 1.5; curl -s -D - -o /dev/null -H "Host: $M" "$B/catalogue/couleur=Gris" | grep -qi "x-vinext-cache: HIT"'

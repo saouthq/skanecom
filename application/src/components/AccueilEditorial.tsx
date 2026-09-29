@@ -110,25 +110,27 @@ function Ouverture({ section, cadre, premiere }: { section: Extract<Section, { t
   }
 
   return (
-    <section className="ed-ouverture" data-premiere={premiere ? "" : undefined}>
+    <section className="ed-ouverture" data-premiere={premiere ? "" : undefined} data-alignement={section.alignement}>
       <PhotoOuverture className="ed-ouverture-image" paysage={urlFichier(section.image.chemin)} portrait={section.image.portrait ? urlFichier(section.image.portrait) : undefined} alt={alt} />
       <div className="ed-ouverture-voile" aria-hidden="true" />
       <div className="enveloppe ed-ouverture-contenu">
-        {etiquette ? <p className="etiquette">{etiquette}</p> : null}
-        <h1>
-          <Lignes texte={titre} />
-        </h1>
-        {chapo ? <p className="chapo">{chapo}</p> : null}
-        <p className="ed-ouverture-actions">
-          <Link className="btn btn-clair" href={lien}>
-            {cta}
-          </Link>
-          {cadre.racines.length > 1 ? (
-            <a className="lien-souligne" href="#collections">
-              {t.accueil.parcourirParRayon}
-            </a>
-          ) : null}
-        </p>
+        <div className="ed-ouverture-bloc">
+          {etiquette ? <p className="etiquette">{etiquette}</p> : null}
+          <h1>
+            <Lignes texte={titre} />
+          </h1>
+          {chapo ? <p className="chapo">{chapo}</p> : null}
+          <p className="ed-ouverture-actions">
+            <Link className="btn btn-clair" href={lien}>
+              {cta}
+            </Link>
+            {cadre.racines.length > 1 ? (
+              <a className="lien-souligne" href="#collections">
+                {t.accueil.parcourirParRayon}
+              </a>
+            ) : null}
+          </p>
+        </div>
       </div>
     </section>
   );

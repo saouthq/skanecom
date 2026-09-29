@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 219 tests (dont la vitrine, la console et l'import), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 223 tests (dont la vitrine, la console et l'import), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -46,7 +46,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 219 tests pgTAP
+outils/base-locale.sh tester    # les 223 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 
@@ -58,7 +58,9 @@ La base écoute sur `127.0.0.1:54322`, comme celle de la CLI Supabase. Comme che
 
 ## Vitrine en local
 
-Base locale et API locale d'abord (voir ci-dessus), puis :
+**Pour simplement essayer** : `outils/essayer.sh` fait tout en une commande (base et jeu de démo, API, compilation, vitrine) et affiche les adresses ; le pas-à-pas, prérequis compris, est dans [`TESTER.md`](TESTER.md).
+
+À la main : base locale et API locale d'abord (voir ci-dessus), puis :
 
 ```bash
 outils/api-locale.sh demarrer                  # PostgREST sous /rest/v1 et fichiers de démo, sur :54321

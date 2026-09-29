@@ -9,7 +9,8 @@
 -- les deux gabarits ne se ressemblent pas :
 --   maymar              gabarit ÉDITORIAL : catalogue de démarrage de Maymar
 --                       (4 valises, 20 variantes). Ses produits attendent
---                       leurs vraies photos (état « photo à venir »).
+--                       leurs vraies photos (état « photo à venir ») ;
+--                       l'accueil s'ouvre sur des photos de démonstration.
 --   quincaillerie-demo  gabarit TECHNIQUE : outillage, visserie, protection,
 --                       rayons sur deux niveaux, livraison offerte dès
 --                       500 TND, prix barrés affichés, retrait en magasin et
@@ -21,8 +22,8 @@
 -- mode.localhost.
 --
 -- Les photos de démonstration (supabase/fichiers-demo/, CC0, voir
--- CREDITS.md) habillent les boutiques fictives ; aucune n'est présentée
--- comme la photo d'un produit de Maymar.
+-- CREDITS.md) habillent les boutiques jusqu'à la fin du développement ;
+-- aucune n'est présentée comme la photo d'un produit de Maymar.
 -- =====================================================================
 
 insert into plateforme.boutiques (id, slug, nom, statut, langues_actives) values
@@ -468,7 +469,8 @@ insert into public.produit_images (boutique_id, produit_id, chemin, alt_fr, posi
 -- R2 (`<slug>/…`), et servis en local par outils/api-locale.sh.
 -- ---------------------------------------------------------------------
 -- Maymar : gabarit éditorial, sa propre charte (couleurs par défaut du
--- gabarit). L'accueil s'ouvre sur SA valise détourée (photo de son stock).
+-- gabarit). Ouverture et récit sur des photos de démonstration (CC0) : ses
+-- produits, eux, attendent leurs vraies photos (état « photo à venir »).
 insert into public.themes (boutique_id, code, logo_chemin, logo_ratio, monogramme_chemin, favicon_chemin, textes, sections) values
   ('00000000-0000-4000-8000-000000000001', 'editorial',
    'maymar/marque/logo.svg', 7.497, 'maymar/marque/monogramme.svg', 'maymar/marque/favicon.svg',
@@ -477,23 +479,22 @@ insert into public.themes (boutique_id, code, logo_chemin, logo_ratio, monogramm
      "seo_description_fr": "Bagages et accessoires en stock à Tunis. Paiement à la livraison, partout en Tunisie.",
      "origine_fr": "Tunis",
      "politique_retour_fr": "Après acceptation, un échange reste possible sous 7 jours, article non utilisé."}',
-   '[{"type": "hero", "lien": "/categorie/valises",
+   '[{"type": "hero", "lien": "/categorie/valises", "alignement": "fin",
       "textes": {"etiquette_fr": "Bagages et accessoires",
                  "titre_fr": "Des pièces\nqui tiennent.",
                  "chapo_fr": "Une sélection courte, choisie pour durer. Vous voyez le stock réel, vous payez au livreur.",
                  "cta_fr": "Voir les valises",
-                 "cartel_fr": "Valise rigide quatre roues — une pièce de notre stock, à Tunis.",
-                 "image_alt_fr": "Valise rigide à quatre roues, coque jaune, photographiée dans notre stock à Tunis"},
-      "image": {"chemin": "maymar/accueil/valise-jaune-1200.webp", "detouree": true}},
+                 "image_alt_fr": "Valise à roulettes rouge dans une salle d''embarquement"},
+      "image": {"chemin": "maymar/accueil/aeroport-large-2000.webp", "chemin_portrait": "maymar/accueil/aeroport-1200.webp"}},
      {"type": "selection", "nombre": 4,
       "textes": {"titre_fr": "En boutique aujourd''hui"}},
      {"type": "editorial", "lien": "/categorie/valises",
       "textes": {"etiquette_fr": "Voyager",
-                 "titre_fr": "Pensées pour\nla soute.",
-                 "texte_fr": "Des roues qui tournent sur elles-mêmes, des serrures TSA, des coques qui encaissent les tapis roulants de Carthage. Chaque modèle est en stock à Tunis : ce que vous voyez est ce qui part.",
+                 "titre_fr": "Partir\nléger.",
+                 "texte_fr": "Cabine, moyenne ou grande : chaque fiche donne le poids de la taille choisie. Tout est en stock à Tunis : ce que vous voyez est ce qui part.",
                  "cta_fr": "Voir les valises",
-                 "image_alt_fr": "Valise à roulettes dans une salle d''embarquement"},
-      "image": {"chemin": "maymar/accueil/aeroport-1200.webp"}},
+                 "image_alt_fr": "Sac de voyage en toile posé sur un parquet"},
+      "image": {"chemin": "maymar/accueil/depart-portrait-1200.webp"}},
      {"type": "engagements"}]');
 
 -- Quincaillerie : gabarit technique, jaune et noir par défaut, sans logo (le

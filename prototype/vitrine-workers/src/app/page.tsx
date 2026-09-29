@@ -8,7 +8,6 @@ import { Fleche } from "@/components/Icones";
 import { formePourCategorie } from "@/components/Silhouette";
 import { chargeCadre } from "@/lib/boutique";
 import { chargeCatalogue } from "@/lib/catalogue";
-import { PHOTO_ACCUEIL } from "@/lib/photos";
 import { champ, t } from "@/lib/i18n";
 import { formatePrix } from "@/lib/prix";
 
@@ -106,23 +105,17 @@ export default async function Accueil() {
               ) : null}
             </div>
 
-            {/* La niche d'accueil. UNE seule photo réelle existe (la valise
-                détourée par Théo) : elle occupe la niche, seule. La petite
-                niche d'appoint a été RETIRÉE — elle portait une silhouette de
-                valise juste sous la photo d'une valise : le même objet dessiné
-                à côté de lui-même, et un dessin de plus dans une page qui en
-                compte déjà quatre (juge visuel, 11/08). */}
+            {/* La niche d'accueil. La seule photo réelle (la valise jaune
+                détourée par Théo) a été retirée le 29/09 : la niche dit
+                « photo à venir » jusqu'au protocole photo, sans légende —
+                il n'y a plus de pièce à légender. */}
             <div className="relative" data-arc style={{ "--d": ".16s" } as React.CSSProperties}>
               <Niche
                 forme="valise"
-                photo={PHOTO_ACCUEIL}
+                photo={null}
                 className="aspect-[4/5] max-w-[24rem] mx-auto"
-                prioritaire
                 tailles="(min-width: 900px) 24rem, 92vw"
               />
-              <p className="mt-4 text-legende text-encre-doux border-t border-filet pt-2">
-                {t.accueil.cartel}
-              </p>
             </div>
           </div>
         </section>

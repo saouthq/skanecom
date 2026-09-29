@@ -16,22 +16,11 @@ import type { Produit, Variante } from "./catalogue";
    Ils ne sont d'ailleurs pas dans `public/` : le serveur ne peut pas les
    servir même par accident.
 
-   ✅ SEULE photo réelle disponible : la valise détourée par Théo
-   (`public/produits/valise-jaune-*.webp`). Elle sert de VISUEL D'ACCUEIL —
-   une pièce du stock de Tunis — et n'est rattachée à aucune référence du
-   catalogue : aucune variante du seed n'est jaune, l'associer à un produit
-   ferait mentir la fiche.
+   AUCUNE photo réelle n'est servie : la valise jaune détourée par Théo, qui
+   servait de visuel d'accueil, a été retirée le 29/09 à la demande de
+   Skander. L'accueil montre l'état « photo à venir » jusqu'au protocole
+   photo.
    ========================================================================== */
-
-/** La photo d'accueil. `detoure` : fond déjà retiré, elle se pose DANS la
- *  niche au lieu d'être cadrée par elle. */
-export const PHOTO_ACCUEIL = {
-  src: "/produits/valise-jaune-1200.webp",
-  alt: "Valise rigide à quatre roues, coque jaune, photographiée dans notre stock à Tunis",
-  detoure: true,
-  largeur: 1200,
-  hauteur: 1200,
-};
 
 const BUCKET_DEFAUT = "produits";
 

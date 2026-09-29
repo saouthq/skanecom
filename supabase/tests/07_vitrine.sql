@@ -4,7 +4,7 @@
 begin;
 \ir outils.psql
 
-select plan(39);
+select plan(43);
 
 -- ---------------------------------------------------------------------
 -- Catalogue d'essai plus riche dans A : rayons sur deux niveaux, un produit
@@ -129,6 +129,14 @@ select throws_like(format($$ update public.themes set sections = '[{"type": "her
   '%lien interne attendu%', 'un lien de section ne mène jamais hors de la boutique (« //autre-site »)');
 select throws_like(format($$ update public.themes set sections = '[{"type": "editorial", "lien": "https://site-pirate.example/"}]' where boutique_id = %L $$, tests.id('A')),
   '%lien interne attendu%', 'ni vers une autre origine (« https://… »)');
+select throws_like(format($$ update public.themes set sections = '[{"type": "hero", "image": {"chemin": "essai-a/photo.webp", "chemin_portrait": "essai-b/photo.webp"}}]' where boutique_id = %L $$, tests.id('A')),
+  'Chemin de fichier invalide%', 'le cadrage portrait non plus ne vient pas d''une autre boutique');
+select throws_like(format($$ update public.themes set sections = '[{"type": "hero", "alignement": "centre"}]' where boutique_id = %L $$, tests.id('A')),
+  '%alignement « debut » ou « fin » attendu%', 'l''alignement du texte d''ouverture est dans une liste fermée');
+select throws_like(format($$ update public.themes set sections = '[{"type": "selection", "alignement": "fin"}]' where boutique_id = %L $$, tests.id('A')),
+  '%ne se règle que sur la section d''ouverture%', 'l''alignement n''existe que pour la section d''ouverture');
+select lives_ok(format($$ update public.themes set sections = '[{"type": "hero", "alignement": "fin", "image": {"chemin": "essai-a/photo.webp", "chemin_portrait": "essai-a/photo-portrait.webp"}}]' where boutique_id = %L $$, tests.id('A')),
+  'ouverture en deux cadrages, texte en fin de ligne : accepté');
 
 reset role;
 select * from finish();

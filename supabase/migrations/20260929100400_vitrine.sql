@@ -103,7 +103,7 @@ comment on column public.themes.couleurs is
 comment on column public.themes.textes is
   'Textes de marque, par langue : {"resume_fr": "…", "resume_ar": "…"}.';
 comment on column public.themes.sections is
-  'Sections de l''accueil, dans l''ordre : [{"type": "hero", "textes": {...}, "image": {"chemin": "...", "chemin_portrait": "...", "detouree": true}}, …]. NULL = les sections par défaut du thème.';
+  'Sections de l''accueil, dans l''ordre : [{"type": "hero", "textes": {...}, "image": {"chemin": "...", "chemin_portrait": "...", "detouree": true}, "alignement": "fin"}, …]. NULL = les sections par défaut du thème.';
 
 create function private.valide_textes(p_textes jsonb, p_ou text)
 returns void
@@ -178,7 +178,7 @@ begin
     for s in select * from jsonb_array_elements(new.sections) loop
       if jsonb_typeof(s) <> 'object'
          or coalesce(s ->> 'type', '') not in ('hero', 'rayons', 'selection', 'editorial', 'engagements', 'texte')
-         or exists (select 1 from jsonb_object_keys(s) k where k not in ('type', 'textes', 'image', 'nombre', 'lien', 'rayon')) then
+         or exists (select 1 from jsonb_object_keys(s) k where k not in ('type', 'textes', 'image', 'nombre', 'lien', 'rayon', 'alignement')) then
         raise exception 'themes.sections : section invalide %', s using errcode = 'check_violation';
       end if;
       if s ? 'textes' then
@@ -204,6 +204,14 @@ begin
       end if;
       if s ? 'rayon' and (jsonb_typeof(s -> 'rayon') <> 'string' or (s ->> 'rayon') !~ '^[a-z0-9]+(-[a-z0-9]+)*$') then
         raise exception 'themes.sections : identifiant de rayon invalide %', s -> 'rayon' using errcode = 'check_violation';
+      end if;
+      -- Où poser le texte sur la photo d'ouverture : au début de la ligne
+      -- (à gauche en français) ou à la fin, pour ne pas couvrir le sujet.
+      if s ? 'alignement' and (s ->> 'type') <> 'hero' then
+        raise exception 'themes.sections : l''alignement ne se règle que sur la section d''ouverture (hero)' using errcode = 'check_violation';
+      end if;
+      if s ? 'alignement' and (jsonb_typeof(s -> 'alignement') <> 'string' or (s ->> 'alignement') not in ('debut', 'fin')) then
+        raise exception 'themes.sections : alignement « debut » ou « fin » attendu, pas %', s -> 'alignement' using errcode = 'check_violation';
       end if;
     end loop;
   end if;

@@ -55,7 +55,6 @@ export const fr = {
     promesseAvecFrais: (frais: string) =>
       `Paiement à la livraison, partout en Tunisie — livraison ${frais}.`,
     cartouche: "Maison Maymar — Tunis",
-    cartel: "Valise rigide quatre roues — une pièce de notre stock, à Tunis.",
 
     registreEtiquette: "Le registre",
     registreTitre: "Le catalogue, rayon par rayon.",

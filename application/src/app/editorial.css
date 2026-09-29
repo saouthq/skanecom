@@ -120,6 +120,13 @@ html[data-gabarit="editorial"] .tiroir-panier .tiroir-titre { font-size: 1.5rem;
     linear-gradient(to bottom, color-mix(in srgb, var(--theme-encre) 30%, transparent), transparent 22%);
 }
 .ed-ouverture-contenu { padding-block: 6rem 2.75rem; }
+.ed-ouverture-bloc { max-inline-size: 40rem; }
+/* Réglage de section « alignement : fin » : le texte passe de l'autre côté
+   de la photo, pour ne pas couvrir le sujet (grand écran seulement : sur
+   téléphone, le texte prend toute la largeur). */
+@media (min-width: 900px) {
+  .ed-ouverture[data-alignement="fin"] .ed-ouverture-bloc { margin-inline-start: auto; }
+}
 .ed-ouverture .etiquette { color: color-mix(in srgb, var(--theme-surface) 88%, transparent); }
 .ed-ouverture h1 { max-inline-size: 11ch; margin-block: .75rem 0; font-size: clamp(3.25rem, 9vw, 8rem); line-height: .9; letter-spacing: -.025em; }
 .ed-ouverture .chapo { margin-block-start: 1.25rem; max-inline-size: 34ch; color: color-mix(in srgb, var(--theme-surface) 86%, transparent); }

@@ -58,7 +58,7 @@ export type TextesSection = Record<string, string>;
 export type ImageSection = { chemin: string; portrait?: string; detouree?: boolean };
 
 export type Section =
-  | { type: "hero"; textes: TextesSection; image?: ImageSection; lien?: string }
+  | { type: "hero"; textes: TextesSection; image?: ImageSection; lien?: string; alignement?: "debut" | "fin" }
   | { type: "rayons"; textes: TextesSection }
   | { type: "selection"; textes: TextesSection; nombre?: number; rayon?: string; lien?: string }
   | { type: "editorial"; textes: TextesSection; image?: ImageSection; lien?: string }
@@ -161,10 +161,15 @@ function sectionsSures(valeur: unknown, defaut: Section[]): Section[] {
     const textes = textesSurs(s.textes);
     const lien = lienSur(s.lien);
     switch (s.type) {
-      case "hero":
+      case "hero": {
+        const image = imageSure(s.image);
+        const alignement = s.alignement === "fin" ? "fin" : undefined;
+        sections.push({ type: "hero", textes, ...(image ? { image } : {}), ...(lien ? { lien } : {}), ...(alignement ? { alignement } : {}) });
+        break;
+      }
       case "editorial": {
         const image = imageSure(s.image);
-        sections.push({ type: s.type, textes, ...(image ? { image } : {}), ...(lien ? { lien } : {}) });
+        sections.push({ type: "editorial", textes, ...(image ? { image } : {}), ...(lien ? { lien } : {}) });
         break;
       }
       case "selection":

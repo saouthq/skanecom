@@ -2,12 +2,14 @@
    écran et sur téléphone. Sert à relire le rendu ; les parcours
    (parcours-humain.mjs) vérifient le comportement.
 
-     CAPTURES=dossier BASE=http://127.0.0.1:4200 node essais/apercu.mjs [boutique…] */
+     cd application && CAPTURES=dossier BASE=http://127.0.0.1:4200 node essais/apercu.mjs [boutique…]
+   (par défaut, les captures vont dans .outils/captures/apercu, à la racine
+   du dépôt, comme celles des parcours) */
 import { chromium } from "playwright-core";
 import { mkdirSync } from "node:fs";
 
 const BASE = process.env.BASE ?? "http://127.0.0.1:4200";
-const SORTIE = process.env.CAPTURES ?? ".outils/captures/apercu";
+const SORTIE = process.env.CAPTURES ?? "../.outils/captures/apercu";
 const port = new URL(BASE).port;
 mkdirSync(SORTIE, { recursive: true });
 
@@ -29,9 +31,13 @@ for (const [ecran, options] of [
     for (const chemin of chemins) {
       await page.goto(`http://${boutique}.localhost:${port}${chemin}`, { waitUntil: "networkidle" });
       // Défiler comme un visiteur : les images hors écran se chargent.
+      // (défilement instantané : le défilement doux de la page n'aurait pas
+      // fini de remonter au moment de la capture)
       await page.evaluate(async () => {
+        document.documentElement.style.scrollBehavior = "auto";
         for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)); }
         window.scrollTo(0, 0);
+        await new Promise((r) => setTimeout(r, 200));
       });
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(400);
