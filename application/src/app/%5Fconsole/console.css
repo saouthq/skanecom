@@ -1,0 +1,53 @@
+/* ==========================================================================
+   CONSOLE — ce que la vitrine n'a pas : tableaux, cartes, messages, zones de
+   texte. Tout passe par les jetons --theme-* (palette de la console).
+   ========================================================================== */
+.console h1 { font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.01em; font-weight: 600; }
+.console h2 { font-size: 1.125rem; line-height: 1.3; font-weight: 600; }
+.console h1, .console h2 { font-synthesis-weight: auto; }
+
+.console-entete { background: var(--theme-encre); color: var(--theme-surface); }
+.console-entete a { color: inherit; }
+.console-entete .rang { display: flex; align-items: center; gap: 1.5rem; min-block-size: 60px; flex-wrap: wrap; }
+.console-entete nav { display: flex; gap: 1.25rem; font-size: 0.9375rem; }
+.console-entete nav a { opacity: .8; padding-block: .25rem; border-block-end: 2px solid transparent; }
+.console-entete nav a:hover, .console-entete nav a[aria-current] { opacity: 1; border-block-end-color: var(--theme-accent-clair); }
+.console-entete .qui { margin-inline-start: auto; display: flex; align-items: center; gap: .75rem; font-size: .875rem; opacity: .9; }
+.console-entete button { background: none; border: 1px solid color-mix(in srgb, var(--theme-surface) 35%, transparent);
+  border-radius: var(--theme-radius-doux); padding: .25rem .75rem; cursor: pointer; }
+.console-entete button:hover { background: color-mix(in srgb, var(--theme-surface) 12%, transparent); }
+
+.carte { background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); padding: 1.5rem; }
+.carte + .carte { margin-block-start: 1.25rem; }
+
+.tableau { inline-size: 100%; border-collapse: collapse; font-size: .9375rem; }
+.tableau th { text-align: start; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--theme-encre-doux);
+  font-weight: 500; padding: .5rem .75rem; border-block-end: 1px solid var(--theme-filet-fort); }
+.tableau td { padding: .75rem; border-block-end: 1px solid var(--theme-filet); vertical-align: middle; }
+.tableau tr:hover td { background: var(--theme-surface-2); }
+.tableau a { color: var(--theme-accent); font-weight: 500; }
+.tableau a:hover { text-decoration: underline; }
+.defile { overflow-x: auto; }
+
+.statut { display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; font-weight: 500; padding: .125rem .5rem;
+  border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.statut::before { content: ""; inline-size: .4rem; block-size: .4rem; border-radius: 50%; background: currentColor; }
+.statut-active { color: var(--theme-succes); }
+.statut-en_preparation { color: var(--theme-alerte); }
+.statut-suspendue, .statut-fermee { color: var(--theme-erreur); }
+
+.message { border-radius: var(--theme-radius-doux); padding: .75rem 1rem; font-size: .9375rem; border: 1px solid; }
+.message-erreur { color: var(--theme-erreur); background: color-mix(in srgb, var(--theme-erreur) 7%, var(--theme-surface)); }
+.message-succes { color: var(--theme-succes); background: color-mix(in srgb, var(--theme-succes) 7%, var(--theme-surface)); }
+
+.formulaire { display: grid; gap: 1.25rem; }
+.formulaire .aide { font-size: .8125rem; color: var(--theme-encre-doux); }
+.champ textarea { min-block-size: 96px; padding: .5rem .75rem; background: var(--theme-surface); resize: vertical;
+  border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux); font-size: 1rem; line-height: 1.5; }
+.champ textarea:focus-visible { border-color: var(--theme-encre); }
+.deux-colonnes { display: grid; gap: 1.25rem; }
+@media (min-width: 720px) { .deux-colonnes { grid-template-columns: 1fr 1fr; } }
+
+.code-secret { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; letter-spacing: .08em; word-break: break-all;
+  background: var(--theme-surface-2); padding: .5rem .75rem; border-radius: var(--theme-radius-doux); font-size: .9375rem; }
+.chiffres { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; letter-spacing: .3em; font-size: 1.25rem; }

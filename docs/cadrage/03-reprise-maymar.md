@@ -201,7 +201,7 @@
 
 ## 7. État de la reprise (29/09/2026)
 
-**Construit** (`supabase/migrations/`, 5 migrations) et **vérifié** par 163 tests pgTAP (`supabase/tests/`), qui tournent en CI sur l'image Supabase et sur la base locale simulée :
+**Construit** (`supabase/migrations/`, 6 migrations) et **vérifié** par 194 tests pgTAP (`supabase/tests/`), qui tournent en CI sur l'image Supabase et sur la base locale simulée :
 
 | Partie | Contenu |
 |---|---|

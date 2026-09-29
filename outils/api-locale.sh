@@ -91,7 +91,11 @@ NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_FICHIERS_URL=http://127.0.0.1:54321/fichiers
 NEXT_PUBLIC_SUPABASE_ANON_KEY=$(jeton anon)
 SUPABASE_SERVICE_ROLE_KEY=$(jeton service_role)
+NEXT_PUBLIC_CONSOLE_HOTE=console.localhost
 ENV
+  # Le secret de la console, tel que le Worker le lit (bindings.secret()) :
+  # en local, workerd le prend dans application/.dev.vars (hors dépôt).
+  printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$(jeton service_role)" > "$RACINE/application/.dev.vars"
 
   for _ in $(seq 1 80); do
     if curl -sf -o /dev/null "http://127.0.0.1:54321/rest/v1/gouvernorats?select=code&limit=1" -H "apikey: $(jeton anon)" &&

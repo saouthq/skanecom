@@ -49,3 +49,6 @@ graphify-out/
 /dist/
 .vinext/
 .cloudflare/
+
+# Secrets locaux des Workers (clé service_role de développement)
+.dev.vars*

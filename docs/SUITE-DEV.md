@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 163 tests (dont la vitrine), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 194 tests (dont la vitrine et la console), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -31,7 +31,11 @@
    - fait : client Supabase qui abandonne vite (`retry: false`, 2 s) : pendant une panne, une page jamais vue échoue en 60 ms au lieu de 7 s ;
    - fait : robots, plan du site et favicon par boutique, panier par boutique, prix barrés en réglage, seuil de livraison offerte ;
    - reste : **déploiement en deux temps avec cache prérempli** (`--warm-cache`) et nettoyage des anciennes versions du cache (découverte n°6) ; **page de secours WhatsApp** pour les pages jamais vues pendant une panne (étape 2) ; libellés d'interface en arabe (le jour d'une boutique arabophone).
-5. **Console minimale** : créer une boutique, régler sa marque, importer un fichier Excel.
+5. **Console minimale** (PRD §6.1), sur son propre domaine (`app.skanecom.tn` ; en local `console.localhost:4200`) :
+   - fait le 29/09 : connexion par mot de passe et **double authentification obligatoire** (TOTP, GoTrue), réservée aux administrateurs de la plateforme — un membre de boutique est refusé avant même la double authentification ;
+   - fait : **C1** créer une boutique et son domaine, l'ouvrir ou la suspendre, ajouter des domaines ; **C2** régler sa marque (thème, police des titres, 13 couleurs, textes) avec un aperçu qui suit chaque changement ;
+   - fait : chaque écriture passe par une fonction `public.console_*` réservée à `service_role`, qui revérifie l'administrateur et trace l'action (avec l'IP) dans `plateforme.journal_audit` ; formulaires refusés s'ils viennent d'une autre origine ; la clé `service_role` est un secret du Worker, absente du paquet compilé ;
+   - reste : **C5 import Excel** ; logo et images (téléversement vers R2) ; C3 modules ; C4 comptes de l'équipe du client.
 6. **Maymar migrée** comme première boutique ; domaine `maymar.tn` à l'étape 2.
 
 ## Base de données en local
@@ -40,7 +44,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 163 tests pgTAP
+outils/base-locale.sh tester    # les 194 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 
@@ -64,6 +68,8 @@ bun run build && bun run start --port 4200 --host 127.0.0.1   # la vitrine compi
 Ouvrir http://maymar.localhost:4200 et http://quincaillerie.localhost:4200 : la même application sert les deux boutiques, chacune avec son thème. `outils/essai-vitrine.sh` vérifie en 16 essais qu'elles ne se mélangent jamais ; la CI le lance à chaque modification (`.github/workflows/vitrine.yml`).
 
 `bun run parcours` (dans `application/`) joue un **testeur humain** dans Chromium : souris, clavier seul, téléphone tactile, sur les deux boutiques — filtres, tri, fiche, panier, recherche, page introuvable. Il vérifie ce qu'une personne vit (le focus au clavier, la page qui ne saute pas, la feuille de filtres qui reste ouverte, le tiroir du panier qui garde le focus) et laisse une capture par étape dans `.outils/captures/`. La CI le lance aussi et joint les captures à chaque passage (« captures-vitrine »). Le premier passage, le 29/09, a trouvé et fait corriger : pas de rayons sur téléphone, page introuvable sans en-tête, page décalée quand une liste est vide, focus perdu et feuille refermée après chaque filtre, focus qui sortait du tiroir du panier.
+
+**Console en local** : http://console.localhost:4200, compte `admin@skanecom.test`, mot de passe `console-locale-skanecom` (créés par `outils/api-locale.sh demarrer`, base locale seulement). À la première connexion, la console affiche le QR code de la double authentification. `bun run parcours:console` rejoue la mise en place d'une boutique de bout en bout, avec captures (la CI aussi).
 
 Avant un déploiement : `bun run annuaire` fige l'annuaire des domaines dans `src/annuaire.genere.json` (clé de service requise ; le fichier du dépôt reste vide, il ne doit pas contenir la liste des clients).
 

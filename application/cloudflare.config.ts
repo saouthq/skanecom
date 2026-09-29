@@ -27,6 +27,10 @@ export default defineConfig({
       ...responseStore.applicationWorker.env,
       ASSETS: bindings.assets(),
       IMAGES: bindings.images(),
+      // La clé service_role, pour la console seule (src/lib/console/service.ts).
+      // Production : `wrangler secret put SUPABASE_SERVICE_ROLE_KEY` ; local :
+      // application/.dev.vars, écrit par outils/api-locale.sh.
+      SUPABASE_SERVICE_ROLE_KEY: bindings.secret(),
     },
   }),
 });

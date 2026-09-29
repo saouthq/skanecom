@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   vitrine:
-    name: Types, compilation et essai de bout en bout
+    name: Types, compilation, essais et parcours
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -96,6 +96,16 @@ jobs:
         run: |
           bunx playwright-core install chromium
           bun run parcours
+
+      # La console : connexion, double authentification, création et ouverture
+      # d'une boutique, marque avec aperçu, journal, portes fermées.
+      - name: Parcours de la console
+        working-directory: application
+        env:
+          CAPTURES: ${{ github.workspace }}/.outils/captures/console
+        run: |
+          set -a; . ../.outils/api-locale.env; set +a
+          bun run parcours:console
 
       - name: Captures du parcours
         if: always()

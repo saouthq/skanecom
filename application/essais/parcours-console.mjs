@@ -1,0 +1,337 @@
+import { createHmac } from "node:crypto";
+import http from "node:http";
+import { creeTesteur } from "./testeur.mjs";
+
+/* ============================================================================
+   PARCOURS HUMAIN DE LA CONSOLE — Skander met une boutique en place.
+
+   Connexion, double authentification (le code est calculé comme le ferait
+   son application d'authentification), création d'une boutique et de son
+   domaine, vitrine fermée puis ouverte, réglage de la marque avec aperçu,
+   journal ; puis les portes : mauvais mot de passe, mauvais code, compte qui
+   n'est pas administrateur, formulaire posté depuis un autre site.
+
+     cd application && bun run parcours:console
+     (base, API et vitrine locales démarrées ; clés dans .outils/api-locale.env)
+
+   Chaque passage crée une boutique neuve (identifiant horodaté) : le
+   parcours se rejoue sans réinitialiser la base.
+   ========================================================================== */
+
+const t = creeTesteur();
+const { pause, note, verifie, capture, clic, tape, etape } = t;
+const CONSOLE = t.adresse("console.localhost");
+const ADMIN = { email: "admin@skanecom.test", mdp: "console-locale-skanecom" };
+const SUFFIXE = Date.now().toString(36).slice(-5);
+const SLUG = `outillage-${SUFFIXE}`;
+const HOTE = `outillage-${SUFFIXE}.localhost`;
+const VITRINE = t.adresse(HOTE);
+
+/* TOTP (RFC 6238) : ce que calcule une application d'authentification. */
+function base32(s) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const c of s.replace(/=+$/, "").toUpperCase()) bits += alphabet.indexOf(c).toString(2).padStart(5, "0");
+  const octets = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) octets.push(parseInt(bits.slice(i, i + 8), 2));
+  return Buffer.from(octets);
+}
+function totp(secret, decalage = 0) {
+  const pas = Buffer.alloc(8);
+  pas.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30_000) + decalage));
+  const h = createHmac("sha1", base32(secret)).update(pas).digest();
+  const o = h[h.length - 1] & 15;
+  return String((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000).padStart(6, "0");
+}
+/* Un code faux à coup sûr (différent des codes valides autour de maintenant). */
+function codeFaux(secret) {
+  const bons = new Set([-1, 0, 1].map((d) => totp(secret, d)));
+  for (let i = 0; ; i++) { const c = String(123456 + i * 7919).slice(-6); if (!bons.has(c)) return c; }
+}
+
+// Réponses d'erreur provoquées exprès par le parcours.
+// (la vitrine fermée répond 404 tant que la boutique est en préparation).
+const attendue = (url, texte) => url.includes(HOTE) && texte.includes("404");
+
+/* Une requête brute vers la console, avec les cookies du navigateur : pour
+   lire une redirection sans la suivre, ou poster depuis une « autre origine ». */
+async function brut(contexte, methode, chemin, { entetes = {}, formulaire } = {}) {
+  const cookies = (await contexte.cookies(CONSOLE)).map((c) => `${c.name}=${c.value}`).join("; ");
+  const corps = formulaire ? new URLSearchParams(formulaire).toString() : undefined;
+  return new Promise((ok, ko) => {
+    const req = http.request({
+      host: "127.0.0.1", port: Number(t.port), method: methode, path: chemin,
+      headers: {
+        host: new URL(CONSOLE).host, cookie: cookies, ...entetes,
+        ...(corps ? { "content-type": "application/x-www-form-urlencoded", "content-length": Buffer.byteLength(corps) } : {}),
+      },
+    }, (r) => { r.resume(); r.on("end", () => ok({ status: r.statusCode, location: r.headers.location ?? "" })); });
+    req.on("error", ko);
+    req.end(corps);
+  });
+}
+
+/* Attend qu'une page réponde comme prévu (l'annuaire de la vitrine
+   redemande une boutique fermée toutes les 10 s). */
+async function attendsVitrine(p, url, statut, delaiMs = 20_000) {
+  const fin = Date.now() + delaiMs;
+  for (;;) {
+    const r = await p.goto(url, { waitUntil: "networkidle" });
+    if (r.status() === statut || Date.now() > fin) return r;
+    await pause(1000);
+  }
+}
+
+/* L'API d'administration de GoTrue (clé service_role, .outils/api-locale.env). */
+async function gotrue(methode, chemin, corps) {
+  const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1${chemin}`, {
+    method: methode,
+    headers: { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json" },
+    body: corps ? JSON.stringify(corps) : undefined,
+  });
+  if (!r.ok) throw new Error(`GoTrue ${methode} ${chemin} : HTTP ${r.status}`);
+  return r.status === 204 ? null : r.json();
+}
+
+/* Le parcours commence comme sur un téléphone neuf : on retire les facteurs
+   de double authentification de l'administrateur de développement (laissés
+   par un passage précédent), pour revoir l'inscription par QR code. */
+async function telephoneNeuf() {
+  const { users } = await gotrue("GET", "/admin/users?per_page=1000");
+  const admin = users.find((u) => u.email === ADMIN.email);
+  if (!admin) throw new Error(`${ADMIN.email} introuvable : lancer outils/api-locale.sh demarrer`);
+  // (la liste des comptes ne donne pas les facteurs : on les demande à part)
+  const facteurs = await gotrue("GET", `/admin/users/${admin.id}/factors`);
+  for (const f of facteurs ?? []) await gotrue("DELETE", `/admin/users/${admin.id}/factors/${f.id}`);
+}
+
+await telephoneNeuf();
+const navigateur = await t.navigateur();
+let secret = "";
+
+/* ------------------------------------------------------------------ */
+console.log("\n== 1. Première connexion : mot de passe, puis double authentification ==");
+const ctx = await navigateur.newContext({ viewport: { width: 1366, height: 860 }, locale: "fr-FR" });
+const page = await ctx.newPage();
+t.espion(page, "console", attendue);
+
+await etape("la console demande de se connecter", async () => {
+  await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
+  verifie(new URL(page.url()).pathname === "/connexion", `sans session, « / » mène à la connexion (${page.url()})`);
+  verifie(new URL(page.url()).host === new URL(CONSOLE).host, "la redirection reste sur le domaine de la console");
+  await capture(page, "console-connexion");
+});
+
+await etape("mauvais mot de passe", async () => {
+  await clic(page, page.locator("#email"));
+  await tape(page, ADMIN.email);
+  await clic(page, page.locator("#mot_de_passe"));
+  await tape(page, "pas-le-bon");
+  await page.keyboard.press("Enter");
+  await page.waitForURL(/erreur=/);
+  const message = await page.getByRole("alert").innerText();
+  verifie(message.includes("incorrect"), `message : « ${message} »`);
+  verifie((await page.locator("#email").inputValue()) === ADMIN.email, "l'adresse saisie est conservée");
+  await capture(page, "console-mauvais-mot-de-passe");
+});
+
+await etape("bon mot de passe", async () => {
+  await clic(page, page.locator("#mot_de_passe"));
+  await tape(page, ADMIN.mdp);
+  await clic(page, page.getByRole("button", { name: "Se connecter" }));
+  await page.waitForURL(/double-authentification/);
+  await page.waitForLoadState("networkidle");
+  secret = (await page.locator("[data-secret-totp]").innerText()).trim();
+  verifie(await page.getByRole("img", { name: /QR code/ }).isVisible(), "première connexion : le QR code à scanner s'affiche");
+  verifie(/^[A-Z2-7]{16,}$/.test(secret), `la clé à saisir à la main s'affiche (${secret.length} caractères)`);
+  await capture(page, "console-double-authentification-inscription");
+});
+
+await etape("sans le code, la console reste fermée", async () => {
+  const r = await brut(ctx, "GET", "/");
+  verifie(r.status >= 300 && r.status < 400 && r.location.includes("/double-authentification"),
+    `après le seul mot de passe, « / » renvoie vers la double authentification (${r.status})`);
+});
+
+await etape("mauvais code : le QR code reste", async () => {
+  await clic(page, page.locator("#code"));
+  await tape(page, codeFaux(secret));
+  await page.keyboard.press("Enter");
+  await page.getByRole("alert").filter({ hasText: /incorrect/ }).waitFor();
+  const secretApres = (await page.locator("[data-secret-totp]").innerText()).trim();
+  verifie(secretApres === secret, "après un code faux, la même clé reste à l'écran (rien à rescanner)");
+  await capture(page, "console-code-faux");
+});
+
+await etape("bon code : la console s'ouvre", async () => {
+  await clic(page, page.locator("#code"));
+  await tape(page, totp(secret));
+  await page.keyboard.press("Enter");
+  await page.waitForURL((u) => u.pathname === "/");
+  await page.waitForLoadState("networkidle");
+  const lignes = await page.locator("tbody tr").allInnerTexts();
+  verifie(lignes.some((l) => l.includes("Maymar")) && lignes.some((l) => l.includes("Quincaillerie")),
+    `tableau des boutiques : ${lignes.length} boutiques, dont Maymar et la quincaillerie`);
+  await capture(page, "console-tableau");
+});
+
+/* ------------------------------------------------------------------ */
+console.log("\n== 2. Mettre une boutique en place ==");
+
+await etape("créer la boutique", async () => {
+  await clic(page, page.getByRole("link", { name: "Nouvelle boutique" }).first());
+  await page.waitForURL(/nouvelle-boutique/);
+  await clic(page, page.locator("#nom")); await tape(page, "Outillage Pro Démo");
+  await clic(page, page.locator("#slug")); await tape(page, SLUG);
+  await clic(page, page.locator("#hote")); await tape(page, HOTE);
+  await clic(page, page.getByLabel(/Catalogue technique/));
+  await capture(page, "console-nouvelle-boutique");
+  await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
+  await page.waitForURL(new RegExp(`/boutiques/${SLUG}`));
+  await page.waitForLoadState("networkidle");
+  verifie((await page.getByRole("status").innerText()).includes("en préparation"), "la boutique est créée, en préparation");
+  await capture(page, "console-boutique-creee");
+});
+
+await etape("un identifiant déjà pris est refusé, la saisie gardée", async () => {
+  await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
+  await clic(page, page.locator("#nom")); await tape(page, "Doublon");
+  await clic(page, page.locator("#slug")); await tape(page, SLUG);
+  await clic(page, page.locator("#hote")); await tape(page, `autre-${SUFFIXE}.localhost`);
+  await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
+  await page.waitForURL(/erreur=/);
+  verifie((await page.getByRole("alert").innerText()).includes("Déjà pris"), `message : « ${await page.getByRole("alert").innerText()} »`);
+  verifie((await page.locator("#nom").inputValue()) === "Doublon", "le formulaire garde ce qui a été saisi");
+});
+
+await etape("la vitrine de la boutique en préparation est fermée", async () => {
+  const vitrine = await ctx.newPage();
+  const r = await vitrine.goto(VITRINE + "/", { waitUntil: "networkidle" });
+  verifie(r.status() === 404 && (await vitrine.locator("h1").innerText()).includes("fermée"), `avant l'ouverture : HTTP ${r.status()}, « ${await vitrine.locator("h1").innerText()} »`);
+  await capture(vitrine, "vitrine-fermee");
+  await vitrine.close();
+});
+
+await etape("ouvrir la boutique", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await clic(page, page.getByRole("button", { name: "Ouvrir la boutique" }));
+  await page.waitForURL(/ok=/);
+  verifie((await page.getByRole("status").innerText()).includes("ouverte"), "la console confirme l'ouverture");
+  const vitrine = await ctx.newPage();
+  const debut = Date.now();
+  const r = await attendsVitrine(vitrine, VITRINE + "/", 200);
+  verifie(r.status() === 200 && (await vitrine.title()).includes("Outillage Pro Démo"),
+    `après l'ouverture : HTTP ${r.status()}, « ${await vitrine.title()} », servie en ${Math.round((Date.now() - debut) / 1000)} s`);
+  await capture(vitrine, "vitrine-ouverte-theme-technique");
+  await vitrine.close();
+});
+
+await etape("régler la marque, avec aperçu", async () => {
+  await clic(page, page.getByRole("link", { name: "Régler la marque" }));
+  await page.waitForURL(/\/marque/);
+  await page.waitForLoadState("networkidle");
+  const apercu = page.locator("[data-apercu]");
+  const accentAvant = await apercu.evaluate((e) => getComputedStyle(e).getPropertyValue("--theme-accent").trim());
+
+  const champAccent = page.locator("#c-accent");
+  await clic(page, champAccent);
+  await champAccent.press("ControlOrMeta+a");
+  await tape(page, "#0B6E4F");
+  await page.locator("#polices_titres").selectOption("young-serif");
+  await clic(page, page.locator("#t-resume_fr"));
+  await tape(page, "Outillage électroportatif et consommables, pour les pros du chantier.");
+  await pause(200);
+  const accentApres = await apercu.evaluate((e) => getComputedStyle(e).getPropertyValue("--theme-accent").trim());
+  const police = await apercu.locator(".font-display").first().evaluate((e) => getComputedStyle(e).fontFamily);
+  verifie(accentAvant !== accentApres && accentApres.toUpperCase() === "#0B6E4F", `l'aperçu suit la couleur saisie (${accentAvant} → ${accentApres})`);
+  verifie(/young/i.test(police), `l'aperçu suit la police choisie (${police.split(",")[0]})`);
+  verifie((await apercu.innerText()).includes("pros du chantier"), "l'aperçu montre la présentation saisie");
+  await capture(page, "console-marque-apercu", true);
+
+  await clic(page, page.getByRole("button", { name: "Enregistrer la marque" }));
+  await page.waitForURL(/ok=/);
+  verifie((await page.getByRole("status").innerText()).includes("version 2"), `« ${await page.getByRole("status").innerText()} »`);
+});
+
+await etape("la vitrine porte la nouvelle marque", async () => {
+  const vitrine = await ctx.newPage();
+  // Une page jamais vue : l'accueil, lui, reste en cache cinq minutes.
+  await vitrine.goto(VITRINE + "/catalogue", { waitUntil: "networkidle" });
+  const accent = await vitrine.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--theme-accent").trim());
+  const resume = await vitrine.locator("footer").innerText();
+  verifie(accent.toUpperCase() === "#0B6E4F", `accent de la vitrine : ${accent}`);
+  verifie(resume.includes("pros du chantier"), "le pied de la vitrine montre la présentation");
+  await capture(vitrine, "vitrine-nouvelle-marque");
+  await vitrine.close();
+});
+
+await etape("le journal garde tout", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  const journal = await page.locator("#t-journal").locator("..").locator("tbody tr").allInnerTexts();
+  const actions = ["Boutique créée", "Statut changé", "Marque modifiée"];
+  verifie(actions.every((a) => journal.some((l) => l.includes(a))) && journal.every((l) => l.includes(ADMIN.email)),
+    `journal : ${journal.length} actions (${actions.join(", ")}), chacune avec l'administrateur`);
+  await capture(page, "console-fiche-journal", true);
+});
+
+/* ------------------------------------------------------------------ */
+console.log("\n== 3. Les portes ==");
+
+await etape("un formulaire posté depuis un autre site est refusé", async () => {
+  const r = await brut(ctx, "POST", "/nouvelle-boutique/creer", {
+    entetes: { origin: "https://site-pirate.example" },
+    formulaire: { nom: "Pirate", slug: `pirate-${SUFFIXE}`, hote: `pirate-${SUFFIXE}.localhost`, theme: "premium_sobre" },
+  });
+  verifie(r.status === 403, `origine étrangère, même avec la session de l'administrateur : HTTP ${r.status}`);
+  const r2 = await brut(ctx, "POST", "/nouvelle-boutique/creer", {
+    formulaire: { nom: "Sans origine", slug: `sans-origine-${SUFFIXE}`, hote: `sans-origine-${SUFFIXE}.localhost`, theme: "premium_sobre" },
+  });
+  verifie(r2.status === 403, `sans en-tête Origin : HTTP ${r2.status}`);
+});
+
+await etape("se déconnecter", async () => {
+  await clic(page, page.getByRole("button", { name: "Se déconnecter" }));
+  await page.waitForURL(/connexion/);
+  await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
+  verifie(new URL(page.url()).pathname === "/connexion", "après déconnexion, la console redemande de se connecter");
+});
+
+await etape("deuxième connexion : seulement le code, plus de QR code", async () => {
+  await page.locator("#email").fill(ADMIN.email);
+  await page.locator("#mot_de_passe").fill(ADMIN.mdp);
+  await page.keyboard.press("Enter");
+  await page.waitForURL(/double-authentification/);
+  verifie(await page.locator("[data-secret-totp]").count() === 0, "le facteur existe : aucun QR code, juste le code");
+  await capture(page, "console-double-authentification-code");
+  // Un nouveau pas de 30 s : un code déjà servi ne doit pas l'être deux fois.
+  await pause(((30 - (Math.floor(Date.now() / 1000) % 30)) + 1) * 1000);
+  await clic(page, page.locator("#code"));
+  await tape(page, totp(secret));
+  await page.keyboard.press("Enter");
+  await page.waitForURL((u) => u.pathname === "/");
+  verifie(true, "le code de l'application ouvre la console");
+});
+await ctx.close();
+
+await etape("un compte qui n'est pas administrateur est refusé avant la double authentification", async () => {
+  const email = `membre-${SUFFIXE}@skanecom.test`;
+  await gotrue("POST", "/admin/users", { email, password: "mot-de-passe-du-membre", email_confirm: true });
+  const autre = await navigateur.newContext({ viewport: { width: 1366, height: 860 }, locale: "fr-FR" });
+  const p = await autre.newPage();
+  t.espion(p, "console-membre", attendue);
+  await p.goto(CONSOLE + "/connexion", { waitUntil: "networkidle" });
+  await p.locator("#email").fill(email);
+  await p.locator("#mot_de_passe").fill("mot-de-passe-du-membre");
+  await p.keyboard.press("Enter");
+  await p.waitForURL(/refuse/);
+  verifie((await p.locator("h1").innerText()) === "Accès refusé", `compte ordinaire : « ${await p.locator("h1").innerText()} »`);
+  const r2 = await brut(autre, "GET", "/");
+  verifie(r2.location.includes("/refuse"), `et la console reste fermée pour lui (« / » → ${r2.location})`);
+  await capture(p, "console-acces-refuse");
+  await autre.close();
+});
+
+await navigateur.close();
+note("INFO  ", `boutique d'essai : ${SLUG} (${HOTE})`);
+process.exit(t.bilan());

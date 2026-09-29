@@ -1,5 +1,4 @@
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright-core";
+import { creeTesteur } from "./testeur.mjs";
 
 /* ============================================================================
    PARCOURS HUMAIN DE LA VITRINE — un testeur qui bouge la souris, clique,
@@ -17,57 +16,13 @@ import { chromium } from "playwright-core";
    constaté, après avoir tout parcouru.
    ========================================================================== */
 
-const PORT = process.env.PORT_VITRINE ?? "4200";
-const DOSSIER = process.env.CAPTURES ?? "../.outils/captures";
-// Sans CHROMIUM : celui du poste s'il existe, sinon celui que
-// `bunx playwright-core install chromium` a posé (CI).
-const CHROMIUM = process.env.CHROMIUM ?? (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
-const M = `http://maymar.localhost:${PORT}`;
-const Q = `http://quincaillerie.localhost:${PORT}`;
-mkdirSync(DOSSIER, { recursive: true });
-const pause = (ms) => new Promise((r) => setTimeout(r, ms));
-let n = 0;
-const notes = [];
-const note = (etat, texte) => { notes.push(`${etat}  ${texte}`); console.log(`${etat}  ${texte}`); };
-const verifie = (cond, texte) => note(cond ? "OK    " : "DÉFAUT", texte);
-
-async function capture(page, nom, pleine = false) {
-  n += 1;
-  const fichier = `${DOSSIER}/${String(n).padStart(2, "0")}-${nom}.png`;
-  await page.screenshot({ path: fichier, fullPage: pleine });
-  return fichier;
-}
-
-/* Clic « humain » : la souris va jusqu'à l'élément, s'arrête, clique. */
-async function clic(page, loc) {
-  await loc.scrollIntoViewIfNeeded();
-  const b = await loc.boundingBox();
-  if (!b) throw new Error("élément invisible");
-  await page.mouse.move(b.x + b.width / 2 + (Math.random() * 4 - 2), b.y + b.height / 2 + (Math.random() * 4 - 2), { steps: 12 });
-  await pause(250);
-  await loc.click();
-  await pause(150);
-}
-
-async function tape(page, texte) {
-  for (const c of texte) { await page.keyboard.type(c); await pause(60 + Math.random() * 80); }
-}
-
-function espion(page, nom) {
-  page.on("console", (m) => { if (m.type() === "error" && !(m.text().includes("404") && page.url().includes("/produit/perceuse"))) note("DÉFAUT", `${nom} console : ${m.text().slice(0, 160)} (${page.url()})`); });
-  page.on("pageerror", (e) => note("DÉFAUT", `${nom} erreur JS : ${String(e).slice(0, 160)}`));
-  page.on("response", (r) => { if (r.status() >= 400 && !r.url().includes("/produit/perceuse")) note("DÉFAUT", `${nom} HTTP ${r.status()} ${r.url()}`); });
-}
-
-async function etape(nom, fn) {
-  try { await fn(); } catch (e) { note("DÉFAUT", `${nom} : ${String(e.message ?? e).split("\n")[0].slice(0, 200)}`); }
-}
-
-// *.localhost → 127.0.0.1 : la vitrine n'écoute qu'en IPv4.
-const navigateur = await chromium.launch({
-  executablePath: CHROMIUM,
-  args: ["--no-sandbox", "--host-resolver-rules=MAP *.localhost 127.0.0.1"],
-});
+const t = creeTesteur();
+const { pause, note, verifie, capture, clic, tape, etape } = t;
+const M = t.adresse("maymar.localhost");
+const Q = t.adresse("quincaillerie.localhost");
+// La page introuvable est visitée exprès.
+const espion = (page, nom) => t.espion(page, nom, (url) => url.includes("/produit/perceuse"));
+const navigateur = await t.navigateur();
 
 /* ------------------------------------------------------------------ */
 console.log("\n== 1. Maymar, à la souris, sur ordinateur ==");
@@ -455,6 +410,4 @@ console.log("\n== 4. Quincaillerie, à la souris ==");
 }
 
 await navigateur.close();
-const defauts = notes.filter((l) => l.startsWith("DÉFAUT"));
-console.log(`\n${notes.length} observations, ${defauts.length} défaut(s). Captures : ${DOSSIER}`);
-process.exit(defauts.length > 0 ? 1 : 0);
+process.exit(t.bilan());

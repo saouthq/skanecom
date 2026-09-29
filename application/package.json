@@ -11,10 +11,12 @@
     "deploy:response-store": "cf deploy --prebuilt --mode production --worker skanecom-application-response-store",
     "deploy": "vinext-cloudflare deploy",
     "parcours": "node essais/parcours-humain.mjs",
-    "lint": "eslint src essais"
+    "lint": "eslint src essais",
+    "parcours:console": "node essais/parcours-console.mjs"
   },
   "dependencies": {
     "@cloudflare/workers-response-store": "^1.0.0",
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.112.2",
     "@vinext/cloudflare": "^1.0.0",
     "next": "16.3.0",

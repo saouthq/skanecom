@@ -25,6 +25,10 @@ type Entree = { resolution: Resolution; expire: number };
 
 const DUREE_CONNU = 5 * 60_000;
 const DUREE_INCONNU = 60_000;
+// Une boutique fermée est souvent une boutique EN PRÉPARATION, qu'on va
+// ouvrir depuis la console : on la redemande vite, pour qu'elle apparaisse
+// dans les secondes qui suivent l'ouverture, pas cinq minutes plus tard.
+const DUREE_FERMEE = 10_000;
 const memoire = new Map<string, Entree>();
 const ANNUAIRE = instantane as Record<string, string>;
 
@@ -59,7 +63,7 @@ export async function resoudre(hote: string): Promise<Resolution> {
     const resolution = await demandeALaBase(hote);
     memoire.set(hote, {
       resolution,
-      expire: Date.now() + (resolution.etat === "inconnu" ? DUREE_INCONNU : DUREE_CONNU),
+      expire: Date.now() + (resolution.etat === "inconnu" ? DUREE_INCONNU : resolution.etat === "fermee" ? DUREE_FERMEE : DUREE_CONNU),
     });
     return resolution;
   } catch {
