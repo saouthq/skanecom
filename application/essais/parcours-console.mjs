@@ -441,10 +441,39 @@ await etape("le logo et les images de la marque, téléversés", async () => {
   await vitrine.close();
 });
 
+await etape("les modules de la boutique", async () => {
+  await clic(page, page.getByRole("link", { name: /^Modules/ }));
+  await page.waitForURL(/\/modules$/);
+  const lignes = page.locator(".md-module");
+  verifie((await lignes.count()) === 6 && (await page.locator(".md-module[data-actif]").count()) === 0,
+    `${await lignes.count()} modules, aucun actif pour une boutique neuve`);
+  const devis = page.locator('.md-module[data-module="devis"]');
+  verifie((await devis.innerText()).includes("À venir") && (await devis.getByRole("button").count()) === 0,
+    "un module pas encore construit est « à venir », sans bouton");
+  await clic(page, page.getByRole("button", { name: "Activer : Demander conseil (WhatsApp)" }));
+  await page.waitForURL(/ok=/);
+  const conseil = page.locator('.md-module[data-module="conseil_whatsapp"]');
+  verifie((await page.getByRole("status").innerText()).includes("activé") && (await conseil.getAttribute("data-actif")) === ""
+    && (await conseil.innerText()).includes(ADMIN.email),
+    `« ${await page.getByRole("status").innerText()} » — avec qui l'a activé`);
+  verifie((await page.locator(".onglets a", { hasText: "Modules" }).innerText()).includes("1"), "l'onglet compte le module actif");
+  await capture(page, "console-modules", true);
+  // Une activation postée à la main pour un module à venir : la base refuse.
+  const refus = await brut(ctx, "POST", `/boutiques/${SLUG}/modules/changer`, {
+    entetes: { origin: CONSOLE },
+    formulaire: { boutique_id: await page.locator('input[name="boutique_id"]').first().inputValue(), module: "devis", actif: "true" },
+  });
+  verifie(refus.status === 303 && decodeURIComponent(refus.location.replace(/\+/g, " ")).includes("à venir"), "un module à venir, posté à la main : la base refuse");
+  await clic(page, page.getByRole("button", { name: "Couper : Demander conseil (WhatsApp)" }));
+  await page.waitForURL(/ok=/);
+  verifie((await page.getByRole("status").innerText()).includes("coupé") && (await page.locator(".md-module[data-actif]").count()) === 0,
+    `« ${await page.getByRole("status").innerText()} »`);
+});
+
 await etape("le journal garde tout", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
   const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
-  const actions = ["Boutique créée", "Statut changé", "Marque modifiée", "Image de la marque"];
+  const actions = ["Boutique créée", "Statut changé", "Marque modifiée", "Image de la marque", "Module activé", "Module coupé"];
   verifie(actions.every((a) => journal.some((l) => l.includes(a))) && journal.every((l) => l.includes(ADMIN.email)),
     `journal : ${journal.length} actions (${actions.join(", ")}), chacune avec l'administrateur`);
   await capture(page, "console-fiche-journal", true);

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { REGLES, type Emplacement } from "@/lib/console/images-marque";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
-import { LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
+import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { initiales } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
@@ -24,6 +24,8 @@ const ACTIONS: Record<string, string> = {
   "domaine.ajouter": "Domaine ajouté",
   "theme.modifier": "Marque modifiée",
   "theme.image": "Image de la marque",
+  "module.activer": "Module activé",
+  "module.couper": "Module coupé",
   "catalogue.importer": "Catalogue importé",
   "equipe.ajouter": "Membre invité",
   "equipe.modifier": "Accès modifié",
@@ -127,7 +129,8 @@ export default async function FicheBoutique({ params, searchParams }: {
                       <tr key={i}>
                         <td className="font-medium whitespace-nowrap">{ACTIONS[j.action] ?? j.action}</td>
                         <td className="discret">{j.action === "boutique.statut" && j.cible ? (LIBELLES_STATUT[j.cible] ?? j.cible)
-                          : j.action === "theme.image" && j.cible ? (REGLES[j.cible as Emplacement]?.titre ?? j.cible) : (j.cible ?? "")}</td>
+                          : j.action === "theme.image" && j.cible ? (REGLES[j.cible as Emplacement]?.titre ?? j.cible)
+                          : j.action.startsWith("module.") && j.cible ? (LIBELLES_MODULES[j.cible] ?? j.cible) : (j.cible ?? "")}</td>
                         <td>
                           {j.acteur ? (
                             <span className="inline-flex items-center gap-2 whitespace-nowrap">

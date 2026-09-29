@@ -5,6 +5,16 @@ export const LIBELLES_STATUT: Record<string, string> = {
   fermee: "Fermée",
 };
 
+/** Les noms des modules (plateforme.modules), pour le journal et les messages. */
+export const LIBELLES_MODULES: Record<string, string> = {
+  paiement_en_ligne: "Paiement en ligne",
+  retrait_magasin: "Retrait en magasin",
+  conseil_whatsapp: "Demander conseil (WhatsApp)",
+  sav: "Service après-vente",
+  comptes_pro: "Comptes professionnels",
+  devis: "Demande de devis",
+};
+
 export const LIBELLES_THEME: Record<string, string> = {
   editorial: "Éditorial",
   technique: "Technique",

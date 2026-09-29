@@ -664,3 +664,28 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
   -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain;
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
 }
+
+/* --------------------------------------------------------------------------
+   LES MODULES D'UNE BOUTIQUE (console → Modules)
+   -------------------------------------------------------------------------- */
+.md-tete { padding: .875rem 1.25rem; border-block-end: 1px solid var(--ui-bord-leger); }
+.md-tete h3 { font-size: .875rem; font-weight: 600; }
+@media (min-width: 700px) { .md-tete { padding-inline: 1.5rem; } }
+.md-liste { display: grid; }
+.md-module {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .5rem .875rem; align-items: start;
+  padding: 1rem 1.25rem; border-block-start: 1px solid var(--ui-bord-leger);
+}
+.md-module:first-child { border-block-start: 0; }
+@media (min-width: 700px) { .md-module { grid-template-columns: auto minmax(0, 1fr) auto; padding-inline: 1.5rem; } }
+.md-icone {
+  display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; border-radius: var(--ui-r);
+  background: var(--ui-doux); color: var(--ui-texte-2); box-shadow: inset 0 0 0 1px var(--ui-bord-leger);
+}
+.md-module[data-actif] .md-icone { background: var(--ui-vert-fond); color: var(--ui-vert); box-shadow: inset 0 0 0 1px var(--ui-vert-bord); }
+.md-texte { display: grid; gap: .25rem; min-inline-size: 0; }
+.md-titre { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .875rem; font-weight: 600; }
+.md-titre .ui-etat { font-weight: 500; }
+.md-note { display: flex; align-items: center; gap: .375rem; font-size: .75rem; color: var(--ui-texte-3); }
+.md-action { grid-column: 2; display: flex; }
+@media (min-width: 700px) { .md-action { grid-column: auto; align-self: center; } }
