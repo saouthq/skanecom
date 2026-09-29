@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import http from "node:http";
+import { strToU8, zipSync } from "fflate";
 import { creeTesteur } from "./testeur.mjs";
 
 /* ============================================================================
@@ -52,6 +53,37 @@ function codeFaux(secret) {
 // Réponses d'erreur provoquées exprès par le parcours.
 // (la vitrine fermée répond 404 tant que la boutique est en préparation).
 const attendue = (url, texte) => url.includes(HOTE) && texte.includes("404");
+
+/* Un vrai classeur .xlsx, rangé comme Excel le range (chaînes partagées,
+   nombres en cellules numériques) : ce que le client enverra. */
+function classeur(lignes) {
+  const partagees = [];
+  const index = new Map();
+  const chaine = (t) => { if (!index.has(t)) { index.set(t, partagees.length); partagees.push(t); } return index.get(t); };
+  const col = (i) => { let n = i + 1, r = ""; while (n > 0) { const m = (n - 1) % 26; r = String.fromCharCode(65 + m) + r; n = Math.floor((n - 1) / 26); } return r; };
+  const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const rangs = lignes.map((l, r) => `<row r="${r + 1}">${l.map((v, c) =>
+    v === "" || v === null ? "" : typeof v === "number"
+      ? `<c r="${col(c)}${r + 1}"><v>${v}</v></c>`
+      : `<c r="${col(c)}${r + 1}" t="s"><v>${chaine(String(v))}</v></c>`).join("")}</row>`).join("");
+  const xml = (corps) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${corps}`;
+  return Buffer.from(zipSync({
+    "[Content_Types].xml": strToU8(xml('<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>')),
+    "_rels/.rels": strToU8(xml('<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')),
+    "xl/workbook.xml": strToU8(xml('<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Catalogue" sheetId="1" r:id="rId1"/></sheets></workbook>')),
+    "xl/_rels/workbook.xml.rels": strToU8(xml('<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>')),
+    "xl/worksheets/sheet1.xml": strToU8(xml(`<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rangs}</sheetData></worksheet>`)),
+    "xl/sharedStrings.xml": strToU8(xml(`<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${partagees.length}" uniqueCount="${partagees.length}">${partagees.map((t) => `<si><t xml:space="preserve">${esc(t)}</t></si>`).join("")}</sst>`)),
+  }));
+}
+
+const ENTETES = ["Produit", "Référence", "Prix", "Prix barré", "Stock", "Rayon", "Marque", "Description", "Poids (kg)", "Tension", "Conditionnement"];
+const CATALOGUE = [
+  ["Perceuse à percussion 18 V", "PP18-SEULE", 329, "", 7, "Outillage > Perceuses", "Atelier Pro", "Mandrin 13 mm, deux vitesses.", "1,9", "18 V", "Machine seule"],
+  ["Perceuse à percussion 18 V", "PP18-KIT", "529,000", "599,000", 3, "Outillage > Perceuses", "Atelier Pro", "", "3,1", "18 V", "Kit 2 batteries"],
+  ["Disque à tronçonner 125 mm", "DT125-U", "4,500", "", 200, "Consommables > Disques", "", "Acier et inox.", "0,05", "", "Unité"],
+  ["Disque à tronçonner 125 mm", "DT125-B10", 39, "", 40, "Consommables > Disques", "", "", "0,5", "", "Boîte de 10"],
+];
 
 /* Une requête brute vers la console, avec les cookies du navigateur : pour
    lire une redirection sans la suivre, ou poster depuis une « autre origine ». */
@@ -262,6 +294,9 @@ await etape("la vitrine porte la nouvelle marque", async () => {
   const resume = await vitrine.locator("footer").innerText();
   verifie(accent.toUpperCase() === "#0B6E4F", `accent de la vitrine : ${accent}`);
   verifie(resume.includes("pros du chantier"), "le pied de la vitrine montre la présentation");
+  const vide = await vitrine.locator("main").innerText();
+  verifie(vide.includes("Le catalogue arrive") && !vide.includes("filtres"),
+    "catalogue encore vide : la vitrine dit que le catalogue arrive, sans parler de filtres");
   await capture(vitrine, "vitrine-nouvelle-marque");
   await vitrine.close();
 });
@@ -273,6 +308,68 @@ await etape("le journal garde tout", async () => {
   verifie(actions.every((a) => journal.some((l) => l.includes(a))) && journal.every((l) => l.includes(ADMIN.email)),
     `journal : ${journal.length} actions (${actions.join(", ")}), chacune avec l'administrateur`);
   await capture(page, "console-fiche-journal", true);
+});
+
+await etape("importer un catalogue : un fichier avec des erreurs", async () => {
+  await clic(page, page.getByRole("link", { name: "Importer un catalogue" }));
+  await page.waitForURL(/\/import$/);
+  await capture(page, "console-import");
+  const fautif = CATALOGUE.map((l) => [...l]);
+  fautif[1][1] = "PP18-SEULE";          // référence en double
+  fautif[3][2] = "trente-neuf";        // prix illisible
+  await page.locator("#fichier").setInputFiles({
+    name: "catalogue-outillage.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: classeur([ENTETES, ...fautif]),
+  });
+  await clic(page, page.getByRole("button", { name: "Vérifier le fichier" }));
+  await page.waitForURL(/\/import\/[0-9a-f-]{36}$/);
+  await page.waitForLoadState("networkidle");
+  const erreurs = await page.locator("#t-erreurs").locator("..").locator("tbody tr").allInnerTexts();
+  verifie(erreurs.some((e) => e.startsWith("3") && e.includes("en double")) && erreurs.some((e) => e.startsWith("5") && e.includes("Prix illisible")),
+    `le rapport cite chaque erreur avec la ligne du tableur : ${erreurs.map((e) => e.replace(/\s+/g, " ")).join(" | ")}`);
+  verifie(await page.getByRole("button", { name: /^Importer/ }).count() === 0, "avec des erreurs, aucun bouton pour importer");
+  await capture(page, "console-import-erreurs", true);
+});
+
+await etape("importer un catalogue : le fichier corrigé", async () => {
+  await clic(page, page.getByRole("link", { name: "vérifiez-le de nouveau" }));
+  await page.waitForURL(/\/import$/);
+  await page.locator("#fichier").setInputFiles({
+    name: "catalogue-outillage.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: classeur([ENTETES, ...CATALOGUE]),
+  });
+  await clic(page, page.getByRole("button", { name: "Vérifier le fichier" }));
+  await page.waitForURL(/\/import\/[0-9a-f-]{36}$/);
+  await page.waitForLoadState("networkidle");
+  const texte = await page.locator("main").innerText();
+  verifie(/2\s+produits nouveaux/.test(texte) && texte.includes("Rayons créés : Consommables, Disques, Outillage, Perceuses"),
+    "le rapport annonce 2 produits nouveaux et les 4 rayons à créer");
+  verifie(texte.includes("529,000") && texte.includes("Kit 2 batteries"), "l'aperçu montre les prix et les axes lus dans le fichier");
+  await capture(page, "console-import-rapport", true);
+  await clic(page, page.getByRole("button", { name: /^Importer 2 produits \(4 variantes\)/ }));
+  await page.waitForURL(new RegExp(`/boutiques/${SLUG}\\?ok=`));
+  verifie((await page.getByRole("status").innerText()).includes("Catalogue importé : 2 produits, 4 variantes"), "la console confirme l'import");
+  verifie((await page.locator("#t-catalogue").locator("..").innerText()).includes("2 produits (2 publiés) · 4 variantes · 4 rayons"),
+    "la fiche de la boutique compte le nouveau catalogue");
+});
+
+await etape("la vitrine montre le catalogue importé", async () => {
+  const vitrine = await ctx.newPage();
+  await vitrine.goto(VITRINE + "/categorie/perceuses", { waitUntil: "networkidle" });
+  const texte = await vitrine.locator("main").innerText();
+  verifie(texte.includes("Perceuse à percussion 18 V") && texte.includes("329,000"), "le rayon Perceuses montre la perceuse, à partir de 329,000 TND");
+  await capture(vitrine, "vitrine-catalogue-importe");
+  await clic(vitrine, vitrine.locator(".grille-produits a").first());
+  await vitrine.waitForURL(/\/produit\//);
+  await vitrine.waitForLoadState("networkidle");
+  await clic(vitrine, vitrine.getByRole("button", { name: /^Kit 2 batteries/ }));
+  const fiche = await vitrine.locator("main").innerText();
+  verifie(fiche.includes("529,000") && fiche.includes("599,000") === false, "la fiche : le kit à 529,000 TND (prix barré masqué : réglage de la boutique)");
+  verifie(/3 pièces/.test(fiche), "la fiche montre le stock importé du kit (3 pièces)");
+  await capture(vitrine, "vitrine-fiche-importee");
+  await vitrine.close();
 });
 
 /* ------------------------------------------------------------------ */

@@ -116,10 +116,15 @@ export default async function FicheBoutique({ params, searchParams }: {
         </section>
 
         <section className="carte" aria-labelledby="t-catalogue">
-          <h2 id="t-catalogue">Catalogue</h2>
-          <p className="text-encre-doux mt-1 tabular-nums">
-            {f.compteurs.produits} produits ({f.compteurs.publies} publiés) · {f.compteurs.variantes} variantes · {f.compteurs.categories} rayons
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 id="t-catalogue">Catalogue</h2>
+              <p className="text-encre-doux mt-1 tabular-nums">
+                {f.compteurs.produits} produits ({f.compteurs.publies} publiés) · {f.compteurs.variantes} variantes · {f.compteurs.categories} rayons
+              </p>
+            </div>
+            <Link href={`/boutiques/${b.slug}/import`} className="btn btn-second">Importer un catalogue</Link>
+          </div>
         </section>
 
         <section className="carte" aria-labelledby="t-journal">

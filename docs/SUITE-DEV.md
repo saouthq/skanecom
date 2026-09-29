@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 194 tests (dont la vitrine et la console), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 217 tests (dont la vitrine, la console et l'import), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -35,7 +35,8 @@
    - fait le 29/09 : connexion par mot de passe et **double authentification obligatoire** (TOTP, GoTrue), réservée aux administrateurs de la plateforme — un membre de boutique est refusé avant même la double authentification ;
    - fait : **C1** créer une boutique et son domaine, l'ouvrir ou la suspendre, ajouter des domaines ; **C2** régler sa marque (thème, police des titres, 13 couleurs, textes) avec un aperçu qui suit chaque changement ;
    - fait : chaque écriture passe par une fonction `public.console_*` réservée à `service_role`, qui revérifie l'administrateur et trace l'action (avec l'IP) dans `plateforme.journal_audit` ; formulaires refusés s'ils viennent d'une autre origine ; la clé `service_role` est un secret du Worker, absente du paquet compilé ;
-   - reste : **C5 import Excel** ; logo et images (téléversement vers R2) ; C3 modules ; C4 comptes de l'équipe du client.
+   - fait : **C5 import Excel ou CSV** — une ligne par variante, en-têtes reconnus sous leurs noms usuels, toute autre colonne devient un axe (couleur, taille, tension…), rayons « Parent > Enfant » créés au besoin. D'abord un **rapport** (nouveautés, mises à jour, stocks ajustés, erreurs avec la ligne du tableur) sans rien écrire, puis l'import **en une transaction** ; rien n'est supprimé, une cellule vide ne remplace rien, un écart de stock passe au journal du stock. Lecture du .xlsx sans bibliothèque de tableur (fflate + lecteur maison, `src/lib/console/tableur.ts`) ;
+   - reste : logo et images (téléversement vers R2) ; photos des produits à l'import ; C3 modules ; C4 comptes de l'équipe du client.
 6. **Maymar migrée** comme première boutique ; domaine `maymar.tn` à l'étape 2.
 
 ## Base de données en local
@@ -44,7 +45,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 194 tests pgTAP
+outils/base-locale.sh tester    # les 217 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 

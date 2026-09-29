@@ -85,6 +85,8 @@ reinit() {
     echo "  jeu de démo supabase/seed.sql"
     psql_en postgres -d "$BASE" -f "$RACINE/supabase/seed.sql"
   fi
+  # Si l'API locale tourne, PostgREST relit le schéma (nouvelles fonctions).
+  psql_en postgres -d "$BASE" -c "notify pgrst, 'reload schema'" > /dev/null
   echo "Base $BASE prête."
 }
 

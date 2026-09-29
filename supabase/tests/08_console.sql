@@ -16,10 +16,11 @@ select is_empty($$
   where p.pronamespace = 'public'::regnamespace and p.proname like 'console\_%'
     and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'))
 $$, 'aucune fonction console_* n''est exécutable par un visiteur ou un membre');
-select is((select count(*)::integer from pg_proc p
-            where p.pronamespace = 'public'::regnamespace and p.proname like 'console\_%'
-              and has_function_privilege('service_role', p.oid, 'execute')),
-  7, 'les 7 fonctions de la console sont ouvertes à service_role');
+select is_empty($$
+  select p.oid::regprocedure from pg_proc p
+  where p.pronamespace = 'public'::regnamespace and p.proname like 'console\_%'
+    and not has_function_privilege('service_role', p.oid, 'execute')
+$$, 'toutes les fonctions console_* sont ouvertes à service_role, le serveur de la console');
 select is_empty($$
   select p.oid::regprocedure from pg_proc p
   where p.pronamespace = 'private'::regnamespace and p.proname like 'console\_%'
@@ -79,7 +80,7 @@ select results_eq($$ select slug, statut from public.resoudre_domaine('essai-con
 select lives_ok(format($$ select public.console_changer_statut(%L, (select id from plateforme.boutiques where slug = 'essai-console'), 'active') $$,
                        tests.id('admin_plateforme')), 'l''administrateur ouvre la boutique');
 select results_eq($$ select j.avant ->> 'statut', j.apres ->> 'statut' from plateforme.journal_audit j
-                     where j.action = 'boutique.statut' $$,
+                     where j.action = 'boutique.statut' and j.boutique_id = (select id from plateforme.boutiques where slug = 'essai-console') $$,
   $$ values ('en_preparation'::text, 'active'::text) $$, 'l''ouverture est tracée avec l''état d''avant et d''après');
 select throws_ok(format($$ select public.console_changer_statut(%L, (select id from plateforme.boutiques where slug = 'essai-console'), 'ouverte') $$,
                         tests.id('admin_plateforme')),
@@ -109,7 +110,7 @@ select throws_ok(format($$ select public.console_modifier_theme(%L, (select id f
 select throws_ok(format($$ select public.console_modifier_theme(%L, (select id from plateforme.boutiques where slug = 'essai-console'), 2,
                                    '{"logo_chemin": "essai-a/marque/logo.svg"}') $$, tests.id('admin_plateforme')),
   '23514', null, 'les champs hors marque (fichiers, sections) ne passent pas par ce réglage');
-select is((select (j.avant ->> 'version')::integer from plateforme.journal_audit j where j.action = 'theme.modifier'),
+select is((select (j.avant ->> 'version')::integer from plateforme.journal_audit j where j.action = 'theme.modifier' and j.boutique_id = (select id from plateforme.boutiques where slug = 'essai-console')),
   1, 'le réglage de marque est tracé avec le thème d''avant');
 
 -- Lecture
@@ -124,7 +125,7 @@ select ok(exists (select 1 from public.console_boutiques() where slug = 'essai-c
 select set_config('request.headers', '{"x-console-ip": "pas-une-ip"}', true);
 select public.console_changer_statut(tests.id('admin_plateforme'),
   (select id from plateforme.boutiques where slug = 'essai-console'), 'suspendue');
-select is((select count(*)::integer from plateforme.journal_audit j where j.action = 'boutique.statut' and j.ip is null), 1,
+select is((select count(*)::integer from plateforme.journal_audit j where j.action = 'boutique.statut' and j.ip is null and j.boutique_id = (select id from plateforme.boutiques where slug = 'essai-console')), 1,
   'une adresse IP illisible laisse la trace, sans IP');
 
 select * from finish();

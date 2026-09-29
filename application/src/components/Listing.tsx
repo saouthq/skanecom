@@ -108,6 +108,13 @@ export function Listing({
               </div>
             ) : null}
           </>
+        ) : corpus === 0 ? (
+          /* Rien à filtrer : la boutique (ou le rayon) n'a encore aucune pièce
+             publiée. Parler de filtres serait faux — aucun n'est actif. */
+          <div className="border border-filet rounded-carte bg-surface p-8 text-center">
+            <h2 className="text-t4">{t.accueil.selectionVideTitre}</h2>
+            <p className="text-petit text-encre-doux mt-2 mx-auto max-w-[42ch]">{t.accueil.selectionVide}</p>
+          </div>
         ) : (
           <div className="border border-filet rounded-carte bg-surface p-8 text-center">
             <h2 className="text-t4">{t.catalogue.videTitre}</h2>
