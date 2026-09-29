@@ -2,10 +2,11 @@
 # (docs/cadrage/02-infrastructure.md §8, prototype/vitrine-workers/RAPPORT.md).
 #
 # Lancement manuel uniquement. Actions :
-#   deployer  — déploie le faux Supabase (sain), puis la vitrine, puis mesure
-#   panne     — redéploie le faux Supabase en panne (503), puis mesure
+#   deployer  — déploie le faux Supabase (sain), la vitrine et les faux domaines, puis mesure
+#   panne     — redéploie le faux Supabase en panne (503), mesure, attend que la
+#               durée de fraîcheur du cache (300 s) soit dépassée, puis mesure encore
 #   retablir  — redéploie le faux Supabase sain, puis mesure
-#   supprimer — supprime les trois Workers du prototype
+#   supprimer — supprime les quatre Workers du prototype
 #
 # Secrets requis (Settings → Secrets and variables → Actions) :
 #   CLOUDFLARE_API_TOKEN  — jeton créé avec le modèle « Edit Cloudflare Workers »
@@ -59,7 +60,7 @@ jobs:
       - name: Supprimer les Workers du prototype
         if: inputs.action == 'supprimer'
         run: |
-          for w in skanecom-prototype-vitrine skanecom-prototype-vitrine-response-store skanecom-faux-supabase; do
+          for w in skanecom-faux-domaines skanecom-prototype-vitrine skanecom-prototype-vitrine-response-store skanecom-faux-supabase; do
             npx -y wrangler@4 delete --name "$w" --force || echo "::warning::$w introuvable ou déjà supprimé"
           done
 
@@ -75,6 +76,7 @@ jobs:
           SOUS_DOMAINE=${URL#https://skanecom-faux-supabase.}
           echo "FAUX_SUPABASE_URL=$URL" >> "$GITHUB_ENV"
           echo "VITRINE_URL=https://skanecom-prototype-vitrine.$SOUS_DOMAINE" >> "$GITHUB_ENV"
+          echo "FAUX_DOMAINES_URL=https://skanecom-faux-domaines.$SOUS_DOMAINE" >> "$GITHUB_ENV"
           echo "Faux Supabase : $URL (PANNE=$PANNE)"
           curl -s -o /dev/null -w "Contrôle du faux Supabase : HTTP %{http_code}\n" "$URL/rest/v1/categories" || true
 
@@ -89,6 +91,8 @@ jobs:
           bun run build:vinext
           bun run deploy:response-store
           bun run deploy:vinext -- --skip-build
+          # Les faux domaines se lient à la vitrine : ils se déploient après elle.
+          (cd ../faux-domaines && npx -y wrangler@4 deploy)
 
       - name: Mesurer
         if: inputs.action != 'supprimer'
@@ -97,3 +101,49 @@ jobs:
           sleep 15
           echo "Vitrine : $VITRINE_URL"
           bash scripts/mesure.sh "$VITRINE_URL" "Action : ${{ inputs.action }} — mesuré depuis un serveur GitHub (pas depuis la Tunisie)" | tee -a "$GITHUB_STEP_SUMMARY"
+          bash scripts/test-domaines.sh "$FAUX_DOMAINES_URL" "Action : ${{ inputs.action }} — séparation du cache entre deux domaines" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Mesurer après expiration de la fraîcheur (panne)
+        if: inputs.action == 'panne'
+        working-directory: prototype/vitrine-workers
+        run: |
+          sleep 310
+          bash scripts/mesure.sh "$VITRINE_URL" "Action : panne — 5 min plus tard, durée de fraîcheur (300 s) dépassée" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Si l'accueil répond 5xx, on écoute les journaux du Worker pendant deux
+      # requêtes et on n'affiche que l'issue, les exceptions et les messages.
+      - name: Diagnostiquer les erreurs 5xx
+        if: inputs.action != 'supprimer'
+        working-directory: prototype/vitrine-workers
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$VITRINE_URL/")
+          echo "Accueil : HTTP $code"
+          case "$code" in 5*) ;; *) exit 0 ;; esac
+          npx -y wrangler@4 tail skanecom-prototype-vitrine --format json > tail.json 2> tail.err &
+          TAIL=$!
+          sleep 15
+          curl -s -o /dev/null "$VITRINE_URL/"
+          curl -s -o /dev/null "$VITRINE_URL/catalogue"
+          sleep 10
+          kill "$TAIL" || true
+          python3 - <<'PY'
+          import json
+          dec = json.JSONDecoder()
+          texte = open("tail.json").read()
+          i = 0
+          while i < len(texte):
+              while i < len(texte) and texte[i].isspace():
+                  i += 1
+              if i >= len(texte):
+                  break
+              try:
+                  ev, i = dec.raw_decode(texte, i)
+              except ValueError:
+                  break
+              print("issue :", ev.get("outcome"))
+              for e in ev.get("exceptions", []):
+                  print("  exception :", e.get("name"), "-", str(e.get("message"))[:500])
+              for l in ev.get("logs", [])[:20]:
+                  print("  journal :", l.get("level"), "-", " ".join(map(str, l.get("message", [])))[:500])
+          PY
+          tail -5 tail.err || true
