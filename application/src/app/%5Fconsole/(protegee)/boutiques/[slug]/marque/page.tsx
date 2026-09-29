@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
+import { imagesDuTheme } from "@/lib/console/images-marque";
 import { EditeurMarque, type ThemeEdite } from "./EditeurMarque";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -32,7 +33,7 @@ export default async function Marque({ params, searchParams }: {
       <div className="grid gap-5">
         {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
         {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
-        <EditeurMarque slug={slug} boutiqueId={boutique.id} nom={boutique.nom} theme={theme} />
+        <EditeurMarque slug={slug} boutiqueId={boutique.id} nom={boutique.nom} theme={theme} images={imagesDuTheme(theme)} />
       </div>
     </>
   );

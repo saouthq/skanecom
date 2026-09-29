@@ -565,3 +565,102 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
   background: rgb(24 24 27 / .28); animation: voile-entre .18s ease-out;
 }
 @keyframes voile-entre { from { opacity: 0; } }
+
+/* --------------------------------------------------------------------------
+   LE LOGO ET LES IMAGES DE LA MARQUE (console → Marque)
+   Une ligne par emplacement : la vignette telle que la vitrine la montrera,
+   ce que c'est et ce qu'il faut fournir, les gestes. Les tracés sont montrés
+   sur le fond de la boutique et sur son pied (--im-fond, --im-encre).
+   -------------------------------------------------------------------------- */
+.im-carte h2 { font-size: 1rem; }
+/* La carte s'adapte à SA largeur (conteneur), pas à celle de l'écran : à
+   côté de l'aperçu, la colonne est étroite même sur un grand écran. */
+.im-liste { display: grid; margin-block: -.25rem; container-type: inline-size; }
+.im-ligne {
+  display: grid; gap: .875rem; align-items: start; padding-block: 1rem;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  border-block-start: 1px solid var(--ui-bord-leger);
+}
+.im-ligne:first-child { border-block-start: 0; padding-block-start: .25rem; }
+.im-ligne[data-occupe] { cursor: progress; }
+.im-ligne-secondaire { margin-inline-start: 1.5rem; padding-inline-start: 1rem; border-inline-start: 2px solid var(--ui-bord); border-block-start: 0; padding-block-start: .25rem; }
+.im-vignette { display: grid; min-inline-size: 0; }
+/* Sur une carte étroite, les gestes viennent après le texte ; sur une large,
+   à droite du titre. */
+.im-corps { display: flex; flex-direction: column; gap: .25rem; min-inline-size: 0; }
+.im-tete { display: contents; }
+.im-actions { order: 9; display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; margin-block-start: .5rem; }
+@container (min-width: 520px) {
+  .im-ligne { grid-template-columns: 8.5rem minmax(0, 1fr); gap: 1.125rem; }
+  .im-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+  .im-actions { order: 0; flex: none; margin-block: -.25rem 0; }
+}
+.im-titre { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-block-size: 1.375rem; font-size: .875rem; font-weight: 600; color: var(--ui-texte); }
+.im-titre .ui-etat { font-weight: 500; }
+.im-conseil { color: var(--ui-texte-2); }
+.im-choisir { position: relative; }
+.im-choisir:focus-within { box-shadow: var(--ui-anneau); border-color: var(--ui-accent); }
+.im-choisir.im-occupe { cursor: progress; color: var(--ui-accent); border-color: var(--ui-accent); background: var(--ui-accent-doux); }
+.im-retirer { color: var(--ui-texte-2); }
+.im-retirer:hover { color: var(--ui-rouge); background: var(--ui-rouge-fond); }
+
+.im-message { display: flex; align-items: flex-start; gap: .375rem; margin-block-start: .25rem; font-size: .8125rem; line-height: 1.4; }
+.im-message .icone { flex: none; margin-block-start: .125rem; }
+.im-message-ok { color: var(--ui-vert); }
+.im-message-erreur { color: var(--ui-rouge); }
+
+/* Vignettes */
+.im-vignette-photo {
+  aspect-ratio: 16 / 10; border-radius: var(--ui-r); overflow: hidden;
+  background: var(--ui-doux); box-shadow: inset 0 0 0 1px rgb(24 24 27 / .06);
+}
+.im-vignette-portrait { aspect-ratio: 3 / 4; inline-size: 66%; }
+.im-vignette-photo img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.im-vide { display: grid; place-items: center; inline-size: 100%; block-size: 100%; min-block-size: 3.5rem; color: var(--ui-texte-3); }
+.im-paire { display: grid; gap: 4px; }
+.im-trace {
+  display: grid; place-items: center; block-size: 3.25rem; padding: .5rem .625rem; border-radius: var(--ui-r);
+  background: var(--im-fond, #FAF8F5); color: var(--im-encre, #141414); box-shadow: inset 0 0 0 1px rgb(24 24 27 / .08);
+}
+.im-trace-sombre { background: var(--im-encre, #141414); color: var(--im-surface, #FFFFFF); box-shadow: none; }
+.im-vignette-trace > .im-trace { block-size: 4.5rem; }
+.im-trace .im-vide { min-block-size: 0; }
+.im-trace-sombre .im-vide { color: rgb(255 255 255 / .5); }
+.im-trace img { max-inline-size: 100%; max-block-size: 100%; object-fit: contain; }
+.im-masque {
+  display: block; inline-size: 100%; block-size: 100%; background-color: currentColor;
+  -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+/* L'icône, dans un onglet de navigateur. */
+.im-onglet {
+  display: flex; align-items: center; gap: .5rem; block-size: 2.25rem; padding-inline: .625rem; margin-block-start: .5rem;
+  border-radius: 8px 8px 0 0; background: var(--ui-panneau); box-shadow: 0 0 0 1px var(--ui-bord), 0 -1px 0 1px var(--ui-bord-leger);
+}
+.im-onglet-icone { display: grid; place-items: center; flex: none; inline-size: 16px; block-size: 16px; border-radius: 3px; background: var(--ui-doux); overflow: hidden; }
+.im-onglet-icone img { inline-size: 100%; block-size: 100%; object-fit: contain; }
+.im-onglet-nom { flex: 1; block-size: 6px; border-radius: 3px; background: var(--ui-bord); }
+
+.im-mode { display: grid; gap: 0; margin: .375rem 0 0; padding: 0; border: 0; }
+.im-description { display: grid; gap: .375rem; margin-block-start: .75rem; padding-block-start: .75rem; border-block-start: 1px dashed var(--ui-bord); }
+.im-description-libelle { font-size: .8125rem; font-weight: 500; color: var(--ui-texte); }
+.im-description-rang { display: flex; gap: .5rem; }
+.im-description-rang .entree { flex: 1; min-inline-size: 0; }
+
+/* L'aperçu de la marque : le logo, la photo d'ouverture, le filigrane. */
+.apercu-marque {
+  display: block; max-inline-size: 100%; background-color: currentColor;
+  -webkit-mask-position: left center; mask-position: left center; -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+.apercu-ouverture { position: relative; isolation: isolate; color: #fff; min-block-size: 15rem; display: flex; flex-direction: column; justify-content: flex-end; }
+.apercu-ouverture > * { position: relative; }
+.apercu-ouverture > .apercu-ouverture-image { position: absolute; inset: 0; z-index: -1; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.apercu-ouverture::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / .62), rgb(0 0 0 / .08) 70%); pointer-events: none; }
+.apercu-ouverture .text-encre-doux { color: rgb(255 255 255 / .85); }
+.apercu-ouverture .ui-etiquette { color: rgb(255 255 255 / .9); }
+.apercu-filigrane {
+  display: block; inline-size: 2.75rem; aspect-ratio: 1; background-color: currentColor; opacity: .3;
+  -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}

@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { ImagesMarque as Images } from "@/lib/console/images-marque";
+import { urlFichier } from "@/lib/photos";
 import { gabaritDe, GABARITS, JETONS_COULEUR, pilePolice, themeDeLaBoutique, type CodeTheme, type JetonCouleur, type Police } from "@/lib/theme";
 import { GROUPES_COULEURS, POLICES_TEXTE, POLICES_TITRES, TEXTES_MARQUE } from "./champs";
+import { ImagesMarque } from "./ImagesMarque";
 
 /* ============================================================================
    L'ÉDITEUR DE MARQUE — formulaire ordinaire (il s'enregistre sans
@@ -12,6 +15,10 @@ import { GROUPES_COULEURS, POLICES_TEXTE, POLICES_TITRES, TEXTES_MARQUE } from "
 
    Une couleur égale à celle du gabarit n'est pas enregistrée comme
    personnalisée : changer de gabarit garde alors des couleurs cohérentes.
+
+   Le logo et les images s'enregistrent à part, dès leur envoi
+   (ImagesMarque) : chacun rend la nouvelle version du thème, que le
+   formulaire garde pour rester enregistrable.
    ========================================================================== */
 
 export type ThemeEdite = {
@@ -31,8 +38,11 @@ const LIBELLES_GABARITS: Record<CodeTheme, string> = {
 
 const defautsDe = (code: CodeTheme) => themeDeLaBoutique({ code });
 
-export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; boutiqueId: string; nom: string; theme: ThemeEdite }) {
+export function EditeurMarque({ slug, boutiqueId, nom, theme, images: imagesInitiales }: {
+  slug: string; boutiqueId: string; nom: string; theme: ThemeEdite; images: Images;
+}) {
   const [code, setCode] = useState<CodeTheme>(gabaritDe(theme.code));
+  const [images, setImages] = useState<Images>(imagesInitiales);
   const defauts = useMemo(() => defautsDe(code), [code]);
   const [couleurs, setCouleurs] = useState<Partial<Record<JetonCouleur, string>>>(theme.couleurs ?? {});
   const [titres, setTitres] = useState<Police | "">(theme.polices?.titres ?? "");
@@ -55,8 +65,11 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
 
   return (
     <form action={`/boutiques/${slug}/marque/enregistrer`} method="post" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] items-start">
+      {/* Le bouton par défaut (touche Entrée dans un champ) : enregistrer la
+          marque, jamais le premier bouton venu (« Retirer » le logo…). */}
+      <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true">Enregistrer la marque</button>
       <input type="hidden" name="boutique_id" value={boutiqueId} />
-      <input type="hidden" name="version" value={theme.version} />
+      <input type="hidden" name="version" value={images.version} />
 
       <div className="grid gap-5">
         <section className="carte formulaire" aria-labelledby="t-theme">
@@ -83,18 +96,10 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
               {POLICES_TEXTE.map((p) => <option key={p.valeur} value={p.valeur}>{p.libelle}</option>)}
             </select>
           </div>
-          {theme.logo_chemin ? (
-            <div className="champ">
-              <label htmlFor="logo_mode">Logo</label>
-              <select id="logo_mode" name="logo_mode" defaultValue={theme.logo_mode}>
-                <option value="masque">Monochrome : prend la couleur du texte (clair sur le pied foncé)</option>
-                <option value="image">Image : affiché avec ses propres couleurs</option>
-              </select>
-            </div>
-          ) : (
-            <p className="aide">Pas de logo : le nom de la boutique s&apos;affiche dans la police des titres.</p>
-          )}
         </section>
+
+        <ImagesMarque slug={slug} images={images} surChangement={setImages}
+          teintes={{ fond: couleur("fond"), encre: couleur("encre"), surface: couleur("surface") }} />
 
         <section className="carte formulaire" aria-labelledby="t-couleurs">
           <h2 id="t-couleurs">Couleurs</h2>
@@ -154,10 +159,14 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
         <div className="apercu border border-filet-fort rounded-carte overflow-hidden font-texte" style={variables} data-apercu data-apercu-gabarit={code}>
           <div className="bg-fond text-encre">
             <div className="flex items-center justify-between px-4 py-3 border-b border-filet">
-              <span className="font-display text-[1.125rem]">{nom}</span>
+              <Marque nom={nom} logo={images.logo} hauteur={20} />
               <span className="text-legende text-encre-doux">Catalogue · Panier</span>
             </div>
-            <div className="px-4 py-5">
+            <div className={`px-4 py-5${images.ouverture?.chemin ? " apercu-ouverture" : ""}`}>
+              {images.ouverture?.chemin ? (
+                // eslint-disable-next-line @next/next/no-img-element -- aperçu : l'image telle que déposée
+                <img className="apercu-ouverture-image" src={urlFichier(images.ouverture.chemin)} alt="" />
+              ) : null}
               <p className="ui-etiquette">{code === "technique" ? "Outillage et quincaillerie" : "Nouvelle collection"}</p>
               <p className={`font-display leading-tight mt-2 ${code === "technique" ? "text-[1.5rem] font-extrabold uppercase" : "text-[1.875rem]"}`}>Bienvenue chez {nom}.</p>
               <p className="text-petit text-encre-doux mt-2">{textes.resume_fr || "La présentation courte de la boutique s'affiche ici."}</p>
@@ -165,19 +174,40 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
             </div>
             <div className="px-4 pb-5">
               <div className="bg-surface border border-filet rounded-carte p-3">
-                <div className="bg-surface-2 rounded-doux h-20 grid place-items-center text-legende text-encre-doux">Photo</div>
+                <div className="bg-surface-2 rounded-doux h-20 grid place-items-center text-legende text-encre-doux">
+                  {images.monogramme ? (
+                    <span className="apercu-filigrane" role="img" aria-label="Photo à venir"
+                      style={{ WebkitMaskImage: `url("${urlFichier(images.monogramme)}")`, maskImage: `url("${urlFichier(images.monogramme)}")` }} />
+                  ) : "Photo"}
+                </div>
                 <p className="font-display mt-3">Un produit du catalogue</p>
                 <p className="text-legende mt-1" style={{ color: "var(--theme-succes)" }}>● En stock — 12 pièces</p>
                 <p className="mt-2 tabular-nums"><b>149,000</b> <span className="text-legende text-encre-doux">TND</span></p>
                 <p className="text-legende text-accent mt-1">Voir la fiche →</p>
               </div>
             </div>
-            <div className="bg-encre text-surface px-4 py-3 text-legende">
-              © {nom}{textes.origine_fr ? ` — ${textes.origine_fr}` : ""}
+            <div className="bg-encre text-surface px-4 py-4 text-legende grid gap-3">
+              {images.logo ? <Marque nom={nom} logo={images.logo} hauteur={16} /> : null}
+              <span>© {nom}{textes.origine_fr ? ` — ${textes.origine_fr}` : ""}</span>
             </div>
           </div>
         </div>
       </aside>
     </form>
+  );
+}
+
+/** Le logo comme la vitrine l'affiche : monochrome (masque à la couleur du
+ *  texte) ou avec ses couleurs ; sans logo, le nom dans la police des titres. */
+function Marque({ nom, logo, hauteur }: { nom: string; logo: Images["logo"]; hauteur: number }) {
+  if (!logo) return <span className="font-display text-[1.125rem]">{nom}</span>;
+  const url = urlFichier(logo.chemin);
+  if (logo.mode === "image") {
+    // eslint-disable-next-line @next/next/no-img-element -- aperçu : l'image telle que déposée
+    return <img src={url} alt={nom} style={{ blockSize: hauteur, inlineSize: "auto" }} />;
+  }
+  return (
+    <span role="img" aria-label={nom} className="apercu-marque"
+      style={{ blockSize: hauteur, inlineSize: Math.min(hauteur * logo.ratio, 220), WebkitMaskImage: `url("${url}")`, maskImage: `url("${url}")` }} />
   );
 }

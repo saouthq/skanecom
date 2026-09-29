@@ -255,6 +255,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis la veille des nouvelles commandes** (migration 19, `20260929101800_gestion_veille.sql`, 4 tests dans `supabase/tests/21_veille.sql`) : `gestion_veille(boutique)` — commandes à confirmer, dernière arrivée — pour le compteur et les alertes du backoffice ouvert.
 
+**Puis le logo et les images de la marque** (migration 20, `20260929101900_console_images_marque.sql`, 31 tests dans `supabase/tests/22_images_marque.sql`) : `console_image_marque(acteur, boutique, version, emplacement, image, sections_gabarit)` pose ou retire le logo (avec sa proportion et son mode), le monogramme, l'icône d'onglet, la photo d'ouverture et son cadrage pour téléphone, la photo du récit, et leur description. Fichier neuf pris dans `<boutique>/marque/` seulement ; tant que la boutique garde les sections d'accueil de son gabarit, la console les fournit et la première photo les fixe en base ; la fonction rend les fichiers que le thème n'emploie plus (`private.fichiers_theme`), que la console retire de R2.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { readFileSync } from "node:fs";
 import http from "node:http";
 import { strToU8, zipSync } from "fflate";
 import { creeTesteur } from "./testeur.mjs";
@@ -85,6 +86,23 @@ const CATALOGUE = [
   ["Disque à tronçonner 125 mm", "DT125-U", "4,500", "", 200, "Consommables > Disques", "", "Acier et inox.", "0,05", "", "Unité"],
   ["Disque à tronçonner 125 mm", "DT125-B10", 39, "", 40, "Consommables > Disques", "", "", "0,5", "", "Boîte de 10"],
 ];
+
+/* Les fichiers déposés (relais local, qui tient lieu de R2). */
+async function fichierLocal(chemin) {
+  const r = await fetch(`http://127.0.0.1:54321/fichiers/${chemin}`);
+  return { status: r.status, octets: r.ok ? new Uint8Array(await r.arrayBuffer()) : new Uint8Array() };
+}
+/* Largeur et hauteur d'un PNG (en-tête IHDR) ou d'un WebP. */
+function taille(o) {
+  if (o[0] === 0x89) return [(o[16] << 24 | o[17] << 16 | o[18] << 8 | o[19]) >>> 0, (o[20] << 24 | o[21] << 16 | o[22] << 8 | o[23]) >>> 0];
+  const quatre = String.fromCharCode(...o.subarray(12, 16));
+  if (quatre === "VP8X") return [1 + (o[24] | (o[25] << 8) | (o[26] << 16)), 1 + (o[27] | (o[28] << 8) | (o[29] << 16))];
+  if (quatre === "VP8L") { const b = o[21] | (o[22] << 8) | (o[23] << 16) | (o[24] << 24); return [(b & 0x3fff) + 1, ((b >> 14) & 0x3fff) + 1]; }
+  return [(o[26] | (o[27] << 8)) & 0x3fff, (o[28] | (o[29] << 8)) & 0x3fff];
+}
+const demo = (chemin) => readFileSync(new URL(`../../supabase/fichiers-demo/${chemin}`, import.meta.url));
+/* Un logo vectoriel avec des marges vides (à rogner) : un carré et une barre. */
+const LOGO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120"><g fill="#111"><rect x="40" y="30" width="60" height="60" rx="6"/><rect x="115" y="45" width="240" height="30" rx="4"/></g></svg>';
 
 /* Une requête brute vers la console, avec les cookies du navigateur : pour
    lire une redirection sans la suivre, ou poster depuis une « autre origine ». */
@@ -302,10 +320,131 @@ await etape("la vitrine porte la nouvelle marque", async () => {
   await vitrine.close();
 });
 
+await etape("le logo et les images de la marque, téléversés", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/marque`, { waitUntil: "networkidle" });
+  const ligne = (e) => page.locator(`.im-ligne[data-emplacement="${e}"]`);
+  // Un geste, puis la réponse de la ligne (son message change, elle n'est plus occupée).
+  const geste = async (e, faire) => {
+    const l = ligne(e);
+    const avant = (await l.locator(".im-message").count()) ? await l.locator(".im-message").innerText() : "";
+    await faire(l);
+    await page.waitForFunction(([sel, avant]) => {
+      const el = document.querySelector(sel);
+      const m = el?.querySelector(".im-message");
+      return el && !el.hasAttribute("data-occupe") && m && m.textContent.trim() !== avant.trim();
+    }, [`.im-ligne[data-emplacement="${e}"]`, avant], { timeout: 20_000 });
+    return (await l.locator(".im-message").innerText()).trim();
+  };
+  const choisir = (e, fichier) => geste(e, (l) => l.locator('input[type="file"]').setInputFiles(fichier));
+  // Une image tracée par le navigateur (canvas) : opaque, ou un rond sur fond transparent.
+  const png = async (l, h, genre) => Buffer.from(await page.evaluate(async ([l, h, genre]) => {
+    const c = document.createElement("canvas");
+    c.width = l; c.height = h;
+    const x = c.getContext("2d");
+    if (genre === "opaque") { x.fillStyle = "#F5C400"; x.fillRect(0, 0, l, h); x.fillStyle = "#111"; x.fillRect(l / 3, h / 3, l / 3, h / 3); }
+    else { x.fillStyle = "#111"; x.beginPath(); x.arc(l / 2, h / 2, l / 3, 0, Math.PI * 2); x.fill(); }
+    const b = await new Promise((r) => c.toBlob(r, "image/png"));
+    return Array.from(new Uint8Array(await b.arrayBuffer()));
+  }, [l, h, genre]));
+  const cheminDe = async (selecteur, attribut) => {
+    const v = await page.locator(selecteur).first().evaluate((el, a) => a === "style" ? el.style.maskImage || el.style.webkitMaskImage : el.getAttribute(a), attribut);
+    return (v ?? "").match(/fichiers\/([^")]+)/)?.[1] ?? "";
+  };
+
+  verifie((await ligne("recit").count()) === 0 && (await ligne("ouverture_portrait").count()) === 0,
+    "gabarit technique : pas de photo du récit à poser, et le cadrage pour téléphone attend la photo d'ouverture");
+
+  // Le logo : un SVG, converti en PNG par le navigateur, marges rognées.
+  let m = await choisir("logo", { name: "logo-outillage.svg", mimeType: "image/svg+xml", buffer: Buffer.from(LOGO_SVG) });
+  const logo = await cheminDe(".im-ligne[data-emplacement=logo] .im-masque", "style");
+  const f = await fichierLocal(logo);
+  const [l, h] = f.status === 200 ? taille(f.octets) : [0, 0];
+  verifie(m === "Logo enregistré." && /\/marque\/logo-[a-z0-9]+\.png$/.test(logo) && f.status === 200 && f.octets[0] === 0x89,
+    `« ${m} » — le SVG est déposé converti en PNG (${logo})`);
+  verifie(Math.abs(l / h - 5.25) < 0.02, `ses marges vides rognées : ${l} × ${h} px, proportion ${(l / h).toFixed(2)} (le dessin fait 315 × 60)`);
+  verifie((await page.locator('input[name="logo_mode"][value="masque"]').isChecked()), "un logo à fond transparent s'affiche en monochrome");
+  verifie((await page.locator("[data-apercu] .apercu-marque").count()) === 2, "l'aperçu le montre en tête et dans le pied");
+  m = await geste("logo", (l) => l.getByLabel("Avec ses propres couleurs").check());
+  verifie(m === "Logo affiché avec ses couleurs." && (await page.locator("[data-apercu] img[alt='Outillage Pro Démo']").count()) === 2,
+    `« ${m} » — l'aperçu le montre en couleurs`);
+  m = await geste("logo", (l) => l.getByLabel(/Monochrome/).check());
+  verifie(m === "Logo affiché en monochrome.", `« ${m} »`);
+
+  // Le monogramme : un filigrane, il lui faut de la transparence.
+  m = await choisir("monogramme", { name: "carre-jaune.png", mimeType: "image/png", buffer: await png(400, 400, "opaque") });
+  verifie(/fond transparent/.test(m) && (await ligne("monogramme").locator(".im-message-erreur").count()) === 1, `image opaque refusée : « ${m} »`);
+  m = await choisir("monogramme", { name: "rond.png", mimeType: "image/png", buffer: await png(400, 400, "rond") });
+  verifie(m === "Monogramme enregistré." && (await page.locator("[data-apercu] .apercu-filigrane").count()) === 1,
+    `« ${m} » — le filigrane paraît sur le produit de l'aperçu`);
+
+  // L'icône d'onglet : une image en largeur est complétée en carré.
+  m = await choisir("favicon", { name: "icone-large.png", mimeType: "image/png", buffer: await png(300, 200, "opaque") });
+  const icone = await cheminDe(".im-onglet-icone img", "src");
+  const fi = await fichierLocal(icone);
+  verifie(m === "Icône enregistrée." && fi.status === 200 && taille(fi.octets).join("×") === "256×256",
+    `« ${m} » — 300 × 200 px devenue ${taille(fi.octets).join(" × ")} px`);
+
+  // La photo d'ouverture : trop petite, puis la bonne.
+  m = await choisir("ouverture", { name: "chantier-1000.webp", mimeType: "image/webp", buffer: demo("quincaillerie-demo/accueil/chantier-1000.webp") });
+  verifie(/Image trop petite \(1000 × 667 px\).*1\s200 px/.test(m), `photo trop petite refusée avant l'envoi : « ${m} »`);
+  m = await choisir("ouverture", { name: "chantier-2000.webp", mimeType: "image/webp", buffer: demo("quincaillerie-demo/accueil/chantier-2000.webp") });
+  verifie(m === "Photo d'ouverture enregistrée." && (await page.locator("[data-apercu] .apercu-ouverture-image").count()) === 1,
+    `« ${m} » — l'aperçu s'ouvre sur elle`);
+  await ligne("ouverture_portrait").waitFor();
+  m = await choisir("ouverture_portrait", { name: "chantier-2000.webp", mimeType: "image/webp", buffer: demo("quincaillerie-demo/accueil/chantier-2000.webp") });
+  verifie(/plus large que haute/.test(m), `le cadrage pour téléphone est en hauteur : « ${m} »`);
+  // Glissée sur sa ligne, comme depuis le bureau.
+  const octets = Array.from(demo("maison-selma/accueil/hero-portrait-1200.webp"));
+  m = await geste("ouverture_portrait", async (l) => {
+    const transfert = await page.evaluateHandle((o) => {
+      const dt = new DataTransfer();
+      dt.items.add(new File([new Uint8Array(o)], "portrait.webp", { type: "image/webp" }));
+      return dt;
+    }, octets);
+    await l.dispatchEvent("dragover", { dataTransfer: transfert });
+    await l.dispatchEvent("drop", { dataTransfer: transfert });
+  });
+  verifie(m === "Cadrage pour téléphone enregistré.", `glissée sur la ligne : « ${m} »`);
+  await clic(page, page.locator("#alt-ouverture"));
+  m = await geste("ouverture", async () => { await tape(page, "Gerbe d'étincelles sur un chantier"); await page.keyboard.press("Enter"); });
+  verifie(m === "Description enregistrée." && page.url().endsWith("/marque"), `Entrée dans la description l'enregistre, sans quitter la page : « ${m} »`);
+  await page.locator(".im-carte").scrollIntoViewIfNeeded();
+  await pause(300);
+  await capture(page, "console-marque-images", true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator(".im-carte").scrollIntoViewIfNeeded();
+  await pause(300);
+  await capture(page, "console-marque-images-telephone");
+  await page.setViewportSize({ width: 1366, height: 860 });
+
+  // Retirer : le fichier quitte le dépôt.
+  const monogramme = await cheminDe(".im-ligne[data-emplacement=monogramme] .im-masque", "style");
+  m = await geste("monogramme", (l) => l.getByRole("button", { name: /Retirer/ }).click());
+  verifie(m === "Monogramme retiré." && (await fichierLocal(monogramme)).status === 404, `« ${m} » — et son fichier quitte le dépôt`);
+
+  // Le formulaire de marque suit la version : il s'enregistre encore.
+  await clic(page, page.locator("#t-origine_fr"));
+  await tape(page, "Sfax");
+  await clic(page, page.getByRole("button", { name: "Enregistrer la marque" }));
+  await page.waitForURL(/ok=/);
+  const statut = await page.getByRole("status").first().innerText();
+  verifie(/Marque enregistrée \(version \d+\)/.test(statut), `après les images, la marque s'enregistre toujours : « ${statut} »`);
+
+  // La vitrine : une page jamais servie (l'accueil reste en cache cinq minutes).
+  const vitrine = await ctx.newPage();
+  await vitrine.goto(VITRINE + "/mentions-legales", { waitUntil: "networkidle" });
+  const variable = await vitrine.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--theme-logo"));
+  const favicon = await vitrine.locator('link[rel="icon"]').first().getAttribute("href");
+  verifie(variable.includes(logo) && (await vitrine.locator("header .marque").count()) >= 1, "la vitrine porte le logo, en tête de page");
+  verifie((favicon ?? "").includes(icone), `et son icône d'onglet (${favicon})`);
+  await capture(vitrine, "vitrine-logo-televerse");
+  await vitrine.close();
+});
+
 await etape("le journal garde tout", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
   const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
-  const actions = ["Boutique créée", "Statut changé", "Marque modifiée"];
+  const actions = ["Boutique créée", "Statut changé", "Marque modifiée", "Image de la marque"];
   verifie(actions.every((a) => journal.some((l) => l.includes(a))) && journal.every((l) => l.includes(ADMIN.email)),
     `journal : ${journal.length} actions (${actions.join(", ")}), chacune avec l'administrateur`);
   await capture(page, "console-fiche-journal", true);

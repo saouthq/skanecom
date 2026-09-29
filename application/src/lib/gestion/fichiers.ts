@@ -32,6 +32,49 @@ export function typeImage(o: Uint8Array): { type: string; extension: string } | 
   return null;
 }
 
+/** Largeur et hauteur d'une image PNG, JPEG ou WebP, lues dans son en-tête
+ *  (le fichier n'est pas décodé). `null` si l'en-tête est illisible. */
+export function dimensionsImage(o: Uint8Array): { largeur: number; hauteur: number } | null {
+  const lu = new DataView(o.buffer, o.byteOffset, o.byteLength);
+  const dans = (fin: number) => fin <= o.byteLength;
+  const genre = typeImage(o);
+  if (!genre) return null;
+  if (genre.type === "image/png") {
+    // Signature (8), longueur (4), « IHDR » (4), largeur, hauteur.
+    return dans(24) ? { largeur: lu.getUint32(16), hauteur: lu.getUint32(20) } : null;
+  }
+  if (genre.type === "image/webp") {
+    if (!dans(30)) return null;
+    const bloc = String.fromCharCode(...o.subarray(12, 16));
+    if (bloc === "VP8 ") return { largeur: lu.getUint16(26, true) & 0x3fff, hauteur: lu.getUint16(28, true) & 0x3fff };
+    if (bloc === "VP8L") {
+      const b = lu.getUint32(21, true);
+      return { largeur: (b & 0x3fff) + 1, hauteur: ((b >> 14) & 0x3fff) + 1 };
+    }
+    if (bloc === "VP8X") {
+      const l = o[24] | (o[25] << 8) | (o[26] << 16);
+      const h = o[27] | (o[28] << 8) | (o[29] << 16);
+      return { largeur: l + 1, hauteur: h + 1 };
+    }
+    return null;
+  }
+  // JPEG : on parcourt les segments jusqu'à l'en-tête de trame (SOF0 à SOF15,
+  // sauf DHT C4, JPG C8 et DAC CC) : longueur, précision, hauteur, largeur.
+  let i = 2;
+  while (dans(i + 9)) {
+    if (o[i] !== 0xff) return null;
+    const marqueur = o[i + 1];
+    if (marqueur === 0xff) { i += 1; continue; }
+    if (marqueur === 0xd8 || (marqueur >= 0xd0 && marqueur <= 0xd7) || marqueur === 0x01) { i += 2; continue; }
+    if (marqueur === 0xd9 || marqueur === 0xda) return null;
+    if (marqueur >= 0xc0 && marqueur <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marqueur)) {
+      return { largeur: lu.getUint16(i + 7), hauteur: lu.getUint16(i + 5) };
+    }
+    i += 2 + lu.getUint16(i + 2);
+  }
+  return null;
+}
+
 function depotLocal(): string | null {
   const base = process.env.NEXT_PUBLIC_FICHIERS_URL;
   if (!base) return null;
