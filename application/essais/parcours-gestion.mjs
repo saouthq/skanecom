@@ -12,10 +12,13 @@ import { creeTesteur } from "./testeur.mjs";
       refuser à la livraison avec son origine, annuler, noter ; puis le
       catalogue : un arrivage, un inventaire, un prix, une couleur de plus,
       un produit neuf mis en vitrine, ses photos (réduites avant l'envoi,
-      rangées, légendées, retirées), deux écrans sur la même fiche.
+      rangées, légendées, retirées), deux écrans sur la même fiche ; enfin
+      les réglages : invités, confirmation d'office, frais par zone, une
+      zone de plus, un moyen de paiement qu'on ne peut pas couper.
    3. Le même employé sur téléphone.
    4. Le préparateur d'une autre boutique : pas de bouton de confirmation ;
-      au catalogue, le stock mais pas les fiches ni les photos.
+      au catalogue, le stock mais pas les fiches ni les photos ; les
+      réglages en lecture seule.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -89,6 +92,16 @@ async function posteBrut(contexte, chemin, formulaire) {
     req.on("error", ko);
     req.end(corps);
   });
+}
+
+/* Les frais de livraison qu'annonce la base à un acheteur (API publique). */
+async function fraisPour(gouvernorat, sousTotal = 1000) {
+  const r = await fetch("http://127.0.0.1:54321/rest/v1/rpc/frais_livraison_millimes", {
+    method: "POST",
+    headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", "content-type": "application/json" },
+    body: JSON.stringify({ p_boutique_id: "00000000-0000-4000-8000-000000000001", p_gouvernorat_code: gouvernorat, p_sous_total_millimes: sousTotal }),
+  });
+  return r.ok ? Number(await r.json()) : Number.NaN;
 }
 
 /* Un fichier servi par le relais local (qui tient lieu de R2). */
@@ -527,6 +540,101 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie((await p2.getByRole("alert").innerText()).includes("modifiée entre-temps"), "l'écran resté ouvert est prévenu, rien n'est écrasé");
     await autre.close();
   });
+
+  /* ---------------- Les réglages ---------------- */
+  const section = (id) => page.locator(`section:has(#t-${id})`);
+  const journal = () => page.locator("section:has(#t-journal)").innerText();
+
+  await etape("les réglages : ce qui s'applique à la boutique", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Réglages" }));
+    await page.waitForURL(/\/gestion\/maymar\/reglages$/);
+    await page.waitForLoadState("networkidle");
+    for (const id of ["commandes", "livraison", "zones", "gouvernorats", "paiement", "vitrine", "journal"]) {
+      verifie(await page.locator(`#t-${id}`).count() === 1, `la section « ${await page.locator(`#t-${id}`).innerText().catch(() => id)} »`);
+    }
+    verifie(await section("commandes").getByLabel("Compte obligatoire").isChecked(), "au départ : compte obligatoire");
+    verifie((await section("zones").innerText()).includes("Non appliquées"), "les zones de Maymar existent, mais le tarif est le même partout");
+    verifie((await section("commandes").innerText()).includes("MAY-"), "le préfixe des numéros est affiché, réglé par SkanEcom");
+    await capture(page, "gestion-reglages", true);
+  });
+
+  await etape("ouvrir aux invités, confirmer d'office", async () => {
+    await clic(page, section("commandes").getByText("Commande en invité"));
+    await clic(page, section("commandes").getByText("Confirmée d'office"));
+    await envoie(section("commandes").getByRole("button", { name: "Enregistrer" }));
+    verifie((await ok()).includes("Réglages enregistrés"), `« ${await ok()} »`);
+    verifie(await section("commandes").getByLabel("Commande en invité").isChecked(), "le choix est gardé");
+    const j = await journal();
+    verifie(j.includes("Compte client : obligatoire → invité possible") && j.includes("Confirmation : par téléphone → automatique"),
+      "le journal dit ce qui a changé, et qui l'a fait");
+    verifie(j.includes("gerant@maymar.test"), "avec son auteur");
+  });
+
+  await etape("les frais par zone, et une zone de plus", async () => {
+    verifie(await fraisPour("sfax") === 7000, `avant : Sfax paie le tarif fixe (${await fraisPour("sfax")})`);
+    await clic(page, section("livraison").getByText("Tarif par zone"));
+    await section("livraison").locator("#seuil").fill("300");
+    await envoie(section("livraison").getByRole("button", { name: "Enregistrer" }));
+    verifie((await ok()).includes("Réglages enregistrés"), `« ${await ok()} »`);
+    verifie((await section("zones").innerText()).includes("Appliquées"), "les zones s'appliquent");
+    verifie(await fraisPour("sfax") === 10000, `Sfax paie le tarif de la zone « Centre et Sud » (${await fraisPour("sfax")})`);
+    verifie(await fraisPour("tunis", 320000) === 0, "la livraison est offerte dès 300 TND");
+
+    await clic(page, page.locator("#zn-neuve"));
+    await tape(page, "Grand Sud");
+    await clic(page, page.locator("#zf-neuve"));
+    await tape(page, "12,500");
+    await page.locator(".rg-zone-ajout input[name=delai_min]").fill("3");
+    await page.locator(".rg-zone-ajout input[name=delai_max]").fill("6");
+    await envoie(page.getByRole("button", { name: "Ajouter la zone" }));
+    verifie((await ok()).includes("Zone « Grand Sud » ajoutée"), `« ${await ok()} »`);
+    await page.locator("#g-tataouine").selectOption({ label: "Grand Sud" });
+    await page.locator("#g-kebili").selectOption({ label: "Grand Sud" });
+    await envoie(page.getByRole("button", { name: "Enregistrer les gouvernorats" }));
+    verifie((await ok()).includes("2 gouvernorats rattachés"), `« ${await ok()} »`);
+    verifie(await fraisPour("tataouine") === 12500, `Tataouine paie 12,500 (${await fraisPour("tataouine")})`);
+    await pause(800); // (la page défile en douceur jusqu'à la section)
+    await capture(page, "gestion-reglages-zones");
+  });
+
+  await etape("supprimer une zone : retour au tarif fixe", async () => {
+    await envoie(page.getByRole("button", { name: "Supprimer la zone Grand Sud" }));
+    verifie((await ok()).includes("2 gouvernorats au tarif fixe"), `« ${await ok()} »`);
+    verifie(await fraisPour("tataouine") === 7000, "Tataouine retombe sur le tarif fixe, jamais sur zéro");
+    verifie((await section("gouvernorats").innerText()).includes("2 au tarif fixe"), "l'écran le signale");
+  });
+
+  await etape("un moyen de paiement qu'on ne coupe pas, un WhatsApp", async () => {
+    await clic(page, section("paiement").getByText("Paiement à la livraison"));
+    await envoie(section("paiement").getByRole("button", { name: "Enregistrer" }));
+    verifie((await page.getByRole("alert").innerText()).includes("au moins un moyen de paiement"), "le seul moyen de paiement ne se coupe pas");
+    verifie(await section("paiement").getByLabel("Paiement à la livraison").isChecked(), "il reste coché");
+    verifie((await section("paiement").innerText()).includes("Bientôt"), "Konnect : prévu, à activer par SkanEcom");
+    await section("vitrine").locator("#whatsapp").fill("20 123 456");
+    await envoie(section("vitrine").getByRole("button", { name: "Enregistrer" }));
+    verifie(await section("vitrine").locator("#whatsapp").inputValue() === "21620123456", "le numéro est mis au format international");
+  });
+
+  await etape("les réglages sur téléphone", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${C}/gestion/maymar/reglages#t-zones`, { waitUntil: "networkidle" });
+    const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    verifie(!deborde, "rien ne déborde en largeur");
+    await pause(800);
+    await capture(page, "gestion-reglages-telephone");
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
+
+  await etape("remettre Maymar comme au départ", async () => {
+    await page.goto(`${C}/gestion/maymar/reglages`, { waitUntil: "networkidle" });
+    await clic(page, section("commandes").getByText("Compte obligatoire"));
+    await clic(page, section("commandes").getByText("Confirmée par téléphone"));
+    await envoie(section("commandes").getByRole("button", { name: "Enregistrer" }));
+    await clic(page, section("livraison").getByText("Même tarif partout"));
+    await section("livraison").locator("#seuil").fill("");
+    await envoie(section("livraison").getByRole("button", { name: "Enregistrer" }));
+    verifie(await fraisPour("sfax") === 7000 && await fraisPour("tunis", 320000) === 7000, "de nouveau le même tarif partout, jamais offert");
+  });
   await ctx.close();
 }
 
@@ -599,8 +707,18 @@ console.log("\n== 4. Le préparateur d'une autre boutique ==");
     const photo = await posteBrut(ctx, `${new URL(page.url()).pathname}/photos`, { action: "retirer", image_id: "00000000-0000-0000-0000-000000000000" });
     verifie(photo.status === 303 && decodeURIComponent(photo.location.replace(/\+/g, " ")).includes("rôle"),
       `retirer une photo à la main : refusé aussi (${photo.status})`);
-    const r = await posteBrut(ctx, `${new URL(page.url()).pathname}/action`, { action: "fiche", nom: "Pirate", version: "" });
-    verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("rôle"),
+    const fiche = await posteBrut(ctx, `${new URL(page.url()).pathname}/action`, { action: "fiche", nom: "Pirate", version: "" });
+    verifie(fiche.status === 303 && decodeURIComponent(fiche.location.replace(/\+/g, " ")).includes("rôle"),
+      `même en postant le formulaire à la main, la base refuse (${fiche.status})`);
+  });
+
+  await etape("les réglages, en lecture seule", async () => {
+    await page.goto(`${C}/gestion/quincaillerie-demo/reglages`, { waitUntil: "networkidle" });
+    verifie((await page.locator("main").innerText()).includes("Lecture seule"), "l'écran le dit");
+    verifie(await page.getByRole("button", { name: /^Enregistrer/ }).count() === 0, "aucun bouton « Enregistrer »");
+    verifie(await page.locator("fieldset:disabled").count() >= 4, "les champs sont grisés");
+    const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/reglages/enregistrer", { section: "commandes", "compte.obligatoire": "0" });
+    verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("propriétaire"),
       `même en postant le formulaire à la main, la base refuse (${r.status})`);
   });
   await ctx.close();

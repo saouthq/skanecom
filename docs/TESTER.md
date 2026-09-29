@@ -72,7 +72,7 @@ outils/essayer.sh
 
 **Sur téléphone** : dans Chrome ou Edge, F12 puis l'icône téléphone (« Toggle device toolbar »), choisir un modèle et recharger : menu en tiroir, galerie à faire glisser, barre d'achat collante en bas de la fiche. (Un vrai téléphone ne peut pas joindre la vitrine : elle reste sur ta machine.)
 
-**Backoffice** — http://console.localhost:4200, mot de passe `equipe-locale-skanecom` : `appels@maymar.test` (confirmation des commandes) ou `gerant@maymar.test` (propriétaire, double authentification à la première connexion). Les onze commandes de démonstration de Maymar : appeler, confirmer, expédier, noter une livraison ou un refus. Onglet **Catalogue** : filtrer (en vitrine, brouillons, stock bas), ouvrir un produit, enregistrer une réception ou un inventaire, changer un prix, ajouter une couleur, ajouter des photos (glisser-déposer ; les ranger, les légender, en attitrer une à une couleur) ; **Nouveau produit** : un nom, un prix, ses tailles et couleurs, et toutes les déclinaisons sont créées (en brouillon, sans stock).
+**Backoffice** — http://console.localhost:4200, mot de passe `equipe-locale-skanecom` : `appels@maymar.test` (confirmation des commandes) ou `gerant@maymar.test` (propriétaire, double authentification à la première connexion). Les onze commandes de démonstration de Maymar : appeler, confirmer, expédier, noter une livraison ou un refus. Onglet **Catalogue** : filtrer (en vitrine, brouillons, stock bas), ouvrir un produit, enregistrer une réception ou un inventaire, changer un prix, ajouter une couleur, ajouter des photos (glisser-déposer ; les ranger, les légender, en attitrer une à une couleur) ; **Nouveau produit** : un nom, un prix, ses tailles et couleurs, et toutes les déclinaisons sont créées (en brouillon, sans stock). Onglet **Réglages** : ouvrir aux invités, confirmer d'office, passer aux frais par zone, ajouter une zone et lui rattacher des gouvernorats ; le journal à droite garde chaque changement.
 
 **Console** — http://console.localhost:4200, `admin@skanecom.test`, mot de passe `console-locale-skanecom` (base locale seulement). À la première connexion, scanner le QR code avec une application d'authentification (Google Authenticator, Microsoft Authenticator, 1Password…) et saisir le code. Ensuite : créer une boutique et son domaine, l'ouvrir, régler sa marque (gabarit, couleurs, polices, textes) avec l'aperçu, importer un catalogue (le modèle CSV se télécharge depuis la page d'import).
 
@@ -83,7 +83,7 @@ outils/essayer.sh
 Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
 
 ```bash
-outils/base-locale.sh tester                   # 410 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos)
+outils/base-locale.sh tester                   # 440 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages)
 outils/essai-vitrine.sh                        # 25 essais : les boutiques ne se mélangent jamais, le tunnel n'est jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)

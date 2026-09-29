@@ -1,0 +1,394 @@
+import type { Metadata } from "next";
+import { EnTetePage } from "@/components/console/Coquille";
+import { Icone, type NomIcone } from "@/components/console/Icone";
+import { clientSession, exigeMembre } from "@/lib/console/session";
+import { formateMontant } from "@/lib/prix";
+import { quand } from "@/lib/gestion/libelles";
+import { PEUT_MODIFIER } from "@/lib/gestion/catalogue";
+import { lignesJournal, montantChamp, type EtatReglages, type Reglage } from "@/lib/gestion/reglages";
+
+export const metadata: Metadata = { title: "Réglages" };
+
+/* ============================================================================
+   LES RÉGLAGES DE LA BOUTIQUE — « quand t'as un doute, fais les deux et
+   mets-le en réglage ». Chaque alternative est posée côte à côte, avec ce
+   qu'elle change pour la boutique ; une section s'enregistre d'un coup.
+
+   Toute l'équipe lit ; propriétaire et administrateur changent. Chaque
+   changement passe au journal (colonne de droite).
+   ========================================================================== */
+
+function Section({ id, icone, titre, description, children }: { id: string; icone: NomIcone; titre: string; description: string; children: React.ReactNode }) {
+  return (
+    <section className="carte" aria-labelledby={`t-${id}`}>
+      <div className="carte-tete">
+        <div>
+          <h2 id={`t-${id}`} className="carte-titre-icone"><Icone nom={icone} /> {titre}</h2>
+          <p>{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** Deux (ou plus) possibilités côte à côte, en cartes. */
+function Alternative({ nom, valeur, options, legende }: {
+  nom: string; valeur: string; legende: string;
+  options: { valeur: string; titre: string; aide: string; conseil?: string }[];
+}) {
+  return (
+    <fieldset className="choix choix-2 rg-alternative">
+      <legend>{legende}</legend>
+      {options.map((o) => (
+        <label key={o.valeur} className="choix-carte">
+          <input type="radio" name={nom} value={o.valeur} defaultChecked={valeur === o.valeur} />
+          <span>
+            <b>{o.titre}{o.conseil ? <span className="rg-conseil">{o.conseil}</span> : null}</b>
+            <span className="aide">{o.aide}</span>
+          </span>
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+function Case({ cle, valeur, titre, aide }: { cle: string; valeur: boolean; titre: string; aide: string }) {
+  return (
+    <label className="choix-carte">
+      <input type="hidden" name={`champ.${cle}`} value="1" />
+      <input type="checkbox" name={cle} value="1" defaultChecked={valeur} />
+      <span><b>{titre}</b><span className="aide">{aide}</span></span>
+    </label>
+  );
+}
+
+function Pied({ modifie, texte = "Enregistrer" }: { modifie: boolean; texte?: string }) {
+  return modifie ? (
+    <div className="carte-pied">
+      <span className="aide">La boutique en tient compte dans les cinq minutes.</span>
+      <button className="btn btn-primaire">{texte}</button>
+    </div>
+  ) : null;
+}
+
+export default async function Reglages({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ ok?: string; erreur?: string }>;
+}) {
+  const [{ slug }, messages] = await Promise.all([params, searchParams]);
+  const { boutique } = await exigeMembre(slug);
+  const sb = await clientSession();
+  const { data, error } = await sb.rpc("gestion_reglages", { p_boutique_id: boutique.boutique_id });
+  if (error) throw new Error(`Réglages illisibles : ${error.message}`);
+  const e = data as EtatReglages;
+
+  const modifie = PEUT_MODIFIER.includes(boutique.role);
+  const action = `/gestion/${slug}/reglages/enregistrer`;
+  const r = new Map<string, Reglage>(e.reglages.map((x) => [x.cle, x]));
+  const v = (cle: string) => r.get(cle)?.valeur;
+  const parZone = v("livraison.mode_frais") === "zone";
+  const zonesParId = new Map(e.zones.map((z) => [z.id, z.nom]));
+  const gouvParCode = new Map(e.gouvernorats.map((g) => [g.code, g.nom]));
+  const sansZone = e.gouvernorats.filter((g) => !g.zone_id).length;
+  const konnect = r.get("paiement.konnect_actif");
+  const maintenant = new Date();
+  const prefixe = String(v("commande.prefixe_numero") ?? "");
+
+  return (
+    <>
+      <EnTetePage
+        titre="Réglages"
+        description="Ce qui s'applique à la boutique et à ses commandes. Chaque changement est gardé au journal, avec son auteur."
+      />
+
+      <div className="pile">
+        {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
+        {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
+        {!modifie ? (
+          <p className="message">Lecture seule : le propriétaire ou l&apos;administrateur de la boutique change les réglages.</p>
+        ) : null}
+
+        <div className="grille-2">
+          <div className="pile">
+            {/* ---------------- Commandes ---------------- */}
+            <Section id="commandes" icone="commandes" titre="Commandes" description="Qui peut commander, et ce qui se passe une fois la commande passée.">
+              <form action={action} method="post">
+                <input type="hidden" name="section" value="commandes" />
+                <fieldset className="pile rg-corps" disabled={!modifie}>
+                  <Alternative
+                    nom="compte.obligatoire" legende="Pour commander" valeur={v("compte.obligatoire") ? "1" : "0"}
+                    options={[
+                      { valeur: "1", titre: "Compte obligatoire", conseil: "Conseillé", aide: "L'acheteur confirme son numéro par un code SMS. Moins de refus à la livraison." },
+                      { valeur: "0", titre: "Commande en invité", aide: "Plus rapide pour l'acheteur, mais plus de commandes fantaisistes à appeler." },
+                    ]}
+                  />
+                  <Alternative
+                    nom="commande.mode_confirmation" legende="Une fois la commande passée" valeur={String(v("commande.mode_confirmation"))}
+                    options={[
+                      { valeur: "telephonique", titre: "Confirmée par téléphone", conseil: "Conseillé", aide: "Chaque commande attend votre appel avant d'être préparée." },
+                      { valeur: "automatique", titre: "Confirmée d'office", aide: "La commande passe seule en « à préparer ». Pour une clientèle connue." },
+                    ]}
+                  />
+                  <div className="champ rg-court">
+                    <label htmlFor="max_en_attente">Commandes en attente par numéro</label>
+                    <input id="max_en_attente" name="commande.max_en_attente" type="number" min={0} max={50} defaultValue={Number(v("commande.max_en_attente") ?? 3)} />
+                    <span className="aide">Au-delà, un même numéro ne commande plus tant que ses commandes ne sont pas confirmées ou annulées. 0 = sans limite.</span>
+                  </div>
+                  <p className="aide rg-fixe">
+                    <Icone nom="cle" taille={14} /> Numéros de commande : <b className="font-medium">{prefixe || "préfixe automatique"}-{maintenant.getFullYear()}-00001</b> — réglé par SkanEcom.
+                  </p>
+                </fieldset>
+                <Pied modifie={modifie} />
+              </form>
+            </Section>
+
+            {/* ---------------- Livraison ---------------- */}
+            <Section id="livraison" icone="camion" titre="Livraison" description="Ce que paie l'acheteur pour être livré, et par qui.">
+              <form action={action} method="post">
+                <input type="hidden" name="section" value="livraison" />
+                <fieldset className="pile rg-corps" disabled={!modifie}>
+                  <Alternative
+                    nom="livraison.mode_frais" legende="Frais de livraison" valeur={String(v("livraison.mode_frais"))}
+                    options={[
+                      { valeur: "fixe", titre: "Même tarif partout", aide: "Un seul montant, quel que soit le gouvernorat." },
+                      { valeur: "zone", titre: "Tarif par zone", aide: "Grand Tunis, Sahel, Sud… chaque zone son tarif et son délai (ci-dessous)." },
+                    ]}
+                  />
+                  <div className="grille-champs">
+                    <div className="champ">
+                      <label htmlFor="frais_fixes">Tarif de livraison <span className="discret">TND</span></label>
+                      <input id="frais_fixes" name="livraison.frais_fixes_millimes" inputMode="decimal" defaultValue={montantChamp(v("livraison.frais_fixes_millimes"))} placeholder="7,000" />
+                      <span className="aide">{parZone ? "Pour un gouvernorat qui n'est dans aucune zone." : "Partout en Tunisie."}</span>
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="seuil">Livraison offerte dès <span className="discret">TND</span></label>
+                      <input id="seuil" name="livraison.seuil_gratuite_millimes" inputMode="decimal" defaultValue={montantChamp(v("livraison.seuil_gratuite_millimes"))} placeholder="Jamais" />
+                      <span className="aide">D&apos;achats. Vide = jamais offerte.</span>
+                    </div>
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="transporteur">Transporteur <span className="discret">(facultatif)</span></label>
+                    <input id="transporteur" name="livraison.transporteur" defaultValue={String(v("livraison.transporteur") ?? "")} placeholder="Ex. Aramex, First Delivery…" maxLength={60} />
+                    <span className="aide">Affiché à l&apos;acheteur et proposé à l&apos;expédition.</span>
+                  </div>
+                </fieldset>
+                <Pied modifie={modifie} />
+              </form>
+            </Section>
+
+            {/* ---------------- Zones ---------------- */}
+            <section className="carte" aria-labelledby="t-zones" data-eteinte={parZone ? undefined : ""}>
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-zones" className="carte-titre-icone">
+                    <Icone nom="lieu" /> Zones de livraison
+                    {parZone ? <span className="ui-etat ui-etat-point ui-etat-vert">Appliquées</span> : <span className="ui-etat">Non appliquées</span>}
+                  </h2>
+                  <p>{parZone
+                    ? "Chaque zone a son tarif et son délai, annoncés à l'acheteur dès qu'il choisit son gouvernorat."
+                    : "Préparées ici, elles ne s'appliquent qu'avec « Tarif par zone » (ci-dessus)."}</p>
+                </div>
+              </div>
+              <ul className="rg-zones" role="list">
+                {e.zones.map((z) => (
+                  <li key={z.id} className="rg-zone">
+                    <form id={`zone-${z.id}`} action={action} method="post">
+                      <input type="hidden" name="section" value="zone" />
+                      <input type="hidden" name="zone_id" value={z.id} />
+                      <fieldset className="rg-zone-champs" disabled={!modifie}>
+                        <div className="champ rg-zone-nom">
+                          <label htmlFor={`zn-${z.id}`}>Zone</label>
+                          <input id={`zn-${z.id}`} name="nom" defaultValue={z.nom} required maxLength={60} />
+                        </div>
+                        <div className="champ">
+                          <label htmlFor={`zf-${z.id}`}>Tarif <span className="discret">TND</span></label>
+                          <input id={`zf-${z.id}`} name="frais" inputMode="decimal" defaultValue={formateMontant(z.frais)} required />
+                        </div>
+                        <div className="champ rg-delai">
+                          <span className="rg-etiquette" aria-hidden="true">Délai <span className="discret">jours</span></span>
+                          <span className="rg-delai-entrees">
+                            <input aria-label={`${z.nom} : délai au plus tôt, en jours`} name="delai_min" type="number" min={0} max={60} defaultValue={z.delai_min ?? ""} />
+                            <span aria-hidden="true">à</span>
+                            <input aria-label={`${z.nom} : délai au plus tard, en jours`} name="delai_max" type="number" min={0} max={60} defaultValue={z.delai_max ?? ""} />
+                          </span>
+                        </div>
+                        <label className="rg-actif">
+                          <input type="checkbox" name="actif" value="1" defaultChecked={z.actif} /> Active
+                        </label>
+                      </fieldset>
+                    </form>
+                    <div className="rg-zone-pied">
+                      <span className="aide">{z.gouvernorats} gouvernorat{z.gouvernorats > 1 ? "s" : ""}{z.actif ? "" : " · inactive : tarif fixe"}</span>
+                      {modifie ? (
+                        <span className="rg-zone-gestes">
+                          <form action={action} method="post">
+                            <input type="hidden" name="section" value="zone_supprimer" />
+                            <input type="hidden" name="zone_id" value={z.id} />
+                            <button className="btn btn-fantome btn-petit ph-retirer" aria-label={`Supprimer la zone ${z.nom}`}>
+                              <Icone nom="corbeille" taille={14} /> Supprimer
+                            </button>
+                          </form>
+                          <button form={`zone-${z.id}`} className="btn btn-second btn-petit">Enregistrer</button>
+                        </span>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {e.zones.length === 0 ? <p className="discret rg-vide">Aucune zone pour le moment.</p> : null}
+              {modifie ? (
+                <form action={action} method="post" className="rg-zone-ajout">
+                  <input type="hidden" name="section" value="zone" />
+                  <div className="champ rg-zone-nom">
+                    <label htmlFor="zn-neuve">Nouvelle zone</label>
+                    <input id="zn-neuve" name="nom" required maxLength={60} placeholder="Ex. Grand Tunis" />
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="zf-neuve">Tarif <span className="discret">TND</span></label>
+                    <input id="zf-neuve" name="frais" inputMode="decimal" required placeholder="7,000" />
+                  </div>
+                  <div className="champ rg-delai">
+                    <span className="rg-etiquette" aria-hidden="true">Délai <span className="discret">jours</span></span>
+                    <span className="rg-delai-entrees">
+                      <input aria-label="Nouvelle zone : délai au plus tôt, en jours" name="delai_min" type="number" min={0} max={60} placeholder="1" />
+                      <span aria-hidden="true">à</span>
+                      <input aria-label="Nouvelle zone : délai au plus tard, en jours" name="delai_max" type="number" min={0} max={60} placeholder="3" />
+                    </span>
+                  </div>
+                  <button className="btn btn-second"><Icone nom="plus" taille={14} /> Ajouter la zone</button>
+                </form>
+              ) : null}
+            </section>
+
+            {/* ---------------- Gouvernorats ---------------- */}
+            <section className="carte" aria-labelledby="t-gouvernorats" data-eteinte={parZone ? undefined : ""}>
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-gouvernorats" className="carte-titre-icone">
+                    <Icone nom="domaine" /> Gouvernorats
+                    {sansZone ? <span className="ui-etat ui-etat-ambre">{sansZone} au tarif fixe</span> : null}
+                  </h2>
+                  <p>La zone de chacun des 24 gouvernorats. Sans zone, c&apos;est le tarif de livraison ci-dessus : jamais la gratuité par oubli.</p>
+                </div>
+              </div>
+              <form action={action} method="post">
+                <input type="hidden" name="section" value="gouvernorats" />
+                <fieldset className="rg-gouvernorats" disabled={!modifie || e.zones.length === 0}>
+                  <legend className="sr-only">Zone de chaque gouvernorat</legend>
+                  {e.gouvernorats.map((g) => (
+                    <div key={g.code} className="rg-gouv">
+                      <label htmlFor={`g-${g.code}`}>{g.nom}</label>
+                      <select id={`g-${g.code}`} name={`g.${g.code}`} className="entree" defaultValue={g.zone_id ?? ""}>
+                        <option value="">Tarif fixe</option>
+                        {e.zones.map((z) => <option key={z.id} value={z.id}>{z.nom}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </fieldset>
+                {modifie && e.zones.length ? (
+                  <div className="carte-pied">
+                    <span className="aide">Seuls les gouvernorats changés sont enregistrés.</span>
+                    <button className="btn btn-primaire">Enregistrer les gouvernorats</button>
+                  </div>
+                ) : null}
+              </form>
+            </section>
+
+            {/* ---------------- Paiement ---------------- */}
+            <Section id="paiement" icone="billet" titre="Paiement" description="Comment l'acheteur règle sa commande.">
+              <form action={action} method="post">
+                <input type="hidden" name="section" value="paiement" />
+                <fieldset className="choix rg-corps" disabled={!modifie}>
+                  <legend className="sr-only">Moyens de paiement</legend>
+                  <Case cle="paiement.cod_actif" valeur={Boolean(v("paiement.cod_actif"))} titre="Paiement à la livraison"
+                    aide="L'acheteur paie le livreur en espèces. Toujours au moins un moyen de paiement actif." />
+                  {konnect?.module_actif ? (
+                    <Case cle="paiement.konnect_actif" valeur={Boolean(konnect.valeur)} titre="Paiement en ligne (Konnect)"
+                      aide="Carte bancaire ou e-dinar, sur le compte marchand de la boutique." />
+                  ) : (
+                    <div className="choix-carte rg-indispo" aria-disabled="true">
+                      <input type="checkbox" disabled aria-label="Paiement en ligne (Konnect), non disponible" />
+                      <span>
+                        <b>Paiement en ligne (Konnect) <span className="ui-etat">Bientôt</span></b>
+                        <span className="aide">Prévu, mais à activer par SkanEcom une fois le compte marchand de la boutique ouvert.</span>
+                      </span>
+                    </div>
+                  )}
+                </fieldset>
+                <Pied modifie={modifie} />
+              </form>
+            </Section>
+
+            {/* ---------------- Vitrine et contact ---------------- */}
+            <Section id="vitrine" icone="boutique" titre="Vitrine et contact" description="Ce que la boutique affiche, et comment la joindre.">
+              <form action={action} method="post">
+                <input type="hidden" name="section" value="vitrine" />
+                <fieldset className="pile rg-corps" disabled={!modifie}>
+                  <div className="choix">
+                    <Case cle="catalogue.afficher_prix_barres" valeur={Boolean(v("catalogue.afficher_prix_barres"))} titre="Afficher les prix barrés"
+                      aide="L'ancien prix, barré, à côté du prix payé — pour les déclinaisons qui en ont un." />
+                  </div>
+                  <div className="grille-champs">
+                    <div className="champ">
+                      <label htmlFor="whatsapp">WhatsApp</label>
+                      <input id="whatsapp" name="contact.whatsapp" inputMode="tel" defaultValue={String(v("contact.whatsapp") ?? "")} placeholder="21612345678" />
+                      <span className="aide">Indicatif compris ; un numéro à 8 chiffres reçoit le 216.</span>
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="telephone">Téléphone de la boutique</label>
+                      <input id="telephone" name="contact.telephone" inputMode="tel" defaultValue={String(v("contact.telephone") ?? "")} placeholder="21671234567" />
+                      <span className="aide">Affiché sur la vitrine.</span>
+                    </div>
+                  </div>
+                </fieldset>
+                <Pied modifie={modifie} />
+              </form>
+            </Section>
+          </div>
+
+          <aside className="pile rg-aside">
+            <section className="carte" aria-labelledby="t-journal">
+              <h2 id="t-journal" className="carte-titre-icone"><Icone nom="journal" /> Journal des réglages</h2>
+              {e.journal.length === 0 ? (
+                <p className="discret mt-3 text-petit">Aucun changement : la boutique suit les réglages de départ de SkanEcom.</p>
+              ) : (
+                <ol className="bo-journal mt-3">
+                  {e.journal.map((j, i) => (
+                    <li key={`${j.le}-${i}`}>
+                      <span className="bo-journal-point" aria-hidden="true" />
+                      <span className="bo-journal-texte rg-lignes">
+                        {lignesJournal(j, zonesParId, gouvParCode).map((l, k) => <span key={k}>{l}</span>)}
+                      </span>
+                      <span className="bo-journal-meta">{j.auteur ?? "SkanEcom"} · {quand(j.le, maintenant)}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+            <nav className="carte rg-sommaire" aria-label="Sections des réglages">
+              <ol>
+                {[
+                  ["commandes", "Commandes", "commandes"],
+                  ["livraison", "Livraison", "camion"],
+                  ["zones", "Zones de livraison", "lieu"],
+                  ["gouvernorats", "Gouvernorats", "domaine"],
+                  ["paiement", "Paiement", "billet"],
+                  ["vitrine", "Vitrine et contact", "boutique"],
+                  ["journal", "Journal", "journal"],
+                ].map(([id, titre, icone]) => (
+                  <li key={id}>
+                    <a href={`#t-${id}`}><Icone nom={icone as NomIcone} taille={15} /> {titre}</a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </aside>
+        </div>
+      </div>
+    </>
+  );
+}

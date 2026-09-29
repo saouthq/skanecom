@@ -389,3 +389,69 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .depot-barre { position: absolute; inset-inline: .75rem; inset-block-end: .75rem; block-size: 4px; border-radius: 999px; background: rgb(79 70 229 / .15); overflow: hidden; }
 .depot-barre > span { display: block; block-size: 100%; border-radius: inherit; background: var(--ui-accent); transition: inline-size .25s ease; }
 .depot-note { font-size: .8125rem; color: var(--ui-ambre); }
+
+/* ---- Réglages de la boutique ---- */
+.rg-corps { gap: 1.25rem; border: 0; padding: 0; margin: 0; min-inline-size: 0; }
+.rg-corps:disabled .choix-carte { cursor: default; }
+.rg-alternative > legend { font-size: .875rem; font-weight: 600; color: var(--ui-texte); margin-block-end: .625rem; }
+.rg-alternative .choix-carte { align-items: flex-start; }
+.rg-conseil {
+  margin-inline-start: .5rem; padding: .0625rem .4375rem; border-radius: 999px; vertical-align: 1px;
+  font-size: .6875rem; font-weight: 600; color: var(--ui-vert); background: var(--ui-vert-fond); box-shadow: inset 0 0 0 1px var(--ui-vert-bord);
+}
+.rg-court input { max-inline-size: 8rem; }
+.rg-fixe { display: flex; align-items: center; gap: .5rem; padding: .625rem .75rem; border-radius: var(--ui-r); background: var(--ui-doux); }
+.grille-champs { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+.carte[data-eteinte] .rg-zones, .carte[data-eteinte] .rg-gouvernorats { opacity: .72; }
+.carte-titre-icone .ui-etat { margin-inline-start: .5rem; }
+
+.rg-zones { display: grid; }
+.rg-zone { display: grid; gap: .75rem; padding-block: 1rem; border-block-end: 1px solid var(--ui-bord-leger); }
+.rg-zone:first-child { padding-block-start: 0; }
+.rg-zone-champs, .rg-zone-ajout {
+  display: grid; gap: .75rem; align-items: end; border: 0; padding: 0; margin: 0; min-inline-size: 0;
+  grid-template-columns: minmax(9rem, 2fr) minmax(6rem, 1fr) minmax(9rem, 1.3fr) auto;
+}
+.rg-zone-ajout { grid-template-columns: minmax(9rem, 2fr) minmax(6rem, 1fr) minmax(9rem, 1.3fr) auto; padding-block-start: 1rem; }
+.rg-etiquette { font-size: .8125rem; font-weight: 500; }
+.rg-delai { display: grid; gap: .375rem; }
+.rg-delai-entrees { display: flex; align-items: center; gap: .5rem; color: var(--ui-texte-3); font-size: .8125rem; }
+.rg-delai-entrees input { inline-size: 100%; min-inline-size: 0; }
+.rg-actif { display: inline-flex; align-items: center; gap: .5rem; block-size: var(--ui-h); font-size: .875rem; font-weight: 500; white-space: nowrap; }
+.rg-zone-pied { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.rg-zone-gestes { display: inline-flex; align-items: center; gap: .5rem; }
+.rg-vide { padding-block: .5rem 0; }
+
+.rg-gouvernorats {
+  display: grid; gap: .5rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  border: 0; padding: 0; margin: 0; min-inline-size: 0;
+}
+.rg-gouv { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); align-items: center; gap: .75rem; }
+.rg-gouv label { font-size: .875rem; font-weight: 500; }
+.rg-gouv select { block-size: var(--ui-h-s); font-size: .8125rem; }
+.rg-gouv:has(option[value=""]:checked) label::after { content: "·"; margin-inline-start: .375rem; color: var(--ui-ambre); font-weight: 700; }
+
+.rg-indispo { opacity: .75; cursor: default; background: var(--ui-survol); }
+.rg-indispo b .ui-etat { margin-inline-start: .375rem; vertical-align: 1px; }
+.rg-lignes { display: grid; gap: .125rem; }
+.rg-aside { align-self: stretch; }
+.rg-sommaire { padding: .5rem; }
+.rg-sommaire ol { display: grid; gap: 1px; }
+.rg-sommaire a {
+  display: flex; align-items: center; gap: .625rem; padding: .4375rem .625rem; border-radius: var(--ui-r-s);
+  font-size: .875rem; font-weight: 500; color: var(--ui-texte-2); text-decoration: none;
+}
+.rg-sommaire a:hover { background: var(--ui-doux); color: var(--ui-texte); }
+.rg-sommaire .icone { color: var(--ui-texte-3); }
+[id^="t-"] { scroll-margin-block-start: 1.5rem; }
+@media (min-width: 1100px) {
+  /* En flex (pas en grille) : le sommaire colle sur toute la hauteur de la colonne. */
+  .rg-aside { display: flex; flex-direction: column; }
+  .rg-sommaire { position: sticky; inset-block-start: 1.5rem; }
+}
+@media (max-width: 1099px) { .rg-sommaire { display: none; } }
+
+@media (max-width: 699px) {
+  .rg-zone-champs, .rg-zone-ajout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .rg-zone-nom { grid-column: 1 / -1; }
+}

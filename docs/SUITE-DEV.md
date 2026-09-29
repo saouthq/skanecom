@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 410 tests (dont la vitrine, la console, l'import, le tunnel de commande, le backoffice, les équipes, le catalogue et les photos), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 440 tests (dont la vitrine, la console, l'import, le tunnel de commande, le backoffice, les équipes, le catalogue, les photos et les réglages), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -53,6 +53,7 @@
    - **catalogue et stock (B1, B2) : faits le 29/09** (migration 11) — liste des produits avec recherche (nom, marque, référence) et filtres (en vitrine, brouillons, stock bas, en rupture) ; fiche d'un produit : chaque déclinaison avec son prix, son prix barré, son seuil d'alerte et sa mise en vente, et son stock tenu par **réception, inventaire ou casse** (jamais une saisie directe : chaque pièce passe au journal, avec son auteur) ; une déclinaison de plus (les valeurs déjà utilisées proposées à la saisie, la référence proposée) ; la fiche elle-même (nom, description, marque, rayon, vitrine, mise en avant), refusée si un collègue l'a modifiée entre-temps ; un produit neuf en brouillon, ses déclinaisons calculées depuis ses axes (taille × couleur…) ; les trente derniers mouvements de stock. Propriétaire et administrateur modifient tout, la préparation tient le stock, la confirmation et la lecture regardent ;
    - **photos des produits : faites le 29/09** (migration 12) — sur la fiche, glisser ou choisir ses photos (sur téléphone : l'appareil ou la galerie) ; le navigateur les **réduit avant l'envoi** (2 000 px, WebP : une photo de téléphone de 5 Mo devient 300 Ko, et perd le lieu de la prise de vue), la progression s'affiche ; le serveur vérifie le contenu (JPEG, PNG ou WebP d'après les premiers octets, 10 Mo au plus), dépose le fichier sous `<boutique>/produits/<produit>/`, puis l'inscrit en base ; douze photos au plus. Ranger (avancer, reculer, mettre en premier : la première est celle des listes), légender (texte lu aux personnes aveugles et par Google), attitrer à une déclinaison, retirer (le fichier quitte R2 si rien d'autre ne s'en sert). Propriétaire et administrateur ; les autres voient ;
    - **à faire pour la mise en ligne** : créer le bucket R2 `skanecom-fichiers` (liaison `FICHIERS` du Worker, `cloudflare.config.ts`) et lui donner un domaine public (`NEXT_PUBLIC_FICHIERS_URL`). En local, le relais en tient lieu (`.outils/fichiers/`, vidé avec la base) ;
+   - **réglages de la boutique : faits le 29/09** (migration 13) — la règle « fais les deux et mets-le en réglage » a son écran : compte obligatoire ou commande en invité, confirmation par téléphone ou d'office, commandes en attente par numéro ; frais identiques partout ou par zone, tarif, livraison offerte dès un montant, transporteur ; **zones** (tarif, délai, active) et **rattachement des 24 gouvernorats** (sans zone : le tarif fixe, jamais la gratuité) ; paiement à la livraison (impossible de couper le seul moyen de paiement), Konnect prévu mais à activer par SkanEcom (module) ; prix barrés, WhatsApp et téléphone (mis au format international). Chaque alternative est posée côte à côte avec ce qu'elle change ; chaque changement passe au **journal d'audit** (avant, après, auteur), affiché à côté. Le préfixe des numéros de commande reste à la plateforme. Propriétaire et administrateur ; les autres lisent ;
    - reste : clients (B6), le propriétaire qui gère son équipe lui-même (B7 ; la console le fait déjà, C4), livreurs et bordereau (B5), export (B8), notification des nouvelles commandes.
 7. **Maymar migrée** comme première boutique ; domaine `maymar.tn` à l'étape 2.
 
@@ -62,7 +63,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 410 tests pgTAP
+outils/base-locale.sh tester    # les 440 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 

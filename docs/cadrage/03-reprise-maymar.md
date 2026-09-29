@@ -241,6 +241,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les photos des produits** (migration 12, `20260929101100_gestion_photos.sql`, 24 tests dans `supabase/tests/14_photos.sql`) : `gestion_ajouter_photo` (sous `<slug>/produits/`, douze au plus), `gestion_modifier_photo` (légende, déclinaison du même produit), `gestion_deplacer_photo` (avant, après, en première ; ordre sans trou), `gestion_retirer_photo` (rend le chemin, et s'il n'est plus utilisé dans la boutique). Les fichiers : liaison R2 `FICHIERS` en production, le relais local en développement (`application/src/lib/gestion/fichiers.ts`).
 
+**Puis les réglages de la boutique** (migration 13, `20260929101200_gestion_reglages.sql`, 30 tests dans `supabase/tests/15_reglages.sql`) : colonne `modifiable_boutique` au catalogue des réglages (le préfixe des numéros reste à la plateforme) ; `gestion_reglages` (valeurs, défauts, modules, zones, gouvernorats, journal), `gestion_enregistrer_reglages` (valeur égale au défaut = ligne effacée ; bornes ; au moins un moyen de paiement ; journal d'audit), `gestion_enregistrer_zone`, `gestion_supprimer_zone`, `gestion_rattacher_gouvernorats`.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.
