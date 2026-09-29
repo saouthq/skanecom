@@ -482,6 +482,15 @@ begin
         from page pg
         join public.vitrine_produits vp on vp.boutique_id = p_boutique_id and vp.id = pg.id), '[]'::jsonb),
     'facettes', jsonb_build_object(
+      -- Les axes présents dans le rayon, avec leur libellé, dans l'ordre voulu
+      -- par le backoffice (position des axes sur les fiches).
+      'axes', coalesce((
+        select jsonb_agg(jsonb_build_object('cle', a.cle, 'label_fr', a.label_fr, 'label_ar', a.label_ar)
+                         order by a.position, a.cle)
+          from (select o.cle, min(o.label_fr) as label_fr, min(o.label_ar) as label_ar, min(o.position) as position
+                  from public.produit_options o
+                 where o.boutique_id = p_boutique_id and o.produit_id in (select id from dans_rayon)
+                 group by o.cle) a), '[]'::jsonb),
       'options', coalesce((
         select jsonb_object_agg(x.cle, x.valeurs)
           from (select v.cle,
@@ -505,3 +514,32 @@ $$;
 
 comment on function public.liste_produits(uuid, jsonb, text, integer, integer) is
   'Catalogue public d''une boutique : filtres sur n''importe quel axe de variante, rayon et sous-rayons, stock, prix, recherche (nom, marque, description, SKU, fautes de frappe) ; tri, pagination, facettes. Sous la RLS de l''appelant.';
+
+
+-- ---------------------------------------------------------------------
+-- L'annuaire des domaines, pour l'instantané embarqué dans la vitrine
+-- ---------------------------------------------------------------------
+-- La vitrine résout le domaine de chaque requête. Si elle devait demander à
+-- la base à chaque fois, une panne de la base rendrait TOUTES les boutiques
+-- injoignables, même leurs pages en cache. Elle embarque donc un instantané
+-- de l'annuaire, figé au déploiement par outils/annuaire.mjs, et n'interroge
+-- la base (public.resoudre_domaine) que pour un domaine qu'elle ne connaît
+-- pas encore.
+-- Réservée à la clé de service : la liste complète des domaines est la liste
+-- de nos clients.
+create function public.annuaire_domaines()
+returns table (hote text, slug text)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select d.hote, b.slug
+  from plateforme.domaines d
+  join plateforme.boutiques b on b.id = d.boutique_id
+  where b.statut = 'active'
+  order by d.hote;
+$$;
+
+revoke execute on function public.annuaire_domaines() from public, anon, authenticated;
+grant  execute on function public.annuaire_domaines() to service_role;

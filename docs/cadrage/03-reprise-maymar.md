@@ -201,16 +201,22 @@
 
 ## 7. État de la reprise (29/09/2026)
 
-**Construit** (`supabase/migrations/`, 4 migrations) et **vérifié** par 124 tests pgTAP (`supabase/tests/`), qui tournent en CI sur l'image Supabase et sur la base locale simulée :
+**Construit** (`supabase/migrations/`, 5 migrations) et **vérifié** par 163 tests pgTAP (`supabase/tests/`), qui tournent en CI sur l'image Supabase et sur la base locale simulée :
 
 | Partie | Contenu |
 |---|---|
 | Plan de contrôle (`plateforme`, hors de l'API) | `boutiques`, `domaines`, `membres`, `administrateurs`, `modules`, `modules_actifs`, `reglages_catalogue`, `journal_audit` |
 | Autorisations (`private`) | `mes_boutiques(roles)`, `est_membre`, `boutiques_visibles`, `mes_clients`, `est_administrateur` |
 | Données des boutiques (`public`) | `reglages`, `zones_livraison`, `zones_gouvernorats`, `categories`, `produits`, `produit_options`, `variantes`, `produit_images`, `stock_mouvements`, `clients`, `adresses`, `compteurs_commandes`, `commandes`, `commande_lignes`, `commande_evenements` ; référentiel partagé `gouvernorats` |
-| API (`public`) | `resoudre_domaine`, `configuration_publique`, `frais_livraison_millimes`, `mes_acces`, `reglages_boutique`, `inscrire_client`, `mouvement_stock` |
+| Vitrine (`public`, migration 05) | `themes` (couleurs, polices, logo, sections, validés par la base), vue `vitrine_produits`, `boutique_publique` (tout le cadre d'une page en un appel), `liste_produits` (filtres, tri, pagination et facettes en base), fichiers rangés sous `<slug>/…` |
+| API (`public`) | `resoudre_domaine`, `annuaire_domaines` (clé de service), `configuration_publique`, `frais_livraison_millimes`, `mes_acces`, `reglages_boutique`, `inscrire_client`, `mouvement_stock` |
 
-Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en partie : index composites, et seules les boutiques actives sont lisibles ; les limites de débit de la façade restent à faire. Les pièges 8 à 12 concernent l'application.
+Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en partie : index composites, et seules les boutiques actives sont lisibles ; les limites de débit de la façade restent à faire. Dans la vitrine (`application/`), les pièges 8 à 12 sont corrigés :
+- piège 8 : réécriture `/_b/<boutique>/…` ;
+- piège 9 : plus aucune valeur Maymar dans le code, tout vient de la boutique ;
+- piège 10 : `generateStaticParams` partout, et filtres dans le chemin ;
+- piège 11 : catalogue en SQL ;
+- piège 12 : fichiers sur R2.
 
 **Choix faits en construisant** :
 - **Plus de table `profils`.** Un compte (`auth.users`) est une identité globale. Chaque boutique a sa fiche `clients` pour ce compte : le même acheteur a deux fiches chez deux commerçants, et aucun ne voit l'autre. Avec la connexion par code SMS, un acheteur qui s'inscrit sur une deuxième boutique ne reçoit jamais « compte déjà existant ».
@@ -223,5 +229,4 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
-- avec le thème : `theme` ;
 - avec le tunnel de commande et le backoffice : la fonction de création de commande, `confirmations`, `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

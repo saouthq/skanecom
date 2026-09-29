@@ -4,7 +4,7 @@
 begin;
 \ir outils.psql
 
-select plan(36);
+select plan(37);
 
 -- ---------------------------------------------------------------------
 -- Catalogue d'essai plus riche dans A : rayons sur deux niveaux, un produit
@@ -81,6 +81,8 @@ select is(tests.facette(tests.liste('{"options": {"couleur": ["Noir"]}}'), 'tail
   'une option qui ne donnerait rien est renvoyée à 0, pour s''afficher éteinte');
 select is(tests.facette(tests.liste('{"options": {"couleur": ["Noir"]}}'), 'taille', '75'), 1,
   'en Noir, 1 modèle en 75');
+select is((select array_agg(e ->> 'cle' order by n) from jsonb_array_elements(tests.liste() -> 'facettes' -> 'axes') with ordinality x(e, n)),
+  array['couleur'], 'les axes déclarés sur les fiches du rayon, avec leur libellé');
 select is((tests.liste() -> 'facettes' -> 'prix')::text, '{"max": 250000, "min": 90000}', 'bornes de prix du rayon');
 select is(
   (select array_agg((e ->> 'slug') || '=' || (e ->> 'compte') order by e ->> 'slug') from jsonb_array_elements(tests.liste('{"rayon": "sacs"}') -> 'facettes' -> 'rayons') e),

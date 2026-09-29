@@ -1,0 +1,49 @@
+{
+  "name": "skanecom-application",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite dev --port 3001",
+    "build": "vite build",
+    "start": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "annuaire": "node ../outils/annuaire.mjs",
+    "deploy:response-store": "cf deploy --prebuilt --mode production --worker skanecom-application-response-store",
+    "deploy": "vinext-cloudflare deploy"
+  },
+  "dependencies": {
+    "@cloudflare/workers-response-store": "^1.0.0",
+    "@supabase/supabase-js": "^2.112.2",
+    "@vinext/cloudflare": "^1.0.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-server-dom-webpack": "^19.3.0",
+    "vinext": "^1.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^2.0.0-beta.sha-ad79608dd",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-rsc": "^0.5.35",
+    "cf": "^1.0.0-beta.5",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "8.3.0"
+  },
+  "packageManager": "bun@1.3.14",
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "type": "module"
+}

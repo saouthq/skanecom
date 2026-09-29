@@ -1,0 +1,84 @@
+# Vitrine SkanEcom : vérification des types, compilation pour Cloudflare
+# Workers, puis essai de bout en bout — les deux boutiques du jeu de démo,
+# servies par la même application, ne se mélangent jamais
+# (outils/essai-vitrine.sh).
+#
+# La chaîne est la même que sur le poste d'un développeur : base locale
+# simulée, API locale (PostgREST), application compilée et lancée dans workerd.
+name: Vitrine
+
+on:
+  push:
+    paths:
+      - "application/**"
+      - "supabase/**"
+      - "outils/**"
+      - ".github/workflows/vitrine.yml"
+  pull_request:
+    paths:
+      - "application/**"
+      - "supabase/**"
+      - "outils/**"
+      - ".github/workflows/vitrine.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vitrine:
+    name: Types, compilation et essai de bout en bout
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Installer Postgres 16 et pgTAP
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-16 postgresql-16-pgtap
+          sudo systemctl stop postgresql || true
+
+      - name: Base locale et API locale
+        env:
+          PG_BIN: /usr/lib/postgresql/16/bin
+        run: |
+          outils/base-locale.sh reinit
+          outils/api-locale.sh demarrer
+
+      - name: Dépendances
+        working-directory: application
+        run: bun install --frozen-lockfile
+
+      - name: Vérification des types
+        working-directory: application
+        run: bun run typecheck
+
+      - name: Compilation
+        working-directory: application
+        run: |
+          set -a; . ../.outils/api-locale.env; set +a
+          bun run build
+
+      - name: Essai de bout en bout
+        working-directory: application
+        run: |
+          set -a; . ../.outils/api-locale.env; set +a
+          setsid bun run start --port 4200 > ../.outils/vitrine.log 2>&1 < /dev/null &
+          for _ in $(seq 1 60); do
+            curl -s -o /dev/null -H "Host: maymar.localhost" http://127.0.0.1:4200/ && break
+            sleep 1
+          done
+          ../outils/essai-vitrine.sh http://127.0.0.1:4200
+
+      - name: Journal de la vitrine en cas d'échec
+        if: failure()
+        run: tail -60 .outils/vitrine.log || true

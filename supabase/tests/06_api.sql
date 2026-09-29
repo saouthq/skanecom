@@ -4,7 +4,7 @@
 begin;
 \ir outils.psql
 
-select plan(20);
+select plan(22);
 
 -- ---------------------------------------------------------------------
 -- Vitrine (visiteur anonyme)
@@ -31,6 +31,8 @@ select throws_ok('select * from plateforme.boutiques', '42501', null,
   'un visiteur ne lit pas plateforme.boutiques');
 select throws_ok(format($$ select private.reglage(%L, 'commande.prefixe_numero') $$, tests.id('A')), '42501', null,
   'un visiteur n''appelle pas private.reglage');
+select throws_ok('select * from public.annuaire_domaines()', '42501', null,
+  'un visiteur ne lit pas l''annuaire des domaines (la liste de nos clients)');
 
 -- ---------------------------------------------------------------------
 -- Backoffice
@@ -78,6 +80,9 @@ select throws_ok(format($$ select public.mouvement_stock(%L, %L, 1, 'reception')
   'P0002', null, 'une variante de B est introuvable depuis A');
 
 reset role; select tests.service();
+select set_eq($$ select hote, slug from public.annuaire_domaines() where slug like 'essai-%' $$,
+  $$ values ('essai-a.test'::text, 'essai-a'::text), ('www.essai-a.test', 'essai-a'), ('essai-b.test', 'essai-b') $$,
+  'l''annuaire donne les domaines des boutiques actives, pas ceux d''une boutique suspendue');
 select is(public.mouvement_stock(tests.id('B'), tests.id('variante_b'), 10, 'correction', 'Inventaire'), 12,
   'la console (service_role) saisit un inventaire');
 
