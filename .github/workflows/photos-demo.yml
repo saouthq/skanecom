@@ -43,7 +43,7 @@ jobs:
       - name: Planches contact
         if: steps.quoi.outputs.candidats == 'oui' || github.event_name == 'workflow_dispatch'
         run: |
-          sudo apt-get install -y -q imagemagick > /dev/null
+          command -v montage > /dev/null || { sudo apt-get update -q > /dev/null && sudo apt-get install -y -q imagemagick > /dev/null; }
           node outils/photos-demo/photos.mjs candidats
 
       - name: Photos retenues
