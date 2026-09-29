@@ -224,6 +224,54 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     await capture(page, "gestion-geste-perime");
     await poste2.close();
   });
+
+  await etape("la veille : le compteur, et l'alerte d'une nouvelle commande", async () => {
+    // Un poste où les notifications sont permises ; on garde trace de celles
+    // que la page crée.
+    const veille = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR", permissions: ["notifications"] });
+    await veille.addCookies(await ctx.cookies());
+    await veille.addInitScript(() => {
+      const N = window.Notification;
+      window.__notifs = [];
+      window.Notification = class extends N {
+        constructor(titre, options) {
+          super(titre, options);
+          window.__notifs.push(`${titre} — ${options?.body ?? ""}`);
+        }
+      };
+    });
+    const p = await veille.newPage();
+    t.espion(p, "veille", attendue);
+    await p.goto(`${C}/gestion/maymar`, { waitUntil: "networkidle" });
+    const aConfirmer = Number((await p.locator(".bo-etapes a", { hasText: "À confirmer" }).innerText()).match(/\d+/)?.[0] ?? -1);
+    await p.locator(".app-cote .app-nav-compte").waitFor({ timeout: 5000 });
+    verifie(Number(await p.locator(".app-cote .app-nav-compte").innerText()) === aConfirmer, `le compteur de la navigation : ${aConfirmer} à confirmer`);
+    verifie((await p.title()).startsWith(`(${aConfirmer}) `), `et le titre de l'onglet : « ${await p.title()} »`);
+    verifie((await p.locator(".bo-alertes").innerText()).includes("Alertes activées"), "les alertes sont activées (permission donnée)");
+
+    // Une commande arrive (écrite directement en base, comme la vitrine le ferait).
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const entetes = { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json", prefer: "return=representation" };
+    const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/commandes`, {
+      method: "POST", headers: entetes,
+      body: JSON.stringify({ boutique_id: "00000000-0000-4000-8000-000000000001", contact_nom: "Salma Ben Ali", contact_telephone: "+21622333444",
+        livraison_ligne1: "5 rue de Carthage", livraison_ville: "Tunis", livraison_gouvernorat: "tunis", total_millimes: 189000 }),
+    });
+    const [nouvelle] = r.ok ? await r.json() : [];
+    verifie(Boolean(nouvelle?.numero), `une nouvelle commande arrive : ${nouvelle?.numero ?? r.status}`);
+    // (sans attendre les 45 s : on revient sur l'onglet — au moins 10 s après
+    // la dernière question, la veille ne se répète pas plus souvent)
+    await pause(10500);
+    await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    await p.waitForFunction((n) => Number(document.querySelector(".app-cote .app-nav-compte")?.textContent) === n, aConfirmer + 1, { timeout: 5000 }).catch(() => {});
+    verifie(Number(await p.locator(".app-cote .app-nav-compte").innerText()) === aConfirmer + 1, "le compteur passe à un de plus, sans recharger la page");
+    const notifs = await p.evaluate(() => window.__notifs);
+    verifie(notifs.length === 1 && notifs[0].includes(nouvelle?.numero) && notifs[0].includes("Salma Ben Ali") && notifs[0].includes("189,000 TND"),
+      `une notification : « ${notifs[0] ?? "aucune"} »`);
+    await capture(p, "gestion-veille");
+    if (nouvelle?.id) await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/commandes?id=eq.${nouvelle.id}`, { method: "DELETE", headers: entetes });
+    await veille.close();
+  });
   await ctx.close();
 }
 

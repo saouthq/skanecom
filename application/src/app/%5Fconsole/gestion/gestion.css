@@ -503,6 +503,15 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .bdx:nth-child(even) { break-after: page; }
 }
 
+/* ---- La veille : compteur des commandes à confirmer, alertes ---- */
+.console .app-nav-compte {
+  margin-inline-start: auto; min-inline-size: 1.25rem; block-size: 1.25rem; padding-inline: .375rem; border-radius: 999px;
+  display: inline-grid; place-items: center; font-size: .6875rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: var(--ui-ambre); color: #fff;
+}
+.bo-alertes { display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; font-weight: 500; color: var(--ui-vert); white-space: nowrap; }
+.bo-alertes.discret { color: var(--ui-texte-3); }
+
 /* ---- Équipe ---- */
 .eq-vous { margin-inline-start: .5rem; vertical-align: 1px; }
 .eq-ailleurs { align-self: center; white-space: nowrap; }

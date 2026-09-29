@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
+import { AlertesCommandes } from "@/components/console/Veille";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { lieu } from "@/lib/commande";
 import {
@@ -95,6 +96,7 @@ export default async function Commandes({
               </span>
               <button type="submit" className="btn btn-second">Chercher</button>
             </form>
+            {etape.cle === "a_confirmer" ? <AlertesCommandes /> : null}
             {etape.cle === "a_preparer" && liste.compteurs.a_preparer > 0 ? (
               <Link href={`/gestion/${slug}/bordereaux?etape=a_preparer`} className="btn btn-primaire">
                 <Icone nom="fichier" /> Bordereaux ({liste.compteurs.a_preparer})

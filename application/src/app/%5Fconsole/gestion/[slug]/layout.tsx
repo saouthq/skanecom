@@ -1,5 +1,6 @@
 import { exigeMembre } from "@/lib/console/session";
 import { Coquille } from "@/components/console/Coquille";
+import { CompteurCommandes } from "@/components/console/Veille";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 
 /* ============================================================================
@@ -32,7 +33,10 @@ export default async function BackofficeBoutique({
         {
           titre: "Boutique",
           liens: [
-            { href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes", exact: true, aussi: [`/gestion/${slug}/commandes/`] },
+            {
+              href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes", exact: true, aussi: [`/gestion/${slug}/commandes/`],
+              extra: <CompteurCommandes slug={slug} />,
+            },
             { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
             { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },
             ...(boutique.role === "proprietaire" || boutique.role === "admin"

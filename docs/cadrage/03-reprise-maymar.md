@@ -253,6 +253,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les bordereaux de livraison** (migration 18, `20260929101700_gestion_bordereaux.sql`, 7 tests dans `supabase/tests/20_bordereaux.sql`) : `gestion_bordereaux(boutique, numéros | étape)` — expéditeur, destinataire, contenu, montant — pour toute l'équipe.
 
+**Puis la veille des nouvelles commandes** (migration 19, `20260929101800_gestion_veille.sql`, 4 tests dans `supabase/tests/21_veille.sql`) : `gestion_veille(boutique)` — commandes à confirmer, dernière arrivée — pour le compteur et les alertes du backoffice ouvert.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

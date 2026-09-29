@@ -8,7 +8,15 @@ import { LienNav, MenuMobile } from "./LienNav";
    contenu se pose sur un panneau clair, décollé du fond.
    ========================================================================== */
 
-export type LienCoquille = { href: string; libelle: string; icone: NomIcone; exact?: boolean; aussi?: string[] };
+export type LienCoquille = {
+  href: string;
+  libelle: string;
+  icone: NomIcone;
+  exact?: boolean;
+  aussi?: string[];
+  /** Après le libellé : un compteur tenu à jour (la veille des commandes). */
+  extra?: React.ReactNode;
+};
 export type GroupeCoquille = { titre?: string; liens: LienCoquille[] };
 
 /** Les initiales d'un nom ou d'une adresse : « appels@maymar.test » → « AP ». */
@@ -31,6 +39,7 @@ function Navigation({ groupes }: { groupes: GroupeCoquille[] }) {
                 <LienNav href={l.href} exact={l.exact} aussi={l.aussi} className="app-nav-lien">
                   <Icone nom={l.icone} taille={16} />
                   <span>{l.libelle}</span>
+                  {l.extra}
                 </LienNav>
               </li>
             ))}

@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 510 tests (dont la vitrine, la console, l'import, le tunnel de commande, le backoffice, les équipes, le catalogue, les photos, les réglages, les clients et les pages légales), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 514 tests (dont la vitrine, la console, l'import, le tunnel de commande, le backoffice, les équipes, le catalogue, les photos, les réglages, les clients et les pages légales), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -59,7 +59,8 @@
    - **le propriétaire gère son équipe (B7) : fait le 29/09** (migration 16) — onglet Équipe du backoffice : inviter par adresse e-mail (lien à transmettre par WhatsApp ; un compte déjà confirmé entre avec son mot de passe), changer un rôle, retirer ou rendre l'accès, remettre un lien. Les règles vivent en base à un seul endroit (`private.equipe_*`), communes avec la console : au moins un propriétaire actif, pas de doublon, chaque geste au journal. **Précaution** : un lien d'accès fixe le mot de passe du compte ; depuis un backoffice, il n'est remis qu'aux comptes qui n'appartiennent qu'à cette boutique (jamais à un membre d'une autre boutique ni à un administrateur de la plateforme : ceux-là passent par la console). L'administrateur voit l'équipe sans la changer ;
    - **export des données (B8) : fait le 29/09** (migration 17) — Réglages → Vos données : commandes, articles des commandes, clients, catalogue (une ligne par déclinaison), journal du stock, en CSV qu'Excel ouvre tel quel (point-virgule, UTF-8 avec BOM, montants « 189,000 », heure de Tunis ; cellules protégées contre l'injection de formules). Propriétaire et administrateur ; chaque export au journal d'audit, avec son nombre de lignes ;
    - **bordereaux de livraison (B5, en repli) : faits le 29/09** (migration 18) — depuis l'étape « À préparer », « Bordereaux (N) » imprime ceux de toutes les commandes confirmées ; depuis la fiche d'une commande, le sien. Deux par feuille A4, à découper et coller : expéditeur, numéro de commande, destinataire (téléphone en grand : le livreur appelle), adresse, contenu du colis, **montant à encaisser** en noir (« refus : ne rien encaisser »), transporteur et suivi. « Enregistrer en PDF » dans la boîte d'impression en fait un fichier. Toute l'équipe imprime ;
-   - reste : les livreurs branchés (API des transporteurs, avec Skander : lesquels), notification des nouvelles commandes.
+   - **veille des nouvelles commandes : faite le 29/09** (migration 19) — tant qu'un écran du backoffice est ouvert, il se renseigne toutes les 45 secondes (et dès qu'on y revient) : le nombre de commandes à confirmer s'affiche en pastille dans la navigation et dans le titre de l'onglet (« (3) Commandes ») ; avec « Me prévenir des nouvelles commandes », chaque commande qui arrive déclenche une notification du navigateur (un clic ouvre sa fiche). Une seule veille par boutique, même à plusieurs endroits de l'écran ;
+   - reste : les livreurs branchés (API des transporteurs, avec Skander : lesquels) ; être prévenu **backoffice fermé** (notification push avec un service worker et des clés VAPID, ou un message WhatsApp/SMS au propriétaire : fournisseur à choisir avec Skander).
 7. **Maymar migrée** comme première boutique ; domaine `maymar.tn` à l'étape 2.
 
 ## Base de données en local
@@ -68,7 +69,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 510 tests pgTAP
+outils/base-locale.sh tester    # les 514 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 
