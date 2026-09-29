@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit",
     "annuaire": "node ../outils/annuaire.mjs",
     "deploy:response-store": "cf deploy --prebuilt --mode production --worker skanecom-application-response-store",
-    "deploy": "vinext-cloudflare deploy"
+    "deploy": "vinext-cloudflare deploy",
+    "parcours": "node essais/parcours-humain.mjs",
+    "lint": "eslint src essais"
   },
   "dependencies": {
     "@cloudflare/workers-response-store": "^1.0.0",
@@ -32,6 +34,7 @@
     "cf": "^1.0.0-beta.5",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "playwright-core": "1.56.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "8.3.0"

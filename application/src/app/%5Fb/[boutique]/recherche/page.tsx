@@ -30,7 +30,7 @@ export default async function Recherche({
   const n = liste?.total ?? 0;
 
   return (
-    <Gabarit cadre={cadre}>
+    <Gabarit>
       <nav className="fil pt-4" aria-label={t.commun.filAriane}>
         <Link href="/">{t.commun.accueil}</Link>
         <Fleche taille={14} className="rtl:-scale-x-100" />

@@ -61,6 +61,8 @@ bun run build && bun run start --port 4200 --host 127.0.0.1   # la vitrine compi
 
 Ouvrir http://maymar.localhost:4200 et http://quincaillerie.localhost:4200 : la même application sert les deux boutiques, chacune avec son thème. `outils/essai-vitrine.sh` vérifie en 16 essais qu'elles ne se mélangent jamais ; la CI le lance à chaque modification (`.github/workflows/vitrine.yml`).
 
+`bun run parcours` (dans `application/`) joue un **testeur humain** dans Chromium : souris, clavier seul, téléphone tactile, sur les deux boutiques — filtres, tri, fiche, panier, recherche, page introuvable. Il vérifie ce qu'une personne vit (le focus au clavier, la page qui ne saute pas, la feuille de filtres qui reste ouverte, le tiroir du panier qui garde le focus) et laisse une capture par étape dans `.outils/captures/`. La CI le lance aussi et joint les captures à chaque passage (« captures-vitrine »). Le premier passage, le 29/09, a trouvé et fait corriger : pas de rayons sur téléphone, page introuvable sans en-tête, page décalée quand une liste est vide, focus perdu et feuille refermée après chaque filtre, focus qui sortait du tiroir du panier.
+
 Avant un déploiement : `bun run annuaire` fige l'annuaire des domaines dans `src/annuaire.genere.json` (clé de service requise ; le fichier du dépôt reste vide, il ne doit pas contenir la liste des clients).
 
 ## Règles à tenir

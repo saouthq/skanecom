@@ -50,7 +50,7 @@ export default async function Rayon({ params }: Params) {
   const nom = champ(categorie, "nom");
 
   return (
-    <Gabarit cadre={cadre} actif={parent?.slug ?? slug}>
+    <Gabarit>
       <nav className="fil pt-4" aria-label={t.commun.filAriane}>
         <Link href="/">{t.commun.accueil}</Link>
         <Fleche taille={14} className="rtl:-scale-x-100" />

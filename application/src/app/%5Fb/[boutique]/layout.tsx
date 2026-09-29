@@ -6,6 +6,8 @@ import { chargeCadre } from "@/lib/boutique";
 import { feuilleDuTheme, texte } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 import { directionDe, localeOgDe, t } from "@/lib/i18n";
+import { Entete } from "@/components/Entete";
+import { Pied } from "@/components/Pied";
 
 /* ============================================================================
    LE LAYOUT RACINE D'UNE BOUTIQUE
@@ -13,9 +15,9 @@ import { directionDe, localeOgDe, t } from "@/lib/i18n";
    La façade (src/proxy.ts) a trouvé la boutique à partir du domaine et
    réécrit l'adresse vers /_b/<boutique>/… : ce layout est donc la racine de
    toute page de boutique. Il pose sur <html> la langue et le sens d'écriture
-   de la boutique, et écrit la balise <style> de son thème (lib/theme.ts) :
-   couleurs, polices, rayons, logo. Une boutique inconnue ou inactive donne
-   404.
+   de la boutique, écrit la balise <style> de son thème (lib/theme.ts) :
+   couleurs, polices, rayons, logo — et pose l'en-tête et le pied, communs à
+   toutes les pages. Une boutique inconnue ou inactive donne 404.
 
    Polices : câblées par `next/font` — JAMAIS un @import Google dans le CSS
    (deux chemins de chargement concurrents = texte invisible et décalage de
@@ -68,7 +70,14 @@ export default async function RacineBoutique({ children, params }: Props) {
       <head>
         <style dangerouslySetInnerHTML={{ __html: feuilleDuTheme(cadre.theme, urlFichier) }} />
       </head>
-      <body className="min-h-full flex flex-col bg-fond text-encre">{children}</body>
+      <body className="min-h-full flex flex-col bg-fond text-encre">
+        <a className="saut-contenu" href="#principal">
+          {t.commun.sauterAuContenu}
+        </a>
+        <Entete cadre={cadre} />
+        {children}
+        <Pied cadre={cadre} />
+      </body>
     </html>
   );
 }

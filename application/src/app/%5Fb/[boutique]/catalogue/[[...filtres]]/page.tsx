@@ -42,7 +42,7 @@ export default async function Catalogue({ params }: Params) {
   const liste = await listeProduits(cadre.boutique.id, versCriteres(f), f.tri, f.page);
 
   return (
-    <Gabarit cadre={cadre} actif="catalogue">
+    <Gabarit>
       <nav className="fil pt-4" aria-label={t.commun.filAriane}>
         <Link href="/">{t.commun.accueil}</Link>
         <Fleche taille={14} className="rtl:-scale-x-100" />

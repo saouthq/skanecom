@@ -29,7 +29,7 @@ jobs:
   vitrine:
     name: Types, compilation et essai de bout en bout
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 
@@ -62,6 +62,10 @@ jobs:
         working-directory: application
         run: bun run typecheck
 
+      - name: Relecture du code (eslint)
+        working-directory: application
+        run: bun run lint
+
       - name: Compilation
         working-directory: application
         run: |
@@ -82,6 +86,25 @@ jobs:
           done
           if [ "$pret" != oui ]; then echo "::error::La vitrine ne répond pas sur 127.0.0.1:4200 après 60 s"; exit 1; fi
           ../outils/essai-vitrine.sh http://127.0.0.1:4200
+
+      # Un testeur à la souris, au clavier et au doigt (essais/parcours-humain.mjs) :
+      # focus, défilement, feuille de filtres, tiroir du panier, en-tête partout.
+      - name: Parcours humain (souris, clavier, téléphone)
+        working-directory: application
+        env:
+          CAPTURES: ${{ github.workspace }}/.outils/captures
+        run: |
+          bunx playwright-core install chromium
+          bun run parcours
+
+      - name: Captures du parcours
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: captures-vitrine
+          path: .outils/captures/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Journal de la vitrine en cas d'échec
         if: failure()

@@ -52,7 +52,8 @@ function decode(segment: string): string {
   }
 }
 
-function nombre(brut: string | undefined | null): number | null {
+/** Un entier positif lu dans une adresse ou un champ ; `null` sinon. */
+export function nombre(brut: string | undefined | null): number | null {
   if (brut === undefined || brut === null || brut === "") return null;
   const n = Number(brut);
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;

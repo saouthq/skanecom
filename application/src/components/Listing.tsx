@@ -61,7 +61,7 @@ export function Listing({
         {lesPuces.length > 0 ? (
           <div className="actifs">
             {lesPuces.map((p) => (
-              <Link key={p.url + p.libelle} className="puce" href={p.url} aria-label={t.catalogue.retirerLeFiltre(p.libelle)}>
+              <Link key={p.url + p.libelle} className="puce" href={p.url} scroll={false} aria-label={t.catalogue.retirerLeFiltre(p.libelle)}>
                 <b>{p.libelle}</b>
                 <Croix taille={13} />
               </Link>

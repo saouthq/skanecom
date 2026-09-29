@@ -45,11 +45,16 @@ export function FicheAchat({ produit, prixBarres = false }: {
   const stock = variante?.stock ?? 0;
   const disponible = Boolean(variante) && stock > 0;
 
-  // La quantité ne dépasse jamais le stock réel de la déclinaison choisie.
-  useEffect(() => {
+  // La quantité ne dépasse jamais le stock réel de la déclinaison choisie ;
+  // changer de déclinaison efface le « Ajouté ». Ajusté pendant le rendu,
+  // pas dans un effet (un rendu de moins, pas d'état faux affiché).
+  const cleDeclinaison = `${variante?.id ?? ""}:${stock}`;
+  const [declinaisonVue, setDeclinaisonVue] = useState(cleDeclinaison);
+  if (declinaisonVue !== cleDeclinaison) {
+    setDeclinaisonVue(cleDeclinaison);
     setQuantite((q) => Math.max(1, Math.min(q, Math.max(1, stock))));
     setAjoute(false);
-  }, [stock, variante?.id]);
+  }
 
   useEffect(() => {
     const cible = blocAchat.current;

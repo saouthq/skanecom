@@ -57,7 +57,7 @@ export default async function Accueil({ params }: Params) {
     : [];
 
   return (
-    <Gabarit cadre={cadre} className="flex-1">
+    <Gabarit className="flex-1">
       {sections.map((s, i) => {
         // Seules les sections qui affichent une étiquette portent un numéro.
         const rang = sections.slice(0, i + 1).filter(porteUnNumero).length;
