@@ -728,7 +728,13 @@ function Recap({
             return (
               <li key={ligne.varianteId} className="tunnel-ligne" data-indisponible={indisponible ? "" : undefined}>
                 <span className="tunnel-vignette">
-                  {image ? <Image src={urlFichier(image)} alt="" fill sizes="64px" /> : null}
+                  {image ? (
+                    <Image src={urlFichier(image)} alt="" fill sizes="64px" />
+                  ) : (
+                    <span className="attente-photo" aria-hidden="true">
+                      <span className="filigrane" />
+                    </span>
+                  )}
                   <span className="tunnel-vignette-n" aria-hidden="true">{ligne.quantite}</span>
                 </span>
                 <span className="tunnel-ligne-corps">

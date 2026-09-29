@@ -110,7 +110,13 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
               {commande.lignes.map((ligne, i) => (
                 <li key={`${ligne.sku}-${i}`} className="tunnel-ligne">
                   <span className="tunnel-vignette">
-                    {ligne.image ? <Image src={urlFichier(ligne.image)} alt="" fill sizes="64px" /> : null}
+                    {ligne.image ? (
+                      <Image src={urlFichier(ligne.image)} alt="" fill sizes="64px" />
+                    ) : (
+                      <span className="attente-photo" aria-hidden="true">
+                        <span className="filigrane" />
+                      </span>
+                    )}
                     <span className="tunnel-vignette-n" aria-hidden="true">{ligne.quantite}</span>
                   </span>
                   <span className="tunnel-ligne-corps">
