@@ -1,4 +1,4 @@
-# Photos de démonstration (Unsplash) : le poste de développement n'a pas
+# Photos de démonstration (Openverse, CC0) : le poste de développement n'a pas
 # accès à Internet, GitHub Actions si. Les résultats sont commités sur la
 # branche qui a déclenché le workflow.
 #   · candidats.json modifié → planches contact dans outils/photos-demo/candidats/
@@ -48,7 +48,9 @@ jobs:
 
       - name: Photos retenues
         if: steps.quoi.outputs.final == 'oui' || github.event_name == 'workflow_dispatch'
-        run: node outils/photos-demo/photos.mjs final
+        run: |
+          command -v convert > /dev/null || { sudo apt-get update -q > /dev/null && sudo apt-get install -y -q imagemagick > /dev/null; }
+          node outils/photos-demo/photos.mjs final
 
       - name: Commit des résultats
         run: |

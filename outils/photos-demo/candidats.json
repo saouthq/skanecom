@@ -1,10 +1,18 @@
 {
-  "_": "Photos Unsplash candidates (identifiants trouvés par recherche), par boutique et par usage. Modifier ce fichier relance le workflow « Photos de démonstration », qui dépose une planche contact par groupe dans candidats/.",
-  "mode/femme": ["LV599W0ULus", "x9TByYwqbZ0", "k49kD3YXOsc", "ZtDBdBr-MrQ", "frTwmhpA4Tw", "Jbw7IxgA87k", "9E7s5oyDmxg", "kWb9nbanCq0", "1pslZKG8m90", "o96oyhJjNhU"],
-  "mode/maille-homme": ["Vq6KCyYGHt8", "mU88MlEFcoU", "1Pj1Yrpca4A", "VrIZIPHwq_E", "aEyYriAqq1E", "dP6g1YJWQcA", "0szhmTrnSnY", "dnDX11gefqE", "2mWKL_I70qk", "eqlFuu9nU0o"],
-  "mode/accessoires": ["2sIvempJoI8", "Zha2jqwxzMY", "tcVH_BwHtrc", "N8CwCRjp0LA", "9LtMbTbtGNQ", "YL7Y9uZ5O98", "ZI2mwWRHMzQ", "7e6LAzGS838", "mwa_nzFpnJw", "Apw4z0D9xVE"],
-  "bagages/valises": ["pmJAM2Fxbos", "RPq5WLS6wRQ", "-cItKmBrXN8", "QStz1IM5eSg", "AYcs41PLFX0", "wgga4XBXC3o", "PpzBE1hWeGI", "9XiN0r2NWSM", "dfBa1wgTqKc", "3KXW9cJLHLw"],
-  "bagages/voyage": ["9WjbBqpvN9M", "XvK3G-DVvew", "hd1UMOBWXDQ", "DF4Zo5Lp9g0", "wwrAXGGsCFw", "-ZUHytrj4Ic", "C-o9HNzQ_rA", "YG-VV0gZpB8", "GWeWNAugFCc", "a2JAUN80lAA"],
-  "outillage/machines": ["XolHGHlwy7Q", "Nn2mg1lUbZc", "ZEfFgaXVaV4", "PeG9dqAbyjE", "9IEGO2zcM2s", "YEmsw57gYa8", "gJsBR0CYpA4", "dhFpe7CTI5Y", "zWdad3pPLvE", "d0yNnTEjEWY"],
-  "outillage/atelier": ["uqh5Pbv0d4s", "eMc0lpn1P60", "VW6gnHHZIjg", "v8vz-Roj8zo", "fDdNNr63CGM", "EJU7A__krX0", "WXoHE4GibYo", "eSuHtTPcLlo", "CY_e5kPUS4w", "ohF5oGzMcUY"]
+  "_": "Recherches Openverse (images sous CC0 ou domaine public, sans condition), par boutique et par usage. Modifier ce fichier relance le workflow « Photos de démonstration », qui dépose une planche contact par groupe dans candidats/.",
+  "mode--femme": { "q": "woman fashion dress", "rapport": "tall" },
+  "mode--chemise": { "q": "woman white shirt", "rapport": "tall" },
+  "mode--homme": { "q": "man fashion shirt", "rapport": "tall" },
+  "mode--maille": { "q": "sweater knit", "rapport": "tall" },
+  "mode--editorial": { "q": "fashion model street", "rapport": "wide" },
+  "mode--sac": { "q": "leather handbag", "rapport": "square" },
+  "mode--chaussures": { "q": "leather shoes", "rapport": "square" },
+  "bagages--valise": { "q": "suitcase", "rapport": "tall" },
+  "bagages--voyage": { "q": "luggage travel airport", "rapport": "wide" },
+  "bagages--sac": { "q": "travel bag duffel", "rapport": "square" },
+  "outillage--perceuse": { "q": "drill power tool", "rapport": "square" },
+  "outillage--scie": { "q": "saw woodworking", "rapport": "wide" },
+  "outillage--atelier": { "q": "workshop tools", "rapport": "wide" },
+  "outillage--chantier": { "q": "construction worker", "rapport": "wide" },
+  "outillage--visserie": { "q": "screws bolts", "rapport": "square" }
 }
