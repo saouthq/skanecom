@@ -162,7 +162,7 @@ function FicheEditoriale({ cadre, produit, fil }: { cadre: Cadre; produit: Produ
   return (
     <FournisseurSelection produit={produit}>
       <div className="ed-fiche">
-        <GalerieEditoriale photos={photosProduit(produit)} />
+        <GalerieEditoriale photos={photosProduit(produit)} nom={champ(produit, "nom")} />
 
         <div className="ed-fiche-panneau">
           <div className="ed-fiche-collant">

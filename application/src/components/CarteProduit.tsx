@@ -84,6 +84,7 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
         survol={photoSurvol(produit)}
         tailles={tailles ?? "(min-width: 1100px) 24vw, (min-width: 700px) 32vw, 48vw"}
         prioritaire={prioritaire}
+        nom={champ(produit, "nom")}
       >
         {marqueur ? <span className="ed-marqueur" data-etat={etat}>{marqueur}</span> : null}
       </Photo>

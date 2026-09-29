@@ -15,14 +15,14 @@ import { t } from "@/lib/i18n";
      des détails (mandrin, embout, boîtier), on ne feuillette pas un magazine.
    ========================================================================== */
 
-export function GalerieEditoriale({ photos }: { photos: PhotoAffichable[] }) {
+export function GalerieEditoriale({ photos, nom }: { photos: PhotoAffichable[]; nom?: string }) {
   const piste = useRef<HTMLDivElement>(null);
   const [vue, setVue] = useState(0);
 
   if (photos.length === 0) {
     return (
       <div className="ed-galerie">
-        <Photo photo={null} ratio="4 / 5" />
+        <Photo photo={null} ratio="4 / 5" nom={nom} />
       </div>
     );
   }

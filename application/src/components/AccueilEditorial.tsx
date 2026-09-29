@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CarteProduit } from "./CarteProduit";
 import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
-import { Billets, Camion, Retour, Telephone } from "./Icones";
+import { Billets, Camion, Fleche, Retour, Telephone } from "./Icones";
 import { descendance, type Cadre } from "@/lib/boutique";
 import type { Produit } from "@/lib/catalogue";
 import { texte, type Section } from "@/lib/theme";
@@ -123,6 +123,7 @@ function Ouverture({ section, cadre, premiere }: { section: Extract<Section, { t
           <p className="ed-ouverture-actions">
             <Link className="btn btn-clair" href={lien}>
               {cta}
+              <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />
             </Link>
             {cadre.racines.length > 1 ? (
               <a className="lien-souligne" href="#collections">
@@ -144,8 +145,9 @@ function TeteSection({ titre, etiquette, lien, libelleLien }: { titre: string; e
         <h2>{titre}</h2>
       </div>
       {lien ? (
-        <Link className="lien-souligne" href={lien}>
+        <Link className="lien-souligne ed-lien-fleche" href={lien}>
           {libelleLien ?? t.commun.toutVoir}
+          <Fleche taille={14} className="icone-fleche rtl:-scale-x-100" />
         </Link>
       ) : null}
     </div>

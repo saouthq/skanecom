@@ -7,8 +7,9 @@ import { t } from "@/lib/i18n";
 
    1. une photo ordinaire, cadrée plein cadre ;
    2. une photo DÉTOURÉE (fond retiré), posée entière sur l'aplat du thème ;
-   3. rien : l'état « photo à venir », dit avec tenue — un aplat, le
-      monogramme de la boutique en filigrane s'il existe, une mention courte
+   3. rien : l'état « photo à venir », dit avec tenue — un aplat, le nom du
+      produit composé comme un cartel (quand on le connaît), le monogramme de
+      la boutique en filigrane s'il existe, une mention courte
       (décision du 11/08 : une maison qui attend ses photos le dit, elle
       n'exhibe pas un pictogramme). On ne substitue JAMAIS la photo d'un autre
       produit.
@@ -26,6 +27,7 @@ export function Photo({
   tailles = "(min-width: 1100px) 25vw, (min-width: 700px) 33vw, 50vw",
   prioritaire = false,
   className = "",
+  nom,
   children,
 }: {
   photo: PhotoAffichable | null;
@@ -35,6 +37,8 @@ export function Photo({
   tailles?: string;
   prioritaire?: boolean;
   className?: string;
+  /** Le nom du produit : sans photo, il compose le cartel. */
+  nom?: string;
   children?: React.ReactNode;
 }) {
   return (
@@ -45,9 +49,10 @@ export function Photo({
       {photo ? (
         <Image src={photo.src} alt={photo.alt} fill sizes={tailles} priority={prioritaire} className="photo-principale" />
       ) : (
-        <span className="attente-photo" aria-hidden="true">
+        <span className={nom ? "attente-photo attente-cartel" : "attente-photo"} aria-hidden="true">
           <span className="filigrane" aria-hidden="true" />
-          <span>{t.commun.photoAVenir}</span>
+          {nom ? <span className="attente-nom">{nom}</span> : null}
+          <span className="attente-mention">{t.commun.photoAVenir}</span>
         </span>
       )}
       {photo && survol && !photo.detoure ? (
