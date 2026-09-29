@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { exigeAdmin } from "@/lib/console/session";
+import { EnTetePage } from "@/components/console/Coquille";
+import { Icone } from "@/components/console/Icone";
 
 export const metadata: Metadata = { title: "Nouvelle boutique" };
 
@@ -11,39 +14,53 @@ export default async function NouvelleBoutique({ searchParams }: {
   await exigeAdmin();
   const v = await searchParams;
   return (
-    <div className="max-w-[40rem]">
-      <h1>Nouvelle boutique</h1>
-      <p className="text-encre-doux mt-1">Elle naîtra « en préparation » : la vitrine ne l&apos;affiche qu&apos;une fois ouverte.</p>
+    <div className="max-w-[42rem]">
+      <EnTetePage
+        avant={<Link href="/"><Icone nom="retour" taille={14} /> Boutiques</Link>}
+        titre="Nouvelle boutique"
+        description="Elle naîtra « en préparation » : la vitrine ne l'affiche qu'une fois ouverte."
+      />
 
-      <form action="/nouvelle-boutique/creer" method="post" className="carte formulaire mt-6">
+      <form action="/nouvelle-boutique/creer" method="post" className="carte formulaire">
         {v.erreur ? <p className="message message-erreur" role="alert">{v.erreur}</p> : null}
         <div className="champ">
           <label htmlFor="nom">Nom de la boutique</label>
-          <input id="nom" name="nom" required maxLength={80} defaultValue={v.nom ?? ""} autoFocus />
+          <input id="nom" name="nom" required maxLength={80} defaultValue={v.nom ?? ""} autoFocus placeholder="Maymar" />
         </div>
-        <div className="champ">
-          <label htmlFor="slug">Identifiant</label>
-          <input id="slug" name="slug" required pattern="[a-z0-9]([a-z0-9\-]{0,46}[a-z0-9])?" maxLength={48} defaultValue={v.slug ?? ""}
-            aria-describedby="aide-slug" />
-          <p id="aide-slug" className="aide">Minuscules, chiffres et tirets : il sert de dossier des fichiers et d&apos;adresse interne. Il ne change plus ensuite.</p>
+        <div className="deux-colonnes">
+          <div className="champ">
+            <label htmlFor="slug">Identifiant</label>
+            <input id="slug" name="slug" required pattern="[a-z0-9]([a-z0-9\-]{0,46}[a-z0-9])?" maxLength={48} defaultValue={v.slug ?? ""}
+              aria-describedby="aide-slug" placeholder="maymar" />
+            <p id="aide-slug" className="aide">Minuscules, chiffres et tirets. Il ne change plus ensuite.</p>
+          </div>
+          <div className="champ">
+            <label htmlFor="hote">Domaine principal</label>
+            <input id="hote" name="hote" required placeholder="maymar.tn" defaultValue={v.hote ?? ""} aria-describedby="aide-hote" />
+            <p id="aide-hote" className="aide">Sans « https:// ». Les autres s&apos;ajoutent ensuite.</p>
+          </div>
         </div>
-        <div className="champ">
-          <label htmlFor="hote">Domaine principal</label>
-          <input id="hote" name="hote" required placeholder="maboutique.tn" defaultValue={v.hote ?? ""} aria-describedby="aide-hote" />
-          <p id="aide-hote" className="aide">Sans « https:// ». D&apos;autres domaines (www., ancien domaine) s&apos;ajoutent sur la fiche de la boutique.</p>
-        </div>
-        <fieldset className="champ">
-          <legend className="text-petit font-medium">Gabarit</legend>
-          <label className="opt">
+        <fieldset className="choix choix-2">
+          <legend>Gabarit</legend>
+          <label className="choix-carte">
             <input type="radio" name="theme" value="editorial" defaultChecked={(v.theme ?? "editorial") !== "technique"} />
-            Éditorial — mode, bagages, maroquinerie : grandes images, typographie de magazine
+            <span>
+              <b>Éditorial</b>
+              <span className="aide">Mode, bagages, maroquinerie : grandes images, typographie de magazine.</span>
+            </span>
           </label>
-          <label className="opt">
+          <label className="choix-carte">
             <input type="radio" name="theme" value="technique" defaultChecked={v.theme === "technique"} />
-            Technique — outillage, quincaillerie, grands catalogues : recherche, références, stock chiffré
+            <span>
+              <b>Technique</b>
+              <span className="aide">Outillage, quincaillerie, grands catalogues : recherche, références, stock chiffré.</span>
+            </span>
           </label>
         </fieldset>
-        <button type="submit" className="btn btn-primaire">Créer la boutique</button>
+        <div className="carte-pied">
+          <span className="aide">Ensuite : la marque, le catalogue, l&apos;équipe.</span>
+          <button type="submit" className="btn btn-primaire">Créer la boutique</button>
+        </div>
       </form>
     </div>
   );

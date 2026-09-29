@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { acces, accesEquipe, clientSession } from "@/lib/console/session";
 import { FormulaireCode } from "./FormulaireCode";
+import { Porte } from "@/components/console/Porte";
 
 export const metadata: Metadata = { title: "Double authentification" };
 
@@ -48,54 +49,62 @@ export default async function DoubleAuthentification({ searchParams }: { searchP
   }
 
   return (
-    <main id="principal" className="flex-1 grid place-items-center px-4 py-12">
-      <div className="w-full max-w-[30rem]">
-        <p className="text-petit text-encre-doux">{a.user.email}</p>
-        <h1 className="mt-1">Double authentification</h1>
-
-        <FormulaireCode facteur={valide?.id ?? inscription?.id ?? ""} erreurInitiale={erreur}>
-
-          {inscription ? (
-            <>
-              <p>
-                Première connexion : ajoutez SkanEcom à votre application d&apos;authentification (Google Authenticator,
-                Aegis, 1Password…), puis saisissez le code à six chiffres qu&apos;elle affiche.
-              </p>
-              {/* Sur un téléphone, on ne scanne pas son propre écran : le lien
-                  otpauth:// ouvre l'application, qui enregistre le compte. */}
-              <div className="seulement-tactile">
-                <a className="btn btn-primaire btn-bloc" href={inscription.uri}>Ouvrir l&apos;application d&apos;authentification</a>
-                <p className="aide mt-2">Elle enregistre SkanEcom ; revenez ensuite ici saisir le code qu&apos;elle affiche.</p>
-              </div>
-              <p className="aide seulement-tactile">Ou, depuis un autre appareil, scannez ce code :</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={inscription.qr.startsWith("data:") ? inscription.qr : `data:image/svg+xml;utf-8,${encodeURIComponent(inscription.qr)}`}
-                alt="QR code de la double authentification"
-                width={200}
-                height={200}
-                className="mx-auto bg-surface p-2 border border-filet rounded-doux"
-              />
+    <Porte
+      titre="Double authentification"
+      qui={a.user.email}
+      description={inscription
+        ? "Première connexion : reliez votre compte à une application d'authentification, puis saisissez le code qu'elle affiche."
+        : "Saisissez le code à six chiffres affiché par votre application d'authentification."}
+      pied={
+        <form action="/session/fermer" method="post">
+          <button type="submit" className="btn-lien">Se déconnecter</button>
+        </form>
+      }
+    >
+      <FormulaireCode facteur={valide?.id ?? inscription?.id ?? ""} erreurInitiale={erreur}>
+        {inscription ? (
+          <ol className="etapes-porte">
+            <li>
               <div>
-                <p className="aide">Sans appareil photo, saisissez cette clé dans l&apos;application :</p>
-                <p className="code-secret mt-1" data-secret-totp>{inscription.secret}</p>
+                <p className="font-medium">Ajoutez SkanEcom à votre application</p>
+                <p className="aide">Google Authenticator, Microsoft Authenticator, Aegis, 1Password…</p>
+                {/* Sur un téléphone, on ne scanne pas son propre écran : le lien
+                    otpauth:// ouvre l'application, qui enregistre le compte. */}
+                <div className="seulement-tactile">
+                  <a className="btn btn-primaire btn-bloc" href={inscription.uri}>Ouvrir l&apos;application d&apos;authentification</a>
+                  <p className="aide mt-2">Ou, depuis un autre appareil, scannez ce code :</p>
+                </div>
+                <div className="qr">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={inscription.qr.startsWith("data:") ? inscription.qr : `data:image/svg+xml;utf-8,${encodeURIComponent(inscription.qr)}`}
+                    alt="QR code de la double authentification"
+                    width={168}
+                    height={168}
+                  />
+                  <details className="text-center">
+                    <summary className="aide cursor-pointer">Pas d&apos;appareil photo ? Saisir la clé</summary>
+                    <p className="code-secret mt-2" data-secret-totp>{inscription.secret}</p>
+                  </details>
+                </div>
               </div>
-            </>
-          ) : (
-            <p>Saisissez le code à six chiffres affiché par votre application d&apos;authentification.</p>
-          )}
-
+            </li>
+            <li>
+              <div className="champ">
+                <label htmlFor="code">Saisissez le code à six chiffres</label>
+                <input id="code" name="code" className="chiffres" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
+                  autoComplete="one-time-code" required autoFocus placeholder="000000" />
+              </div>
+            </li>
+          </ol>
+        ) : (
           <div className="champ">
             <label htmlFor="code">Code à six chiffres</label>
             <input id="code" name="code" className="chiffres" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
-              autoComplete="one-time-code" required autoFocus />
+              autoComplete="one-time-code" required autoFocus placeholder="000000" />
           </div>
-        </FormulaireCode>
-
-        <form action="/session/fermer" method="post" className="mt-4 text-center">
-          <button type="submit" className="btn-lien text-petit">Se déconnecter</button>
-        </form>
-      </div>
-    </main>
+        )}
+      </FormulaireCode>
+    </Porte>
   );
 }

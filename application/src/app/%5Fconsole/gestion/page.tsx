@@ -3,6 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { accesEquipe } from "@/lib/console/session";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
+import { Porte } from "@/components/console/Porte";
+import { Icone } from "@/components/console/Icone";
 
 export const metadata: Metadata = { title: "Vos boutiques" };
 
@@ -16,24 +18,30 @@ export default async function MesBoutiques() {
   if (a.boutiques.length === 1) redirect(`/gestion/${a.boutiques[0].slug}`);
 
   return (
-    <main id="principal" className="flex-1 grid place-items-center px-4 py-12">
-      <div className="w-full max-w-[32rem]">
-        <p className="text-petit text-encre-doux">{a.user.email}</p>
-        <h1 className="mt-1">Vos boutiques</h1>
-        <ul className="bo-choix mt-6">
-          {a.boutiques.map((b) => (
-            <li key={b.slug}>
-              <Link href={`/gestion/${b.slug}`} className="carte bo-choix-lien">
-                <span className="font-semibold">{b.nom}</span>
-                <span className="text-petit text-encre-doux">{LIBELLES_ROLE[b.role] ?? b.role}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <form action="/session/fermer" method="post" className="mt-6 text-center">
-          <button type="submit" className="btn-lien text-petit">Se déconnecter</button>
+    <Porte
+      titre="Vos boutiques"
+      qui={a.user.email}
+      description="Choisissez le backoffice à ouvrir."
+      pied={
+        <form action="/session/fermer" method="post">
+          <button type="submit" className="btn-lien">Se déconnecter</button>
         </form>
-      </div>
-    </main>
+      }
+    >
+      <ul className="carte porte-carte choix-boutiques" role="list">
+        {a.boutiques.map((b) => (
+          <li key={b.slug}>
+            <Link href={`/gestion/${b.slug}`} className="choix-boutique">
+              <span className="initiale" aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
+              <span className="choix-boutique-texte">
+                <span className="font-medium">{b.nom}</span>
+                <span className="text-petit discret">{LIBELLES_ROLE[b.role] ?? b.role}</span>
+              </span>
+              <Icone nom="droite" className="discret" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Porte>
   );
 }

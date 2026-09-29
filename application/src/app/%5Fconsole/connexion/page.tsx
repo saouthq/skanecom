@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { acces, accesEquipe } from "@/lib/console/session";
+import { Porte } from "@/components/console/Porte";
 
 export const metadata: Metadata = { title: "Connexion" };
 
@@ -19,28 +20,23 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
   const { erreur, email } = await searchParams;
 
   return (
-    <main id="principal" className="flex-1 grid place-items-center px-4 py-12">
-      <div className="w-full max-w-[26rem]">
-        <p className="text-petit text-encre-doux">SkanEcom</p>
-        <h1 className="mt-1">Connexion</h1>
-        <p className="text-petit text-encre-doux mt-2">
-          Le backoffice de votre boutique, ou la console de la plateforme. Propriétaires et administrateurs confirment
-          leur connexion par double authentification.
-        </p>
-
-        <form action="/session/ouvrir" method="post" className="carte formulaire mt-6">
-          {erreur ? <p className="message message-erreur" role="alert">{erreur}</p> : null}
-          <div className="champ">
-            <label htmlFor="email">Adresse e-mail</label>
-            <input id="email" name="email" type="email" autoComplete="username" required defaultValue={email ?? ""} autoFocus />
-          </div>
-          <div className="champ">
-            <label htmlFor="mot_de_passe">Mot de passe</label>
-            <input id="mot_de_passe" name="mot_de_passe" type="password" autoComplete="current-password" required />
-          </div>
-          <button type="submit" className="btn btn-primaire btn-bloc">Se connecter</button>
-        </form>
-      </div>
-    </main>
+    <Porte
+      titre="Connexion"
+      description="Le backoffice de votre boutique, ou la console de la plateforme."
+      pied={<>Propriétaires et administrateurs confirment leur connexion par double authentification.</>}
+    >
+      <form action="/session/ouvrir" method="post" className="carte porte-carte formulaire">
+        {erreur ? <p className="message message-erreur" role="alert">{erreur}</p> : null}
+        <div className="champ">
+          <label htmlFor="email">Adresse e-mail</label>
+          <input id="email" name="email" type="email" autoComplete="username" required defaultValue={email ?? ""} autoFocus placeholder="prenom@exemple.tn" />
+        </div>
+        <div className="champ">
+          <label htmlFor="mot_de_passe">Mot de passe</label>
+          <input id="mot_de_passe" name="mot_de_passe" type="password" autoComplete="current-password" required />
+        </div>
+        <button type="submit" className="btn btn-primaire btn-bloc btn-grand">Se connecter</button>
+      </form>
+    </Porte>
   );
 }

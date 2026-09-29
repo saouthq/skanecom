@@ -175,7 +175,7 @@ await etape("bon mot de passe", async () => {
   await clic(page, page.getByRole("button", { name: "Se connecter" }));
   await page.waitForURL(/double-authentification/);
   await page.waitForLoadState("networkidle");
-  secret = (await page.locator("[data-secret-totp]").innerText()).trim();
+  secret = (await page.locator("[data-secret-totp]").textContent()).trim();
   verifie(await page.getByRole("img", { name: /QR code/ }).isVisible(), "première connexion : le QR code à scanner s'affiche");
   verifie(/^[A-Z2-7]{16,}$/.test(secret), `la clé à saisir à la main s'affiche (${secret.length} caractères)`);
   await capture(page, "console-double-authentification-inscription");
@@ -192,7 +192,7 @@ await etape("mauvais code : le QR code reste", async () => {
   await tape(page, codeFaux(secret));
   await page.keyboard.press("Enter");
   await page.getByRole("alert").filter({ hasText: /incorrect/ }).waitFor();
-  const secretApres = (await page.locator("[data-secret-totp]").innerText()).trim();
+  const secretApres = (await page.locator("[data-secret-totp]").textContent()).trim();
   verifie(secretApres === secret, "après un code faux, la même clé reste à l'écran (rien à rescanner)");
   await capture(page, "console-code-faux");
 });
@@ -304,7 +304,7 @@ await etape("la vitrine porte la nouvelle marque", async () => {
 
 await etape("le journal garde tout", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  const journal = await page.locator("#t-journal").locator("..").locator("tbody tr").allInnerTexts();
+  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
   const actions = ["Boutique créée", "Statut changé", "Marque modifiée"];
   verifie(actions.every((a) => journal.some((l) => l.includes(a))) && journal.every((l) => l.includes(ADMIN.email)),
     `journal : ${journal.length} actions (${actions.join(", ")}), chacune avec l'administrateur`);
@@ -352,7 +352,7 @@ await etape("importer un catalogue : le fichier corrigé", async () => {
   await clic(page, page.getByRole("button", { name: /^Importer 2 produits \(4 variantes\)/ }));
   await page.waitForURL(new RegExp(`/boutiques/${SLUG}\\?ok=`));
   verifie((await page.getByRole("status").innerText()).includes("Catalogue importé : 2 produits, 4 variantes"), "la console confirme l'import");
-  verifie((await page.locator("#t-catalogue").locator("..").innerText()).includes("2 produits (2 publiés) · 4 variantes · 4 rayons"),
+  verifie(/Produits 2 Publiés 2 Variantes 4 Rayons 4/.test((await page.locator("section:has(#t-catalogue)").innerText()).replace(/\s+/g, " ")),
     "la fiche de la boutique compte le nouveau catalogue");
 });
 
@@ -397,7 +397,7 @@ async function ouvreLien(lien, motDePasse, nom) {
 
 await etape("la fiche de la boutique invite à nommer son propriétaire", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  verifie((await page.locator("#t-equipe").locator("../..").innerText()).includes("Personne n'entre encore dans son backoffice"),
+  verifie((await page.locator("section:has(#t-equipe)").innerText()).includes("Personne n'entre encore dans son backoffice"),
     "une boutique neuve n'a personne dans son équipe");
   await clic(page, page.getByRole("link", { name: "Inviter le propriétaire" }));
   await page.waitForURL(new RegExp(`/boutiques/${SLUG}/equipe$`));
@@ -479,7 +479,7 @@ await etape("sur son téléphone, elle choisit son mot de passe et entre dans le
   await clic(p, p.getByRole("button", { name: "Enregistrer et entrer" }));
   await p.waitForURL(new RegExp(`/gestion/${SLUG}`));
   await p.waitForLoadState("networkidle");
-  verifie((await p.locator(".bo-marque").innerText()).includes("Outillage Pro Démo") && (await p.locator("h1").innerText()) === "Commandes",
+  verifie((await p.locator(".app-haut .app-marque-nom").innerText()).includes("Outillage Pro Démo") && (await p.locator("h1").innerText()) === "Commandes",
     "elle arrive dans le backoffice de la boutique, sur ses commandes");
   await capture(p, "console-bienvenue-backoffice");
   await tel.close();
@@ -510,7 +510,7 @@ await etape("la liste de l'équipe suit : invitations acceptées, journal", asyn
   verifie(await page.locator("#lien-acces").count() === 0, "les liens qui ont servi ne sont plus affichés");
   await capture(page, "console-equipe-liste", true);
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  const journal = await page.locator("#t-journal").locator("..").locator("tbody tr").allInnerTexts();
+  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
   verifie(journal.filter((l) => l.includes("Membre invité")).length === 3 && journal.filter((l) => l.includes("Lien d'accès remis")).length === 2,
     "le journal garde les trois invitations et les deux liens remis");
   // Sa session à elle, pour la suite (un nouveau téléphone, connexion ordinaire).

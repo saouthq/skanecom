@@ -3,7 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";
-import { Bulle, Coche, Telephone } from "@/components/Icones";
+import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
 import { lieu } from "@/lib/commande";
 import {
@@ -122,6 +123,27 @@ function libelleEvenement(e: Fiche["historique"][number]): string {
   }
 }
 
+type EtapeProgression = { cle: string; libelle: string; etat: "fait" | "courant" | "a_venir" | "echec"; quand: string | null };
+
+/** La frise d'une commande : reçue, confirmée, expédiée, livrée — ou
+ *  arrêtée en route (annulée, refusée à la livraison). */
+function progressionDe(f: Fiche): EtapeProgression[] {
+  const ordre = ["recue", "confirmee", "expediee", "livree"];
+  const rang = f.statut === "a_arbitrer" ? 0 : ordre.indexOf(f.statut);
+  const etapes: EtapeProgression[] = [
+    { cle: "recue", libelle: "Reçue", etat: "fait", quand: f.cree_le },
+    { cle: "confirmee", libelle: "Confirmée", etat: "a_venir", quand: f.confirmee_le },
+    { cle: "expediee", libelle: "Expédiée", etat: "a_venir", quand: f.expediee_le },
+    { cle: "livree", libelle: "Livrée", etat: "a_venir", quand: f.livree_le },
+  ];
+  if (f.statut === "annulee" || f.statut === "refusee") {
+    const faites = etapes.filter((e) => e.quand).length;
+    const fin = { cle: f.statut, libelle: f.statut === "annulee" ? "Annulée" : "Refusée", etat: "echec" as const, quand: f.cloturee_le };
+    return [...etapes.slice(0, Math.max(1, faites)).map((e) => ({ ...e, etat: "fait" as const })), fin];
+  }
+  return etapes.map((e, i) => ({ ...e, etat: i < rang || f.statut === "livree" ? "fait" : i === rang + 1 ? "courant" : i <= rang ? "fait" : "a_venir" }));
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ numero: string }> }): Promise<Metadata> {
   return { title: (await params).numero };
 }
@@ -167,341 +189,410 @@ export default async function FicheCommande({
     })),
   ].sort((x, y) => x.le.localeCompare(y.le));
 
+  const whatsapp = lienWhatsApp(
+    f.contact.telephone,
+    messageConfirmation({ prenom, boutique: boutique.nom, numero: f.numero, totalMillimes: f.total_millimes, articles, ville: f.livraison.ville }),
+  );
+  const progression = progressionDe(f);
+
   return (
-    <>
-      <p className="bo-retour">
-        <Link href={`/gestion/${slug}?etape=${etapeDe(f.statut)}`}>← Commandes</Link>
-      </p>
-      <div className="bo-fiche-tete">
-        <h1>{f.numero}</h1>
-        <span className={`bo-statut bo-statut-${f.statut}`}>{LIBELLES_STATUT[f.statut] ?? f.statut}</span>
-        <p className="bo-fiche-quand">
-          Passée {quand(f.cree_le, maintenant)} · {age(f.cree_le, maintenant)} · {articles} article{articles > 1 ? "s" : ""} ·{" "}
-          <strong>{formatePrix(f.total_millimes)}</strong> à la livraison
-        </p>
-      </div>
+    <div className={aConfirmer && peut(role, CONFIRMER) ? "bo-avec-barre" : undefined}>
+      <EnTetePage
+        avant={<Link href={`/gestion/${slug}?etape=${etapeDe(f.statut)}`}><Icone nom="retour" taille={14} /> Commandes</Link>}
+        titre={
+          <span className="bo-fiche-tete">
+            <span>{f.numero}</span>
+            <span className={`bo-statut bo-statut-${f.statut}`}>{LIBELLES_STATUT[f.statut] ?? f.statut}</span>
+          </span>
+        }
+        description={
+          <>
+            Passée {quand(f.cree_le, maintenant)} · {age(f.cree_le, maintenant)} · {articles} article{articles > 1 ? "s" : ""} ·{" "}
+            <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> à la livraison
+          </>
+        }
+      />
 
-      {messages.fait && FAIT[messages.fait] ? (
-        <p className="message message-succes bo-message" role="status">
-          {FAIT[messages.fait]}{" "}
-          <Link href={`/gestion/${slug}?etape=a_confirmer`} className="bo-lien">Commandes à confirmer →</Link>
-        </p>
-      ) : null}
-      {messages.erreur ? <p className="message message-erreur bo-message" role="alert">{messages.erreur}</p> : null}
+      <ol className="bo-progression" aria-label="Avancement de la commande">
+        {progression.map((e) => (
+          <li key={e.cle} data-etat={e.etat}>
+            <span className="bo-progression-point" aria-hidden="true">
+              {e.etat === "fait" ? <Icone nom="coche" taille={12} /> : e.etat === "echec" ? <Icone nom="croix" taille={12} /> : null}
+            </span>
+            <span className="bo-progression-texte">
+              <span>{e.libelle}</span>
+              {e.quand ? <span className="discret">{quand(e.quand, maintenant)}</span> : null}
+            </span>
+          </li>
+        ))}
+      </ol>
 
-      <div className="bo-fiche">
-        <div className="bo-fiche-principal">
-          {/* ---------------- Le geste du moment ---------------- */}
-          {aConfirmer ? (
-            <section className="carte bo-action" aria-labelledby="action-titre">
-              <h2 id="action-titre">Confirmer la commande</h2>
-              {peut(role, CONFIRMER) ? (
-                <>
-                  <p className="bo-action-aide">
-                    Appelez {prenom} pour confirmer l&apos;adresse et la disponibilité, puis notez le résultat.
-                  </p>
-                  <div className="bo-contact">
-                    <a className="btn btn-primaire" href={lienAppel(f.contact.telephone)}>
-                      <Telephone taille={18} /> Appeler le {telephoneLisible(f.contact.telephone)}
-                    </a>
-                    <a
-                      className="btn btn-second"
-                      href={lienWhatsApp(
-                        f.contact.telephone,
-                        messageConfirmation({ prenom, boutique: boutique.nom, numero: f.numero, totalMillimes: f.total_millimes, articles, ville: f.livraison.ville }),
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Bulle taille={18} /> WhatsApp
-                    </a>
+      <div className="pile">
+        {messages.fait && FAIT[messages.fait] ? (
+          <p className="message message-succes bo-message" role="status">
+            <span>
+              {FAIT[messages.fait]}{" "}
+              <Link href={`/gestion/${slug}?etape=a_confirmer`}>Commandes à confirmer</Link>
+            </span>
+          </p>
+        ) : null}
+        {messages.erreur ? <p className="message message-erreur bo-message" role="alert">{messages.erreur}</p> : null}
+
+        <div className="grille-2 bo-fiche">
+          <div className="pile bo-fiche-principal">
+            {/* ---------------- Le geste du moment ---------------- */}
+            {aConfirmer ? (
+              <section className="carte bo-action" aria-labelledby="action-titre">
+                <div className="bo-action-tete">
+                  <span className="bo-action-icone"><Icone nom="telephone" /></span>
+                  <div>
+                    <p className="bo-action-sur">Étape en cours</p>
+                    <h2 id="action-titre">Confirmer la commande</h2>
                   </div>
-                  <form action={action} method="post" className="bo-resultats">
-                    <input type="hidden" name="action" value="appel" />
-                    <fieldset className="bo-canal">
-                      <legend>Contacté par</legend>
-                      <label className="opt">
-                        <input type="radio" name="canal" value="appel" defaultChecked /> Appel
-                      </label>
-                      <label className="opt">
-                        <input type="radio" name="canal" value="whatsapp" /> WhatsApp
-                      </label>
-                    </fieldset>
-                    <div className="champ">
-                      <label htmlFor="note-appel">
-                        Note <span className="bo-facultatif">(facultatif)</span>
-                      </label>
-                      <input id="note-appel" name="note" maxLength={500} placeholder="Préfère être livré après 17 h" />
+                </div>
+                {peut(role, CONFIRMER) ? (
+                  <>
+                    <p className="bo-action-aide">
+                      Appelez {prenom} pour confirmer l&apos;adresse et la disponibilité, puis notez le résultat.
+                    </p>
+                    <div className="bo-contact">
+                      <a className="btn btn-primaire btn-grand" href={lienAppel(f.contact.telephone)}>
+                        <Icone nom="telephone" /> Appeler le {telephoneLisible(f.contact.telephone)}
+                      </a>
+                      <a className="btn btn-second btn-grand bo-whatsapp" href={whatsapp} target="_blank" rel="noopener noreferrer">
+                        <Icone nom="message" /> WhatsApp
+                      </a>
+                    </div>
+                    <form action={action} method="post" className="bo-resultats">
+                      <input type="hidden" name="action" value="appel" />
+                      <div className="bo-resultats-rang">
+                        <fieldset className="segments">
+                          <legend>Contacté par</legend>
+                          <label><input type="radio" name="canal" value="appel" defaultChecked /> Appel</label>
+                          <label><input type="radio" name="canal" value="whatsapp" /> WhatsApp</label>
+                        </fieldset>
+                        <div className="champ flex-1">
+                          <label htmlFor="note-appel" className="sr-only">Note (facultatif)</label>
+                          <input id="note-appel" name="note" maxLength={500} placeholder="Note (facultatif) : préfère être livré après 17 h" />
+                        </div>
+                      </div>
+                      <p className="ui-etiquette">Résultat de l&apos;appel</p>
+                      <div className="bo-boutons">
+                        <button type="submit" name="resultat" value="confirmee" className="btn btn-succes">
+                          <Icone nom="coche" /> Confirmée
+                        </button>
+                        <button type="submit" name="resultat" value="injoignable" className="btn btn-second">Injoignable</button>
+                        <button type="submit" name="resultat" value="rappeler" className="btn btn-second">À rappeler</button>
+                        <button type="submit" name="resultat" value="refus" className="btn btn-danger bo-danger">Refus du client</button>
+                      </div>
+                    </form>
+                    {f.appels.length > 0 ? (
+                      <p className="bo-action-note">
+                        <Icone nom="journal" taille={14} />
+                        Déjà {f.appels.length} tentative{f.appels.length > 1 ? "s" : ""} : dernière{" "}
+                        {(LIBELLES_RESULTAT[f.appels[f.appels.length - 1].resultat] ?? "").toLowerCase()},{" "}
+                        {quand(f.appels[f.appels.length - 1].le, maintenant)}.
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="bo-action-aide">La confirmation revient au propriétaire, à l&apos;administrateur ou à la personne chargée des appels.</p>
+                )}
+              </section>
+            ) : f.statut === "confirmee" ? (
+              <section className="carte bo-action" aria-labelledby="action-titre">
+                <div className="bo-action-tete">
+                  <span className="bo-action-icone"><Icone nom="colis" /></span>
+                  <div>
+                    <p className="bo-action-sur">Étape en cours</p>
+                    <h2 id="action-titre">Préparer et expédier</h2>
+                  </div>
+                </div>
+                <p className="bo-action-aide">
+                  Confirmée {f.confirmee_le ? quand(f.confirmee_le, maintenant) : ""}. Préparez les articles ci-dessous, puis remettez le colis au livreur.
+                </p>
+                {peut(role, EXPEDIER) ? (
+                  <form action={action} method="post" className="bo-formulaire">
+                    <input type="hidden" name="action" value="expedier" />
+                    <input type="hidden" name="statut" value={f.statut} />
+                    <div className="deux-colonnes">
+                      <div className="champ">
+                        <label htmlFor="transporteur">Transporteur</label>
+                        <input id="transporteur" name="transporteur" maxLength={80} defaultValue={f.transporteur ?? ""} placeholder="Nom du livreur ou de la société" />
+                      </div>
+                      <div className="champ">
+                        <label htmlFor="suivi">
+                          Numéro de suivi <span className="facultatif">(facultatif)</span>
+                        </label>
+                        <input id="suivi" name="suivi" maxLength={80} defaultValue={f.numero_suivi ?? ""} />
+                      </div>
                     </div>
                     <div className="bo-boutons">
-                      <button type="submit" name="resultat" value="confirmee" className="btn btn-primaire">
-                        <Coche taille={16} /> Confirmée
-                      </button>
-                      <button type="submit" name="resultat" value="injoignable" className="btn btn-second">Injoignable</button>
-                      <button type="submit" name="resultat" value="rappeler" className="btn btn-second">À rappeler</button>
-                      <button type="submit" name="resultat" value="refus" className="btn btn-second bo-danger">Refus du client</button>
+                      <button type="submit" className="btn btn-primaire"><Icone nom="camion" /> Marquer expédiée</button>
                     </div>
                   </form>
-                  {f.appels.length > 0 ? (
-                    <p className="bo-action-aide">
-                      Déjà {f.appels.length} tentative{f.appels.length > 1 ? "s" : ""} : dernière{" "}
-                      {(LIBELLES_RESULTAT[f.appels[f.appels.length - 1].resultat] ?? "").toLowerCase()},{" "}
-                      {quand(f.appels[f.appels.length - 1].le, maintenant)}.
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                <p className="bo-action-aide">La confirmation revient au propriétaire, à l&apos;administrateur ou à la personne chargée des appels.</p>
-              )}
-            </section>
-          ) : f.statut === "confirmee" ? (
-            <section className="carte bo-action" aria-labelledby="action-titre">
-              <h2 id="action-titre">Préparer et expédier</h2>
-              <p className="bo-action-aide">
-                Confirmée {f.confirmee_le ? quand(f.confirmee_le, maintenant) : ""}. Préparez les articles ci-dessous, puis remettez le colis au livreur.
-              </p>
-              {peut(role, EXPEDIER) ? (
+                ) : (
+                  <p className="bo-action-aide">L&apos;expédition revient au propriétaire, à l&apos;administrateur ou à la préparation.</p>
+                )}
+              </section>
+            ) : f.statut === "expediee" ? (
+              <section className="carte bo-action" aria-labelledby="action-titre">
+                <div className="bo-action-tete">
+                  <span className="bo-action-icone"><Icone nom="camion" /></span>
+                  <div>
+                    <p className="bo-action-sur">Étape en cours</p>
+                    <h2 id="action-titre">Livraison</h2>
+                  </div>
+                </div>
+                <p className="bo-action-aide">
+                  Expédiée {f.expediee_le ? quand(f.expediee_le, maintenant) : ""}
+                  {f.transporteur ? ` avec ${f.transporteur}` : ""}
+                  {f.numero_suivi ? ` · suivi ${f.numero_suivi}` : ""}. Le livreur encaisse {formatePrix(f.total_millimes)}.
+                </p>
+                {peut(role, LIVRER) ? (
+                  <>
+                    <form action={action} method="post" className="bo-boutons">
+                      <input type="hidden" name="action" value="livrer" />
+                      <input type="hidden" name="statut" value={f.statut} />
+                      <button type="submit" className="btn btn-succes">
+                        <Icone nom="coche" /> Livrée, paiement encaissé
+                      </button>
+                    </form>
+                    <details className="bo-pli">
+                      <summary><Icone nom="refus" /> Refusée à la livraison <Icone nom="bas" className="bo-pli-chevron" /></summary>
+                      <form action={action} method="post" className="bo-formulaire">
+                        <input type="hidden" name="action" value="refuser" />
+                        <input type="hidden" name="statut" value={f.statut} />
+                        <fieldset className="choix bo-origines">
+                          <legend>D&apos;où vient le refus ?</legend>
+                          {Object.entries(LIBELLES_ORIGINE_REFUS).map(([cle, libelle]) => (
+                            <label key={cle} className="choix-carte">
+                              <input type="radio" name="origine" value={cle} required /> <span><b>{libelle}</b></span>
+                            </label>
+                          ))}
+                        </fieldset>
+                        <div className="champ">
+                          <label htmlFor="commentaire">
+                            Commentaire <span className="facultatif">(facultatif)</span>
+                          </label>
+                          <input id="commentaire" name="commentaire" maxLength={500} placeholder="Absent deux fois, colis revenu" />
+                        </div>
+                        <p className="aide">Le stock revient automatiquement. Un refus du client ou un client injoignable compte sur sa fiche.</p>
+                        <div className="bo-boutons">
+                          <button type="submit" className="btn btn-danger bo-danger">Enregistrer le refus</button>
+                        </div>
+                      </form>
+                    </details>
+                  </>
+                ) : (
+                  <p className="bo-action-aide">Votre rôle ne permet pas d&apos;enregistrer la livraison.</p>
+                )}
+              </section>
+            ) : (
+              <section className={`carte bo-action bo-cloture bo-cloture-${f.statut}`} aria-labelledby="action-titre">
+                <div className="bo-action-tete">
+                  <span className="bo-action-icone"><Icone nom={f.statut === "livree" ? "succes" : f.statut === "refusee" ? "refus" : "croix"} /></span>
+                  <div>
+                    <p className="bo-action-sur">Commande clôturée</p>
+                    <h2 id="action-titre">{LIBELLES_STATUT[f.statut] ?? f.statut}</h2>
+                  </div>
+                </div>
+                <p className="bo-action-aide">
+                  {f.statut === "livree"
+                    ? `Livrée ${f.livree_le ? quand(f.livree_le, maintenant) : ""} : ${formatePrix(f.total_millimes)} encaissés.`
+                    : f.statut === "refusee"
+                      ? `${LIBELLES_ORIGINE_REFUS[f.refus_origine ?? ""] ?? "Refusée"}${f.refus_commentaire ? ` : ${f.refus_commentaire}` : ""}. Le stock est revenu.`
+                      : `Motif : ${f.motif_annulation ?? "non précisé"}. Le stock est revenu.`}
+                </p>
+              </section>
+            )}
+
+            {annulable && peut(role, CONFIRMER) ? (
+              <details className="bo-pli bo-annuler carte">
+                <summary><Icone nom="croix" /> Annuler la commande <Icone nom="bas" className="bo-pli-chevron" /></summary>
                 <form action={action} method="post" className="bo-formulaire">
-                  <input type="hidden" name="action" value="expedier" />
+                  <input type="hidden" name="action" value="annuler" />
                   <input type="hidden" name="statut" value={f.statut} />
-                  <div className="bo-deux">
-                    <div className="champ">
-                      <label htmlFor="transporteur">Transporteur</label>
-                      <input id="transporteur" name="transporteur" maxLength={80} defaultValue={f.transporteur ?? ""} placeholder="Nom du livreur ou de la société" />
-                    </div>
-                    <div className="champ">
-                      <label htmlFor="suivi">
-                        Numéro de suivi <span className="bo-facultatif">(facultatif)</span>
-                      </label>
-                      <input id="suivi" name="suivi" maxLength={80} defaultValue={f.numero_suivi ?? ""} />
-                    </div>
+                  <div className="champ">
+                    <label htmlFor="motif">Motif de l&apos;annulation</label>
+                    <input id="motif" name="motif" required minLength={3} maxLength={500} placeholder="Doublon, rupture, demande du client…" />
                   </div>
                   <div className="bo-boutons">
-                    <button type="submit" className="btn btn-primaire">Marquer expédiée</button>
+                    <button type="submit" className="btn btn-danger bo-danger">Annuler la commande</button>
+                  </div>
+                </form>
+              </details>
+            ) : null}
+
+            {/* ---------------- Les articles ---------------- */}
+            <section className="carte" aria-labelledby="articles-titre">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="articles-titre" className="carte-titre-icone"><Icone nom="colis" /> Articles</h2>
+                </div>
+              </div>
+              <ul className="bo-articles" role="list">
+                {f.lignes.map((l, i) => (
+                  <li key={`${l.sku}-${i}`} className="bo-article">
+                    <span className="bo-vignette">
+                      {l.image ? <Image src={urlFichier(l.image)} alt="" fill sizes="56px" /> : <Icone nom="colis" taille={18} />}
+                      <span className="bo-vignette-qte">{l.quantite}</span>
+                    </span>
+                    <span className="bo-article-corps">
+                      <span className="bo-article-nom">{l.produit_nom}</span>
+                      {l.variante_libelle ? <span className="text-petit discret">{l.variante_libelle}</span> : null}
+                      <span className="text-petit discret">
+                        {l.sku ? `Réf. ${l.sku}` : "Sans référence"}
+                        {l.stock_restant !== null ? ` · reste ${l.stock_restant} en stock` : ""}
+                      </span>
+                    </span>
+                    <span className="bo-article-qte">× {l.quantite}</span>
+                    <span className="bo-article-prix">
+                      <Prix millimes={l.total_ligne_millimes} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <dl className="bo-totaux liste-def">
+                <div>
+                  <dt>Sous-total</dt>
+                  <dd><Prix millimes={f.sous_total_millimes} /></dd>
+                </div>
+                <div>
+                  <dt>Livraison{f.livraison.zone ? ` (${f.livraison.zone})` : ""}</dt>
+                  <dd>{f.frais_livraison_millimes === 0 ? "Offerte" : <Prix millimes={f.frais_livraison_millimes} />}</dd>
+                </div>
+                <div className="bo-total">
+                  <dt>À encaisser à la livraison</dt>
+                  <dd><Prix millimes={f.total_millimes} fort /></dd>
+                </div>
+              </dl>
+            </section>
+
+            {/* ---------------- L'historique ---------------- */}
+            <section className="carte" aria-labelledby="historique-titre">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="historique-titre" className="carte-titre-icone"><Icone nom="journal" /> Historique</h2>
+                </div>
+              </div>
+              <ol className="bo-journal">
+                {journal.map((j) => (
+                  <li key={j.cle}>
+                    <span className="bo-journal-point" aria-hidden="true" />
+                    <span className="bo-journal-texte">
+                      {j.texte}
+                      {j.detail ? <span className="bo-journal-detail"> — {j.detail}</span> : null}
+                    </span>
+                    <span className="bo-journal-meta">
+                      <span className="bo-journal-auteur">{j.auteur}</span> · <span className="bo-journal-quand">{quand(j.le, maintenant)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </div>
+
+          <aside className="pile bo-fiche-cote">
+            {/* ---------------- Le client ---------------- */}
+            <section className="carte" aria-labelledby="client-titre">
+              <h2 id="client-titre" className="sr-only">Client</h2>
+              <div className="bo-client">
+                <span className="avatar avatar-l" aria-hidden="true">{initiales(f.contact.nom)}</span>
+                <span className="bo-client-texte">
+                  <span className="bo-client-nom">{f.contact.nom}</span>
+                  <a className="lien" href={lienAppel(f.contact.telephone)}>{telephoneLisible(f.contact.telephone)}</a>
+                </span>
+              </div>
+              {f.client ? (
+                <>
+                  <p className="ui-etats mt-3">
+                    {f.client.compte
+                      ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié par SMS</span>
+                      : <span className="ui-etat">Commande en invité</span>}
+                    {f.client.nb_commandes <= 1 ? <span className="ui-etat ui-etat-bleu">Nouveau client</span> : <span className="ui-etat">{f.client.nb_commandes} commandes</span>}
+                    {f.client.nb_refus > 0 ? <span className="ui-etat ui-etat-rouge">{f.client.nb_refus} refus à la livraison</span> : null}
+                    {f.client.niveau_risque !== "normal" ? (
+                      <span className="ui-etat ui-etat-rouge">{f.client.niveau_risque === "bloque" ? "Bloqué" : "Surveillé"}</span>
+                    ) : null}
+                  </p>
+                  <p className="text-petit discret mt-3">Client depuis le {new Date(f.client.depuis).toLocaleDateString("fr-FR", { timeZone: "Africa/Tunis" })}</p>
+                </>
+              ) : null}
+              {f.autres.length > 0 ? (
+                <>
+                  <h3 className="bo-sous-titre">Ses autres commandes</h3>
+                  <ul className="bo-autres" role="list">
+                    {f.autres.map((o) => (
+                      <li key={o.numero}>
+                        <Link href={`/gestion/${slug}/commandes/${o.numero}`} className="lien">{o.numero}</Link>
+                        <span className={`bo-statut bo-statut-${o.statut}`}>{LIBELLES_STATUT[o.statut] ?? o.statut}</span>
+                        <Prix millimes={o.total_millimes} />
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </section>
+
+            {/* ---------------- La livraison ---------------- */}
+            <section className="carte" aria-labelledby="livraison-titre">
+              <h2 id="livraison-titre" className="carte-titre-icone"><Icone nom="lieu" /> Livraison</h2>
+              <address className="bo-adresse">
+                {f.contact.nom}
+                <br />
+                {f.livraison.ligne1}
+                {f.livraison.ligne2 ? (
+                  <>
+                    <br />
+                    {f.livraison.ligne2}
+                  </>
+                ) : null}
+                <br />
+                {f.livraison.code_postal ? `${f.livraison.code_postal} ` : ""}
+                {lieu(f.livraison.ville, f.livraison.gouvernorat)}
+              </address>
+              {f.note_client ? (
+                <p className="bo-note-client">
+                  <strong>Note du client</strong> {f.note_client}
+                </p>
+              ) : null}
+            </section>
+
+            {/* ---------------- La note interne ---------------- */}
+            <section className="carte" aria-labelledby="note-titre">
+              <h2 id="note-titre" className="carte-titre-icone"><Icone nom="note" /> Note interne</h2>
+              {role !== "lecture" ? (
+                <form action={action} method="post" className="bo-formulaire mt-3">
+                  <input type="hidden" name="action" value="note" />
+                  <div className="champ">
+                    <label htmlFor="note-interne" className="sr-only">Note interne</label>
+                    <textarea id="note-interne" name="note" maxLength={2000} rows={3} defaultValue={f.note_interne ?? ""}
+                      placeholder="Visible par l'équipe seulement" />
+                  </div>
+                  <div className="bo-boutons">
+                    <button type="submit" className="btn btn-second btn-petit">Enregistrer la note</button>
                   </div>
                 </form>
               ) : (
-                <p className="bo-action-aide">L&apos;expédition revient au propriétaire, à l&apos;administrateur ou à la préparation.</p>
+                <p className="text-petit discret mt-2">{f.note_interne ?? "Aucune note."}</p>
               )}
+              <p className="text-petit discret bo-role">Vous êtes : {LIBELLES_ROLE[role] ?? role}.</p>
             </section>
-          ) : f.statut === "expediee" ? (
-            <section className="carte bo-action" aria-labelledby="action-titre">
-              <h2 id="action-titre">Livraison</h2>
-              <p className="bo-action-aide">
-                Expédiée {f.expediee_le ? quand(f.expediee_le, maintenant) : ""}
-                {f.transporteur ? ` avec ${f.transporteur}` : ""}
-                {f.numero_suivi ? ` · suivi ${f.numero_suivi}` : ""}. Le livreur encaisse {formatePrix(f.total_millimes)}.
-              </p>
-              {peut(role, LIVRER) ? (
-                <>
-                  <form action={action} method="post" className="bo-boutons">
-                    <input type="hidden" name="action" value="livrer" />
-                    <input type="hidden" name="statut" value={f.statut} />
-                    <button type="submit" className="btn btn-primaire">
-                      <Coche taille={16} /> Livrée, paiement encaissé
-                    </button>
-                  </form>
-                  <details className="bo-pli">
-                    <summary>Refusée à la livraison</summary>
-                    <form action={action} method="post" className="bo-formulaire">
-                      <input type="hidden" name="action" value="refuser" />
-                      <input type="hidden" name="statut" value={f.statut} />
-                      <fieldset className="bo-origines">
-                        <legend>D&apos;où vient le refus ?</legend>
-                        {Object.entries(LIBELLES_ORIGINE_REFUS).map(([cle, libelle]) => (
-                          <label key={cle} className="opt">
-                            <input type="radio" name="origine" value={cle} required /> {libelle}
-                          </label>
-                        ))}
-                      </fieldset>
-                      <div className="champ">
-                        <label htmlFor="commentaire">
-                          Commentaire <span className="bo-facultatif">(facultatif)</span>
-                        </label>
-                        <input id="commentaire" name="commentaire" maxLength={500} placeholder="Absent deux fois, colis revenu" />
-                      </div>
-                      <p className="bo-action-aide">Le stock revient automatiquement. Un refus du client ou un client injoignable compte sur sa fiche.</p>
-                      <div className="bo-boutons">
-                        <button type="submit" className="btn btn-second bo-danger">Enregistrer le refus</button>
-                      </div>
-                    </form>
-                  </details>
-                </>
-              ) : (
-                <p className="bo-action-aide">Votre rôle ne permet pas d&apos;enregistrer la livraison.</p>
-              )}
-            </section>
-          ) : (
-            <section className="carte bo-action bo-cloture" aria-labelledby="action-titre">
-              <h2 id="action-titre">{LIBELLES_STATUT[f.statut] ?? f.statut}</h2>
-              <p className="bo-action-aide">
-                {f.statut === "livree"
-                  ? `Livrée ${f.livree_le ? quand(f.livree_le, maintenant) : ""} : ${formatePrix(f.total_millimes)} encaissés.`
-                  : f.statut === "refusee"
-                    ? `${LIBELLES_ORIGINE_REFUS[f.refus_origine ?? ""] ?? "Refusée"}${f.refus_commentaire ? ` : ${f.refus_commentaire}` : ""}. Le stock est revenu.`
-                    : `Motif : ${f.motif_annulation ?? "non précisé"}. Le stock est revenu.`}
-              </p>
-            </section>
-          )}
-
-          {annulable && peut(role, CONFIRMER) ? (
-            <details className="bo-pli bo-annuler">
-              <summary>Annuler la commande</summary>
-              <form action={action} method="post" className="bo-formulaire">
-                <input type="hidden" name="action" value="annuler" />
-                <input type="hidden" name="statut" value={f.statut} />
-                <div className="champ">
-                  <label htmlFor="motif">Motif de l&apos;annulation</label>
-                  <input id="motif" name="motif" required minLength={3} maxLength={500} placeholder="Doublon, rupture, demande du client…" />
-                </div>
-                <div className="bo-boutons">
-                  <button type="submit" className="btn btn-second bo-danger">Annuler la commande</button>
-                </div>
-              </form>
-            </details>
-          ) : null}
-
-          {/* ---------------- Les articles ---------------- */}
-          <section className="carte" aria-labelledby="articles-titre">
-            <h2 id="articles-titre">Articles</h2>
-            <ul className="bo-articles">
-              {f.lignes.map((l, i) => (
-                <li key={`${l.sku}-${i}`} className="bo-article">
-                  <span className="bo-vignette">
-                    {l.image ? <Image src={urlFichier(l.image)} alt="" fill sizes="56px" /> : null}
-                  </span>
-                  <span className="bo-article-corps">
-                    <span className="bo-article-nom">{l.produit_nom}</span>
-                    {l.variante_libelle ? <span className="text-petit text-encre-doux">{l.variante_libelle}</span> : null}
-                    <span className="text-petit text-encre-doux tabular-nums">
-                      {l.sku ? `Réf. ${l.sku}` : "Sans référence"}
-                      {l.stock_restant !== null ? ` · reste ${l.stock_restant} en stock` : ""}
-                    </span>
-                  </span>
-                  <span className="bo-article-qte">× {l.quantite}</span>
-                  <span className="bo-article-prix">
-                    <Prix millimes={l.total_ligne_millimes} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <dl className="bo-totaux">
-              <div>
-                <dt>Sous-total</dt>
-                <dd><Prix millimes={f.sous_total_millimes} /></dd>
-              </div>
-              <div>
-                <dt>Livraison{f.livraison.zone ? ` (${f.livraison.zone})` : ""}</dt>
-                <dd>{f.frais_livraison_millimes === 0 ? "Offerte" : <Prix millimes={f.frais_livraison_millimes} />}</dd>
-              </div>
-              <div className="bo-total">
-                <dt>À encaisser</dt>
-                <dd><Prix millimes={f.total_millimes} fort /></dd>
-              </div>
-            </dl>
-          </section>
-
-          {/* ---------------- L'historique ---------------- */}
-          <section className="carte" aria-labelledby="historique-titre">
-            <h2 id="historique-titre">Historique</h2>
-            <ol className="bo-journal">
-              {journal.map((j) => (
-                <li key={j.cle}>
-                  <span className="bo-journal-quand">{quand(j.le, maintenant)}</span>
-                  <span className="bo-journal-texte">
-                    {j.texte}
-                    {j.detail ? <span className="bo-journal-detail"> — {j.detail}</span> : null}
-                  </span>
-                  <span className="bo-journal-auteur">{j.auteur}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
+          </aside>
         </div>
-
-        <aside className="bo-fiche-cote">
-          {/* ---------------- Le client ---------------- */}
-          <section className="carte" aria-labelledby="client-titre">
-            <h2 id="client-titre">Client</h2>
-            <p className="bo-client-nom">{f.contact.nom}</p>
-            <p>
-              <a className="bo-lien" href={lienAppel(f.contact.telephone)}>{telephoneLisible(f.contact.telephone)}</a>
-            </p>
-            {f.client ? (
-              <>
-                <p className="bo-badges">
-                  {f.client.compte ? <span className="bo-badge bo-badge-ok">Numéro vérifié par SMS</span> : <span className="bo-badge">Commande en invité</span>}
-                  {f.client.nb_commandes <= 1 ? <span className="bo-badge">Nouveau client</span> : <span className="bo-badge">{f.client.nb_commandes} commandes</span>}
-                  {f.client.nb_refus > 0 ? <span className="bo-badge bo-badge-alerte">{f.client.nb_refus} refus à la livraison</span> : null}
-                  {f.client.niveau_risque !== "normal" ? (
-                    <span className="bo-badge bo-badge-alerte">{f.client.niveau_risque === "bloque" ? "Bloqué" : "Surveillé"}</span>
-                  ) : null}
-                </p>
-                <p className="text-petit text-encre-doux">Client depuis le {new Date(f.client.depuis).toLocaleDateString("fr-FR", { timeZone: "Africa/Tunis" })}</p>
-              </>
-            ) : null}
-            {f.autres.length > 0 ? (
-              <>
-                <h3 className="bo-sous-titre">Ses autres commandes</h3>
-                <ul className="bo-autres">
-                  {f.autres.map((o) => (
-                    <li key={o.numero}>
-                      <Link href={`/gestion/${slug}/commandes/${o.numero}`} className="bo-lien">{o.numero}</Link>
-                      <span className={`bo-statut bo-statut-${o.statut}`}>{LIBELLES_STATUT[o.statut] ?? o.statut}</span>
-                      <Prix millimes={o.total_millimes} />
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : null}
-          </section>
-
-          {/* ---------------- La livraison ---------------- */}
-          <section className="carte" aria-labelledby="livraison-titre">
-            <h2 id="livraison-titre">Livraison</h2>
-            <address className="bo-adresse">
-              {f.contact.nom}
-              <br />
-              {f.livraison.ligne1}
-              {f.livraison.ligne2 ? (
-                <>
-                  <br />
-                  {f.livraison.ligne2}
-                </>
-              ) : null}
-              <br />
-              {f.livraison.code_postal ? `${f.livraison.code_postal} ` : ""}
-              {lieu(f.livraison.ville, f.livraison.gouvernorat)}
-            </address>
-            {f.note_client ? (
-              <p className="bo-note-client">
-                <strong>Note du client :</strong> {f.note_client}
-              </p>
-            ) : null}
-          </section>
-
-          {/* ---------------- La note interne ---------------- */}
-          <section className="carte" aria-labelledby="note-titre">
-            <h2 id="note-titre">Note interne</h2>
-            {role !== "lecture" ? (
-              <form action={action} method="post" className="bo-formulaire">
-                <input type="hidden" name="action" value="note" />
-                <div className="champ">
-                  <label htmlFor="note-interne" className="sr-only">Note interne</label>
-                  <textarea id="note-interne" name="note" maxLength={2000} rows={3} defaultValue={f.note_interne ?? ""}
-                    placeholder="Visible par l'équipe seulement" />
-                </div>
-                <div className="bo-boutons">
-                  <button type="submit" className="btn btn-second">Enregistrer la note</button>
-                </div>
-              </form>
-            ) : (
-              <p className="text-petit text-encre-doux">{f.note_interne ?? "Aucune note."}</p>
-            )}
-            <p className="text-petit text-encre-doux bo-role">Vous êtes : {LIBELLES_ROLE[role] ?? role}.</p>
-          </section>
-        </aside>
       </div>
-    </>
+
+      {aConfirmer && peut(role, CONFIRMER) ? (
+        <div className="bo-barre-mobile" role="group" aria-label={`Joindre ${prenom}`}>
+          <a className="btn btn-primaire btn-grand" href={lienAppel(f.contact.telephone)}>
+            <Icone nom="telephone" /> Appeler {prenom}
+          </a>
+          <a className="btn btn-second btn-grand bo-whatsapp" href={whatsapp} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp à ${prenom}`}>
+            <Icone nom="message" />
+          </a>
+        </div>
+      ) : null}
+    </div>
   );
 }

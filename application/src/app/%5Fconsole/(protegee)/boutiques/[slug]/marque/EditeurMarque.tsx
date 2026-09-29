@@ -158,7 +158,7 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme }: { slug: string; 
               <span className="text-legende text-encre-doux">Catalogue · Panier</span>
             </div>
             <div className="px-4 py-5">
-              <p className="etiquette">{code === "technique" ? "Outillage et quincaillerie" : "Nouvelle collection"}</p>
+              <p className="ui-etiquette">{code === "technique" ? "Outillage et quincaillerie" : "Nouvelle collection"}</p>
               <p className={`font-display leading-tight mt-2 ${code === "technique" ? "text-[1.5rem] font-extrabold uppercase" : "text-[1.875rem]"}`}>Bienvenue chez {nom}.</p>
               <p className="text-petit text-encre-doux mt-2">{textes.resume_fr || "La présentation courte de la boutique s'affiche ici."}</p>
               <span className="btn btn-primaire mt-4 pointer-events-none">Voir le catalogue</span>

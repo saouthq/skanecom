@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { exigeAdmin } from "@/lib/console/session";
@@ -8,6 +7,8 @@ import { COOKIE_LIEN, ROLES_EQUIPE, VALIDITE_LIEN, cheminEquipe, lienWhatsAppPar
 import { boutiqueDe, equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { BoutonCopier } from "./BoutonCopier";
+import { initiales } from "@/components/console/Coquille";
+import { Icone } from "@/components/console/Icone";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   return { title: `Équipe · ${(await params).slug}` };
@@ -34,9 +35,9 @@ function lienEncoreUtile(l: LienRemis | null, equipe: MembreEquipe[]): LienRemis
 }
 
 function etatDe(m: MembreEquipe): { texte: string; classe: string } {
-  if (!m.actif) return { texte: "Accès retiré", classe: "statut-suspendue" };
-  if (m.en_attente) return { texte: "Invitation en attente", classe: "statut-en_preparation" };
-  return { texte: "Actif", classe: "statut-active" };
+  if (!m.actif) return { texte: "Accès retiré", classe: "ui-etat ui-etat-point" };
+  if (m.en_attente) return { texte: "Invitation en attente", classe: "ui-etat ui-etat-point ui-etat-ambre" };
+  return { texte: "Actif", classe: "ui-etat ui-etat-point ui-etat-vert" };
 }
 
 /* C4 · L'équipe d'une boutique : qui entre dans son backoffice, avec quel
@@ -57,46 +58,52 @@ export default async function Equipe({ params, searchParams }: {
   const action = cheminEquipe(slug);
 
   return (
-    <div className="max-w-[56rem]">
-      <p className="text-petit">
-        <Link href="/" className="text-encre-doux hover:underline">Boutiques</Link>
-        <span className="text-encre-doux"> / </span>
-        <Link href={`/boutiques/${slug}`} className="text-encre-doux hover:underline">{boutique.nom}</Link>
-      </p>
-      <h1 className="mt-1">Équipe</h1>
-      <p className="text-encre-doux mt-1">
-        Les personnes qui entrent dans le backoffice de {boutique.nom} : commandes à confirmer, colis à préparer. Chacune a son
-        propre compte ; vous ne connaissez jamais son mot de passe.
-      </p>
+    <div className="pile">
+      {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
+      {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
 
-      <div className="mt-6 grid gap-5">
-        {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
-        {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
-
-        {lien ? (
-          <section id="lien" className="carte carte-lien" aria-labelledby="t-lien">
-            <h2 id="t-lien">{lien.type === "invite" ? "Le lien d'invitation" : "Le lien pour choisir un mot de passe"} de {lien.email}</h2>
-            <p className="text-encre-doux mt-1">
-              À envoyer à cette personne seulement, par WhatsApp par exemple. Il sert une seule fois, pendant {VALIDITE_LIEN}.
-              Il reste affiché ici un quart d&apos;heure.
-            </p>
-            <label className="sr-only" htmlFor="lien-acces">Lien</label>
-            <input id="lien-acces" className="lien-acces code-secret mt-3" readOnly value={lien.lien} />
-            <div className="mt-3 flex flex-wrap gap-3">
-              <BoutonCopier texte={lien.lien} />
-              <a className="btn btn-second" href={lienWhatsAppPartage(messageLien(lien))} target="_blank" rel="noopener noreferrer">
-                Envoyer par WhatsApp
-              </a>
+      {lien ? (
+        <section id="lien" className="carte carte-lien" aria-labelledby="t-lien">
+          <div className="carte-tete">
+            <div>
+              <h2 id="t-lien" className="carte-titre-icone">
+                <Icone nom="lien" /> {lien.type === "invite" ? "Le lien d'invitation" : "Le lien pour choisir un mot de passe"} de {lien.email}
+              </h2>
+              <p>À envoyer à cette personne seulement. Il sert une seule fois, pendant {VALIDITE_LIEN} ; il reste affiché ici un quart d&apos;heure.</p>
             </div>
-          </section>
-        ) : null}
+          </div>
+          <div className="lien-acces-rang">
+            <div className="champ lien-acces">
+              <label className="sr-only" htmlFor="lien-acces">Lien</label>
+              <input id="lien-acces" className="code-secret" readOnly value={lien.lien} />
+            </div>
+            <BoutonCopier texte={lien.lien} />
+            <a className="btn btn-succes" href={lienWhatsAppPartage(messageLien(lien))} target="_blank" rel="noopener noreferrer">
+              <Icone nom="message" /> Envoyer par WhatsApp
+            </a>
+          </div>
+        </section>
+      ) : null}
 
+      <div className="grille-2">
         <section className="carte" aria-labelledby="t-membres">
-          <h2 id="t-membres">Membres <span className="text-encre-doux font-normal tabular-nums">· {actifs} {actifs > 1 ? "actifs" : "actif"}</span></h2>
+          <div className="carte-tete">
+            <div>
+              <h2 id="t-membres">Membres</h2>
+              <p>
+                {actifs} {actifs > 1 ? "personnes ont" : "personne a"} accès au backoffice de {boutique.nom}. Chacune a son compte ; vous ne
+                connaissez jamais son mot de passe.
+              </p>
+            </div>
+          </div>
           {equipe.length === 0 ? (
-            <p className="text-encre-doux mt-2">Personne encore. Invitez le propriétaire de la boutique ci-dessous.</p>
+            <div className="vide">
+              <span className="vide-icone"><Icone nom="equipe" taille={20} /></span>
+              <strong>Personne encore</strong>
+              <p>Invitez le propriétaire de la boutique : il recevra un lien pour choisir son mot de passe.</p>
+            </div>
           ) : (
-            <ul className="equipe mt-3" role="list">
+            <ul className="equipe" role="list">
               {equipe.map((m) => {
                 const etat = etatDe(m);
                 const qui = m.email ?? m.telephone ?? "compte sans adresse";
@@ -104,32 +111,41 @@ export default async function Equipe({ params, searchParams }: {
                 return (
                   <li key={m.user_id} className={`membre${m.actif ? "" : " membre-inactif"}`}>
                     <div className="membre-qui">
-                      <p className="font-medium break-all">{qui}</p>
-                      <p className="text-petit text-encre-doux mt-0.5">
-                        <span className={`statut ${etat.classe}`}>{etat.texte}</span>
-                        {m.actif && !m.en_attente
-                          ? <> · {m.derniere_connexion ? `vu le ${dateJournal(m.derniere_connexion)}` : "jamais connecté"}</>
-                          : null}
-                        {m.actif && aal2 ? <> · {m.double_auth ? "double authentification active" : "double authentification pas encore activée"}</> : null}
-                      </p>
+                      <span className="avatar" aria-hidden="true">{initiales(qui)}</span>
+                      <div>
+                        <p className="membre-nom">{qui}</p>
+                        <p className="membre-infos">
+                          <span className={etat.classe}>{etat.texte}</span>
+                          {m.actif && !m.en_attente
+                            ? <span>{m.derniere_connexion ? `vu le ${dateJournal(m.derniere_connexion)}` : "jamais connecté"}</span>
+                            : null}
+                          {m.actif && aal2 ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Icone nom="bouclier" taille={13} />
+                              {m.double_auth ? "double authentification active" : "double authentification pas encore activée"}
+                            </span>
+                          ) : null}
+                        </p>
+                      </div>
                     </div>
                     <div className="membre-gestes">
                       {m.actif ? (
                         <form action={`${action}/modifier`} method="post" className="membre-role">
                           <input type="hidden" name="user_id" value={m.user_id} />
                           <label className="sr-only" htmlFor={`role-${m.user_id}`}>Rôle de {qui}</label>
-                          <select id={`role-${m.user_id}`} name="role" defaultValue={m.role}>
+                          <select id={`role-${m.user_id}`} name="role" defaultValue={m.role} className="entree">
                             {ROLES_EQUIPE.map((r) => <option key={r.code} value={r.code}>{LIBELLES_ROLE[r.code]}</option>)}
                           </select>
                           <button type="submit" className="btn btn-second btn-petit">Changer</button>
                         </form>
                       ) : (
-                        <span className="text-petit text-encre-doux">{LIBELLES_ROLE[m.role] ?? m.role}</span>
+                        <span className="ui-etat">{LIBELLES_ROLE[m.role] ?? m.role}</span>
                       )}
                       {m.actif ? (
                         <form action={`${action}/lien`} method="post">
                           <input type="hidden" name="user_id" value={m.user_id} />
                           <button type="submit" className="btn btn-second btn-petit">
+                            <Icone nom={m.en_attente ? "lien" : "cle"} taille={14} />
                             {m.en_attente ? "Nouvelle invitation" : "Lien de mot de passe"}
                           </button>
                         </form>
@@ -138,6 +154,7 @@ export default async function Equipe({ params, searchParams }: {
                         <input type="hidden" name="user_id" value={m.user_id} />
                         <input type="hidden" name="actif" value={m.actif ? "0" : "1"} />
                         <button type="submit" className={`btn btn-petit ${m.actif ? "btn-danger" : "btn-second"}`}>
+                          <Icone nom={m.actif ? "retirer" : "rendre"} taille={14} />
                           {m.actif ? "Retirer l'accès" : "Rendre l'accès"}
                         </button>
                       </form>
@@ -150,21 +167,22 @@ export default async function Equipe({ params, searchParams }: {
         </section>
 
         <section className="carte" aria-labelledby="t-inviter">
-          <h2 id="t-inviter">Inviter une personne</h2>
-          <p className="text-encre-doux mt-1">
-            La console crée son compte et vous donne un lien à lui envoyer : elle y choisit son mot de passe, puis arrive dans
-            le backoffice. Quelqu&apos;un qui a déjà un compte (une autre boutique) entre avec son mot de passe habituel.
-          </p>
-          <form action={`${action}/inviter`} method="post" className="formulaire mt-4">
+          <div className="carte-tete">
+            <div>
+              <h2 id="t-inviter" className="carte-titre-icone"><Icone nom="plus" /> Inviter une personne</h2>
+              <p>La console crée son compte et vous donne un lien à lui envoyer : elle y choisit son mot de passe, puis arrive dans le backoffice.</p>
+            </div>
+          </div>
+          <form action={`${action}/inviter`} method="post" className="formulaire">
             <div className="champ">
               <label htmlFor="email">Adresse e-mail</label>
               <input id="email" name="email" type="email" required autoComplete="off" defaultValue={messages.email ?? ""} placeholder="prenom@exemple.tn" />
-              <p className="aide">Son identifiant de connexion. Aucun e-mail n&apos;est envoyé : c&apos;est vous qui transmettez le lien.</p>
+              <p className="aide">Son identifiant. Aucun e-mail n&apos;est envoyé : c&apos;est vous qui transmettez le lien.</p>
             </div>
-            <fieldset className="roles">
+            <fieldset className="choix">
               <legend>Rôle</legend>
               {ROLES_EQUIPE.map((r) => (
-                <label key={r.code} className="role-choix">
+                <label key={r.code} className="choix-carte role-choix">
                   <input type="radio" name="role" value={r.code} required defaultChecked={(messages.role ?? "confirmateur") === r.code} />
                   <span>
                     <b>{LIBELLES_ROLE[r.code]}</b>
@@ -173,9 +191,7 @@ export default async function Equipe({ params, searchParams }: {
                 </label>
               ))}
             </fieldset>
-            <div>
-              <button type="submit" className="btn btn-primaire">Inviter</button>
-            </div>
+            <button type="submit" className="btn btn-primaire btn-bloc">Inviter</button>
           </form>
         </section>
       </div>

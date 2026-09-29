@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
@@ -23,17 +22,14 @@ export default async function Marque({ params, searchParams }: {
 
   return (
     <>
-      <p className="text-petit">
-        <Link href="/" className="text-encre-doux hover:underline">Boutiques</Link>
-        <span className="text-encre-doux"> / </span>
-        <Link href={`/boutiques/${slug}`} className="text-encre-doux hover:underline">{boutique.nom}</Link>
-      </p>
-      <h1 className="mt-1">Marque</h1>
-      <p className="text-encre-doux mt-1">
-        Tout ce qui habille la vitrine. La base refuse toute valeur hors liste ; chaque enregistrement est tracé.
-        Visible sur la boutique d&apos;ici cinq minutes (le temps que ses pages en cache se renouvellent).
-      </p>
-      <div className="mt-6 grid gap-5">
+      <div className="sous-tete">
+        <h2>Marque</h2>
+        <p>
+          Tout ce qui habille la vitrine. La base refuse toute valeur hors liste ; chaque enregistrement est tracé.
+          Visible sur la boutique d&apos;ici cinq minutes (le temps que ses pages en cache se renouvellent).
+        </p>
+      </div>
+      <div className="grid gap-5">
         {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
         {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
         <EditeurMarque slug={slug} boutiqueId={boutique.id} nom={boutique.nom} theme={theme} />

@@ -89,7 +89,7 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     await connexion(page, "appels@maymar.test");
     await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
     verifie(true, "l'employé des appels entre directement dans le backoffice de Maymar");
-    verifie((await page.locator(".bo-qui-compte").innerText()).includes("Confirmation"), "son rôle est affiché");
+    verifie((await page.locator(".app-cote .app-compte-role").innerText()).includes("Confirmation"), "son rôle est affiché");
   });
 
   await etape("la liste « à confirmer »", async () => {
@@ -184,7 +184,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await connexion(page, "gerant@maymar.test");
     await page.waitForURL(/double-authentification/, { timeout: 15000 });
     verifie(true, "propriétaire : la double authentification est demandée");
-    const secret = (await page.locator("[data-secret-totp]").innerText()).trim();
+    const secret = (await page.locator("[data-secret-totp]").textContent()).trim();
     await clic(page, page.locator("#code"));
     await tape(page, totp(secret));
     await page.keyboard.press("Enter");

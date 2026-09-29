@@ -7,9 +7,10 @@ import { feuilleDuTheme, themeDeLaBoutique } from "@/lib/theme";
    LA CONSOLE SKANECOM — racine (PRD §6.1). Outil interne de Skander et de son
    père : mettre une boutique en place, du domaine au catalogue.
 
-   Elle réemploie les styles de la vitrine (boutons, champs, jetons), habillés
-   d'une palette à elle : on sait toujours si l'on regarde la console ou une
-   boutique. Jamais en cache, jamais indexée (le proxy pose les en-têtes).
+   Son interface à elle (console.css : Inter, neutres froids, barre latérale)
+   habille les mêmes classes que la vitrine (boutons, champs) : on sait
+   toujours si l'on regarde un outil ou une boutique. Jamais en cache, jamais
+   indexée (le proxy pose les en-têtes).
    ========================================================================== */
 
 /* Toutes les familles sont déclarées (app/polices.css) : l'aperçu de la
@@ -20,9 +21,9 @@ const THEME_CONSOLE = themeDeLaBoutique({
   code: "technique",
   polices: { titres: "plex-sans", texte: "plex-sans" },
   couleurs: {
-    fond: "#F4F5F7", surface: "#FFFFFF", surface_2: "#ECEEF2", filet: "#DCE0E6", filet_fort: "#B6BDC8",
-    contour_champ: "#8792A2", encre: "#121826", encre_doux: "#4A5568", accent: "#1E4FD8", accent_clair: "#6E8FF0",
-    succes: "#17693A", erreur: "#B42318", alerte: "#8A5A00",
+    fond: "#F6F6F7", surface: "#FFFFFF", surface_2: "#F4F4F5", filet: "#E4E4E7", filet_fort: "#D4D4D8",
+    contour_champ: "#8E8E98", encre: "#18181B", encre_doux: "#52525B", accent: "#4F46E5", accent_clair: "#A5B4FC",
+    succes: "#15803D", erreur: "#B91C1C", alerte: "#B45309",
   },
 });
 

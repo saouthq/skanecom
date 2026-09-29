@@ -6,6 +6,7 @@ import { exigeAdmin } from "@/lib/console/session";
 import { dateJournal } from "@/lib/console/libelles";
 import { formatePrix } from "@/lib/prix";
 import type { LigneImport } from "@/lib/console/import";
+import { Icone } from "@/components/console/Icone";
 
 export const metadata: Metadata = { title: "Rapport d'import" };
 
@@ -21,8 +22,8 @@ type Import = {
 
 function Chiffre({ valeur, libelle }: { valeur: number | string; libelle: string }) {
   return (
-    <div className="bg-surface border border-filet rounded-carte p-4">
-      <p className="text-t3 font-semibold tabular-nums">{valeur}</p>
+    <div className="chiffre-cle">
+      <p className="chiffre-cle-valeur tabular-nums">{valeur}</p>
       <p className="text-petit text-encre-doux">{libelle}</p>
     </div>
   );
@@ -42,19 +43,13 @@ export default async function RapportImport({ params }: { params: Promise<{ slug
 
   return (
     <>
-      <p className="text-petit">
-        <Link href="/" className="text-encre-doux hover:underline">Boutiques</Link>
-        <span className="text-encre-doux"> / </span>
-        <Link href={`/boutiques/${slug}`} className="text-encre-doux hover:underline">{imp.boutique.nom}</Link>
-        <span className="text-encre-doux"> / </span>
-        <Link href={`/boutiques/${slug}/import`} className="text-encre-doux hover:underline">Import</Link>
-      </p>
-      <h1 className="mt-1">{imp.fichier}</h1>
-      <p className="text-encre-doux mt-1">
-        {r.lignes} lignes lues le {dateJournal(imp.created_at)}{imp.acteur ? ` par ${imp.acteur}` : ""}.
-      </p>
+      <div className="sous-tete">
+        <p className="page-avant"><Link href={`/boutiques/${slug}/import`}><Icone nom="retour" taille={14} /> Importer un autre fichier</Link></p>
+        <h2 className="carte-titre-icone"><Icone nom="fichier" /> {imp.fichier}</h2>
+        <p>{r.lignes} lignes lues le {dateJournal(imp.created_at)}{imp.acteur ? ` par ${imp.acteur}` : ""}.</p>
+      </div>
 
-      <div className="mt-6 grid gap-5">
+      <div className="grid gap-5">
         {imp.statut === "applique" ? (
           <p className="message message-succes" role="status">
             Import appliqué le {dateJournal(imp.applique_le!)} : le catalogue de {imp.boutique.nom} est à jour.{" "}

@@ -39,11 +39,11 @@ export function FormulaireCode({ facteur, erreurInitiale, children }: {
   };
 
   return (
-    <form action="/double-authentification/verifier" method="post" className="carte formulaire mt-6" onSubmit={envoie} aria-busy={envoi}>
+    <form action="/double-authentification/verifier" method="post" className="carte porte-carte formulaire" onSubmit={envoie} aria-busy={envoi}>
       <p className="message message-erreur" role="alert" hidden={!erreur}>{erreur}</p>
       <input type="hidden" name="facteur" value={facteur} />
       {children}
-      <button type="submit" className="btn btn-primaire btn-bloc" disabled={envoi}>
+      <button type="submit" className="btn btn-primaire btn-bloc btn-grand" disabled={envoi}>
         {envoi ? "Vérification…" : "Valider"}
       </button>
     </form>

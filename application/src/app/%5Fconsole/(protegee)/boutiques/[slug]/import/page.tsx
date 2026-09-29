@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
@@ -23,18 +22,15 @@ export default async function Import({ params, searchParams }: {
 
   return (
     <div className="max-w-[48rem]">
-      <p className="text-petit">
-        <Link href="/" className="text-encre-doux hover:underline">Boutiques</Link>
-        <span className="text-encre-doux"> / </span>
-        <Link href={`/boutiques/${slug}`} className="text-encre-doux hover:underline">{boutique.nom}</Link>
-      </p>
-      <h1 className="mt-1">Importer un catalogue</h1>
-      <p className="text-encre-doux mt-1">
-        Un fichier Excel (.xlsx) ou CSV. Rien n&apos;est écrit avant votre confirmation : la console vérifie d&apos;abord
-        chaque ligne et vous montre ce qui sera créé, modifié ou refusé.
-      </p>
+      <div className="sous-tete">
+        <h2>Importer un catalogue</h2>
+        <p>
+          Un fichier Excel (.xlsx) ou CSV. Rien n&apos;est écrit avant votre confirmation : la console vérifie d&apos;abord
+          chaque ligne et vous montre ce qui sera créé, modifié ou refusé.
+        </p>
+      </div>
 
-      <form action={`/boutiques/${slug}/import/analyser`} method="post" encType="multipart/form-data" className="carte formulaire mt-6">
+      <form action={`/boutiques/${slug}/import/analyser`} method="post" encType="multipart/form-data" className="carte formulaire">
         {erreur ? <p className="message message-erreur" role="alert">{erreur}</p> : null}
         <input type="hidden" name="boutique_id" value={boutique.id} />
         <div className="champ">
