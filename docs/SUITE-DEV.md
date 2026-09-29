@@ -15,14 +15,14 @@
 | Accès | État au 29/09 | Ce qu'il débloque |
 |---|---|---|
 | Secrets GitHub `CLOUDFLARE_API_TOKEN` et `CLOUDFLARE_ACCOUNT_ID` | **Manquants** | Workflow `prototype-vitrine.yml` : déploiements de test sur Cloudflare |
-| Organisation Supabase « SkanEcom » visible par le connecteur | **Manquante** (le connecteur ne voyait que « Lemonbeach ») | Création du projet de développement et migrations par le connecteur |
+| Organisation Supabase « SkanEcom » visible par le connecteur | Manquante (le connecteur ne voyait que « Lemonbeach »). **Pas bloquant pour l'étape 1** : on développe sur un Postgres local | Base dans le cloud, nécessaire avant la mise en ligne de Maymar (étape 2) |
 | Bucket R2 `skanecom-prototype-vitrine-response-store-cache-bodies` | Créé | Cache de la vitrine du prototype |
 | Réseau de l'environnement vers `*.supabase.co` et `api.cloudflare.com` | Bloqué (facultatif) | Tests directs depuis le conteneur |
 
 ## Premières tâches de l'étape 1 (socle), dans l'ordre
 
 1. **Phase 2 du prototype** (dès que les secrets sont là) : lancer `deployer`, `panne` et `retablir` avec le workflow, consigner les mesures dans le rapport, ajouter un test de séparation du cache entre deux domaines, puis `supprimer`.
-2. **Projet Supabase SkanEcom** (région `eu-west-3`, gratuit pendant le développement). Migrations multi-boutique à partir de celles de Maymar, en appliquant `cadrage/03-reprise-maymar.md` :
+2. **Base locale d'abord** (décision de Skander, 29/09) : Postgres local avec les éléments Supabase simulés (`auth.users`, `auth.uid()`, rôles `anon` et `authenticated`), comme pour le prototype. Si Docker est disponible, utiliser `supabase start` pour avoir aussi Auth et l'API REST. On passe au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) avant l'étape 2. Migrations multi-boutique à partir de celles de Maymar, en appliquant `cadrage/03-reprise-maymar.md` :
    - `boutique_id` partout, clés étrangères composites ;
    - `private.est_membre()` ;
    - unicités par boutique, compteur de commandes par boutique ;
