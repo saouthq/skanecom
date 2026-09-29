@@ -211,6 +211,13 @@ export default async function FicheCommande({
             <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> à la livraison
           </>
         }
+        actions={
+          ["confirmee", "expediee"].includes(f.statut) ? (
+            <Link href={`/gestion/${slug}/bordereaux?n=${encodeURIComponent(f.numero)}`} className="btn btn-second">
+              <Icone nom="fichier" /> Bordereau
+            </Link>
+          ) : null
+        }
       />
 
       <ol className="bo-progression" aria-label="Avancement de la commande">

@@ -85,15 +85,22 @@ export default async function Commandes({
         titre="Commandes"
         description={etape.cle === "a_confirmer" ? "La plus ancienne en haut : c'est elle qu'on appelle d'abord." : undefined}
         actions={
-          <form role="search" method="get" action={`/gestion/${slug}`} className="bo-recherche">
-            <input type="hidden" name="etape" value={etape.cle} />
-            <label htmlFor="q" className="sr-only">Chercher une commande</label>
-            <span className="bo-recherche-champ">
-              <Icone nom="recherche" />
-              <input id="q" name="q" type="search" className="entree" defaultValue={q} placeholder="Numéro, nom ou téléphone" autoComplete="off" />
-            </span>
-            <button type="submit" className="btn btn-second">Chercher</button>
-          </form>
+          <>
+            <form role="search" method="get" action={`/gestion/${slug}`} className="bo-recherche">
+              <input type="hidden" name="etape" value={etape.cle} />
+              <label htmlFor="q" className="sr-only">Chercher une commande</label>
+              <span className="bo-recherche-champ">
+                <Icone nom="recherche" />
+                <input id="q" name="q" type="search" className="entree" defaultValue={q} placeholder="Numéro, nom ou téléphone" autoComplete="off" />
+              </span>
+              <button type="submit" className="btn btn-second">Chercher</button>
+            </form>
+            {etape.cle === "a_preparer" && liste.compteurs.a_preparer > 0 ? (
+              <Link href={`/gestion/${slug}/bordereaux?etape=a_preparer`} className="btn btn-primaire">
+                <Icone nom="fichier" /> Bordereaux ({liste.compteurs.a_preparer})
+              </Link>
+            ) : null}
+          </>
         }
       />
 

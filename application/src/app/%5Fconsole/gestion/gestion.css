@@ -462,6 +462,47 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .rg-zone-nom { grid-column: 1 / -1; }
 }
 
+/* ---- Bordereaux de livraison (deux par A4) ---- */
+.bdx-feuilles { display: grid; gap: 1.25rem; justify-items: center; }
+.bdx {
+  display: grid; grid-template-rows: auto auto 1fr auto; gap: 4mm; inline-size: min(100%, 194mm); min-block-size: 132mm;
+  padding: 7mm 8mm; background: #fff; color: #111; border: 1px solid var(--ui-bord); border-radius: 4px;
+  box-shadow: var(--ui-ombre-s); font-size: 10.5pt; line-height: 1.35;
+}
+.bdx p { margin: 0; }
+.bdx-etiquette { font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #555; margin-block-end: 1mm !important; }
+.bdx-tete { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6mm; padding-block-end: 3mm; border-block-end: 1.5px solid #111; }
+.bdx-exp-nom { font-weight: 700; font-size: 11pt; }
+.bdx-numero { text-align: end; }
+.bdx-num { font-size: 17pt; font-weight: 800; letter-spacing: .01em; }
+.bdx-destinataire { padding: 3mm 4mm; border: 1.5px solid #111; border-radius: 2mm; }
+.bdx-dest-nom { font-size: 15pt; font-weight: 700; }
+.bdx-dest-tel { font-size: 17pt; font-weight: 800; letter-spacing: .02em; font-variant-numeric: tabular-nums; margin-block: .5mm 1.5mm !important; }
+.bdx-adresse { font-size: 11.5pt; }
+.bdx-note { margin-block-start: 1.5mm !important; font-style: italic; color: #333; }
+.bdx-bas { display: grid; grid-template-columns: minmax(0, 1fr) 58mm; gap: 5mm; align-items: start; }
+.bdx-contenu ul { display: grid; gap: .75mm; margin: 0; padding: 0; list-style: none; font-size: 9.5pt; }
+.bdx-ref { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 8pt; color: #555; }
+.bdx-montant { padding: 3mm 4mm; background: #111; color: #fff; border-radius: 2mm; }
+.bdx-montant .bdx-etiquette { color: #ccc; }
+.bdx-montant p:last-child { font-size: 8pt; color: #ddd; margin-block-start: 1mm !important; }
+.bdx-somme { font-size: 18pt; font-weight: 800; font-variant-numeric: tabular-nums; }
+.bdx-somme .prix, .bdx-somme .prix * { color: inherit !important; }
+.bdx-paye { background: #fff; color: #111; border: 1.5px solid #111; }
+.bdx-paye .bdx-etiquette { color: #555; }
+.bdx-pied { display: flex; flex-wrap: wrap; gap: 1mm 6mm; padding-block-start: 2.5mm; border-block-start: 1px dashed #999; font-size: 8.5pt; color: #333; }
+
+@page { size: A4; margin: 8mm; }
+@media print {
+  .app-cote, .app-haut, .app-menu, .bdx-ecran, .skip, .lien-evitement { display: none !important; }
+  .app, .app-principal, .app-contenu { display: block !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; background: #fff !important; max-inline-size: none !important; }
+  body, .console { background: #fff !important; }
+  .bdx-feuilles { display: block; }
+  .bdx { inline-size: 100%; block-size: 136mm; min-block-size: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none; break-inside: avoid; }
+  .bdx:nth-child(odd) { border-block-end: 1px dashed #999; margin-block-end: 5mm; padding-block-end: 9mm; }
+  .bdx:nth-child(even) { break-after: page; }
+}
+
 /* ---- Équipe ---- */
 .eq-vous { margin-inline-start: .5rem; vertical-align: 1px; }
 .eq-ailleurs { align-self: center; white-space: nowrap; }

@@ -251,6 +251,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis l'export des données** (migration 17, `20260929101600_gestion_export.sql`, 11 tests dans `supabase/tests/19_export.sql`) : `gestion_export(boutique, jeu)` — commandes, articles, clients, catalogue, stock — pour le propriétaire et l'administrateur, tracé au journal d'audit.
 
+**Puis les bordereaux de livraison** (migration 18, `20260929101700_gestion_bordereaux.sql`, 7 tests dans `supabase/tests/20_bordereaux.sql`) : `gestion_bordereaux(boutique, numéros | étape)` — expéditeur, destinataire, contenu, montant — pour toute l'équipe.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

@@ -246,6 +246,30 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie(true, "le code de l'application ouvre le backoffice");
   });
 
+  await etape("les bordereaux des commandes à préparer", async () => {
+    await page.goto(`${C}/gestion/maymar?etape=a_preparer`, { waitUntil: "networkidle" });
+    const bouton = page.getByRole("link", { name: /^Bordereaux \(\d+\)$/ });
+    const n = Number((await bouton.innerText()).match(/\d+/)?.[0] ?? 0);
+    verifie(n >= 1, `un bouton pour les ${n} commandes à préparer`);
+    await clic(page, bouton);
+    await page.waitForURL(/\/bordereaux\?etape=a_preparer$/);
+    await page.waitForLoadState("networkidle");
+    verifie(await page.locator(".bdx").count() === n, `${n} bordereau(x), un par colis`);
+    const premier = await page.locator(".bdx").first().innerText();
+    verifie(/MAY-\d{4}-\d{5}/.test(premier) && /à encaisser/i.test(premier) && /\+216 \d{2} \d{3} \d{3}/.test(premier),
+      "le numéro, le téléphone du client en grand, le montant à encaisser");
+    // (le fond de l'onglet quitté s'efface en 0,15 s : on laisse la transition finir avant la capture)
+    await pause(400);
+    verifie(await page.locator(".app-cote [aria-current=page]").count() === 0, "aucun onglet ne se dit « la page » : les bordereaux sont une page à part");
+    await capture(page, "gestion-bordereaux");
+    await page.emulateMedia({ media: "print" });
+    await capture(page, "gestion-bordereaux-impression", true);
+    const pdf = await page.pdf({ format: "A4", printBackground: true });
+    const pages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+    verifie(pages === Math.ceil(n / 2), `imprimés deux par feuille A4 : ${pages} page(s) pour ${n}`);
+    await page.emulateMedia({ media: "screen" });
+  });
+
   await etape("expédier, puis livrée", async () => {
     await ouvre(page, 8);
     await clic(page, page.locator("#suivi"));
