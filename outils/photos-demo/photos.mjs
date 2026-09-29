@@ -2,7 +2,7 @@
 // usage libre, commercial compris ; nous créditons quand même chaque photo).
 // Tourne dans GitHub Actions (le poste de développement n'a pas accès à
 // Internet) :
-//   node outils/photos-demo/photos.mjs candidats   → planches contact dans outils/photos-demo/candidats/
+//   node outils/photos-demo/photos.mjs candidats   → planches contact (candidats.json) dans outils/photos-demo/candidats/
 //   node outils/photos-demo/photos.mjs final       → photos retenues (choix.json) dans supabase/fichiers-demo/
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -26,39 +26,67 @@ async function telecharge(url, fichier) {
   writeFileSync(fichier, Buffer.from(await r.arrayBuffer()));
 }
 
+/* L'adresse de l'image d'une photo, sans clé d'API : le lien « Télécharger »
+   public redirige vers images.unsplash.com ; à défaut, l'image de partage
+   (og:image) de la page de la photo. Et ce que la page dit de l'auteur. */
+async function source(id) {
+  let image = null;
+  const r = await fetch(`https://unsplash.com/photos/${id}/download?force=true`, { headers: { "user-agent": UA["user-agent"] }, redirect: "manual" });
+  const lieu = r.headers.get("location");
+  if (lieu && lieu.includes("images.unsplash.com")) image = lieu;
+  let auteur = null;
+  let titre = null;
+  const page = await fetch(`https://unsplash.com/photos/${id}`, { headers: { "user-agent": UA["user-agent"], accept: "text/html" } });
+  if (page.ok) {
+    const html = await page.text();
+    image ??= /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/.exec(html)?.[1]?.replace(/&amp;/g, "&") ?? null;
+    titre = /<meta[^>]+property="og:title"[^>]+content="([^"]+)"/.exec(html)?.[1] ?? null;
+    auteur = /"user":\{"id":"[^"]+","updated_at":"[^"]*","username":"([^"]+)","name":"([^"]+)"/.exec(html)?.slice(1) ?? null;
+  }
+  if (!image) throw new Error(`photo ${id} : image introuvable (${r.status}, page ${page.status})`);
+  const base = new URL(image);
+  for (const k of ["w", "h", "fit", "crop", "fm", "q", "dl", "force"]) base.searchParams.delete(k);
+  return { base: base.toString(), titre, auteur: auteur ? { username: auteur[0], nom: auteur[1] } : null };
+}
+
+function taille(base, params) {
+  const u = new URL(base);
+  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, String(v));
+  return u.toString();
+}
+
 async function candidats() {
-  const requetes = JSON.parse(readFileSync(path.join(ICI, "requetes.json"), "utf8"));
+  const groupes = JSON.parse(readFileSync(path.join(ICI, "candidats.json"), "utf8"));
   const sortie = path.join(ICI, "candidats");
   rmSync(sortie, { recursive: true, force: true });
   const tmp = path.join(RACINE, ".outils/photos-tmp");
   rmSync(tmp, { recursive: true, force: true });
   const index = {};
-  for (const [boutique, liste] of Object.entries(requetes)) {
-    if (boutique === "_") continue;
-    for (const { cle, q, orientation } of liste) {
-      const url = `https://unsplash.com/napi/search/photos?query=${encodeURIComponent(q)}&per_page=30${orientation ? `&orientation=${orientation}` : ""}`;
-      const { results } = await json(url);
-      const libres = results.filter((p) => !p.premium && !p.plus && p.urls?.raw).slice(0, 12);
-      const vignettes = [];
-      for (const [i, p] of libres.entries()) {
-        const f = path.join(tmp, boutique, cle, `${String(i + 1).padStart(2, "0")}.jpg`);
-        await telecharge(`${p.urls.raw}&w=360&h=360&fit=crop&q=70&fm=jpg`, f);
-        vignettes.push(f);
-        (index[`${boutique}/${cle}`] ??= []).push({
-          n: i + 1, id: p.id, slug: p.slug, alt: p.alt_description, largeur: p.width, hauteur: p.height,
-          auteur: p.user?.name, profil: p.user?.links?.html, lien: p.links?.html,
-        });
+  for (const [groupe, ids] of Object.entries(groupes)) {
+    if (groupe === "_") continue;
+    const vignettes = [];
+    for (const [i, id] of ids.entries()) {
+      try {
+        const s = await source(id);
+        const f = path.join(tmp, groupe, `${String(i + 1).padStart(2, "0")}.jpg`);
+        await telecharge(taille(s.base, { w: 360, h: 450, fit: "crop", crop: "entropy", q: 70, fm: "jpg" }), f);
+        vignettes.push({ f, n: i + 1 });
+        (index[groupe] ??= []).push({ n: i + 1, id, titre: s.titre, auteur: s.auteur });
+      } catch (e) {
+        console.log(`${groupe} n°${i + 1} (${id}) : ${e.message}`);
+        (index[groupe] ??= []).push({ n: i + 1, id, erreur: e.message });
       }
-      if (vignettes.length === 0) continue;
-      mkdirSync(path.join(sortie, boutique), { recursive: true });
-      // Planche contact : 4 colonnes, chaque vignette numérotée.
-      execFileSync("montage", [
-        ...vignettes.flatMap((v, i) => ["-label", String(i + 1), v]),
-        "-tile", "4x", "-geometry", "360x360+6+6", "-pointsize", "28", "-background", "#ffffff",
-        "-quality", "72", path.join(sortie, boutique, `${cle}.jpg`),
-      ]);
-      console.log(`${boutique}/${cle} : ${vignettes.length} candidats`);
     }
+    if (vignettes.length === 0) continue;
+    const fichier = path.join(sortie, `${groupe.replace("/", "--")}.jpg`);
+    mkdirSync(path.dirname(fichier), { recursive: true });
+    // Planche contact : 5 colonnes, chaque vignette numérotée comme dans candidats.json.
+    execFileSync("montage", [
+      ...vignettes.flatMap((v) => ["-label", String(v.n), v.f]),
+      "-tile", "5x", "-geometry", "360x450+6+6", "-pointsize", "30", "-background", "#ffffff",
+      "-quality", "72", fichier,
+    ]);
+    console.log(`${groupe} : ${vignettes.length}/${ids.length} photos`);
   }
   writeFileSync(path.join(sortie, "index.json"), JSON.stringify(index, null, 2) + "\n");
 }
@@ -67,13 +95,14 @@ async function final() {
   const { photos } = JSON.parse(readFileSync(path.join(ICI, "choix.json"), "utf8"));
   if (photos.length === 0) return console.log("Aucune photo retenue pour l'instant.");
   const credits = [];
-  for (const { id, chemin, largeurs = [1600, 800, 400], recadrage } of photos) {
-    const p = await json(`https://unsplash.com/napi/photos/${id}`);
+  for (const { id, chemin, largeurs = [1600, 800, 400], rapport } of photos) {
+    const s = await source(id);
     for (const w of largeurs) {
-      const crop = recadrage ? `&h=${Math.round(w * recadrage)}&fit=crop&crop=entropy` : "";
-      await telecharge(`${p.urls.raw}&w=${w}${crop}&q=78&fm=webp`, path.join(RACINE, "supabase/fichiers-demo", `${chemin}-${w}.webp`));
+      const params = rapport ? { w, h: Math.round(w * rapport), fit: "crop", crop: "entropy" } : { w };
+      await telecharge(taille(s.base, { ...params, q: 78, fm: "webp" }), path.join(RACINE, "supabase/fichiers-demo", `${chemin}-${w}.webp`));
     }
-    credits.push(`| \`${chemin}\` | [${p.user?.name}](${p.user?.links?.html}) | [Unsplash](${p.links?.html}) |`);
+    const qui = s.auteur ? `[${s.auteur.nom}](https://unsplash.com/@${s.auteur.username})` : "—";
+    credits.push(`| \`${chemin}\` | ${qui} | [Unsplash](https://unsplash.com/photos/${id}) |`);
     console.log(`${chemin} ← ${id}`);
   }
   writeFileSync(path.join(RACINE, "supabase/fichiers-demo/CREDITS.md"),
