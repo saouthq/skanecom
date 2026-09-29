@@ -109,6 +109,8 @@ jobs:
         run: |
           sleep 310
           bash scripts/mesure.sh "$VITRINE_URL" "Action : panne — 5 min plus tard, durée de fraîcheur (300 s) dépassée" | tee -a "$GITHUB_STEP_SUMMARY"
+          # Fiche jamais visitée : rien en cache, erreur attendue tant que la page de secours n'existe pas.
+          curl -s -o /dev/null -w "Fiche jamais visitée pendant la panne (/produit/valise-rigide-abs-4-roues) : HTTP %{http_code}\n" "$VITRINE_URL/produit/valise-rigide-abs-4-roues" | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Si l'accueil répond 5xx, on écoute les journaux du Worker pendant deux
       # requêtes et on n'affiche que l'issue, les exceptions et les messages.
