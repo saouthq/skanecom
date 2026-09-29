@@ -48,6 +48,13 @@ demarrer() {
     en_postgres "$BIN/initdb" -D "$DONNEES" -U supabase_admin --auth=trust --encoding=UTF8 --locale=C.UTF-8 > /dev/null
   fi
   if ! en_postgres "$BIN/pg_ctl" -D "$DONNEES" status > /dev/null 2>&1; then
+    # Notre cluster est arrêté mais le port répond : c'est une autre base
+    # (celle d'un autre dossier, ou un autre Postgres). On le dit.
+    if (exec 3<> "/dev/tcp/127.0.0.1/$PORT") 2> /dev/null; then
+      echo "Le port $PORT est déjà pris par une autre base (lancée depuis un autre dossier ?)." >&2
+      echo "  → l'arrêter (outils/base-locale.sh arreter dans son dossier), ou choisir un autre port : BASE_LOCALE_PORT=…" >&2
+      exit 1
+    fi
     en_postgres "$BIN/pg_ctl" -D "$DONNEES" -l "$DONNEES/journal.log" -w \
       -o "-p $PORT -k $DONNEES -c listen_addresses=127.0.0.1" start > /dev/null
   fi

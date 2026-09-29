@@ -59,9 +59,30 @@ arreter() {
   done
 }
 
+# Un port déjà pris après l'arrêt de NOTRE API, c'est une autre API (lancée
+# depuis un autre dossier, ou un autre programme) : on le dit, au lieu de la
+# réutiliser sans le savoir.
+ports_libres() {
+  local port essai
+  for port in 54321 54330 54340; do
+    # Nos propres processus viennent d'être arrêtés : on leur laisse jusqu'à
+    # cinq secondes pour libérer le port.
+    for essai in $(seq 1 20); do
+      (exec 3<> "/dev/tcp/127.0.0.1/$port") 2> /dev/null || break
+      sleep 0.25
+    done
+    if (exec 3<> "/dev/tcp/127.0.0.1/$port") 2> /dev/null; then
+      echo "Le port $port est déjà pris : une API SkanEcom lancée depuis un autre dossier, ou un autre programme." >&2
+      echo "  → l'arrêter (outils/api-locale.sh arreter dans son dossier), ou voir qui l'occupe : ss -ltnp | grep $port" >&2
+      exit 1
+    fi
+  done
+}
+
 demarrer() {
   telecharger
   arreter
+  ports_libres
   cat > "$OUTILS/postgrest.conf" <<CONF
 db-uri = "postgres://authenticator@127.0.0.1:$PORT_BASE/$BASE"
 db-schemas = "public"

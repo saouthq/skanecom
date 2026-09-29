@@ -94,6 +94,7 @@ Les captures arrivent dans `.outils/captures/` (à la racine du dépôt).
 | `✗ Postgres 16 introuvable` ou `pgTAP manque` | `sudo apt install postgresql-16 postgresql-16-pgtap` |
 | `✗ Node … Node 22 au moins est attendu` | `nvm install 22 && nvm use 22` |
 | `✗ Le port 4200 est déjà pris` | une vitrine tourne déjà (Ctrl+C dans son terminal), ou `PORT_VITRINE=4300 outils/essayer.sh` |
+| `Le port 54321 est déjà pris` ou `Le port 54322 est déjà pris par une autre base` | une autre copie de SkanEcom tourne, depuis un autre dossier : `outils/essayer.sh arreter` dans ce dossier-là, puis relancer |
 | `Ce cluster n'a pas de superutilisateur supabase_admin` | `outils/base-locale.sh detruire`, puis relancer |
 | La compilation échoue | la fin du journal s'affiche ; le journal complet est dans `.outils/essayer.log` |
 | La page dit « Adresse inconnue » | ouvrir l'adresse avec le nom de la boutique : `mode.localhost:4200`, pas `localhost:4200` |
