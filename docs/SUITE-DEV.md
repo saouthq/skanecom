@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 347 tests (dont la vitrine, la console, l'import, le tunnel de commande, le backoffice et les équipes), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 386 tests (dont la vitrine, la console, l'import, le tunnel de commande, le backoffice, les équipes et le catalogue), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -50,7 +50,8 @@
    - **fiche** : le geste du moment selon l'étape — appeler ou écrire sur WhatsApp (message prêt), noter le résultat (confirmée, injoignable, à rappeler, refus du client) ; préparer et expédier (transporteur, suivi) ; livrée (paiement encaissé) ou refusée à la livraison avec son origine, le stock revient seul ; annuler avec un motif ; note interne ; historique complet et fiche du client ;
    - chaque geste passe par une fonction de la base (`public.gestion_*`, migration 09) qui revérifie le rôle et **l'étape affichée** : deux employés sur la même commande, le second geste est refusé, pas rejoué. Plus d'UPDATE direct des commandes par l'API. Tentatives de confirmation dans `public.confirmations` ;
    - découvert en route : PostgREST rejoue d'office une transaction en conflit de sérialisation (code 40001) ; une erreur métier sous ce code tournait sans fin — corrigé ici et dans la console (conflit de version de la marque) ;
-   - reste : catalogue et stock au backoffice (B1, B2), clients (B6), le propriétaire qui gère son équipe lui-même (B7 ; la console le fait déjà, C4), livreurs et bordereau (B5), export (B8), notification des nouvelles commandes.
+   - **catalogue et stock (B1, B2) : faits le 29/09** (migration 11) — liste des produits avec recherche (nom, marque, référence) et filtres (en vitrine, brouillons, stock bas, en rupture) ; fiche d'un produit : chaque déclinaison avec son prix, son prix barré, son seuil d'alerte et sa mise en vente, et son stock tenu par **réception, inventaire ou casse** (jamais une saisie directe : chaque pièce passe au journal, avec son auteur) ; une déclinaison de plus (les valeurs déjà utilisées proposées à la saisie, la référence proposée) ; la fiche elle-même (nom, description, marque, rayon, vitrine, mise en avant), refusée si un collègue l'a modifiée entre-temps ; un produit neuf en brouillon, ses déclinaisons calculées depuis ses axes (taille × couleur…) ; les trente derniers mouvements de stock. Propriétaire et administrateur modifient tout, la préparation tient le stock, la confirmation et la lecture regardent ;
+   - reste : photos des produits (téléversement), clients (B6), le propriétaire qui gère son équipe lui-même (B7 ; la console le fait déjà, C4), livreurs et bordereau (B5), export (B8), notification des nouvelles commandes.
 7. **Maymar migrée** comme première boutique ; domaine `maymar.tn` à l'étape 2.
 
 ## Base de données en local
@@ -59,7 +60,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 347 tests pgTAP
+outils/base-locale.sh tester    # les 386 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 

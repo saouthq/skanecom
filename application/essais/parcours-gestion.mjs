@@ -9,9 +9,12 @@ import { creeTesteur } from "./testeur.mjs";
       WhatsApp, la recherche, une boutique qui n'est pas la sienne, et deux
       écrans ouverts sur la même commande (le geste périmé est refusé).
    2. Le gérant (propriétaire, double authentification) : expédier, livrer,
-      refuser à la livraison avec son origine, annuler, noter.
+      refuser à la livraison avec son origine, annuler, noter ; puis le
+      catalogue : un arrivage, un inventaire, un prix, une couleur de plus,
+      un produit neuf mis en vitrine, deux écrans sur la même fiche.
    3. Le même employé sur téléphone.
-   4. Le préparateur d'une autre boutique : pas de bouton de confirmation.
+   4. Le préparateur d'une autre boutique : pas de bouton de confirmation ;
+      au catalogue, le stock mais pas les fiches.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -69,6 +72,22 @@ async function connexion(page, email, mobile = false) {
   await champ(page.locator("#email"), email);
   await champ(page.locator("#mot_de_passe"), MDP);
   await page.keyboard.press("Enter");
+}
+
+/* Un formulaire posté « à la main » (hors navigateur), avec les cookies de
+   la session : la console doit refuser d'elle-même, pas seulement l'écran. */
+async function posteBrut(contexte, chemin, formulaire) {
+  const { request } = await import("node:http");
+  const cookies = (await contexte.cookies(C)).map((c) => `${c.name}=${c.value}`).join("; ");
+  const corps = new URLSearchParams(formulaire).toString();
+  return new Promise((ok, ko) => {
+    const req = request({
+      host: "127.0.0.1", port: Number(t.port), method: "POST", path: chemin,
+      headers: { host: new URL(C).host, origin: C, cookie: cookies, "content-type": "application/x-www-form-urlencoded", "content-length": Buffer.byteLength(corps) },
+    }, (r) => { r.resume(); r.on("end", () => ok({ status: r.statusCode, location: r.headers.location ?? "" })); });
+    req.on("error", ko);
+    req.end(corps);
+  });
 }
 
 async function ouvre(page, n) {
@@ -239,6 +258,132 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie((await page.locator("#note-interne").inputValue()) === "Cliente de Sousse, livrer avant le week-end", "la note est gardée");
     await capture(page, "gestion-fiche-note", true);
   });
+
+  /* ---------------- Le catalogue ---------------- */
+  const fiche = async (nom) => {
+    await page.goto(`${C}/gestion/maymar/produits`, { waitUntil: "networkidle" });
+    await clic(page, page.locator(".cat-ligne-lien", { hasText: nom }));
+    await page.waitForURL(/\/produits\/[0-9a-f-]{36}/);
+    await page.waitForLoadState("networkidle");
+  };
+  const ok = () => page.getByRole("status").first().innerText().catch(() => "");
+  /* Un formulaire posté : on attend la page qui revient (l'adresse porte
+     souvent déjà « ?ok= » : l'attendre ne suffit pas). */
+  const envoie = async (bouton) => {
+    await Promise.all([page.waitForEvent("load"), clic(page, bouton)]);
+    await page.waitForLoadState("networkidle");
+  };
+
+  await etape("le catalogue : ses produits, ses filtres", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Catalogue" }));
+    await page.waitForURL(/\/gestion\/maymar\/produits$/);
+    await page.waitForLoadState("networkidle");
+    verifie(await page.locator(".cat-ligne").count() === 4, `les quatre valises de Maymar (${await page.locator(".cat-ligne").count()})`);
+    verifie((await page.locator(".app-cote [aria-current=page]").innerText()).includes("Catalogue"), "la navigation dit où l'on est");
+    await capture(page, "gestion-catalogue");
+    await clic(page, page.locator("#q"));
+    await tape(page, "cabine");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/q=cabine/);
+    verifie(await page.locator(".cat-ligne").count() === 1, "la recherche trouve la valise cabine");
+  });
+
+  let stockAvant = 0;
+  await etape("recevoir un arrivage", async () => {
+    await fiche("Valise rigide ABS 4 roues");
+    const premiere = page.locator(".var").first();
+    stockAvant = Number((await premiere.locator(".var-tete").innerText()).match(/(\d+) en stock|Stock bas · (\d+)/)?.slice(1).find(Boolean) ?? 0);
+    await capture(page, "gestion-produit", true);
+    await clic(page, premiere.locator("input[name=quantite]"));
+    await tape(page, "5");
+    await clic(page, premiere.locator("input[name=commentaire]"));
+    await tape(page, "Arrivage fournisseur");
+    await envoie(premiere.getByRole("button", { name: "Valider" }));
+    verifie((await ok()).includes(`Réception de 5 pièces enregistrée : ${stockAvant + 5} en stock`), `« ${await ok()} »`);
+    verifie((await page.locator(".mvt").first().innerText()).includes("+5") && (await page.locator(".mvt").first().innerText()).includes("Arrivage fournisseur"),
+      "le mouvement entre à l'historique, avec son commentaire");
+  });
+
+  await etape("inventaire et casse", async () => {
+    const premiere = page.locator(".var").first();
+    await clic(page, premiere.getByLabel("Casse"));
+    await clic(page, premiere.locator("input[name=quantite]"));
+    await tape(page, "999");
+    await envoie(premiere.getByRole("button", { name: "Valider" }));
+    verifie((await page.getByRole("alert").innerText()).includes("Il ne reste que"), "une casse plus grande que le stock est refusée");
+    await clic(page, page.locator(".var").first().getByLabel("Inventaire"));
+    await clic(page, page.locator(".var").first().locator("input[name=quantite]"));
+    await tape(page, "4");
+    await envoie(page.locator(".var").first().getByRole("button", { name: "Valider" }));
+    verifie((await ok()).includes("Inventaire enregistré : 4 en stock"), "l'inventaire ramène le stock au compté");
+  });
+
+  await etape("changer un prix", async () => {
+    const champ = page.locator(".var").first().locator("input[name=prix]");
+    await champ.fill("");
+    await clic(page, champ);
+    await tape(page, "199,000");
+    await envoie(page.locator(".var").first().getByRole("button", { name: "Enregistrer" }));
+    verifie((await ok()).includes("199,000 TND"), "le nouveau prix est enregistré");
+    verifie((await page.locator(".var").first().locator("input[name=prix]").inputValue()) === "199,000", "et affiché");
+  });
+
+  await etape("ajouter une couleur", async () => {
+    const axes = page.locator("section:has(#t-ajouter) input[name^='axe.']");
+    const n = await axes.count();
+    verifie(n === 2, `un champ par axe du produit (taille, couleur) : ${n}`);
+    for (let i = 0; i < n; i++) {
+      const nom = await axes.nth(i).getAttribute("name");
+      await clic(page, axes.nth(i));
+      await tape(page, nom === "axe.couleur" ? "Vert sauge" : "Cabine 55 cm");
+    }
+    await envoie(page.getByRole("button", { name: "Ajouter la déclinaison" }));
+    verifie((await ok()).includes("Déclinaison ajoutée"), `« ${await ok()} »`);
+    verifie((await page.locator(".var", { hasText: "Vert sauge" }).innerText()).includes("Rupture"), "la nouvelle couleur arrive sans stock");
+  });
+
+  let nouveau = "";
+  await etape("un produit neuf, puis en vitrine", async () => {
+    await page.goto(`${C}/gestion/maymar/produits`, { waitUntil: "networkidle" });
+    await clic(page, page.getByRole("link", { name: "Nouveau produit" }));
+    await page.waitForURL(/produits\/nouveau$/);
+    await clic(page, page.locator("#nom"));
+    await tape(page, "Housse de protection");
+    await page.locator("#categorie").selectOption({ label: "Valises" }).catch(() => {});
+    await clic(page, page.locator("#prix"));
+    await tape(page, "39");
+    await clic(page, page.locator("#axe-nom-0"));
+    await tape(page, "Taille");
+    await clic(page, page.locator("#axe-val-0"));
+    await tape(page, "S, M, L");
+    await capture(page, "gestion-nouveau-produit");
+    await clic(page, page.getByRole("button", { name: "Créer le produit" }));
+    await page.waitForURL(/\/produits\/[0-9a-f-]{36}\?ok=/);
+    nouveau = page.url();
+    verifie((await ok()).includes("3 déclinaisons"), "créé en brouillon, avec ses trois tailles");
+    verifie((await page.locator(".var-sku").allInnerTexts()).join(" ") === "HOUSSE-DE-PROTECTION-S HOUSSE-DE-PROTECTION-M HOUSSE-DE-PROTECTION-L",
+      `références proposées : ${(await page.locator(".var-sku").allInnerTexts()).join(", ")}`);
+    await clic(page, page.locator(".choix-carte", { hasText: "En vitrine" }));
+    await envoie(page.getByRole("button", { name: "Enregistrer la fiche" }));
+    verifie((await ok()).includes("en vitrine"), "puis mis en vitrine");
+    verifie((await page.locator("h1").innerText()).includes("En vitrine"), "la fiche le montre");
+  });
+
+  await etape("deux écrans sur la même fiche : pas d'écrasement", async () => {
+    const autre = await navigateur.newContext({ viewport: { width: 1280, height: 860 }, locale: "fr-FR" });
+    await autre.addCookies(await ctx.cookies());
+    const p2 = await autre.newPage();
+    await p2.goto(nouveau.split("?")[0], { waitUntil: "networkidle" });
+    await page.goto(nouveau.split("?")[0], { waitUntil: "networkidle" });
+    await page.locator("#marque").fill("Maymar");
+    await clic(page, page.getByRole("button", { name: "Enregistrer la fiche" }));
+    await page.waitForURL(/ok=/);
+    await p2.locator("#nom").fill("Housse (écrasée)");
+    await p2.getByRole("button", { name: "Enregistrer la fiche" }).click();
+    await p2.waitForURL(/erreur=/);
+    verifie((await p2.getByRole("alert").innerText()).includes("modifiée entre-temps"), "l'écran resté ouvert est prévenu, rien n'est écrasé");
+    await autre.close();
+  });
   await ctx.close();
 }
 
@@ -296,6 +441,20 @@ console.log("\n== 4. Le préparateur d'une autre boutique ==");
       verifie((await page.locator(".bo-vide").innerText()).includes("Aucune commande"), "aucune commande : la liste le dit");
     }
     await capture(page, "gestion-preparateur");
+  });
+
+  await etape("au catalogue : il tient le stock, pas les fiches", async () => {
+    await page.goto(`${C}/gestion/quincaillerie-demo/produits`, { waitUntil: "networkidle" });
+    verifie(await page.getByRole("link", { name: "Nouveau produit" }).count() === 0, "pas de bouton « Nouveau produit »");
+    await clic(page, page.locator(".cat-ligne-lien").first());
+    await page.waitForURL(/\/produits\/[0-9a-f-]{36}/);
+    await page.waitForLoadState("networkidle");
+    verifie(await page.locator(".var-stock").count() > 0 && await page.locator(".var-prix").count() === 0,
+      "les mouvements de stock, sans les prix");
+    verifie(await page.getByRole("button", { name: "Enregistrer la fiche" }).count() === 0, "la fiche en lecture seule");
+    const r = await posteBrut(ctx, `${new URL(page.url()).pathname}/action`, { action: "fiche", nom: "Pirate", version: "" });
+    verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("rôle"),
+      `même en postant le formulaire à la main, la base refuse (${r.status})`);
   });
   await ctx.close();
 }

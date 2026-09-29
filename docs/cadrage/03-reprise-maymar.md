@@ -237,6 +237,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis l'équipe des boutiques, depuis la console** (migration 10, `20260929100900_console_equipe.sql`, 32 tests dans `supabase/tests/12_equipe.sql`) : `console_equipe` (membres, rôle, invitation en attente, double authentification), `console_compte`, `console_ajouter_membre` (une personne déjà dans l'équipe n'est pas réinvitée ; un membre désactivé est réactivé), `console_modifier_membre` (rôle, accès ; au moins un propriétaire actif, changements d'une même boutique un par un), `console_tracer_lien` (chaque lien d'accès remis passe au journal). Les comptes eux-mêmes sont créés par l'API d'administration de GoTrue, côté serveur de la console.
 
+**Puis le catalogue et le stock au backoffice** (migration 11, `20260929101000_gestion_catalogue.sql`, 39 tests dans `supabase/tests/13_catalogue.sql`) : `gestion_liste_produits` (filtres, recherche, compteurs), `gestion_produit` (fiche, déclinaisons, axes, rayons, trente derniers mouvements), `gestion_enregistrer_produit` (version attendue : pas d'écrasement à l'aveugle ; pas de publication sans déclinaison en vente), `gestion_enregistrer_variante` (prix, prix barré, seuil, mise en vente ; la dernière déclinaison en vente d'un produit publié reste), `gestion_mouvement_stock` (réception, inventaire, casse, toujours par `mouvement_stock`, donc au journal), `gestion_ajouter_variante`, `gestion_creer_produit` (brouillon, adresse libre). Rôles : propriétaire et administrateur modifient, la préparation tient le stock.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

@@ -31,7 +31,10 @@ export default async function BackofficeBoutique({
       groupes={[
         {
           titre: "Boutique",
-          liens: [{ href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes" }],
+          liens: [
+            { href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes", exact: true, aussi: [`/gestion/${slug}/commandes/`] },
+            { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
+          ],
         },
       ]}
       email={user.email ?? ""}

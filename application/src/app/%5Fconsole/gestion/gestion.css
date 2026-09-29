@@ -227,3 +227,89 @@
     border-block-start: 1px solid var(--ui-bord);
   }
 }
+
+/* --- Le catalogue ------------------------------------------------------------ */
+.compte-alerte { background: var(--ui-ambre-fond); color: var(--ui-ambre); box-shadow: inset 0 0 0 1px var(--ui-ambre-bord); }
+a[aria-current="page"] .compte-alerte { background: var(--ui-ambre); color: #fff; box-shadow: none; }
+
+.cat-liste {
+  display: grid; background: var(--ui-panneau); border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l);
+  box-shadow: var(--ui-ombre-xs); overflow: hidden;
+}
+.cat-ligne { border-block-end: 1px solid var(--ui-bord-leger); }
+.cat-ligne:last-child { border-block-end: 0; }
+.cat-ligne-lien {
+  display: grid; align-items: center; gap: .25rem .875rem; padding: .75rem 1rem;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-areas: "img nom prix" "img etat stock";
+  transition: background-color .12s;
+}
+.cat-ligne-lien:hover { background: var(--ui-survol); }
+.cat-vignette {
+  grid-area: img; position: relative; display: grid; place-items: center; inline-size: 48px; block-size: 48px; border-radius: 8px;
+  overflow: hidden; background: var(--ui-doux); color: var(--ui-texte-3); box-shadow: inset 0 0 0 1px var(--ui-bord-leger);
+}
+.cat-vignette img { object-fit: cover; }
+.cat-ligne-nom { grid-area: nom; display: grid; min-inline-size: 0; line-height: 1.3; }
+.cat-ligne-nom strong { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-ligne-nom > span { font-size: .8125rem; color: var(--ui-texte-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-ligne-etat { grid-area: etat; }
+.cat-ligne-var { display: none; font-size: .8125rem; color: var(--ui-texte-2); }
+.cat-ligne-stock { grid-area: stock; justify-self: end; font-size: .8125rem; color: var(--ui-texte-2); }
+.cat-ligne-prix { grid-area: prix; justify-self: end; font-weight: 500; white-space: nowrap; }
+@media (min-width: 900px) {
+  .cat-ligne-lien {
+    grid-template-columns: 48px minmax(0, 2fr) 7.5rem 8rem 9rem 8.5rem;
+    grid-template-areas: "img nom etat var stock prix"; padding-inline: 1.25rem;
+  }
+  .cat-ligne-var { display: block; grid-area: var; }
+  .cat-ligne-stock { justify-self: start; }
+}
+
+/* Les déclinaisons d'une fiche */
+.var-liste { display: grid; margin-inline: -1.25rem; border-block-start: 1px solid var(--ui-bord-leger); }
+@media (min-width: 700px) { .var-liste { margin-inline: -1.5rem; } }
+.var { display: grid; gap: .75rem; padding: 1rem 1.25rem; border-block-end: 1px solid var(--ui-bord-leger); scroll-margin-block-start: 5rem; }
+@media (min-width: 700px) { .var { padding-inline: 1.5rem; } }
+.var:last-child { border-block-end: 0; padding-block-end: 0; }
+.var:target { background: color-mix(in srgb, var(--ui-accent) 4%, transparent); }
+.var[data-inactive] .var-nom { color: var(--ui-texte-3); }
+.var-tete { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .625rem; }
+.var-nom { font-weight: 600; }
+.var-sku { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .75rem; color: var(--ui-texte-3); letter-spacing: .02em; }
+.var-corps { display: grid; gap: .75rem; }
+.var-prix, .var-stock { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem .625rem; }
+.var-prix .champ { inline-size: 7.5rem; }
+.var-prix .var-seuil { inline-size: 5.5rem; }
+.var-prix .champ > label { font-size: .75rem; color: var(--ui-texte-2); font-weight: 500; }
+.var-actif { min-block-size: var(--ui-h); }
+.var-stock { padding: .625rem; border-radius: var(--ui-r); background: var(--ui-survol); border: 1px solid var(--ui-bord-leger); }
+.var-stock .segments { background: var(--ui-panneau); }
+.var-qte { inline-size: 5.5rem; }
+.var-note { flex: 1 1 12rem; }
+.var-lecture { display: flex; gap: 1.5rem; }
+.var-lecture dt { font-size: .75rem; color: var(--ui-texte-3); }
+.var-lecture dd { font-weight: 500; }
+
+/* Les mouvements de stock */
+.mvt-liste { display: grid; }
+.mvt { display: grid; grid-template-columns: 3.25rem minmax(0, 1fr); gap: .75rem; align-items: start; padding-block: .625rem; border-block-end: 1px solid var(--ui-bord-leger); }
+.mvt:first-child { padding-block-start: 0; }
+.mvt:last-child { border-block-end: 0; padding-block-end: 0; }
+.mvt-delta {
+  display: inline-grid; place-items: center; block-size: 26px; border-radius: 999px; font-size: .8125rem; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.mvt-plus { color: var(--ui-vert); background: var(--ui-vert-fond); box-shadow: inset 0 0 0 1px var(--ui-vert-bord); }
+.mvt-moins { color: var(--ui-gris); background: var(--ui-gris-fond); box-shadow: inset 0 0 0 1px var(--ui-gris-bord); }
+.mvt-texte { display: grid; gap: .0625rem; min-inline-size: 0; }
+.mvt-meta { font-size: .8125rem; color: var(--ui-texte-3); }
+.mvt-note-texte { font-size: .875rem; color: var(--ui-texte-2); }
+
+/* Nouveau produit : un axe par ligne */
+.axe-ligne { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: .5rem; }
+
+/* Photos */
+.photos-grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.photo-vignette { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--ui-doux); box-shadow: inset 0 0 0 1px var(--ui-bord-leger); }
+.photo-vignette img { object-fit: cover; }
