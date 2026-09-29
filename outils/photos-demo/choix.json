@@ -431,6 +431,24 @@
     500
    ],
    "rapport": 1
+  },
+  {
+   "id": "3c49e881-0ba9-4f73-931d-4ac9c8f723b3",
+   "chemin": "maymar/accueil/aeroport-large",
+   "largeurs": [
+    2000,
+    1000
+   ]
+  },
+  {
+   "id": "502b1380-51b7-4dc6-bae7-108e8cfe1fd2",
+   "chemin": "maymar/accueil/depart-portrait",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25,
+   "gravite": "West"
   }
  ]
 }
