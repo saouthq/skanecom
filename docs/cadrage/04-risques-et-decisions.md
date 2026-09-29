@@ -13,6 +13,7 @@
 | 28/09/2026 | Nom : **SkanEcom** | Skander |
 | 28/09/2026 | **Maymar est le client n°1** | Skander |
 | 28/09/2026 | **D1 — Hébergement : Cloudflare** (domaines, application Next.js sur Workers, cache, R2, files) **+ Supabase** (données). Vercel seulement en plan B si le prototype échoue | Skander |
+| 29/09/2026 | ↳ **D1 confirmée par le prototype chez Cloudflare** : pages servies pendant une panne de la base, cache séparé entre deux domaines. Plan B Vercel écarté | Prototype |
 | 28/09/2026 | **D14 — Paiement en ligne pendant une panne de notre base** : masqué, le paiement à la livraison est proposé à la place. Aucune confirmation Konnect n'est perdue | Skander |
 | **29/09/2026** | **D15 — Recentrage : boutique en ligne clé en main, en marque blanche**, vendue et mise en place par Skander et son père à **10 à 50 entreprises établies**. Un seul code et une seule base ; chaque client s'habille par des réglages. Remplace la plateforme en autonomie du 28/09 (archivée dans `annexes/`) | Skander |
 | 29/09/2026 | **Premier cercle de prospects** : Maymar, un distributeur DeWalt, une quincaillerie | Skander |
@@ -62,7 +63,8 @@
 | Action | Qui |
 |---|---|
 | Réserver `skanecom.tn` et `skanecom.com` ; déposer la marque à l'INNORPI | Skander |
-| Ajouter les secrets Cloudflare sur le dépôt pour la phase 2 du prototype | Skander |
+| ~~Ajouter les secrets Cloudflare sur le dépôt pour la phase 2 du prototype~~ Fait le 29/09 ; prototype réussi | Skander |
+| Renouveler le jeton Cloudflare avant fin octobre (validité d'un mois) | Skander |
 | Vérifier que le bureau d'enregistrement de `maymar.tn` accepte de déléguer le DNS à Cloudflare | Skander |
 | Créer l'organisation Supabase « SkanEcom » (le projet est créé ensuite par l'assistant) | Skander |
 | Questions pour l'avocat et le comptable (contrat, INPDP, TEIF) | Agent, puis Skander |

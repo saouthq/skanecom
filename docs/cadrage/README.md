@@ -10,7 +10,7 @@
 4. [`04-risques-et-decisions.md`](04-risques-et-decisions.md) — **À trancher.** Décisions prises et ouvertes, registre des risques, actions immédiates.
 5. [`05-etude-outillage-quincaillerie.md`](05-etude-outillage-quincaillerie.md) — **Les clients 2 et 3.** Ce dont ont besoin le représentant DeWalt et la quincaillerie, et les modules qui en découlent.
 
-Prototype technique : [`../../prototype/vitrine-workers/RAPPORT.md`](../../prototype/vitrine-workers/RAPPORT.md). La vitrine Maymar tourne sur Cloudflare Workers ; phase locale réussie le 28/09.
+Prototype technique : [`../../prototype/vitrine-workers/RAPPORT.md`](../../prototype/vitrine-workers/RAPPORT.md). La vitrine Maymar tourne sur Cloudflare Workers : phase locale réussie le 28/09, phase chez Cloudflare réussie le 29/09 (panne de la base et séparation du cache entre deux domaines).
 
 ## Annexes : la version « plateforme en autonomie » du 28/09
 

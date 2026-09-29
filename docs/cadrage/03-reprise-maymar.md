@@ -87,7 +87,7 @@
    - Correction : la façade applique des limites, les requêtes filtrent toujours par `boutique_id`, avec des index composites `(boutique_id, …)`.
    - Les brouillons restent protégés par la RLS.
 8. **Cache non partitionné.**
-   - `revalidate = 300` sur les pages : en multi-boutique, la clé de cache doit inclure la boutique. Le cache de Workers **n'inclut pas le domaine** : l'application réécrit donc l'adresse en interne avec l'identifiant de la boutique (`/_b/<boutique>/…`, voir `02-infrastructure.md`, §2 et §5.2).
+   - `revalidate = 300` sur les pages : en multi-boutique, la clé de cache doit inclure la boutique. Le cache de Workers **n'inclut pas le domaine** : l'application réécrit donc l'adresse en interne avec l'identifiant de la boutique (`/_b/<boutique>/…`, voir `02-infrastructure.md`, §2 et §5.2). Le dossier s'appelle `src/app/%5Fb/[boutique]/` : Next.js ne route pas un dossier qui commence par « _ ». Principe testé chez Cloudflare le 29/09 (`prototype/vitrine-workers/src/proxy.ts`).
    - L'invalidation se fait boutique par boutique, quand le commerçant modifie son catalogue.
 9. **Valeurs Maymar en dur dans le front.**
    - 185 mentions de « maymar » dans `src/` (grep du 28/09/2026).

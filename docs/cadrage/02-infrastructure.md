@@ -61,8 +61,8 @@ flowchart LR
 |---|---|---|
 | **Domaines des clients** | `maymar.tn`, le domaine du distributeur, celui de la quincaillerie… | **Recommandé :** le client nous confie la gestion DNS de son domaine (déplacé dans notre compte Cloudflare) et on le branche sur l'application. **Sinon :** le client garde son DNS et ajoute un enregistrement vers nous (Cloudflare for SaaS, 100 domaines inclus) |
 | **Notre domaine** | `skanecom.tn` : site commercial ; `app.skanecom.tn` : backoffice de tous les clients et console | Chacun ne voit que sa boutique |
-| **Application** | Vitrine, backoffice et console : le même code Next.js, sur Workers via vinext | Prototype validé en local le 28/09 |
-| **Trouver la boutique** | À partir du domaine, l'application trouve la boutique, puis **réécrit l'adresse en interne** avec son identifiant (`/_b/<boutique>/produit/…`) | Le cache ne peut alors pas confondre deux boutiques (§5.2) |
+| **Application** | Vitrine, backoffice et console : le même code Next.js, sur Workers via vinext | Prototype validé en local le 28/09, puis chez Cloudflare le 29/09 |
+| **Trouver la boutique** | À partir du domaine, l'application trouve la boutique, puis **réécrit l'adresse en interne** avec son identifiant (`/_b/<boutique>/produit/…`). Dans le code, le dossier s'appelle `%5Fb` : Next.js ne route pas un dossier qui commence par « _ » | Le cache ne peut alors pas confondre deux boutiques (§5.2). Testé chez Cloudflare le 29/09 |
 | **Cache** | Pages publiques mises en cache, purgées boutique par boutique quand le commerçant modifie son catalogue | Jamais de cache pour le backoffice ni les comptes clients |
 | **Images** | Photos produit sur R2, redimensionnées par Cloudflare Images | Elles restent affichées si Supabase tombe |
 | **Base** | Une base Supabase (offre payante) pour toutes les boutiques | **Jamais l'offre gratuite pour un client** : elle met les projets en pause faute d'activité, c'est arrivé à Maymar |
@@ -96,6 +96,11 @@ Ce qu'il faut dès le 3e client :
 
 **Plus tard (S), un instantané nocturne** de toutes les pages publiques sur R2. Il servirait aussi les pages que personne n'a encore vues pendant une panne.
 
+**Le cache repart de zéro à chaque déploiement** (constaté dans le code du cache de réponses le 29/09) : il est rangé par version du Worker. C'est ce qui rend le retour arrière sûr, puisque l'ancienne version retrouve son cache. Mais juste après un déploiement, aucune page n'est protégée contre une panne de la base. Parades, à mettre en place à l'étape 1 :
+- **déployer en deux temps** : la nouvelle version est d'abord mise en ligne sans trafic, son cache est rempli, puis elle reçoit le trafic (option `--warm-cache` de vinext, à tester) ;
+- **ne jamais déployer quand la base va mal** : le déploiement vérifie d'abord la santé de la base ;
+- **nettoyer les anciennes versions** : leurs pages restent sur R2 et ne sont jamais effacées automatiquement. Une tâche mensuelle garde les dernières versions, celles vers lesquelles on peut revenir, et supprime les autres.
+
 ### 4.2 Les commandes pendant une panne
 
 - **Paiement à la livraison** : le bouton de commande bascule sur « Commander par WhatsApp », avec le panier prérempli. Le client reçoit la commande sur son WhatsApp et la saisit au retour. C'est simple, sans coût, et naturel en Tunisie. Le tampon automatique de commandes en bordure reste possible plus tard (voir l'annexe).
@@ -106,7 +111,7 @@ Ce qu'il faut dès le 3e client :
 | Panne | Ce que voit l'acheteur | Ce qu'on fait |
 |---|---|---|
 | Base Supabase indisponible | Pages déjà vues : normales. Commande : bouton WhatsApp | Alerte ; attendre ou restaurer |
-| Notre déploiement est cassé | Pages en cache : normales | Retour immédiat à la version précédente |
+| Notre déploiement est cassé | Pages en cache : normales | Retour immédiat à la version précédente, qui retrouve son cache |
 | Konnect en panne | Seul le paiement à la livraison est proposé | Automatique |
 | Livreur ou WhatsApp en panne | Rien | La file réessaie ; bordereau PDF en repli |
 | Carte refusée chez un fournisseur | Rien d'abord, puis tout tombe (Supabase en pause, Cloudflare en offre gratuite à J+5) | Deux cartes, crédits Supabase prépayés, alerte sur les échéances |
@@ -138,8 +143,9 @@ Le distributeur DeWalt ne doit jamais voir une commande de la quincaillerie. C'e
 
 ### 5.2 Dans le cache
 
-- **Le cache de Workers ne tient pas compte du domaine** (vérifié dans la doc Cloudflare le 28/09). D'où la réécriture interne de l'adresse avec l'identifiant de la boutique (§2) : deux boutiques n'ont jamais la même adresse interne.
-- **Un test automatique** vérifie que deux domaines ne reçoivent jamais la même page.
+- **Le cache de Workers ne tient pas compte du domaine** (vérifié dans la doc Cloudflare le 28/09, et dans le code du cache de réponses le 29/09 : sa clé est le chemin et les paramètres de l'adresse, sans le domaine). D'où la réécriture interne de l'adresse avec l'identifiant de la boutique (§2) : deux boutiques n'ont jamais la même adresse interne.
+- **L'adresse interne n'est jamais servie directement** (404) : sinon un visiteur de la boutique A pourrait afficher les pages de la boutique B sous le domaine A.
+- **Un test automatique** vérifie que deux domaines ne reçoivent jamais la même page. Première version passée chez Cloudflare le 29/09 (`prototype/vitrine-workers/scripts/test-domaines.sh`).
 - **Aucune page avec session** (backoffice, compte client) n'est jamais mise en cache.
 
 ### 5.3 Accès et secrets
@@ -195,12 +201,20 @@ Le distributeur DeWalt ne doit jamais voir une commande de la quincaillerie. C'e
 - Les 8 pages sont justes.
 - Base coupée, une fiche déjà en cache reste servie.
 
-**Phase 2, sur Cloudflare : prête.**
-- Faux Supabase en Worker, script de mesure et workflow GitHub Actions sont en place, et le bucket R2 est créé.
-- Il manque les secrets `CLOUDFLARE_API_TOKEN` et `CLOUDFLARE_ACCOUNT_ID` sur le dépôt.
-- **À y ajouter :** vérifier que la réécriture interne par boutique (§2) sépare bien le cache de deux domaines.
+**Phase 2, chez Cloudflare : réussie le 29/09.**
+- La vitrine tourne chez Cloudflare. Les pages en cache répondent en 50 à 70 ms, mesurées depuis les États-Unis.
+- **Base en panne : les pages déjà vues restent servies**, même après la fin de leur durée de fraîcheur. Au retour de la base, elles se remettent à jour seules.
+- **La réécriture interne par boutique (§2) sépare bien le cache de deux domaines**, panne comprise.
+- À traiter à l'étape 1 :
+  - le cache repart de zéro à chaque déploiement (§4.1) ;
+  - le client Supabase réessaie pendant 7 s avant d'échouer ;
+  - les pages à filtres ne sont jamais en cache.
 
-**Si le prototype échoue**, le plan B reste Vercel pour l'application, derrière Cloudflare. Tout le reste ne change pas.
+  Détail dans le rapport.
+
+**Décision : on garde Cloudflare pour l'application. Le plan B (Vercel) est écarté.**
+
+Si un blocage apparaissait plus tard, le plan B resterait Vercel pour l'application, derrière Cloudflare ; le reste ne changerait pas.
 
 ---
 
