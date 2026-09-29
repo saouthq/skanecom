@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
+import { equipeDe } from "@/lib/console/equipe-serveur";
 
 type Fiche = {
   boutique: { id: string; slug: string; nom: string; statut: string; langue_defaut: string; created_at: string };
@@ -20,6 +21,9 @@ const ACTIONS: Record<string, string> = {
   "domaine.ajouter": "Domaine ajouté",
   "theme.modifier": "Marque modifiée",
   "catalogue.importer": "Catalogue importé",
+  "equipe.ajouter": "Membre invité",
+  "equipe.modifier": "Accès modifié",
+  "equipe.lien": "Lien d'accès remis",
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -39,6 +43,9 @@ export default async function FicheBoutique({ params, searchParams }: {
   const b = f.boutique;
   const principal = f.domaines.find((d) => d.principal)?.hote;
   const hoteConsole = (await headers()).get("host");
+  const equipe = await equipeDe(b.id);
+  const actifs = equipe.filter((m) => m.actif).length;
+  const enAttente = equipe.filter((m) => m.actif && m.en_attente).length;
 
   return (
     <>
@@ -101,6 +108,20 @@ export default async function FicheBoutique({ params, searchParams }: {
             <label className="opt"><input type="checkbox" name="principal" value="1" /> en faire le domaine principal</label>
             <button type="submit" className="btn btn-second">Ajouter</button>
           </form>
+        </section>
+
+        <section className="carte" aria-labelledby="t-equipe">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 id="t-equipe">Équipe</h2>
+              <p className="text-encre-doux mt-1">
+                {equipe.length === 0
+                  ? "Personne n'entre encore dans son backoffice."
+                  : `${actifs} ${actifs > 1 ? "personnes ont" : "personne a"} accès au backoffice${enAttente ? ` · ${enAttente} invitation${enAttente > 1 ? "s" : ""} en attente` : ""}`}
+              </p>
+            </div>
+            <Link href={`/boutiques/${b.slug}/equipe`} className="btn btn-second">{equipe.length === 0 ? "Inviter le propriétaire" : "Gérer l'équipe"}</Link>
+          </div>
         </section>
 
         <section className="carte" aria-labelledby="t-marque">

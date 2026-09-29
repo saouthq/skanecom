@@ -235,6 +235,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis le backoffice des commandes** (migration 09, `20260929100800_gestion_commandes.sql`, 39 tests dans `supabase/tests/11_gestion.sql`) : `confirmations` (chaque tentative : canal, résultat, note, auteur) et les gestes de l'équipe par fonctions (`gestion_appel`, `gestion_annuler`, `gestion_expedier`, `gestion_livrer`, `gestion_refuser`, `gestion_note`), avec le rôle de chacun et l'étape attendue ; la liste et la fiche pour l'équipe (`gestion_liste_commandes`, `gestion_commande`). L'UPDATE direct des commandes par l'API est retiré.
 
+**Puis l'équipe des boutiques, depuis la console** (migration 10, `20260929100900_console_equipe.sql`, 32 tests dans `supabase/tests/12_equipe.sql`) : `console_equipe` (membres, rôle, invitation en attente, double authentification), `console_compte`, `console_ajouter_membre` (une personne déjà dans l'équipe n'est pas réinvitée ; un membre désactivé est réactivé), `console_modifier_membre` (rôle, accès ; au moins un propriétaire actif, changements d'une même boutique un par un), `console_tracer_lien` (chaque lien d'accès remis passe au journal). Les comptes eux-mêmes sont créés par l'API d'administration de GoTrue, côté serveur de la console.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

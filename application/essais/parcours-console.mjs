@@ -9,7 +9,8 @@ import { creeTesteur } from "./testeur.mjs";
    Connexion, double authentification (le code est calculé comme le ferait
    son application d'authentification), création d'une boutique et de son
    domaine, vitrine fermée puis ouverte, réglage de la marque avec aperçu,
-   journal ; puis les portes : mauvais mot de passe, mauvais code, compte qui
+   journal, import du catalogue, invitation de l'équipe (lien d'accès,
+   mot de passe choisi sur téléphone, accès retiré puis rendu) ; puis les portes : mauvais mot de passe, mauvais code, compte qui
    n'est pas administrateur, formulaire posté depuis un autre site.
 
      cd application && bun run parcours:console
@@ -373,7 +374,192 @@ await etape("la vitrine montre le catalogue importé", async () => {
 });
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 3. Les portes ==");
+console.log("\n== 3. L'équipe de la boutique : inviter, choisir son mot de passe, retirer l'accès ==");
+
+const GERANT = `gerant-${SUFFIXE}@outillage.test`;
+const APPELS = `appels-${SUFFIXE}@outillage.test`;
+const TELEPHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" };
+const lienAffiche = async () => (await page.locator("#lien-acces").inputValue()).trim();
+const ligneDe = (email) => page.locator(".membre", { hasText: email });
+
+/* La personne invitée ouvre son lien sur son téléphone et choisit son mot de
+   passe. Rend la page (dans un contexte neuf : son téléphone à elle). */
+async function ouvreLien(lien, motDePasse, nom) {
+  const tel = await navigateur.newContext(TELEPHONE);
+  const p = await tel.newPage();
+  t.espion(p, nom, attendue);
+  await p.goto(lien, { waitUntil: "networkidle" });
+  await p.locator("#mot_de_passe").fill(motDePasse);
+  await p.locator("#confirmation").fill(motDePasse);
+  await clic(p, p.getByRole("button", { name: "Enregistrer et entrer" }));
+  return { tel, p };
+}
+
+await etape("la fiche de la boutique invite à nommer son propriétaire", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  verifie((await page.locator("#t-equipe").locator("../..").innerText()).includes("Personne n'entre encore dans son backoffice"),
+    "une boutique neuve n'a personne dans son équipe");
+  await clic(page, page.getByRole("link", { name: "Inviter le propriétaire" }));
+  await page.waitForURL(new RegExp(`/boutiques/${SLUG}/equipe$`));
+  await page.waitForLoadState("networkidle");
+  await capture(page, "console-equipe-vide", true);
+});
+
+let lienGerant = "";
+let lienAppels = "";
+await etape("inviter le propriétaire : la console rend un lien à lui envoyer", async () => {
+  await page.locator("#email").fill(GERANT);
+  await clic(page, page.locator(".role-choix", { hasText: "Propriétaire" }));
+  await clic(page, page.getByRole("button", { name: "Inviter" }));
+  await page.waitForURL(new RegExp(`/equipe\\?ok=`));
+  await page.waitForLoadState("networkidle");
+  lienGerant = await lienAffiche();
+  verifie(new URL(lienGerant).pathname === "/bienvenue" && new URL(lienGerant).searchParams.get("jeton")?.length > 40,
+    `un lien d'invitation à usage unique : ${lienGerant.slice(0, 60)}…`);
+  const wa = await page.getByRole("link", { name: "Envoyer par WhatsApp" }).getAttribute("href");
+  verifie(wa.startsWith("https://wa.me/?text=") && decodeURIComponent(wa).includes(lienGerant) && decodeURIComponent(wa).includes(GERANT),
+    "« Envoyer par WhatsApp » prépare le message avec le lien et l'identifiant");
+  verifie((await ligneDe(GERANT).innerText()).includes("Invitation en attente"), "dans la liste : invitation en attente");
+  await capture(page, "console-equipe-lien");
+});
+
+await etape("inviter une personne pour confirmer les commandes", async () => {
+  await page.locator("#email").fill(APPELS);
+  await clic(page, page.locator(".role-choix", { hasText: "Confirmation" }));
+  await clic(page, page.getByRole("button", { name: "Inviter" }));
+  await page.waitForURL(new RegExp(`/equipe\\?ok=`));
+  await page.waitForLoadState("networkidle");
+  lienAppels = await lienAffiche();
+  verifie(lienAppels !== lienGerant && (await page.locator("#t-lien").innerText()).includes(APPELS), "un autre lien, le sien");
+});
+
+await etape("une personne déjà dans l'équipe n'est pas réinvitée", async () => {
+  await page.locator("#email").fill(APPELS.toUpperCase());
+  await clic(page, page.locator(".role-choix", { hasText: "Lecture seule" }));
+  await clic(page, page.getByRole("button", { name: "Inviter" }));
+  await page.waitForURL(/erreur=/);
+  verifie((await page.getByRole("alert").innerText()).includes("fait déjà partie de l'équipe"), `refusé : « ${await page.getByRole("alert").innerText()} »`);
+  verifie(await lienAffiche() === lienAppels, "son lien d'invitation reste valable (aucun nouveau jeton)");
+});
+
+await etape("une personne qui a déjà un compte entre avec son mot de passe, sans lien", async () => {
+  const email = `ancien-${SUFFIXE}@outillage.test`;
+  await gotrue("POST", "/admin/users", { email, password: "mot-de-passe-habituel", email_confirm: true });
+  await page.locator("#email").fill(email);
+  await clic(page, page.locator(".role-choix", { hasText: "Préparation" }));
+  await clic(page, page.getByRole("button", { name: "Inviter" }));
+  await page.waitForURL(/ok=/);
+  verifie((await page.getByRole("status").innerText()).includes("se connecte avec son mot de passe habituel"),
+    `« ${await page.getByRole("status").innerText()} »`);
+  verifie((await ligneDe(email).innerText()).includes("Actif"), "elle est dans l'équipe, active");
+});
+
+await etape("l'aperçu que fabrique WhatsApp ne grille pas le lien", async () => {
+  const u = new URL(lienAppels);
+  const r = await brut(await navigateur.newContext(), "GET", u.pathname + u.search);
+  verifie(r.status === 200, `ouvrir le lien sans rien envoyer : HTTP ${r.status}, le jeton n'est pas consommé`);
+});
+
+await etape("sur son téléphone, elle choisit son mot de passe et entre dans le backoffice", async () => {
+  const tel = await navigateur.newContext(TELEPHONE);
+  const p = await tel.newPage();
+  t.espion(p, "bienvenue", attendue);
+  await p.goto(lienAppels, { waitUntil: "networkidle" });
+  verifie((await p.locator("h1").innerText()) === "Bienvenue" && (await p.locator("#email").inputValue()) === APPELS,
+    "la page d'accueil montre son identifiant");
+  await capture(p, "console-bienvenue-telephone");
+  await p.locator("#mot_de_passe").fill("court");
+  await p.locator("#confirmation").fill("court");
+  await p.locator("form").evaluate((f) => f.noValidate = true);
+  await clic(p, p.getByRole("button", { name: "Enregistrer et entrer" }));
+  await p.waitForURL(/erreur=/);
+  verifie((await p.getByRole("alert").innerText()).includes("10 caractères"), "un mot de passe trop court est refusé, sans griller le lien");
+  await p.locator("#mot_de_passe").fill("le colis part demain");
+  await p.locator("#confirmation").fill("le colis part demain");
+  await clic(p, p.getByRole("button", { name: "Enregistrer et entrer" }));
+  await p.waitForURL(new RegExp(`/gestion/${SLUG}`));
+  await p.waitForLoadState("networkidle");
+  verifie((await p.locator(".bo-marque").innerText()).includes("Outillage Pro Démo") && (await p.locator("h1").innerText()) === "Commandes",
+    "elle arrive dans le backoffice de la boutique, sur ses commandes");
+  await capture(p, "console-bienvenue-backoffice");
+  await tel.close();
+});
+
+await etape("un lien qui a servi ne marche plus", async () => {
+  const { tel, p } = await ouvreLien(lienAppels, "une autre phrase secrète", "lien-servi");
+  await p.waitForURL(/perime=1/);
+  verifie((await p.locator("h1").innerText()) === "Ce lien ne marche plus", "le même lien, une seconde fois : « Ce lien ne marche plus »");
+  await capture(p, "console-bienvenue-perime");
+  await tel.close();
+});
+
+await etape("le propriétaire, lui, passe d'abord par la double authentification", async () => {
+  const { tel, p } = await ouvreLien(lienGerant, "la valise est prête", "bienvenue-gerant");
+  await p.waitForURL(/double-authentification/);
+  verifie(await p.locator("[data-secret-totp]").count() === 1, "le propriétaire enregistre son application d'authentification avant d'entrer");
+  await tel.close();
+});
+
+let appels;
+await etape("la liste de l'équipe suit : invitations acceptées, journal", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/equipe`, { waitUntil: "networkidle" });
+  const ligne = await ligneDe(APPELS).innerText();
+  verifie(ligne.includes("Actif") && /vu le \d/.test(ligne), `elle est active, avec sa dernière connexion (${ligne.match(/vu le [^·\n]+/)?.[0]})`);
+  verifie((await ligneDe(GERANT).innerText()).includes("double authentification pas encore activée"),
+    "le propriétaire : double authentification pas encore activée");
+  verifie(await page.locator("#lien-acces").count() === 0, "les liens qui ont servi ne sont plus affichés");
+  await capture(page, "console-equipe-liste", true);
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  const journal = await page.locator("#t-journal").locator("..").locator("tbody tr").allInnerTexts();
+  verifie(journal.filter((l) => l.includes("Membre invité")).length === 3 && journal.filter((l) => l.includes("Lien d'accès remis")).length === 2,
+    "le journal garde les trois invitations et les deux liens remis");
+  // Sa session à elle, pour la suite (un nouveau téléphone, connexion ordinaire).
+  appels = await navigateur.newContext(TELEPHONE);
+  const p = await appels.newPage();
+  t.espion(p, "appels", attendue);
+  await p.goto(CONSOLE + "/connexion", { waitUntil: "networkidle" });
+  await p.locator("#email").fill(APPELS);
+  await p.locator("#mot_de_passe").fill("le colis part demain");
+  await p.keyboard.press("Enter");
+  await p.waitForURL(new RegExp(`/gestion/${SLUG}`));
+  verifie(true, "elle se reconnecte avec le mot de passe qu'elle a choisi");
+});
+
+await etape("le seul propriétaire ne peut pas perdre son accès", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/equipe`, { waitUntil: "networkidle" });
+  await clic(page, ligneDe(GERANT).getByRole("button", { name: "Retirer l'accès" }));
+  await page.waitForURL(/erreur=/);
+  verifie((await page.getByRole("alert").innerText()).includes("au moins un propriétaire actif"), `refusé : « ${await page.getByRole("alert").innerText()} »`);
+});
+
+await etape("retirer l'accès : elle est dehors aussitôt ; le rendre", async () => {
+  await clic(page, ligneDe(APPELS).getByRole("button", { name: "Retirer l'accès" }));
+  await page.waitForURL(/ok=/);
+  verifie((await ligneDe(APPELS).innerText()).includes("Accès retiré"), "la liste la montre sans accès");
+  const r = await brut(appels, "GET", `/gestion/${SLUG}`);
+  verifie(r.status === 307 || r.status === 303 ? r.location.includes("/refuse") : false, `sa session ouverte ne mène plus qu'à /refuse (${r.status} → ${r.location})`);
+  await clic(page, ligneDe(APPELS).getByRole("button", { name: "Rendre l'accès" }));
+  await page.waitForURL(/ok=/);
+  const r2 = await brut(appels, "GET", `/gestion/${SLUG}`);
+  verifie(r2.status === 200, `accès rendu : son backoffice s'ouvre de nouveau (HTTP ${r2.status})`);
+});
+
+await etape("mot de passe oublié : un nouveau lien, le même compte", async () => {
+  await clic(page, ligneDe(APPELS).getByRole("button", { name: "Lien de mot de passe" }));
+  await page.waitForURL(/ok=/);
+  await page.waitForLoadState("networkidle");
+  const lien = await lienAffiche();
+  verifie(new URL(lien).searchParams.get("type") === "recovery" && (await page.locator("#t-lien").innerText()).includes("choisir un mot de passe"),
+    "un lien pour choisir un nouveau mot de passe");
+  const { tel, p } = await ouvreLien(lien, "nouvelle phrase du mardi", "nouveau-mdp");
+  await p.waitForURL(new RegExp(`/gestion/${SLUG}`));
+  verifie(true, "nouveau mot de passe enregistré, elle est dans le backoffice");
+  await tel.close();
+  await appels.close();
+});
+
+/* ------------------------------------------------------------------ */
+console.log("\n== 4. Les portes ==");
 
 await etape("un formulaire posté depuis un autre site est refusé", async () => {
   const r = await brut(ctx, "POST", "/nouvelle-boutique/creer", {

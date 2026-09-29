@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 315 tests (dont la vitrine, la console, l'import, le tunnel de commande et le backoffice), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 347 tests (dont la vitrine, la console, l'import, le tunnel de commande, le backoffice et les équipes), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -39,14 +39,16 @@
    - fait : **C1** créer une boutique et son domaine, l'ouvrir ou la suspendre, ajouter des domaines ; **C2** régler sa marque (thème, police des titres, 13 couleurs, textes) avec un aperçu qui suit chaque changement ;
    - fait : chaque écriture passe par une fonction `public.console_*` réservée à `service_role`, qui revérifie l'administrateur et trace l'action (avec l'IP) dans `plateforme.journal_audit` ; formulaires refusés s'ils viennent d'une autre origine ; la clé `service_role` est un secret du Worker, absente du paquet compilé ;
    - fait : **C5 import Excel ou CSV** — une ligne par variante, en-têtes reconnus sous leurs noms usuels, toute autre colonne devient un axe (couleur, taille, tension…), rayons « Parent > Enfant » créés au besoin. D'abord un **rapport** (nouveautés, mises à jour, stocks ajustés, erreurs avec la ligne du tableur) sans rien écrire, puis l'import **en une transaction** ; rien n'est supprimé, une cellule vide ne remplace rien, un écart de stock passe au journal du stock. Lecture du .xlsx sans bibliothèque de tableur (fflate + lecteur maison, `src/lib/console/tableur.ts`) ;
-   - reste : logo et images (téléversement vers R2) ; photos des produits à l'import ; C3 modules ; C4 comptes de l'équipe du client.
+   - fait (29/09) : **C4 l'équipe d'une boutique**. L'administrateur invite par adresse e-mail, avec un rôle ; la console crée le compte (API d'administration de GoTrue) et rend un **lien d'accès** à transmettre lui-même (bouton « Envoyer par WhatsApp », message prêt) : aucun e-mail ne part, personne d'autre que l'invité ne connaît son mot de passe. Le lien mène à `/bienvenue`, qui **ne consomme rien à l'ouverture** (l'aperçu que fabrique WhatsApp ne le grille pas) : le jeton à usage unique n'est vérifié qu'à l'envoi du mot de passe choisi, puis la personne arrive dans son backoffice (double authentification d'abord pour un propriétaire ; sur téléphone, un bouton ouvre l'application d'authentification au lieu du QR code). Depuis la liste : changer un rôle, retirer ou rendre l'accès (effet immédiat), remettre un lien (invitation expirée, **mot de passe oublié**). La base garde toujours **au moins un propriétaire actif** et trace chaque geste, liens remis compris (`public.console_*`, migration 10) ;
+   - **à régler chez Supabase pour la mise en ligne** : Authentication → « Email OTP Expiration » à 86400 s (liens valables 24 heures, comme en local). Pas d'adresse de redirection à déclarer : le lien pointe sur la console, qui vérifie le jeton elle-même ;
+   - reste : logo et images (téléversement vers R2) ; photos des produits à l'import ; C3 modules ; que le propriétaire invite lui-même son équipe depuis son backoffice (B7).
 6. **Backoffice des boutiques — les commandes : fait le 29/09** (PRD §6.2 B3, B4), sur le domaine de la console (`app.skanecom.tn` ; en local `console.localhost:4200/gestion`), même connexion :
    - un **membre** d'une boutique entre dans le backoffice de SA boutique (`plateforme.membres`) ; la double authentification est exigée des propriétaires et administrateurs, pas des employés (confirmation, préparation, lecture) ; un compte sans rôle est refusé, la boutique d'un autre répond 404 ;
    - **liste par étape du travail** : à confirmer (la plus ancienne d'abord, bouton d'appel sur téléphone), à préparer, expédiées, clôturées ; recherche par numéro, nom ou téléphone ; pastilles avant l'appel : nouveau client, numéro vérifié par SMS, refus passés, appels déjà tentés ;
    - **fiche** : le geste du moment selon l'étape — appeler ou écrire sur WhatsApp (message prêt), noter le résultat (confirmée, injoignable, à rappeler, refus du client) ; préparer et expédier (transporteur, suivi) ; livrée (paiement encaissé) ou refusée à la livraison avec son origine, le stock revient seul ; annuler avec un motif ; note interne ; historique complet et fiche du client ;
    - chaque geste passe par une fonction de la base (`public.gestion_*`, migration 09) qui revérifie le rôle et **l'étape affichée** : deux employés sur la même commande, le second geste est refusé, pas rejoué. Plus d'UPDATE direct des commandes par l'API. Tentatives de confirmation dans `public.confirmations` ;
    - découvert en route : PostgREST rejoue d'office une transaction en conflit de sérialisation (code 40001) ; une erreur métier sous ce code tournait sans fin — corrigé ici et dans la console (conflit de version de la marque) ;
-   - reste : catalogue et stock au backoffice (B1, B2), clients (B6), équipe et invitations (B7, C4), livreurs et bordereau (B5), export (B8), notification des nouvelles commandes.
+   - reste : catalogue et stock au backoffice (B1, B2), clients (B6), le propriétaire qui gère son équipe lui-même (B7 ; la console le fait déjà, C4), livreurs et bordereau (B5), export (B8), notification des nouvelles commandes.
 7. **Maymar migrée** comme première boutique ; domaine `maymar.tn` à l'étape 2.
 
 ## Base de données en local
@@ -55,7 +57,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 315 tests pgTAP
+outils/base-locale.sh tester    # les 347 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 

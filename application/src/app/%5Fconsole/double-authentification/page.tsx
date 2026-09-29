@@ -34,7 +34,7 @@ export default async function DoubleAuthentification({ searchParams }: { searchP
   const { data: facteurs } = await sb.auth.mfa.listFactors();
   const valide = facteurs?.totp.find((f) => f.status === "verified");
 
-  let inscription: { id: string; qr: string; secret: string } | null = null;
+  let inscription: { id: string; qr: string; secret: string; uri: string } | null = null;
   if (!valide) {
     // Un facteur non validé d'une visite précédente ne sert plus : son QR
     // code n'est plus affichable. On repart d'un facteur neuf (le nom est
@@ -44,7 +44,7 @@ export default async function DoubleAuthentification({ searchParams }: { searchP
     }
     const { data, error } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "Console SkanEcom", issuer: "SkanEcom" });
     if (error || !data) throw new Error(`Double authentification indisponible : ${error?.message}`);
-    inscription = { id: data.id, qr: data.totp.qr_code, secret: data.totp.secret };
+    inscription = { id: data.id, qr: data.totp.qr_code, secret: data.totp.secret, uri: data.totp.uri };
   }
 
   return (
@@ -58,9 +58,16 @@ export default async function DoubleAuthentification({ searchParams }: { searchP
           {inscription ? (
             <>
               <p>
-                Première connexion : scannez ce code avec votre application d&apos;authentification
-                (Google Authenticator, Aegis, 1Password…), puis saisissez le code à six chiffres qu&apos;elle affiche.
+                Première connexion : ajoutez SkanEcom à votre application d&apos;authentification (Google Authenticator,
+                Aegis, 1Password…), puis saisissez le code à six chiffres qu&apos;elle affiche.
               </p>
+              {/* Sur un téléphone, on ne scanne pas son propre écran : le lien
+                  otpauth:// ouvre l'application, qui enregistre le compte. */}
+              <div className="seulement-tactile">
+                <a className="btn btn-primaire btn-bloc" href={inscription.uri}>Ouvrir l&apos;application d&apos;authentification</a>
+                <p className="aide mt-2">Elle enregistre SkanEcom ; revenez ensuite ici saisir le code qu&apos;elle affiche.</p>
+              </div>
+              <p className="aide seulement-tactile">Ou, depuis un autre appareil, scannez ce code :</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={inscription.qr.startsWith("data:") ? inscription.qr : `data:image/svg+xml;utf-8,${encodeURIComponent(inscription.qr)}`}

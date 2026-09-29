@@ -76,12 +76,14 @@ outils/essayer.sh
 
 **Console** — http://console.localhost:4200, `admin@skanecom.test`, mot de passe `console-locale-skanecom` (base locale seulement). À la première connexion, scanner le QR code avec une application d'authentification (Google Authenticator, Microsoft Authenticator, 1Password…) et saisir le code. Ensuite : créer une boutique et son domaine, l'ouvrir, régler sa marque (gabarit, couleurs, polices, textes) avec l'aperçu, importer un catalogue (le modèle CSV se télécharge depuis la page d'import).
 
+**Donner l'accès au backoffice** — dans la console, fiche de la boutique → **Gérer l'équipe** : saisir une adresse (inventée, par exemple `papa@maymar.test`) et un rôle, **Inviter**. La console affiche le lien d'accès à envoyer (bouton « Envoyer par WhatsApp »). L'ouvrir dans une **fenêtre de navigation privée** (sinon il remplace ta session de console) : choisir un mot de passe, et l'on arrive dans le backoffice de la boutique — après la double authentification pour un propriétaire. Depuis la liste : changer le rôle, retirer l'accès (la personne est dehors aussitôt), le rendre, ou remettre un lien si le mot de passe est oublié.
+
 ## 4. Les vérifications automatiques
 
 Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
 
 ```bash
-outils/base-locale.sh tester                   # 315 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice)
+outils/base-locale.sh tester                   # 347 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes)
 outils/essai-vitrine.sh                        # 25 essais : les boutiques ne se mélangent jamais, le tunnel n'est jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)

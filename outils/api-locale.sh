@@ -107,6 +107,10 @@ CONF
     export GOTRUE_API_HOST=127.0.0.1 GOTRUE_API_PORT=54340
     export GOTRUE_EXTERNAL_EMAIL_ENABLED=true GOTRUE_MAILER_AUTOCONFIRM=true
     export GOTRUE_MFA_TOTP_ENROLL_ENABLED=true GOTRUE_MFA_TOTP_VERIFY_ENABLED=true
+    # Équipes : les liens d'accès que remet la console (invitation, mot de
+    # passe à rechoisir) valent 24 heures — chez Supabase, « Email OTP
+    # Expiration » à 86400.
+    export GOTRUE_MAILER_OTP_EXP=86400
     # Acheteurs : connexion par numéro de téléphone et code. Le « fournisseur
     # de SMS » est le relais, qui note les codes dans .outils/sms.log.
     export GOTRUE_EXTERNAL_PHONE_ENABLED=true GOTRUE_SMS_AUTOCONFIRM=false

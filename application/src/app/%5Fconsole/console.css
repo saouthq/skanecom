@@ -51,3 +51,39 @@
 .code-secret { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; letter-spacing: .08em; word-break: break-all;
   background: var(--theme-surface-2); padding: .5rem .75rem; border-radius: var(--theme-radius-doux); font-size: .9375rem; }
 .chiffres { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; letter-spacing: .3em; font-size: 1.25rem; }
+
+/* --- Boutons d'appoint (listes) ----------------------------------------- */
+.btn-petit { min-block-size: 40px; padding: .5rem .875rem; font-size: .875rem; }
+.btn-danger { background: transparent; color: var(--theme-erreur); border-color: color-mix(in srgb, var(--theme-erreur) 55%, transparent); }
+.btn-danger:hover { background: color-mix(in srgb, var(--theme-erreur) 8%, var(--theme-surface)); }
+
+/* --- L'équipe d'une boutique -------------------------------------------- */
+.equipe { display: grid; }
+.membre { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; padding-block: 1rem;
+  border-block-end: 1px solid var(--theme-filet); }
+.membre:first-child { padding-block-start: .25rem; }
+.membre:last-child { border-block-end: 0; padding-block-end: 0; }
+.membre-qui { flex: 1 1 18rem; min-inline-size: 0; }
+.membre-inactif .membre-qui > p:first-child { color: var(--theme-encre-doux); }
+.membre-gestes { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.membre-role { display: flex; gap: .5rem; }
+.membre-role select { min-block-size: 40px; padding: .375rem 2rem .375rem .75rem; font-size: 1rem;
+  background-color: var(--theme-surface); border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux); }
+
+.carte-lien { border-color: var(--theme-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 14%, transparent); }
+.lien-acces { display: block; inline-size: 100%; border: 1px solid var(--theme-filet); letter-spacing: 0; font-size: .875rem;
+  min-block-size: 48px; }
+
+.roles { display: grid; gap: .5rem; border: 0; padding: 0; margin: 0; }
+.roles legend { font-size: .8125rem; font-weight: 500; margin-block-end: .5rem; }
+.role-choix { display: flex; align-items: flex-start; gap: .75rem; padding: .75rem .875rem; cursor: pointer;
+  border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-doux); }
+.role-choix:hover { border-color: var(--theme-filet-fort); }
+.role-choix:has(input:checked) { border-color: var(--theme-encre); background: var(--theme-surface-2); }
+.role-choix input { inline-size: 18px; block-size: 18px; margin-block-start: .15rem; accent-color: var(--theme-encre); flex: none; }
+.role-choix > span { display: grid; gap: .125rem; }
+@media (min-width: 720px) { .roles { grid-template-columns: 1fr 1fr; } .roles legend { grid-column: 1 / -1; } }
+
+/* Ce qui ne sert que sur un écran tactile (téléphone, tablette). */
+.seulement-tactile { display: none; }
+@media (pointer: coarse) { .seulement-tactile { display: block; } }
