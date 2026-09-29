@@ -2,6 +2,7 @@
 
 > Statut : **brouillon v0.2, à valider par Skander**. Rédigé le 29/09/2026.
 > Remplace la v0 du 28/09 (plateforme « type Shopify » en autonomie), archivée dans [`annexes/prd-v0-plateforme-autonomie.md`](annexes/prd-v0-plateforme-autonomie.md).
+> Modules des clients 2 et 3 tranchés par l'étude du 29/09 : [`05-etude-outillage-quincaillerie.md`](05-etude-outillage-quincaillerie.md).
 > Documents liés :
 > - [`02-infrastructure.md`](02-infrastructure.md) : l'infrastructure ;
 > - [`03-reprise-maymar.md`](03-reprise-maymar.md) : ce qu'on reprend de Maymar ;
@@ -51,7 +52,7 @@ Qui met en place : **Skander et son père.** La mise en place doit donc être **
 
 ### 4.1 Ce que le client achète
 
-| Élément | Contenu | Prix (hypothèses à valider avec les 3 prospects) |
+| Élément | Contenu | Fourchette (prix de lancement fixés en D5, `04-risques-et-decisions.md`) |
 |---|---|---|
 | **Mise en place**, une fois | Réglage de la marque (logo, couleurs, polices, sections), import du catalogue, branchement du domaine, du paiement Konnect et du livreur, commande test, formation de l'équipe | 1 500 à 4 000 TND selon la taille du catalogue |
 | **Abonnement mensuel** | Hébergement, maintenance, mises à jour, sauvegardes, sécurité, support, boutique qui reste ouverte en cas de panne | 150 à 500 TND par mois |
@@ -93,7 +94,7 @@ Face à Converty ou Shopify, on ne vend pas un outil à configurer soi-même : *
 
 ## 6. Périmètre de la v1 (pour Maymar et les 2 prochains clients)
 
-Priorités : **M** = indispensable · **S** = souhaité · **C** = si le temps le permet · **À valider** = à confirmer avec les prospects.
+Priorités : **M** = indispensable · **S** = souhaité · **C** = si le temps le permet. Les modules des clients 2 et 3 sont tranchés par l’étude `05-etude-outillage-quincaillerie.md`.
 
 ### 6.1 Console SkanEcom (pour Skander et son père)
 
@@ -119,9 +120,9 @@ Priorités : **M** = indispensable · **S** = souhaité · **C** = si le temps l
 | B6 | Clients, adresses, historique | M |
 | B7 | Équipe et rôles, double authentification pour les administrateurs | M |
 | B8 | Export complet des données | M |
-| B9 | Fiches techniques : attributs par catégorie (puissance, tension, dimensions…) | S · À valider (DeWalt, quincaillerie) |
-| B10 | Prix professionnels et comptes pro | S · À valider |
-| B11 | Demande de devis pour les grosses commandes | C · À valider |
+| B9 | Fiches techniques : attributs par catégorie (puissance, tension, dimensions…) | M (décidé, étude 05) |
+| B10 | Prix professionnels et comptes pro | S (étape 4, étude 05) |
+| B11 | Demande de devis pour les grosses commandes | C (étape 4, étude 05) |
 | B12 | Tableau de bord des refus, rapprochement du cash COD | C |
 
 ### 6.3 Vitrine
@@ -129,12 +130,12 @@ Priorités : **M** = indispensable · **S** = souhaité · **C** = si le temps l
 | # | Fonction | Priorité |
 |---|---|---|
 | V1 | Thème n°1 tiré de la charte Maymar, personnalisé par jetons (couleurs, polices, logo) et sections | M |
-| V2 | Thème n°2 « catalogue technique », pour l'outillage et la quincaillerie : filtres par attribut, recherche rapide, fiche technique | S · À valider |
+| V2 | Thème n°2 « catalogue technique », pour l'outillage et la quincaillerie : filtres par attribut, recherche rapide, fiche technique | M (décidé, étude 05) |
 | V3 | Accueil, rayons, fiche produit, recherche, panier, commande COD | M (repris de Maymar) |
 | V4 | **Grands catalogues** : filtres et pagination en base, recherche rapide sur des milliers de références | M dès la quincaillerie (voir `03-reprise-maymar.md`) |
 | V5 | FR/AR avec RTL, TND, SEO, performance mobile | M |
 | V6 | Paiement en ligne Konnect sur le compte du client (désactivé par défaut) | S |
-| V7 | Retrait en magasin | S · À valider (quincaillerie) |
+| V7 | Retrait en magasin | M (décidé, étude 05) |
 | V8 | CGV, mentions légales et rétractation générées par boutique ; consentement des acheteurs | M |
 
 ### 6.4 Hors v1
@@ -200,8 +201,8 @@ Pas de dates avant d'avoir mesuré la première mise en place. On ne passe à un
 | **0. Cadrage** | Ce document, l'infrastructure, le prototype | Validé par Skander |
 | **1. Socle** | Multi-boutique (une base, `boutique_id`), thème par réglages, console de mise en place, import Excel | Deux boutiques de test isolées, habillées différemment par la console seule |
 | **2. Maymar** | Maymar en ligne sur SkanEcom (`maymar.tn`) | De vraies commandes livrées ; durée de mise en place mesurée |
-| **3. Clients 2 et 3** | Distributeur DeWalt, quincaillerie : grands catalogues, modules validés avec eux | Deux clients payants en ligne |
-| **4. Industrialiser** | Réduire la durée de mise en place, 2e thème, 10 à 20 clients | Une mise en place en quelques jours |
+| **3. Représentant DeWalt** | Thème n°2 « catalogue technique », attributs filtrables, recherche par référence, retrait en magasin, frais au poids, prix barrés en réglage, sections revendeur officiel et SAV (`05-etude-outillage-quincaillerie.md`) | Client payant en ligne |
+| **4. Quincaillerie, puis industrialiser** | Très grand catalogue, conditionnement, comptes et prix pro, devis ; réduire la durée de mise en place, 10 à 20 clients | Client payant en ligne ; une mise en place en quelques jours |
 | **Plus tard** | Ouverture en autonomie, si la demande le justifie (voir l'annexe) | — |
 
 ---

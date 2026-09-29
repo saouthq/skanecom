@@ -8,6 +8,7 @@
 2. [`02-infrastructure.md`](02-infrastructure.md) — **L'infrastructure.** Cloudflare + Supabase, les grands catalogues, la boutique qui reste ouverte en cas de panne, les coûts.
 3. [`03-reprise-maymar.md`](03-reprise-maymar.md) — **La reprise du code Maymar.** Ce qu'on garde, ce qu'on corrige, le modèle de données multi-boutique.
 4. [`04-risques-et-decisions.md`](04-risques-et-decisions.md) — **À trancher.** Décisions prises et ouvertes, registre des risques, actions immédiates.
+5. [`05-etude-outillage-quincaillerie.md`](05-etude-outillage-quincaillerie.md) — **Les clients 2 et 3.** Ce dont ont besoin le représentant DeWalt et la quincaillerie, et les modules qui en découlent.
 
 Prototype technique : [`../../prototype/vitrine-workers/RAPPORT.md`](../../prototype/vitrine-workers/RAPPORT.md). La vitrine Maymar tourne sur Cloudflare Workers ; phase locale réussie le 28/09.
 
