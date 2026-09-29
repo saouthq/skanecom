@@ -22,13 +22,8 @@
 ## Premières tâches de l'étape 1 (socle), dans l'ordre
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
-2. **Base locale d'abord** (décision de Skander, 29/09) : Postgres local avec les éléments Supabase simulés (`auth.users`, `auth.uid()`, rôles `anon` et `authenticated`), comme pour le prototype. Si Docker est disponible, utiliser `supabase start` pour avoir aussi Auth et l'API REST. On passe au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) avant l'étape 2. Migrations multi-boutique à partir de celles de Maymar, en appliquant `cadrage/03-reprise-maymar.md` :
-   - `boutique_id` partout, clés étrangères composites ;
-   - `private.est_membre()` ;
-   - unicités par boutique, compteur de commandes par boutique ;
-   - réglages et zones par boutique ;
-   - tables de la console.
-3. **Tests d'isolation pgTAP**, bloquants dans l'intégration continue.
+2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 124 tests, dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application** : à partir de `prototype/vitrine-workers` :
    - trouver la boutique à partir du domaine et réécrire l'adresse en interne (`/_b/<boutique>/…`, dossier `src/app/%5Fb/[boutique]/`, modèle : `prototype/vitrine-workers/src/proxy.ts`) ;
    - thème par jetons `--theme-*` lus dans la base ;
@@ -39,6 +34,20 @@
    - **déploiement en deux temps avec cache prérempli** (`--warm-cache`), et nettoyage des anciennes versions du cache (découverte n°6).
 5. **Console minimale** : créer une boutique, régler sa marque, importer un fichier Excel.
 6. **Maymar migrée** comme première boutique ; domaine `maymar.tn` à l'étape 2.
+
+## Base de données en local
+
+Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgresql-16-pgtap libtap-parser-sourcehandler-pgtap-perl`). Docker n'est pas nécessaire.
+
+```bash
+outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
+outils/base-locale.sh tester    # les 124 tests pgTAP
+outils/base-locale.sh psql      # console SQL
+```
+
+La base écoute sur `127.0.0.1:54322`, comme celle de la CLI Supabase. Comme chez Supabase, `postgres` n'y est **pas** superutilisateur (c'est `supabase_admin`) : une migration qui demanderait un droit de superutilisateur échoue en local comme en production. Le jeu de démo (`supabase/seed.sql`) contient deux boutiques, `maymar` et `quincaillerie-demo`, avec les domaines `maymar.localhost` et `quincaillerie.localhost`. Avec Docker, `supabase db start` donne la vraie base Supabase ; c'est ce que fait la CI.
+
+**Ajouter une table de boutique** : `boutique_id` NOT NULL vers `plateforme.boutiques`, `unique (boutique_id, id)`, clés étrangères composites, trigger `private.boutique_immuable`, RLS. Le fichier `supabase/tests/01_structure.sql` le vérifie sur toutes les tables, et `02_isolation.sql` compare automatiquement ce que chaque rôle voit de chaque boutique : une nouvelle table est couverte sans écrire de test.
 
 ## Règles à tenir
 

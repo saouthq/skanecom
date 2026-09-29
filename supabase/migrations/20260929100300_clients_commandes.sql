@@ -478,11 +478,11 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-set skanecom.ecriture_stock = 'on'
 as $$
 declare
   v_stock_apres integer;
   v_numero      text;
+  v_ecriture    text := current_setting('skanecom.ecriture_stock', true);
 begin
   if new.variante_id is null then
     return new;   -- ligne libre (produit retiré du catalogue) : rien à réserver
@@ -491,11 +491,13 @@ begin
   -- L'UPDATE verrouille la variante : deux clients qui commandent la
   -- dernière pièce en même temps sont sérialisés ici. La clé composite de la
   -- ligne garantit que la variante est de la même boutique.
+  perform set_config('skanecom.ecriture_stock', 'on', true);
   update public.variantes
      set stock = stock - new.quantite
    where boutique_id = new.boutique_id and id = new.variante_id
      and stock >= new.quantite
   returning stock into v_stock_apres;
+  perform set_config('skanecom.ecriture_stock', coalesce(v_ecriture, ''), true);
 
   if v_stock_apres is null then
     raise exception 'Stock insuffisant pour la variante % (quantité demandée : %)',
@@ -528,12 +530,12 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-set skanecom.ecriture_stock = 'on'
 as $$
 declare
-  v_ligne record;
-  v_stock integer;
-  v_motif public.motif_mouvement_stock;
+  v_ligne    record;
+  v_stock    integer;
+  v_motif    public.motif_mouvement_stock;
+  v_ecriture text := current_setting('skanecom.ecriture_stock', true);
 begin
   if new.statut not in ('refusee', 'annulee') then return new; end if;
   if old.statut in ('refusee', 'annulee') then return new; end if;
@@ -545,10 +547,12 @@ begin
     select l.variante_id, l.quantite from public.commande_lignes l
     where l.boutique_id = new.boutique_id and l.commande_id = new.id and l.variante_id is not null
   loop
+    perform set_config('skanecom.ecriture_stock', 'on', true);
     update public.variantes
        set stock = stock + v_ligne.quantite
      where boutique_id = new.boutique_id and id = v_ligne.variante_id
     returning stock into v_stock;
+    perform set_config('skanecom.ecriture_stock', coalesce(v_ecriture, ''), true);
 
     insert into public.stock_mouvements
       (boutique_id, variante_id, delta, stock_apres, motif, commande_id, commentaire, auteur_id)

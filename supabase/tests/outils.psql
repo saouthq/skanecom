@@ -8,7 +8,8 @@
 --   reset role; select tests.connecte('proprio_a');   -- membre, client…
 --   reset role; select tests.anonyme();               -- visiteur de la vitrine
 --   reset role; select tests.service();               -- clé service_role
--- `reset role` revient au superutilisateur, qui contourne la RLS.
+-- `reset role` revient à `postgres`, propriétaire des tables, qui contourne la
+-- RLS (comme une fonction SECURITY DEFINER, ou la console côté serveur).
 --
 -- Jeu d'essai :
 --   boutique A « essai-a » (active), B « essai-b » (active),
@@ -21,6 +22,7 @@
 --   un invité (sans compte) dans A.
 -- =====================================================================
 
+set local client_min_messages = warning;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
@@ -30,7 +32,7 @@ grant usage on schema tests to anon, authenticated, service_role;
 create table tests.ids (nom text primary key, id uuid not null default gen_random_uuid());
 grant select on tests.ids to anon, authenticated, service_role;
 
--- Résultats relevés sous un rôle, comparés ensuite sous le superutilisateur.
+-- Résultats relevés sous un rôle, comparés ensuite sous postgres.
 create table tests.vus (qui text, nom_table text, n bigint);
 grant insert, select on tests.vus to anon, authenticated, service_role;
 
@@ -101,7 +103,7 @@ grant execute on all functions in schema tests to anon, authenticated, service_r
 
 
 -- ---------------------------------------------------------------------
--- Jeu d'essai (écrit en superutilisateur)
+-- Jeu d'essai (écrit par postgres, hors RLS)
 -- ---------------------------------------------------------------------
 insert into plateforme.boutiques (id, slug, nom, statut) values
   (tests.nouvel_id('A'), 'essai-a',         'Essai A',         'active'),

@@ -211,11 +211,15 @@ create index stock_mouvements_variante_idx on public.stock_mouvements (boutique_
 -- ---------------------------------------------------------------------
 -- Le stock ne change que par un mouvement
 -- ---------------------------------------------------------------------
--- Les fonctions autorisées à écrire le stock portent la clause
--- `set skanecom.ecriture_stock = 'on'` : le réglage ne vaut que pendant leur
--- exécution. Un UPDATE direct de la colonne, lui, est refusé, quel que soit
--- le rôle (y compris la console et l'import Excel, qui passent par
--- public.mouvement_stock).
+-- Les fonctions autorisées à écrire le stock lèvent le drapeau
+-- `skanecom.ecriture_stock` juste le temps de leur UPDATE, puis remettent
+-- l'ancienne valeur. L'API ne peut pas le lever elle-même : PostgREST
+-- n'expose pas set_config. Un UPDATE direct de la colonne est donc refusé,
+-- quel que soit le rôle (y compris la console et l'import Excel, qui passent
+-- par public.mouvement_stock).
+-- Pas de clause `set skanecom.ecriture_stock = 'on'` dans la définition des
+-- fonctions : sur Supabase, où `postgres` n'est pas superutilisateur,
+-- Postgres refuse un paramètre personnalisé dans cette clause.
 create function private.garde_stock()
 returns trigger
 language plpgsql
@@ -267,10 +271,10 @@ returns integer
 language plpgsql
 security definer
 set search_path = ''
-set skanecom.ecriture_stock = 'on'
 as $$
 declare
-  v_stock integer;
+  v_stock    integer;
+  v_ecriture text := current_setting('skanecom.ecriture_stock', true);
 begin
   if not (private.est_membre(p_boutique_id, '{proprietaire,admin,preparateur}')
           or auth.role() = 'service_role') then
@@ -282,10 +286,12 @@ begin
       using errcode = 'check_violation';
   end if;
 
+  perform set_config('skanecom.ecriture_stock', 'on', true);
   update public.variantes
      set stock = stock + p_delta
    where boutique_id = p_boutique_id and id = p_variante_id
   returning stock into v_stock;
+  perform set_config('skanecom.ecriture_stock', coalesce(v_ecriture, ''), true);
 
   if v_stock is null then
     raise exception 'Variante introuvable dans cette boutique' using errcode = 'no_data_found';

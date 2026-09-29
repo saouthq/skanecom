@@ -1,6 +1,6 @@
 # SkanEcom — Reprise du code Maymar et modèle de données multi-boutique (v0)
 
-> Statut : **proposition à valider**. Rédigé le 28/09/2026, mis à jour le 29/09 pour la marque blanche (10 à 50 clients installés par nous). Lecture directe du dépôt `saouthq/maymar`, branche `dev` au 13/08/2026, version v1.9.9.1.
+> Statut : **schéma construit le 29/09** (`supabase/migrations/`, voir §7). Rédigé le 28/09/2026, mis à jour le 29/09 pour la marque blanche (10 à 50 clients installés par nous). Lecture directe du dépôt `saouthq/maymar`, branche `dev` au 13/08/2026, version v1.9.9.1.
 > Principe : **on ne jette pas le moteur de Maymar, on le rend multi-boutique.** La marque Maymar (logo, palette, ton) reste à Maymar. Sa charte « premium sobre » devient le **premier thème** de SkanEcom.
 
 ---
@@ -119,9 +119,9 @@
   - Une référence entre boutiques devient impossible, même pour une fonction qui contourne la RLS.
 - **Index composites en tête `(boutique_id, …)`** sur toutes les listes (commandes par statut, produits publiés, etc.).
 - **RLS par boutique.**
-  - Lecture publique : seulement les objets publiés.
-  - Membres : lecture et écriture selon leur rôle, via `private.est_membre(boutique_id, roles)`.
-  - Fonction `STABLE SECURITY DEFINER`, appelée sous la forme `(select private.est_membre(...))` pour être évaluée une seule fois par requête.
+  - Lecture publique : seulement les objets publiés, des boutiques actives.
+  - Membres : lecture et écriture selon leur rôle, via `boutique_id in (select private.mes_boutiques(roles))`.
+  - `private.mes_boutiques()` est `STABLE SECURITY DEFINER` et ne dépend d'aucune colonne : Postgres l'évalue une seule fois par requête, puis compare chaque ligne à la liste. Un appel `private.est_membre(boutique_id, roles)` dans la policy serait, lui, exécuté ligne par ligne. `est_membre` sert dans les fonctions.
 - **Écritures sensibles uniquement par fonctions SQL** : création de commande, changement de statut, mouvements de stock. Elles recalculent tout côté serveur, comme le fait déjà Maymar.
 
 ### 4.2 Plan de contrôle (schéma `plateforme`)
@@ -196,3 +196,32 @@
   - confirmation téléphonique.
 
   Chaque boutique peut ensuite changer ces réglages.
+
+---
+
+## 7. État de la reprise (29/09/2026)
+
+**Construit** (`supabase/migrations/`, 4 migrations) et **vérifié** par 124 tests pgTAP (`supabase/tests/`), qui tournent en CI sur l'image Supabase et sur la base locale simulée :
+
+| Partie | Contenu |
+|---|---|
+| Plan de contrôle (`plateforme`, hors de l'API) | `boutiques`, `domaines`, `membres`, `administrateurs`, `modules`, `modules_actifs`, `reglages_catalogue`, `journal_audit` |
+| Autorisations (`private`) | `mes_boutiques(roles)`, `est_membre`, `boutiques_visibles`, `mes_clients`, `est_administrateur` |
+| Données des boutiques (`public`) | `reglages`, `zones_livraison`, `zones_gouvernorats`, `categories`, `produits`, `produit_options`, `variantes`, `produit_images`, `stock_mouvements`, `clients`, `adresses`, `compteurs_commandes`, `commandes`, `commande_lignes`, `commande_evenements` ; référentiel partagé `gouvernorats` |
+| API (`public`) | `resoudre_domaine`, `configuration_publique`, `frais_livraison_millimes`, `mes_acces`, `reglages_boutique`, `inscrire_client`, `mouvement_stock` |
+
+Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en partie : index composites, et seules les boutiques actives sont lisibles ; les limites de débit de la façade restent à faire. Les pièges 8 à 12 concernent l'application.
+
+**Choix faits en construisant** :
+- **Plus de table `profils`.** Un compte (`auth.users`) est une identité globale. Chaque boutique a sa fiche `clients` pour ce compte : le même acheteur a deux fiches chez deux commerçants, et aucun ne voit l'autre. Avec la connexion par code SMS, un acheteur qui s'inscrit sur une deuxième boutique ne reçoit jamais « compte déjà existant ».
+- **Langues et devise** sont des colonnes de `boutiques`, plus des réglages.
+- **Les modules sont activés par nous** (`plateforme.modules_actifs`), depuis la console : ils font partie de l'offre vendue. Un réglage rattaché à un module n'est visible de la vitrine que si le module est actif.
+- **Les administrateurs de la plateforme n'ont aucun droit par la RLS.** Ils passent par la console (clé `service_role`), qui trace chaque accès dans `journal_audit`.
+- **Le stock ne change que par un mouvement journalisé.** C'est vrai pour tous les rôles, y compris la console et le rôle `postgres` : une commande réserve le stock, un refus ou une annulation le rend, et le reste passe par `mouvement_stock`. La somme du journal est toujours égale au stock.
+- **Journaux horodatés à l'instant réel** (`clock_timestamp()`) : plusieurs changements dans une même transaction gardent leur ordre.
+- **Livraison offerte dès un seuil** (`livraison.seuil_gratuite_millimes`), demandée par l'étude de la quincaillerie : prise en compte dès maintenant dans le calcul des frais.
+
+**Pas encore construit**, et prévu :
+- avec la console : `contrats`, `factures`, `mise_en_place` ;
+- avec le thème : `theme` ;
+- avec le tunnel de commande et le backoffice : la fonction de création de commande, `confirmations`, `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

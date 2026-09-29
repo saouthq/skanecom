@@ -1,9 +1,9 @@
 -- =====================================================================
--- 04 · Intégrité : ce que la base refuse, même au superutilisateur
+-- 04 · Intégrité : ce que la base refuse, même hors RLS
 -- =====================================================================
--- Ces tests tournent en superutilisateur, qui contourne la RLS : c'est le
--- cas d'une fonction SECURITY DEFINER ou d'un bug côté serveur. Les clés
--- composites et les triggers doivent tenir quand même.
+-- Ces tests tournent sous postgres, propriétaire des tables, qui contourne la
+-- RLS : c'est le cas d'une fonction SECURITY DEFINER, de la console ou d'un
+-- bug côté serveur. Les clés composites et les triggers doivent tenir quand même.
 begin;
 \ir outils.psql
 
@@ -65,11 +65,11 @@ select throws_ok(
   '23505', null, 'ni deux fois le même SKU dans une boutique');
 
 -- ---------------------------------------------------------------------
--- Le stock ne change que par un mouvement, même pour le superutilisateur
+-- Le stock ne change que par un mouvement, même hors RLS
 -- ---------------------------------------------------------------------
 select throws_like(
   format($$ update public.variantes set stock = 50 where id = %L $$, tests.id('variante_a')),
-  '%ne change que par un mouvement de stock%', 'le superutilisateur non plus ne modifie pas le stock en direct');
+  '%ne change que par un mouvement de stock%', 'même hors RLS, personne ne modifie le stock en direct');
 select is(
   (select sum(delta) from public.stock_mouvements where variante_id = tests.id('variante_a'))::integer,
   (select stock from public.variantes where id = tests.id('variante_a')),
