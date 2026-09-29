@@ -1,0 +1,4 @@
+{
+  "_": "Photos retenues : { boutique, id Unsplash, chemin de destination sans extension, largeurs }. Modifier ce fichier relance le workflow, qui télécharge les photos en WebP dans supabase/fichiers-demo/ et met à jour CREDITS.md.",
+  "photos": []
+}

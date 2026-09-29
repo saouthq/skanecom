@@ -1,0 +1,27 @@
+{
+  "_": "Recherches Unsplash des photos de démonstration (outils/photos-demo/photos.mjs). Modifier ce fichier relance le workflow « Photos de démonstration », qui dépose des planches contact dans candidats/.",
+  "mode": [
+    { "cle": "chemise-lin", "q": "linen shirt woman studio", "orientation": "portrait" },
+    { "cle": "robe", "q": "beige dress woman minimal", "orientation": "portrait" },
+    { "cle": "homme-chemise", "q": "man white shirt minimal studio", "orientation": "portrait" },
+    { "cle": "maille", "q": "knit sweater minimal neutral", "orientation": "portrait" },
+    { "cle": "pantalon", "q": "wide leg trousers woman minimal", "orientation": "portrait" },
+    { "cle": "editorial", "q": "fashion editorial neutral tones", "orientation": "landscape" },
+    { "cle": "sac-cuir", "q": "leather handbag minimal", "orientation": "portrait" },
+    { "cle": "chaussures", "q": "leather shoes minimal", "orientation": "squarish" }
+  ],
+  "bagages": [
+    { "cle": "valise", "q": "suitcase minimal studio", "orientation": "portrait" },
+    { "cle": "valise-voyage", "q": "suitcase travel airport", "orientation": "landscape" },
+    { "cle": "cabine", "q": "carry on luggage", "orientation": "portrait" },
+    { "cle": "sac-voyage", "q": "leather travel bag", "orientation": "portrait" }
+  ],
+  "outillage": [
+    { "cle": "perceuse", "q": "cordless drill", "orientation": "squarish" },
+    { "cle": "atelier", "q": "power tools workshop", "orientation": "landscape" },
+    { "cle": "meuleuse", "q": "angle grinder", "orientation": "squarish" },
+    { "cle": "outils", "q": "hand tools flat lay", "orientation": "landscape" },
+    { "cle": "chantier", "q": "construction worker drill", "orientation": "landscape" },
+    { "cle": "visserie", "q": "screws bolts hardware", "orientation": "squarish" }
+  ]
+}

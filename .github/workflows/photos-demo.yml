@@ -1,0 +1,60 @@
+# Photos de démonstration (Unsplash) : le poste de développement n'a pas
+# accès à Internet, GitHub Actions si. Les résultats sont commités sur la
+# branche qui a déclenché le workflow.
+#   · requetes.json modifié → planches contact dans outils/photos-demo/candidats/
+#   · choix.json modifié    → photos retenues dans supabase/fichiers-demo/
+name: Photos de démonstration
+
+on:
+  push:
+    paths:
+      - "outils/photos-demo/requetes.json"
+      - "outils/photos-demo/choix.json"
+      - "outils/photos-demo/photos.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: photos-demo-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Ce qui a changé
+        id: quoi
+        run: |
+          changes=$(git diff --name-only HEAD~1 HEAD || true)
+          echo "candidats=$(echo "$changes" | grep -qE 'requetes.json|photos.mjs' && echo oui || echo non)" >> "$GITHUB_OUTPUT"
+          echo "final=$(echo "$changes" | grep -qE 'choix.json|photos.mjs' && echo oui || echo non)" >> "$GITHUB_OUTPUT"
+
+      - name: Planches contact
+        if: steps.quoi.outputs.candidats == 'oui' || github.event_name == 'workflow_dispatch'
+        run: |
+          sudo apt-get install -y -q imagemagick > /dev/null
+          node outils/photos-demo/photos.mjs candidats
+
+      - name: Photos retenues
+        if: steps.quoi.outputs.final == 'oui' || github.event_name == 'workflow_dispatch'
+        run: node outils/photos-demo/photos.mjs final
+
+      - name: Commit des résultats
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add outils/photos-demo/candidats supabase/fichiers-demo
+          if git diff --cached --quiet; then echo "Rien de nouveau."; exit 0; fi
+          git commit -m "Photos de démonstration : résultats du workflow"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
