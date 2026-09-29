@@ -52,3 +52,5 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `quincaillerie-demo/produits/assortiment-visserie` | [Matt Bango](https://mattbango.photo) | CC0 | [stocksnap](https://stocksnap.io/photo/metal-screws-0S5UEC0XC2) |
 | `quincaillerie-demo/produits/gants-protection` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5928007/photo-image-public-domain-wood-person) |
 | `quincaillerie-demo/produits/casque-chantier` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5914234/image-white-background-public-domain-blue) |
+| `maymar/accueil/aeroport-large` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5924408/luggage-airport-free-public-domain-cc0-image) |
+| `maymar/accueil/depart-portrait` | [Erol Ahmed](https://stocksnap.io/author/26749) | CC0 | [stocksnap](https://stocksnap.io/photo/luggage-dufflebag-B3KGCPF50Y) |
