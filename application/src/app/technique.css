@@ -270,3 +270,36 @@ html[data-gabarit="technique"] .caracteristiques dd { font-weight: 600; }
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 2rem; padding-block: 1.25rem 1.75rem;
   border-block-start: 1px solid color-mix(in srgb, var(--theme-surface) 14%, transparent); font-size: .75rem;
 }
+
+/* ============================================================================
+   Refonte du 29/09 : le jaune n'est plus partout. Il reste à ce qui compte —
+   la recherche, l'ouverture, l'ajout au panier de la fiche — et les cartes
+   passent au noir, plus calmes : vingt boutons jaunes dans une grille ne
+   disent plus rien. Filets allégés, rayons en graisse moyenne, les
+   assurances ne se répètent plus deux fois en bas de l'accueil.
+   ========================================================================== */
+.te-carte { gap: .75rem; padding: .5rem .5rem .75rem; border-color: color-mix(in srgb, var(--theme-filet) 85%, transparent); }
+.te-carte:hover { border-color: var(--theme-filet-fort); box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-encre) 5%, transparent), 0 12px 28px -14px color-mix(in srgb, var(--theme-encre) 28%, transparent); }
+.te-carte-lien { padding-inline: .25rem; }
+.te-carte-lien .cadre-image { margin-inline: -.25rem; }
+.te-carte-bas { padding-inline: .25rem; }
+.te-carte .btn { min-block-size: 40px; border-radius: var(--theme-radius-doux); }
+html[data-gabarit="technique"] .te-carte .btn-primaire { background: var(--theme-encre); color: var(--theme-surface); }
+html[data-gabarit="technique"] .te-carte .btn-primaire:hover { background: color-mix(in srgb, var(--theme-encre) 84%, var(--theme-surface)); }
+html[data-gabarit="technique"] .te-carte .btn-primaire svg { color: var(--theme-accent); }
+html[data-gabarit="technique"] .te-carte .btn-second { border-color: color-mix(in srgb, var(--theme-encre) 22%, transparent); }
+html[data-gabarit="technique"] .te-recherche input { font-size: .9375rem; }
+.te-carte-marque { letter-spacing: .08em; font-weight: 700; }
+.te-remise { border-radius: 999px; padding: .1875rem .5rem; font-size: .6875rem; }
+
+.te-section-tete { border-block-end-width: 1px; border-block-end-color: color-mix(in srgb, var(--theme-encre) 70%, transparent); padding-block-end: .75rem; }
+.te-nav a { font-weight: 600; }
+.te-nav a[aria-current="page"] { font-weight: 700; }
+.te-rayon { border-color: color-mix(in srgb, var(--theme-filet) 85%, transparent); }
+.te-rayon:hover { border-color: var(--theme-filet-fort); }
+
+/* L'accueil a sa section « Commander, simplement » : le bandeau du pied ne la répète pas. */
+html:has(.te-services) .te-pied-services { display: none; }
+
+html[data-gabarit="technique"] .te-filtres-titre { border-block-end-width: 1px; }
+html[data-gabarit="technique"] .te-fiche-details h2 { border-block-end-width: 1px; }

@@ -8,8 +8,27 @@
    gauche, le récapitulatif collant à droite.
    ========================================================================== */
 
-.tunnel-page { padding-block: clamp(1.5rem, 4vw, 3rem) clamp(3rem, 7vw, 6rem); }
-.tunnel-tete { display: grid; gap: .375rem; margin-block-end: clamp(1.25rem, 3vw, 2.25rem); }
+.tunnel-page { padding-block: clamp(1.5rem, 4vw, 3.25rem) clamp(3rem, 7vw, 6rem); }
+
+/* --- Le mode commande --------------------------------------------------------
+   Pendant la commande et sur sa page de fin, la boutique se tait : l'en-tête
+   ne garde que le logo (retour à l'accueil), le pied sa dernière ligne. On ne
+   quitte pas un tunnel par distraction. */
+html:has(.tunnel-page, .merci-page) :is(.ed-annonce, .te-utilitaire, .te-barre-rayons, .te-pied-services, .te-pied-grille, .ed-pied-grille, .ed-pied-marque) { display: none; }
+html:has(.tunnel-page, .merci-page) :is(.ed-entete-debut, .ed-entete-fin, .te-entete-fin) > * { display: none; }
+html:has(.tunnel-page, .merci-page) :is(.te-menu, .te-recherche) { display: none; }
+html:has(.tunnel-page, .merci-page) .ed-pied { margin-block-start: 0; }
+html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-content: center; }
+
+/* Les listes déroulantes du tunnel : une flèche dessinée, pas celle du système. */
+.tunnel-page .champ select {
+  appearance: none; -webkit-appearance: none; padding-inline-end: 2.75rem; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 1rem center;
+}
+[dir="rtl"] .tunnel-page .champ select { padding-inline: .875rem 2.75rem; background-position: left 1rem center; }
+.tunnel-tete { display: grid; gap: .5rem; margin-block-end: clamp(1.25rem, 3vw, 2.5rem); }
+.tunnel-tete p { color: var(--theme-encre-doux); }
 .tunnel-tete h1 { font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; }
 .tunnel-attente { min-block-size: 40vh; display: grid; place-items: center; color: var(--theme-encre-doux); font-size: .875rem; }
 .tunnel-vide { max-inline-size: 36rem; margin-inline: auto; }
@@ -23,15 +42,22 @@
 
 /* --- Formulaire ------------------------------------------------------------ */
 .tunnel-formulaire { display: grid; gap: .5rem; min-inline-size: 0; }
-.tunnel-etape { margin: 0; padding: 1.5rem 0 1.75rem; border: 0; border-block-start: 1px solid var(--theme-filet); min-inline-size: 0; display: grid; gap: 1rem; }
+.tunnel-etape { margin: 0; padding: 1.75rem 0 2rem; border: 0; border-block-start: 1px solid var(--theme-filet); min-inline-size: 0; display: grid; gap: 1.125rem; }
 .tunnel-etape > legend {
   display: flex; align-items: center; gap: .75rem; float: inline-start; inline-size: 100%;
   margin-block-end: .25rem; padding: 0; font-family: var(--theme-font-display); font-size: 1.5rem; line-height: 1.15;
 }
 .tunnel-num {
-  display: inline-grid; place-items: center; flex: none; inline-size: 1.875rem; block-size: 1.875rem;
-  border: 1px solid var(--theme-encre); border-radius: 50%;
-  font-family: var(--theme-font-texte); font-size: .8125rem; font-weight: 500; font-variant-numeric: tabular-nums;
+  display: inline-grid; place-items: center; flex: none; inline-size: 1.75rem; block-size: 1.75rem;
+  border-radius: 50%; background: var(--theme-encre); color: var(--theme-fond);
+  font-family: var(--theme-font-texte); font-size: .75rem; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+/* Le numéro confirmé : la première étape est faite, elle le montre. */
+.tunnel-etape:has(.tunnel-identite) .tunnel-num { background: var(--theme-succes); color: var(--theme-surface); font-size: 0; }
+.tunnel-etape:has(.tunnel-identite) .tunnel-num::before {
+  content: ""; inline-size: .8125rem; block-size: .8125rem; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 .tunnel-grille { display: grid; gap: 1rem; }
 @media (min-width: 700px) {
@@ -83,9 +109,9 @@
 .tunnel-livraison-frais::before { display: none; }
 
 .tunnel-mode {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .875rem;
-  padding: 1rem 1.125rem; background: var(--theme-surface); border: 1px solid var(--theme-encre);
-  border-radius: var(--theme-radius-doux); cursor: default;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem;
+  padding: 1.125rem 1.25rem; background: var(--theme-surface); border: 1px solid var(--theme-encre);
+  box-shadow: inset 0 0 0 1px var(--theme-encre); border-radius: var(--theme-radius-doux); cursor: default;
 }
 .tunnel-mode input { inline-size: 18px; block-size: 18px; accent-color: var(--theme-encre); margin: 0; }
 .tunnel-mode-corps { display: grid; gap: .125rem; }
@@ -94,7 +120,7 @@
 .tunnel-rappel { margin: -.25rem 0 0; }
 
 .tunnel-envoi { display: grid; gap: .75rem; padding-block-start: 1.25rem; border-block-start: 1px solid var(--theme-filet); }
-.tunnel-bouton { justify-content: space-between; min-block-size: 56px; }
+.tunnel-bouton { justify-content: space-between; min-block-size: 58px; padding-inline: 1.5rem; font-size: .9375rem; }
 .tunnel-bouton .prix .dev { color: inherit; opacity: .75; }
 .tunnel-bouton[aria-busy] { justify-content: center; }
 
@@ -106,7 +132,7 @@
 .tunnel-alerte:focus { outline: none; }
 
 /* --- Récapitulatif ---------------------------------------------------------- */
-.tunnel-recap { background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); }
+.tunnel-recap { background: var(--theme-surface-2); border: 1px solid color-mix(in srgb, var(--theme-filet) 70%, transparent); border-radius: var(--theme-radius-carte); }
 .tunnel-recap-bascule {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem; inline-size: 100%;
   min-block-size: 56px; padding: .75rem 1.125rem; background: none; border: 0; cursor: pointer; font-size: .875rem; text-align: start;
@@ -129,12 +155,13 @@
 
 .tunnel-lignes { list-style: none; margin: 0; padding: 0; }
 .tunnel-ligne {
-  display: grid; grid-template-columns: 4rem minmax(0, 1fr) auto; gap: .875rem; align-items: start;
-  padding-block: .875rem; border-block-end: 1px solid var(--theme-filet);
+  display: grid; grid-template-columns: 4.25rem minmax(0, 1fr) auto; gap: 1rem; align-items: start;
+  padding-block: 1rem; border-block-end: 1px solid var(--theme-filet);
 }
 .tunnel-ligne[data-indisponible] .tunnel-vignette, .tunnel-ligne[data-indisponible] .tunnel-ligne-nom { opacity: .5; }
 .tunnel-vignette {
-  position: relative; display: block; aspect-ratio: 4 / 5; background: var(--theme-surface-2);
+  position: relative; display: block; aspect-ratio: 4 / 5; background: var(--theme-surface);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-filet) 80%, transparent);
   border-radius: var(--theme-radius-net); overflow: visible;
 }
 .tunnel-vignette img { object-fit: cover; border-radius: var(--theme-radius-net); }
@@ -179,8 +206,8 @@
 .merci-suite strong { display: block; font-weight: 500; margin-block: .25rem .125rem; }
 .merci-suite p { margin: 0; font-size: .9375rem; color: var(--theme-encre-doux); max-inline-size: 46ch; }
 .merci-continuer { margin-block-start: .5rem; }
-.merci-recap { padding: 1.5rem; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); }
-.merci-recap h3 { margin-block: 1.5rem .5rem; font-family: var(--theme-font-texte); font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.merci-recap { padding: 1.5rem; background: var(--theme-surface-2); border: 1px solid color-mix(in srgb, var(--theme-filet) 70%, transparent); border-radius: var(--theme-radius-carte); }
+.merci-recap h3 { margin-block: 1.5rem .5rem; font-family: var(--theme-font-texte); font-size: .8125rem; font-weight: 500; letter-spacing: 0; color: var(--theme-encre-doux); }
 .merci-adresse { font-style: normal; font-size: .9375rem; line-height: 1.6; margin-block-end: .75rem; }
 .merci-aucune { max-inline-size: 36rem; margin-inline: auto; }
 
@@ -191,7 +218,13 @@ html[data-gabarit="editorial"] .tunnel-recap { border-color: var(--theme-filet);
 html[data-gabarit="editorial"] .tunnel-recap-tete h2,
 html[data-gabarit="editorial"] .merci-suite h2,
 html[data-gabarit="editorial"] .merci-recap h2 { font-size: 1.625rem; }
-html[data-gabarit="editorial"] .tunnel-bouton { letter-spacing: .12em; }
+html[data-gabarit="editorial"] .tunnel-bouton { letter-spacing: 0; }
+html[data-gabarit="editorial"] .tunnel-etape > legend { letter-spacing: -.01em; }
+html[data-gabarit="editorial"] .tunnel-page .champ input:not([type="checkbox"]):not([type="radio"]),
+html[data-gabarit="editorial"] .tunnel-page .champ select,
+html[data-gabarit="editorial"] .tunnel-tel { min-block-size: 52px; }
+html[data-gabarit="editorial"] .tunnel-page .champ > label { font-size: .8125rem; }
+html[data-gabarit="editorial"] .tunnel-recap-corps { padding: 1.75rem; }
 
 /* --- Gabarit technique ------------------------------------------------------ */
 html[data-gabarit="technique"] .tunnel-tete h1 { text-transform: uppercase; font-size: clamp(1.75rem, 4vw, 2.5rem); }
