@@ -3,12 +3,14 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { REGLES, type Emplacement } from "@/lib/console/images-marque";
+import { ETAPES_MISE_EN_PLACE, type CleEtape, type MiseEnPlace as DonneesMiseEnPlace } from "@/lib/console/mise-en-place";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { initiales } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
+import { MiseEnPlace } from "@/components/console/MiseEnPlace";
 
 type Fiche = {
   boutique: { id: string; slug: string; nom: string; statut: string; langue_defaut: string; created_at: string };
@@ -26,6 +28,8 @@ const ACTIONS: Record<string, string> = {
   "theme.image": "Image de la marque",
   "module.activer": "Module activé",
   "module.couper": "Module coupé",
+  "mise_en_place.faite": "Étape de mise en place faite",
+  "mise_en_place.a_faire": "Étape de mise en place à refaire",
   "catalogue.importer": "Catalogue importé",
   "equipe.ajouter": "Membre invité",
   "equipe.modifier": "Accès modifié",
@@ -55,7 +59,10 @@ export default async function FicheBoutique({ params, searchParams }: {
   const f = data as Fiche;
   const b = f.boutique;
   const hoteConsole = (await headers()).get("host");
-  const equipe = await equipeDe(b.id);
+  const [equipe, { data: miseEnPlace }] = await Promise.all([
+    equipeDe(b.id),
+    clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
+  ]);
   const actifs = equipe.filter((m) => m.actif);
   const enAttente = actifs.filter((m) => m.en_attente).length;
 
@@ -68,6 +75,8 @@ export default async function FicheBoutique({ params, searchParams }: {
       ) : null}
       {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
       {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
+
+      {miseEnPlace ? <MiseEnPlace slug={b.slug} boutiqueId={b.id} donnees={miseEnPlace as DonneesMiseEnPlace} /> : null}
 
       <div className="grille-2">
         <div className="pile">
@@ -130,7 +139,8 @@ export default async function FicheBoutique({ params, searchParams }: {
                         <td className="font-medium whitespace-nowrap">{ACTIONS[j.action] ?? j.action}</td>
                         <td className="discret">{j.action === "boutique.statut" && j.cible ? (LIBELLES_STATUT[j.cible] ?? j.cible)
                           : j.action === "theme.image" && j.cible ? (REGLES[j.cible as Emplacement]?.titre ?? j.cible)
-                          : j.action.startsWith("module.") && j.cible ? (LIBELLES_MODULES[j.cible] ?? j.cible) : (j.cible ?? "")}</td>
+                          : j.action.startsWith("module.") && j.cible ? (LIBELLES_MODULES[j.cible] ?? j.cible)
+                          : j.action.startsWith("mise_en_place.") && j.cible ? (ETAPES_MISE_EN_PLACE[j.cible as CleEtape]?.titre ?? j.cible) : (j.cible ?? "")}</td>
                         <td>
                           {j.acteur ? (
                             <span className="inline-flex items-center gap-2 whitespace-nowrap">

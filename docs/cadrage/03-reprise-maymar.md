@@ -263,6 +263,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis « mes commandes »** (migration 23, `20260929102200_vitrine_mes_commandes.sql`, tests dans `02_isolation.sql` et `06_api.sql`) : les policies de lecture du client sur `commandes`, `commande_lignes`, `commande_evenements` et `clients` sont retirées (elles exposaient les notes et l'historique de l'équipe) ; `mes_commandes(boutique)` rend au client connecté ses commandes, sans rien de ce que l'équipe en écrit. Le carnet d'adresses (`adresses`) reste lisible par son propriétaire.
 
+**Puis la liste de mise en place** (migration 24, `20260929102300_console_mise_en_place.sql`, 16 tests dans `supabase/tests/25_mise_en_place.sql`) : `plateforme.mise_en_place` (les étapes cochées à la main : recueil, commande test, formation), `console_mise_en_place(boutique)` (les dix étapes, constatées ou cochées, datées), `console_avancements()` et `console_marquer_etape(acteur, boutique, étape, faite)`, tracé au journal.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

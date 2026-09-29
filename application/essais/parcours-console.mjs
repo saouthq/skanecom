@@ -541,6 +541,28 @@ await etape("la vitrine montre le catalogue importé", async () => {
   await vitrine.close();
 });
 
+await etape("la liste de mise en place", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  const carte = page.locator("section:has(#t-mise-en-place)");
+  const fait = async (cle) => (await carte.locator(`[data-etape="${cle}"]`).getAttribute("data-fait")) === "";
+  const faites = await carte.locator(".mp-etape[data-fait]").count();
+  verifie(await fait("marque") && await fait("catalogue") && await fait("domaine") && await fait("mise_en_ligne"),
+    "constatées d'office : la marque, le catalogue, le domaine, la mise en ligne");
+  verifie(!(await fait("equipe")) && (await carte.locator('[data-etape="equipe"]').getByRole("link", { name: "Aller à l'étape : équipe" }).count()) === 1,
+    "l'équipe reste à faire, avec le chemin pour la faire");
+  verifie(/J\+0/.test(await carte.locator('[data-etape="marque"]').innerText()), "chaque étape faite est datée depuis la création (J+0)");
+  await clic(page, carte.getByRole("button", { name: "Recueil : faite" }));
+  await page.waitForURL(/ok=/);
+  verifie((await page.getByRole("status").innerText()).includes("« Recueil » : faite") && await fait("recueil")
+    && (await carte.locator('[data-etape="recueil"]').innerText()).includes(ADMIN.email),
+    "le recueil se coche à la main, avec son auteur");
+  verifie((await carte.locator(".mp-compte").innerText()).includes(`${faites + 1} sur 10`), `l'avancement : ${faites + 1} sur 10`);
+  await capture(page, "console-mise-en-place", true);
+  await page.goto(`${CONSOLE}/`, { waitUntil: "networkidle" });
+  const ligne = page.locator("tr", { hasText: "Outillage Pro Démo" }).last();
+  verifie((await ligne.locator(".mp-mini").innerText()).includes(`${faites + 1}/10`), "la liste des boutiques montre l'avancement de chacune");
+});
+
 /* ------------------------------------------------------------------ */
 console.log("\n== 3. L'équipe de la boutique : inviter, choisir son mot de passe, retirer l'accès ==");
 

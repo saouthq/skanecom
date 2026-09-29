@@ -16,9 +16,14 @@ type Ligne = {
 /* Le tableau de bord de la plateforme : toutes les boutiques, leur état. */
 export default async function Tableau() {
   await exigeAdmin();
-  const { data, error } = await clientService().rpc("console_boutiques");
+  const service = clientService();
+  const [{ data, error }, { data: avancements }] = await Promise.all([
+    service.rpc("console_boutiques"),
+    service.rpc("console_avancements"),
+  ]);
   if (error) throw new Error(`Boutiques illisibles : ${error.message}`);
   const boutiques = (data ?? []) as Ligne[];
+  const avancement = (avancements ?? {}) as Record<string, { faites: number; total: number }>;
   const ouvertes = boutiques.filter((b) => b.statut === "active").length;
   const enPreparation = boutiques.filter((b) => b.statut === "en_preparation").length;
   const produits = boutiques.reduce((n, b) => n + b.nb_produits, 0);
@@ -49,7 +54,7 @@ export default async function Tableau() {
         <div className="carte carte-plate defile">
           <table className="tableau">
             <thead>
-              <tr><th>Boutique</th><th>Domaine</th><th>Statut</th><th>Gabarit</th><th className="text-end">Produits</th><th aria-label="Ouvrir" /></tr>
+              <tr><th>Boutique</th><th>Domaine</th><th>Statut</th><th>Mise en place</th><th>Gabarit</th><th className="text-end">Produits</th><th aria-label="Ouvrir" /></tr>
             </thead>
             <tbody>
               {boutiques.map((b) => (
@@ -68,6 +73,16 @@ export default async function Tableau() {
                     {b.domaines.length > 1 ? <span> +{b.domaines.length - 1}</span> : null}
                   </td>
                   <td><span className={`statut statut-${b.statut}`}>{LIBELLES_STATUT[b.statut] ?? b.statut}</span></td>
+                  <td>
+                    {avancement[b.id] ? (
+                      <span className="mp-mini" title={`${avancement[b.id].faites} étapes faites sur ${avancement[b.id].total}`}>
+                        <span className="mp-barre" aria-hidden="true">
+                          <span style={{ inlineSize: `${(avancement[b.id].faites / avancement[b.id].total) * 100}%` }} />
+                        </span>
+                        <span className="tabular-nums">{avancement[b.id].faites}/{avancement[b.id].total}</span>
+                      </span>
+                    ) : "—"}
+                  </td>
                   <td className="discret">{(b.theme && LIBELLES_THEME[b.theme]) ?? "—"}</td>
                   <td className="tabular-nums text-end">{b.nb_produits}</td>
                   <td className="text-end discret"><Icone nom="droite" /></td>
