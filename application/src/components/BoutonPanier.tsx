@@ -16,10 +16,9 @@ import type { CodeTheme } from "@/lib/theme";
 /* ============================================================================
    LE PANIER DANS L'EN-TÊTE — compteur + tiroir.
 
-   Périmètre assumé : la vitrine POSE un panier local pour que le site vende,
-   mais ne commande pas encore. Le bouton « Commander » appartient au tunnel :
-   il se branchera ICI, sur le contrat `panier-contrat.ts`. Aucun bouton mort :
-   on n'affiche jamais une action qui ne se passe pas.
+   Le panier vit dans le navigateur (contrat `panier-contrat.ts`) ; le bouton
+   « Commander » mène au tunnel (/commande), qui relit tout en base avant de
+   laisser commander. Aucun bouton mort : il n'apparaît qu'avec des articles.
 
    Le tiroir s'ouvre aussi tout seul après un ajout (événement PANIER_OUVRIR) :
    on voit ce qu'on vient de mettre de côté, et le chemin du retour.
@@ -83,6 +82,9 @@ export function BoutonPanier({
                   <Prix millimes={total} fort />
                 </div>
                 <p className="legende">{t.panier.horsLivraison}</p>
+                <Link href="/commande" className="btn btn-primaire btn-bloc" onClick={() => setOuvert(false)}>
+                  {t.panier.commander}
+                </Link>
               </>
             ) : null}
             <button type="button" className="btn btn-second btn-bloc" onClick={() => setOuvert(false)}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   clePanier,
   PANIER_EVENEMENT,
@@ -60,6 +60,17 @@ export function retireDuPanier(varianteId: string): void {
   ecrit(retireLigne(lit(), varianteId));
 }
 
+/** Après une commande passée : le panier est devenu une commande. */
+export function videPanier(): void {
+  ecrit(PANIER_VIDE);
+}
+
+/** Ajuste une ligne au stock réel (le tunnel le propose quand il en reste
+ *  moins que demandé). */
+export function ramenePanier(varianteId: string, quantite: number): void {
+  ecrit(changeQuantite(lit(), varianteId, quantite, quantite));
+}
+
 export function changeQuantitePanier(varianteId: string, quantite: number): void {
   // Le plafond de stock est reposé à l'ajout ; ici on borne à ce qui est déjà
   // dans la ligne, la vérification réelle appartient au tunnel (contrat).
@@ -83,6 +94,38 @@ export function usePanier(): Panier {
   }, []);
 
   return panier;
+}
+
+/* Le panier comme source externe (useSyncExternalStore) : lu pendant le
+   rendu, sans effet, et `null` tant que la page n'est pas hydratée — le
+   tunnel distingue ainsi « pas encore lu » de « vide ». L'instantané est
+   gardé tant que le texte stocké ne change pas : même objet, pas de rendu. */
+let dernierBrut: string | null | undefined;
+let dernierPanier: Panier = PANIER_VIDE;
+
+function instantane(): Panier {
+  let brut: string | null = null;
+  try {
+    brut = window.localStorage.getItem(cle());
+  } catch {}
+  if (brut !== dernierBrut) {
+    dernierBrut = brut;
+    dernierPanier = litPanier(brut);
+  }
+  return dernierPanier;
+}
+
+function abonne(rappel: () => void): () => void {
+  window.addEventListener("storage", rappel);
+  window.addEventListener(PANIER_EVENEMENT, rappel);
+  return () => {
+    window.removeEventListener("storage", rappel);
+    window.removeEventListener(PANIER_EVENEMENT, rappel);
+  };
+}
+
+export function usePanierLu(): Panier | null {
+  return useSyncExternalStore(abonne, instantane, () => null);
 }
 
 /**

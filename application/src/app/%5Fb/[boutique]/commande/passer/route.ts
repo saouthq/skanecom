@@ -1,0 +1,92 @@
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import { chargeCadre } from "@/lib/boutique";
+import { memeOrigine } from "@/lib/origine";
+import { COOKIE_COMMANDE, raisonDe, type Raison, type ReponsePasser } from "@/lib/commande";
+
+/* ============================================================================
+   PASSER COMMANDE — la page envoie le panier, le contact, l'adresse et le
+   total qu'elle a affiché ; public.passer_commande recalcule tout et décide.
+
+   · Même origine exigée : un site tiers ne fait pas commander à votre place.
+   · La session de l'acheteur (connexion par code SMS) est lue dans ses
+     cookies : la base sait alors à quel compte rattacher la commande. Sans
+     session, la commande part en invité — si la boutique l'autorise.
+   · Réussite : « numéro.jeton » dans un cookie HttpOnly, limité à
+     /commande, pour la page de fin. Le jeton n'apparaît dans aucune adresse.
+   ========================================================================== */
+
+export const dynamic = "force-dynamic";
+
+const STATUTS: Partial<Record<Raison, number>> = {
+  boutique: 404, compte: 401, bloque: 403, en_attente: 429, stock: 409, total: 409, cle: 409,
+};
+
+function reponse(corps: ReponsePasser, statut = 200): Response {
+  return Response.json(corps, { status: statut, headers: { "cache-control": "private, no-store" } });
+}
+
+type Corps = {
+  cle?: unknown;
+  lignes?: unknown;
+  contact?: unknown;
+  livraison?: unknown;
+  total?: unknown;
+  note?: unknown;
+};
+
+export async function POST(req: Request, { params }: { params: Promise<{ boutique: string }> }) {
+  if (!memeOrigine(req)) return reponse({ ok: false, raison: "inconnue", message: "Origine refusée" }, 403);
+  const { boutique } = await params;
+  const cadre = await chargeCadre(boutique);
+  if (!cadre) return reponse({ ok: false, raison: "boutique", message: "Boutique introuvable" }, 404);
+
+  const corps = (await req.json().catch(() => null)) as Corps | null;
+  if (!corps || typeof corps.cle !== "string" || typeof corps.total !== "number") {
+    return reponse({ ok: false, raison: "panier", message: "Commande illisible" }, 400);
+  }
+
+  const magasin = await cookies();
+  const sb = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll: () => magasin.getAll(),
+      // Une session expirée est rafraîchie au passage : les nouveaux jetons
+      // repartent dans la réponse.
+      setAll: (liste) => {
+        for (const { name, value, options } of liste) magasin.set(name, value, options);
+      },
+    },
+    global: { headers: { "x-application-name": "skanecom-vitrine" } },
+  });
+
+  const { data, error } = await sb.rpc("passer_commande", {
+    p_boutique_id: cadre.boutique.id,
+    p_cle_idempotence: corps.cle,
+    p_lignes: corps.lignes ?? [],
+    p_contact: corps.contact ?? {},
+    p_livraison: corps.livraison ?? {},
+    p_total_attendu_millimes: Math.round(corps.total),
+    p_note: typeof corps.note === "string" ? corps.note : null,
+  });
+  if (error) {
+    const raison = raisonDe(error.hint);
+    // Un refus prévu porte un message écrit pour l'acheteur (la base le
+    // rédige) ; une erreur imprévue reste dans le journal du serveur.
+    if (raison === "inconnue") {
+      console.error(`passer_commande (${boutique}) : ${error.code} ${error.message}`);
+      return reponse({ ok: false, raison, message: "Erreur du serveur" }, 500);
+    }
+    return reponse({ ok: false, raison, message: error.message }, STATUTS[raison] ?? 422);
+  }
+
+  const resultat = data as { numero: string; jeton: string };
+  const securise = (req.headers.get("origin") ?? "").startsWith("https:");
+  magasin.set(COOKIE_COMMANDE, `${resultat.numero}.${resultat.jeton}`, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: securise,
+    path: "/commande",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  return reponse({ ok: true, numero: resultat.numero });
+}

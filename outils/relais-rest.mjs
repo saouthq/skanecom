@@ -7,9 +7,13 @@
 // Il sert aussi les fichiers de démonstration (supabase/fichiers-demo), rangés
 // comme sur R2 :
 //   http://127.0.0.1:54321/fichiers/maymar/marque/logo.svg
+// Et il tient lieu de fournisseur de SMS : GoTrue lui confie les codes de
+// connexion (crochet « Send SMS »), il les note dans .outils/sms.log au lieu
+// de les envoyer. Les essais relisent le dernier code d'un numéro :
+//   http://127.0.0.1:54321/sms-dev/dernier?telephone=21620123456
 // Lancé par outils/api-locale.sh. Jamais en production.
 import http from "node:http";
-import { readFile } from "node:fs/promises";
+import { appendFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,6 +24,34 @@ const AMONTS = [
 ];
 const FICHIERS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../supabase/fichiers-demo");
 const TYPES = { ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
+
+const JOURNAL_SMS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.outils/sms.log");
+const SMS = new Map(); // numéro (chiffres seuls) → dernier code
+
+const chiffres = (texte) => String(texte ?? "").replace(/\D/g, "");
+
+/* Le crochet « Send SMS » de GoTrue : { user: { phone }, sms: { otp } }. */
+function recoitSms(req, res) {
+  let corps = "";
+  req.on("data", (morceau) => (corps += morceau));
+  req.on("end", async () => {
+    try {
+      const { user, sms } = JSON.parse(corps);
+      const numero = chiffres(user?.phone);
+      SMS.set(numero, String(sms?.otp ?? ""));
+      await appendFile(JOURNAL_SMS, `${new Date().toISOString()}  +${numero}  code ${sms?.otp}\n`);
+      res.writeHead(200, { "content-type": "application/json" }).end("{}");
+    } catch {
+      res.writeHead(400, { "content-type": "application/json" }).end('{"error":{"http_code":400,"message":"SMS illisible"}}');
+    }
+  });
+}
+
+function dernierSms(url, res) {
+  const code = SMS.get(chiffres(new URL(url, "http://relais").searchParams.get("telephone")));
+  if (!code) return res.writeHead(404, { "content-type": "application/json" }).end("{}");
+  res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify({ code }));
+}
 
 async function sertFichier(url, res) {
   const chemin = path.resolve(FICHIERS, decodeURIComponent(url.slice("/fichiers/".length).split("?")[0]));
@@ -45,6 +77,8 @@ http
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
     if (req.method === "OPTIONS") return res.writeHead(204).end();
     if (req.url.startsWith("/fichiers/")) return sertFichier(req.url, res);
+    if (req.url === "/sms-dev" && req.method === "POST") return recoitSms(req, res);
+    if (req.url.startsWith("/sms-dev/dernier") && req.method === "GET") return dernierSms(req.url, res);
 
     const cible = AMONTS.find((a) => req.url === a.prefixe || req.url.startsWith(a.prefixe + "/") || req.url.startsWith(a.prefixe + "?"));
     if (!cible) {

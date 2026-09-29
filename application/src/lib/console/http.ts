@@ -1,4 +1,5 @@
 import { acces } from "./session";
+import { memeOrigine } from "@/lib/origine";
 import type { User } from "@supabase/supabase-js";
 
 /* ============================================================================
@@ -23,19 +24,10 @@ export function versAvecErreur(chemin: string, message: string, valeurs: Record<
   return vers(`${chemin}?${params}`);
 }
 
+export { memeOrigine };
+
 export function ipDe(req: Request): string | null {
   return req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
-}
-
-export function memeOrigine(req: Request): boolean {
-  const origine = req.headers.get("origin");
-  const hote = req.headers.get("host");
-  if (!origine || !hote) return false;
-  try {
-    return new URL(origine).host === hote;
-  } catch {
-    return false;
-  }
 }
 
 export async function ecriture(

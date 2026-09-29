@@ -76,10 +76,19 @@ export async function proxy(request: NextRequest) {
 
   const resolution = await resoudre(hote);
   switch (resolution.etat) {
-    case "boutique":
-      return NextResponse.rewrite(
+    case "boutique": {
+      const reponse = NextResponse.rewrite(
         new URL(`/_b/${resolution.slug}${pathname === "/" ? "" : pathname}${search}`, request.url),
       );
+      // Le tunnel de commande est propre à chaque acheteur : jamais en cache,
+      // jamais indexé, et l'adresse ne part pas chez un site tiers.
+      if (pathname === "/commande" || pathname.startsWith("/commande/")) {
+        reponse.headers.set("cache-control", "private, no-store");
+        reponse.headers.set("x-robots-tag", "noindex, nofollow");
+        reponse.headers.set("referrer-policy", "same-origin");
+      }
+      return reponse;
+    }
     case "fermee":
       return page(404, "Boutique fermée", "Cette boutique n'est pas ouverte en ce moment.");
     case "injoignable":

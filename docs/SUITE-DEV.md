@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 223 tests (dont la vitrine, la console et l'import), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 275 tests (dont la vitrine, la console, l'import et le tunnel de commande), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -31,6 +31,8 @@
    - fait : catalogue filtré, trié et paginé en base, filtres sur n'importe quel axe de variante, **filtres dans le chemin** pour que les listes filtrées soient en cache (découverte n°8) ;
    - fait : client Supabase qui abandonne vite (`retry: false`, 2 s) : pendant une panne, une page jamais vue échoue en 60 ms au lieu de 7 s ;
    - fait : robots, plan du site et favicon par boutique, panier par boutique, prix barrés en réglage, seuil de livraison offerte ;
+   - fait (29/09) : **le tunnel de commande**, paiement à la livraison. « Commander » dans le panier mène à une page en trois temps (coordonnées, livraison, paiement) avec un récapitulatif relu en base à chaque changement (`public.devis_commande` : prix, stock, frais du gouvernorat). La commande passe par `public.passer_commande`, qui recalcule tout, **refuse un total différent de celui que l'acheteur a lu**, réserve le stock, numérote par boutique et rend un jeton de suivi : la page de fin le lit dans un cookie HttpOnly, jamais dans l'adresse (`public.commande_suivie`). **Compte obligatoire par défaut** (réglage `compte.obligatoire`) : le numéro se confirme par un **code SMS** (GoTrue, depuis le navigateur pour que ses limites se comptent par acheteur), et devient le compte de l'acheteur dans la boutique ; sinon, commande en invité. Garde-fous : clé d'idempotence (double clic, réseau coupé), au plus 3 commandes en attente d'appel par numéro (réglage `commande.max_en_attente`), fiche bloquée par la boutique. Jamais en cache ni indexé. Au passage : une page quittée un peu défilée s'ouvrait le titre sous l'en-tête collant — corrigé pour tout le site (`components/Gabarit.tsx`) ;
+   - reste pour le tunnel : **le fournisseur de SMS en production** (crochet « Send SMS » de Supabase Auth vers un Worker qui appelle le fournisseur ; à choisir avec Skander : prix par SMS, envoi vers les numéros tunisiens), une protection anti-robots sur la demande de code (Turnstile), « mes commandes » dans le compte, CGV et consentement (V8), retrait en magasin (V7), Konnect (V6) ;
    - reste : **déploiement en deux temps avec cache prérempli** (`--warm-cache`) et nettoyage des anciennes versions du cache (découverte n°6) ; **page de secours WhatsApp** pour les pages jamais vues pendant une panne (étape 2) ; libellés d'interface en arabe (le jour d'une boutique arabophone).
 5. **Console minimale** (PRD §6.1), sur son propre domaine (`app.skanecom.tn` ; en local `console.localhost:4200`) :
    - fait le 29/09 : connexion par mot de passe et **double authentification obligatoire** (TOTP, GoTrue), réservée aux administrateurs de la plateforme — un membre de boutique est refusé avant même la double authentification ;
@@ -46,7 +48,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 223 tests pgTAP
+outils/base-locale.sh tester    # les 275 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 
@@ -69,9 +71,11 @@ set -a; . ../.outils/api-locale.env; set +a    # adresses et clés de développe
 bun run build && bun run start --port 4200 --host 127.0.0.1   # la vitrine compilée, dans workerd
 ```
 
-Ouvrir http://mode.localhost:4200, http://maymar.localhost:4200 et http://quincaillerie.localhost:4200 : la même application sert les trois boutiques, chacune avec son gabarit et son thème. `outils/essai-vitrine.sh` vérifie en 20 essais qu'elles ne se mélangent jamais ; la CI le lance à chaque modification (`.github/workflows/vitrine.yml`). `bun run apercu` prend les captures des pages clés des trois boutiques, sur grand écran et sur téléphone.
+Ouvrir http://mode.localhost:4200, http://maymar.localhost:4200 et http://quincaillerie.localhost:4200 : la même application sert les trois boutiques, chacune avec son gabarit et son thème. `outils/essai-vitrine.sh` vérifie en 25 essais qu'elles ne se mélangent jamais, et que le tunnel de commande n'est jamais mis en cache ; la CI le lance à chaque modification (`.github/workflows/vitrine.yml`). `bun run apercu` prend les captures des pages clés des trois boutiques, sur grand écran et sur téléphone.
 
 `bun run parcours` (dans `application/`) joue un **testeur humain** dans Chromium : souris, clavier seul, téléphone tactile, sur les trois boutiques et les deux gabarits — en-tête sur la photo d'ouverture, collections, survol des cartes, tiroir de filtres, tri, fiche, panier, menu du téléphone, galerie au doigt, recherche par référence, ajout direct. Il vérifie ce qu'une personne vit (le focus au clavier, le tiroir de filtres qui se rouvre après chaque case, le panier qui s'ouvre après un ajout et garde le focus) et laisse une capture par étape dans `.outils/captures/`. La CI le lance aussi et joint les captures à chaque passage (« captures-vitrine »). Le premier passage, le 29/09, a trouvé et fait corriger : pas de rayons sur téléphone, page introuvable sans en-tête, page décalée quand une liste est vide, focus perdu et feuille refermée après chaque filtre, focus qui sortait du tiroir du panier.
+
+**Commander en local** : ajouter un article, « Commander », puis saisir un numéro tunisien (par exemple 20 123 456). Le code n'est envoyé à personne : le relais de l'API locale tient lieu de fournisseur de SMS et le note dans `.outils/sms.log` (`tail -f .outils/sms.log`). `bun run parcours:commande` rejoue une commande dans chaque gabarit, puis sur téléphone, avec captures (la CI aussi).
 
 **Console en local** : http://console.localhost:4200, compte `admin@skanecom.test`, mot de passe `console-locale-skanecom` (créés par `outils/api-locale.sh demarrer`, base locale seulement). À la première connexion, la console affiche le QR code de la double authentification. `bun run parcours:console` rejoue la mise en place d'une boutique de bout en bout, avec captures (la CI aussi).
 

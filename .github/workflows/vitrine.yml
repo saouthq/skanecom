@@ -107,6 +107,15 @@ jobs:
           set -a; . ../.outils/api-locale.env; set +a
           bun run parcours:console
 
+      # Une vraie commande dans chaque gabarit : panier, numéro confirmé par
+      # code SMS (le relais de l'API locale tient lieu de fournisseur),
+      # adresse, frais du gouvernorat, page de fin ; puis sur téléphone.
+      - name: Parcours de commande
+        working-directory: application
+        env:
+          CAPTURES: ${{ github.workspace }}/.outils/captures/commande
+        run: bun run parcours:commande
+
       - name: Aperçu des trois boutiques
         working-directory: application
         env:

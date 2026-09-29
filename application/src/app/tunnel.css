@@ -1,0 +1,209 @@
+/* ============================================================================
+   LE TUNNEL DE COMMANDE ET SA PAGE DE FIN — la mécanique commune ; chaque
+   gabarit l'affine plus bas (éditorial : filets fins, titres de magazine ;
+   technique : titres condensés, repères jaunes, cadres nets).
+
+   Téléphone : le récapitulatif se replie en tête (le total reste visible),
+   le formulaire suit, le bouton est en bas. Grand écran : le formulaire à
+   gauche, le récapitulatif collant à droite.
+   ========================================================================== */
+
+.tunnel-page { padding-block: clamp(1.5rem, 4vw, 3rem) clamp(3rem, 7vw, 6rem); }
+.tunnel-tete { display: grid; gap: .375rem; margin-block-end: clamp(1.25rem, 3vw, 2.25rem); }
+.tunnel-tete h1 { font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; }
+.tunnel-attente { min-block-size: 40vh; display: grid; place-items: center; color: var(--theme-encre-doux); font-size: .875rem; }
+.tunnel-vide { max-inline-size: 36rem; margin-inline: auto; }
+
+.tunnel { display: grid; gap: 1.5rem; align-items: start; }
+@media (min-width: 900px) {
+  .tunnel { grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem); gap: clamp(2rem, 5vw, 5rem); }
+  .tunnel-formulaire { grid-column: 1; grid-row: 1; }
+  .tunnel-recap { grid-column: 2; grid-row: 1; position: sticky; inset-block-start: calc(var(--entete-h, 4rem) + 1.5rem); }
+}
+
+/* --- Formulaire ------------------------------------------------------------ */
+.tunnel-formulaire { display: grid; gap: .5rem; min-inline-size: 0; }
+.tunnel-etape { margin: 0; padding: 1.5rem 0 1.75rem; border: 0; border-block-start: 1px solid var(--theme-filet); min-inline-size: 0; display: grid; gap: 1rem; }
+.tunnel-etape > legend {
+  display: flex; align-items: center; gap: .75rem; float: inline-start; inline-size: 100%;
+  margin-block-end: .25rem; padding: 0; font-family: var(--theme-font-display); font-size: 1.5rem; line-height: 1.15;
+}
+.tunnel-num {
+  display: inline-grid; place-items: center; flex: none; inline-size: 1.875rem; block-size: 1.875rem;
+  border: 1px solid var(--theme-encre); border-radius: 50%;
+  font-family: var(--theme-font-texte); font-size: .8125rem; font-weight: 500; font-variant-numeric: tabular-nums;
+}
+.tunnel-grille { display: grid; gap: 1rem; }
+@media (min-width: 700px) {
+  .tunnel-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tunnel-grille > [data-large] { grid-column: 1 / -1; }
+}
+.champ .facultatif { font-weight: 400; color: var(--theme-encre-doux); }
+.champ textarea { resize: vertical; min-block-size: 4.5rem; line-height: 1.5; }
+.champ [aria-invalid="true"], .tunnel-tel[data-invalide] { border-color: var(--theme-erreur) !important; }
+.champ-erreur { margin: 0; font-size: .8125rem; color: var(--theme-erreur); }
+.champ-erreur:empty { display: none; }
+
+/* Téléphone : l'indicatif fait partie du champ, le bouton du code à côté. */
+.tunnel-rangee { display: flex; flex-wrap: wrap; gap: .5rem; }
+.tunnel-rangee > .btn { flex: 1 0 auto; }
+@media (min-width: 520px) { .tunnel-rangee > .btn { flex: 0 0 auto; } }
+.tunnel-tel {
+  flex: 1 1 14rem; display: flex; align-items: stretch; min-block-size: 48px;
+  background: var(--theme-surface); border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux);
+}
+.tunnel-tel:focus-within { border-color: var(--theme-encre); outline: 2px solid var(--theme-encre); outline-offset: 1px; }
+.tunnel-tel > span {
+  display: grid; place-items: center; padding-inline: .875rem; border-inline-end: 1px solid var(--theme-filet);
+  color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; direction: ltr;
+}
+.champ .tunnel-tel input { flex: 1; min-inline-size: 0; border: 0 !important; background: transparent; outline: none; direction: ltr; }
+.champ input.tunnel-code {
+  flex: 1 1 10rem; max-inline-size: 14rem; text-align: center; letter-spacing: .5em; font-variant-numeric: tabular-nums;
+  font-size: 1.25rem; direction: ltr;
+}
+.tunnel-renvoi { justify-self: start; }
+.tunnel-renvoi:disabled { text-decoration: none; cursor: default; opacity: .8; }
+
+.tunnel-identite {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem;
+  padding: .875rem 1rem; background: var(--theme-surface); border: 1px solid var(--theme-filet);
+  border-radius: var(--theme-radius-doux);
+}
+.tunnel-identite p { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: .9375rem; }
+.tunnel-identite svg { color: var(--theme-succes); flex: none; }
+
+.tunnel-livraison {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem; margin: 0;
+  padding: .75rem 1rem; background: var(--theme-surface-2); border-radius: var(--theme-radius-doux); font-size: .875rem;
+}
+.tunnel-livraison > span + span::before { content: "·"; margin-inline-end: 1rem; color: var(--theme-encre-doux); }
+.tunnel-livraison-frais { margin-inline-start: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tunnel-livraison-frais::before { display: none; }
+
+.tunnel-mode {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .875rem;
+  padding: 1rem 1.125rem; background: var(--theme-surface); border: 1px solid var(--theme-encre);
+  border-radius: var(--theme-radius-doux); cursor: default;
+}
+.tunnel-mode input { inline-size: 18px; block-size: 18px; accent-color: var(--theme-encre); margin: 0; }
+.tunnel-mode-corps { display: grid; gap: .125rem; }
+.tunnel-mode-corps strong { font-weight: 500; }
+.tunnel-mode svg { color: var(--theme-encre-doux); }
+.tunnel-rappel { margin: -.25rem 0 0; }
+
+.tunnel-envoi { display: grid; gap: .75rem; padding-block-start: 1.25rem; border-block-start: 1px solid var(--theme-filet); }
+.tunnel-bouton { justify-content: space-between; min-block-size: 56px; }
+.tunnel-bouton .prix .dev { color: inherit; opacity: .75; }
+.tunnel-bouton[aria-busy] { justify-content: center; }
+
+.tunnel-alerte {
+  margin: 0 0 .5rem; padding: .875rem 1rem; font-size: .9375rem;
+  background: color-mix(in srgb, var(--theme-erreur) 7%, var(--theme-surface));
+  border-inline-start: 3px solid var(--theme-erreur); color: var(--theme-encre);
+}
+.tunnel-alerte:focus { outline: none; }
+
+/* --- Récapitulatif ---------------------------------------------------------- */
+.tunnel-recap { background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); }
+.tunnel-recap-bascule {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; inline-size: 100%;
+  min-block-size: 56px; padding: .75rem 1.125rem; background: none; border: 0; cursor: pointer; font-size: .875rem; text-align: start;
+}
+.tunnel-recap-bascule > span:first-child { text-decoration: underline; text-underline-offset: .25em; text-decoration-thickness: 1px; }
+.tunnel-recap-bascule .prix { font-weight: 600; font-size: 1rem; }
+.tunnel-recap-corps { padding: 0 1.125rem 1.25rem; }
+@media (max-width: 899px) {
+  .tunnel-recap:not([data-ouvert]) .tunnel-recap-corps { display: none; }
+  .tunnel-recap[data-ouvert] .tunnel-recap-bascule { border-block-end: 1px solid var(--theme-filet); }
+  .tunnel-recap[data-ouvert] .tunnel-recap-corps { padding-block-start: 1rem; }
+}
+@media (min-width: 900px) {
+  .tunnel-recap-bascule { display: none; }
+  .tunnel-recap-corps { padding: 1.5rem; }
+}
+.tunnel-recap-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-block-end: .5rem; }
+.tunnel-recap-tete h2 { font-size: 1.375rem; }
+.tunnel-calcul { padding-block: 1rem; }
+
+.tunnel-lignes { list-style: none; margin: 0; padding: 0; }
+.tunnel-ligne {
+  display: grid; grid-template-columns: 4rem minmax(0, 1fr) auto; gap: .875rem; align-items: start;
+  padding-block: .875rem; border-block-end: 1px solid var(--theme-filet);
+}
+.tunnel-ligne[data-indisponible] .tunnel-vignette, .tunnel-ligne[data-indisponible] .tunnel-ligne-nom { opacity: .5; }
+.tunnel-vignette {
+  position: relative; display: block; aspect-ratio: 4 / 5; background: var(--theme-surface-2);
+  border-radius: var(--theme-radius-net); overflow: visible;
+}
+.tunnel-vignette img { object-fit: cover; border-radius: var(--theme-radius-net); }
+.tunnel-vignette-n {
+  position: absolute; inset-block-start: -.5rem; inset-inline-end: -.5rem; display: grid; place-items: center;
+  min-inline-size: 1.375rem; block-size: 1.375rem; padding-inline: .3rem; border-radius: 999px;
+  background: var(--theme-encre); color: var(--theme-fond); font-size: .6875rem; font-variant-numeric: tabular-nums;
+}
+.tunnel-ligne-corps { display: grid; gap: .125rem; min-inline-size: 0; }
+.tunnel-ligne-nom { font-size: .875rem; line-height: 1.35; text-wrap: pretty; }
+.tunnel-ligne-prix { font-size: .875rem; }
+.tunnel-ligne-alerte { margin-block-start: .25rem; font-size: .8125rem; color: var(--theme-erreur); }
+
+.tunnel-totaux { display: grid; gap: .5rem; margin: 1rem 0 0; }
+.tunnel-totaux > div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: .875rem; }
+.tunnel-totaux dt { color: var(--theme-encre-doux); }
+.tunnel-totaux dd { margin: 0; }
+.tunnel-total { padding-block-start: .875rem; margin-block-start: .375rem; border-block-start: 1px solid var(--theme-filet); }
+.tunnel-total dt { color: var(--theme-encre); font-weight: 500; font-size: 1rem; }
+
+/* --- Page de fin ------------------------------------------------------------ */
+.merci-page { padding-block: clamp(2rem, 6vw, 5rem); }
+.merci { max-inline-size: 68rem; margin-inline: auto; display: grid; gap: clamp(2rem, 5vw, 3.5rem); }
+.merci-tete { display: grid; gap: .75rem; max-inline-size: 40rem; }
+.merci-tete h1 { font-size: clamp(2.5rem, 7vw, 4.5rem); line-height: 1; }
+.merci-etiquette svg { color: var(--theme-succes); }
+.merci-grille { display: grid; gap: 2.5rem; align-items: start; }
+@media (min-width: 900px) { .merci-grille { grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem); gap: clamp(2rem, 6vw, 6rem); } }
+.merci-suite h2, .merci-recap h2 { font-size: 1.375rem; margin-block-end: 1rem; }
+.merci-suite ol { list-style: none; margin: 0; padding: 0; display: grid; }
+.merci-suite li { position: relative; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 1rem; padding-block-end: 1.5rem; }
+.merci-suite li:not(:last-child)::before {
+  content: ""; position: absolute; inset-inline-start: calc(1rem - .5px); inset-block: 2rem 0; inline-size: 1px; background: var(--theme-filet-fort);
+}
+.merci-puce {
+  display: grid; place-items: center; inline-size: 2rem; block-size: 2rem; border-radius: 50%;
+  border: 1px solid var(--theme-filet-fort); background: var(--theme-fond); font-size: .8125rem; font-variant-numeric: tabular-nums;
+}
+.merci-suite li[data-fait] .merci-puce { background: var(--theme-encre); border-color: var(--theme-encre); color: var(--theme-fond); }
+.merci-suite strong { display: block; font-weight: 500; margin-block: .25rem .125rem; }
+.merci-suite p { margin: 0; font-size: .9375rem; color: var(--theme-encre-doux); max-inline-size: 46ch; }
+.merci-continuer { margin-block-start: .5rem; }
+.merci-recap { padding: 1.5rem; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); }
+.merci-recap h3 { margin-block: 1.5rem .5rem; font-family: var(--theme-font-texte); font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.merci-adresse { font-style: normal; font-size: .9375rem; line-height: 1.6; margin-block-end: .75rem; }
+.merci-aucune { max-inline-size: 36rem; margin-inline: auto; }
+
+/* --- Gabarit éditorial ------------------------------------------------------ */
+html[data-gabarit="editorial"] .tunnel-tete h1 { font-size: clamp(2.5rem, 6vw, 4rem); }
+html[data-gabarit="editorial"] .tunnel-etape > legend { font-size: 1.75rem; }
+html[data-gabarit="editorial"] .tunnel-recap { border-color: var(--theme-filet); }
+html[data-gabarit="editorial"] .tunnel-recap-tete h2,
+html[data-gabarit="editorial"] .merci-suite h2,
+html[data-gabarit="editorial"] .merci-recap h2 { font-size: 1.625rem; }
+html[data-gabarit="editorial"] .tunnel-bouton { letter-spacing: .12em; }
+
+/* --- Gabarit technique ------------------------------------------------------ */
+html[data-gabarit="technique"] .tunnel-tete h1 { text-transform: uppercase; font-size: clamp(1.75rem, 4vw, 2.5rem); }
+html[data-gabarit="technique"] .tunnel-etape > legend {
+  font-family: var(--theme-font-texte); font-size: 1.0625rem; font-weight: 800; text-transform: uppercase; letter-spacing: .02em;
+}
+html[data-gabarit="technique"] .tunnel-num {
+  border: 0; border-radius: var(--theme-radius-doux); background: var(--theme-accent); color: var(--theme-encre); font-weight: 800;
+}
+html[data-gabarit="technique"] .tunnel-etape { padding-inline: 1.25rem; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); margin-block-end: .75rem; }
+html[data-gabarit="technique"] .tunnel-mode { border-width: 2px; }
+html[data-gabarit="technique"] .tunnel-recap-tete h2,
+html[data-gabarit="technique"] .merci-suite h2,
+html[data-gabarit="technique"] .merci-recap h2 { font-family: var(--theme-font-texte); font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; }
+html[data-gabarit="technique"] .tunnel-envoi { border-block-start: 0; padding-block-start: .5rem; }
+html[data-gabarit="technique"] .tunnel-bouton { font-size: 1rem; }
+html[data-gabarit="technique"] .merci-tete h1 { text-transform: uppercase; }
+html[data-gabarit="technique"] .merci-suite li[data-fait] .merci-puce { background: var(--theme-succes); border-color: var(--theme-succes); color: var(--theme-surface); }

@@ -18,6 +18,18 @@ echecs=0
 
 code()  { curl -s -o /dev/null -w "%{http_code}" -H "Host: $1" "$B$2"; }
 corps() { curl -s -H "Host: $1" "$B$2"; }
+entetes() { curl -s -D - -o /dev/null -H "Host: $1" "$B$2" | tr -d "\r"; }
+# POST JSON au tunnel, depuis la boutique elle-même (en-tête Origin) ou non.
+poste() { curl -s -X POST -H "Host: $1" -H "content-type: application/json" ${4:+-H "Origin: http://$1"} -d "$3" "$B$2"; }
+
+# L'API locale, pour trouver une variante de Maison Selma.
+if [ -z "${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}" ] && [ -f "$(dirname "$0")/../.outils/api-locale.env" ]; then
+  set -a; . "$(dirname "$0")/../.outils/api-locale.env"; set +a
+fi
+API=${NEXT_PUBLIC_SUPABASE_URL:-http://127.0.0.1:54321}
+VARIANTE_SELMA=$(curl -s "$API/rest/v1/variantes?select=id&boutique_id=eq.00000000-0000-4000-8000-000000000003&stock=gt.0&limit=1" \
+  -H "apikey: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}" | grep -o '[0-9a-f]\{8\}-[0-9a-f-]\{27\}' | head -1)
+PANIER_SELMA="{\"lignes\":[{\"variante_id\":\"$VARIANTE_SELMA\",\"quantite\":1}],\"gouvernorat\":\"tunis\"}"
 verifie() {
   if eval "$2"; then echo "ok     — $1"; else echo "ÉCHEC  — $1"; echecs=$((echecs + 1)); fi
 }
@@ -51,6 +63,17 @@ verifie "une liste filtrée est mise en cache" \
 verifie "robots.txt propre à la boutique" 'corps $Q /robots.txt | grep -q "Sitemap: https://quincaillerie.localhost/sitemap.xml"'
 verifie "plan du site sans les fiches de l'autre boutique" \
   'corps $M /sitemap.xml | grep -q "valise-rigide-abs-4-roues" && ! corps $M /sitemap.xml | grep -q "perceuse" && ! corps $M /sitemap.xml | grep -q "robe-"'
+
+# Le tunnel de commande
+verifie "la page de commande n'est ni en cache ni indexée" \
+  'entetes $S /commande > /dev/null; e=$(entetes $S /commande); echo "$e" | grep -qi "^cache-control: private, no-store" && echo "$e" | grep -qi "^x-robots-tag: noindex" && ! echo "$e" | grep -qi "x-vinext-cache: HIT"'
+verifie "le devis relit la variante dans SA boutique : vendue chez Selma, inconnue chez Maymar" \
+  '[ -n "$VARIANTE_SELMA" ] && poste $S /commande/devis "$PANIER_SELMA" | grep -q "\"disponible\":true" && poste $M /commande/devis "$PANIER_SELMA" | grep -q "\"disponible\":false" && ! poste $M /commande/devis "$PANIER_SELMA" | grep -q "produit_nom\":\""'
+verifie "commander exige une page de la boutique (même origine)" \
+  '[ "$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Host: $S" -H "content-type: application/json" -d "{}" "$B/commande/passer")" = 403 ]'
+verifie "sans compte, la commande est refusée (compte obligatoire par défaut)" \
+  'poste $S /commande/passer "{\"cle\":\"essai-http-sans-compte-01\",\"lignes\":[{\"variante_id\":\"$VARIANTE_SELMA\",\"quantite\":1}],\"contact\":{\"nom\":\"Essai\",\"telephone\":\"20123456\"},\"livraison\":{\"ligne1\":\"1 rue de Rome\",\"ville\":\"Tunis\",\"gouvernorat\":\"tunis\"},\"total\":1}" oui | grep -q "\"raison\":\"compte\""'
+verifie "la page de fin ne montre rien sans le jeton de la commande" 'corps $S /commande/merci | grep -q "Aucune commande récente"'
 
 echo
 if [ "$echecs" -eq 0 ]; then echo "Vitrine : tous les essais passent."; else echo "Vitrine : $echecs échec(s)."; exit 1; fi

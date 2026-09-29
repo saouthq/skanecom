@@ -15,6 +15,9 @@
 }
 .section { padding-block: clamp(3rem, 7vw, 6.5rem); }
 
+/* Repère du haut de page pour le routeur (components/Gabarit.tsx). */
+.haut-de-page { position: absolute; inset-block-start: 0; inset-inline-start: 0; inline-size: 1px; block-size: 1px; pointer-events: none; }
+
 .saut-contenu {
   position: absolute; inset-inline-start: 1rem; inset-block-start: -10rem; z-index: 100;
   padding: .75rem 1rem; background: var(--theme-encre); color: var(--theme-fond);

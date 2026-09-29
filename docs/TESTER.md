@@ -68,6 +68,8 @@ outils/essayer.sh
 
 **Maymar** : l'accueil, puis la fiche « Valise rigide ABS 4 roues » : choisir Grande 75 cm et Bordeaux — cette combinaison est épuisée, la fiche le dit et le bouton se désactive. Une valeur épuisée dans toutes ses combinaisons reste visible mais barrée : la taille M du combishort (Maison Selma), les forets de 10 mm (quincaillerie).
 
+**Commander** (les trois boutiques) : dans le panier, **Commander**. Saisir un numéro tunisien (par exemple 20 123 456) et « Recevoir le code » : aucun SMS ne part, le code s'écrit dans `.outils/sms.log` (`tail -f .outils/sms.log` dans un autre terminal). Taper les 6 chiffres confirme le numéro ; choisir le gouvernorat fait apparaître les frais et le délai ; « Confirmer la commande » mène à la page de fin (numéro de commande, appel de confirmation, montant à régler au livreur).
+
 **Sur téléphone** : dans Chrome ou Edge, F12 puis l'icône téléphone (« Toggle device toolbar »), choisir un modèle et recharger : menu en tiroir, galerie à faire glisser, barre d'achat collante en bas de la fiche. (Un vrai téléphone ne peut pas joindre la vitrine : elle reste sur ta machine.)
 
 **Console** — http://console.localhost:4200, `admin@skanecom.test`, mot de passe `console-locale-skanecom` (base locale seulement). À la première connexion, scanner le QR code avec une application d'authentification (Google Authenticator, Microsoft Authenticator, 1Password…) et saisir le code. Ensuite : créer une boutique et son domaine, l'ouvrir, régler sa marque (gabarit, couleurs, polices, textes) avec l'aperçu, importer un catalogue (le modèle CSV se télécharge depuis la page d'import).
@@ -77,11 +79,12 @@ outils/essayer.sh
 Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
 
 ```bash
-outils/base-locale.sh tester                   # 223 tests de la base (isolation des boutiques, vitrine, console, import)
-outils/essai-vitrine.sh                        # 20 essais : les boutiques ne se mélangent jamais
+outils/base-locale.sh tester                   # 275 tests de la base (isolation des boutiques, vitrine, console, import, commande)
+outils/essai-vitrine.sh                        # 25 essais : les boutiques ne se mélangent jamais, le tunnel n'est jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)
 bun run parcours                               # le testeur « humain » : souris, clavier, téléphone
+bun run parcours:commande                      # une vraie commande dans chaque gabarit (base fraîche : outils/essayer.sh)
 bun run apercu                                 # captures des pages clés des trois boutiques
 ```
 

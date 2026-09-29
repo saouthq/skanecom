@@ -100,6 +100,13 @@ CONF
     export GOTRUE_API_HOST=127.0.0.1 GOTRUE_API_PORT=54340
     export GOTRUE_EXTERNAL_EMAIL_ENABLED=true GOTRUE_MAILER_AUTOCONFIRM=true
     export GOTRUE_MFA_TOTP_ENROLL_ENABLED=true GOTRUE_MFA_TOTP_VERIFY_ENABLED=true
+    # Acheteurs : connexion par numéro de téléphone et code. Le « fournisseur
+    # de SMS » est le relais, qui note les codes dans .outils/sms.log.
+    export GOTRUE_EXTERNAL_PHONE_ENABLED=true GOTRUE_SMS_AUTOCONFIRM=false
+    export GOTRUE_SMS_OTP_LENGTH=6 GOTRUE_SMS_OTP_EXP=600 GOTRUE_SMS_MAX_FREQUENCY=1s GOTRUE_RATE_LIMIT_SMS_SENT=1000
+    export GOTRUE_HOOK_SEND_SMS_ENABLED=true GOTRUE_HOOK_SEND_SMS_URI=http://127.0.0.1:54321/sms-dev
+    GOTRUE_HOOK_SEND_SMS_SECRETS="v1,whsec_$(printf '%s' "$SECRET_DEV" | base64 -w0)"
+    export GOTRUE_HOOK_SEND_SMS_SECRETS
     export GOTRUE_LOG_LEVEL=warn
     setsid "$GOTRUE_DOSSIER/auth" serve > "$OUTILS/gotrue.log" 2>&1 < /dev/null &
     echo $! > "$OUTILS/gotrue.pid"

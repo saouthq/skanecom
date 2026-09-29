@@ -227,6 +227,12 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 - **Journaux horodatés à l'instant réel** (`clock_timestamp()`) : plusieurs changements dans une même transaction gardent leur ordre.
 - **Livraison offerte dès un seuil** (`livraison.seuil_gratuite_millimes`), demandée par l'étude de la quincaillerie : prise en compte dès maintenant dans le calcul des frais.
 
+**Construit ensuite, le 29/09** (migration 08, `20260929100700_tunnel_commande.sql`, 52 tests dans `supabase/tests/10_tunnel.sql`) : le tunnel de commande en paiement à la livraison.
+- `devis_commande` : le chiffrage d'un panier dans une boutique (prix, stock, libellés, frais du gouvernorat, livraison offerte), partagé avec la commande : l'affiché et le facturé ne peuvent pas diverger. Une variante qui n'est pas en vente dans CETTE boutique revient « indisponible » sans rien dire d'elle ;
+- `passer_commande` : compte obligatoire ou invité (réglage), numéro tunisien normalisé, clé d'idempotence (le rejeu rend la même commande), verrou par numéro, au plus N commandes en attente d'appel par numéro (réglage `commande.max_en_attente`, 3), fiche bloquée refusée, variantes verrouillées dans un ordre stable, total vu par l'acheteur exigé, confirmation automatique en réglage, carnet d'adresses du compte ;
+- `commande_suivie` : la commande pour qui a son numéro et son jeton (seule l'empreinte SHA-256 du jeton est gardée) ;
+- les gestes du système (commande de la vitrine, confirmation automatique) n'ont pas d'auteur dans les journaux : l'identifiant de l'acheteur n'y entre pas.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
-- avec le tunnel de commande et le backoffice : la fonction de création de commande, `confirmations`, `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.
+- avec le backoffice : `confirmations`, `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

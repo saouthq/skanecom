@@ -9,7 +9,8 @@
                       champs, tiroirs, prix, états, puces ;
    4. editorial.css et technique.css — chaque gabarit, sous
                       `html[data-gabarit="…"]` : l'un ne déborde jamais sur
-                      l'autre.
+                      l'autre ;
+   5. tunnel.css    — la commande et sa page de fin, retouchées par gabarit.
    ========================================================================== */
 
 @import "tailwindcss";
@@ -18,6 +19,7 @@
 @import "./socle.css";
 @import "./editorial.css";
 @import "./technique.css";
+@import "./tunnel.css";
 
 :root {
   --theme-marge: 1rem;      /* gouttière mobile : 16 px */
