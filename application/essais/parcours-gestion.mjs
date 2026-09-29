@@ -17,8 +17,9 @@ import { creeTesteur } from "./testeur.mjs";
       zone de plus, un moyen de paiement qu'on ne peut pas couper.
    3. Le même employé sur téléphone.
    4. Le préparateur d'une autre boutique : pas de bouton de confirmation ;
-      au catalogue, le stock mais pas les fiches ni les photos ; les
-      réglages en lecture seule.
+      au catalogue, le stock mais pas les fiches ni les photos ; une commande
+      à retirer au magasin, prête puis retirée ; les réglages en lecture
+      seule.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -949,6 +950,47 @@ console.log("\n== 4. Le préparateur d'une autre boutique ==");
     const fiche = await posteBrut(ctx, `${new URL(page.url()).pathname}/action`, { action: "fiche", nom: "Pirate", version: "" });
     verifie(fiche.status === 303 && decodeURIComponent(fiche.location.replace(/\+/g, " ")).includes("rôle"),
       `même en postant le formulaire à la main, la base refuse (${fiche.status})`);
+  });
+
+  await etape("une commande à retirer au magasin : prête, puis retirée", async () => {
+    // Une commande en retrait, confirmée par le propriétaire (écrite en base,
+    // comme la vitrine et l'appel de confirmation l'auraient fait).
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const entetes = { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json", prefer: "return=representation" };
+    const rest = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/commandes`;
+    const r = await fetch(rest, {
+      method: "POST", headers: entetes,
+      body: JSON.stringify({ boutique_id: "00000000-0000-4000-8000-000000000002", contact_nom: "Anis Kammoun", contact_telephone: "+21624681357",
+        mode_livraison: "retrait", sous_total_millimes: 89000, total_millimes: 89000 }),
+    });
+    const [cmd] = r.ok ? await r.json() : [];
+    const confirme = cmd ? await fetch(`${rest}?id=eq.${cmd.id}`, { method: "PATCH", headers: entetes, body: JSON.stringify({ statut: "confirmee" }) }) : null;
+    verifie(Boolean(cmd?.numero) && confirme?.ok === true, `une commande à retirer, confirmée : ${cmd?.numero ?? r.status}`);
+
+    await page.goto(`${C}/gestion/quincaillerie-demo?etape=a_preparer`, { waitUntil: "networkidle" });
+    const ligne = page.locator(".bo-ligne", { hasText: cmd?.numero ?? "—" });
+    verifie((await ligne.innerText()).includes("À retirer") && (await ligne.innerText()).includes("retrait en magasin"), "la liste la dit « à retirer »");
+    await clic(page, ligne.locator(".bo-ligne-lien"));
+    await page.waitForURL(/commandes\//);
+    const action = page.locator(".bo-action");
+    verifie((await action.innerText()).includes("Préparer la commande") && (await page.locator("#transporteur").count()) === 0
+      && (await page.getByRole("link", { name: "Bordereau" }).count()) === 0,
+      "préparer, sans transporteur ni bordereau");
+    verifie((await page.locator(".bo-fiche-cote").innerText()).includes("Route de Tunis, km 3"), "la fiche dit à quel magasin elle attend");
+    await clic(page, page.getByRole("button", { name: "Prête au retrait" }));
+    await page.waitForURL(/fait=expedier/);
+    verifie((await page.getByRole("status").innerText()).includes("prête au retrait"), `« ${await page.getByRole("status").innerText()} »`);
+    const prevenir = page.getByRole("link", { name: /c'est prêt/ });
+    const message = decodeURIComponent((await prevenir.getAttribute("href"))?.split("text=")[1] ?? "");
+    verifie(message.includes(cmd?.numero ?? "—") && message.includes("Route de Tunis, km 3") && message.includes("89,000 TND"),
+      "le message WhatsApp « c'est prêt » : le numéro, le magasin, le montant");
+    verifie((await page.locator(".bo-progression").innerText()).includes("Prête"), "la frise dit « prête »");
+    await capture(page, "gestion-retrait-prete");
+    await clic(page, page.getByRole("button", { name: "Retirée, paiement encaissé" }));
+    await page.waitForURL(/fait=livrer/);
+    verifie((await page.getByRole("status").innerText()).includes("Retrait enregistré") && (await page.locator(".bo-fiche-tete").innerText()).includes("Retirée"),
+      "retirée : le paiement est encaissé");
+    await capture(page, "gestion-retrait-retiree");
   });
 
   await etape("les réglages, en lecture seule", async () => {

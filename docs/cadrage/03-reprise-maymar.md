@@ -259,6 +259,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les modules d'une boutique** (migration 21, `20260929102000_console_modules.sql`, 14 tests dans `supabase/tests/23_modules.sql`) : `plateforme.modules.disponible` (un module construit ou à venir), `console_modules(boutique)` et `console_changer_module(acteur, boutique, module, actif)` — refus d'activer un module à venir, journal d'audit.
 
+**Puis le retrait en magasin** (migration 22, `20260929102100_vitrine_retrait.sql`, 25 tests dans `supabase/tests/24_retrait.sql`) : `commandes.mode_livraison` (`domicile` ou `retrait`) ; l'adresse de livraison n'est plus obligatoire qu'à domicile (contrainte `commandes_adresse_a_domicile`) ; réglages `retrait.*` du module `retrait_magasin` (bornés par `private.valide_reglages_retrait`) ; `private.magasin(boutique)` et `private.retrait_propose(boutique)` ; `private.chiffre_commande` prend le mode (retrait : gratuit) ; `devis_commande(boutique, lignes, gouvernorat, mode)` ; `passer_commande`, `commande_suivie`, `gestion_liste_commandes`, `gestion_commande`, `gestion_bordereaux` et `gestion_export` reprises pour le mode. Une commande en retrait suit le cycle d'une livraison : « expédiée » y est « prête au retrait », « livrée » « retirée », « refusée » « non retirée ».
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures`, `mise_en_place` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

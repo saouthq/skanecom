@@ -19,7 +19,8 @@ export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Co
     colonnes: [
       { cle: "numero", titre: "Numéro" }, { cle: "date", titre: "Date", format: "date" }, { cle: "statut", titre: "Statut" },
       { cle: "origine", titre: "Origine" }, { cle: "nom", titre: "Nom" }, { cle: "telephone", titre: "Téléphone" },
-      { cle: "email", titre: "E-mail" }, { cle: "adresse", titre: "Adresse" }, { cle: "complement", titre: "Complément" },
+      { cle: "email", titre: "E-mail" }, { cle: "mode_livraison", titre: "Livraison" },
+      { cle: "adresse", titre: "Adresse" }, { cle: "complement", titre: "Complément" },
       { cle: "ville", titre: "Ville" }, { cle: "gouvernorat", titre: "Gouvernorat" }, { cle: "code_postal", titre: "Code postal" },
       { cle: "zone", titre: "Zone" }, { cle: "sous_total", titre: "Sous-total", format: "montant" },
       { cle: "frais_livraison", titre: "Frais de livraison", format: "montant" }, { cle: "remise", titre: "Remise", format: "montant" },

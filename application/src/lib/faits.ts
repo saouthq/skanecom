@@ -14,7 +14,7 @@ export function faitsDeService(cadre: Cadre): string[] {
   if (cadre.livraison.cod) faits.push(t.annonce.cod);
   if (cadre.seuilGratuiteMillimes) faits.push(t.annonce.livraisonOfferte(formatePrix(cadre.seuilGratuiteMillimes)));
   else if (cadre.livraison.delai) faits.push(cadre.livraison.delai);
-  if (cadre.modules.includes("retrait_magasin")) faits.push(t.annonce.retrait);
+  if (cadre.retrait) faits.push(t.annonce.retrait);
   if (cadre.modules.includes("conseil_whatsapp") && cadre.whatsapp) faits.push(t.annonce.conseil);
   return faits;
 }

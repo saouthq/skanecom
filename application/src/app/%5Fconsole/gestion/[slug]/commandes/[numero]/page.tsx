@@ -6,17 +6,19 @@ import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
-import { lieu } from "@/lib/commande";
+import { lieu, type Magasin } from "@/lib/commande";
 import {
   LIBELLES_CANAL,
+  LIBELLES_ORIGINE_NON_RETRAIT,
   LIBELLES_ORIGINE_REFUS,
   LIBELLES_RESULTAT,
   LIBELLES_ROLE,
-  LIBELLES_STATUT,
   age,
+  libelleStatut,
   lienAppel,
   lienWhatsApp,
   messageConfirmation,
+  messagePrete,
   quand,
   telephoneLisible,
 } from "@/lib/gestion/libelles";
@@ -34,6 +36,11 @@ import { formatePrix } from "@/lib/prix";
    Puis les articles, le client (ses commandes, ses refus), la livraison,
    la note interne et l'historique complet.
 
+   Une commande à retirer en magasin suit le même cycle, sous d'autres
+   mots : préparer puis « prête au retrait » (sans transporteur ni
+   bordereau ; un message WhatsApp prévient le client), puis retirée
+   (payée au comptoir) ou non retirée — le stock revient seul.
+
    Chaque formulaire envoie l'étape affichée : si un collègue a déjà agi,
    la base refuse le geste au lieu de le rejouer (la fiche se met à jour).
    Les gestes que le rôle du membre ne permet pas ne sont pas proposés.
@@ -46,8 +53,10 @@ type Fiche = {
   cree_le: string;
   mode_paiement: string;
   statut_paiement: string;
+  mode_livraison: "domicile" | "retrait";
+  retrait: Magasin | null;
   contact: { nom: string; telephone: string; email: string | null };
-  livraison: { ligne1: string; ligne2: string | null; ville: string; code_postal: string | null; gouvernorat: string; zone: string | null };
+  livraison: { ligne1: string | null; ligne2: string | null; ville: string | null; code_postal: string | null; gouvernorat: string | null; zone: string | null };
   sous_total_millimes: number;
   frais_livraison_millimes: number;
   remise_millimes: number;
@@ -99,6 +108,12 @@ const FAIT: Record<string, string> = {
   note: "Note interne enregistrée.",
 };
 
+const FAIT_RETRAIT: Record<string, string> = {
+  expedier: "Commande prête au retrait : prévenez le client.",
+  livrer: "Retrait enregistré : le paiement est encaissé.",
+  refuser: "Commande non retirée. Le stock est rendu.",
+};
+
 const peut = (role: Role, roles: Role[]) => roles.includes(role);
 const CONFIRMER: Role[] = ["proprietaire", "admin", "confirmateur"];
 const EXPEDIER: Role[] = ["proprietaire", "admin", "preparateur"];
@@ -111,34 +126,38 @@ function etapeDe(statut: string): string {
   return "cloturees";
 }
 
-function libelleEvenement(e: Fiche["historique"][number]): string {
+function libelleEvenement(e: Fiche["historique"][number], retrait: boolean): string {
   if (e.avant === null) return "Commande passée sur la boutique";
   switch (e.apres) {
     case "confirmee": return "Confirmée";
-    case "expediee": return "Expédiée";
-    case "livree": return "Livrée, paiement encaissé";
-    case "refusee": return `Refusée à la livraison — ${(LIBELLES_ORIGINE_REFUS[e.origine_refus ?? ""] ?? "").toLowerCase()}`;
+    case "expediee": return retrait ? "Prête au retrait" : "Expédiée";
+    case "livree": return retrait ? "Retirée, paiement encaissé" : "Livrée, paiement encaissé";
+    case "refusee":
+      return retrait
+        ? `Non retirée — ${(LIBELLES_ORIGINE_NON_RETRAIT[e.origine_refus ?? ""] ?? "").toLowerCase()}`
+        : `Refusée à la livraison — ${(LIBELLES_ORIGINE_REFUS[e.origine_refus ?? ""] ?? "").toLowerCase()}`;
     case "annulee": return "Annulée";
-    default: return LIBELLES_STATUT[e.apres] ?? e.apres;
+    default: return libelleStatut(e.apres);
   }
 }
 
 type EtapeProgression = { cle: string; libelle: string; etat: "fait" | "courant" | "a_venir" | "echec"; quand: string | null };
 
-/** La frise d'une commande : reçue, confirmée, expédiée, livrée — ou
- *  arrêtée en route (annulée, refusée à la livraison). */
+/** La frise d'une commande : reçue, confirmée, expédiée, livrée (en
+ *  retrait : prête, retirée) — ou arrêtée en route (annulée, refusée). */
 function progressionDe(f: Fiche): EtapeProgression[] {
+  const retrait = f.mode_livraison === "retrait";
   const ordre = ["recue", "confirmee", "expediee", "livree"];
   const rang = f.statut === "a_arbitrer" ? 0 : ordre.indexOf(f.statut);
   const etapes: EtapeProgression[] = [
     { cle: "recue", libelle: "Reçue", etat: "fait", quand: f.cree_le },
     { cle: "confirmee", libelle: "Confirmée", etat: "a_venir", quand: f.confirmee_le },
-    { cle: "expediee", libelle: "Expédiée", etat: "a_venir", quand: f.expediee_le },
-    { cle: "livree", libelle: "Livrée", etat: "a_venir", quand: f.livree_le },
+    { cle: "expediee", libelle: retrait ? "Prête" : "Expédiée", etat: "a_venir", quand: f.expediee_le },
+    { cle: "livree", libelle: retrait ? "Retirée" : "Livrée", etat: "a_venir", quand: f.livree_le },
   ];
   if (f.statut === "annulee" || f.statut === "refusee") {
     const faites = etapes.filter((e) => e.quand).length;
-    const fin = { cle: f.statut, libelle: f.statut === "annulee" ? "Annulée" : "Refusée", etat: "echec" as const, quand: f.cloturee_le };
+    const fin = { cle: f.statut, libelle: f.statut === "annulee" ? "Annulée" : retrait ? "Non retirée" : "Refusée", etat: "echec" as const, quand: f.cloturee_le };
     return [...etapes.slice(0, Math.max(1, faites)).map((e) => ({ ...e, etat: "fait" as const })), fin];
   }
   return etapes.map((e, i) => ({ ...e, etat: i < rang || f.statut === "livree" ? "fait" : i === rang + 1 ? "courant" : i <= rang ? "fait" : "a_venir" }));
@@ -170,11 +189,14 @@ export default async function FicheCommande({
   const articles = f.lignes.reduce((n, l) => n + l.quantite, 0);
   const prenom = f.contact.nom.trim().split(/\s+/)[0] ?? f.contact.nom;
   const annulable = aConfirmer || f.statut === "confirmee";
+  const retrait = f.mode_livraison === "retrait";
+  const statut = libelleStatut(f.statut, f.mode_livraison);
+  const fait = messages.fait ? ((retrait ? FAIT_RETRAIT[messages.fait] : undefined) ?? FAIT[messages.fait]) : undefined;
 
   const journal = [
     ...f.historique.map((e) => ({
       le: e.le,
-      texte: libelleEvenement(e),
+      texte: libelleEvenement(e, retrait),
       detail: e.commentaire,
       // Sans auteur : la commande passée par l'acheteur, ou un geste du système.
       auteur: e.auteur ?? (e.avant === null ? (f.origine === "vitrine" ? "boutique en ligne" : "saisie") : "système"),
@@ -191,8 +213,14 @@ export default async function FicheCommande({
 
   const whatsapp = lienWhatsApp(
     f.contact.telephone,
-    messageConfirmation({ prenom, boutique: boutique.nom, numero: f.numero, totalMillimes: f.total_millimes, articles, ville: f.livraison.ville }),
+    messageConfirmation({
+      prenom, boutique: boutique.nom, numero: f.numero, totalMillimes: f.total_millimes, articles, ville: f.livraison.ville,
+      retraitA: retrait ? (f.retrait?.ville ?? boutique.nom) : null,
+    }),
   );
+  const whatsappPrete = retrait && f.retrait
+    ? lienWhatsApp(f.contact.telephone, messagePrete({ prenom, boutique: boutique.nom, numero: f.numero, totalMillimes: f.total_millimes, magasin: f.retrait }))
+    : null;
   const progression = progressionDe(f);
 
   return (
@@ -202,17 +230,18 @@ export default async function FicheCommande({
         titre={
           <span className="bo-fiche-tete">
             <span>{f.numero}</span>
-            <span className={`bo-statut bo-statut-${f.statut}`}>{LIBELLES_STATUT[f.statut] ?? f.statut}</span>
+            <span className={`bo-statut bo-statut-${f.statut}`}>{statut}</span>
+            {retrait ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> Retrait en magasin</span> : null}
           </span>
         }
         description={
           <>
             Passée {quand(f.cree_le, maintenant)} · {age(f.cree_le, maintenant)} · {articles} article{articles > 1 ? "s" : ""} ·{" "}
-            <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> à la livraison
+            <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> {retrait ? "au retrait" : "à la livraison"}
           </>
         }
         actions={
-          ["confirmee", "expediee"].includes(f.statut) ? (
+          !retrait && ["confirmee", "expediee"].includes(f.statut) ? (
             <Link href={`/gestion/${slug}/bordereaux?n=${encodeURIComponent(f.numero)}`} className="btn btn-second">
               <Icone nom="fichier" /> Bordereau
             </Link>
@@ -235,10 +264,10 @@ export default async function FicheCommande({
       </ol>
 
       <div className="pile">
-        {messages.fait && FAIT[messages.fait] ? (
+        {fait ? (
           <p className="message message-succes bo-message" role="status">
             <span>
-              {FAIT[messages.fait]}{" "}
+              {fait}{" "}
               <Link href={`/gestion/${slug}?etape=a_confirmer`}>Commandes à confirmer</Link>
             </span>
           </p>
@@ -260,7 +289,9 @@ export default async function FicheCommande({
                 {peut(role, CONFIRMER) ? (
                   <>
                     <p className="bo-action-aide">
-                      Appelez {prenom} pour confirmer l&apos;adresse et la disponibilité, puis notez le résultat.
+                      {retrait
+                        ? <>Appelez {prenom} pour confirmer la commande et le moment du retrait au magasin, puis notez le résultat.</>
+                        : <>Appelez {prenom} pour confirmer l&apos;adresse et la disponibilité, puis notez le résultat.</>}
                     </p>
                     <div className="bo-contact">
                       <a className="btn btn-primaire btn-grand" href={lienAppel(f.contact.telephone)}>
@@ -304,6 +335,85 @@ export default async function FicheCommande({
                   </>
                 ) : (
                   <p className="bo-action-aide">La confirmation revient au propriétaire, à l&apos;administrateur ou à la personne chargée des appels.</p>
+                )}
+              </section>
+            ) : f.statut === "confirmee" && retrait ? (
+              <section className="carte bo-action" aria-labelledby="action-titre">
+                <div className="bo-action-tete">
+                  <span className="bo-action-icone"><Icone nom="colis" /></span>
+                  <div>
+                    <p className="bo-action-sur">Étape en cours</p>
+                    <h2 id="action-titre">Préparer la commande</h2>
+                  </div>
+                </div>
+                <p className="bo-action-aide">
+                  Confirmée {f.confirmee_le ? quand(f.confirmee_le, maintenant) : ""}. Préparez les articles ci-dessous : {prenom} vient les
+                  retirer au magasin{f.retrait ? ` (${f.retrait.ville})` : ""}. Pas de transporteur, pas de bordereau.
+                </p>
+                {peut(role, EXPEDIER) ? (
+                  <form action={action} method="post" className="bo-boutons">
+                    <input type="hidden" name="action" value="expedier" />
+                    <input type="hidden" name="statut" value={f.statut} />
+                    <button type="submit" className="btn btn-primaire"><Icone nom="boutique" /> Prête au retrait</button>
+                  </form>
+                ) : (
+                  <p className="bo-action-aide">La préparation revient au propriétaire, à l&apos;administrateur ou à la préparation.</p>
+                )}
+              </section>
+            ) : f.statut === "expediee" && retrait ? (
+              <section className="carte bo-action" aria-labelledby="action-titre">
+                <div className="bo-action-tete">
+                  <span className="bo-action-icone"><Icone nom="boutique" /></span>
+                  <div>
+                    <p className="bo-action-sur">Étape en cours</p>
+                    <h2 id="action-titre">Au comptoir</h2>
+                  </div>
+                </div>
+                <p className="bo-action-aide">
+                  Prête {f.expediee_le ? quand(f.expediee_le, maintenant) : ""}. {prenom} règle {formatePrix(f.total_millimes)} en la retirant.
+                </p>
+                {peut(role, LIVRER) ? (
+                  <>
+                    <form action={action} method="post" className="bo-boutons">
+                      <input type="hidden" name="action" value="livrer" />
+                      <input type="hidden" name="statut" value={f.statut} />
+                      {whatsappPrete ? (
+                        <a className="btn btn-second bo-whatsapp" href={whatsappPrete} target="_blank" rel="noopener noreferrer">
+                          <Icone nom="message" /> Prévenir {prenom} : c&apos;est prêt
+                        </a>
+                      ) : null}
+                      <button type="submit" className="btn btn-succes">
+                        <Icone nom="coche" /> Retirée, paiement encaissé
+                      </button>
+                    </form>
+                    <details className="bo-pli">
+                      <summary><Icone nom="refus" /> Non retirée <Icone nom="bas" className="bo-pli-chevron" /></summary>
+                      <form action={action} method="post" className="bo-formulaire">
+                        <input type="hidden" name="action" value="refuser" />
+                        <input type="hidden" name="statut" value={f.statut} />
+                        <fieldset className="choix bo-origines">
+                          <legend>Pourquoi ?</legend>
+                          {Object.entries(LIBELLES_ORIGINE_NON_RETRAIT).map(([cle, libelle]) => (
+                            <label key={cle} className="choix-carte">
+                              <input type="radio" name="origine" value={cle} required /> <span><b>{libelle}</b></span>
+                            </label>
+                          ))}
+                        </fieldset>
+                        <div className="champ">
+                          <label htmlFor="commentaire">
+                            Commentaire <span className="facultatif">(facultatif)</span>
+                          </label>
+                          <input id="commentaire" name="commentaire" maxLength={500} placeholder="Appelé trois fois, jamais venu" />
+                        </div>
+                        <p className="aide">Le stock revient automatiquement. Une commande abandonnée compte sur la fiche du client.</p>
+                        <div className="bo-boutons">
+                          <button type="submit" className="btn btn-danger bo-danger">Enregistrer : non retirée</button>
+                        </div>
+                      </form>
+                    </details>
+                  </>
+                ) : (
+                  <p className="bo-action-aide">Votre rôle ne permet pas d&apos;enregistrer le retrait.</p>
                 )}
               </section>
             ) : f.statut === "confirmee" ? (
@@ -401,14 +511,14 @@ export default async function FicheCommande({
                   <span className="bo-action-icone"><Icone nom={f.statut === "livree" ? "succes" : f.statut === "refusee" ? "refus" : "croix"} /></span>
                   <div>
                     <p className="bo-action-sur">Commande clôturée</p>
-                    <h2 id="action-titre">{LIBELLES_STATUT[f.statut] ?? f.statut}</h2>
+                    <h2 id="action-titre">{statut}</h2>
                   </div>
                 </div>
                 <p className="bo-action-aide">
                   {f.statut === "livree"
-                    ? `Livrée ${f.livree_le ? quand(f.livree_le, maintenant) : ""} : ${formatePrix(f.total_millimes)} encaissés.`
+                    ? `${retrait ? "Retirée" : "Livrée"} ${f.livree_le ? quand(f.livree_le, maintenant) : ""} : ${formatePrix(f.total_millimes)} encaissés.`
                     : f.statut === "refusee"
-                      ? `${LIBELLES_ORIGINE_REFUS[f.refus_origine ?? ""] ?? "Refusée"}${f.refus_commentaire ? ` : ${f.refus_commentaire}` : ""}. Le stock est revenu.`
+                      ? `${(retrait ? LIBELLES_ORIGINE_NON_RETRAIT : LIBELLES_ORIGINE_REFUS)[f.refus_origine ?? ""] ?? statut}${f.refus_commentaire ? ` : ${f.refus_commentaire}` : ""}. Le stock est revenu.`
                       : `Motif : ${f.motif_annulation ?? "non précisé"}. Le stock est revenu.`}
                 </p>
               </section>
@@ -466,11 +576,11 @@ export default async function FicheCommande({
                   <dd><Prix millimes={f.sous_total_millimes} /></dd>
                 </div>
                 <div>
-                  <dt>Livraison{f.livraison.zone ? ` (${f.livraison.zone})` : ""}</dt>
-                  <dd>{f.frais_livraison_millimes === 0 ? "Offerte" : <Prix millimes={f.frais_livraison_millimes} />}</dd>
+                  <dt>{retrait ? "Retrait en magasin" : `Livraison${f.livraison.zone ? ` (${f.livraison.zone})` : ""}`}</dt>
+                  <dd>{retrait ? "Gratuit" : f.frais_livraison_millimes === 0 ? "Offerte" : <Prix millimes={f.frais_livraison_millimes} />}</dd>
                 </div>
                 <div className="bo-total">
-                  <dt>À encaisser à la livraison</dt>
+                  <dt>{retrait ? "À encaisser au retrait" : "À encaisser à la livraison"}</dt>
                   <dd><Prix millimes={f.total_millimes} fort /></dd>
                 </div>
               </dl>
@@ -536,7 +646,7 @@ export default async function FicheCommande({
                     {f.autres.map((o) => (
                       <li key={o.numero}>
                         <Link href={`/gestion/${slug}/commandes/${o.numero}`} className="lien">{o.numero}</Link>
-                        <span className={`bo-statut bo-statut-${o.statut}`}>{LIBELLES_STATUT[o.statut] ?? o.statut}</span>
+                        <span className={`bo-statut bo-statut-${o.statut}`}>{libelleStatut(o.statut)}</span>
                         <Prix millimes={o.total_millimes} />
                       </li>
                     ))}
@@ -547,21 +657,45 @@ export default async function FicheCommande({
 
             {/* ---------------- La livraison ---------------- */}
             <section className="carte" aria-labelledby="livraison-titre">
-              <h2 id="livraison-titre" className="carte-titre-icone"><Icone nom="lieu" /> Livraison</h2>
-              <address className="bo-adresse">
-                {f.contact.nom}
-                <br />
-                {f.livraison.ligne1}
-                {f.livraison.ligne2 ? (
-                  <>
+              {retrait ? (
+                <>
+                  <h2 id="livraison-titre" className="carte-titre-icone"><Icone nom="boutique" /> Retrait en magasin</h2>
+                  <p className="bo-adresse">
+                    {f.contact.nom} vient la retirer
+                    {f.retrait ? (
+                      <>
+                        {" "}au magasin :
+                        <br />
+                        {f.retrait.adresse}, {f.retrait.ville}
+                        {f.retrait.horaires ? (
+                          <>
+                            <br />
+                            <span className="discret">{f.retrait.horaires}</span>
+                          </>
+                        ) : null}
+                      </>
+                    ) : " au magasin."}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 id="livraison-titre" className="carte-titre-icone"><Icone nom="lieu" /> Livraison</h2>
+                  <address className="bo-adresse">
+                    {f.contact.nom}
                     <br />
-                    {f.livraison.ligne2}
-                  </>
-                ) : null}
-                <br />
-                {f.livraison.code_postal ? `${f.livraison.code_postal} ` : ""}
-                {lieu(f.livraison.ville, f.livraison.gouvernorat)}
-              </address>
+                    {f.livraison.ligne1}
+                    {f.livraison.ligne2 ? (
+                      <>
+                        <br />
+                        {f.livraison.ligne2}
+                      </>
+                    ) : null}
+                    <br />
+                    {f.livraison.code_postal ? `${f.livraison.code_postal} ` : ""}
+                    {lieu(f.livraison.ville, f.livraison.gouvernorat)}
+                  </address>
+                </>
+              )}
               {f.note_client ? (
                 <p className="bo-note-client">
                   <strong>Note du client</strong> {f.note_client}

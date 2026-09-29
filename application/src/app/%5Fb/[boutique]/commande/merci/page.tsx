@@ -15,7 +15,7 @@ import { t } from "@/lib/i18n";
 /* ============================================================================
    LA PAGE DE FIN DE COMMANDE — ce qui a été commandé, où, pour combien, et
    la suite (appel de confirmation si la boutique le pratique, expédition,
-   paiement au livreur).
+   paiement au livreur ; ou, en retrait, préparation et paiement au comptoir).
 
    Elle lit « numéro.jeton » dans le cookie HttpOnly posé par
    /commande/passer, puis public.commande_suivie : sans le bon jeton, la
@@ -57,18 +57,31 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
   }
 
   const aConfirmer = commande.statut === "recue" || commande.statut === "a_arbitrer";
+  const retrait = commande.mode_livraison === "retrait";
+  const magasin = commande.retrait;
   const zone = cadre.zones.find((z) => (z.nom_fr ?? z.nom_ar) === commande.livraison.zone);
   const delai =
     zone?.delai_jours_min != null && zone.delai_jours_max != null
       ? t.commande.delai(zone.delai_jours_min, zone.delai_jours_max)
       : undefined;
   const suite = [
-    { titre: t.commande.suiteRecue, texte: t.commande.suiteRecueTexte, fait: true },
+    { titre: t.commande.suiteRecue, texte: retrait ? t.commande.suiteRecueTexteRetrait : t.commande.suiteRecueTexte, fait: true },
     ...(cadre.livraison.rappel && aConfirmer
-      ? [{ titre: t.commande.suiteAppel, texte: t.commande.suiteAppelTexte(telephoneLisible(commande.contact.telephone)), fait: false }]
+      ? [{
+          titre: t.commande.suiteAppel,
+          texte: (retrait ? t.commande.suiteAppelTexteRetrait : t.commande.suiteAppelTexte)(telephoneLisible(commande.contact.telephone)),
+          fait: false,
+        }]
       : []),
-    { titre: t.commande.suiteExpedition, texte: t.commande.suiteExpeditionTexte(delai), fait: false },
-    { titre: t.commande.suiteLivraison, texte: t.commande.suiteLivraisonTexte(formatePrix(commande.total_millimes)), fait: false },
+    ...(retrait
+      ? [
+          { titre: t.commande.suitePreparation, texte: t.commande.suitePreparationTexte(t.commande.pretSous(magasin?.delai_heures ?? 24)), fait: false },
+          { titre: t.commande.suiteRetrait, texte: t.commande.suiteRetraitTexte(formatePrix(commande.total_millimes)), fait: false },
+        ]
+      : [
+          { titre: t.commande.suiteExpedition, texte: t.commande.suiteExpeditionTexte(delai), fait: false },
+          { titre: t.commande.suiteLivraison, texte: t.commande.suiteLivraisonTexte(formatePrix(commande.total_millimes)), fait: false },
+        ]),
   ];
   const l = commande.livraison;
 
@@ -136,9 +149,10 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
                 <dd><Prix millimes={commande.sous_total_millimes} /></dd>
               </div>
               <div>
-                <dt>{l.zone ? t.commande.livraisonVers(l.zone) : t.commande.livraison}</dt>
+                <dt>{retrait ? t.commande.modeRetrait : l.zone ? t.commande.livraisonVers(l.zone) : t.commande.livraison}</dt>
                 <dd>
-                  {commande.frais_livraison_millimes === 0 ? t.commande.livraisonOfferte : <Prix millimes={commande.frais_livraison_millimes} />}
+                  {retrait ? t.commande.gratuit
+                    : commande.frais_livraison_millimes === 0 ? t.commande.livraisonOfferte : <Prix millimes={commande.frais_livraison_millimes} />}
                 </dd>
               </div>
               <div className="tunnel-total">
@@ -148,24 +162,51 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
                 <dd><Prix millimes={commande.total_millimes} fort /></dd>
               </div>
             </dl>
-            <h3>{t.commande.livreeA}</h3>
-            <address className="merci-adresse">
-              {commande.contact.nom}
-              <br />
-              {l.ligne1}
-              {l.ligne2 ? (
-                <>
+            {retrait ? (
+              <>
+                <h3>{t.commande.aRetirerA}</h3>
+                <address className="merci-adresse">
+                  {magasin ? (
+                    <>
+                      {magasin.adresse}
+                      <br />
+                      {magasin.ville}
+                      {magasin.horaires ? (
+                        <>
+                          <br />
+                          {magasin.horaires}
+                        </>
+                      ) : null}
+                      <br />
+                    </>
+                  ) : null}
+                  {commande.contact.nom} · <bdi>{telephoneLisible(commande.contact.telephone)}</bdi>
+                </address>
+              </>
+            ) : (
+              <>
+                <h3>{t.commande.livreeA}</h3>
+                <address className="merci-adresse">
+                  {commande.contact.nom}
                   <br />
-                  {l.ligne2}
-                </>
-              ) : null}
-              <br />
-              {l.code_postal ? `${l.code_postal} ` : ""}
-              {lieu(l.ville, l.gouvernorat)}
-              <br />
-              <bdi>{telephoneLisible(commande.contact.telephone)}</bdi>
-            </address>
-            <p className="legende">{t.commande.statut[commande.statut] ?? commande.statut}</p>
+                  {l.ligne1}
+                  {l.ligne2 ? (
+                    <>
+                      <br />
+                      {l.ligne2}
+                    </>
+                  ) : null}
+                  <br />
+                  {l.code_postal ? `${l.code_postal} ` : ""}
+                  {lieu(l.ville, l.gouvernorat)}
+                  <br />
+                  <bdi>{telephoneLisible(commande.contact.telephone)}</bdi>
+                </address>
+              </>
+            )}
+            <p className="legende">
+              {(retrait ? t.commande.statutRetrait[commande.statut] : undefined) ?? t.commande.statut[commande.statut] ?? commande.statut}
+            </p>
           </div>
         </div>
       </section>

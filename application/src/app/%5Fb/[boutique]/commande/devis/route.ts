@@ -3,8 +3,9 @@ import { supabase } from "@/lib/supabase";
 import { raisonDe, type ReponseDevis } from "@/lib/commande";
 
 /* Le devis de la page de commande : le panier du navigateur, relu par la base
-   (public.devis_commande) — prix, stock, frais du gouvernorat choisi, total.
-   Rien n'est mis en cache : c'est le panier d'une personne. */
+   (public.devis_commande) — prix, stock, frais du gouvernorat choisi (ou
+   retrait en magasin, gratuit), total. Rien n'est mis en cache : c'est le
+   panier d'une personne. */
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +18,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   const cadre = await chargeCadre(boutique);
   if (!cadre) return reponse({ ok: false, raison: "boutique", message: "Boutique introuvable" }, 404);
 
-  const corps = (await req.json().catch(() => null)) as { lignes?: unknown; gouvernorat?: unknown } | null;
+  const corps = (await req.json().catch(() => null)) as { lignes?: unknown; gouvernorat?: unknown; mode?: unknown } | null;
   const { data, error } = await supabase.rpc("devis_commande", {
     p_boutique_id: cadre.boutique.id,
     p_lignes: corps?.lignes ?? [],
     p_gouvernorat: typeof corps?.gouvernorat === "string" && corps.gouvernorat ? corps.gouvernorat : null,
+    p_mode: corps?.mode === "retrait" ? "retrait" : "domicile",
   });
   if (error) {
     const raison = raisonDe(error.hint);

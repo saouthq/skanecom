@@ -33,6 +33,8 @@ type Bordereau = {
 type Donnees = {
   expediteur: { nom: string; raison_sociale: string | null; adresse: string | null; telephone: string | null };
   commandes: Bordereau[];
+  /** Les commandes à retirer en magasin, qui n'ont pas de bordereau. */
+  retraits: number;
 };
 
 const DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
@@ -75,9 +77,14 @@ export default async function Bordereaux({
           avant={<Link href={retour}><Icone nom="retour" taille={14} /> {numeros?.length === 1 ? numeros[0] : "Commandes"}</Link>}
           titre={n === 1 ? "Bordereau de livraison" : `${n} bordereaux de livraison`}
           description={
-            n === 0
-              ? "Aucune commande à préparer : rien à imprimer."
-              : "Deux par feuille A4, à découper et coller sur le colis. Dans la boîte d'impression, « Enregistrer en PDF » en fait un fichier."
+            <>
+              {n === 0
+                ? "Aucune commande à livrer : rien à imprimer."
+                : "Deux par feuille A4, à découper et coller sur le colis. Dans la boîte d'impression, « Enregistrer en PDF » en fait un fichier."}
+              {d.retraits > 0
+                ? ` ${d.retraits} commande${d.retraits > 1 ? "s" : ""} à retirer en magasin : pas de bordereau, elle${d.retraits > 1 ? "s" : ""} attend${d.retraits > 1 ? "ent" : ""} au comptoir.`
+                : ""}
+            </>
           }
           actions={n > 0 ? <BoutonImprimer libelle={n === 1 ? "Imprimer le bordereau" : `Imprimer les ${n} bordereaux`} /> : null}
         />

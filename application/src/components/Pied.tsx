@@ -92,7 +92,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
   const services = [
     livraison.cod ? { icone: <Billets taille={22} />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
     livraison.delai ? { icone: <Camion taille={22} />, titre: livraison.delai, texte: livraison.frais ?? "" } : null,
-    cadre.modules.includes("retrait_magasin") ? { icone: <Magasin taille={22} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte } : null,
+    cadre.retrait ? { icone: <Magasin taille={22} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) } : null,
     { icone: <Retour taille={22} />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
   ].filter((s) => s !== null);
 
@@ -125,7 +125,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
           <ul>
             {livraison.cod ? <li>{t.pied.paiementLivraison}</li> : null}
             {livraison.delai ? <li>{livraison.delai}</li> : null}
-            {cadre.modules.includes("retrait_magasin") ? <li>{t.produit.retraitMagasin}</li> : null}
+            {cadre.retrait ? <li>{t.produit.retraitMagasin}</li> : null}
           </ul>
         </div>
         {conseil ? (

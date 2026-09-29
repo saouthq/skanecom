@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Billets, Coche } from "./Icones";
+import { Billets, Camion, Coche, Magasin as IconeMagasin } from "./Icones";
 import { Prix } from "./Prix";
 import { ouvrePanier, ramenePanier, retireDuPanier, usePanierLu } from "@/lib/panier";
 import type { LignePanier } from "@/lib/panier-contrat";
@@ -14,6 +14,8 @@ import {
   telephoneLisible,
   type Devis,
   type LigneDevis,
+  type Magasin,
+  type ModeLivraison,
   type Raison,
   type ReponseDevis,
   type ReponsePasser,
@@ -39,7 +41,10 @@ import type { CodeTheme } from "@/lib/theme";
      Sinon, le numéro est un simple champ (commande en invité) ;
    · une commande envoyée deux fois (double clic, réseau coupé) n'est créée
      qu'une fois : la clé d'idempotence survit au rechargement de la page
-     tant que le panier ne change pas.
+     tant que le panier ne change pas ;
+   · si la boutique propose le retrait en magasin (module), l'acheteur choisit
+     entre la livraison à domicile et le retrait, gratuit : plus d'adresse à
+     saisir, le magasin, ses horaires et son temps de préparation à la place.
    ========================================================================== */
 
 type Gouvernorat = { code: string; nom: string };
@@ -74,6 +79,7 @@ export function Tunnel({
   cod,
   gouvernorats,
   retractationJours,
+  retrait,
 }: {
   gabarit: CodeTheme;
   boutiqueId: string;
@@ -83,6 +89,8 @@ export function Tunnel({
   cod: boolean;
   gouvernorats: Gouvernorat[];
   retractationJours: number;
+  /** Le magasin, si la boutique propose le retrait ; null sinon. */
+  retrait: Magasin | null;
 }) {
   const id = useId();
   const router = useRouter();
@@ -94,6 +102,8 @@ export function Tunnel({
   const [recapOuvert, setRecapOuvert] = useState(false);
   const [accepte, setAccepte] = useState(false);
   const refConditions = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<ModeLivraison>("domicile");
+  const enRetrait = mode === "retrait" && retrait !== null;
 
   // Le devis de la base.
   const [devis, setDevis] = useState<Devis | null>(null);
@@ -124,14 +134,14 @@ export function Tunnel({
   );
   const cleLignes = JSON.stringify(lignes);
 
-  // Le devis suit le panier et le gouvernorat.
+  // Le devis suit le panier, le mode de livraison et le gouvernorat.
   useEffect(() => {
     if (cleLignes === "[]") return;
     const arret = new AbortController();
     fetch("/commande/devis", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: `{"lignes":${cleLignes},"gouvernorat":${JSON.stringify(champs.gouvernorat || null)}}`,
+      body: `{"lignes":${cleLignes},"gouvernorat":${JSON.stringify(enRetrait ? null : champs.gouvernorat || null)},"mode":"${enRetrait ? "retrait" : "domicile"}"}`,
       signal: arret.signal,
     })
       .then((r) => r.json() as Promise<ReponseDevis>)
@@ -145,7 +155,7 @@ export function Tunnel({
         if ((e as Error).name !== "AbortError") setDevisEnPanne(true);
       });
     return () => arret.abort();
-  }, [cleLignes, champs.gouvernorat, rafraichir]);
+  }, [cleLignes, champs.gouvernorat, enRetrait, rafraichir]);
 
   // La session : lue au montage, puis suivie (connexion, déconnexion).
   useEffect(() => {
@@ -214,13 +224,14 @@ export function Tunnel({
       if (!session) e.telephone = t.commande.numeroAConfirmer;
     } else if (!chiffresTelephone(champs.telephone)) e.telephone = t.commande.telephoneInvalide;
     const nom = champs.nom.trim();
-    if (nom.length < 2 || nom.length > 80) e.nom = t.commande.nomInvalide;
+    if (nom.length < 2 || nom.length > 80) e.nom = enRetrait ? t.commande.nomRetraitInvalide : t.commande.nomInvalide;
+    if (enRetrait) return e;
     if (champs.ligne1.trim().length < 3) e.ligne1 = t.commande.adresseInvalide;
     if (champs.ville.trim().length < 2) e.ville = t.commande.villeInvalide;
     if (!champs.gouvernorat) e.gouvernorat = t.commande.gouvernoratInvalide;
     if (champs.codePostal.trim() && !/^\d{4}$/.test(champs.codePostal.trim())) e.codePostal = t.commande.codePostalInvalide;
     return e;
-  }, [champs, compteObligatoire, session]);
+  }, [champs, compteObligatoire, session, enRetrait]);
 
   const change = (cle: keyof Champs) => (valeur: string) => setChamps((c) => ({ ...c, [cle]: valeur }));
 
@@ -296,6 +307,10 @@ export function Tunnel({
       case "conditions":
         setAccepte(false);
         return setAlerte(t.commande.conditionsRequises);
+      case "retrait":
+        // La boutique a cessé de proposer le retrait entre-temps.
+        setMode("domicile");
+        return setAlerte(t.commande.retraitIndisponible);
       default:
         return setAlerte(t.commande.erreur);
     }
@@ -336,13 +351,16 @@ export function Tunnel({
           cle: cleDeCommande(boutique, cleLignes),
           lignes,
           contact: { nom: champs.nom.trim(), telephone, accepte_conditions: accepte },
-          livraison: {
-            ligne1: champs.ligne1.trim(),
-            ligne2: champs.ligne2.trim() || null,
-            ville: champs.ville.trim(),
-            gouvernorat: champs.gouvernorat,
-            code_postal: champs.codePostal.trim() || null,
-          },
+          livraison: enRetrait
+            ? { mode: "retrait" }
+            : {
+                mode: "domicile",
+                ligne1: champs.ligne1.trim(),
+                ligne2: champs.ligne2.trim() || null,
+                ville: champs.ville.trim(),
+                gouvernorat: champs.gouvernorat,
+                code_postal: champs.codePostal.trim() || null,
+              },
           total: devis.total_millimes,
           note: champs.note.trim() || null,
         }),
@@ -391,6 +409,7 @@ export function Tunnel({
         ouvert={recapOuvert}
         onBascule={() => setRecapOuvert((o) => !o)}
         zone={zone}
+        retrait={enRetrait}
       />
 
       <form className="tunnel-formulaire" noValidate onSubmit={confirmer}>
@@ -512,6 +531,26 @@ export function Tunnel({
             <span className="tunnel-num" aria-hidden="true">2</span>
             {t.commande.etapeLivraison}
           </legend>
+          {retrait ? (
+            <div className="tunnel-choix" role="radiogroup" aria-label={t.commande.modeLivraison}>
+              <label className="tunnel-mode">
+                <input type="radio" name="mode-livraison" value="domicile" checked={!enRetrait} onChange={() => setMode("domicile")} />
+                <span className="tunnel-mode-corps">
+                  <strong>{t.commande.modeDomicile}</strong>
+                  <span className="legende">{t.commande.modeDomicileTexte}</span>
+                </span>
+                <Camion taille={22} />
+              </label>
+              <label className="tunnel-mode">
+                <input type="radio" name="mode-livraison" value="retrait" checked={enRetrait} onChange={() => setMode("retrait")} />
+                <span className="tunnel-mode-corps">
+                  <strong>{t.commande.modeRetrait} <span className="tunnel-gratuit">{t.commande.gratuit}</span></strong>
+                  <span className="legende">{t.commande.modeRetraitTexte(retrait.ville, t.commande.pretSous(retrait.delai_heures))}</span>
+                </span>
+                <IconeMagasin taille={22} />
+              </label>
+            </div>
+          ) : null}
           <div className="tunnel-grille">
             <Champ
               id={`${id}-nom`}
@@ -526,6 +565,20 @@ export function Tunnel({
               longueur={80}
               large
             />
+            {enRetrait && retrait ? (
+              <div className="tunnel-magasin" data-large="">
+                <p className="tunnel-magasin-titre">{t.commande.retraitOu}</p>
+                <address>
+                  {retrait.adresse}
+                  <br />
+                  {retrait.ville}
+                </address>
+                {retrait.horaires ? <p>{retrait.horaires}</p> : null}
+                <p className="tunnel-magasin-delai">{t.commande.pretSous(retrait.delai_heures)}</p>
+                <p className="legende">{t.commande.retraitSuite}</p>
+              </div>
+            ) : (
+            <>
             <Champ
               id={`${id}-ligne1`}
               libelle={t.commande.adresse}
@@ -595,9 +648,11 @@ export function Tunnel({
               autoComplete="postal-code"
               inputMode="numeric"
             />
+            </>
+            )}
           </div>
 
-          {devis?.gouvernorat && devis.frais_livraison_millimes !== null ? (
+          {!enRetrait && devis?.gouvernorat && devis.frais_livraison_millimes !== null ? (
             <p className="tunnel-livraison" aria-live="polite">
               <span>{zone ? t.commande.livraisonVers(zone) : t.commande.livraison}</span>
               {delai ? <span>{delai}</span> : null}
@@ -617,21 +672,21 @@ export function Tunnel({
           <label className="tunnel-mode">
             <input type="radio" name="paiement" value="cod" checked readOnly disabled={!cod} />
             <span className="tunnel-mode-corps">
-              <strong>{t.commande.cod}</strong>
-              <span className="legende">{t.commande.codTexte}</span>
+              <strong>{enRetrait ? t.commande.codRetrait : t.commande.cod}</strong>
+              <span className="legende">{enRetrait ? t.commande.codTexteRetrait : t.commande.codTexte}</span>
             </span>
             <Billets taille={22} />
           </label>
-          {rappel ? <p className="legende tunnel-rappel">{t.commande.appelConfirmation}</p> : null}
+          {rappel ? <p className="legende tunnel-rappel">{enRetrait ? t.commande.appelConfirmationRetrait : t.commande.appelConfirmation}</p> : null}
           <div className="champ">
             <label htmlFor={`${id}-note`}>
-              {t.commande.note} <span className="facultatif">({t.commande.facultatif})</span>
+              {enRetrait ? t.commande.noteRetrait : t.commande.note} <span className="facultatif">({t.commande.facultatif})</span>
             </label>
             <textarea
               id={`${id}-note`}
               rows={2}
               maxLength={500}
-              placeholder={t.commande.noteAide}
+              placeholder={enRetrait ? t.commande.noteRetraitAide : t.commande.noteAide}
               value={champs.note}
               onChange={(e) => change("note")(e.target.value)}
             />
@@ -728,6 +783,7 @@ function Recap({
   ouvert,
   onBascule,
   zone,
+  retrait,
 }: {
   panier: LignePanier[];
   devis: Devis | null;
@@ -735,6 +791,7 @@ function Recap({
   ouvert: boolean;
   onBascule: () => void;
   zone: string | null;
+  retrait: boolean;
 }) {
   const parId = new Map<string, LigneDevis>((devis?.lignes ?? []).map((l) => [l.variante_id, l]));
   const total = devis?.total_millimes ?? devis?.sous_total_millimes ?? null;
@@ -805,9 +862,11 @@ function Recap({
               <dd><Prix millimes={devis.sous_total_millimes} /></dd>
             </div>
             <div>
-              <dt>{zone ? t.commande.livraisonVers(zone) : t.commande.livraison}</dt>
+              <dt>{retrait ? t.commande.modeRetrait : zone ? t.commande.livraisonVers(zone) : t.commande.livraison}</dt>
               <dd>
-                {devis.frais_livraison_millimes === null ? (
+                {retrait && devis.mode === "retrait" ? (
+                  t.commande.gratuit
+                ) : devis.frais_livraison_millimes === null ? (
                   <span className="legende">{t.commande.selonGouvernorat}</span>
                 ) : devis.frais_livraison_millimes === 0 ? (
                   t.commande.livraisonOfferte

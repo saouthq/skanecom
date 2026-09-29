@@ -176,6 +176,15 @@ export function conditionsDeVente(cadre: Cadre): { intro: React.ReactNode; secti
               <p>Les frais de livraison dépendent du gouvernorat ; ils sont annoncés avant la confirmation de la commande.</p>
             )}
             {cadre.seuilGratuiteMillimes ? <p>La livraison est offerte à partir de {formatePrix(cadre.seuilGratuiteMillimes)} d&apos;achats.</p> : null}
+            {cadre.retrait ? (
+              <p>
+                L&apos;acheteur peut aussi choisir de retirer sa commande au magasin, sans frais : {cadre.retrait.adresse},{" "}
+                {cadre.retrait.ville}
+                {cadre.retrait.horaires ? ` (${cadre.retrait.horaires.charAt(0).toLowerCase()}${cadre.retrait.horaires.slice(1)})` : ""}. La
+                commande est prête dans un délai indicatif de {cadre.retrait.delai_heures} heure{cadre.retrait.delai_heures > 1 ? "s" : ""} après
+                sa confirmation ; elle se retire au nom de l&apos;acheteur et se paie au comptoir, en espèces.
+              </p>
+            ) : null}
           </>
         ),
       },
@@ -183,10 +192,18 @@ export function conditionsDeVente(cadre: Cadre): { intro: React.ReactNode; secti
         id: "refus",
         titre: "Refus à la livraison",
         corps: (
-          <p>
-            L&apos;acheteur peut refuser le colis à sa remise : il ne paie alors rien. La boutique peut ne plus accepter de
-            commandes en ligne d&apos;un numéro qui refuse ses colis de façon répétée, sans motif.
-          </p>
+          <>
+            <p>
+              L&apos;acheteur peut refuser le colis à sa remise : il ne paie alors rien. La boutique peut ne plus accepter de
+              commandes en ligne d&apos;un numéro qui refuse ses colis de façon répétée, sans motif.
+            </p>
+            {cadre.retrait ? (
+              <p>
+                Il en va de même d&apos;une commande à retirer au magasin qui n&apos;est pas retirée : elle est annulée sans frais,
+                après que la boutique a tenté de joindre l&apos;acheteur.
+              </p>
+            ) : null}
+          </>
         ),
       },
       {

@@ -171,7 +171,7 @@ function Services({ cadre }: { cadre: Cadre }) {
   const { livraison } = cadre;
   const conseil = lienConseil(cadre);
   const services = [
-    cadre.modules.includes("retrait_magasin") ? { icone: <Magasin taille={28} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte } : null,
+    cadre.retrait ? { icone: <Magasin taille={28} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) } : null,
     livraison.cod ? { icone: <Billets taille={28} />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
     livraison.delai ? { icone: <Camion taille={28} />, titre: livraison.delai, texte: livraison.frais ?? "" } : null,
     conseil

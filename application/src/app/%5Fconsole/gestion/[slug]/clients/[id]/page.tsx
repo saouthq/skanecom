@@ -5,7 +5,7 @@ import { Prix } from "@/components/Prix";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
-import { LIBELLES_ORIGINE_REFUS, LIBELLES_STATUT, lienAppel, lienWhatsApp, quand, telephoneLisible } from "@/lib/gestion/libelles";
+import { LIBELLES_ORIGINE_REFUS, libelleStatut, lienAppel, lienWhatsApp, quand, telephoneLisible } from "@/lib/gestion/libelles";
 import { LIBELLES_CONFIANCE, NIVEAUX, PEUT_JUGER, pastilleConfiance, tauxRefus, type FicheClient } from "@/lib/gestion/clients";
 
 export const metadata: Metadata = { title: "Client" };
@@ -144,7 +144,7 @@ export default async function FicheClientBackoffice({
                     <li key={o.numero}>
                       <Link href={`/gestion/${slug}/commandes/${o.numero}`} className="cl-commande">
                         <span className="cl-commande-num">{o.numero}</span>
-                        <span className={`bo-statut bo-statut-${o.statut}`}>{LIBELLES_STATUT[o.statut] ?? o.statut}</span>
+                        <span className={`bo-statut bo-statut-${o.statut}`}>{libelleStatut(o.statut)}</span>
                         <span className="cl-commande-detail">
                           {quand(o.cree_le, maintenant)} · {o.articles} article{o.articles > 1 ? "s" : ""}
                           {o.ville ? ` · ${o.ville}` : ""}

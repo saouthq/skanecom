@@ -373,8 +373,8 @@ select is((select e.auteur_id from public.commande_evenements e join public.comm
 
 select ok(
   has_function_privilege('anon', 'public.passer_commande(uuid, text, jsonb, jsonb, jsonb, bigint, text)', 'execute')
-  and has_function_privilege('anon', 'public.devis_commande(uuid, jsonb, text)', 'execute')
-  and not has_function_privilege('anon', 'private.chiffre_commande(uuid, jsonb, text)', 'execute')
+  and has_function_privilege('anon', 'public.devis_commande(uuid, jsonb, text, text)', 'execute')
+  and not has_function_privilege('anon', 'private.chiffre_commande(uuid, jsonb, text, boolean)', 'execute')
   and not has_function_privilege('authenticated', 'private.telephone_tunisien(text)', 'execute'),
   'la vitrine appelle le devis et la commande ; le chiffrage interne n''est pas exposé');
 

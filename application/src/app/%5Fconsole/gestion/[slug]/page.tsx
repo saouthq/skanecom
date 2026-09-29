@@ -9,8 +9,8 @@ import { lieu } from "@/lib/commande";
 import {
   ETAPES,
   LIBELLES_RESULTAT,
-  LIBELLES_STATUT,
   age,
+  libelleStatut,
   lienAppel,
   telephoneLisible,
   type Etape,
@@ -34,8 +34,9 @@ type Ligne = {
   cree_le: string;
   contact_nom: string;
   contact_telephone: string;
-  ville: string;
-  gouvernorat: string;
+  mode_livraison: "domicile" | "retrait";
+  ville: string | null;
+  gouvernorat: string | null;
   total_millimes: number;
   articles: number;
   premier_article: string | null;
@@ -78,6 +79,10 @@ export default async function Commandes({
   const liste = data as Liste;
   const maintenant = new Date();
   const pages = Math.max(1, Math.ceil(liste.total / PAR_PAGE));
+  // Les bordereaux ne servent qu'aux colis livrés : pas aux commandes à retirer.
+  const aExpedier = liste.total <= liste.commandes.length
+    ? liste.commandes.filter((c) => c.mode_livraison !== "retrait").length
+    : liste.compteurs.a_preparer;
   const lien = (e: string, p = 1) => `/gestion/${slug}?etape=${e}${q ? `&q=${encodeURIComponent(q)}` : ""}${p > 1 ? `&page=${p}` : ""}`;
 
   return (
@@ -97,9 +102,9 @@ export default async function Commandes({
               <button type="submit" className="btn btn-second">Chercher</button>
             </form>
             {etape.cle === "a_confirmer" ? <AlertesCommandes /> : null}
-            {etape.cle === "a_preparer" && liste.compteurs.a_preparer > 0 ? (
+            {etape.cle === "a_preparer" && aExpedier > 0 ? (
               <Link href={`/gestion/${slug}/bordereaux?etape=a_preparer`} className="btn btn-primaire">
-                <Icone nom="fichier" /> Bordereaux ({liste.compteurs.a_preparer})
+                <Icone nom="fichier" /> Bordereaux ({aExpedier})
               </Link>
             ) : null}
           </>
@@ -143,7 +148,7 @@ export default async function Commandes({
                     <span className="avatar" aria-hidden="true">{initiales(c.contact_nom)}</span>
                     <span className="bo-ligne-client-texte">
                       <strong>{c.contact_nom}</strong>
-                      <span>{telephoneLisible(c.contact_telephone)} · {lieu(c.ville, c.gouvernorat)}</span>
+                      <span>{telephoneLisible(c.contact_telephone)} · {c.mode_livraison === "retrait" ? "retrait en magasin" : lieu(c.ville, c.gouvernorat)}</span>
                     </span>
                   </span>
                   <span className="bo-ligne-articles">
@@ -151,6 +156,7 @@ export default async function Commandes({
                     {c.premier_article ? <span> · {c.premier_article}</span> : null}
                   </span>
                   <span className="bo-badges ui-etats">
+                    {c.mode_livraison === "retrait" ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> À retirer</span> : null}
                     {c.client?.compte ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié</span> : null}
                     {c.client && c.client.nb_commandes <= 1 ? <span className="ui-etat ui-etat-bleu">Nouveau client</span> : null}
                     {c.client && c.client.nb_commandes > 1 ? <span className="ui-etat">{c.client.nb_commandes} commandes</span> : null}
@@ -165,7 +171,7 @@ export default async function Commandes({
                     ) : null}
                   </span>
                   <span className="bo-ligne-fin">
-                    <span className={`bo-statut bo-statut-${c.statut}`}>{LIBELLES_STATUT[c.statut] ?? c.statut}</span>
+                    <span className={`bo-statut bo-statut-${c.statut}`}>{libelleStatut(c.statut, c.mode_livraison)}</span>
                     <span className="bo-ligne-total"><Prix millimes={c.total_millimes} /></span>
                   </span>
                 </Link>

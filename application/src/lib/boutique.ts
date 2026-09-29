@@ -4,6 +4,7 @@ import { themeDeLaBoutique, type Theme } from "./theme";
 import { formatePrix } from "./prix";
 import { t } from "./i18n";
 import type { Categorie } from "./catalogue";
+import type { Magasin } from "./commande";
 
 /* ============================================================================
    LE CADRE DE LA BOUTIQUE — ce que TOUTE page doit savoir, en UN appel
@@ -53,6 +54,9 @@ export type Cadre = {
   konnectActif: boolean;
   prixBarres: boolean;
   whatsapp: string | null;
+  /** Le magasin où retirer ses commandes, si la boutique le propose (module
+   *  retrait_magasin, adresse et ville renseignées) ; `null` sinon. */
+  retrait: Magasin | null;
 };
 
 type Brut = {
@@ -90,11 +94,13 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
   const seuilTexte = seuil > 0 ? formatePrix(seuil) : undefined;
   const bornes = delai(brut.zones);
   const whatsapp = String(reglage(reglages, "contact.whatsapp", "")).replace(/\D/g, "");
+  const texteDe = (cle: string) => String(reglage(reglages, cle, "")).trim();
+  const modules = brut.configuration?.modules ?? [];
 
   return {
     boutique: brut.boutique,
     reglages,
-    modules: brut.configuration?.modules ?? [],
+    modules,
     theme: themeDeLaBoutique(brut.theme),
     categories: brut.categories,
     racines: brut.categories.filter((c) => c.parent_id === null),
@@ -113,6 +119,14 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
     konnectActif: reglage(reglages, "paiement.konnect_actif", false),
     prixBarres: reglage(reglages, "catalogue.afficher_prix_barres", false),
     whatsapp: whatsapp.length >= 8 ? whatsapp : null,
+    retrait: modules.includes("retrait_magasin") && texteDe("retrait.adresse") && texteDe("retrait.ville")
+      ? {
+          adresse: texteDe("retrait.adresse"),
+          ville: texteDe("retrait.ville"),
+          horaires: texteDe("retrait.horaires") || null,
+          delai_heures: Number(reglage(reglages, "retrait.delai_heures", 24)) || 24,
+        }
+      : null,
   };
 });
 

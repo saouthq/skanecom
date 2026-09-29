@@ -56,6 +56,12 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
     { cle: "livraison.seuil_gratuite_millimes", genre: "montant" },
     { cle: "livraison.transporteur", genre: "texte" },
   ],
+  retrait: [
+    { cle: "retrait.adresse", genre: "texte" },
+    { cle: "retrait.ville", genre: "texte" },
+    { cle: "retrait.horaires", genre: "texte" },
+    { cle: "retrait.delai_heures", genre: "entier" },
+  ],
   paiement: [
     { cle: "paiement.cod_actif", genre: "booleen" },
     { cle: "paiement.konnect_actif", genre: "booleen" },
@@ -81,6 +87,7 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
 export const TITRES_SECTIONS: Record<string, string> = {
   commandes: "Commandes",
   livraison: "Livraison",
+  retrait: "Retrait en magasin",
   paiement: "Paiement",
   vitrine: "Vitrine et contact",
   legal: "Informations légales",

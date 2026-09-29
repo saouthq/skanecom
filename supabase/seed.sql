@@ -46,6 +46,11 @@ insert into public.reglages (boutique_id, cle, valeur) values
   ('00000000-0000-4000-8000-000000000002', 'livraison.seuil_gratuite_millimes', '500000'),
   ('00000000-0000-4000-8000-000000000002', 'catalogue.afficher_prix_barres',   'true'),
   ('00000000-0000-4000-8000-000000000002', 'contact.whatsapp',                 '"21670000000"'),
+  -- Le magasin de la quincaillerie : on y retire ses commandes (module retrait_magasin).
+  ('00000000-0000-4000-8000-000000000002', 'retrait.adresse',                  '"Route de Tunis, km 3"'),
+  ('00000000-0000-4000-8000-000000000002', 'retrait.ville',                    '"Sfax"'),
+  ('00000000-0000-4000-8000-000000000002', 'retrait.horaires',                 '"Du lundi au samedi, de 8 h à 18 h"'),
+  ('00000000-0000-4000-8000-000000000002', 'retrait.delai_heures',             '2'),
   ('00000000-0000-4000-8000-000000000003', 'commande.prefixe_numero',          '"SEL"'),
   ('00000000-0000-4000-8000-000000000003', 'livraison.frais_fixes_millimes',   '7000'),
   ('00000000-0000-4000-8000-000000000003', 'livraison.seuil_gratuite_millimes', '250000');
@@ -588,7 +593,7 @@ begin
 
     v_devis := private.chiffre_commande(b,
       jsonb_build_array(jsonb_build_object('variante_id', (select v.id from public.variantes v where v.boutique_id = b and v.sku = c.sku), 'quantite', c.qte)),
-      c.gouv);
+      c.gouv, false);
 
     insert into public.commandes (boutique_id, origine, client_id, contact_nom, contact_telephone,
                                   livraison_ligne1, livraison_ville, livraison_gouvernorat, livraison_zone_nom,

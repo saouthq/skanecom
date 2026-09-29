@@ -24,6 +24,12 @@ export type LigneDevis = {
   total_ligne_millimes: number | null;
 };
 
+/** Le magasin où retirer une commande (module retrait_magasin : adresse,
+ *  horaires, temps de préparation). */
+export type Magasin = { adresse: string; ville: string; horaires: string | null; delai_heures: number };
+
+export type ModeLivraison = "domicile" | "retrait";
+
 export type Devis = {
   lignes: LigneDevis[];
   complet: boolean;
@@ -31,6 +37,9 @@ export type Devis = {
   seuil_gratuite_millimes: number | null;
   gouvernorat: { code: string; nom_fr: string; nom_ar: string } | null;
   zone: { nom_fr: string | null; nom_ar: string | null; delai_jours_min: number | null; delai_jours_max: number | null } | null;
+  mode: ModeLivraison;
+  /** Le magasin, pour un devis en retrait. */
+  retrait: Magasin | null;
   frais_livraison_millimes: number | null;
   total_millimes: number | null;
 };
@@ -38,10 +47,10 @@ export type Devis = {
 /** Les raisons de refus de la base, plus deux de la vitrine. */
 export type Raison =
   | "boutique" | "cle" | "panier" | "contact" | "adresse" | "compte" | "stock" | "total"
-  | "en_attente" | "bloque" | "paiement" | "conditions" | "reseau" | "inconnue";
+  | "en_attente" | "bloque" | "paiement" | "conditions" | "retrait" | "reseau" | "inconnue";
 
 const RAISONS: Raison[] = [
-  "boutique", "cle", "panier", "contact", "adresse", "compte", "stock", "total", "en_attente", "bloque", "paiement", "conditions",
+  "boutique", "cle", "panier", "contact", "adresse", "compte", "stock", "total", "en_attente", "bloque", "paiement", "conditions", "retrait",
 ];
 
 export function raisonDe(indice: string | null | undefined): Raison {
@@ -66,13 +75,17 @@ export type CommandeSuivie = {
   statut: string;
   cree_le: string;
   mode_paiement: string;
+  mode_livraison: ModeLivraison;
+  /** Le magasin où la retirer (commande en retrait). */
+  retrait: Magasin | null;
   contact: { nom: string; telephone: string; email: string | null };
+  /** Vide pour une commande à retirer en magasin. */
   livraison: {
-    ligne1: string;
+    ligne1: string | null;
     ligne2: string | null;
-    ville: string;
+    ville: string | null;
     code_postal: string | null;
-    gouvernorat: string;
+    gouvernorat: string | null;
     zone: string | null;
   };
   note_client: string | null;
@@ -103,7 +116,8 @@ export function telephoneLisible(numero: string): string {
 
 /** « Sfax » plutôt que « Sfax, Sfax » quand la ville porte le nom de son
  *  gouvernorat ; « La Marsa, Tunis » sinon. */
-export function lieu(ville: string, gouvernorat: string): string {
+export function lieu(ville: string | null, gouvernorat: string | null): string {
+  if (!ville || !gouvernorat) return (ville ?? gouvernorat ?? "").trim();
   const pareil = ville.trim().localeCompare(gouvernorat.trim(), "fr", { sensitivity: "base" }) === 0;
   return pareil ? ville.trim() : `${ville.trim()}, ${gouvernorat}`;
 }

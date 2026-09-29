@@ -31,7 +31,7 @@ export default async function Commande({ params }: { params: Promise<{ boutique:
     <Gabarit className="enveloppe flex-1 tunnel-page">
       <header className="tunnel-tete">
         <h1>{t.commande.titre}</h1>
-        <p className="legende">{t.commande.rassurance}</p>
+        <p className="legende">{cadre.retrait ? t.commande.rassuranceRetrait : t.commande.rassurance}</p>
       </header>
       <Tunnel
         gabarit={cadre.theme.code}
@@ -42,6 +42,7 @@ export default async function Commande({ params }: { params: Promise<{ boutique:
         cod={cadre.livraison.cod}
         gouvernorats={(gouvernorats ?? []).map((g) => ({ code: g.code as string, nom: g.nom_fr as string }))}
         retractationJours={identiteLegale(cadre).retractationJours}
+        retrait={cadre.retrait}
       />
     </Gabarit>
   );

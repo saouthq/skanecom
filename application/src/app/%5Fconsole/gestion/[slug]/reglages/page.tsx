@@ -97,6 +97,8 @@ export default async function Reglages({
   const gouvParCode = new Map(e.gouvernorats.map((g) => [g.code, g.nom]));
   const sansZone = e.gouvernorats.filter((g) => !g.zone_id).length;
   const konnect = r.get("paiement.konnect_actif");
+  const retraitActif = Boolean(r.get("retrait.adresse")?.module_actif);
+  const retraitIncomplet = retraitActif && (!String(v("retrait.adresse") ?? "").trim() || !String(v("retrait.ville") ?? "").trim());
   const maintenant = new Date();
   const prefixe = String(v("commande.prefixe_numero") ?? "");
   const manquants = CHAMPS_LEGAUX.filter((c) => !String(v(c.cle) ?? "").trim()).map((c) => c.libelle);
@@ -301,6 +303,50 @@ export default async function Reglages({
               </form>
             </section>
 
+            {/* ---------------- Retrait en magasin (module) ---------------- */}
+            {retraitActif ? (
+              <Section id="retrait" icone="boutique" titre="Retrait en magasin"
+                description="L'acheteur commande en ligne et vient chercher sa commande au comptoir : gratuit, payé au retrait.">
+                <form action={action} method="post">
+                  <input type="hidden" name="section" value="retrait" />
+                  <fieldset className="pile rg-corps" disabled={!modifie}>
+                    {retraitIncomplet ? (
+                      <p className="message rg-manque" role="note">
+                        Sans l&apos;adresse et la ville du magasin, la vitrine ne propose pas encore le retrait.
+                      </p>
+                    ) : null}
+                    <div className="grille-champs">
+                      <div className="champ">
+                        <label htmlFor="retrait_adresse">Adresse du magasin</label>
+                        <input id="retrait_adresse" name="retrait.adresse" defaultValue={String(v("retrait.adresse") ?? "")} maxLength={200}
+                          placeholder="Ex. Route de Tunis, km 3" />
+                      </div>
+                      <div className="champ">
+                        <label htmlFor="retrait_ville">Ville</label>
+                        <input id="retrait_ville" name="retrait.ville" defaultValue={String(v("retrait.ville") ?? "")} maxLength={80} placeholder="Ex. Sfax" />
+                      </div>
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="retrait_horaires">Horaires d&apos;ouverture</label>
+                      <input id="retrait_horaires" name="retrait.horaires" defaultValue={String(v("retrait.horaires") ?? "")} maxLength={200}
+                        placeholder="Du lundi au samedi, de 8 h à 18 h" />
+                      <span className="aide">Affichés à la commande et sur sa page de suivi.</span>
+                    </div>
+                    <div className="champ rg-court">
+                      <label htmlFor="retrait_delai">Prête en</label>
+                      <span className="rg-unite">
+                        <input id="retrait_delai" name="retrait.delai_heures" type="number" min={1} max={720} inputMode="numeric"
+                          defaultValue={Number(v("retrait.delai_heures") ?? 24)} />
+                        <span>heures</span>
+                      </span>
+                      <span className="aide">Le temps de préparer une commande confirmée. L&apos;acheteur lit « prête sous 2 heures ».</span>
+                    </div>
+                  </fieldset>
+                  <Pied modifie={modifie} />
+                </form>
+              </Section>
+            ) : null}
+
             {/* ---------------- Paiement ---------------- */}
             <Section id="paiement" icone="billet" titre="Paiement" description="Comment l'acheteur règle sa commande.">
               <form action={action} method="post">
@@ -471,6 +517,7 @@ export default async function Reglages({
                   ["livraison", "Livraison", "camion"],
                   ["zones", "Zones de livraison", "lieu"],
                   ["gouvernorats", "Gouvernorats", "domaine"],
+                  ...(retraitActif ? [["retrait", "Retrait en magasin", "boutique"]] : []),
                   ["paiement", "Paiement", "billet"],
                   ["vitrine", "Vitrine et contact", "boutique"],
                   ["legal", "Informations légales", "fichier"],

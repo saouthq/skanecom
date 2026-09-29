@@ -52,7 +52,7 @@ async function remplitAdresse(page, { nom, adresse, ville, gouvernorat }) {
   await tape(page, adresse);
   await clic(page, page.getByLabel("Ville ou délégation"));
   await tape(page, ville);
-  await page.getByLabel("Gouvernorat").selectOption({ label: gouvernorat });
+  await page.getByLabel("Gouvernorat", { exact: true }).selectOption({ label: gouvernorat });
   await page.locator(".tunnel-livraison").waitFor({ timeout: 8000 });
 }
 
@@ -76,6 +76,7 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
     await page.locator(".tunnel-ligne").first().waitFor();
     await page.locator(".tunnel-totaux").waitFor();
     verifie(await page.evaluate(() => window.scrollY) === 0, "la page de commande s'ouvre en haut");
+    verifie((await page.locator(".tunnel-choix").count()) === 0, "sans le module retrait en magasin : pas de choix, la livraison à domicile");
   });
 
   await etape("la page de commande : récapitulatif relu en base", async () => {
@@ -233,23 +234,45 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await capture(page, "quincaillerie-commande-vide");
   });
 
-  await etape("numéro, adresse à Sfax, confirmation", async () => {
+  await etape("numéro, adresse à Sfax, puis le retrait en magasin", async () => {
     await confirmeNumero(page, "98765432", "98 765 432");
+    const choix = page.locator(".tunnel-choix");
+    verifie((await choix.count()) === 1 && (await choix.locator('input[value="domicile"]').isChecked()),
+      "le retrait est proposé ; la livraison à domicile reste le choix par défaut");
+    verifie((await choix.innerText()).includes("Au magasin de Sfax. Prête sous 2 heures"), `le magasin et son temps de préparation : « ${(await choix.locator(".tunnel-mode").nth(1).innerText()).replace(/\s+/g, " ")} »`);
     await remplitAdresse(page, { nom: "Karim Trabelsi", adresse: "Route de Gabès km 4", ville: "Sfax", gouvernorat: "Sfax" });
     note("INFO  ", `livraison : ${(await page.locator(".tunnel-livraison").innerText()).replace(/\s+/g, " ")}`);
     await capture(page, "quincaillerie-commande-remplie");
+    const totalDomicile = await page.locator(".tunnel-bouton").innerText();
+
+    // Finalement, il passe au comptoir.
+    await clic(page, choix.getByText("Retrait en magasin"));
+    await page.waitForFunction(() => document.querySelector(".tunnel-totaux")?.textContent?.includes("Gratuit"), null, { timeout: 5000 }).catch(() => {});
+    const sousTotal = (await page.locator(".tunnel-totaux > div").first().innerText()).replace(/\D/g, "");
+    const totalRetrait = await page.locator(".tunnel-bouton").innerText();
+    verifie((await page.locator(`input[autocomplete="address-line1"]`).count()) === 0 && (await page.locator(".tunnel-magasin").innerText()).includes("Route de Tunis, km 3"),
+      "plus d'adresse à saisir : le magasin à la place, avec ses horaires");
+    verifie((await page.locator(".tunnel-totaux").innerText()).includes("Retrait en magasin") && totalRetrait.replace(/\D/g, "") === sousTotal && totalRetrait !== totalDomicile,
+      `le récapitulatif relu en base : retrait gratuit, total ${totalRetrait.replace(/\s+/g, " ")} (au lieu de ${totalDomicile.replace(/\s+/g, " ")})`);
+    verifie((await page.locator(".tunnel-mode").last().innerText()).includes("au comptoir"), "le paiement se fait au comptoir");
+    await capture(page, "quincaillerie-commande-retrait", true);
     await clic(page, page.locator(".tunnel-conditions input[type=checkbox]"));
     await clic(page, page.locator(".tunnel-bouton"));
     await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
     await page.locator(".merci").waitFor();
     await pause(400);
-    verifie((await page.locator(".merci").innerText()).includes(`QDS-${annee}-00001`), "numéro de commande de la quincaillerie (son préfixe, son compteur)");
+    const merci = await page.locator(".merci").innerText();
+    verifie(merci.includes(`QDS-${annee}-00001`), "numéro de commande de la quincaillerie (son préfixe, son compteur)");
+    verifie(merci.includes("À retirer au magasin") && merci.includes("Route de Tunis, km 3") && merci.includes("Retrait et paiement"),
+      "la page de fin : où la retirer, et le paiement au comptoir");
     await capture(page, "quincaillerie-merci");
   });
 
   await etape("les conditions de vente, gabarit technique", async () => {
     await page.goto(Q + "/conditions-de-vente", { waitUntil: "networkidle" });
     verifie((await page.locator("main").innerText()).includes("offerte à partir de 500,000"), "le seuil de livraison offerte de la quincaillerie");
+    verifie((await page.locator("main").innerText()).includes("retirer sa commande au magasin, sans frais : Route de Tunis, km 3, Sfax"),
+      "et le retrait en magasin, avec son adresse");
     await capture(page, "quincaillerie-conditions-de-vente");
   });
   await ctx.close();

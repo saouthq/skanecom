@@ -559,3 +559,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .cl-defaut { margin-inline-start: .5rem; vertical-align: 1px; }
 .bo-client-depuis { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .bo-client-depuis .lien { display: inline-flex; align-items: center; gap: .25rem; font-weight: 500; }
+
+/* Un nombre et son unité (« 2 heures »). */
+.rg-unite { display: inline-flex; align-items: center; gap: .5rem; }
+.rg-unite > span { font-size: .875rem; color: var(--ui-texte-2); }

@@ -67,8 +67,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 /** Ce qui rassure, ligne à ligne — chaque ligne vient d'un réglage réel. */
 function rassurances(cadre: Cadre) {
   return [
-    cadre.modules.includes("retrait_magasin")
-      ? { cle: "retrait", icone: <Magasin />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte }
+    cadre.retrait
+      ? { cle: "retrait", icone: <Magasin />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) }
       : null,
     cadre.livraison.delai ? { cle: "livraison", icone: <Camion />, titre: cadre.livraison.delai, texte: cadre.livraison.frais ?? "" } : null,
     cadre.livraison.cod

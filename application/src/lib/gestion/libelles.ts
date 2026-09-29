@@ -25,6 +25,18 @@ export const LIBELLES_STATUT: Record<string, string> = {
   annulee: "Annulée",
 };
 
+/** Une commande à retirer en magasin suit le même cycle, sous d'autres
+ *  mots : prête au retrait, retirée, non retirée. */
+const STATUTS_RETRAIT: Record<string, string> = {
+  expediee: "Prête au retrait",
+  livree: "Retirée",
+  refusee: "Non retirée",
+};
+
+export function libelleStatut(statut: string, mode?: string | null): string {
+  return (mode === "retrait" ? STATUTS_RETRAIT[statut] : undefined) ?? LIBELLES_STATUT[statut] ?? statut;
+}
+
 /** Les étapes de la liste, dans l'ordre du travail. */
 export const ETAPES = [
   { cle: "a_confirmer", libelle: "À confirmer", vide: "Aucune commande à confirmer. Les nouvelles commandes arrivent ici." },
@@ -40,6 +52,14 @@ export const LIBELLES_ORIGINE_REFUS: Record<string, string> = {
   client: "Le client a refusé le colis",
   livreur: "Problème du livreur",
   injoignable: "Client injoignable à la livraison",
+  autre: "Autre raison",
+};
+
+/** Pourquoi une commande n'a pas été retirée (même origine en base qu'un
+ *  refus à la livraison, sans le livreur). */
+export const LIBELLES_ORIGINE_NON_RETRAIT: Record<string, string> = {
+  client: "Le client a renoncé",
+  injoignable: "Jamais venu, injoignable",
   autre: "Autre raison",
 };
 
@@ -102,12 +122,38 @@ export function messageConfirmation(c: {
   numero: string;
   totalMillimes: number;
   articles: number;
-  ville: string;
+  ville: string | null;
+  /** La ville du magasin, pour une commande à retirer. */
+  retraitA?: string | null;
 }): string {
+  const articles = `${c.articles} article${c.articles > 1 ? "s" : ""}`;
+  if (c.retraitA) {
+    return (
+      `Bonjour ${c.prenom}, ici ${c.boutique}. Nous avons bien reçu votre commande ${c.numero} ` +
+      `(${articles}, ${formatePrix(c.totalMillimes)} à régler au retrait). ` +
+      `Pouvez-vous nous confirmer que vous viendrez la retirer à notre magasin de ${c.retraitA} ? Merci.`
+    );
+  }
   return (
     `Bonjour ${c.prenom}, ici ${c.boutique}. Nous avons bien reçu votre commande ${c.numero} ` +
-    `(${c.articles} article${c.articles > 1 ? "s" : ""}, ${formatePrix(c.totalMillimes)} à régler à la livraison). ` +
-    `Pouvez-vous nous confirmer la livraison à ${c.ville} ? Merci.`
+    `(${articles}, ${formatePrix(c.totalMillimes)} à régler à la livraison). ` +
+    `Pouvez-vous nous confirmer la livraison à ${c.ville ?? "votre adresse"} ? Merci.`
+  );
+}
+
+/** « Votre commande est prête » : le message WhatsApp d'une commande à
+ *  retirer, une fois préparée. */
+export function messagePrete(c: {
+  prenom: string;
+  boutique: string;
+  numero: string;
+  totalMillimes: number;
+  magasin: { adresse: string; ville: string; horaires: string | null };
+}): string {
+  return (
+    `Bonjour ${c.prenom}, ici ${c.boutique}. Votre commande ${c.numero} est prête : elle vous attend au magasin, ` +
+    `${c.magasin.adresse}, ${c.magasin.ville}${c.magasin.horaires ? ` (${c.magasin.horaires.charAt(0).toLowerCase()}${c.magasin.horaires.slice(1)})` : ""}. ` +
+    `À régler en la retirant : ${formatePrix(c.totalMillimes)}. À bientôt !`
   );
 }
 
