@@ -1,6 +1,6 @@
 # SkanEcom — Reprise du code Maymar et modèle de données multi-boutique (v0)
 
-> Statut : **proposition à valider**. Rédigé le 28/09/2026 à partir de la lecture directe du dépôt `saouthq/maymar`, branche `dev` au 13/08/2026, version v1.9.9.1.
+> Statut : **proposition à valider**. Rédigé le 28/09/2026, mis à jour le 29/09 pour la marque blanche (10 à 50 clients installés par nous). Lecture directe du dépôt `saouthq/maymar`, branche `dev` au 13/08/2026, version v1.9.9.1.
 > Principe : **on ne jette pas le moteur de Maymar, on le rend multi-boutique.** La marque Maymar (logo, palette, ton) reste à Maymar. Sa charte « premium sobre » devient le **premier thème** de SkanEcom.
 
 ---
@@ -43,7 +43,7 @@
 
 | Élément | Décision | Ce qu'on change |
 |---|---|---|
-| Principe des réglages clé/valeur | **Garder** | Clé primaire `(boutique_id, cle)` ; un **catalogue des réglages** au niveau plateforme (définition, type, valeur par défaut, offre minimale requise) |
+| Principe des réglages clé/valeur | **Garder** | Clé primaire `(boutique_id, cle)` ; un **catalogue des réglages** au niveau plateforme (définition, type, valeur par défaut, module concerné) |
 | Prix en millimes (entiers) | **Garder** | Ajouter une `devise` par boutique (TND seul en v1) pour ne pas se fermer la porte |
 | Colonnes `_fr` / `_ar` | **Garder, assouplir** | Une boutique peut être **uniquement en arabe** : `nom_fr NOT NULL` devient la contrainte « au moins une langue, et la langue par défaut de la boutique est remplie » ; index de recherche par langue |
 | Catalogue, variantes, stock, journal | **Garder** | `boutique_id` partout ; unicités **par boutique** (voir §3) |
@@ -87,8 +87,8 @@
    - Correction : la façade applique des limites, les requêtes filtrent toujours par `boutique_id`, avec des index composites `(boutique_id, …)`.
    - Les brouillons restent protégés par la RLS.
 8. **Cache non partitionné.**
-   - `revalidate = 300` sur les pages : en multi-boutique, la clé de cache doit inclure la boutique. Attention, le cache de Workers **n'inclut pas le domaine** : la façade passe l'identifiant de boutique dans `ctx.props` (voir `02-infrastructure.md`, §3.1).
-   - L'invalidation se fait par étiquette `boutique:<id>` (voir `02-infrastructure.md`, §3.1).
+   - `revalidate = 300` sur les pages : en multi-boutique, la clé de cache doit inclure la boutique. Le cache de Workers **n'inclut pas le domaine** : l'application réécrit donc l'adresse en interne avec l'identifiant de la boutique (`/_b/<boutique>/…`, voir `02-infrastructure.md`, §2 et §5.2).
+   - L'invalidation se fait boutique par boutique, quand le commerçant modifie son catalogue.
 9. **Valeurs Maymar en dur dans le front.**
    - 185 mentions de « maymar » dans `src/` (grep du 28/09/2026).
    - `https://maymar.tn` par défaut dans `layout.tsx`, `robots.ts` et `sitemap.ts`.
@@ -98,9 +98,13 @@
     - Sur une route à segment dynamique (`/produit/[slug]`), `revalidate = 300` ne suffit pas : Next.js exige aussi `generateStaticParams`, sans quoi chaque visite interroge la base.
     - Correction : `generateStaticParams` qui renvoie une liste vide (génération à la première visite, puis cache).
     - Les pages qui lisent les filtres dans l'adresse (catalogue, rayon, recherche) restent dynamiques : à repenser dans le thème.
-11. **Images dans Supabase Storage.**
+11. **Catalogue chargé entièrement en mémoire.**
+    - `src/lib/catalogue.ts` charge tout le catalogue publié en une requête, puis filtre et trie en mémoire. Son commentaire le dit : c'est prévu pour « des centaines de références », et au-delà d'environ 1 000 il faut filtrer en SQL.
+    - La quincaillerie et le distributeur d'outillage dépasseront ce seuil.
+    - Correction : filtres, tri et pagination en base, recherche Postgres avec `pg_trgm` (voir `02-infrastructure.md`, §3).
+12. **Images dans Supabase Storage.**
     - Si Supabase tombe, les vitrines perdent leurs photos.
-    - Les images passent sur R2, servies par la façade (voir `02-infrastructure.md`, §2).
+    - Les images passent sur R2, servies par Cloudflare (voir `02-infrastructure.md`, §2).
 
 ---
 
@@ -108,7 +112,7 @@
 
 ### 4.1 Règles de conception
 
-- **Chaque table de boutique porte `boutique_id NOT NULL`.** Aucune requête ne croise deux boutiques. C'est la condition pour déménager une boutique d'une cellule à l'autre (`02-infrastructure.md`, §3.4).
+- **Chaque table de boutique porte `boutique_id NOT NULL`.** Aucune requête ne croise deux boutiques. C'est ce qui garantit l'isolation entre clients, permet d'exporter ou de restaurer une seule boutique, et laisse la porte ouverte à plusieurs bases si un jour on grandit beaucoup (voir l'annexe grande échelle).
 - **Clés étrangères composites.**
   - Chaque table de boutique a `unique (boutique_id, id)`.
   - Les références sont `foreign key (boutique_id, variante_id) references variantes (boutique_id, id)`.
@@ -124,17 +128,16 @@
 
 | Table | Colonnes clés | Rôle |
 |---|---|---|
-| `boutiques` | `id`, `slug`, `nom`, `statut` (essai, active, grace, restreinte, suspendue, fermee), `cellule_id`, `offre_code`, `langue_defaut`, `langues_actives`, `devise`, `profil_juridique`, `matricule_fiscal`, `created_at` | La boutique elle-même |
+| `boutiques` | `id`, `slug`, `nom`, `statut` (en_preparation, active, suspendue, fermee), `langue_defaut`, `langues_actives`, `devise`, `matricule_fiscal`, `created_at` | La boutique d'un client |
 | `domaines` | `hote` (unique), `boutique_id`, `type` (sous_domaine, personnalise), `principal`, `statut_certificat` | Alimente l'annuaire de la façade |
 | `membres` | `boutique_id`, `user_id`, `role` (proprietaire, admin, confirmateur, preparateur, lecture), `invite_par` | Équipe de chaque boutique |
-| `administrateurs` | `user_id`, `role` (support, exploitation, super_admin) | Équipe SkanEcom, tout accès tracé |
-| `offres` | `code`, `nom`, `prix_millimes` par période, `limites` jsonb, `reglages_autorises` jsonb | Une offre = un paquet de réglages et de limites |
-| `reglages_catalogue` | `cle`, `type_valeur`, `defaut`, `offre_minimale`, `public`, `libelle_fr/ar` | Définition des réglages (la table `reglages` de Maymar, promue) |
-| `abonnements` | `boutique_id`, `offre_code`, `periode`, `debut`, `fin`, `statut`, `grace_jusqu_a` | Abonnement prépayé |
-| `factures`, `paiements_abonnement` | Numéro, montants HT/TVA/timbre, retenue, statut TEIF, référence TTN | Facturation conforme |
-| `cellules` | `id`, `projet_ref`, `region`, `statut`, `capacite` | Carte des cellules |
+| `administrateurs` | `user_id`, `role` (support, super_admin) | Skander et son père : accès à la console, tout accès à une boutique est tracé |
+| `reglages_catalogue` | `cle`, `type_valeur`, `defaut`, `module`, `public`, `libelle_fr/ar` | Définition des réglages disponibles pour toutes les boutiques (la table `reglages` de Maymar, promue) |
+| `contrats` | `boutique_id`, `date_debut`, `engagement_mois`, `prix_mise_en_place_millimes`, `prix_mensuel_millimes`, `statut` | Le contrat de service du client ; la facturation est faite par nous (TEIF), pas en libre-service |
+| `factures` | Numéro, montants HT/TVA/timbre, retenue, statut TEIF, référence TTN | Nos factures de mise en place et d'abonnement |
+| `mise_en_place` | `boutique_id`, `etape`, `fait_le`, `par` | Suivi de la liste de mise en place (PRD §7) |
 | `journal_audit` | `acteur`, `boutique_id`, `action`, `cible`, `avant`, `apres`, `ip`, `at` | Traçabilité |
-| `signalements` | `boutique_id`, `motif`, `statut`, `decision` | Abus, retraits |
+| `modules_actifs` | `boutique_id`, `module`, `actif`, `reglages` | Modules activés par client (prix pro, retrait en magasin, paiement en ligne…) |
 
 ### 4.3 Données de chaque boutique
 
@@ -162,7 +165,7 @@
 
 | Aujourd'hui (Maymar) | Demain (SkanEcom) |
 |---|---|
-| Une boutique, des variables d'environnement | La boutique est **résolue à partir du domaine** par la façade ; l'application reçoit l'identifiant de boutique et de cellule dans `ctx.props`, par liaison de service entre Workers |
+| Une boutique, des variables d'environnement | La boutique est **trouvée à partir du domaine**, puis l'adresse est réécrite en interne avec son identifiant (`/_b/<boutique>/…`) |
 | `revalidate = 300` | Pages en cache à durée longue, **purge par étiquettes** `boutique:<id>`, `produit:<id>` |
 | Jetons `--maymar-*` écrits dans `tokens.css` | Jetons `--theme-*` générés depuis la configuration de thème de la boutique ; thème n°1 = charte Maymar |
 | Accueil écrit en dur (sections Maymar) | Accueil composé de **sections configurables** : bandeau, rayons, produits mis en avant, réassurance, texte, galerie |
@@ -183,7 +186,7 @@
 
 ## 6. Ce que ça implique pour Maymar
 
-- Maymar devient **une boutique sur SkanEcom** (cellule interne, domaine `maymar.tn`), plus un site à part.
+- Maymar devient **une boutique sur SkanEcom** (domaine `maymar.tn`), plus un site à part.
 - Son dépôt `saouthq/maymar` devient une **archive de référence** : charte, maquettes, directions, photos.
 - Son contenu (catalogue, réglages, zones) est migré par un script d'import, qui sert aussi de premier test de l'import CSV/Excel.
 - Les décisions du PRD Maymar deviennent les **réglages par défaut** de SkanEcom :

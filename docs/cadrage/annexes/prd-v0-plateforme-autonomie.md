@@ -1,3 +1,6 @@
+> **ARCHIVÉ le 29/09/2026.** Ce document décrit la première version du projet : une plateforme « type Shopify » où des milliers de commerçants s'inscrivent seuls. Le 29/09, Skander a recentré SkanEcom sur une **boutique en ligne clé en main, en marque blanche**, installée par nous pour 10 à 50 entreprises (voir [`../01-prd.md`](../01-prd.md) et [`../02-infrastructure.md`](../02-infrastructure.md)).
+> On le garde parce qu'il sera utile **le jour où l'on ouvrira l'inscription libre**. Il n'est plus la référence : les liens qu'il contient vers les autres documents renvoient à leur ancienne version.
+
 # SkanEcom — PRD v0
 
 > Statut : **brouillon v0, à valider par Skander**. Rédigé le 28/09/2026.
