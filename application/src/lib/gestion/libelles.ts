@@ -117,7 +117,9 @@ export function messageRefus(indice: string | undefined, message: string): strin
     case "role":
       return "Votre rôle dans l'équipe ne permet pas ce geste.";
     case "change":
-      return `${message}. La fiche est à jour : vérifiez avant de recommencer.`;
+      // Le message de la base nomme le statut technique ; l'équipe, elle,
+      // a besoin de savoir qu'un collègue vient d'agir.
+      return "La commande a changé entre-temps : quelqu'un vient d'agir dessus. La fiche est à jour, vérifiez avant de recommencer.";
     case "commande":
       return "Cette commande n'existe pas dans cette boutique.";
     default:
