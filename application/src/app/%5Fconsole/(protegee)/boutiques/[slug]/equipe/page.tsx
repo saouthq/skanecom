@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { exigeAdmin } from "@/lib/console/session";
-import { dateJournal } from "@/lib/console/libelles";
+import { dateJournal, deNom } from "@/lib/console/libelles";
 import { COOKIE_LIEN, ROLES_EQUIPE, VALIDITE_LIEN, cheminEquipe, lienWhatsAppPartage, messageLien, type LienRemis, type MembreEquipe } from "@/lib/console/equipe";
 import { boutiqueDe, equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
@@ -91,7 +91,7 @@ export default async function Equipe({ params, searchParams }: {
             <div>
               <h2 id="t-membres">Membres</h2>
               <p>
-                {actifs} {actifs > 1 ? "personnes ont" : "personne a"} accès au backoffice de {boutique.nom}. Chacune a son compte ; vous ne
+                {actifs} {actifs > 1 ? "personnes ont" : "personne a"} accès au backoffice {deNom(boutique.nom)}. Chacune a son compte ; vous ne
                 connaissez jamais son mot de passe.
               </p>
             </div>

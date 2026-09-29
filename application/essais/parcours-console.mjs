@@ -749,6 +749,134 @@ await etape("mot de passe oublié : un nouveau lien, le même compte", async () 
 });
 
 /* ------------------------------------------------------------------ */
+console.log("\n== 3 bis. Le support : entrer dans le backoffice du client ==");
+
+const MOTIF_REGARDER = "Le propriétaire ne trouve pas où régler ses frais de livraison";
+const MOTIF_AGIR = "Débloquer une commande restée en attente";
+
+await etape("la page Support de la boutique", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await clic(page, page.getByRole("link", { name: "Support" }));
+  await page.waitForURL(new RegExp(`/boutiques/${SLUG}/support$`));
+  await page.waitForLoadState("networkidle");
+  verifie((await page.locator("#t-sp-entrer").innerText()).includes("Entrer dans son backoffice"), "un formulaire pour entrer dans son backoffice");
+  verifie((await page.locator("section:has(#t-sp-historique)").innerText()).includes("Personne de SkanEcom n'est encore entré"),
+    "personne n'y est encore entré");
+  verifie(await page.locator("input[name=role][value=lecture]").isChecked(), "« Regarder » est proposé d'abord");
+});
+
+await etape("sans motif, ou pour devenir propriétaire : refusé par la base", async () => {
+  const erreurDe = (r) => new URL(r.location, CONSOLE).searchParams.get("erreur") ?? "";
+  const r = await brut(ctx, "POST", `/boutiques/${SLUG}/support/ouvrir`, { entetes: { origin: CONSOLE }, formulaire: { motif: "ok", role: "lecture", minutes: "60" } });
+  verifie(r.status === 303 && erreurDe(r).includes("pourquoi vous entrez"), `motif trop court : « ${erreurDe(r)} »`);
+  const r2 = await brut(ctx, "POST", `/boutiques/${SLUG}/support/ouvrir`, { entetes: { origin: CONSOLE }, formulaire: { motif: MOTIF_REGARDER, role: "proprietaire", minutes: "60" } });
+  verifie(r2.status === 303 && erreurDe(r2).includes("regarder, ou agir"), "mode « propriétaire » posté à la main : refusé");
+  const r3 = await brut(ctx, "POST", `/boutiques/${SLUG}/support/ouvrir`, { entetes: { origin: CONSOLE }, formulaire: { motif: MOTIF_REGARDER, role: "lecture", minutes: "1440" } });
+  verifie(r3.status === 303 && erreurDe(r3).includes("15 minutes à 4 heures"), "une journée entière : refusée");
+});
+
+await etape("regarder : le backoffice du client, avec son bandeau", async () => {
+  await page.locator("#sp-motif").fill(MOTIF_REGARDER);
+  await page.locator("#sp-duree").selectOption("60");
+  await clic(page, page.getByRole("button", { name: "Entrer dans son backoffice" }));
+  await page.waitForURL(new RegExp(`/gestion/${SLUG}$`));
+  await page.waitForLoadState("networkidle");
+  const bandeau = await page.locator(".sp-bandeau").innerText();
+  verifie(bandeau.includes("Accès support") && bandeau.includes("regarder seulement") && bandeau.includes(MOTIF_REGARDER),
+    `le bandeau rappelle l'accès : « ${bandeau.replace(/\s+/g, " ").slice(0, 110)}… »`);
+  verifie(/jusqu.à \d{2}:\d{2}/.test(bandeau), "et son heure de fin");
+  verifie((await page.locator(".app-cote .app-compte-role").innerText()).includes("Support"), "le compte se présente comme le support");
+  verifie(await page.getByRole("link", { name: "Équipe" }).count() === 0, "en mode « regarder », pas d'onglet Équipe");
+  await capture(page, "backoffice-support-regarder", true);
+  await page.goto(`${CONSOLE}/gestion/${SLUG}/reglages`, { waitUntil: "networkidle" });
+  verifie((await page.locator(".message", { hasText: "Lecture seule" }).count()) === 1, "les réglages se lisent, sans se changer");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${CONSOLE}/gestion/${SLUG}`, { waitUntil: "networkidle" });
+  const boite = await page.locator(".sp-bandeau").boundingBox();
+  verifie(boite && boite.width <= 390 && boite.x >= 0, `sur téléphone, le bandeau tient dans l'écran (${Math.round(boite?.width ?? 0)} px)`);
+  await capture(page, "backoffice-support-telephone");
+  await page.setViewportSize({ width: 1366, height: 860 });
+});
+
+await etape("fermer l'accès depuis le bandeau : retour à la console, porte refermée", async () => {
+  await page.goto(`${CONSOLE}/gestion/${SLUG}`, { waitUntil: "networkidle" });
+  await clic(page, page.locator(".sp-bandeau").getByRole("button", { name: "Fermer l'accès" }));
+  await page.waitForURL(new RegExp(`/boutiques/${SLUG}/support\\?ok=`));
+  verifie((await page.getByRole("status").innerText()).includes("Accès support fermé"), `« ${await page.getByRole("status").innerText()} »`);
+  const r = await brut(ctx, "GET", `/gestion/${SLUG}`);
+  verifie((r.status === 307 || r.status === 303) && r.location.includes(`/boutiques/${SLUG}/support?fin=1`),
+    `le backoffice ne s'ouvre plus : ${r.status} → ${r.location}`);
+  verifie((await page.locator(".sp-acces").first().innerText()).includes("fermé à"), "l'accès passe dans l'historique, fermé");
+});
+
+await etape("agir comme un administrateur, et ce que voit le propriétaire", async () => {
+  await page.locator("#sp-motif").fill(MOTIF_AGIR);
+  await clic(page, page.locator(".choix-carte", { hasText: "Agir comme un administrateur" }));
+  await page.locator("#sp-duree").selectOption("30");
+  await clic(page, page.getByRole("button", { name: "Entrer dans son backoffice" }));
+  await page.waitForURL(new RegExp(`/gestion/${SLUG}$`));
+  verifie((await page.locator(".sp-bandeau").innerText()).includes("agir comme administrateur"), "le bandeau dit le mode");
+  await clic(page, page.locator(".app-cote").getByRole("link", { name: "Équipe" }));
+  await page.waitForURL(new RegExp(`/gestion/${SLUG}/equipe$`));
+  await page.waitForLoadState("networkidle");
+  verifie((await page.locator(".message", { hasText: "le propriétaire de la boutique gère son équipe" }).count()) === 1,
+    "l'équipe se voit, sans se changer : elle reste au propriétaire");
+  const acces = await page.locator("section:has(#t-support) .sp-acces").allInnerTexts();
+  verifie(acces.length === 2 && acces[0].includes(MOTIF_AGIR) && acces[1].includes(MOTIF_REGARDER) && acces[0].includes(ADMIN.email),
+    "dans son backoffice, le propriétaire lit qui est entré, dans quel mode et pourquoi");
+  await page.locator("section:has(#t-support)").scrollIntoViewIfNeeded();
+  await capture(page, "backoffice-equipe-support");
+});
+
+await etape("la console montre l'accès ouvert", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/support`, { waitUntil: "networkidle" });
+  const carte = await page.locator(".sp-actif").innerText();
+  verifie(carte.includes("Vous êtes dans le backoffice") && carte.includes("Agir comme un administrateur") && /encore \d+ min/.test(carte),
+    `« ${carte.replace(/\s+/g, " ").slice(0, 100)}… »`);
+  verifie((await page.locator("#t-sp-entrer").innerText()).includes("Changer de mode ou prolonger"), "le formulaire propose de changer de mode ou de prolonger");
+  await capture(page, "console-support", true);
+});
+
+await etape("le propriétaire ferme lui-même l'accès du support", async () => {
+  const bureau = await navigateur.newContext({ viewport: { width: 1366, height: 860 }, locale: "fr-FR" });
+  const p = await bureau.newPage();
+  t.espion(p, "proprietaire", attendue);
+  await p.goto(CONSOLE + "/connexion", { waitUntil: "networkidle" });
+  await p.locator("#email").fill(GERANT);
+  await p.locator("#mot_de_passe").fill("la valise est prête");
+  await p.keyboard.press("Enter");
+  await p.waitForURL(/double-authentification/);
+  await p.waitForLoadState("networkidle");
+  const secretGerant = (await p.locator("[data-secret-totp]").textContent()).trim();
+  await clic(p, p.locator("#code"));
+  await tape(p, totp(secretGerant));
+  await p.keyboard.press("Enter");
+  await p.waitForURL(new RegExp(`/gestion/${SLUG}`));
+  verifie(await p.locator(".sp-bandeau").count() === 0, "chez lui, pas de bandeau : il est de l'équipe");
+  await p.goto(`${CONSOLE}/gestion/${SLUG}/equipe`, { waitUntil: "networkidle" });
+  const ouvert = p.locator("section:has(#t-support) .sp-acces[data-ouvert]");
+  verifie((await ouvert.innerText()).includes(MOTIF_AGIR), "il voit l'accès du support ouvert, avec son motif");
+  await ouvert.scrollIntoViewIfNeeded();
+  await capture(p, "backoffice-proprietaire-support");
+  await clic(p, ouvert.getByRole("button", { name: "Fermer cet accès" }));
+  await p.waitForURL(/ok=/);
+  verifie((await p.getByRole("status").innerText()).includes("SkanEcom n'est plus dans votre backoffice"), `« ${await p.getByRole("status").innerText()} »`);
+  verifie(await p.locator("section:has(#t-support) .sp-acces[data-ouvert]").count() === 0, "l'accès passe dans l'historique");
+  await bureau.close();
+
+  const r = await brut(ctx, "GET", `/gestion/${SLUG}`);
+  verifie((r.status === 307 || r.status === 303) && r.location.includes("/support?fin=1"), `le support est dehors aussitôt : ${r.status} → ${r.location}`);
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/support`, { waitUntil: "networkidle" });
+  verifie(await page.locator(".sp-actif").count() === 0, "dans la console, la carte de l'accès ouvert disparaît");
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  verifie(journal.filter((l) => l.includes("Accès support ouvert")).length === 2
+    && journal.filter((l) => l.includes("Accès support fermé")).length === 2
+    && journal.some((l) => l.includes("Accès support fermé") && l.includes(GERANT)),
+  "le journal garde les deux ouvertures et les deux fermetures, dont celle du propriétaire");
+});
+
+/* ------------------------------------------------------------------ */
 console.log("\n== 4. Les portes ==");
 
 await etape("un formulaire posté depuis un autre site est refusé", async () => {

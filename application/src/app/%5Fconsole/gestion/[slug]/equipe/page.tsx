@@ -5,10 +5,12 @@ import { BoutonCopier } from "@/components/console/BoutonCopier";
 import { EnTetePage, initiales } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
-import { dateJournal } from "@/lib/console/libelles";
+import { dateJournal, deNom } from "@/lib/console/libelles";
 import { COOKIE_LIEN, ROLES_EQUIPE, VALIDITE_LIEN, lienWhatsAppPartage, messageLien } from "@/lib/console/equipe";
 import { cheminEquipeBoutique, lienEncoreUtile, lienRemis, type MembreBoutique } from "@/lib/gestion/equipe";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
+import type { AccesSupport } from "@/lib/console/support";
+import { ListeAcces } from "@/components/console/AccesSupport";
 
 export const metadata: Metadata = { title: "Équipe" };
 
@@ -22,7 +24,8 @@ function etatDe(m: MembreBoutique): { texte: string; classe: string } {
    L'ÉQUIPE DE LA BOUTIQUE (B7) — le propriétaire invite ses employés, change
    leur rôle, retire ou rend un accès, remet un lien (invitation expirée, mot
    de passe oublié). L'administrateur voit l'équipe sans la changer ; les
-   autres rôles n'ont pas cette page.
+   autres rôles n'ont pas cette page. En bas, les accès du support SkanEcom
+   (C7) : qui est entré, quand, dans quel mode et pourquoi.
    ========================================================================== */
 export default async function EquipeBoutique({
   params,
@@ -37,9 +40,14 @@ export default async function EquipeBoutique({
   const gere = boutique.role === "proprietaire";
 
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_equipe", { p_boutique_id: boutique.boutique_id });
+  const [{ data, error }, { data: dataSupport, error: erreurSupport }] = await Promise.all([
+    sb.rpc("gestion_equipe", { p_boutique_id: boutique.boutique_id }),
+    sb.rpc("gestion_acces_support", { p_boutique_id: boutique.boutique_id }),
+  ]);
   if (error) throw new Error(`Équipe illisible : ${error.message}`);
+  if (erreurSupport) throw new Error(`Accès du support illisibles : ${erreurSupport.message}`);
   const equipe = (data ?? []) as MembreBoutique[];
+  const support = (dataSupport ?? []) as AccesSupport[];
   const lien = gere ? lienEncoreUtile(lienRemis((await cookies()).get(COOKIE_LIEN)?.value), equipe) : null;
   const actifs = equipe.filter((m) => m.actif).length;
   const action = cheminEquipeBoutique(slug);
@@ -48,7 +56,7 @@ export default async function EquipeBoutique({
     <>
       <EnTetePage
         titre="Équipe"
-        description={`${actifs} ${actifs > 1 ? "personnes ont" : "personne a"} accès au backoffice de ${boutique.nom}. Chacune a son compte : personne ne connaît le mot de passe d'un autre.`}
+        description={`${actifs} ${actifs > 1 ? "personnes ont" : "personne a"} accès au backoffice ${deNom(boutique.nom)}. Chacune a son compte : personne ne connaît le mot de passe d'un autre.`}
       />
 
       <div className="pile">
@@ -187,6 +195,20 @@ export default async function EquipeBoutique({
             </section>
           ) : null}
         </div>
+
+        <section className="carte" aria-labelledby="t-support">
+          <div className="carte-tete">
+            <div>
+              <h2 id="t-support" className="carte-titre-icone"><Icone nom="support" /> Le support SkanEcom</h2>
+              <p>
+                {support.length === 0
+                  ? "Personne de SkanEcom n'est entré dans votre backoffice."
+                  : "Quand vous faites appel à SkanEcom, son équipe peut entrer ici le temps de vous aider : avec un motif, pour une durée limitée, et chacun de ses gestes porte son nom."}
+              </p>
+            </div>
+          </div>
+          {support.length ? <ListeAcces acces={support} maintenant={new Date()} fermer={gere ? `${action}/support` : undefined} /> : null}
+        </section>
       </div>
     </>
   );

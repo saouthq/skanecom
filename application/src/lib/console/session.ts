@@ -22,6 +22,11 @@ import { clientService } from "./service";
       boutique (PRD B7) ; un confirmateur, un préparateur ou un lecteur
       entre avec son mot de passe.
    Un compte qui n'est ni l'un ni l'autre est refusé (/refuse).
+
+   L'ACCÈS SUPPORT (C7) : un administrateur de la plateforme entre dans le
+   backoffice d'une boutique le temps d'un accès ouvert depuis la console
+   (mes_acces le rend avec son échéance et son motif), toujours en double
+   authentification ; échu ou fermé, il est renvoyé à la console.
    ========================================================================== */
 
 export async function clientSession() {
@@ -79,7 +84,16 @@ export async function exigeAdmin(): Promise<{ user: User; role: string }> {
    ------------------------------------------------------------------------- */
 
 export type Role = "proprietaire" | "admin" | "confirmateur" | "preparateur" | "lecture";
-export type Membre = { boutique_id: string; slug: string; nom: string; statut: string; role: Role };
+export type Membre = {
+  boutique_id: string;
+  slug: string;
+  nom: string;
+  statut: string;
+  role: Role;
+  /** Un accès support (C7) : son échéance et son motif ; null pour l'équipe. */
+  support_jusqu_a: string | null;
+  support_motif: string | null;
+};
 
 /** Les rôles qui exigent la double authentification pour entrer. */
 const ROLES_AAL2: Role[] = ["proprietaire", "admin"];
@@ -100,7 +114,7 @@ export async function accesEquipe(): Promise<AccesEquipe> {
   const boutiques = (lignes ?? []) as Membre[];
   if (boutiques.length === 0) return { etat: "aucune", user };
 
-  if (boutiques.some((b) => ROLES_AAL2.includes(b.role))) {
+  if (boutiques.some((b) => ROLES_AAL2.includes(b.role) || b.support_jusqu_a)) {
     const { data: niveau } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
     if (niveau?.currentLevel !== "aal2") return { etat: "aal1", user, boutiques };
   }
@@ -113,9 +127,19 @@ export async function accesEquipe(): Promise<AccesEquipe> {
 export async function exigeMembre(slug: string): Promise<{ user: User; boutique: Membre; boutiques: Membre[] }> {
   const a = await accesEquipe();
   if (a.etat === "anonyme") redirect("/connexion");
-  if (a.etat === "aucune") redirect("/refuse");
   if (a.etat === "aal1") redirect("/double-authentification");
-  const boutique = a.boutiques.find((b) => b.slug === slug);
-  if (!boutique) notFound();
-  return { user: a.user, boutique, boutiques: a.boutiques };
+  const boutique = a.etat === "ok" ? a.boutiques.find((b) => b.slug === slug) : undefined;
+  if (!boutique) {
+    // Un administrateur de la plateforme dont l'accès support a pris fin
+    // retrouve la page Support de la boutique dans la console.
+    if (await estAdministrateur(a.user.id)) redirect(`/boutiques/${encodeURIComponent(slug)}/support?fin=1`);
+    if (a.etat === "aucune") redirect("/refuse");
+    notFound();
+  }
+  return { user: a.user, boutique, boutiques: a.etat === "ok" ? a.boutiques : [] };
+}
+
+export async function estAdministrateur(userId: string): Promise<boolean> {
+  const { data } = await clientService().rpc("console_administrateur", { p_user_id: userId });
+  return Boolean(data);
 }

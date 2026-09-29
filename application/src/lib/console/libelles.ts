@@ -29,6 +29,13 @@ export function adresseVitrine(hote: string, hoteRequete: string | null): string
   return `${local ? "http" : "https"}://${hote}${local ? port : ""}`;
 }
 
+/** « de Maymar », « d'Outillage Pro » : la préposition devant un nom de
+ *  boutique, élidée devant une voyelle (le h est laissé tel quel : une
+ *  marque en h aspiré ne s'élide pas). */
+export function deNom(nom: string): string {
+  return /^[aeiouyàâäéèêëîïôöùûüœæ]/i.test(nom.trim()) ? `d'${nom}` : `de ${nom}`;
+}
+
 /** Une date de journal, à l'heure de Tunis. */
 export function dateJournal(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Africa/Tunis" }).format(new Date(iso));

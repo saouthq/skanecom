@@ -2,6 +2,8 @@ import { exigeMembre } from "@/lib/console/session";
 import { Coquille } from "@/components/console/Coquille";
 import { CompteurCommandes } from "@/components/console/Veille";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
+import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
+import { BandeauSupport } from "@/components/console/AccesSupport";
 
 /* ============================================================================
    LE BACKOFFICE D'UNE BOUTIQUE — pour son équipe (PRD §6.2), sur téléphone
@@ -11,6 +13,7 @@ import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
    Ce layout vérifie le membre pour poser la coquille ; chaque page et chaque
    gestionnaire le revérifient (une navigation côté client peut ne rendre
    que la page), et la base, elle, revérifie le rôle à chaque geste.
+   Pendant un accès support (C7), un bandeau le rappelle en tête de page.
    ========================================================================== */
 export default async function BackofficeBoutique({
   children,
@@ -47,7 +50,12 @@ export default async function BackofficeBoutique({
         },
       ]}
       email={user.email ?? ""}
-      role={LIBELLES_ROLE[boutique.role] ?? boutique.role}
+      role={boutique.support_jusqu_a
+        ? `Support · ${MODES_SUPPORT[boutique.role as ModeSupport]?.court ?? boutique.role}`
+        : (LIBELLES_ROLE[boutique.role] ?? boutique.role)}
+      bandeau={boutique.support_jusqu_a ? (
+        <BandeauSupport slug={slug} mode={boutique.role as ModeSupport} jusqua={boutique.support_jusqu_a} motif={boutique.support_motif} />
+      ) : undefined}
     >
       {children}
     </Coquille>

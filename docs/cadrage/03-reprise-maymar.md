@@ -265,6 +265,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis la liste de mise en place** (migration 24, `20260929102300_console_mise_en_place.sql`, 16 tests dans `supabase/tests/25_mise_en_place.sql`) : `plateforme.mise_en_place` (les étapes cochées à la main : recueil, commande test, formation), `console_mise_en_place(boutique)` (les dix étapes, constatées ou cochées, datées), `console_avancements()` et `console_marquer_etape(acteur, boutique, étape, faite)`, tracé au journal.
 
+**Puis l'accès support** (migration 25, `20260929102400_console_support.sql`, 35 tests dans `supabase/tests/26_support.sql`) : `plateforme.acces_support` (titulaire, mode `lecture` ou `admin`, motif, échéance, fermeture ; au plus un accès non refermé par administrateur et par boutique) ; `private.supports_ouverts()` (accès ouverts de l'utilisateur connecté, en aal2, titulaire toujours administrateur), repris par `private.est_membre` et `private.mes_boutiques` ; `mes_acces()` rend aussi les accès support (échéance, motif) ; `console_ouvrir_support`, `console_fermer_support`, `console_acces_support` ; `gestion_acces_support` et `gestion_fermer_support` pour le propriétaire. Tracé au journal (`support.ouvert`, `support.ferme`).
+
 **Pas encore construit**, et prévu :
-- avec la console : `contrats`, `factures`, `mise_en_place` ;
+- avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

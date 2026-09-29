@@ -264,6 +264,19 @@ const TRACES = {
       <path d="m9 15 2 2 4-4" />
     </>
   ),
+  oeil: (
+    <>
+      <path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  support: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3.5" />
+      <path d="m5.64 5.64 3.89 3.89M14.47 9.53l3.89-3.89M14.47 14.47l3.89 3.89M9.53 14.47l-3.89 3.89" />
+    </>
+  ),
 } as const;
 
 export type NomIcone = keyof typeof TRACES;

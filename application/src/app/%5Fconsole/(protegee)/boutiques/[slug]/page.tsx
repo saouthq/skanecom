@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { REGLES, type Emplacement } from "@/lib/console/images-marque";
 import { ETAPES_MISE_EN_PLACE, type CleEtape, type MiseEnPlace as DonneesMiseEnPlace } from "@/lib/console/mise-en-place";
 import { clientService } from "@/lib/console/service";
+import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
@@ -34,6 +35,8 @@ const ACTIONS: Record<string, string> = {
   "equipe.ajouter": "Membre invité",
   "equipe.modifier": "Accès modifié",
   "equipe.lien": "Lien d'accès remis",
+  "support.ouvert": "Accès support ouvert",
+  "support.ferme": "Accès support fermé",
 };
 
 const CERTIFICAT: Record<string, { texte: string; classe: string }> = {
@@ -140,7 +143,8 @@ export default async function FicheBoutique({ params, searchParams }: {
                         <td className="discret">{j.action === "boutique.statut" && j.cible ? (LIBELLES_STATUT[j.cible] ?? j.cible)
                           : j.action === "theme.image" && j.cible ? (REGLES[j.cible as Emplacement]?.titre ?? j.cible)
                           : j.action.startsWith("module.") && j.cible ? (LIBELLES_MODULES[j.cible] ?? j.cible)
-                          : j.action.startsWith("mise_en_place.") && j.cible ? (ETAPES_MISE_EN_PLACE[j.cible as CleEtape]?.titre ?? j.cible) : (j.cible ?? "")}</td>
+                          : j.action.startsWith("mise_en_place.") && j.cible ? (ETAPES_MISE_EN_PLACE[j.cible as CleEtape]?.titre ?? j.cible)
+                          : j.action.startsWith("support.") && j.cible ? (MODES_SUPPORT[j.cible as ModeSupport]?.titre ?? j.cible) : (j.cible ?? "")}</td>
                         <td>
                           {j.acteur ? (
                             <span className="inline-flex items-center gap-2 whitespace-nowrap">

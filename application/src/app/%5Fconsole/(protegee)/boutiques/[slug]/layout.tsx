@@ -3,14 +3,14 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
-import { LIBELLES_STATUT, adresseVitrine } from "@/lib/console/libelles";
+import { LIBELLES_STATUT, adresseVitrine, deNom } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { Icone } from "@/components/console/Icone";
 import { Onglets } from "@/components/console/Onglets";
 
 /* L'en-tête commun des pages d'une boutique dans la console : son nom, son
    état, sa vitrine, et les onglets (vue d'ensemble, équipe, marque,
-   modules, catalogue). La lecture se fait avec la clé service_role : l'administrateur
+   modules, catalogue, support). La lecture se fait avec la clé service_role : l'administrateur
    est revérifié ici aussi. */
 export default async function Boutique({ children, params }: {
   children: React.ReactNode;
@@ -76,13 +76,14 @@ export default async function Boutique({ children, params }: {
         </div>
       </div>
       <Onglets
-        libelle={`Pages de ${b.nom}`}
+        libelle={`Pages ${deNom(b.nom)}`}
         onglets={[
           { href: base, libelle: "Vue d'ensemble", icone: "apercu", exact: true },
           { href: `${base}/equipe`, libelle: "Équipe", icone: "equipe", compte: actifs },
           { href: `${base}/marque`, libelle: "Marque", icone: "marque" },
           { href: `${base}/modules`, libelle: "Modules", icone: "modules", compte: modulesActifs },
           { href: `${base}/import`, libelle: "Catalogue", icone: "importer" },
+          { href: `${base}/support`, libelle: "Support", icone: "support" },
         ]}
       />
       {children}

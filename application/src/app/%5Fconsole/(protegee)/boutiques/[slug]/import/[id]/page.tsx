@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
-import { dateJournal } from "@/lib/console/libelles";
+import { dateJournal, deNom } from "@/lib/console/libelles";
 import { formatePrix } from "@/lib/prix";
 import type { LigneImport } from "@/lib/console/import";
 import { Icone } from "@/components/console/Icone";
@@ -52,7 +52,7 @@ export default async function RapportImport({ params }: { params: Promise<{ slug
       <div className="grid gap-5">
         {imp.statut === "applique" ? (
           <p className="message message-succes" role="status">
-            Import appliqué le {dateJournal(imp.applique_le!)} : le catalogue de {imp.boutique.nom} est à jour.{" "}
+            Import appliqué le {dateJournal(imp.applique_le!)} : le catalogue {deNom(imp.boutique.nom)} est à jour.{" "}
             <Link href={`/boutiques/${slug}`} className="underline">Retour à la boutique</Link>
           </p>
         ) : r.erreurs_total > 0 ? (

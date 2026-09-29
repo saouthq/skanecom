@@ -721,3 +721,65 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 .mp-action { display: flex; align-self: center; }
 .mp-mini { display: inline-flex; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--ui-texte-2); }
 .mp-mini .mp-barre { inline-size: 4.5rem; min-inline-size: 0; }
+
+/* --------------------------------------------------------------------------
+   L'ACCÈS SUPPORT (C7) — la page Support d'une boutique dans la console, la
+   liste des accès (console et Équipe du backoffice), et le bandeau que le
+   backoffice pose en tête de page pendant l'accès.
+   -------------------------------------------------------------------------- */
+.sp-actif {
+  display: grid; gap: 1rem;
+  background: linear-gradient(180deg, var(--ui-vert-fond), var(--ui-panneau) 70%);
+  border-color: var(--ui-vert-bord);
+}
+@media (min-width: 800px) { .sp-actif { grid-template-columns: minmax(0, 1fr) auto; align-items: center; } }
+.sp-actif-tete { display: flex; align-items: flex-start; gap: .875rem; min-inline-size: 0; }
+.sp-actif-tete h2 { font-size: 1rem; font-weight: 600; letter-spacing: -.01em; }
+.sp-actif-icone {
+  display: grid; place-items: center; flex: none; inline-size: 40px; block-size: 40px; border-radius: var(--ui-r);
+  background: var(--ui-panneau); color: var(--ui-vert); box-shadow: inset 0 0 0 1px var(--ui-vert-bord), var(--ui-ombre-xs);
+}
+.sp-actif-infos { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .75rem; margin-block-start: .375rem; font-size: .8125rem; color: var(--ui-texte-2); }
+.sp-actif-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 799px) { .sp-actif-gestes > * { flex: 1 1 12rem; } .sp-actif-gestes .btn { inline-size: 100%; } }
+.sp-motif { margin-block-start: .375rem; font-size: .8125rem; color: var(--ui-texte-2); font-style: italic; overflow-wrap: anywhere; }
+
+.sp-regles { display: grid; gap: .875rem; margin: 0; padding: 0; list-style: none; }
+.sp-regles li { display: flex; align-items: flex-start; gap: .75rem; font-size: .875rem; color: var(--ui-texte-2); line-height: 1.5; }
+.sp-regle-icone {
+  display: grid; place-items: center; flex: none; inline-size: 28px; block-size: 28px; border-radius: var(--ui-r-s);
+  background: var(--ui-doux); color: var(--ui-texte);
+}
+
+.sp-liste { display: grid; margin: 0 -1.25rem -1.25rem; padding: 0; list-style: none; border-block-start: 1px solid var(--ui-bord-leger); }
+@media (min-width: 700px) { .sp-liste { margin-inline: -1.5rem; } }
+.sp-acces { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .75rem; padding: .875rem 1.25rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.sp-acces:first-child { border-block-start: 0; }
+@media (min-width: 700px) { .sp-acces { padding-inline: 1.5rem; } }
+.sp-acces[data-ouvert] { background: color-mix(in srgb, var(--ui-vert-fond) 60%, transparent); }
+.sp-acces-texte { display: grid; gap: .125rem; flex: 1 1 14rem; min-inline-size: 0; }
+.sp-acces-geste { align-self: center; margin-inline-start: auto; }
+.sp-acces-titre { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; }
+.sp-acces-titre .ui-etat { font-weight: 500; }
+.sp-acces-quand { font-size: .75rem; color: var(--ui-texte-3); }
+.sp-acces .sp-motif { margin-block-start: .125rem; }
+
+.sp-bandeau {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .5rem .75rem;
+  padding: .625rem 1rem; background: var(--ui-texte); color: #fff;
+}
+/* Sur téléphone, le bouton passe sous le texte, aligné sur lui. */
+@media (max-width: 639px) { .sp-bandeau form { grid-column: 2; justify-self: start; } .sp-bandeau-icone { align-self: start; } }
+@media (min-width: 1024px) {
+  .sp-bandeau { padding-inline: 1.5rem 1rem; border-start-start-radius: calc(var(--ui-r-l) - 1px); border-start-end-radius: calc(var(--ui-r-l) - 1px); }
+}
+.sp-bandeau-icone {
+  display: grid; place-items: center; flex: none; inline-size: 28px; block-size: 28px; border-radius: 999px;
+  background: rgb(255 255 255 / .12); color: #86EFAC;
+}
+.sp-bandeau-texte { display: flex; flex-wrap: wrap; align-items: baseline; gap: .125rem .625rem; min-inline-size: 0; margin: 0; font-size: .8125rem; color: rgb(255 255 255 / .78); }
+.sp-bandeau-texte b { font-weight: 600; color: #fff; }
+.sp-bandeau-motif { font-style: italic; color: rgb(255 255 255 / .62); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-inline-size: 100%; }
+.console .sp-bandeau-bouton { background: #fff; color: var(--ui-texte); border-color: #fff; }
+.console .sp-bandeau-bouton:hover { background: rgb(255 255 255 / .88); }
+.console .sp-bandeau-bouton:focus-visible { box-shadow: 0 0 0 3px rgb(255 255 255 / .45); }

@@ -67,7 +67,7 @@ function Compte({ email, role }: { email: string; role: string }) {
   );
 }
 
-export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, email, role, children }: {
+export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, email, role, bandeau, children }: {
   accueil: string;
   titre: string;
   sousTitre: string;
@@ -77,6 +77,8 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, em
   groupes: GroupeCoquille[];
   email: string;
   role: string;
+  /** Au-dessus du contenu, sur toutes les pages : l'accès support en cours. */
+  bandeau?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const marque = (
@@ -119,6 +121,7 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, em
       </header>
 
       <main id="principal" className="app-principal">
+        {bandeau}
         <div className="app-contenu">{children}</div>
       </main>
     </div>

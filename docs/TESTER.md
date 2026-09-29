@@ -78,12 +78,14 @@ outils/essayer.sh
 
 **Donner l'accès au backoffice** — dans la console, fiche de la boutique → **Gérer l'équipe** : saisir une adresse (inventée, par exemple `papa@maymar.test`) et un rôle, **Inviter**. La console affiche le lien d'accès à envoyer (bouton « Envoyer par WhatsApp »). L'ouvrir dans une **fenêtre de navigation privée** (sinon il remplace ta session de console) : choisir un mot de passe, et l'on arrive dans le backoffice de la boutique — après la double authentification pour un propriétaire. Depuis la liste : changer le rôle, retirer l'accès (la personne est dehors aussitôt), le rendre, ou remettre un lien si le mot de passe est oublié.
 
+**Entrer dans le backoffice d'un client (support)** — dans la console, onglet **Support** d'une boutique : dire pourquoi on entre, choisir « Regarder » ou « Agir comme un administrateur » et une durée, **Entrer dans son backoffice**. On y arrive avec un bandeau noir en haut (le mode, l'heure de fin, le motif) et **Fermer l'accès** ; échu ou fermé, le backoffice renvoie à la console. Le propriétaire (`gerant@maymar.test`) retrouve chaque accès dans **Équipe → Le support SkanEcom**, et peut fermer un accès encore ouvert.
+
 ## 4. Les vérifications automatiques
 
 Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
 
 ```bash
-outils/base-locale.sh tester                   # 602 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, images de la marque, modules, retrait en magasin, mes commandes, mise en place)
+outils/base-locale.sh tester                   # 637 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, images de la marque, modules, retrait en magasin, mes commandes, mise en place, accès support)
 outils/essai-vitrine.sh                        # 26 essais : les boutiques ne se mélangent jamais, le tunnel et le compte ne sont jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)

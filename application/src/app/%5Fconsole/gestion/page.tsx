@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { accesEquipe } from "@/lib/console/session";
+import { accesEquipe, estAdministrateur } from "@/lib/console/session";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
+import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { Porte } from "@/components/console/Porte";
 import { Icone } from "@/components/console/Icone";
 
@@ -13,7 +14,8 @@ export const metadata: Metadata = { title: "Vos boutiques" };
 export default async function MesBoutiques() {
   const a = await accesEquipe();
   if (a.etat === "anonyme") redirect("/connexion");
-  if (a.etat === "aucune") redirect("/refuse");
+  // Un administrateur de la plateforme sans accès support ouvert : la console.
+  if (a.etat === "aucune") redirect((await estAdministrateur(a.user.id)) ? "/" : "/refuse");
   if (a.etat === "aal1") redirect("/double-authentification");
   if (a.boutiques.length === 1) redirect(`/gestion/${a.boutiques[0].slug}`);
 
@@ -35,7 +37,9 @@ export default async function MesBoutiques() {
               <span className="initiale" aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
               <span className="choix-boutique-texte">
                 <span className="font-medium">{b.nom}</span>
-                <span className="text-petit discret">{LIBELLES_ROLE[b.role] ?? b.role}</span>
+                <span className="text-petit discret">
+                  {b.support_jusqu_a ? `Accès support · ${MODES_SUPPORT[b.role as ModeSupport]?.court ?? b.role}` : (LIBELLES_ROLE[b.role] ?? b.role)}
+                </span>
               </span>
               <Icone nom="droite" className="discret" />
             </Link>
