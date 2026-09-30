@@ -939,7 +939,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
   await etape("les données de la boutique, dans un tableur", async () => {
     await page.goto(`${C}/gestion/maymar/reglages#t-donnees`, { waitUntil: "networkidle" });
     const donnees = page.locator("section:has(#t-donnees)");
-    verifie(await donnees.getByRole("link", { name: /Télécharger/ }).count() === 6, "six exports : commandes, articles, clients, catalogue, stock, et le SAV (module)");
+    verifie(await donnees.getByRole("link", { name: /Télécharger/ }).count() === 7, "sept exports : commandes, articles, clients, catalogue, stock, le SAV (module) et les versements des livreurs");
     const [telechargement] = await Promise.all([
       page.waitForEvent("download"),
       clic(page, donnees.locator(".rg-export", { hasText: "Commandes" }).first().getByRole("link")),

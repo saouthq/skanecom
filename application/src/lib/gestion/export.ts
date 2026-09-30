@@ -9,7 +9,7 @@ import { formateMontant } from "@/lib/prix";
    UTF-8 avec BOM (les accents restent des accents), fins de ligne CRLF.
    ========================================================================== */
 
-type Format = "texte" | "montant" | "date" | "oui_non" | "nombre";
+type Format = "texte" | "montant" | "date" | "jour" | "oui_non" | "nombre";
 type Colonne = { cle: string; titre: string; format?: Format };
 
 export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Colonne[]; module?: string }> = {
@@ -87,11 +87,26 @@ export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Co
       { cle: "description", titre: "Description" }, { cle: "cloturee_le", titre: "Close le", format: "date" },
     ],
   },
+  versements: {
+    titre: "Versements des livreurs",
+    aide: "Un versement par ligne : le livreur, le reçu, l'attendu, l'écart, les colis couverts.",
+    colonnes: [
+      { cle: "recu_le", titre: "Reçu le", format: "jour" }, { cle: "transporteur", titre: "Transporteur" },
+      { cle: "recu", titre: "Reçu", format: "montant" }, { cle: "attendu", titre: "Attendu", format: "montant" },
+      { cle: "ecart", titre: "Écart", format: "montant" }, { cle: "colis", titre: "Colis", format: "nombre" },
+      { cle: "commandes", titre: "Commandes" }, { cle: "reference", titre: "Référence" }, { cle: "note", titre: "Note" },
+      { cle: "auteur", titre: "Saisi par" }, { cle: "saisi_le", titre: "Saisi le", format: "date" },
+      { cle: "annule_le", titre: "Annulé le", format: "date" },
+    ],
+  },
 };
 
 const DATE = new Intl.DateTimeFormat("fr-FR", {
   year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis",
 });
+
+/** Un jour sans heure (« 2026-09-15 ») : tel quel, sans fuseau. */
+const JOUR = new Intl.DateTimeFormat("fr-FR", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "UTC" });
 
 function valeur(v: unknown, format: Format = "texte"): string {
   if (v === null || v === undefined || v === "") return "";
@@ -100,6 +115,8 @@ function valeur(v: unknown, format: Format = "texte"): string {
       return formateMontant(Number(v));
     case "date":
       return DATE.format(new Date(String(v))).replace(",", "");
+    case "jour":
+      return JOUR.format(new Date(`${String(v).slice(0, 10)}T00:00:00Z`));
     case "oui_non":
       return v === true || v === "true" ? "oui" : "non";
     default:

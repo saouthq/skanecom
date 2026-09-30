@@ -4,7 +4,7 @@
 begin;
 \ir outils.psql
 
-select plan(28);
+select plan(29);
 
 create function tests.indice(p_sql text) returns text
 language plpgsql as $$
@@ -124,6 +124,11 @@ select results_eq($$ select jsonb_array_length(pg_temp.e() -> 'a_recevoir'), (pg
   $$ values (2, true, 2, 0) $$, 'ses colis redeviennent à recevoir ; il reste au journal avec ses colis, hors des totaux');
 select is(tests.indice(format($$ select public.gestion_annuler_versement(%L, %L) $$, tests.id('A'), pg_temp.e() -> 'versements' -> 0 ->> 'id')),
   'versement', 'une saisie ne s''annule qu''une fois');
+
+-- L'export pour le comptable : chaque versement, annulé compris (et dit tel).
+select results_eq($$ select x ->> 'transporteur', (x ->> 'ecart')::bigint, (x ->> 'colis')::int, (x ->> 'annule_le') is not null
+                       from jsonb_array_elements(public.gestion_export(tests.id('A'), 'versements')) x $$,
+  $$ values ('Aramex', -5000::bigint, 2, true) $$, 'l''export des versements : écart, colis, annulation');
 
 select * from finish();
 rollback;
