@@ -58,6 +58,12 @@ verifie "la recherche d'une référence reste dans sa boutique" \
 verifie "le formulaire de filtres mène à l'adresse canonique" \
   '[ "$(curl -s -D - -o /dev/null -H "Host: $M" "$B/filtrer?base=/catalogue&a.couleur=Noir&a.couleur=Bordeaux&stock=1" | tr -d "\r" | sed -n "s/^[Ll]ocation: //p")" = "/catalogue/couleur=Bordeaux~Noir/stock" ]'
 verifie "une liste filtrée est filtrée par la base" 'corps $M "/catalogue/couleur=Gris" | grep -q "1 modèle sur 4"'
+verifie "la fiche technique d'un produit, avec ses unités (B9)" \
+  'f=$(corps $Q /produit/perceuse-visseuse-14v); echo "$f" | grep -q "Couple" && echo "$f" | grep -q "$(printf "32\xc2\xa0Nm")" && echo "$f" | grep -q "$(printf "14,4\xc2\xa0V")"'
+verifie "une liste filtrée sur une caractéristique, comme sur un axe" \
+  'corps $Q "/categorie/outillage/alimentation=Filaire%20230%20V" | grep -q "2 modèles"'
+verifie "les caractéristiques « sur la carte » en pastilles" \
+  'corps $Q /categorie/protection | grep -q "te-pastille\">EN 397"'
 verifie "une liste filtrée est mise en cache" \
   'sleep 1.5; curl -s -D - -o /dev/null -H "Host: $M" "$B/catalogue/couleur=Gris" | grep -qi "x-vinext-cache: HIT"'
 verifie "robots.txt propre à la boutique" 'corps $Q /robots.txt | grep -q "Sitemap: https://quincaillerie.localhost/sitemap.xml"'

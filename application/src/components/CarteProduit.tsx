@@ -7,6 +7,7 @@ import { couleurDeColoris } from "@/lib/coloris";
 import { champ, t } from "@/lib/i18n";
 import { photoSurvol, urlPhoto } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
+import { valeurAvecUnite } from "@/lib/caracteristiques";
 import {
   coloris as colorisDe,
   etatProduit,
@@ -125,6 +126,8 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
   const autres = declinaisons(produit);
   const couleurs = colorisDe(produit);
   const prixBarre = unique && prixBarres && unique.prix_barre_millimes ? unique.prix_barre_millimes : null;
+  // Les caractéristiques que la boutique montre sur la carte (B9) : l'alimentation, la plateforme de batterie…
+  const pastilles = (produit.caracteristiques ?? []).filter((c) => c.en_carte).slice(0, 3);
 
   return (
     <article className="te-carte">
@@ -144,6 +147,11 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
             t.produit.declinaisons
           )}
         </span>
+        {pastilles.length ? (
+          <span className="te-pastilles">
+            {pastilles.map((c) => <span key={c.cle} className="te-pastille">{valeurAvecUnite(c.valeur, c)}</span>)}
+          </span>
+        ) : null}
       </Link>
       <div className="te-carte-bas">
         <EtatStock etat={etat} restant={restant} />

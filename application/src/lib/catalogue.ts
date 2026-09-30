@@ -26,7 +26,26 @@ export type Categorie = {
   nb_produits?: number;
 };
 
-export type OptionAxe = { cle: string; label_fr: string | null; label_ar: string | null };
+export type OptionAxe = {
+  cle: string;
+  label_fr: string | null;
+  label_ar: string | null;
+  /** Une caractéristique filtrable (B9) : son unité et son type. */
+  unite?: string | null;
+  type?: "texte" | "nombre" | null;
+};
+
+/** Une ligne de la fiche technique d'un produit (B9). */
+export type Caracteristique = {
+  cle: string;
+  label_fr: string | null;
+  label_ar: string | null;
+  unite: string | null;
+  type: "texte" | "nombre";
+  en_carte: boolean;
+  valeur: string;
+};
+
 
 export type Variante = {
   id: string;
@@ -65,6 +84,7 @@ export type Produit = {
   options: OptionAxe[];
   variantes: Variante[];
   images: Image[];
+  caracteristiques: Caracteristique[];
 };
 
 export type OptionFacette = { valeur: string; compte: number };

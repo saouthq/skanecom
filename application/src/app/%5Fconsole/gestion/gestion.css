@@ -563,3 +563,40 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 /* Un nombre et son unité (« 2 heures »). */
 .rg-unite { display: inline-flex; align-items: center; gap: .5rem; }
 .rg-unite > span { font-size: .875rem; color: var(--ui-texte-2); }
+
+/* --------------------------------------------------------------------------
+   LES FICHES TECHNIQUES (B9) — l'unité dans le champ, la liste des
+   caractéristiques de la boutique.
+   -------------------------------------------------------------------------- */
+.ft-unite { position: relative; display: flex; align-items: center; }
+.ft-unite input { inline-size: 100%; }
+.ft-unite:has(> span) input { padding-inline-end: calc(var(--ft-unite, 2ch) + 1.5rem); }
+.ft-unite > span { position: absolute; inset-inline-end: .75rem; font-size: .8125rem; color: var(--ui-texte-3); pointer-events: none; }
+.ft-liste { display: grid; margin: 0 -1.25rem -1.25rem; padding: 0; list-style: none; border-block-start: 1px solid var(--ui-bord-leger); }
+@media (min-width: 700px) { .ft-liste { margin-inline: -1.5rem; } }
+.ft-attribut { display: grid; gap: .625rem; padding: .875rem 1.25rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.ft-attribut:first-child { border-block-start: 0; }
+@media (min-width: 700px) { .ft-attribut { padding-inline: 1.5rem; } }
+.ft-attribut-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.ft-attribut-texte { display: grid; gap: .25rem; min-inline-size: 0; }
+.ft-attribut-nom { display: flex; align-items: center; gap: .5rem; font-size: .9375rem; font-weight: 600; }
+.ft-unite-puce { padding: .0625rem .375rem; border-radius: var(--ui-r-s); background: var(--ui-doux); font-size: .75rem; font-weight: 500; color: var(--ui-texte-2); }
+.ft-attribut-infos { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; font-size: .75rem; color: var(--ui-texte-3); }
+.ft-attribut-infos .ui-etat { font-size: .6875rem; }
+.ft-ordre { display: flex; gap: .125rem; flex: none; }
+.ft-haut { transform: rotate(180deg); }
+.ft-gestes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; }
+.ft-gestes > details > summary { list-style: none; }
+.ft-gestes > details > summary::-webkit-details-marker { display: none; }
+.ft-modifier[open] { flex-basis: 100%; }
+.ft-modifier[open] > summary { display: none; }
+.ft-formulaire { margin-block-start: .25rem; padding: 1rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r-l); background: var(--ui-survol); }
+.ft-retirer[open] > summary { display: none; }
+.ft-confirmer { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; font-size: .8125rem; color: var(--ui-texte-2); }
+.ft-rayons { display: grid; gap: .375rem; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); }
+.ft-rayons .opt[data-sous] { padding-inline-start: 1.25rem; }
+/* Les champs d'une caractéristique : sur une colonne dans une carte étroite. */
+.ft-champs { container-type: inline-size; display: grid; gap: 1rem; }
+@container (max-width: 34rem) {
+  .console .ft-champs .choix-2, .console .ft-champs .deux-colonnes { grid-template-columns: 1fr; }
+}

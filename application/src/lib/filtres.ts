@@ -165,12 +165,16 @@ export type Puce = { libelle: string; url: string };
 
 /** Les filtres actifs, en puces retirables : chaque puce mène à la même liste
  *  SANS ce critère. Un filtre qu'on ne sait pas défaire est un piège. */
-export function puces(base: string, f: Filtres, libelles: { enStock: string; prix: (min: number | null, max: number | null) => string }): Puce[] {
+export function puces(
+  base: string,
+  f: Filtres,
+  libelles: { enStock: string; prix: (min: number | null, max: number | null) => string; valeur?: (cle: string, v: string) => string },
+): Puce[] {
   const liste: Puce[] = [];
   for (const [cle, valeurs] of Object.entries(f.options)) {
     for (const v of valeurs) {
       const options = { ...f.options, [cle]: valeurs.filter((x) => x !== v) };
-      liste.push({ libelle: v, url: cheminFiltres(base, { ...f, options, page: 1 }) });
+      liste.push({ libelle: libelles.valeur ? libelles.valeur(cle, v) : v, url: cheminFiltres(base, { ...f, options, page: 1 }) });
     }
   }
   if (f.minDinars !== null || f.maxDinars !== null) {

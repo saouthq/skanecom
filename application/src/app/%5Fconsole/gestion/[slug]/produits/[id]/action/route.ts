@@ -102,6 +102,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       return vers(`${fiche}?${new URLSearchParams({ ok: `Déclinaison ajoutée (${sku.toUpperCase()}). Faites la réception de son stock.` })}#var-${vid}`);
     }
 
+    case "technique": {
+      const retour = ici("t-technique");
+      const valeurs: Record<string, string> = {};
+      for (const [cle, valeur] of f.entries()) {
+        if (cle.startsWith("car.")) valeurs[cle.slice(4)] = String(valeur).slice(0, 120);
+      }
+      const { error } = await sb.rpc("gestion_enregistrer_caracteristiques", {
+        p_boutique_id: b, p_produit_id: id, p_version: texte("version") || null, p_valeurs: valeurs,
+      });
+      if (error) return retour(messageCatalogue(error.hint, error.message));
+      return retour("Fiche technique enregistrée.", true);
+    }
+
     default:
       return versAvecErreur(fiche, "Geste inconnu.");
   }

@@ -269,6 +269,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les photos à l'import** (migration 26, `20260929102500_console_photos_import.sql`, 20 tests dans `supabase/tests/27_photos_import.sql`) : `produit_images.lot_import` et `plateforme.lots_photos` (un lot par envoi de la console, tracé une fois au journal, retirable) ; `console_references(boutique)` (le catalogue à rapprocher : produits, photos, références des déclinaisons), `console_ajouter_photo(acteur, boutique, lot, produit, déclinaison, chemin, texte)`, `console_lots_photos(boutique)` et `console_retirer_lot_photos(acteur, boutique, lot)`, qui rend les fichiers à effacer.
 
+**Puis les fiches techniques** (migration 27, `20260929102600_catalogue_attributs.sql`, 30 tests dans `supabase/tests/28_attributs.sql`) : `public.attributs` (clé, libellé, unité, type `texte` ou `nombre`, filtrable, sur la carte, position) et `public.rayon_attributs` ; `produits.caracteristiques` (jsonb par clé, vérifié par `private.valide_caracteristiques`) ; `gestion_attributs`, `gestion_enregistrer_attribut`, `gestion_deplacer_attribut`, `gestion_retirer_attribut`, `gestion_fiche_technique`, `gestion_enregistrer_caracteristiques` ; `vitrine_produits.caracteristiques` ; `liste_produits` fait hériter les caractéristiques filtrables par chaque déclinaison (filtres, facettes et comptes comme des axes ; les nombres triés comme des nombres ; la recherche les lit).
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

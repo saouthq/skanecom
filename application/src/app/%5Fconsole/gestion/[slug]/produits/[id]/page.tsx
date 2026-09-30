@@ -17,7 +17,9 @@ import {
   PEUT_STOCKER,
   etatStock,
   referenceProposee,
+  valeurSaisie,
   type FicheProduit,
+  type FicheTechnique,
 } from "@/lib/gestion/catalogue";
 
 export const metadata: Metadata = { title: "Produit" };
@@ -30,7 +32,8 @@ export const metadata: Metadata = { title: "Produit" };
       casse) et leurs prix ;
    3. une déclinaison de plus (une couleur, une taille) ;
    4. la fiche : nom, description, marque, rayon, en vitrine ou non ;
-   5. l'historique des mouvements de stock.
+   5. la fiche technique : les caractéristiques de son rayon (B9) ;
+   6. l'historique des mouvements de stock.
 
    La base revérifie chaque geste (supabase/migrations/…_gestion_catalogue.sql) ;
    l'écran ne propose que ce que le rôle permet.
@@ -46,10 +49,14 @@ export default async function FicheProduitBackoffice({
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id });
+  const [{ data, error }, { data: technique }] = await Promise.all([
+    sb.rpc("gestion_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
+    sb.rpc("gestion_fiche_technique", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
+  ]);
   if (error) throw new Error(`Produit illisible : ${error.message}`);
   if (!data) notFound();
   const f = data as FicheProduit;
+  const lignesTechniques = ((technique as FicheTechnique | null)?.attributs ?? []);
 
   const modifie = PEUT_MODIFIER.includes(boutique.role);
   const stocke = PEUT_STOCKER.includes(boutique.role);
@@ -380,6 +387,51 @@ export default async function FicheProduitBackoffice({
                   <p className="aide">La fiche se modifie par le propriétaire ou l&apos;administrateur.</p>
                 )}
               </form>
+            </section>
+
+            {/* ---------------- La fiche technique ---------------- */}
+            <section className="carte" aria-labelledby="t-technique">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-technique" className="carte-titre-icone"><Icone nom="modules" /> Fiche technique</h2>
+                  <p>Les caractéristiques de son rayon : la vitrine les montre en tableau, et filtre sur celles qui sont filtrables.</p>
+                </div>
+                {modifie ? (
+                  <Link href={`/gestion/${slug}/produits/caracteristiques`} className="btn btn-second btn-petit">Définir les caractéristiques</Link>
+                ) : null}
+              </div>
+              {lignesTechniques.length === 0 ? (
+                <p className="discret">
+                  {modifie
+                    ? "Aucune caractéristique pour son rayon : définissez-les (puissance, tension, dimensions…) pour qu'elles apparaissent ici."
+                    : "Aucune caractéristique pour son rayon."}
+                </p>
+              ) : (
+                <form action={action} method="post" className="formulaire">
+                  <input type="hidden" name="action" value="technique" />
+                  <input type="hidden" name="version" value={f.version} />
+                  <fieldset disabled={!modifie} className="formulaire" style={{ border: 0, padding: 0, margin: 0 }}>
+                    <div className="deux-colonnes">
+                      {lignesTechniques.map((l) => (
+                        <div key={l.cle} className="champ">
+                          <label htmlFor={`car-${l.cle}`}>{l.label}</label>
+                          <span className="ft-unite" style={{ "--ft-unite": `${(l.unite ?? "").length}ch` } as React.CSSProperties}>
+                            <input id={`car-${l.cle}`} name={`car.${l.cle}`} maxLength={80} defaultValue={valeurSaisie(l)}
+                              inputMode={l.type === "nombre" ? "decimal" : undefined} placeholder={l.type === "nombre" ? "—" : ""} />
+                            {l.unite ? <span aria-hidden="true">{l.unite}</span> : null}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </fieldset>
+                  {modifie ? (
+                    <div className="carte-pied">
+                      <span className="aide">Une case vide retire la caractéristique du produit.</span>
+                      <button type="submit" className="btn btn-primaire">Enregistrer les caractéristiques</button>
+                    </div>
+                  ) : null}
+                </form>
+              )}
             </section>
 
             {/* ---------------- Les mouvements ---------------- */}

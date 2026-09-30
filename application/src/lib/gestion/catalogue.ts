@@ -107,6 +107,38 @@ export function etatStock(stock: number, seuil: number): { texte: string; classe
 }
 
 /** Le message à l'équipe pour un refus de la base. */
+/* Les fiches techniques (B9) : les caractéristiques de la boutique
+   (public.gestion_attributs), et celles d'un produit, avec leur valeur
+   (public.gestion_fiche_technique). */
+export type Attribut = {
+  id: string;
+  cle: string;
+  label: string;
+  unite: string | null;
+  type: "texte" | "nombre";
+  filtrable: boolean;
+  en_carte: boolean;
+  position: number;
+  rayons: { id: string; nom: string }[];
+  produits: number;
+};
+
+export type LigneTechnique = {
+  id: string;
+  cle: string;
+  label: string;
+  unite: string | null;
+  type: "texte" | "nombre";
+  valeur: string | null;
+};
+
+export type FicheTechnique = { version: string; attributs: LigneTechnique[] };
+
+/** Ce qu'on saisit : un nombre à la française (« 14,4 »). */
+export function valeurSaisie(l: Pick<LigneTechnique, "type" | "valeur">): string {
+  return l.valeur === null ? "" : l.type === "nombre" ? l.valeur.replace(".", ",") : l.valeur;
+}
+
 export function messageCatalogue(indice: string | undefined, message: string): string {
   switch (indice) {
     case "role":

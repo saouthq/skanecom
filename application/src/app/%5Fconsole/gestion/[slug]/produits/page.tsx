@@ -61,6 +61,7 @@ export default async function Catalogue({
               </span>
               <button type="submit" className="btn btn-second">Chercher</button>
             </form>
+            <Link href={`${base}/caracteristiques`} className="btn btn-second"><Icone nom="modules" /> Caractéristiques</Link>
             {peutCreer ? (
               <Link href={`${base}/nouveau`} className="btn btn-primaire"><Icone nom="plus" /> Nouveau produit</Link>
             ) : null}

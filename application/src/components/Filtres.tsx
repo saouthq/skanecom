@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,6 +10,7 @@ import { millimesVersDinars } from "@/lib/prix";
 import { cheminFiltres, nombre, type Filtres } from "@/lib/filtres";
 import { noteReprise, reprends } from "@/lib/reprise";
 import type { Liste, OptionAxe } from "@/lib/catalogue";
+import { valeurAvecUnite } from "@/lib/caracteristiques";
 
 /* ============================================================================
    LE FORMULAIRE DE FILTRES
@@ -146,6 +148,7 @@ export function FormulaireFiltres({
         const choisies = choix.options[cle] ?? [];
         if (options.length < 2 && choisies.length === 0) return null;
         const estCouleur = cle === "couleur";
+        const axe = facettes.axes.find((a) => a.cle === cle);
         return (
           <div className="groupe" key={cle}>
             <h3>{libelleAxe(cle, facettes.axes)}</h3>
@@ -168,7 +171,7 @@ export function FormulaireFiltres({
                   <label key={o.valeur} className={`opt${eteint ? " eteint" : ""}`}>
                     <input type="checkbox" name={`a.${cle}`} value={o.valeur} checked={coche}
                       disabled={eteint} onChange={(e) => bascule(cle, o.valeur, e.target.checked, e.target)} />
-                    {o.valeur}
+                    {valeurAvecUnite(o.valeur, axe)}
                     <span className="n">{o.compte}</span>
                   </label>
                 );

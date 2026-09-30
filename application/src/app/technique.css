@@ -180,6 +180,11 @@ html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent);
 }
 .te-carte-lien:hover .te-carte-nom { text-decoration: underline; text-underline-offset: .15em; }
 .te-carte-ref { font-family: var(--theme-font-mono); font-size: .6875rem; color: var(--theme-encre-doux); }
+.te-pastilles { display: flex; flex-wrap: wrap; gap: .25rem; margin-block-start: .125rem; }
+.te-pastille {
+  padding: .125rem .4375rem; border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-net);
+  background: var(--theme-surface-2); color: var(--theme-encre); font-size: .6875rem; font-weight: 650; line-height: 1.35;
+}
 .te-carte-bas { display: flex; flex-direction: column; gap: .5rem; margin-block-start: auto; }
 .te-carte-bas .dispo, .te-carte-bas .etat { font-size: .75rem; font-weight: 600; }
 .te-carte-prix { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .375rem; margin: 0; }

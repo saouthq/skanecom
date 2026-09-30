@@ -7,6 +7,7 @@ import { Croix } from "./Icones";
 import { t } from "@/lib/i18n";
 import { cheminFiltres, nombreFiltresActifs, puces, type Filtres } from "@/lib/filtres";
 import type { Liste } from "@/lib/catalogue";
+import { valeurAvecUnite } from "@/lib/caracteristiques";
 import type { CodeTheme } from "@/lib/theme";
 
 /* ============================================================================
@@ -44,7 +45,11 @@ export function Listing({
 }) {
   const actifs = nombreFiltresActifs(filtres);
   const pages = Math.max(1, Math.ceil(liste.total / liste.par_page));
-  const lesPuces = puces(base, filtres, { enStock: t.stock.enStock, prix: t.catalogue.prixEntre });
+  const lesPuces = puces(base, filtres, {
+    enStock: t.stock.enStock,
+    prix: t.catalogue.prixEntre,
+    valeur: (cle, v) => valeurAvecUnite(v, liste.facettes.axes.find((a) => a.cle === cle)),
+  });
   const technique = gabarit === "technique";
 
   const formulaire = (prefixe: string) => (

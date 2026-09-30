@@ -594,12 +594,63 @@ console.log("\n== 2. Le gérant, double authentification ==");
     cheminsRetires.push(chemin);
   });
 
-  await etape("la vitrine montre la photo", async () => {
+  /* ---------------- Les fiches techniques (B9) ---------------- */
+  const nouvelleCaracteristique = async ({ nom, unite = "", type, rayon }) => {
+    const form = page.locator("section:has(#t-nouvel-attribut) form");
+    await form.locator("#label-nouveau").fill(nom);
+    await form.locator("#unite-nouveau").fill(unite);
+    await clic(page, form.locator(".choix-carte", { hasText: type === "nombre" ? "Un nombre" : "Un texte" }));
+    if (rayon) await clic(page, form.locator(".opt", { hasText: rayon }).first());
+    await envoie(form.getByRole("button", { name: "Ajouter la caractéristique" }));
+  };
+
+  await etape("les caractéristiques de la boutique", async () => {
+    await page.goto(`${C}/gestion/maymar/produits`, { waitUntil: "networkidle" });
+    await clic(page, page.getByRole("link", { name: "Caractéristiques" }));
+    await page.waitForURL(/produits\/caracteristiques$/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator("section:has(#t-attributs)").innerText()).includes("Pas encore de fiche technique"), "aucune caractéristique au départ");
+    await nouvelleCaracteristique({ nom: "Matière", type: "texte", rayon: "Valises" });
+    verifie((await ok()).includes("« Matière » ajoutée"), `« ${await ok()} »`);
+    await nouvelleCaracteristique({ nom: "Volume", unite: "L", type: "nombre", rayon: "Valises" });
+    const ligne = (await page.locator(".ft-attribut", { hasText: "Volume" }).innerText()).replace(/\s+/g, " ");
+    verifie(ligne.includes("L") && ligne.includes("Nombre") && ligne.includes("Filtrable") && ligne.includes("Valises"),
+      `chacune avec son unité, son type, filtrable, ses rayons : « ${ligne} »`);
+    await nouvelleCaracteristique({ nom: "matière", type: "texte" });
+    verifie((await page.getByRole("alert").innerText()).includes("porte déjà ce nom"), "deux caractéristiques ne portent pas le même nom");
+    await capture(page, "gestion-caracteristiques", true);
+  });
+
+  await etape("la fiche technique d'un produit", async () => {
+    await page.goto(nouveau.split("?")[0], { waitUntil: "networkidle" });
+    const section = page.locator("section:has(#t-technique)");
+    verifie(await section.locator("#car-matiere").count() === 1 && await section.locator("#car-volume").count() === 1,
+      "la fiche propose les caractéristiques de son rayon");
+    await section.locator("#car-volume").fill("grand");
+    await envoie(section.getByRole("button", { name: "Enregistrer les caractéristiques" }));
+    verifie((await page.getByRole("alert").innerText()).includes("attend un nombre"), `refusé : « ${await page.getByRole("alert").innerText()} »`);
+    await section.locator("#car-matiere").fill("Polyester recyclé");
+    await section.locator("#car-volume").fill("12,5 L");
+    await envoie(section.getByRole("button", { name: "Enregistrer les caractéristiques" }));
+    verifie((await ok()).includes("Fiche technique enregistrée"), `« ${await ok()} »`);
+    verifie(await section.locator("#car-volume").inputValue() === "12,5", "le nombre relu à la française, l'unité ôtée");
+    await section.scrollIntoViewIfNeeded();
+    await capture(page, "gestion-fiche-technique");
+  });
+
+  await etape("la vitrine montre la photo, et la fiche technique", async () => {
     const chemin = await cheminDe(vignettes().first());
     const vitrine = await ctx.newPage();
     await vitrine.goto(`${t.adresse("maymar.localhost")}/produit/housse-de-protection`, { waitUntil: "networkidle" });
     const srcs = await vitrine.locator("main img").evaluateAll((imgs) => imgs.map((i) => i.getAttribute("src") ?? ""));
     verifie(srcs.some((s) => decodeURIComponent(s).includes(chemin)), "la fiche de la vitrine affiche la photo déposée");
+    const specs = (await vitrine.locator("dl.caracteristiques").first().textContent()) ?? "";
+    verifie(specs.includes("Matière") && specs.includes("Polyester recyclé") && /12,5\sL/.test(specs),
+      "et sa fiche technique : matière, volume en litres");
+    await vitrine.goto(`${t.adresse("maymar.localhost")}/catalogue/matiere=${encodeURIComponent("Polyester recyclé")}`, { waitUntil: "networkidle" });
+    const liste = await vitrine.locator("main").innerText();
+    verifie(liste.includes("Housse de protection") && /\b1\s+(produit|modèle|article)/i.test(liste),
+      "la liste filtrée sur la matière ne montre qu'elle");
     await vitrine.close();
   });
 
