@@ -347,6 +347,8 @@
   border: 0;
 }
 .console .statut::before, .ui-etat-point::before { content: ""; inline-size: 6px; block-size: 6px; border-radius: 50%; background: currentColor; }
+/* Le point seul, devant un libellé (une synthèse, une légende). */
+.ui-etat-point:not(.ui-etat) { display: inline-flex; flex: none; }
 .console .statut-active, .ui-etat-vert { color: var(--ui-vert); background: var(--ui-vert-fond); box-shadow: inset 0 0 0 1px var(--ui-vert-bord); }
 .console .statut-en_preparation, .ui-etat-ambre { color: var(--ui-ambre); background: var(--ui-ambre-fond); box-shadow: inset 0 0 0 1px var(--ui-ambre-bord); }
 .console .statut-suspendue, .console .statut-fermee, .ui-etat-rouge { color: var(--ui-rouge); background: var(--ui-rouge-fond); box-shadow: inset 0 0 0 1px var(--ui-rouge-bord); }
