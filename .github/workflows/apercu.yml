@@ -10,14 +10,15 @@
 # routeur par adresse (outils/apercu/routeur.js). La base est le projet
 # Supabase de l'aperçu (org SkanEcom), jamais celui de la production.
 #
-# La base de l'aperçu suit le code : chaque exécution joue les migrations
-# nouvelles (supabase db push), le jeu de démo la première fois, et les
-# crochets des codes de connexion (supabase/apercu/codes-demo.sql).
+# La base de l'aperçu suit le code : chaque exécution envoie les migrations
+# à la fonction apercu-installer du projet (supabase/functions/, protégée
+# par la clé service_role), qui joue les nouvelles une fois chacune, le jeu
+# de démo la première fois, et les crochets des codes de connexion
+# (supabase/apercu/codes-demo.sql). Aucun mot de passe de base à copier.
 #
 # Secrets requis (Settings → Secrets and variables → Actions) :
 #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID   — déjà là (29/09)
 #   APERCU_SUPABASE_SERVICE_ROLE_KEY              — la clé service_role (legacy) du projet de l'aperçu
-#   APERCU_DB_URL                                 — sa chaîne de connexion « Session pooler », mot de passe compris
 # Le projet (skanecom-apercu, org SkanEcom, eu-west-3) et sa clé publique
 # sont écrits ci-dessous : publics par nature, ils partent dans le navigateur.
 # Tant qu'un secret manque, le workflow le dit et s'arrête sans erreur.
@@ -45,7 +46,6 @@ env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.APERCU_SUPABASE_SERVICE_ROLE_KEY }}
-  APERCU_DB_URL: ${{ secrets.APERCU_DB_URL }}
   NEXT_PUBLIC_SUPABASE_URL: https://cxvbjwduaisdkvtfjxph.supabase.co
   NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dmJqd2R1YWlzZGt2dGZqeHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NzA1OTEsImV4cCI6MjEwNjM0NjU5MX0.tpD2NxLa-RZihUeHTnd6R4jdNT6w1uh3PM-rU02gAMA
   WRANGLER: npx -y wrangler@4
@@ -62,7 +62,7 @@ jobs:
       - name: Tout est-il là ?
         run: |
           manque=""
-          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID SUPABASE_SERVICE_ROLE_KEY APERCU_DB_URL; do
+          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID SUPABASE_SERVICE_ROLE_KEY; do
             [ -n "${!v}" ] || manque="$manque $v"
           done
           if [ -n "$manque" ]; then
@@ -83,22 +83,24 @@ jobs:
         with:
           node-version: 22
 
-      - uses: supabase/setup-cli@v1
-        if: env.PRET == '1'
-        with:
-          version: latest
-
       - name: La base de l'aperçu (migrations, jeu de démo, crochets des codes)
         if: env.PRET == '1'
         run: |
-          # « y » d'avance : db push demande confirmation avant d'écrire.
-          printf 'y\ny\n' | supabase db push --db-url "$APERCU_DB_URL"
-          # Le jeu de démo une seule fois : la base de l'aperçu vit ensuite sa vie.
-          if [ "$(psql "$APERCU_DB_URL" -tAc 'select count(*) from plateforme.boutiques')" = "0" ]; then
-            psql "$APERCU_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
-            echo "Jeu de démo installé."
-          fi
-          psql "$APERCU_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/apercu/codes-demo.sql
+          installe() {  # genre, nom, fichier, [version]
+            jq -n --arg genre "$1" --arg nom "$2" --arg version "${4:-}" --rawfile requete "$3" \
+              '{genre: $genre, nom: $nom, requete: $requete} + (if $version == "" then {} else {version: $version} end)' > /tmp/envoi.json
+            code=$(curl -sS -o /tmp/reponse.json -w '%{http_code}' -X POST "$NEXT_PUBLIC_SUPABASE_URL/functions/v1/apercu-installer" \
+              -H "authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "content-type: application/json" --data-binary @/tmp/envoi.json)
+            if [ "$code" != "200" ]; then echo "::error::$2 : HTTP $code $(cat /tmp/reponse.json)"; exit 1; fi
+            echo "$2 : $(cat /tmp/reponse.json)"
+          }
+          for f in supabase/migrations/*.sql; do
+            b=$(basename "$f" .sql)
+            installe migration "${b#*_}" "$f" "${b%%_*}"
+          done
+          installe graines seed.sql supabase/seed.sql
+          installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu
         if: env.PRET == '1'
