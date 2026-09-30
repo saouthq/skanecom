@@ -165,6 +165,9 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, on
       </main>
       {onglets?.length ? <Onglets liens={onglets} /> : null}
       {palette}
+      {/* Un repère neuf à chaque rendu du serveur : le geste en place sait
+          ainsi quand la page rafraîchie est posée (Retours.tsx). */}
+      <span hidden data-rendu={crypto.randomUUID()} />
     </div>
   );
 }

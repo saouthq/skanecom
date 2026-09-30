@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Prix } from "@/components/Prix";
-import { EnTetePage } from "@/components/console/Coquille";
+import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone, type NomIcone } from "@/components/console/Icone";
-import { clientSession, exigeMembre } from "@/lib/console/session";
+import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
+import { lieu } from "@/lib/commande";
+import { LIBELLES_RESULTAT, lienAppel, lienWhatsApp, messageConfirmation, telephoneLisible } from "@/lib/gestion/libelles";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
 
@@ -14,7 +16,31 @@ export const metadata: Metadata = { title: "Aujourd'hui" };
    Chaque carte mène à sa liste. Ce qui attend un geste vient d'abord ; ce
    qui est à jour se range en dessous, discret. La journée en chiffres, pour
    la direction (public.gestion_aujourdhui).
+
+   En tête, pour qui confirme les commandes : LE PROCHAIN APPEL — la
+   commande qui attend depuis le plus longtemps (la première de la liste « à
+   confirmer »), le client, depuis quand, ce qu'il a pris, ce qu'on sait de
+   lui, et l'appel ou le message WhatsApp à portée de pouce. Le résultat se
+   note sur la fiche, où mène le troisième bouton.
    ========================================================================== */
+
+type Prochaine = {
+  numero: string;
+  cree_le: string;
+  contact_nom: string;
+  contact_telephone: string;
+  mode_livraison: "domicile" | "retrait";
+  ville: string | null;
+  gouvernorat: string | null;
+  total_millimes: number;
+  articles: number;
+  premier_article: string | null;
+  appels: number;
+  dernier_appel: string | null;
+  client: { nb_commandes: number; nb_refus: number; niveau_risque: string; compte: boolean } | null;
+};
+
+const CONFIRMER: Role[] = ["proprietaire", "admin", "confirmateur"];
 
 type Etat = {
   jour: string;
@@ -52,9 +78,17 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_aujourdhui", { p_boutique_id: boutique.boutique_id });
+  const confirme = CONFIRMER.includes(boutique.role);
+  const [{ data, error }, { data: file }] = await Promise.all([
+    sb.rpc("gestion_aujourdhui", { p_boutique_id: boutique.boutique_id }),
+    // La première de la file « à confirmer » : la plus ancienne (gestion_liste_commandes).
+    confirme
+      ? sb.rpc("gestion_liste_commandes", { p_boutique_id: boutique.boutique_id, p_etape: "a_confirmer", p_recherche: null, p_limite: 1, p_decalage: 0 })
+      : Promise.resolve({ data: null }),
+  ]);
   if (error) throw new Error(`Aujourd'hui illisible : ${error.message}`);
   const e = data as Etat;
+  const prochaine = ((file as { commandes?: Prochaine[] } | null)?.commandes ?? [])[0] ?? null;
   const base = `/gestion/${slug}`;
   const maintenant = new Date();
   const c = e.commandes;
@@ -121,6 +155,8 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
           </>
         }
       />
+
+      {prochaine ? <ProchainAppel commande={prochaine} base={base} boutique={boutique.nom} maintenant={maintenant} /> : null}
 
       {aFaire.length ? (
         <section aria-labelledby="jd-a-faire">
@@ -218,5 +254,55 @@ function Carte({ tache, rang }: { tache: Tache; rang: number }) {
         <Link href={tache.action.href} className="jd-carte-action">{tache.action.libelle}</Link>
       ) : null}
     </li>
+  );
+}
+
+/* Le prochain appel : qui, depuis quand, quoi, ce qu'on sait — et le geste. */
+function ProchainAppel({ commande: c, base, boutique, maintenant }: { commande: Prochaine; base: string; boutique: string; maintenant: Date }) {
+  const prenom = c.contact_nom.trim().split(/\s+/)[0] ?? c.contact_nom;
+  const whatsapp = lienWhatsApp(
+    c.contact_telephone,
+    messageConfirmation({
+      prenom, boutique, numero: c.numero, totalMillimes: c.total_millimes, articles: c.articles, ville: c.ville,
+      retraitA: c.mode_livraison === "retrait" ? boutique : null,
+    }),
+  );
+  const faits = [
+    c.client && c.client.nb_commandes > 1 ? `${c.client.nb_commandes}\u00a0commandes chez vous` : "Nouveau client",
+    c.client && c.client.nb_refus > 0 ? pluriel(c.client.nb_refus, "refus passé", "refus passés") : null,
+    c.appels > 0 ? `Appelé ${c.appels}×${c.dernier_appel ? ` · ${(LIBELLES_RESULTAT[c.dernier_appel] ?? c.dernier_appel).toLowerCase()}` : ""}` : null,
+  ].filter(Boolean) as string[];
+  return (
+    <section className="jd-prochain" aria-labelledby="jd-prochain-titre">
+      <p className="jd-prochain-sur" id="jd-prochain-titre">
+        <span className="jd-prochain-pouls" aria-hidden="true" />
+        Le prochain appel · attend depuis {depuis(c.cree_le, maintenant)}
+      </p>
+      <div className="jd-prochain-corps">
+        <span className="avatar jd-prochain-avatar" style={styleAvatar(c.contact_nom)} aria-hidden="true">{initiales(c.contact_nom)}</span>
+        <div className="jd-prochain-qui">
+          <strong>{c.contact_nom}</strong>
+          <span>
+            {telephoneLisible(c.contact_telephone)} · {c.mode_livraison === "retrait" ? "retrait en magasin" : lieu(c.ville, c.gouvernorat)}
+          </span>
+          <span className="jd-prochain-quoi">
+            <b className="tabular-nums">{c.numero}</b> · {c.premier_article ?? pluriel(c.articles, "article", "articles")}
+            {c.articles > 1 && c.premier_article ? ` et ${pluriel(c.articles - 1, "autre", "autres")}` : ""} · <Prix millimes={c.total_millimes} />
+          </span>
+          {faits.length ? <span className="jd-prochain-faits">{faits.join(" · ")}</span> : null}
+        </div>
+      </div>
+      <div className="jd-prochain-gestes">
+        <a className="btn btn-succes btn-grand jd-prochain-appel" href={lienAppel(c.contact_telephone)}>
+          <Icone nom="telephone" /> Appeler {prenom}
+        </a>
+        <a className="btn btn-second btn-grand" href={whatsapp} target="_blank" rel="noopener noreferrer">
+          <Icone nom="message" /> WhatsApp
+        </a>
+        <Link className="btn btn-fantome btn-grand" href={`${base}/commandes/${encodeURIComponent(c.numero)}`}>
+          Ouvrir la commande <Icone nom="droite" taille={16} />
+        </Link>
+      </div>
+    </section>
   );
 }

@@ -82,6 +82,41 @@
 .console details.bo-pli[open] > summary .bo-pli-chevron { transform: rotate(180deg); }
 .console details.bo-pli[open] > :not(summary) { animation: ui-monte var(--ui-d3) var(--ui-courbe) backwards; }
 
+/* ---- Un geste en place (Retours.tsx) : ce qui a changé bouge ----
+   Pendant la transition de vue, chaque ligne de liste et de tableau garde son
+   identité : celle qui quitte la liste s'efface, les autres se resserrent,
+   celle qui change de place glisse jusqu'à la nouvelle ; une ligne neuve monte
+   en place ; le message du geste descend. Le reste passe en fondu court. Sans
+   match-element ni view-transition-class, le navigateur fait un fondu. */
+html[data-vt-geste] :is(.bo-liste, .pg-liste, .pro-liste, .var-liste, .mvt-liste, .mp-liste, .md-liste, .im-liste, .sp-liste, .ft-liste, .rc-lignes) > li,
+html[data-vt-geste] :is(.cat-ligne, .dv-ligne, .ec-colis-ligne),
+html[data-vt-geste] .console tbody > tr {
+  view-transition-name: match-element; view-transition-class: ligne;
+}
+html[data-vt-geste] .console .message { view-transition-name: match-element; view-transition-class: message; }
+/* (Les pseudo-éléments ::view-transition-* héritent de <html>, pas de
+   .console, posée sur <body> : ni --ui-d3 ni --ui-courbe n'y existent —
+   les durées et les courbes s'écrivent en clair.) Le reste passe en fondu
+   enchaîné, l'ancien et le nouveau avec la même durée et la même courbe :
+   leurs opacités font toujours 1, ce qui n'a pas changé ne pâlit pas. */
+html[data-vt-geste]::view-transition-old(root),
+html[data-vt-geste]::view-transition-new(root) { animation-duration: 180ms; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+html[data-vt-geste]::view-transition-group(*.ligne) { animation-duration: 320ms; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+html[data-vt-geste]::view-transition-old(*.ligne):only-child { animation: vt-ligne-part 200ms cubic-bezier(.4, 0, 1, 1) both; }
+html[data-vt-geste]::view-transition-new(*.ligne):only-child { animation: vt-ligne-entre 320ms cubic-bezier(.2, .8, .2, 1) 60ms both; }
+html[data-vt-geste]::view-transition-new(*.message):only-child { animation: vt-message 320ms cubic-bezier(.2, .8, .2, 1) both; }
+/* La ligne du geste (Retours.tsx : data-vt-ligne-geste) glisse par-dessus
+   celles qu'elle croise : sur un fond plein, soulevée le temps du trajet.
+   Le fond sur le groupe, pas sur la paire d'images : leur fondu
+   (plus-lighter) s'additionnerait au blanc, et la ligne serait vide. */
+html[data-vt-geste] li[data-vt-ligne-geste], html[data-vt-geste] tr[data-vt-ligne-geste] { view-transition-class: ligne porte; }
+html[data-vt-geste]::view-transition-group(*.porte) { z-index: 1; background: #fff; border-radius: 10px; }
+html[data-vt-geste]::view-transition-image-pair(*.porte) { border-radius: 10px; animation: vt-porte 320ms cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes vt-porte { 50% { box-shadow: 0 12px 28px -12px rgb(24 24 27 / .35), 0 0 0 1px rgb(24 24 27 / .06); } }
+@keyframes vt-ligne-part { to { opacity: 0; transform: scale(.98); } }
+@keyframes vt-ligne-entre { from { opacity: 0; transform: translateY(8px); } }
+@keyframes vt-message { from { opacity: 0; transform: translateY(-8px); } }
+
 /* ---- Réduire les animations ---- */
 @media (prefers-reduced-motion: reduce) {
   .console *, .console *::before, .console *::after {

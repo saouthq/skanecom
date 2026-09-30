@@ -15,6 +15,9 @@ import type { LigneDevisGestion } from "@/lib/gestion/devis";
    brouillon (le client ne voit rien) ; « Envoyer » le met dans son compte.
 
    Un formulaire HTML ordinaire : sans JavaScript, on saisit et on envoie.
+   Envoyé en place (Retours.tsx), le devis enregistré remet le formulaire à
+   l'état du serveur (onReset) : les prix, les frais et la note du devis tels
+   qu'ils viennent d'être gardés.
    ========================================================================== */
 
 type ModeFrais = "boutique" | "offerte" | "montant";
@@ -31,10 +34,19 @@ export function FormDevis({ action, lignes, frais, note, version, envoye }: {
   envoye: boolean;
 }) {
   const initial = (l: LigneDevisGestion) => l.prix_devis_millimes ?? l.prix_pro_millimes ?? l.prix_actuel_millimes;
-  const [prix, setPrix] = useState<Record<string, string>>(() => Object.fromEntries(lignes.map((l) => [l.id, formateMontant(initial(l))])));
+  const prixDu = () => Object.fromEntries(lignes.map((l) => [l.id, formateMontant(initial(l))]));
+  const modeDu = (): ModeFrais => (frais === null ? "boutique" : frais === 0 ? "offerte" : "montant");
+  const montantDu = () => (frais && frais > 0 ? formateMontant(frais) : "");
+  const [prix, setPrix] = useState<Record<string, string>>(prixDu);
   const [remise, setRemise] = useState("");
-  const [modeFrais, setModeFrais] = useState<ModeFrais>(frais === null ? "boutique" : frais === 0 ? "offerte" : "montant");
-  const [montantFrais, setMontantFrais] = useState(frais && frais > 0 ? formateMontant(frais) : "");
+  const [modeFrais, setModeFrais] = useState<ModeFrais>(modeDu);
+  const [montantFrais, setMontantFrais] = useState(montantDu);
+  const remetAZero = () => {
+    setPrix(prixDu());
+    setRemise("");
+    setModeFrais(modeDu());
+    setMontantFrais(montantDu());
+  };
 
   const lus = lignes.map((l) => ({ l, m: millimes(prix[l.id] ?? "") }));
   const illisibles = lus.filter(({ m }) => m === null || Number.isNaN(m)).length;
@@ -51,7 +63,7 @@ export function FormDevis({ action, lignes, frais, note, version, envoye }: {
   };
 
   return (
-    <form method="post" action={action} className="dv-form">
+    <form method="post" action={action} className="dv-form" onReset={remetAZero}>
       <input type="hidden" name="action" value="chiffrer" />
       <input type="hidden" name="version" value={version} />
 

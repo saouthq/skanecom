@@ -340,6 +340,11 @@ a[aria-current="page"] .compte-alerte { background: var(--ui-ambre); color: #fff
 .var-pli > summary::-webkit-details-marker { display: none; }
 .var-pli[open] > summary { background: var(--ui-doux); border-color: var(--ui-bord-fort); }
 .var-pli > form { flex-basis: 100%; animation: ui-monte .3s cubic-bezier(.2, .8, .2, 1) backwards; }
+/* Ouvert, le pli prend toute la ligne, le formulaire sous son bouton — et
+   jamais hors de la carte. (Chrome range le contenu d'un <details> dans
+   ::details-content : c'est lui qui passe dessous, pas le formulaire.) */
+.var-pli[open] { flex-basis: 100%; min-inline-size: 0; }
+.var-pli::details-content { flex-basis: 100%; min-inline-size: 0; }
 .var-stock .segments { background: var(--ui-panneau); }
 .var-qte { inline-size: 5.5rem; }
 .var-note { flex: 1 1 12rem; }
@@ -1084,6 +1089,43 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
    « AUJOURD'HUI » — les cartes de ce qui attend l'équipe : un liseré ambre
    pour ce qui attend un geste, discrètes pour ce qui est à jour.
    ========================================================================== */
+/* Le prochain appel (Aujourd'hui) : la commande qui attend depuis le plus
+   longtemps, le client, et le geste à portée de pouce. Le point vert bat
+   doucement : quelqu'un attend. */
+.jd-prochain {
+  position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 1rem;
+  margin-block-start: 1rem; padding: 1.125rem 1.25rem 1.25rem; border-radius: var(--ui-r-xl);
+  background: var(--ui-panneau); border: 1px solid color-mix(in srgb, var(--ui-vert) 26%, var(--ui-bord-leger));
+  box-shadow: var(--ui-ombre-m);
+}
+.jd-prochain::before {
+  content: ""; position: absolute; z-index: -1; inset-block-start: -45%; inset-inline-end: -12%; inline-size: 58%; aspect-ratio: 1;
+  background: radial-gradient(closest-side, color-mix(in srgb, #22C55E 13%, transparent), transparent); pointer-events: none;
+}
+.jd-prochain-sur {
+  display: inline-flex; align-items: center; gap: .625rem; margin: 0;
+  font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ui-vert);
+}
+.jd-prochain-pouls { position: relative; flex: none; inline-size: 8px; block-size: 8px; border-radius: 50%; background: #22C55E; }
+.jd-prochain-pouls::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #22C55E; animation: jd-pouls 1.9s cubic-bezier(.2, .8, .2, 1) infinite; }
+@keyframes jd-pouls { to { transform: scale(3.2); opacity: 0; } }
+.jd-prochain-corps { display: flex; align-items: center; gap: 1rem; min-inline-size: 0; }
+.jd-prochain .jd-prochain-avatar { flex: none; inline-size: 52px; block-size: 52px; font-size: 1rem; }
+.jd-prochain-qui { display: grid; gap: .1875rem; min-inline-size: 0; }
+.jd-prochain-qui strong { font-size: 1.25rem; font-weight: 650; letter-spacing: -.015em; line-height: 1.2; }
+.jd-prochain-qui > span { font-size: .875rem; color: var(--ui-texte-2); }
+.jd-prochain-qui .jd-prochain-quoi { color: var(--ui-texte); }
+.jd-prochain-qui .jd-prochain-quoi .prix { font-weight: 600; }
+.jd-prochain-qui .jd-prochain-faits { font-size: .8125rem; color: var(--ui-texte-3); }
+.jd-prochain-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.jd-prochain-appel { min-inline-size: 13rem; }
+@media (max-width: 699px) {
+  /* Au pouce : l'appel, WhatsApp, la commande — chacun toute la largeur. */
+  .jd-prochain-gestes { display: grid; grid-template-columns: 1fr; }
+  .jd-prochain-appel { min-inline-size: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .jd-prochain-pouls::after { animation: none; } }
+
 .jd-titre { margin: 1.5rem 0 .75rem; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ui-texte-2); }
 .jd-titre-discret { color: var(--ui-texte-3); }
 .jd-grille { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); margin: 0; padding: 0; list-style: none; }

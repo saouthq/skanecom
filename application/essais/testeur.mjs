@@ -28,6 +28,42 @@ export function creeTesteur() {
   const note = (etat, texte) => { notes.push(`${etat}  ${texte}`); console.log(`${etat}  ${texte}`); };
   const verifie = (cond, texte) => note(cond ? "OK    " : "DÉFAUT", texte);
 
+  /* Clic « humain » : la souris va jusqu'à l'élément, s'arrête, clique. */
+  const clic = async (page, loc) => {
+    await loc.scrollIntoViewIfNeeded();
+    const b = await loc.boundingBox();
+    if (!b) throw new Error("élément invisible");
+    await page.mouse.move(b.x + b.width / 2 + (Math.random() * 4 - 2), b.y + b.height / 2 + (Math.random() * 4 - 2), { steps: 12 });
+    await pause(250);
+    await loc.click();
+    await pause(150);
+  };
+
+  /* Un formulaire envoyé (un clic, ou une touche : `geste`), puis la page
+     qui a fini de répondre. Au backoffice et dans la console, le geste se
+     fait en place (components/console/Retours.tsx : <html data-geste> le
+     temps de l'envoi, sans rechargement) ; ailleurs, et vers une autre page,
+     la page se recharge. L'adresse ne suffit pas à le savoir : elle porte
+     souvent déjà « ?ok= » avant le geste. Le formulaire le dit : un envoi
+     que la page a pris en main (defaultPrevented) se fait en place. */
+  const envoie = async (page, geste) => {
+    const recharge = page.waitForEvent("load", { timeout: 30_000 }).catch(() => {});
+    await page.evaluate(() => {
+      window.__envoi = "aucun";
+      window.addEventListener("submit", (e) => { window.__envoi = e.defaultPrevented ? "en-place" : "ordinaire"; }, { once: true });
+    });
+    if (typeof geste === "function") await geste();
+    else await clic(page, geste);
+    const mode = await page.evaluate(() => window.__envoi).catch(() => "ordinaire"); // déjà partie : un rechargement
+    if (mode === "en-place") {
+      await page.waitForFunction(() => !document.documentElement.hasAttribute("data-geste"), null, { timeout: 30_000, polling: 50 })
+        .catch(() => recharge); // vers une autre page : c'est son « load » qui dit la fin
+    } else if (mode === "ordinaire") {
+      await recharge;
+    }
+    await page.waitForLoadState("networkidle");
+  };
+
   return {
     port,
     dossier,
@@ -55,16 +91,8 @@ export function creeTesteur() {
       return fichier;
     },
 
-    /* Clic « humain » : la souris va jusqu'à l'élément, s'arrête, clique. */
-    async clic(page, loc) {
-      await loc.scrollIntoViewIfNeeded();
-      const b = await loc.boundingBox();
-      if (!b) throw new Error("élément invisible");
-      await page.mouse.move(b.x + b.width / 2 + (Math.random() * 4 - 2), b.y + b.height / 2 + (Math.random() * 4 - 2), { steps: 12 });
-      await pause(250);
-      await loc.click();
-      await pause(150);
-    },
+    clic,
+    envoie,
 
     async tape(page, texte) {
       for (const c of texte) { await page.keyboard.type(c); await pause(60 + Math.random() * 80); }

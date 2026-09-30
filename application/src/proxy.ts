@@ -57,6 +57,15 @@ async function versConsole(request: NextRequest, pathname: string, search: strin
   } catch {
     // GoTrue injoignable : la page dira « reconnectez-vous ».
   }
+  // Un geste envoyé sans rechargement (components/console/Retours.tsx) : le
+  // navigateur suit la redirection 303 jusqu'à la page de retour, dont il ne
+  // veut que l'adresse. Rien n'est rendu ici — le routeur la redemandera, en
+  // RSC. Les cookies de session rafraîchis, eux, partent.
+  if (request.method === "GET" && request.headers.get("x-skanecom-geste") === "1") {
+    const vide = new NextResponse(null, { status: 204, headers: { "cache-control": "no-store" } });
+    for (const cookie of reponse.cookies.getAll()) vide.cookies.set(cookie);
+    return vide;
+  }
   reponse.headers.set("cache-control", "private, no-store");
   reponse.headers.set("x-robots-tag", "noindex, nofollow");
   reponse.headers.set("x-frame-options", "DENY");

@@ -22,7 +22,7 @@ import { creeTesteur } from "./testeur.mjs";
    ========================================================================== */
 
 const t = creeTesteur();
-const { pause, note, verifie, capture, clic, tape, etape } = t;
+const { pause, note, verifie, capture, clic, tape, etape, envoie } = t;
 const CONSOLE = t.adresse("console.localhost");
 const ADMIN = { email: "admin@skanecom.test", mdp: "console-locale-skanecom" };
 const SUFFIXE = Date.now().toString(36).slice(-5);
@@ -289,7 +289,7 @@ await etape("la vitrine de la boutique en préparation est fermée", async () =>
 
 await etape("ouvrir la boutique", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  await clic(page, page.getByRole("button", { name: "Ouvrir la boutique" }));
+  await envoie(page, page.getByRole("button", { name: "Ouvrir la boutique" }));
   await page.waitForURL(/ok=/);
   verifie((await page.getByRole("status").innerText()).includes("ouverte"), "la console confirme l'ouverture");
   const vitrine = await ctx.newPage();
@@ -473,7 +473,7 @@ await etape("les modules de la boutique", async () => {
   const aVenir = page.locator('.md-module[data-module="paiement_en_ligne"]');
   verifie((await aVenir.innerText()).includes("À venir") && (await aVenir.getByRole("button").count()) === 0,
     "un module pas encore construit est « à venir », sans bouton");
-  await clic(page, page.getByRole("button", { name: "Activer : Demander conseil (WhatsApp)" }));
+  await envoie(page, page.getByRole("button", { name: "Activer : Demander conseil (WhatsApp)" }));
   await page.waitForURL(/ok=/);
   const conseil = page.locator('.md-module[data-module="conseil_whatsapp"]');
   verifie((await page.getByRole("status").innerText()).includes("activé") && (await conseil.getAttribute("data-actif")) === ""
@@ -487,7 +487,7 @@ await etape("les modules de la boutique", async () => {
     formulaire: { boutique_id: await page.locator('input[name="boutique_id"]').first().inputValue(), module: "paiement_en_ligne", actif: "true" },
   });
   verifie(refus.status === 303 && decodeURIComponent(refus.location.replace(/\+/g, " ")).includes("à venir"), "un module à venir, posté à la main : la base refuse");
-  await clic(page, page.getByRole("button", { name: "Couper : Demander conseil (WhatsApp)" }));
+  await envoie(page, page.getByRole("button", { name: "Couper : Demander conseil (WhatsApp)" }));
   await page.waitForURL(/ok=/);
   verifie((await page.getByRole("status").innerText()).includes("coupé") && (await page.locator(".md-module[data-actif]").count()) === 0,
     `« ${await page.getByRole("status").innerText()} »`);
@@ -540,7 +540,7 @@ await etape("importer un catalogue : le fichier corrigé", async () => {
     "le rapport annonce 2 produits nouveaux et les 4 rayons à créer");
   verifie(texte.includes("529,000") && texte.includes("Kit 2 batteries"), "l'aperçu montre les prix et les axes lus dans le fichier");
   await capture(page, "console-import-rapport", true);
-  await clic(page, page.getByRole("button", { name: /^Importer 2 produits \(4 variantes\)/ }));
+  await envoie(page, page.getByRole("button", { name: /^Importer 2 produits \(4 variantes\)/ }));
   await page.waitForURL(new RegExp(`/boutiques/${SLUG}\\?ok=`));
   verifie((await page.getByRole("status").innerText()).includes("Catalogue importé : 2 produits, 4 variantes"), "la console confirme l'import");
   verifie(/Produits 2 Publiés 2 Variantes 4 Rayons 4/.test((await page.locator("section:has(#t-catalogue)").innerText()).replace(/\s+/g, " ")),
@@ -622,7 +622,7 @@ await etape("les photos à l'import : renvoyer le même dossier ne double rien ;
   verifie(await page.getByRole("button", { name: "Envoyer 4 photos" }).count() === 1, "« compléter aussi » les proposerait de nouveau, en connaissance de cause");
   await clic(page, page.getByRole("button", { name: "Tout retirer" }));
   await clic(page, page.locator(".pi-lot").first().locator("summary"));
-  await clic(page, page.getByRole("button", { name: "Oui, retirer" }));
+  await envoie(page, page.getByRole("button", { name: "Oui, retirer" }));
   await page.waitForURL(/ok=/);
   verifie((await page.getByRole("status").innerText()).includes("4 photos retirées de 2 produits"), `« ${await page.getByRole("status").innerText()} »`);
   verifie((await page.locator(".pi-lot").first().innerText()).includes("Retiré"), "l'envoi est marqué retiré, avec son auteur");
@@ -648,7 +648,7 @@ await etape("la liste de mise en place", async () => {
   verifie(!(await fait("equipe")) && (await carte.locator('[data-etape="equipe"]').getByRole("link", { name: "Aller à l'étape : équipe" }).count()) === 1,
     "l'équipe reste à faire, avec le chemin pour la faire");
   verifie(/J\+0/.test(await carte.locator('[data-etape="marque"]').innerText()), "chaque étape faite est datée depuis la création (J+0)");
-  await clic(page, carte.getByRole("button", { name: "Recueil : faite" }));
+  await envoie(page, carte.getByRole("button", { name: "Recueil : faite" }));
   await page.waitForURL(/ok=/);
   verifie((await page.getByRole("status").innerText()).includes("« Recueil » : faite") && await fait("recueil")
     && (await carte.locator('[data-etape="recueil"]').innerText()).includes(ADMIN.email),
@@ -697,7 +697,7 @@ let lienAppels = "";
 await etape("inviter le propriétaire : la console rend un lien à lui envoyer", async () => {
   await page.locator("#email").fill(GERANT);
   await clic(page, page.locator(".role-choix", { hasText: "Propriétaire" }));
-  await clic(page, page.getByRole("button", { name: "Inviter" }));
+  await envoie(page, page.getByRole("button", { name: "Inviter" }));
   await page.waitForURL(new RegExp(`/equipe\\?ok=`));
   await page.waitForLoadState("networkidle");
   lienGerant = await lienAffiche();
@@ -713,7 +713,7 @@ await etape("inviter le propriétaire : la console rend un lien à lui envoyer",
 await etape("inviter une personne pour confirmer les commandes", async () => {
   await page.locator("#email").fill(APPELS);
   await clic(page, page.locator(".role-choix", { hasText: "Confirmation" }));
-  await clic(page, page.getByRole("button", { name: "Inviter" }));
+  await envoie(page, page.getByRole("button", { name: "Inviter" }));
   await page.waitForURL(new RegExp(`/equipe\\?ok=`));
   await page.waitForLoadState("networkidle");
   lienAppels = await lienAffiche();
@@ -723,7 +723,7 @@ await etape("inviter une personne pour confirmer les commandes", async () => {
 await etape("une personne déjà dans l'équipe n'est pas réinvitée", async () => {
   await page.locator("#email").fill(APPELS.toUpperCase());
   await clic(page, page.locator(".role-choix", { hasText: "Lecture seule" }));
-  await clic(page, page.getByRole("button", { name: "Inviter" }));
+  await envoie(page, page.getByRole("button", { name: "Inviter" }));
   await page.waitForURL(/erreur=/);
   verifie((await page.getByRole("alert").innerText()).includes("fait déjà partie de l'équipe"), `refusé : « ${await page.getByRole("alert").innerText()} »`);
   verifie(await lienAffiche() === lienAppels, "son lien d'invitation reste valable (aucun nouveau jeton)");
@@ -734,7 +734,7 @@ await etape("une personne qui a déjà un compte entre avec son mot de passe, sa
   await gotrue("POST", "/admin/users", { email, password: "mot-de-passe-habituel", email_confirm: true });
   await page.locator("#email").fill(email);
   await clic(page, page.locator(".role-choix", { hasText: "Préparation" }));
-  await clic(page, page.getByRole("button", { name: "Inviter" }));
+  await envoie(page, page.getByRole("button", { name: "Inviter" }));
   await page.waitForURL(/ok=/);
   verifie((await page.getByRole("status").innerText()).includes("se connecte avec son mot de passe habituel"),
     `« ${await page.getByRole("status").innerText()} »`);
@@ -814,25 +814,25 @@ await etape("la liste de l'équipe suit : invitations acceptées, journal", asyn
 
 await etape("le seul propriétaire ne peut pas perdre son accès", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}/equipe`, { waitUntil: "networkidle" });
-  await clic(page, ligneDe(GERANT).getByRole("button", { name: "Retirer l'accès" }));
+  await envoie(page, ligneDe(GERANT).getByRole("button", { name: "Retirer l'accès" }));
   await page.waitForURL(/erreur=/);
   verifie((await page.getByRole("alert").innerText()).includes("au moins un propriétaire actif"), `refusé : « ${await page.getByRole("alert").innerText()} »`);
 });
 
 await etape("retirer l'accès : elle est dehors aussitôt ; le rendre", async () => {
-  await clic(page, ligneDe(APPELS).getByRole("button", { name: "Retirer l'accès" }));
+  await envoie(page, ligneDe(APPELS).getByRole("button", { name: "Retirer l'accès" }));
   await page.waitForURL(/ok=/);
   verifie((await ligneDe(APPELS).innerText()).includes("Accès retiré"), "la liste la montre sans accès");
   const r = await brut(appels, "GET", `/gestion/${SLUG}`);
   verifie(r.status === 307 || r.status === 303 ? r.location.includes("/refuse") : false, `sa session ouverte ne mène plus qu'à /refuse (${r.status} → ${r.location})`);
-  await clic(page, ligneDe(APPELS).getByRole("button", { name: "Rendre l'accès" }));
+  await envoie(page, ligneDe(APPELS).getByRole("button", { name: "Rendre l'accès" }));
   await page.waitForURL(/ok=/);
   const r2 = await brut(appels, "GET", `/gestion/${SLUG}`);
   verifie(r2.status === 200, `accès rendu : son backoffice s'ouvre de nouveau (HTTP ${r2.status})`);
 });
 
 await etape("mot de passe oublié : un nouveau lien, le même compte", async () => {
-  await clic(page, ligneDe(APPELS).getByRole("button", { name: "Lien de mot de passe" }));
+  await envoie(page, ligneDe(APPELS).getByRole("button", { name: "Lien de mot de passe" }));
   await page.waitForURL(/ok=/);
   await page.waitForLoadState("networkidle");
   const lien = await lienAffiche();
@@ -932,7 +932,7 @@ await etape("le support définit une caractéristique ; l'import remplit la fich
   await form.locator("#label-nouveau").fill("Puissance");
   await form.locator("#unite-nouveau").fill("W");
   await clic(page, form.locator(".opt", { hasText: "Perceuses" }).first());
-  await clic(page, form.getByRole("button", { name: "Ajouter la caractéristique" }));
+  await envoie(page, form.getByRole("button", { name: "Ajouter la caractéristique" }));
   await page.waitForURL(/ok=/);
   verifie((await page.getByRole("status").innerText()).includes("« Puissance » ajoutée"), "« Puissance » définie par le support, au nom de l'administrateur");
   // Puis, dans la console, le même fichier avec la colonne « Puissance (W) ».
@@ -949,7 +949,7 @@ await etape("le support définit une caractéristique ; l'import remplit la fich
   const texte = await page.locator("main").innerText();
   verifie(/Fiche technique : Puissance · 1 produit/.test(texte), "le rapport reconnaît la colonne comme la fiche technique, pas comme un axe");
   verifie(/710\sW/.test(await page.locator("section:has(#t-apercu)").innerText()), "l'aperçu montre la puissance avec son unité");
-  await clic(page, page.getByRole("button", { name: /^Importer 2 produits/ }));
+  await envoie(page, page.getByRole("button", { name: /^Importer 2 produits/ }));
   await page.waitForURL(new RegExp(`/boutiques/${SLUG}\\?ok=`));
   const vitrine = await ctx.newPage();
   await vitrine.goto(`${VITRINE}/categorie/perceuses/puissance=710`, { waitUntil: "networkidle" });

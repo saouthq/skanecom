@@ -182,7 +182,7 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     verifie((await page.locator("#resultat-appel .bo-retour-appel").innerText()).includes("Comment s'est passé l'appel"),
       "au retour de l'appel, la fiche demande comment il s'est passé");
     verifie((await page.evaluate(() => document.activeElement?.textContent?.trim())) === "Confirmée", "le focus attend sur « Confirmée »");
-    await clic(page, page.getByRole("button", { name: "Injoignable" }));
+    await t.envoie(page, page.getByRole("button", { name: "Injoignable" }));
     await page.waitForURL(/fait=appel-injoignable/);
     verifie((await message(page)).includes("injoignable"), "« Injoignable » : l'appel est noté");
     verifie((await page.locator(".bo-action").innerText()).includes("Déjà 2 tentatives"), "la fiche compte les tentatives");
@@ -198,7 +198,7 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     await clic(page, page.getByLabel("WhatsApp", { exact: true }));
     await clic(page, page.locator("#note-appel"));
     await tape(page, "Livraison après 17 h");
-    await clic(page, page.getByRole("button", { name: /Confirmée/ }));
+    await t.envoie(page, page.getByRole("button", { name: /Confirmée/ }));
     await page.waitForURL(/fait=appel-confirmee/);
     verifie((await message(page)).includes("Commande confirmée"), "« Confirmée » : la commande passe à la préparation");
     verifie((await statut(page)) === "Confirmée", "son statut suit");
@@ -231,9 +231,9 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     t.espion(autre, "appels-2", attendue);
     await ouvre(page, 10);
     await autre.goto(`${C}/gestion/maymar/commandes/${num(10)}`, { waitUntil: "networkidle" });
-    await clic(autre, autre.getByRole("button", { name: /Confirmée/ }));
+    await t.envoie(autre, autre.getByRole("button", { name: /Confirmée/ }));
     await autre.waitForURL(/fait=appel-confirmee/);
-    await clic(page, page.getByRole("button", { name: "Refus du client" }));
+    await t.envoie(page, page.getByRole("button", { name: "Refus du client" }));
     await page.waitForURL(/erreur=/);
     const texte = await page.locator(".message-erreur").innerText();
     verifie(texte.includes("entre-temps") || texte.includes("n'attend plus"), `le geste périmé est refusé : « ${texte.slice(0, 90)}… »`);
@@ -303,6 +303,8 @@ console.log("\n== 2. Le gérant, double authentification ==");
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   t.espion(page, "gerant", attendue);
+  /* Un formulaire posté : on attend la page qui revient (testeur.mjs). */
+  const envoie = (bouton) => t.envoie(page, bouton);
 
   await etape("connexion, puis double authentification", async () => {
     await connexion(page, "gerant@maymar.test");
@@ -325,6 +327,12 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await page.locator(".app-nav .app-nav-compte").first().waitFor({ timeout: 8000 });
     const pastille = Number((await page.locator(".app-nav .app-nav-compte").first().innerText()).trim());
     verifie(n > 0 && n === pastille, `les commandes à confirmer : ${n}, comme la pastille de « Commandes »`);
+    const prochain = page.locator(".jd-prochain");
+    const ditProchain = (await prochain.innerText().catch(() => "")).replace(/\s+/g, " ");
+    verifie(/attend depuis/i.test(ditProchain) && /MAY-2026-\d{5}/.test(ditProchain) && /TND/.test(ditProchain),
+      `en tête, le prochain appel : qui, depuis quand, quoi (« ${ditProchain.slice(0, 110)}… »)`);
+    verifie((await prochain.locator("a[href^='tel:']").count()) === 1 && (await prochain.locator("a[href^='https://wa.me/']").count()) === 1,
+      "l'appel et le message WhatsApp, à portée de pouce");
     verifie((await page.locator(".jd-journee").innerText()).includes("TND"), "la journée, avec ses montants : le gérant est la direction");
     const stock = page.locator(".jd-stock");
     verifie((await stock.innerText()).includes("VAL-ABS-75-BOR") && (await stock.innerText()).includes("Épuisé"),
@@ -363,12 +371,12 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await ouvre(page, 8);
     await clic(page, page.locator("#suivi"));
     await tape(page, "TN77001");
-    await clic(page, page.getByRole("button", { name: "Marquer expédiée" }));
+    await envoie(page.getByRole("button", { name: "Marquer expédiée" }));
     await page.waitForURL(/fait=expedier/);
     verifie((await statut(page)) === "Expédiée", "la commande est expédiée");
     verifie((await page.locator(".bo-action").innerText()).includes("suivi TN77001"), "le numéro de suivi est gardé");
     await capture(page, "gestion-fiche-expediee");
-    await clic(page, page.getByRole("button", { name: /Livrée, paiement encaissé/ }));
+    await envoie(page.getByRole("button", { name: /Livrée, paiement encaissé/ }));
     await page.waitForURL(/fait=livrer/);
     verifie((await statut(page)) === "Livrée", "livrée : le paiement est encaissé");
   });
@@ -380,7 +388,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await clic(page, page.locator("#commentaire"));
     await tape(page, "Ne voulait plus la valise");
     await capture(page, "gestion-refus");
-    await clic(page, page.getByRole("button", { name: "Enregistrer le refus" }));
+    await envoie(page.getByRole("button", { name: "Enregistrer le refus" }));
     await page.waitForURL(/fait=refuser/);
     verifie((await message(page)).includes("Le stock est rendu"), "refus enregistré, stock rendu");
     verifie((await page.locator(".bo-fiche-cote").innerText()).includes("1 refus à la livraison"), "le refus compte sur la fiche du client");
@@ -391,7 +399,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await clic(page, page.locator("summary", { hasText: "Annuler la commande" }));
     await clic(page, page.locator("#motif"));
     await tape(page, "Rupture chez le fournisseur");
-    await clic(page, page.getByRole("button", { name: "Annuler la commande" }));
+    await envoie(page.getByRole("button", { name: "Annuler la commande" }));
     await page.waitForURL(/fait=annuler/);
     verifie((await statut(page)) === "Annulée", "la commande est annulée");
     verifie((await page.locator(".bo-action").innerText()).includes("Rupture chez le fournisseur"), "le motif est affiché");
@@ -401,7 +409,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await ouvre(page, 11);
     await clic(page, page.locator("#note-interne"));
     await tape(page, "Cliente de Sousse, livrer avant le week-end");
-    await clic(page, page.getByRole("button", { name: "Enregistrer la note" }));
+    await envoie(page.getByRole("button", { name: "Enregistrer la note" }));
     await page.waitForURL(/fait=note/);
     verifie((await page.locator("#note-interne").inputValue()) === "Cliente de Sousse, livrer avant le week-end", "la note est gardée");
     await capture(page, "gestion-fiche-note", true);
@@ -415,13 +423,6 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await page.waitForLoadState("networkidle");
   };
   const ok = () => page.getByRole("status").first().innerText().catch(() => "");
-  /* Un formulaire posté : on attend la page qui revient (l'adresse porte
-     souvent déjà « ?ok= » : l'attendre ne suffit pas). */
-  const envoie = async (bouton) => {
-    await Promise.all([page.waitForEvent("load"), clic(page, bouton)]);
-    await page.waitForLoadState("networkidle");
-  };
-
   await etape("le catalogue : ses produits, ses filtres", async () => {
     await clic(page, page.locator(".app-cote").getByRole("link", { name: "Catalogue" }));
     await page.waitForURL(/\/gestion\/maymar\/produits$/);
@@ -462,8 +463,10 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await envoie(premiere.getByRole("button", { name: "Valider" }));
     verifie((await page.getByRole("alert").innerText()).includes("Il ne reste que"), "une casse plus grande que le stock est refusée");
     verifie(await page.locator(".var").first().locator(".var-pli").evaluate((d) => d.open), "le mouvement de stock reste ouvert, pour corriger");
+    verifie(await page.locator(".var").first().locator("input[name=quantite]").inputValue() === "999", "la quantité refusée reste dans le champ, à corriger");
     await clic(page, page.locator(".var").first().getByLabel("Inventaire"));
     await clic(page, page.locator(".var").first().locator("input[name=quantite]"));
+    await page.keyboard.press("Control+A");
     await tape(page, "4");
     await envoie(page.locator(".var").first().getByRole("button", { name: "Valider" }));
     verifie((await ok()).includes("Inventaire enregistré : 4 en stock"), "l'inventaire ramène le stock au compté");
@@ -519,10 +522,16 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await capture(page, "gestion-reception");
     await envoie(page.getByRole("button", { name: "Enregistrer la réception" }));
     verifie((await ok()).includes("16 pièces sur 2 déclinaisons"), `« ${await ok()} »`);
-    await clic(page, page.locator(".rc-filtre input"));
-    await tape(page, "business");
-    const apres = await Promise.all([0, 1].map(async (i) => Number((await page.locator(".rc-produit:not([hidden]) .rc-ligne").nth(i).locator(".rc-stock").innerText()).match(/(\d+) en stock/)[1])));
+    // Sans rechargement : le filtre reste posé, sur la valise qu'on vient de recevoir.
+    verifie(await page.locator(".rc-filtre input").inputValue() === "business" && await visibles.count() === 1, "le filtre reste : la valise business, toujours sous les yeux");
+    const apres = await Promise.all([0, 1].map(async (i) => Number((await lignes.nth(i).locator(".rc-stock").innerText()).match(/(\d+) en stock/)[1])));
     verifie(apres[0] === avant[0] + 10 && apres[1] === avant[1] + 6, `les deux stocks ont monté (${avant.join(", ")} → ${apres.join(", ")})`);
+    const restes = await page.locator(".rc-quantite").evaluateAll((champs) => champs.filter((c) => c.value !== "").length);
+    verifie(restes === 0 && (await page.locator(".rc-total").innerText()).includes("Tapez les quantités reçues")
+      && await page.getByRole("button", { name: "Enregistrer la réception" }).isDisabled(),
+      `les quantités se vident : rien ne peut partir deux fois (${restes} champ(s) rempli(s))`);
+    verifie(await page.locator(".rc-note").inputValue() === "", "la note du bon de livraison aussi");
+    await capture(page, "gestion-reception-enregistree");
   });
 
   await etape("un produit neuf, puis en vitrine", async () => {
@@ -542,7 +551,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie(apercu.includes("3 déclinaisons") && apercu.includes("S, M, L") && apercu.includes("HOUSSE-DE-PROTECTION-S"),
       `pendant la saisie, l'aperçu : « ${apercu} »`);
     await capture(page, "gestion-nouveau-produit");
-    await clic(page, page.getByRole("button", { name: "Créer le produit" }));
+    await envoie(page.getByRole("button", { name: "Créer le produit" }));
     await page.waitForURL(/\/produits\/[0-9a-f-]{36}\?ok=/);
     nouveau = page.url();
     verifie((await ok()).includes("3 déclinaisons"), "créé en brouillon, avec ses trois tailles");
@@ -733,10 +742,10 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await p2.goto(nouveau.split("?")[0], { waitUntil: "networkidle" });
     await page.goto(nouveau.split("?")[0], { waitUntil: "networkidle" });
     await page.locator("#marque").fill("Maymar");
-    await clic(page, page.getByRole("button", { name: "Enregistrer la fiche" }));
+    await envoie(page.getByRole("button", { name: "Enregistrer la fiche" }));
     await page.waitForURL(/ok=/);
     await p2.locator("#nom").fill("Housse (écrasée)");
-    await p2.getByRole("button", { name: "Enregistrer la fiche" }).click();
+    await t.envoie(p2, () => p2.getByRole("button", { name: "Enregistrer la fiche" }).click());
     await p2.waitForURL(/erreur=/);
     verifie((await p2.getByRole("alert").innerText()).includes("modifiée entre-temps"), "l'écran resté ouvert est prévenu, rien n'est écrasé");
     await autre.close();
@@ -851,7 +860,10 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await clic(page, section("paiement").getByText("Paiement à la livraison"));
     await envoie(section("paiement").getByRole("button", { name: "Enregistrer" }));
     verifie((await page.getByRole("alert").innerText()).includes("au moins un moyen de paiement"), "le seul moyen de paiement ne se coupe pas");
-    verifie(await section("paiement").getByLabel("Paiement à la livraison").isChecked(), "il reste coché");
+    // Refusé, le geste laisse la case comme on l'a mise (pour corriger) ; la boutique, elle, n'a rien changé.
+    verifie(!(await section("paiement").getByLabel("Paiement à la livraison").isChecked()), "la case reste comme on l'a mise, sous le refus");
+    await page.reload({ waitUntil: "networkidle" });
+    verifie(await section("paiement").getByLabel("Paiement à la livraison").isChecked(), "rechargée, la page le confirme : il reste coché");
     verifie((await section("paiement").innerText()).includes("Bientôt"), "Konnect : prévu, à activer par SkanEcom");
     await section("vitrine").locator("#whatsapp").fill("20 123 456");
     await envoie(section("vitrine").getByRole("button", { name: "Enregistrer" }));
@@ -1022,13 +1034,13 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie((await groupe.locator(".ec-bilan").innerText()).includes("Écart −5,000 TND"), `${moins5} TND reçus : l'écart s'affiche pendant la saisie (−5,000)`);
     await groupe.locator("input[name=reference]").fill("VIR-PARCOURS");
     await capture(page, "gestion-encaissements");
-    await clic(page, groupe.getByRole("button", { name: /Enregistrer le versement/ }));
+    await envoie(groupe.getByRole("button", { name: /Enregistrer le versement/ }));
     await page.waitForURL(/fait=verse/);
     verifie((await page.locator(".message-succes").innerText()).includes("écart de −5,000 TND"), "le versement est enregistré, son écart annoncé");
     const saisi = page.locator(".ec-versement", { hasText: "VIR-PARCOURS" });
     verifie((await saisi.innerText()).includes("−5,000 TND") && (await saisi.innerText()).includes("gerant@maymar.test"), "il entre au journal, avec son auteur");
     await clic(page, saisi.locator("summary"));
-    await clic(page, saisi.getByRole("button", { name: "Annuler ce versement" }));
+    await envoie(saisi.getByRole("button", { name: "Annuler ce versement" }));
     await page.waitForURL(/fait=annule/);
     verifie((await page.locator(".ec-versement", { hasText: "VIR-PARCOURS" }).innerText()).includes("Annulé"), "une saisie erronée s'annule : elle reste au journal, barrée");
     verifie((await page.locator(".ec-groupe").first().locator(".ec-colis-ligne").count()) === colis, "ses colis redeviennent à recevoir");
@@ -1195,7 +1207,7 @@ console.log("\n== 3. L'employé des appels, sur téléphone ==");
     await capture(page, "gestion-telephone-fiche");
     await page.locator("#note-appel").tap();
     await tape(page, "Rappeler à 18 h");
-    await page.getByRole("button", { name: "À rappeler" }).tap();
+    await t.envoie(page, () => page.getByRole("button", { name: "À rappeler" }).tap());
     await page.waitForURL(/fait=appel-rappeler/);
     verifie((await message(page)).includes("à rappeler"), "noté : à rappeler");
     await capture(page, "gestion-telephone-rappeler");
@@ -1242,7 +1254,7 @@ console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoy
     await clic(page, page.locator("input[name=frais_mode][value=offerte]"));
     verifie((await page.locator(".dv-ecart dd").innerText()).includes("−10"), "l'écart au catalogue se lit pendant la saisie");
     await capture(page, "gestion-devis-chiffrage");
-    await clic(page, page.getByRole("button", { name: "Envoyer le devis" }));
+    await t.envoie(page, page.getByRole("button", { name: "Envoyer le devis" }));
     await page.waitForURL(/ok=/, { timeout: 15000 });
     verifie((await page.locator(".message-succes").first().innerText()).includes("Devis envoyé"), "envoyé : le client le voit dans son compte");
     const wa = decodeURIComponent((await page.locator("a[href^='https://wa.me/']").first().getAttribute("href")) ?? "");
@@ -1315,15 +1327,14 @@ console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoy
     // Des changements non enregistrés : le navigateur demande avant de partir.
     page.once("dialog", (d) => d.accept());
     await page.goto(`${C}/gestion/quincaillerie-demo/pages`, { waitUntil: "networkidle" });
-    await clic(page, page.getByRole("button", { name: "Monter « Livraison, retrait et retours »" }));
-    await page.waitForLoadState("networkidle");
+    await t.envoie(page, page.getByRole("button", { name: "Monter « Livraison, retrait et retours »" }));
     const titres = await page.locator(".pg-ligne .pg-titre").allInnerTexts();
     verifie(titres[1] === "Livraison, retrait et retours", `montée d'un cran (${titres.join(" · ")})`);
     await clic(page, page.locator(".pg-ligne .pg-titre", { hasText: "Livraison, retrait et retours" }));
     await page.waitForURL(/\/pages\/[0-9a-f-]{36}$/);
     await page.waitForLoadState("networkidle");
     await clic(page, page.locator(".pg-retrait summary"));
-    await clic(page, page.getByRole("button", { name: "Oui, retirer la page" }));
+    await t.envoie(page, page.getByRole("button", { name: "Oui, retirer la page" }));
     await page.waitForURL(/\/pages\?ok=/, { timeout: 15000 });
     verifie((await page.locator(".message-succes").innerText()).includes("Page retirée"), "retirée : elle quitte la boutique et son pied de page");
     verifie(await page.locator(".pg-ligne").count() === 2, "la liste revient à deux pages");
@@ -1397,7 +1408,7 @@ console.log("\n== 5. Le préparateur d'une autre boutique ==");
       && (await page.getByRole("link", { name: "Bordereau" }).count()) === 0,
       "préparer, sans transporteur ni bordereau");
     verifie((await page.locator(".bo-fiche-cote").innerText()).includes("Route de Tunis, km 3"), "la fiche dit à quel magasin elle attend");
-    await clic(page, page.getByRole("button", { name: "Prête au retrait" }));
+    await t.envoie(page, page.getByRole("button", { name: "Prête au retrait" }));
     await page.waitForURL(/fait=expedier/);
     verifie((await page.getByRole("status").innerText()).includes("prête au retrait"), `« ${await page.getByRole("status").innerText()} »`);
     const prevenir = page.getByRole("link", { name: /c'est prêt/ });
@@ -1406,7 +1417,7 @@ console.log("\n== 5. Le préparateur d'une autre boutique ==");
       "le message WhatsApp « c'est prêt » : le numéro, le magasin, le montant");
     verifie((await page.locator(".bo-progression").innerText()).includes("Prête"), "la frise dit « prête »");
     await capture(page, "gestion-retrait-prete");
-    await clic(page, page.getByRole("button", { name: "Retirée, paiement encaissé" }));
+    await t.envoie(page, page.getByRole("button", { name: "Retirée, paiement encaissé" }));
     await page.waitForURL(/fait=livrer/);
     verifie((await page.getByRole("status").innerText()).includes("Retrait enregistré") && (await page.locator(".bo-fiche-tete").innerText()).includes("Retirée"),
       "retirée : le paiement est encaissé");

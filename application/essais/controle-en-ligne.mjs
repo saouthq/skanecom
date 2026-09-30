@@ -38,8 +38,14 @@ for (const [ecran, options] of [
     const contexte = await navigateur.newContext({ ...options, locale: "fr-FR" });
     const page = await contexte.newPage();
     let erreurs = [];
+    let depart = Date.now();
     page.on("response", (r) => { if (r.status() >= 400) erreurs.push(`HTTP ${r.status()} ${r.url()}`); });
-    page.on("requestfailed", (r) => erreurs.push(`échec (${r.failure()?.errorText}) ${r.url()}`));
+    // Une requête abandonnée : quand (depuis le début de la page), quoi, et
+    // la largeur de l'écran à ce moment — de quoi savoir ce qui l'a demandée.
+    page.on("requestfailed", (r) => {
+      const largeur = page.viewportSize()?.width;
+      erreurs.push(`échec (${r.failure()?.errorText}) ${r.url()} [${r.resourceType()}, à ${Date.now() - depart} ms, écran ${largeur} px]`);
+    });
     page.on("pageerror", (e) => erreurs.push(`JavaScript : ${String(e).slice(0, 200)}`));
 
     const chemins = ["/", "/catalogue"];
@@ -47,6 +53,7 @@ for (const [ecran, options] of [
       const chemin = chemins[i];
       erreurs = [];
       const debut = Date.now();
+      depart = debut;
       try {
         await page.goto(base + chemin, { waitUntil: "networkidle", timeout: 60_000 });
       } catch (e) {
@@ -80,6 +87,8 @@ for (const [ecran, options] of [
           titreDispo: titre ? document.fonts.check(`32px "${rendu(titre)}"`) : true,
           texte: rendu(document.body),
           texteDispo: document.fonts.check(`16px "${rendu(document.body)}"`),
+          // L'image d'ouverture : la source que le navigateur a retenue.
+          ouverture: document.querySelector(".ed-ouverture-image img")?.currentSrc?.split("/").pop() ?? null,
           images: document.images.length,
           cassees: [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && i.currentSrc).map((i) => i.currentSrc),
           enAttente: [...document.images].filter((i) => !i.complete).length,
@@ -100,6 +109,7 @@ for (const [ecran, options] of [
           `${erreursOk ? "✓" : `✗ ${erreurs.length}`} |`,
       );
       for (const x of [...etat.cassees.map((u) => `image cassée ${u}`), ...erreurs].slice(0, 8)) console.log(`    ${x}`);
+      if (erreurs.length && etat.ouverture) console.log(`    (ouverture affichée : ${etat.ouverture})`);
     }
     await contexte.close();
   }

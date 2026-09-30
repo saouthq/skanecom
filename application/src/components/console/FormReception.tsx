@@ -14,6 +14,9 @@ import type { ProduitReception } from "@/lib/gestion/reception";
    Un filtre (nom, marque, référence) pour aller droit aux valises reçues.
 
    Un formulaire HTML ordinaire : sans JavaScript, on saisit et on envoie.
+   Envoyé en place (Retours.tsx), la réception enregistrée remet le
+   formulaire à zéro (onReset) : les quantités se vident — rien ne part deux
+   fois —, le filtre reste, sur les stocks qui viennent de monter.
    ========================================================================== */
 
 const QUANTITE = /^\d{1,6}$/;
@@ -46,7 +49,7 @@ export function FormReception({ action, produits }: { action: string; produits: 
   };
 
   return (
-    <form method="post" action={action} className="rc-form">
+    <form method="post" action={action} className="rc-form" onReset={() => setQuantites({})}>
       <div className="rc-filtre">
         <span className="bo-recherche-champ">
           <Icone nom="recherche" />

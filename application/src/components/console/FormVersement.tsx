@@ -12,7 +12,9 @@ import { joursDepuis, type ColisARecevoir } from "@/lib/gestion/encaissements";
    « −5,000 TND » en rouge si le livreur a retenu des frais ou oublié un colis.
 
    Un formulaire HTML ordinaire (la base recalcule tout) ; sans JavaScript,
-   tout est coché et le montant est à saisir.
+   tout est coché et le montant est à saisir. Envoyé en place (Retours.tsx),
+   le versement enregistré remet le formulaire à l'état du serveur
+   (onReset) : les colis qui restent, tous cochés, et leur montant attendu.
    ========================================================================== */
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Africa/Tunis" });
@@ -52,7 +54,8 @@ export function FormVersement({
     });
 
   return (
-    <form method="post" action={action} className="ec-form">
+    <form method="post" action={action} className="ec-form"
+          onReset={() => { setCoches(new Set(commandes.map((c) => c.numero))); setSaisi(null); }}>
       <input type="hidden" name="transporteur" value={transporteur ?? ""} />
       <div className="ec-colis-tete">
         <label className="ec-tout">
