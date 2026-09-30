@@ -231,3 +231,12 @@
 @media print {
   .ui-progression, .app-onglets { display: none !important; }
 }
+
+/* ---- Les pastilles d'initiales : une teinte stable par personne ----------
+   (styleAvatar, components/console/Coquille.tsx) — pâle dessous, soutenue
+   dessus, en oklch pour que toutes les teintes pèsent le même poids. */
+.console :is(.avatar, .initiale)[style*="--teinte"] {
+  background: oklch(95% .035 var(--teinte));
+  color: oklch(42% .11 var(--teinte));
+  box-shadow: inset 0 0 0 1px oklch(89% .05 var(--teinte));
+}

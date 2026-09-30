@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone, type NomIcone } from "@/components/console/Icone";
+import { SuiviSommaire } from "@/components/console/Raccourcis";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { formateMontant } from "@/lib/prix";
 import { quand } from "@/lib/gestion/libelles";
@@ -109,6 +110,23 @@ export default async function Reglages({
   const { count: sansPoids } = await sb.from("variantes").select("id", { count: "exact", head: true })
     .eq("boutique_id", boutique.boutique_id).eq("actif", true).is("poids_grammes", null);
 
+  // Le sommaire : la colonne de droite sur ordinateur, des pastilles en tête
+  // sur téléphone.
+  const sections: [string, string, string][] = [
+    ["commandes", "Commandes", "commandes"],
+    ["livraison", "Livraison", "camion"],
+    ["zones", "Zones de livraison", "lieu"],
+    ["gouvernorats", "Gouvernorats", "domaine"],
+    ["poids", "Supplément au poids", "colis"],
+    ...(retraitActif ? [["retrait", "Retrait en magasin", "boutique"] as [string, string, string]] : []),
+    ...(savActif ? [["sav", "Service après-vente", "outil"] as [string, string, string]] : []),
+    ["paiement", "Paiement", "billet"],
+    ["vitrine", "Vitrine et contact", "boutique"],
+    ["legal", "Informations légales", "fichier"],
+    ...(modifie ? [["donnees", "Vos données", "importer"] as [string, string, string]] : []),
+    ["journal", "Journal", "journal"],
+  ];
+
   return (
     <>
       <EnTetePage
@@ -122,6 +140,13 @@ export default async function Reglages({
         {!modifie ? (
           <p className="message">Lecture seule : le propriétaire ou l&apos;administrateur de la boutique change les réglages.</p>
         ) : null}
+
+        <nav className="rg-puces" id="rg-puces" aria-label="Aller à une section">
+          <SuiviSommaire sommaire="rg-puces" />
+          {sections.map(([id, titre]) => (
+            <a key={id} href={`#t-${id}`}>{titre}</a>
+          ))}
+        </nav>
 
         <div className="grille-2">
           <div className="pile">
@@ -655,22 +680,10 @@ export default async function Reglages({
                 </ol>
               )}
             </section>
-            <nav className="carte rg-sommaire" aria-label="Sections des réglages">
+            <nav className="carte rg-sommaire" id="rg-sommaire" aria-label="Sections des réglages">
+              <SuiviSommaire sommaire="rg-sommaire" />
               <ol>
-                {[
-                  ["commandes", "Commandes", "commandes"],
-                  ["livraison", "Livraison", "camion"],
-                  ["zones", "Zones de livraison", "lieu"],
-                  ["gouvernorats", "Gouvernorats", "domaine"],
-                  ["poids", "Supplément au poids", "colis"],
-                  ...(retraitActif ? [["retrait", "Retrait en magasin", "boutique"]] : []),
-                  ...(savActif ? [["sav", "Service après-vente", "outil"]] : []),
-                  ["paiement", "Paiement", "billet"],
-                  ["vitrine", "Vitrine et contact", "boutique"],
-                  ["legal", "Informations légales", "fichier"],
-                  ...(modifie ? [["donnees", "Vos données", "importer"]] : []),
-                  ["journal", "Journal", "journal"],
-                ].map(([id, titre, icone]) => (
+                {sections.map(([id, titre, icone]) => (
                   <li key={id}>
                     <a href={`#t-${id}`}><Icone nom={icone as NomIcone} taille={15} /> {titre}</a>
                   </li>

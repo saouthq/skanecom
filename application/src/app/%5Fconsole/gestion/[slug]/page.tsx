@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Prix } from "@/components/Prix";
-import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { AlertesCommandes } from "@/components/console/Veille";
 import { RaccourciRecherche } from "@/components/console/Raccourcis";
@@ -150,7 +150,7 @@ export default async function Commandes({
                     {premier ? <span className="bo-premier">À appeler en premier</span> : null}
                   </span>
                   <span className="bo-ligne-client">
-                    <span className="avatar" aria-hidden="true">{initiales(c.contact_nom)}</span>
+                    <span className="avatar" style={styleAvatar(c.contact_nom)} aria-hidden="true">{initiales(c.contact_nom)}</span>
                     <span className="bo-ligne-client-texte">
                       <strong>{c.contact_nom}</strong>
                       <span>{telephoneLisible(c.contact_telephone)} · {c.mode_livraison === "retrait" ? "retrait en magasin" : lieu(c.ville, c.gouvernorat)}</span>

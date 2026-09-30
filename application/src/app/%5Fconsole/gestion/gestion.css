@@ -524,6 +524,15 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 }
 .rg-sommaire a:hover { background: var(--ui-doux); color: var(--ui-texte); }
 .rg-sommaire .icone { color: var(--ui-texte-3); }
+/* La section à l'écran (SuiviSommaire) : son lien s'allume, un trait le marque. */
+.rg-sommaire a { position: relative; transition: background-color var(--ui-d2, .18s), color var(--ui-d2, .18s); }
+.rg-sommaire a::before {
+  content: ""; position: absolute; inset-block: .5rem; inset-inline-start: 0; inline-size: 3px; border-radius: 3px;
+  background: var(--ui-degrade, var(--ui-accent)); transform: scaleY(0); transition: transform .25s cubic-bezier(.2, .8, .2, 1);
+}
+.rg-sommaire a[aria-current] { background: var(--ui-doux); color: var(--ui-texte); }
+.rg-sommaire a[aria-current]::before { transform: scaleY(1); }
+.rg-sommaire a[aria-current] .icone { color: var(--ui-accent); }
 [id^="t-"] { scroll-margin-block-start: 1.5rem; }
 @media (min-width: 1100px) {
   /* En flex (pas en grille) : le sommaire colle sur toute la hauteur de la colonne. */
@@ -531,6 +540,27 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .rg-sommaire { position: sticky; inset-block-start: 1.5rem; }
 }
 @media (max-width: 1099px) { .rg-sommaire { display: none; } }
+
+/* Sur téléphone et tablette : les sections en pastilles, qui collent sous
+   l'en-tête et suivent la lecture (SuiviSommaire). */
+.rg-puces { display: none; }
+@media screen and (max-width: 1099px) {
+  .rg-puces {
+    position: sticky; inset-block-start: 56px; z-index: 20; display: flex; gap: .375rem; overflow-x: auto;
+    margin-inline: -1rem; padding: .625rem 1rem; scrollbar-width: none; overscroll-behavior-x: contain;
+    background: color-mix(in srgb, var(--ui-fond, #F7F7F8) 90%, transparent);
+    backdrop-filter: saturate(1.6) blur(12px); -webkit-backdrop-filter: saturate(1.6) blur(12px);
+    border-block-end: 1px solid var(--ui-bord);
+  }
+  .rg-puces::-webkit-scrollbar { display: none; }
+  .rg-puces a {
+    flex: none; padding: .375rem .75rem; border-radius: 999px; font-size: .8125rem; font-weight: 500; white-space: nowrap;
+    color: var(--ui-texte-2); background: var(--ui-panneau); box-shadow: inset 0 0 0 1px var(--ui-bord); text-decoration: none;
+    transition: background-color .2s, color .2s, box-shadow .2s;
+  }
+  .rg-puces a[aria-current] { background: var(--ui-texte); color: var(--ui-panneau); box-shadow: none; }
+  [id^="t-"] { scroll-margin-block-start: 7rem; }
+}
 
 @media (max-width: 699px) {
   .rg-zone-champs, .rg-zone-ajout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }

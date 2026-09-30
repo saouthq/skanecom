@@ -1,3 +1,4 @@
+import { styleAvatar } from "@/components/console/Coquille";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -34,7 +35,7 @@ export default async function MesBoutiques() {
         {a.boutiques.map((b) => (
           <li key={b.slug}>
             <Link href={`/gestion/${b.slug}`} className="choix-boutique">
-              <span className="initiale" aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
+              <span className="initiale" style={styleAvatar(b.nom)} aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
               <span className="choix-boutique-texte">
                 <span className="font-medium">{b.nom}</span>
                 <span className="text-petit discret">

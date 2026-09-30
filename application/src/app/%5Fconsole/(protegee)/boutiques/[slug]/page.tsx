@@ -9,7 +9,7 @@ import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
-import { initiales } from "@/components/console/Coquille";
+import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { MiseEnPlace } from "@/components/console/MiseEnPlace";
 
@@ -151,7 +151,7 @@ export default async function FicheBoutique({ params, searchParams }: {
                         <td>
                           {j.acteur ? (
                             <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                              <span className="avatar" style={{ inlineSize: 22, blockSize: 22, fontSize: ".5625rem" }} aria-hidden="true">{initiales(j.acteur)}</span>
+                              <span className="avatar" style={styleAvatar(j.acteur, { inlineSize: 22, blockSize: 22, fontSize: ".5625rem" })} aria-hidden="true">{initiales(j.acteur)}</span>
                               {j.acteur}
                             </span>
                           ) : "—"}
@@ -181,7 +181,7 @@ export default async function FicheBoutique({ params, searchParams }: {
             {actifs.length > 0 ? (
               <div className="flex items-center" aria-hidden="true">
                 {actifs.slice(0, 5).map((m, i) => (
-                  <span key={m.user_id} className="avatar" style={{ marginInlineStart: i ? -8 : 0, boxShadow: "0 0 0 2px #fff" }}>
+                  <span key={m.user_id} className="avatar" style={styleAvatar(m.email ?? "?", { marginInlineStart: i ? -8 : 0, boxShadow: "0 0 0 2px #fff" })}>
                     {initiales(m.email ?? "?")}
                   </span>
                 ))}

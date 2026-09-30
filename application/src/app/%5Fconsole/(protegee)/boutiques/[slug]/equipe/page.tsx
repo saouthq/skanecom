@@ -7,7 +7,7 @@ import { COOKIE_LIEN, ROLES_EQUIPE, VALIDITE_LIEN, cheminEquipe, lienWhatsAppPar
 import { boutiqueDe, equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { BoutonCopier } from "@/components/console/BoutonCopier";
-import { initiales } from "@/components/console/Coquille";
+import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -111,7 +111,7 @@ export default async function Equipe({ params, searchParams }: {
                 return (
                   <li key={m.user_id} className={`membre${m.actif ? "" : " membre-inactif"}`}>
                     <div className="membre-qui">
-                      <span className="avatar" aria-hidden="true">{initiales(qui)}</span>
+                      <span className="avatar" style={styleAvatar(qui)} aria-hidden="true">{initiales(qui)}</span>
                       <div>
                         <p className="membre-nom">{qui}</p>
                         <p className="membre-infos">

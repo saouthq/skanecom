@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Prix } from "@/components/Prix";
-import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { quand, telephoneLisible } from "@/lib/gestion/libelles";
@@ -97,7 +97,7 @@ export default async function Clients({
             return (
               <li key={c.id} className="cat-ligne">
                 <Link href={`${base}/${c.id}`} className="cat-ligne-lien cl-ligne-lien">
-                  <span className="initiale cl-initiale" aria-hidden="true">{initiales(c.nom ?? "?")}</span>
+                  <span className="initiale cl-initiale" style={styleAvatar(c.nom ?? "?")} aria-hidden="true">{initiales(c.nom ?? "?")}</span>
                   <span className="cat-ligne-nom">
                     <strong>{c.nom ?? "Sans nom"}</strong>
                     <span className="tabular-nums">{telephoneLisible(c.telephone)}</span>

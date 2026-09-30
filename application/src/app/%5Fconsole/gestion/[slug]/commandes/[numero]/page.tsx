@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";
-import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
 import { lieu, type Magasin } from "@/lib/commande";
@@ -615,7 +615,7 @@ export default async function FicheCommande({
             <section className="carte" aria-labelledby="client-titre">
               <h2 id="client-titre" className="sr-only">Client</h2>
               <div className="bo-client">
-                <span className="avatar avatar-l" aria-hidden="true">{initiales(f.contact.nom)}</span>
+                <span className="avatar avatar-l" style={styleAvatar(f.contact.nom)} aria-hidden="true">{initiales(f.contact.nom)}</span>
                 <span className="bo-client-texte">
                   <span className="bo-client-nom">{f.contact.nom}</span>
                   <a className="lien" href={lienAppel(f.contact.telephone)}>{telephoneLisible(f.contact.telephone)}</a>

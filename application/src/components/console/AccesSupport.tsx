@@ -1,6 +1,6 @@
 import { dateJournal } from "@/lib/console/libelles";
 import { MODES_SUPPORT, dureeSupport, finSupport, heureSupport, type AccesSupport, type ModeSupport } from "@/lib/console/support";
-import { initiales } from "./Coquille";
+import { initiales, styleAvatar } from "./Coquille";
 import { Icone } from "./Icone";
 
 /* ============================================================================
@@ -17,7 +17,7 @@ export function ListeAcces({ acces, maintenant, fermer }: { acces: AccesSupport[
     <ul className="sp-liste" role="list">
       {acces.map((a) => (
         <li key={a.id} className="sp-acces" data-ouvert={a.ouvert ? "" : undefined}>
-          <span className="avatar" aria-hidden="true">{initiales(a.qui ?? "?")}</span>
+          <span className="avatar" style={styleAvatar(a.qui ?? "?")} aria-hidden="true">{initiales(a.qui ?? "?")}</span>
           <div className="sp-acces-texte">
             <p className="sp-acces-titre">
               <span>{a.qui ?? "compte supprimé"}</span>

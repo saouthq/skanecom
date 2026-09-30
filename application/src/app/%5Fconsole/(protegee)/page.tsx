@@ -3,7 +3,7 @@ import Link from "next/link";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_STATUT, LIBELLES_THEME } from "@/lib/console/libelles";
-import { EnTetePage } from "@/components/console/Coquille";
+import { EnTetePage, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 
 export const metadata: Metadata = { title: "Boutiques" };
@@ -61,7 +61,7 @@ export default async function Tableau() {
                 <tr key={b.id} className="ligne-lien">
                   <td>
                     <span className="cellule-titre">
-                      <span className="initiale" aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
+                      <span className="initiale" style={styleAvatar(b.nom)} aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
                       <span>
                         <Link href={`/boutiques/${b.slug}`} className="ligne-cible">{b.nom}</Link>
                         <small>{b.slug}</small>

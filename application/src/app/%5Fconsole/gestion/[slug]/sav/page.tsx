@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { age, lienAppel, telephoneLisible } from "@/lib/gestion/libelles";
@@ -100,7 +100,7 @@ export default async function ServiceApresVente({
                     <span className="bo-age" title={d.cree_le}><Icone nom="horloge" taille={13} /> {age(d.cree_le, maintenant)}</span>
                   </span>
                   <span className="bo-ligne-client">
-                    <span className="avatar" aria-hidden="true">{initiales(d.client_nom)}</span>
+                    <span className="avatar" style={styleAvatar(d.client_nom)} aria-hidden="true">{initiales(d.client_nom)}</span>
                     <span className="bo-ligne-client-texte">
                       <strong>{d.client_nom}</strong>
                       <span>{telephoneLisible(d.client_telephone)} · {d.commande}</span>

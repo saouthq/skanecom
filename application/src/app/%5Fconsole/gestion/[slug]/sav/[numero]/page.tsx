@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";
-import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
 import { age, lienAppel, lienWhatsApp, quand, telephoneLisible } from "@/lib/gestion/libelles";
@@ -343,7 +343,7 @@ export default async function FicheSav({
             <section className="carte" aria-labelledby="client-titre">
               <h2 id="client-titre" className="sr-only">Client</h2>
               <div className="bo-client">
-                <span className="avatar avatar-l" aria-hidden="true">{initiales(nom)}</span>
+                <span className="avatar avatar-l" style={styleAvatar(nom)} aria-hidden="true">{initiales(nom)}</span>
                 <span className="bo-client-texte">
                   <span className="bo-client-nom">{nom}</span>
                   {telephone ? <a className="lien" href={lienAppel(telephone)}>{telephoneLisible(telephone)}</a> : null}

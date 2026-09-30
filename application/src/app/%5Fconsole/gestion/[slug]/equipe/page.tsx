@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { BoutonCopier } from "@/components/console/BoutonCopier";
-import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { dateJournal, deNom } from "@/lib/console/libelles";
@@ -103,7 +103,7 @@ export default async function EquipeBoutique({
                 return (
                   <li key={m.user_id} className={`membre${m.actif ? "" : " membre-inactif"}`}>
                     <div className="membre-qui">
-                      <span className="avatar" aria-hidden="true">{initiales(qui)}</span>
+                      <span className="avatar" style={styleAvatar(qui)} aria-hidden="true">{initiales(qui)}</span>
                       <div>
                         <p className="membre-nom">{qui}{m.vous ? <span className="ui-etat eq-vous">Vous</span> : null}</p>
                         <p className="membre-infos">

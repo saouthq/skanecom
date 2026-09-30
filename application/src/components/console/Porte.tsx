@@ -1,4 +1,4 @@
-import { initiales, LogoSkanEcom } from "./Coquille";
+import { initiales, styleAvatar, LogoSkanEcom } from "./Coquille";
 
 /* Les pages d'entrée (connexion, double authentification, lien d'accès,
    refus) : sur ordinateur, deux panneaux — la marque à gauche, avec une
@@ -49,7 +49,7 @@ export function Porte({ titre, description, qui, large = false, pied, children }
             <span className="app-logo" aria-hidden="true"><LogoSkanEcom /></span>
             {qui ? (
               <span className="porte-qui">
-                <span className="avatar" aria-hidden="true">{initiales(qui)}</span>
+                <span className="avatar" style={styleAvatar(qui)} aria-hidden="true">{initiales(qui)}</span>
                 <span>{qui}</span>
               </span>
             ) : null}

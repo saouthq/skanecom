@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";
-import { EnTetePage, initiales } from "@/components/console/Coquille";
+import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { DepotPhotos } from "@/components/console/DepotPhotos";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
@@ -488,7 +488,7 @@ export default async function FicheProduitBackoffice({
                 <div><dt>Créé</dt><dd className="text-petit">{quand(f.cree_le, maintenant)}</dd></div>
               </dl>
               <p className="text-petit discret mt-4 flex items-center gap-2">
-                <span className="avatar" style={{ inlineSize: 22, blockSize: 22, fontSize: ".5625rem" }} aria-hidden="true">{initiales(boutique.nom)}</span>
+                <span className="avatar" style={styleAvatar(boutique.nom, { inlineSize: 22, blockSize: 22, fontSize: ".5625rem" })} aria-hidden="true">{initiales(boutique.nom)}</span>
                 {modifie ? "Vous pouvez tout modifier." : stocke ? "Vous tenez le stock ; la fiche et les prix reviennent au propriétaire." : "Lecture seule."}
               </p>
             </section>

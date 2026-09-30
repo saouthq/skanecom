@@ -22,6 +22,19 @@ export type LienCoquille = {
 export type GroupeCoquille = { titre?: string; liens: LienCoquille[] };
 
 /** Les initiales d'un nom ou d'une adresse : « appels@maymar.test » → « AP ». */
+/** Une teinte stable par personne (0–359) : la même pastille d'une page à
+ *  l'autre, des listes qu'on distingue d'un coup d'œil. */
+export function teinte(texte: string): number {
+  let h = 0;
+  for (const c of texte.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return h;
+}
+
+/** Le style d'une pastille d'initiales (`.avatar`, `.initiale`) à sa teinte. */
+export function styleAvatar(texte: string, autre: React.CSSProperties = {}): React.CSSProperties {
+  return { ...autre, "--teinte": teinte(texte) } as React.CSSProperties;
+}
+
 export function initiales(texte: string): string {
   const base = texte.split("@")[0].replace(/[._-]+/g, " ").trim();
   const mots = base.split(/\s+/).filter(Boolean);
@@ -55,7 +68,7 @@ function Navigation({ groupes }: { groupes: GroupeCoquille[] }) {
 function Compte({ email, role }: { email: string; role: string }) {
   return (
     <div className="app-compte">
-      <span className="avatar" aria-hidden="true">{initiales(email)}</span>
+      <span className="avatar" style={styleAvatar(email)} aria-hidden="true">{initiales(email)}</span>
       <span className="app-compte-texte">
         <span className="app-compte-email">{email}</span>
         <span className="app-compte-role">{role}</span>
