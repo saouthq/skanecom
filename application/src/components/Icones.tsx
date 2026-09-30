@@ -187,3 +187,13 @@ export function Lot({ taille = 18, className }: Props) {
     </svg>
   );
 }
+
+/** Une enveloppe : le code reçu par e-mail. */
+export function Enveloppe({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+    </svg>
+  );
+}

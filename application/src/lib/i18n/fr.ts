@@ -15,6 +15,8 @@
    les reçoivent en paramètre.
    ========================================================================== */
 
+import type { Verification } from "@/lib/connexion";
+
 export const fr = {
   marque: {
     accueilAria: (nom: string) => `${nom} — accueil`,
@@ -353,6 +355,34 @@ export const fr = {
   /** Le tunnel de commande (paiement à la livraison) et sa page de fin. Les
    *  frais, délais, zones et montants arrivent en paramètre : ils viennent
    *  de la base (devis_commande, commande_suivie). */
+  connexion: {
+    canaux: "Recevoir le code par",
+    parSms: "SMS",
+    parEmail: "E-mail",
+    email: "Adresse e-mail",
+    emailExemple: "vous@exemple.tn",
+    emailInvalide: "Adresse e-mail illisible, par exemple leila@exemple.tn.",
+    aideEmail: "Un code vous est envoyé à cette adresse. Elle vous sert ensuite de compte dans cette boutique, sans mot de passe.",
+    codeEnvoyeEmail: (email: string) => `Code envoyé à ${email}. Il n'arrive pas ? Regardez dans les courriers indésirables.`,
+    codeEmail: "Code reçu par e-mail",
+    modifierEmail: "Modifier l'adresse",
+    codeIncorrectEmail: "Code incorrect ou expiré. Vérifiez l'e-mail, ou demandez un nouveau code.",
+    emailEchec: "L'e-mail n'a pas pu partir. Réessayez dans un instant.",
+    connecteEmail: (email: string) => `Adresse confirmée : ${email}`,
+    changerEmail: "Changer d'adresse",
+    aConfirmer: (v: Verification) =>
+      v === "sms"
+        ? "Confirmez votre numéro avec le code reçu par SMS."
+        : v === "email"
+          ? "Confirmez votre adresse e-mail avec le code reçu."
+          : "Confirmez votre numéro ou votre adresse e-mail avec le code reçu.",
+    telephoneAideEmail: "Le livreur vous appelle sur ce numéro. La boutique le confirme d'un appel avant l'envoi.",
+    telephoneDemande: "Votre numéro de téléphone",
+    telephoneDemandeAide: "La boutique vous rappelle sur ce numéro. Il ne sert qu'à cela.",
+    reconnexion: (v: Verification) =>
+      v === "sms" ? "Votre session a expiré. Confirmez de nouveau votre numéro." : "Votre session a expiré. Reconnectez-vous avec un nouveau code.",
+  },
+
   commande: {
     titre: "Commande",
     rassurance: "Vous ne payez rien en ligne : vous réglez au livreur, à la remise du colis.",
@@ -387,7 +417,6 @@ export const fr = {
     changerNumero: "Changer de numéro",
     codeIncorrect: "Code incorrect ou expiré. Vérifiez le SMS, ou demandez un nouveau code.",
     codeAttendu: "Saisissez les 6 chiffres du code.",
-    numeroAConfirmer: "Confirmez votre numéro avec le code reçu par SMS.",
     telephoneInvalide: "Numéro tunisien à 8 chiffres attendu, par exemple 20 123 456.",
     smsTropTot: "Un code vient de partir. Patientez un peu avant d'en demander un autre.",
     smsEchec: "Le SMS n'a pas pu partir. Réessayez dans un instant.",
@@ -465,7 +494,6 @@ export const fr = {
     totalChange: "Un prix ou un frais a changé. Vérifiez le nouveau total, puis confirmez.",
     stockChange: "Un article n'est plus disponible dans la quantité demandée. Ajustez le récapitulatif.",
     minimumNonAtteint: "Un article se commande par lot : sa quantité est sous le minimum. Ajustez le récapitulatif.",
-    reconnexion: "Votre session a expiré. Confirmez de nouveau votre numéro.",
     enAttente: "Ce numéro a déjà des commandes en attente de confirmation. La boutique vous appelle ; vous pourrez commander de nouveau ensuite.",
     bloque: "Ce numéro ne peut pas commander en ligne. Contactez la boutique.",
     erreur: "La commande n'a pas pu être passée. Réessayez dans un instant.",
@@ -559,8 +587,13 @@ export const fr = {
     panierVideTexte: "Ajoutez les articles de votre chantier, puis revenez demander votre devis.",
     articles: (n: number) => `${n} article${n > 1 ? "s" : ""}`,
     prixIndicatif: "Prix catalogue, à titre indicatif",
-    connexionTitre: "Votre numéro, pour recevoir la réponse",
-    connexionTexte: "Un code vous est envoyé par SMS : le devis arrive dans « Mes commandes », à ce numéro.",
+    connexionTitre: (v: Verification) => (v === "sms" ? "Votre numéro, pour recevoir la réponse" : "Connectez-vous, pour recevoir la réponse"),
+    connexionTexte: (v: Verification) =>
+      v === "sms"
+        ? "Un code vous est envoyé par SMS : le devis arrive dans « Mes commandes », à ce numéro."
+        : v === "email"
+          ? "Un code vous est envoyé par e-mail : le devis arrive dans « Mes commandes »."
+          : "Un code vous est envoyé par SMS ou par e-mail, au choix : le devis arrive dans « Mes commandes ».",
     message: "Votre chantier, vos délais",
     messageAide: "Facultatif : la ville du chantier, la date souhaitée, une précision sur un article.",
     messageExemple: "Ex. Rénovation de deux salles de bains à Sfax, livraison la semaine prochaine.",
@@ -599,16 +632,26 @@ export const fr = {
     tarif: (numero: string) => `Prix du devis ${numero}`,
     indisponible: "Ce devis ne peut plus être accepté ici.",
     connexionAccepterTitre: "Votre devis vous attend",
-    connexionAccepterTexte: "Il est rattaché au numéro qui l'a demandé : un code par SMS, et il s'ouvre ici, prêt à accepter.",
+    connexionAccepterTexte: (v: Verification) =>
+      v === "sms"
+        ? "Il est rattaché au numéro qui l'a demandé : un code par SMS, et il s'ouvre ici, prêt à accepter."
+        : "Il est rattaché au compte qui l'a demandé : connectez-vous de la même façon, et il s'ouvre ici, prêt à accepter.",
   },
   compte: {
     titre: "Mes commandes",
     lien: "Mes commandes",
     meta: "Mes commandes",
-    chapo: "Toutes les commandes passées avec votre numéro, et où elles en sont.",
+    chapo: (v: Verification) =>
+      v === "sms" ? "Toutes les commandes passées avec votre numéro, et où elles en sont." : "Toutes les commandes passées avec votre compte, et où elles en sont.",
     connexionTitre: "Retrouvez vos commandes",
-    connexionTexte: "Saisissez le numéro avec lequel vous avez commandé : un code vous est envoyé par SMS.",
+    connexionTexte: (v: Verification) =>
+      v === "sms"
+        ? "Saisissez le numéro avec lequel vous avez commandé : un code vous est envoyé par SMS."
+        : v === "email"
+          ? "Saisissez l'adresse e-mail avec laquelle vous avez commandé : un code vous y est envoyé."
+          : "Connectez-vous comme à votre commande, par SMS ou par e-mail : un code vous est envoyé.",
     connecte: (telephone: string) => `Connecté avec le ${telephone}`,
+    connecteEmail: (email: string) => `Connecté avec ${email}`,
     deconnexion: "Se déconnecter",
     chargement: "Chargement de vos commandes",
     erreur: "Vos commandes n'ont pas pu être chargées. Réessayez dans un instant.",
@@ -654,13 +697,13 @@ export const fr = {
     garantieLegale: "Les articles bénéficient de la garantie légale et, le cas échéant, de la garantie du fabricant.",
     commentTitre: "Faire une demande",
     etapes: [
-      "Ouvrez « Mes commandes » avec le numéro de téléphone de la commande : un code vous arrive par SMS.",
+      "Ouvrez « Mes commandes », connecté comme lors de votre commande (numéro ou adresse e-mail) : un code vous est envoyé.",
       "Sur la commande livrée, choisissez l'article et dites ce qui ne va pas — avec son numéro de série si vous l'avez.",
       "La boutique vous rappelle pour convenir de la suite : dépôt, réparation, échange ou remboursement.",
     ],
     preparerTitre: "À garder sous la main",
     preparer: [
-      "le numéro de la commande (il figure sur le SMS et sur « Mes commandes ») ;",
+      "le numéro de la commande (il figure sur « Mes commandes ») ;",
       "le numéro de série, s'il y en a un : sur l'étiquette de l'article (sous une machine, dans une valise) ;",
       "une photo du problème, si la boutique vous la demande.",
     ],

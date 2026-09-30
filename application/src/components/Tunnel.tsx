@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Billets, Camion, Coche, Magasin as IconeMagasin } from "./Icones";
 import { Prix } from "./Prix";
-import { ConnexionSms } from "./ConnexionSms";
+import { Connexion, Identification } from "./Connexion";
 import { ouvrePanier, ramenePanier, retireDuPanier, usePanierLu } from "@/lib/panier";
 import type { LignePanier } from "@/lib/panier-contrat";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
@@ -21,6 +21,7 @@ import {
   type ReponseDevis,
   type ReponsePasser,
 } from "@/lib/commande";
+import { sessionAcheteur, type SessionAcheteur, type Verification } from "@/lib/connexion";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { poidsLisible } from "@/lib/caracteristiques";
@@ -39,8 +40,11 @@ import type { CodeTheme } from "@/lib/theme";
      commande est refusée et le récapitulatif se met à jour (on ne fait pas
      payer un montant que l'acheteur n'a pas lu) ;
    · compte obligatoire (réglage de la boutique) : le numéro se confirme par
-     un code SMS, et devient le compte de l'acheteur dans cette boutique.
-     Sinon, le numéro est un simple champ (commande en invité) ;
+     un code SMS, ou l'adresse e-mail par un code e-mail (réglage
+     compte.verification), et devient le compte de l'acheteur dans cette
+     boutique. Connecté par e-mail, il saisit ensuite le numéro du livreur
+     (non vérifié : l'appel de confirmation le vérifie). Sinon, le numéro
+     est un simple champ (commande en invité) ;
    · une commande envoyée deux fois (double clic, réseau coupé) n'est créée
      qu'une fois : la clé d'idempotence survit au rechargement de la page
      tant que le panier ne change pas ;
@@ -68,8 +72,17 @@ type Erreurs = Partial<Record<keyof Champs | "code", string>>;
 
 const CHAMPS_VIDES: Champs = { telephone: "", nom: "", ligne1: "", ligne2: "", ville: "", gouvernorat: "", codePostal: "", note: "" };
 const ORDRE: (keyof Champs)[] = ["telephone", "nom", "ligne1", "ville", "gouvernorat", "codePostal"];
-const ATTENTE_RENVOI = 30;
 const JOUR_DEVIS = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone: "Africa/Tunis" });
+
+/** Le focus sur un champ, amené au milieu de l'écran : un champ déjà visible
+ *  mais caché par l'en-tête collant, le navigateur ne le déplacerait pas.
+ *  D'un coup, pas en glissant : le clavier du téléphone, qui s'ouvre au même
+ *  moment, interromprait le glissement. */
+function amene(el: HTMLElement | null | undefined) {
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  el.scrollIntoView({ block: "center", behavior: "auto" });
+}
 
 function valeurNumerique(saisie: string, max: number): string {
   return saisie.replace(/\D/g, "").slice(0, max);
@@ -80,6 +93,7 @@ export function Tunnel({
   boutiqueId,
   boutique,
   compteObligatoire: compteReglage,
+  verification,
   rappel,
   cod,
   gouvernorats,
@@ -92,6 +106,8 @@ export function Tunnel({
   boutiqueId: string;
   boutique: string;
   compteObligatoire: boolean;
+  /** Le code de connexion : par SMS, par e-mail, ou au choix (compte.verification). */
+  verification: Verification;
   rappel: boolean;
   cod: boolean;
   gouvernorats: Gouvernorat[];
@@ -124,18 +140,11 @@ export function Tunnel({
   const [messagePanne, setMessagePanne] = useState<{ raison: Raison; texte: string } | null>(null);
   const [rafraichir, setRafraichir] = useState(0);
 
-  // Le compte de l'acheteur (connexion par code SMS).
-  const [session, setSession] = useState<{ telephone: string } | null>(null);
+  // Le compte de l'acheteur (connexion par un code SMS ou e-mail).
+  const [session, setSession] = useState<SessionAcheteur | null>(null);
   const connecte = session !== null;
-  const [etapeCode, setEtapeCode] = useState<"numero" | "code">("numero");
-  const [numeroCode, setNumeroCode] = useState("");
-  const [saisieCode, setSaisieCode] = useState("");
-  const [envoiCode, setEnvoiCode] = useState(false);
-  const [verification, setVerification] = useState(false);
-  const [erreurIdentite, setErreurIdentite] = useState<string | null>(null);
-  const [attente, setAttente] = useState(0);
 
-  const refs = useRef<Partial<Record<keyof Champs | "code", HTMLElement | null>>>({});
+  const refs = useRef<Partial<Record<keyof Champs, HTMLElement | null>>>({});
   const refAlerte = useRef<HTMLDivElement>(null);
   // L'alerte ne prend le focus que pour un refus de la base (ou une coupure) :
   // un formulaire incomplet, lui, met le focus sur le premier champ à reprendre.
@@ -205,12 +214,26 @@ export function Tunnel({
   // La session : lue au montage, puis suivie (connexion, déconnexion).
   useEffect(() => {
     if (!compteObligatoire) return;
-    const { data } = supabaseNavigateur().auth.onAuthStateChange((_evenement, s) => {
-      const u = s?.user;
-      setSession(u ? { telephone: u.phone ? `+${u.phone.replace(/^\+/, "")}` : (u.email ?? "") } : null);
-    });
+    const { data } = supabaseNavigateur().auth.onAuthStateChange((_evenement, s) => setSession(sessionAcheteur(s?.user)));
     return () => data.subscription.unsubscribe();
   }, [compteObligatoire]);
+
+  // Connecté par e-mail : le numéro que la boutique lui connaît (sa fiche),
+  // sinon il le saisit.
+  const sansNumero = Boolean(session && !session.telephone);
+  useEffect(() => {
+    if (!sansNumero) return;
+    let actif = true;
+    supabaseNavigateur()
+      .rpc("mon_telephone", { p_boutique_id: boutiqueId })
+      .then(({ data }) => {
+        const huit = typeof data === "string" ? chiffresTelephone(data) : null;
+        if (actif && huit) setChamps((c) => ({ ...c, telephone: c.telephone || `${huit.slice(0, 2)} ${huit.slice(2, 5)} ${huit.slice(5)}` }));
+      });
+    return () => {
+      actif = false;
+    };
+  }, [sansNumero, boutiqueId]);
 
   // Un acheteur qui revient retrouve sa dernière adresse (carnet du compte,
   // lu sous la RLS : seulement les siennes, dans cette boutique).
@@ -243,30 +266,25 @@ export function Tunnel({
   }, [session, boutiqueId]);
 
   useEffect(() => {
-    if (attente <= 0) return;
-    const minuterie = window.setTimeout(() => setAttente((a) => a - 1), 1000);
-    return () => window.clearTimeout(minuterie);
-  }, [attente]);
-
-  useEffect(() => {
     if (alerte && focusAlerte.current) {
       focusAlerte.current = false;
       refAlerte.current?.focus();
     }
   }, [alerte]);
 
-  // Numéro confirmé : on passe à l'adresse.
+  // Numéro confirmé : on passe à l'adresse ; adresse e-mail confirmée : au numéro.
   useEffect(() => {
     if (session && focusApresConnexion.current) {
       focusApresConnexion.current = false;
-      refs.current.nom?.focus();
+      amene(session.telephone ? refs.current.nom : refs.current.telephone);
     }
   }, [session]);
 
   const erreurs = useMemo<Erreurs>(() => {
     const e: Erreurs = {};
     if (compteObligatoire) {
-      if (!session) e.telephone = t.commande.numeroAConfirmer;
+      if (!session) e.telephone = t.connexion.aConfirmer(verification);
+      else if (!session.telephone && !chiffresTelephone(champs.telephone)) e.telephone = t.commande.telephoneInvalide;
     } else if (!chiffresTelephone(champs.telephone)) e.telephone = t.commande.telephoneInvalide;
     const nom = champs.nom.trim();
     if (nom.length < 2 || nom.length > 80) e.nom = enRetrait ? t.commande.nomRetraitInvalide : t.commande.nomInvalide;
@@ -276,7 +294,7 @@ export function Tunnel({
     if (!champs.gouvernorat) e.gouvernorat = t.commande.gouvernoratInvalide;
     if (champs.codePostal.trim() && !/^\d{4}$/.test(champs.codePostal.trim())) e.codePostal = t.commande.codePostalInvalide;
     return e;
-  }, [champs, compteObligatoire, session, enRetrait]);
+  }, [champs, compteObligatoire, session, enRetrait, verification]);
 
   // Une étape remplie se coche (le numéro devient une coche) : on voit où l'on en est.
   const etapeUneFaite = !erreurs.telephone;
@@ -284,51 +302,9 @@ export function Tunnel({
 
   const change = (cle: keyof Champs) => (valeur: string) => setChamps((c) => ({ ...c, [cle]: valeur }));
 
-  async function envoyerCode() {
-    const huit = chiffresTelephone(champs.telephone);
-    if (!huit) {
-      setErreurIdentite(t.commande.telephoneInvalide);
-      refs.current.telephone?.focus();
-      return;
-    }
-    setEnvoiCode(true);
-    setErreurIdentite(null);
-    const { error } = await supabaseNavigateur().auth.signInWithOtp({ phone: `+216${huit}` });
-    setEnvoiCode(false);
-    if (error) {
-      setErreurIdentite(error.status === 429 || /rate|frequen|seconds/i.test(error.message) ? t.commande.smsTropTot : t.commande.smsEchec);
-      return;
-    }
-    setNumeroCode(`+216${huit}`);
-    setSaisieCode("");
-    setEtapeCode("code"); // le champ du code prend le focus en apparaissant
-    setAttente(ATTENTE_RENVOI);
-  }
-
-  async function validerCode(code = saisieCode) {
-    if (verification) return;
-    if (!/^\d{6}$/.test(code)) {
-      setErreurIdentite(t.commande.codeAttendu);
-      return;
-    }
-    setVerification(true);
-    setErreurIdentite(null);
-    const { data, error } = await supabaseNavigateur().auth.verifyOtp({ phone: numeroCode, token: code, type: "sms" });
-    setVerification(false);
-    if (error || !data.session) {
-      setErreurIdentite(t.commande.codeIncorrect);
-      refs.current.code?.focus();
-      return;
-    }
-    focusApresConnexion.current = true;
-    setEtapeCode("numero");
-    setSaisieCode("");
-  }
-
-  async function changerNumero() {
+  async function changerCompte() {
     await supabaseNavigateur().auth.signOut();
-    setEtapeCode("numero");
-    window.setTimeout(() => refs.current.telephone?.focus(), 0);
+    window.setTimeout(() => amene(refs.current.telephone), 0);
   }
 
   function refus(raison: Raison, message: string) {
@@ -345,7 +321,7 @@ export function Tunnel({
         return setAlerte(t.commande.stockChange);
       case "compte":
         setSession(null);
-        return setAlerte(t.commande.reconnexion);
+        return setAlerte(t.connexion.reconnexion(verification));
       case "en_attente":
         return setAlerte(t.commande.enAttente);
       case "bloque":
@@ -372,13 +348,13 @@ export function Tunnel({
     const premiere = ORDRE.find((c) => erreurs[c]);
     if (premiere) {
       setAlerte(t.commande.aCorriger);
-      refs.current[premiere]?.focus();
+      amene(refs.current[premiere]);
       return;
     }
     // L'accord explicite aux conditions de vente : la base le revérifie.
     if (!accepte) {
       setAlerte(t.commande.conditionsRequises);
-      refConditions.current?.focus();
+      amene(refConditions.current);
       return;
     }
     if (!devis || !devis.complet || devis.total_millimes === null) {
@@ -402,7 +378,7 @@ export function Tunnel({
           ...(devisNumero ? { devis: devisNumero } : {}),
           ...(express ? { origine: "express" } : {}),
           lignes,
-          contact: { nom: champs.nom.trim(), telephone, accepte_conditions: accepte },
+          contact: { nom: champs.nom.trim(), telephone, ...(session?.email ? { email: session.email } : {}), accepte_conditions: accepte },
           livraison: enRetrait
             ? { mode: "retrait" }
             : {
@@ -440,7 +416,7 @@ export function Tunnel({
         <div className="tunnel-attente" aria-busy="true">{t.commun.chargement}</div>
       ) : (
         <div className="tunnel-vide">
-          <ConnexionSms titre={t.devis.connexionAccepterTitre} texte={t.devis.connexionAccepterTexte} />
+          <Connexion titre={t.devis.connexionAccepterTitre} texte={t.devis.connexionAccepterTexte(verification)} verification={verification} />
         </div>
       );
     }
@@ -479,6 +455,33 @@ export function Tunnel({
   }
 
   const montre = (cle: keyof Champs) => (tentee ? erreurs[cle] : undefined);
+  // Le numéro du livreur : en invité, ou connecté par e-mail.
+  const champTelephone = (aide: string) => (
+    <div className="champ">
+      <label htmlFor={`${id}-telephone`}>{t.commande.telephone}</label>
+      <div className="tunnel-rangee">
+        <div className="tunnel-tel" data-invalide={montre("telephone") ? "" : undefined}>
+          <span aria-hidden="true">{t.commande.indicatif}</span>
+          <input
+            id={`${id}-telephone`}
+            ref={(el) => {
+              refs.current.telephone = el;
+            }}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel-national"
+            placeholder="20 123 456"
+            value={champs.telephone}
+            aria-invalid={montre("telephone") ? true : undefined}
+            aria-describedby={`${id}-telephone-aide ${id}-telephone-erreur`}
+            onChange={(e) => change("telephone")(e.target.value.slice(0, 20))}
+          />
+        </div>
+      </div>
+      <p id={`${id}-telephone-aide`} className="legende">{aide}</p>
+      <p id={`${id}-telephone-erreur`} className="champ-erreur">{montre("telephone")}</p>
+    </div>
+  );
   const zone = devis?.zone ? (devis.zone.nom_fr ?? devis.zone.nom_ar) : null;
   const delai =
     devis?.zone?.delai_jours_min != null && devis.zone.delai_jours_max != null
@@ -515,99 +518,35 @@ export function Tunnel({
           </legend>
 
           {compteObligatoire && session ? (
-            <div className="tunnel-identite">
-              <p>
-                <Coche taille={18} />
-                <span>{t.commande.connecte(telephoneLisible(session.telephone))}</span>
-              </p>
-              <button type="button" className="btn-lien legende" onClick={changerNumero}>
-                {t.commande.changerNumero}
-              </button>
-            </div>
-          ) : compteObligatoire && etapeCode === "code" ? (
-            <div className="champ">
-              <p className="legende" aria-live="polite">
-                {t.commande.codeEnvoye(telephoneLisible(numeroCode))}{" "}
-                <button type="button" className="btn-lien" onClick={() => setEtapeCode("numero")}>
-                  {t.commande.modifierNumero}
-                </button>
-              </p>
-              <label htmlFor={`${id}-code`}>{t.commande.code}</label>
-              <div className="tunnel-rangee">
-                <input
-                  id={`${id}-code`}
-                  ref={(el) => {
-                    refs.current.code = el;
-                  }}
-                  className="tunnel-code"
-                  autoFocus
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  value={saisieCode}
-                  aria-invalid={erreurIdentite ? true : undefined}
-                  aria-describedby={erreurIdentite ? `${id}-identite` : undefined}
-                  onChange={(e) => {
-                    const code = valeurNumerique(e.target.value, 6);
-                    setSaisieCode(code);
-                    if (code.length === 6) void validerCode(code);
-                  }}
-                  onKeyDown={(e: KeyboardEvent) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      void validerCode();
-                    }
-                  }}
-                />
-                <button type="button" className="btn btn-primaire" onClick={() => void validerCode()} disabled={verification}>
-                  {verification ? t.commande.verification : t.commande.valider}
+            <>
+              <div className="tunnel-identite">
+                <p>
+                  <Coche taille={18} />
+                  <span>
+                    {session.telephone ? t.commande.connecte(telephoneLisible(session.telephone)) : t.connexion.connecteEmail(session.email ?? "")}
+                  </span>
+                </p>
+                <button type="button" className="btn-lien legende" onClick={changerCompte}>
+                  {session.telephone ? t.commande.changerNumero : t.connexion.changerEmail}
                 </button>
               </div>
-              {erreurIdentite ? <p id={`${id}-identite`} className="champ-erreur">{erreurIdentite}</p> : null}
-              <button type="button" className="btn-lien legende tunnel-renvoi" onClick={envoyerCode} disabled={attente > 0 || envoiCode}>
-                {attente > 0 ? t.commande.renvoyerDans(attente) : t.commande.renvoyer}
-              </button>
-            </div>
+              {session.telephone ? null : champTelephone(t.connexion.telephoneAideEmail)}
+            </>
+          ) : compteObligatoire ? (
+            <Identification
+              verification={verification}
+              bouton="second"
+              aide
+              erreurExterne={montre("telephone")}
+              refSaisie={(el) => {
+                refs.current.telephone = el;
+              }}
+              surConnexion={() => {
+                focusApresConnexion.current = true;
+              }}
+            />
           ) : (
-            <div className="champ">
-              <label htmlFor={`${id}-telephone`}>{t.commande.telephone}</label>
-              <div className="tunnel-rangee">
-                <div className="tunnel-tel" data-invalide={(compteObligatoire ? erreurIdentite : montre("telephone")) ? "" : undefined}>
-                  <span aria-hidden="true">{t.commande.indicatif}</span>
-                  <input
-                    id={`${id}-telephone`}
-                    ref={(el) => {
-                      refs.current.telephone = el;
-                    }}
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel-national"
-                    placeholder="20 123 456"
-                    value={champs.telephone}
-                    aria-invalid={(compteObligatoire ? erreurIdentite : montre("telephone")) ? true : undefined}
-                    aria-describedby={`${id}-telephone-aide ${id}-telephone-erreur`}
-                    onChange={(e) => change("telephone")(e.target.value.slice(0, 20))}
-                    onKeyDown={(e: KeyboardEvent) => {
-                      if (compteObligatoire && e.key === "Enter") {
-                        e.preventDefault();
-                        void envoyerCode();
-                      }
-                    }}
-                  />
-                </div>
-                {compteObligatoire ? (
-                  <button type="button" className="btn btn-second" onClick={envoyerCode} disabled={envoiCode}>
-                    {envoiCode ? t.commande.envoiCode : t.commande.recevoirCode}
-                  </button>
-                ) : null}
-              </div>
-              <p id={`${id}-telephone-aide`} className="legende">
-                {compteObligatoire ? t.commande.telephoneAideCompte : t.commande.telephoneAide}
-              </p>
-              <p id={`${id}-telephone-erreur`} className="champ-erreur">
-                {compteObligatoire ? (erreurIdentite ?? montre("telephone")) : montre("telephone")}
-              </p>
-            </div>
+            champTelephone(t.commande.telephoneAide)
           )}
         </fieldset>
 

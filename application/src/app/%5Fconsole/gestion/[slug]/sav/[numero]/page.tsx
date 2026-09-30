@@ -137,6 +137,11 @@ export default async function FicheSav({
   if (error) throw new Error(`Demande illisible : ${error.message}`);
   if (!data) notFound();
   const f = data as Fiche;
+  // Le numéro de la commande est-il celui d'un compte SMS confirmé ? (un compte e-mail ne l'a pas prouvé)
+  const { data: verifiees } = f.client?.compte
+    ? await sb.rpc("gestion_numeros_verifies", { p_boutique_id: boutique.boutique_id, p_commandes: [f.commande.numero] })
+    : { data: [] };
+  const numeroVerifie = ((verifiees as string[] | null) ?? []).includes(f.commande.numero);
 
   const maintenant = new Date();
   const action = `/gestion/${slug}/sav/${f.numero}/action`;
@@ -352,7 +357,7 @@ export default async function FicheSav({
               {f.client ? (
                 <>
                   <p className="ui-etats mt-3">
-                    {f.client.compte ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié par SMS</span> : null}
+                    {f.client.compte && numeroVerifie ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié par SMS</span> : null}
                     <span className="ui-etat">{f.client.nb_commandes} commande{f.client.nb_commandes > 1 ? "s" : ""}</span>
                     {f.client.sav > 1 ? <span className="ui-etat ui-etat-ambre">{f.client.sav} demandes de SAV</span> : null}
                     {f.client.nb_refus > 0 ? <span className="ui-etat ui-etat-rouge">{f.client.nb_refus} refus à la livraison</span> : null}

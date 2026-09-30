@@ -182,6 +182,11 @@ export default async function FicheCommande({
   if (error) throw new Error(`Commande illisible : ${error.message}`);
   if (!data) notFound();
   const f = data as Fiche;
+  // Un compte e-mail n'a pas prouvé son numéro : seul un compte SMS confirmé est « vérifié ».
+  const { data: verifiees } = f.client?.compte
+    ? await sb.rpc("gestion_numeros_verifies", { p_boutique_id: boutique.boutique_id, p_commandes: [f.numero] })
+    : { data: [] };
+  const numeroVerifie = ((verifiees as string[] | null) ?? []).includes(f.numero);
 
   const role = boutique.role;
   const maintenant = new Date();
@@ -628,7 +633,9 @@ export default async function FicheCommande({
                 <>
                   <p className="ui-etats mt-3">
                     {f.client.compte
-                      ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié par SMS</span>
+                      ? numeroVerifie
+                        ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié par SMS</span>
+                        : <span className="ui-etat ui-etat-ambre">Compte client · numéro à confirmer à l&apos;appel</span>
                       : <span className="ui-etat">Commande en invité</span>}
                     {f.client.nb_commandes <= 1 ? <span className="ui-etat ui-etat-bleu">Nouveau client</span> : <span className="ui-etat">{f.client.nb_commandes} commandes</span>}
                     {f.client.nb_refus > 0 ? <span className="ui-etat ui-etat-rouge">{f.client.nb_refus} refus à la livraison</span> : null}

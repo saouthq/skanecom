@@ -10,6 +10,8 @@ import { creeTesteur } from "./testeur.mjs";
 
    Le « fournisseur de SMS » local est le relais de l'API (outils/api-locale.sh) :
    le code se relit sur http://127.0.0.1:54321/sms-dev/dernier?telephone=…
+   De même pour les e-mails (connexion par code e-mail, réglage
+   compte.verification) : http://127.0.0.1:54321/email-dev/dernier?email=…
    Jeu de démo requis (supabase/seed.sql), base fraîche de préférence : les
    numéros de commande vérifiés sont les premiers de chaque boutique.
    ========================================================================== */
@@ -29,6 +31,15 @@ async function codeRecu(numero) {
     await pause(250);
   }
   throw new Error(`aucun SMS pour le ${numero}`);
+}
+
+async function codeEmail(adresse) {
+  for (let i = 0; i < 40; i++) {
+    const r = await fetch(`${RELAIS}/email-dev/dernier?email=${encodeURIComponent(adresse)}`).catch(() => null);
+    if (r?.ok) return (await r.json()).code;
+    await pause(250);
+  }
+  throw new Error(`aucun e-mail pour ${adresse}`);
 }
 
 /** Le numéro, le code du SMS, puis « Numéro confirmé ». */
@@ -240,6 +251,70 @@ console.log("\n== 2. Maison Selma, sur téléphone ==");
     await pause(400);
     verifie((await page.locator("header .bouton-panier-compte").innerText().catch(() => "")).trim() === "1", "le panier garde la robe S de tout à l'heure");
     await capture(page, "selma-telephone-merci-express");
+  });
+
+  await etape("par e-mail : un code sans SMS, puis le numéro du livreur", async () => {
+    // Selma garde le réglage par défaut : SMS ou e-mail, au choix.
+    await page.goto(S + "/commande", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Changer de numéro" }).tap();
+    await page.locator(".identification-canaux").waitFor();
+    verifie(await page.getByRole("radio", { name: "SMS" }).isChecked(), "deux façons de recevoir le code : le SMS d'abord");
+    await capture(page, "selma-telephone-connexion-choix");
+    await page.getByRole("radio", { name: "E-mail" }).check();
+    const adresse = page.getByLabel("Adresse e-mail");
+    await adresse.tap();
+    await tape(page, "Leila.Gharbi@exemple.tn");
+    await page.getByRole("button", { name: "Recevoir le code" }).tap();
+    await page.getByLabel("Code reçu par e-mail").waitFor();
+    verifie((await page.locator(".tunnel-etape").first().innerText()).includes("Code envoyé à leila.gharbi@exemple.tn"), "l'e-mail est annoncé, à l'adresse en minuscules");
+    await capture(page, "selma-telephone-code-email");
+    await tape(page, await codeEmail("leila.gharbi@exemple.tn"));
+    await page.locator(".tunnel-identite").waitFor({ timeout: 8000 });
+    verifie((await page.locator(".tunnel-identite").innerText()).includes("Adresse confirmée : leila.gharbi@exemple.tn"), "six chiffres tapés : l'adresse est confirmée");
+    const numero = page.getByLabel("Téléphone");
+    verifie(await numero.isVisible() && (await numero.inputValue()) === "", "reste le numéro du livreur, à saisir : un compte e-mail n'en a pas");
+    // Le formulaire garde l'adresse saisie avant le changement de compte : on la réécrit.
+    await page.getByLabel("Nom et prénom").fill("Leila Gharbi");
+    await page.getByLabel("Adresse", { exact: true }).fill("3 avenue Habib Bourguiba");
+    await page.getByLabel("Ville ou délégation").fill("Sousse");
+    await page.getByLabel("Gouvernorat", { exact: true }).selectOption({ label: "Sousse" });
+    await page.locator(".tunnel-livraison").waitFor({ timeout: 8000 });
+    await page.locator(".tunnel-conditions input[type=checkbox]").check();
+    await page.locator(".tunnel-bouton").tap();
+    await pause(300);
+    verifie((await page.locator(".tunnel-etape").first().innerText()).includes("Numéro tunisien à 8 chiffres attendu"), "sans numéro, la commande ne part pas");
+    verifie(await page.evaluate(() => document.activeElement?.getAttribute("type")) === "tel", "le focus va au numéro");
+    await tape(page, "50 111 222");
+    const sousEntete = await page.evaluate(() => {
+      const champ = document.activeElement?.getBoundingClientRect();
+      const entete = document.querySelector("header")?.getBoundingClientRect();
+      return Boolean(champ && entete && champ.top < entete.bottom);
+    });
+    verifie(!sousEntete, "le champ du numéro reste visible sous l'en-tête collant");
+    await capture(page, "selma-telephone-identite-email");
+    await page.locator(".tunnel-bouton").tap();
+    await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
+    await page.locator(".merci").waitFor();
+    verifie((await page.locator(".merci").innerText()).includes("+216 50 111 222"), "l'appel de confirmation se fera au numéro saisi");
+  });
+
+  await etape("mes commandes, connectée par e-mail", async () => {
+    await page.goto(S + "/compte", { waitUntil: "networkidle" });
+    await page.locator(".compte-carte").first().waitFor({ timeout: 8000 });
+    verifie((await page.locator(".compte-identite").innerText()).includes("Connecté avec leila.gharbi@exemple.tn"), "le compte, c'est l'adresse e-mail");
+    await page.getByRole("button", { name: "Se déconnecter" }).tap();
+    await page.locator(".compte-connexion").waitFor();
+    verifie((await page.locator(".compte-connexion").innerText()).includes("par SMS ou par e-mail"), "on se reconnecte comme à la commande, par SMS ou par e-mail");
+    await page.getByRole("radio", { name: "E-mail" }).check();
+    await page.getByLabel("Adresse e-mail").fill("leila.gharbi@exemple.tn");
+    await page.getByRole("button", { name: "Recevoir le code" }).tap();
+    // Le champ du code d'abord : le relais garde encore le code d'avant tant que le nouveau n'est pas parti.
+    const champCode = page.getByLabel("Code reçu par e-mail");
+    await champCode.waitFor();
+    await champCode.fill(await codeEmail("leila.gharbi@exemple.tn"));
+    await page.locator(".compte-carte").first().waitFor({ timeout: 8000 });
+    verifie((await page.locator(".compte-carte").count()) === 1, "sa commande est là (celles du compte SMS sont à part)");
+    await capture(page, "selma-telephone-mes-commandes-email");
   });
   await ctx.close();
 }
@@ -529,7 +604,7 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: "fr-FR" });
     const p = await tel.newPage();
     await p.goto(Q + "/commande?devis=DEV-00002", { waitUntil: "networkidle" });
-    const connexion = p.locator(".tunnel-vide .connexion-sms");
+    const connexion = p.locator(".tunnel-vide .compte-connexion");
     await connexion.waitFor({ timeout: 8000 });
     verifie((await connexion.innerText()).includes("Votre devis vous attend"), "sans session : la connexion par SMS, pas une erreur");
     await p.getByLabel("Téléphone").fill("22 345 002");

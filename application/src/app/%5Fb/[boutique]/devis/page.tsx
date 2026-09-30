@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { DemandeDevis } from "@/components/DemandeDevis";
 import { Gabarit } from "@/components/Gabarit";
 import { cadre as chargeCadre } from "@/lib/boutique";
+import { verificationDe } from "@/lib/connexion";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -26,7 +27,7 @@ export default async function PageDevis({ params }: { params: Promise<{ boutique
         <h1>{t.devis.titre}</h1>
         <p className="legende">{t.devis.chapo}</p>
       </header>
-      <DemandeDevis boutiqueId={cadre.boutique.id} />
+      <DemandeDevis boutiqueId={cadre.boutique.id} verification={verificationDe(cadre.reglages)} />
     </Gabarit>
   );
 }

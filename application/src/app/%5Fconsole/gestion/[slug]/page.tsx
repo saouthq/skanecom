@@ -26,7 +26,8 @@ export const metadata: Metadata = { title: "Commandes" };
    Sur téléphone, chaque commande à confirmer a son bouton d'appel : on
    appelle depuis la liste, on note le résultat sur la fiche. Les etats
    disent ce qu'on doit savoir avant d'appeler : nouveau client, numéro
-   vérifié par SMS, refus passés, appels déjà tentés.
+   vérifié par SMS (un compte e-mail, lui, ne l'a pas prouvé), refus passés,
+   appels déjà tentés.
    ========================================================================== */
 
 type Ligne = {
@@ -78,6 +79,14 @@ export default async function Commandes({
   });
   if (error) throw new Error(`Commandes illisibles : ${error.message}`);
   const liste = data as Liste;
+  // Un compte e-mail n'a pas prouvé son numéro : seul un compte SMS confirmé est « vérifié ».
+  const { data: verifiees } = liste.commandes.some((c) => c.client?.compte)
+    ? await sb.rpc("gestion_numeros_verifies", {
+        p_boutique_id: boutique.boutique_id,
+        p_commandes: liste.commandes.filter((c) => c.client?.compte).map((c) => c.numero),
+      })
+    : { data: [] };
+  const numeroVerifie = new Set((verifiees as string[] | null) ?? []);
   const maintenant = new Date();
   const pages = Math.max(1, Math.ceil(liste.total / PAR_PAGE));
   // Les bordereaux ne servent qu'aux colis livrés : pas aux commandes à retirer.
@@ -162,7 +171,11 @@ export default async function Commandes({
                   </span>
                   <span className="bo-badges ui-etats">
                     {c.mode_livraison === "retrait" ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> À retirer</span> : null}
-                    {c.client?.compte ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié</span> : null}
+                    {c.client?.compte ? (
+                      numeroVerifie.has(c.numero)
+                        ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié</span>
+                        : <span className="ui-etat">Numéro non vérifié</span>
+                    ) : null}
                     {c.client && c.client.nb_commandes <= 1 ? <span className="ui-etat ui-etat-bleu">Nouveau client</span> : null}
                     {c.client && c.client.nb_commandes > 1 ? <span className="ui-etat">{c.client.nb_commandes} commandes</span> : null}
                     {c.client && c.client.nb_refus > 0 ? <span className="ui-etat ui-etat-rouge">{c.client.nb_refus} refus</span> : null}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Cadre } from "@/lib/boutique";
+import { verificationDe } from "@/lib/connexion";
 import { formatePrix } from "@/lib/prix";
 import { poidsLisible } from "@/lib/caracteristiques";
 import { identiteLegale, moyensDeContact, numeroLisible, type IdentiteLegale } from "@/lib/legal";
@@ -82,6 +83,7 @@ export function conditionsDeVente(cadre: Cadre): { intro: React.ReactNode; secti
   const id = identiteLegale(cadre);
   const vendeur = id.raisonSociale ?? id.nom;
   const compte = cadre.reglages["compte.obligatoire"] !== false;
+  const verification = verificationDe(cadre.reglages);
   const transporteur = typeof cadre.reglages["livraison.transporteur"] === "string" ? String(cadre.reglages["livraison.transporteur"]).trim() : "";
   const zones = cadre.zones.filter((z) => z.nom_fr || z.nom_ar);
   const jours = id.retractationJours;
@@ -121,7 +123,14 @@ export function conditionsDeVente(cadre: Cadre): { intro: React.ReactNode; secti
               <li>L&apos;acheteur choisit ses articles et ouvre son panier.</li>
               <li>
                 Il indique ses coordonnées et l&apos;adresse de livraison
-                {compte ? " ; son numéro de téléphone est confirmé par un code reçu par SMS" : ""}.
+                {compte
+                  ? verification === "sms"
+                    ? " ; son numéro de téléphone est confirmé par un code reçu par SMS"
+                    : verification === "email"
+                      ? " ; il ouvre son compte avec un code reçu par e-mail, et son numéro est confirmé par l'appel de la boutique"
+                      : " ; il ouvre son compte avec un code reçu par SMS ou par e-mail, à son choix"
+                  : ""}
+                .
               </li>
               <li>Il relit le récapitulatif : articles, frais de livraison, total à payer.</li>
               <li>Il accepte les présentes conditions et confirme la commande.</li>
@@ -312,6 +321,7 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
   const id = identiteLegale(cadre);
   const responsable = id.raisonSociale ?? id.nom;
   const compte = cadre.reglages["compte.obligatoire"] !== false;
+  const verification = verificationDe(cadre.reglages);
   return {
     intro: (
       <p>
@@ -338,8 +348,15 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
         titre: "Les données recueillies",
         corps: (
           <ul className="legal-liste">
-            <li>le nom et le numéro de téléphone de l&apos;acheteur{compte ? ", confirmé par un code reçu par SMS" : ""} ;</li>
-            <li>l&apos;adresse de livraison, et l&apos;adresse électronique si elle est donnée ;</li>
+            <li>
+              le nom et le numéro de téléphone de l&apos;acheteur
+              {compte && verification === "sms" ? ", confirmé par un code reçu par SMS" : ""}
+              {compte && verification === "les_deux" ? ", confirmé par un code reçu par SMS s'il choisit ce moyen" : ""} ;
+            </li>
+            <li>
+              l&apos;adresse de livraison, et l&apos;adresse électronique si elle est donnée
+              {compte && verification !== "sms" ? " (elle sert alors aussi à recevoir le code de connexion)" : ""} ;
+            </li>
             <li>les commandes : articles, montants, dates, suivi de la livraison, refus éventuels ;</li>
             <li>les échanges avec la boutique au sujet d&apos;une commande (appel de confirmation, note de livraison).</li>
           </ul>
@@ -366,7 +383,7 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
           <p>
             L&apos;équipe de la boutique ; le livreur ou le transporteur, pour le nom, le téléphone et l&apos;adresse de
             livraison ; les prestataires techniques de la plateforme, dans la stricte mesure nécessaire (hébergement,
-            envoi des codes SMS).
+            envoi des codes de connexion{verification === "sms" ? " par SMS" : verification === "email" ? " par e-mail" : ", par SMS ou par e-mail"}).
           </p>
         ),
       },

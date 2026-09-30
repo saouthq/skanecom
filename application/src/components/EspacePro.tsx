@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Coche, Lot } from "./Icones";
+import { ChampTelephoneDuCompte, renseigneTelephone, useTelephoneDuCompte } from "./TelephoneDuCompte";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import { t } from "@/lib/i18n";
 
@@ -13,7 +14,8 @@ import { t } from "@/lib/i18n";
 
    Lu et écrit dans le navigateur, avec la session de l'acheteur
    (public.mon_compte_pro, public.demander_compte_pro) : l'équipe ne lui dit
-   que sa décision et, s'il y a lieu, son motif.
+   que sa décision et, s'il y a lieu, son motif. Un compte ouvert par
+   e-mail donne d'abord son numéro, une fois (TelephoneDuCompte.tsx).
    ========================================================================== */
 
 type ComptePro = {
@@ -28,7 +30,7 @@ type ComptePro = {
 };
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
-const INDICES_LISIBLES = ["raison_sociale", "matricule", "metier", "message", "deja", "module", "bloque", "compte"];
+const INDICES_LISIBLES = ["raison_sociale", "matricule", "metier", "message", "deja", "module", "bloque", "compte", "telephone"];
 
 export function EspacePro({ boutiqueId }: { boutiqueId: string }) {
   // undefined : pas encore lu ; null : aucune demande.
@@ -37,6 +39,8 @@ export function EspacePro({ boutiqueId }: { boutiqueId: string }) {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<{ indice: string | null; texte: string } | null>(null);
   const [envoyee, setEnvoyee] = useState(false);
+  const numero = useTelephoneDuCompte(boutiqueId, true);
+  const numeroManque = numero.telephone === null;
 
   useEffect(() => {
     let actif = true;
@@ -60,8 +64,19 @@ export function EspacePro({ boutiqueId }: { boutiqueId: string }) {
       (e.currentTarget.elements.namedItem("raison_sociale") as HTMLInputElement | null)?.focus();
       return;
     }
+    const champs = e.currentTarget.elements;
     setEnvoi(true);
     setErreur(null);
+    if (numeroManque) {
+      const refus = await renseigneTelephone(boutiqueId, texte("telephone"));
+      if (refus) {
+        setEnvoi(false);
+        setErreur({ indice: "telephone", texte: refus });
+        (champs.namedItem("telephone") as HTMLInputElement | null)?.focus();
+        return;
+      }
+      numero.relire();
+    }
     const { data, error } = await supabaseNavigateur().rpc("demander_compte_pro", {
       p_boutique_id: boutiqueId,
       p_raison_sociale: texte("raison_sociale"),
@@ -72,6 +87,7 @@ export function EspacePro({ boutiqueId }: { boutiqueId: string }) {
     setEnvoi(false);
     if (error) {
       const indice = error.hint ?? null;
+      if (indice === "telephone") numero.manque();
       setErreur({ indice, texte: INDICES_LISIBLES.includes(indice ?? "") ? error.message : t.pro.erreur });
       return;
     }
@@ -102,6 +118,11 @@ export function EspacePro({ boutiqueId }: { boutiqueId: string }) {
           <label htmlFor="pro-metier">{t.pro.metier} <span className="facultatif">{t.commande.facultatif}</span></label>
           <input id="pro-metier" name="metier" maxLength={80} defaultValue={compte?.metier ?? ""} placeholder={t.pro.metierExemple} />
         </div>
+        {numeroManque ? (
+          <div className="pro-champ-large">
+            <ChampTelephoneDuCompte id="pro-telephone" invalide={erreur?.indice === "telephone"} decrit="pro-erreur" />
+          </div>
+        ) : null}
         <div className="champ pro-champ-large">
           <label htmlFor="pro-message">{t.pro.message} <span className="facultatif">{t.commande.facultatif}</span></label>
           <textarea id="pro-message" name="message" rows={3} maxLength={500} defaultValue={compte?.message ?? ""} placeholder={t.pro.messageExemple} />

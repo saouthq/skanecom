@@ -124,6 +124,12 @@ CONF
     export GOTRUE_HOOK_SEND_SMS_ENABLED=true GOTRUE_HOOK_SEND_SMS_URI=http://127.0.0.1:54321/sms-dev
     GOTRUE_HOOK_SEND_SMS_SECRETS="v1,whsec_$(printf '%s' "$SECRET_DEV" | base64 -w0)"
     export GOTRUE_HOOK_SEND_SMS_SECRETS
+    # Ou par adresse e-mail et code (réglage compte.verification) : le relais
+    # tient aussi lieu d'expéditeur, il note les codes dans .outils/emails.log.
+    export GOTRUE_HOOK_SEND_EMAIL_ENABLED=true GOTRUE_HOOK_SEND_EMAIL_URI=http://127.0.0.1:54321/email-dev
+    GOTRUE_HOOK_SEND_EMAIL_SECRETS="$GOTRUE_HOOK_SEND_SMS_SECRETS"
+    export GOTRUE_HOOK_SEND_EMAIL_SECRETS
+    export GOTRUE_SMTP_MAX_FREQUENCY=1s GOTRUE_RATE_LIMIT_EMAIL_SENT=1000
     export GOTRUE_LOG_LEVEL=warn
     setsid "$GOTRUE_DOSSIER/auth" serve > "$OUTILS/gotrue.log" 2>&1 < /dev/null &
     echo $! > "$OUTILS/gotrue.pid"

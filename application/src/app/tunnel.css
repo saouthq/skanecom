@@ -40,6 +40,11 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
   .tunnel-recap { grid-column: 2; grid-row: 1; position: sticky; inset-block-start: calc(var(--entete-h, 4rem) + 1.5rem); }
 }
 
+/* Les pages à formulaire : ce que le navigateur fait défiler de lui-même (le
+   champ où l'on tape, quand le clavier du téléphone s'ouvre) s'arrête sous
+   l'en-tête collant, pas dessous. */
+html:has(.tunnel-page, .compte-page) { scroll-padding-block: calc(var(--entete-h, 4rem) + 1rem) 1rem; }
+
 /* --- Formulaire ------------------------------------------------------------ */
 .tunnel-formulaire { display: grid; gap: .5rem; min-inline-size: 0; }
 .tunnel-etape { margin: 0; padding: 1.75rem 0 2rem; border: 0; border-block-start: 1px solid var(--theme-filet); min-inline-size: 0; display: grid; gap: 1.125rem; }
@@ -55,11 +60,11 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 /* Une étape remplie (le numéro confirmé, l'adresse complète) le montre :
    son numéro devient une coche, qui arrive d'un petit bond. */
 .tunnel-num { transition: background-color .3s var(--theme-courbe), color .3s; }
-:is(.tunnel-etape[data-faite], .tunnel-etape:has(.tunnel-identite)) .tunnel-num {
+.tunnel-etape[data-faite] .tunnel-num {
   background: var(--theme-succes); color: var(--theme-surface); font-size: 0; animation: tunnel-coche .45s cubic-bezier(.34, 1.5, .64, 1);
 }
 @keyframes tunnel-coche { from { transform: scale(.6); } }
-:is(.tunnel-etape[data-faite], .tunnel-etape:has(.tunnel-identite)) .tunnel-num::before {
+.tunnel-etape[data-faite] .tunnel-num::before {
   content: ""; inline-size: .8125rem; block-size: .8125rem; background: currentColor;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
@@ -101,6 +106,33 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 @media (max-width: 519px) { .champ input.tunnel-code { flex-basis: 100%; max-inline-size: none; } }
 .tunnel-renvoi { align-self: flex-start; }
 .tunnel-renvoi:disabled { text-decoration: none; cursor: default; opacity: .8; }
+
+/* La connexion (Connexion.tsx) : le code par SMS ou par e-mail, au choix
+   quand la boutique propose les deux — un sélecteur à deux segments, le
+   choisi en relief. */
+.identification { display: grid; gap: 1rem; min-inline-size: 0; }
+.identification-canaux { display: grid; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.identification-canaux > legend { padding: 0; margin-block-end: .5rem; font-size: .8125rem; font-weight: 500; color: var(--theme-encre); }
+.identification-choix {
+  display: inline-grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); justify-self: start; gap: 3px; padding: 3px;
+  background: var(--theme-surface-2); border: 1px solid var(--theme-filet); border-radius: calc(var(--theme-radius-doux) + 3px);
+}
+@media (max-width: 519px) { .identification-choix { justify-self: stretch; } }
+.identification-canal { position: relative; display: block; cursor: pointer; }
+.identification-canal input { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.identification-canal span {
+  display: flex; align-items: center; justify-content: center; gap: .5rem; min-block-size: 40px; padding: .5rem 1.25rem;
+  border-radius: var(--theme-radius-doux); font-size: .9375rem; font-weight: 500; color: var(--theme-encre-doux); white-space: nowrap;
+  transition: background-color .2s var(--theme-courbe), color .2s, box-shadow .25s var(--theme-courbe);
+}
+.identification-canal input:checked + span {
+  background: var(--theme-surface); color: var(--theme-encre);
+  box-shadow: 0 0 0 1px var(--theme-filet), 0 1px 3px color-mix(in srgb, var(--theme-encre) 12%, transparent);
+}
+.identification-canal input:focus-visible + span { outline: 2px solid var(--theme-encre); outline-offset: 2px; }
+@media (hover: hover) { .identification-canal:hover input:not(:checked) + span { color: var(--theme-encre); } }
+.champ input.identification-email { flex: 1 1 14rem; min-inline-size: 0; }
+@media (prefers-reduced-motion: reduce) { .identification-canal span { transition: none; } }
 
 .tunnel-identite {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem;
@@ -262,7 +294,7 @@ html[data-gabarit="technique"] .tunnel-etape > legend {
 html[data-gabarit="technique"] .tunnel-num {
   border: 0; border-radius: var(--theme-radius-doux); background: var(--theme-accent); color: var(--theme-encre); font-weight: 800;
 }
-html[data-gabarit="technique"] :is(.tunnel-etape[data-faite], .tunnel-etape:has(.tunnel-identite)) .tunnel-num { background: var(--theme-succes); color: var(--theme-surface); }
+html[data-gabarit="technique"] .tunnel-etape[data-faite] .tunnel-num { background: var(--theme-succes); color: var(--theme-surface); }
 html[data-gabarit="technique"] .tunnel-etape { padding-inline: 1.25rem; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); margin-block-end: .75rem; }
 html[data-gabarit="technique"] .tunnel-mode { border-width: 2px; }
 html[data-gabarit="technique"] .tunnel-recap-tete h2,

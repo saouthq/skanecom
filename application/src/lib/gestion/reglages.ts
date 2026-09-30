@@ -49,6 +49,7 @@ type Genre = "booleen" | "choix" | "entier" | "montant" | "texte" | "numero";
 export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
   commandes: [
     { cle: "compte.obligatoire", genre: "booleen" },
+    { cle: "compte.verification", genre: "choix" },
     { cle: "commande.mode_confirmation", genre: "choix" },
     { cle: "commande.achat_express", genre: "booleen" },
     { cle: "commande.max_en_attente", genre: "entier" },
@@ -164,6 +165,7 @@ export function montantChamp(v: unknown): string {
 
 const LIBELLES_COURTS: Record<string, string> = {
   "compte.obligatoire": "Compte client",
+  "compte.verification": "Code de connexion",
   "commande.mode_confirmation": "Confirmation",
   "commande.max_en_attente": "Commandes en attente par numéro",
   "commande.achat_express": "Achat express",
@@ -193,6 +195,7 @@ const LIBELLES_COURTS: Record<string, string> = {
 
 function lisible(cle: string, v: unknown): string {
   if (cle === "compte.obligatoire") return v ? "obligatoire" : "invité possible";
+  if (cle === "compte.verification") return v === "sms" ? "par SMS" : v === "email" ? "par e-mail" : "SMS ou e-mail, au choix";
   if (cle === "commande.mode_confirmation") return v === "automatique" ? "automatique" : "par téléphone";
   if (cle === "livraison.mode_frais") return v === "zone" ? "par zone" : "même tarif partout";
   if (cle === "livraison.seuil_gratuite_millimes") return Number(v) > 0 ? `${formateMontant(Number(v))} TND` : "jamais";

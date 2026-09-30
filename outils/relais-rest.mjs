@@ -15,6 +15,9 @@
 // connexion (crochet « Send SMS »), il les note dans .outils/sms.log au lieu
 // de les envoyer. Les essais relisent le dernier code d'un numéro :
 //   http://127.0.0.1:54321/sms-dev/dernier?telephone=21620123456
+// De même pour les e-mails (crochet « Send Email ») : les codes de connexion
+// des acheteurs, notés dans .outils/emails.log, relus par adresse :
+//   http://127.0.0.1:54321/email-dev/dernier?email=leila@exemple.tn
 // Lancé par outils/api-locale.sh. Jamais en production.
 import http from "node:http";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -34,6 +37,8 @@ const TYPES = { ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/p
 
 const JOURNAL_SMS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.outils/sms.log");
 const SMS = new Map(); // numéro (chiffres seuls) → dernier code
+const JOURNAL_EMAILS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.outils/emails.log");
+const EMAILS = new Map(); // adresse (minuscules) → { code, type }
 
 const chiffres = (texte) => String(texte ?? "").replace(/\D/g, "");
 
@@ -58,6 +63,31 @@ function dernierSms(url, res) {
   const code = SMS.get(chiffres(new URL(url, "http://relais").searchParams.get("telephone")));
   if (!code) return res.writeHead(404, { "content-type": "application/json" }).end("{}");
   res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify({ code }));
+}
+
+/* Le crochet « Send Email » de GoTrue :
+   { user: { email }, email_data: { token, email_action_type, … } }. */
+function recoitEmail(req, res) {
+  let corps = "";
+  req.on("data", (morceau) => (corps += morceau));
+  req.on("end", async () => {
+    try {
+      const { user, email_data: donnees } = JSON.parse(corps);
+      const adresse = String(user?.email ?? "").toLowerCase();
+      if (!adresse) throw new Error("adresse absente");
+      EMAILS.set(adresse, { code: String(donnees?.token ?? ""), type: String(donnees?.email_action_type ?? "") });
+      await appendFile(JOURNAL_EMAILS, `${new Date().toISOString()}  ${adresse}  ${donnees?.email_action_type}  code ${donnees?.token}\n`);
+      res.writeHead(200, { "content-type": "application/json" }).end("{}");
+    } catch {
+      res.writeHead(400, { "content-type": "application/json" }).end('{"error":{"http_code":400,"message":"E-mail illisible"}}');
+    }
+  });
+}
+
+function dernierEmail(url, res) {
+  const recu = EMAILS.get(String(new URL(url, "http://relais").searchParams.get("email") ?? "").toLowerCase());
+  if (!recu) return res.writeHead(404, { "content-type": "application/json" }).end("{}");
+  res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify(recu));
 }
 
 /** Le chemin d'un fichier sous un dossier racine, ou null s'il en sort. */
@@ -124,6 +154,8 @@ http
     if (req.url.startsWith("/fichiers/")) return sertFichier(req.url, res);
     if (req.url === "/sms-dev" && req.method === "POST") return recoitSms(req, res);
     if (req.url.startsWith("/sms-dev/dernier") && req.method === "GET") return dernierSms(req.url, res);
+    if (req.url === "/email-dev" && req.method === "POST") return recoitEmail(req, res);
+    if (req.url.startsWith("/email-dev/dernier") && req.method === "GET") return dernierEmail(req.url, res);
 
     const cible = AMONTS.find((a) => req.url === a.prefixe || req.url.startsWith(a.prefixe + "/") || req.url.startsWith(a.prefixe + "?"));
     if (!cible) {

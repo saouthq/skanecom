@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Compte } from "@/components/Compte";
 import { Gabarit } from "@/components/Gabarit";
 import { cadre as chargeCadre } from "@/lib/boutique";
+import { verificationDe } from "@/lib/connexion";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -19,13 +20,14 @@ export const metadata: Metadata = {
 export default async function PageCompte({ params }: { params: Promise<{ boutique: string }> }) {
   const { boutique } = await params;
   const cadre = await chargeCadre(boutique);
+  const verification = verificationDe(cadre.reglages);
   return (
     <Gabarit className="enveloppe flex-1 compte-page">
       <header className="compte-tete">
         <h1>{t.compte.titre}</h1>
-        <p className="legende">{t.compte.chapo}</p>
+        <p className="legende">{t.compte.chapo(verification)}</p>
       </header>
-      <Compte boutiqueId={cadre.boutique.id} sav={Boolean(cadre.sav)} pro={cadre.comptesPro} devis={cadre.devis} avis={cadre.avis} />
+      <Compte boutiqueId={cadre.boutique.id} verification={verification} sav={Boolean(cadre.sav)} pro={cadre.comptesPro} devis={cadre.devis} avis={cadre.avis} />
     </Gabarit>
   );
 }

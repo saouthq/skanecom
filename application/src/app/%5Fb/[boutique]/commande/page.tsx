@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Gabarit } from "@/components/Gabarit";
 import { Tunnel } from "@/components/Tunnel";
 import { cadre as chargeCadre } from "@/lib/boutique";
+import { verificationDe } from "@/lib/connexion";
 import { identiteLegale } from "@/lib/legal";
 import { supabase } from "@/lib/supabase";
 import { t } from "@/lib/i18n";
@@ -11,7 +12,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /* ============================================================================
    LA PAGE DE COMMANDE — le cadre de la boutique (réglages : compte
-   obligatoire, confirmation par appel, paiement à la livraison) et la liste
+   obligatoire et sa vérification, par SMS ou par e-mail, confirmation par
+   appel, paiement à la livraison) et la liste
    des gouvernorats, lus en base ; le reste vit dans le navigateur (le panier)
    et se relit en base à chaque changement (components/Tunnel.tsx).
    L'achat express (réglage commande.achat_express) : `?article=…&quantite=…`,
@@ -58,6 +60,7 @@ export default async function Commande({
         boutiqueId={cadre.boutique.id}
         boutique={cadre.boutique.slug}
         compteObligatoire={cadre.reglages["compte.obligatoire"] !== false}
+        verification={verificationDe(cadre.reglages)}
         rappel={cadre.livraison.rappel}
         cod={cadre.livraison.cod}
         gouvernorats={(gouvernorats ?? []).map((g) => ({ code: g.code as string, nom: g.nom_fr as string }))}

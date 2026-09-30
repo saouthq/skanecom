@@ -40,8 +40,9 @@ function Alternative({ nom, valeur, options, legende }: {
   nom: string; valeur: string; legende: string;
   options: { valeur: string; titre: string; aide: string; conseil?: string }[];
 }) {
+  // Deux options côte à côte ; au-delà, l'une sous l'autre (lisibles sur téléphone comme dans une demi-colonne).
   return (
-    <fieldset className="choix choix-2 rg-alternative">
+    <fieldset className={options.length > 2 ? "choix rg-alternative" : "choix choix-2 rg-alternative"}>
       <legend>{legende}</legend>
       {options.map((o) => (
         <label key={o.valeur} className="choix-carte">
@@ -160,8 +161,16 @@ export default async function Reglages({
                   <Alternative
                     nom="compte.obligatoire" legende="Pour commander" valeur={v("compte.obligatoire") ? "1" : "0"}
                     options={[
-                      { valeur: "1", titre: "Compte obligatoire", conseil: "Conseillé", aide: "L'acheteur confirme son numéro par un code SMS. Moins de refus à la livraison." },
+                      { valeur: "1", titre: "Compte obligatoire", conseil: "Conseillé", aide: "L'acheteur se connecte par un code, avant de commander. Moins de refus à la livraison." },
                       { valeur: "0", titre: "Commande en invité", aide: "Plus rapide pour l'acheteur, mais plus de commandes fantaisistes à appeler." },
+                    ]}
+                  />
+                  <Alternative
+                    nom="compte.verification" legende="Le code de connexion" valeur={String(v("compte.verification") ?? "les_deux")}
+                    options={[
+                      { valeur: "les_deux", titre: "SMS ou e-mail, au choix", conseil: "Conseillé", aide: "Le SMS est proposé d'abord ; qui préfère l'e-mail le choisit. Moins de SMS à payer." },
+                      { valeur: "sms", titre: "Par SMS seulement", aide: "Chaque compte a un numéro vérifié. Chaque code envoyé est un SMS payé." },
+                      { valeur: "email", titre: "Par e-mail seulement", aide: "Presque gratuit. Le numéro, saisi à la commande, se vérifie à l'appel de confirmation." },
                     ]}
                   />
                   <Alternative

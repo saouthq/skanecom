@@ -759,14 +759,17 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await capture(page, "gestion-reglages", true);
   });
 
-  await etape("ouvrir aux invités, confirmer d'office", async () => {
+  await etape("ouvrir aux invités, confirmer d'office, le code par e-mail", async () => {
+    verifie(await section("commandes").getByLabel("SMS ou e-mail, au choix").isChecked(), "au départ : le code par SMS ou par e-mail, au choix");
     await clic(page, section("commandes").getByText("Commande en invité"));
+    await clic(page, section("commandes").getByText("Par e-mail seulement"));
     await clic(page, section("commandes").getByText("Confirmée d'office"));
     await envoie(section("commandes").getByRole("button", { name: "Enregistrer" }));
     verifie((await ok()).includes("Réglages enregistrés"), `« ${await ok()} »`);
     verifie(await section("commandes").getByLabel("Commande en invité").isChecked(), "le choix est gardé");
     const j = await journal();
-    verifie(j.includes("Compte client : obligatoire → invité possible") && j.includes("Confirmation : par téléphone → automatique"),
+    verifie(j.includes("Compte client : obligatoire → invité possible") && j.includes("Confirmation : par téléphone → automatique")
+      && j.includes("Code de connexion : SMS ou e-mail, au choix → par e-mail"),
       "le journal dit ce qui a changé, et qui l'a fait");
     verifie(j.includes("gerant@maymar.test"), "avec son auteur");
   });
@@ -868,6 +871,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
   await etape("remettre Maymar comme au départ", async () => {
     await page.goto(`${C}/gestion/maymar/reglages`, { waitUntil: "networkidle" });
     await clic(page, section("commandes").getByText("Compte obligatoire"));
+    await clic(page, section("commandes").getByText("SMS ou e-mail, au choix"));
     await clic(page, section("commandes").getByText("Confirmée par téléphone"));
     await envoie(section("commandes").getByRole("button", { name: "Enregistrer" }));
     await clic(page, section("livraison").getByText("Même tarif partout"));

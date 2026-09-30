@@ -299,6 +299,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis « Aujourd'hui » au backoffice** (migration 41, `20260929104000_aujourdhui.sql`, 18 tests dans `supabase/tests/41_aujourdhui.sql`) : `public.gestion_aujourdhui`, en un appel pour toute l'équipe — commandes à confirmer (dont à rappeler, et depuis quand), à préparer, en route (et depuis plus de cinq jours), retraits prêts ; ce que demandent les modules actifs ; le stock épuisé ou sous son seuil ; la journée depuis minuit (heure de Tunis), avec les montants pour la direction seulement.
 
+**Puis la vérification par e-mail, à côté du SMS** (migration 42, `20260929104100_verification_email.sql`, 29 tests dans `supabase/tests/42_verification_email.sql`) : le réglage `compte.verification` (`sms`, `email`, `les_deux` par défaut), lu par la vitrine ; `public.mon_telephone` (le numéro que la boutique connaît au compte : sa fiche, sinon son compte SMS) et `public.renseigner_telephone` (un compte e-mail donne son numéro avant sa première demande : sa fiche naît, un numéro bloqué est refusé) ; `demander_devis` et `demander_compte_pro` disent `telephone` (et non plus `compte`) quand le numéro manque ; `public.gestion_numeros_verifies` dit à l'équipe quelles commandes portent le numéro d'un compte SMS confirmé. `passer_commande` n'a pas changé : il prenait déjà le numéro du contact quand le compte n'en a pas.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.
