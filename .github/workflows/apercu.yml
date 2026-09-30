@@ -29,6 +29,10 @@ on:
     branches: [main, claude/gallant-hawking-gi9xv0]
     paths:
       - "application/**"
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - "supabase/apercu/**"
+      - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
       - "outils/annuaire.mjs"
       - "outils/apercu/**"

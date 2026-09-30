@@ -11,8 +11,10 @@
 //
 // Protégée par la clé service_role, qui ouvre déjà toute la base : le
 // workflow l'a en secret (APERCU_SUPABASE_SERVICE_ROLE_KEY), personne
-// d'autre. La base, elle, est jointe par SUPABASE_DB_URL, fournie par
-// Supabase à ses fonctions — aucun mot de passe à copier.
+// d'autre. Supabase vérifie la signature du jeton avant la fonction
+// (verify_jwt) ; la fonction exige le rôle service_role. La base, elle,
+// est jointe par SUPABASE_DB_URL, fournie par Supabase à ses fonctions —
+// aucun mot de passe à copier.
 // Déployée par Claude avec le connecteur Supabase (verify_jwt).
 // =====================================================================
 import postgres from "npm:postgres@3.4.5";
@@ -24,10 +26,24 @@ type Envoi = { genre: "migration" | "graines" | "script"; version?: string; nom:
 const reponse = (corps: unknown, status = 200) =>
   new Response(JSON.stringify(corps), { status, headers: { "content-type": "application/json" } });
 
+/** Le rôle du jeton : sa signature est déjà vérifiée par Supabase avant la
+ *  fonction (verify_jwt) ; reste à exiger celui de la clé service_role. */
+function role(autorisation: string | null): string | null {
+  const jeton = autorisation?.match(/^Bearer (.+)$/)?.[1];
+  const charge = jeton?.split(".")[1];
+  if (!charge) return null;
+  try {
+    const json = atob(charge.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(charge.length / 4) * 4, "="));
+    return (JSON.parse(json) as { role?: string }).role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
-  const cle = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (req.method !== "POST" || !cle || req.headers.get("authorization") !== `Bearer ${cle}`) {
-    return reponse({ erreur: "refusé" }, 401);
+  const qui = role(req.headers.get("authorization"));
+  if (req.method !== "POST" || qui !== "service_role") {
+    return reponse({ erreur: `refusé : la clé service_role est attendue (reçu : ${qui ?? "aucune clé lisible"})` }, 401);
   }
   let e: Envoi;
   try {
