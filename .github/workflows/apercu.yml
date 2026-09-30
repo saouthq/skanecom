@@ -188,6 +188,16 @@ jobs:
             echo "| Quincaillerie du Sud | https://skanecom-apercu-quincaillerie.$SOUS.workers.dev |"
             echo "| Console et backoffices | https://skanecom-apercu-console.$SOUS.workers.dev |"
           } >> "$GITHUB_STEP_SUMMARY"
-          for h in maymar selma quincaillerie console; do
-            curl -s -o /dev/null -w "skanecom-apercu-$h : HTTP %{http_code}\n" "https://skanecom-apercu-$h.$SOUS.workers.dev/" || true
+          # Une adresse workers.dev toute neuve met quelques secondes à répondre :
+          # chaque page a une minute pour le faire.
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          for cible in maymar/ selma/ quincaillerie/ console/connexion; do
+            url="https://skanecom-apercu-${cible%%/*}.$SOUS.workers.dev/${cible#*/}"
+            code=000
+            for _ in $(seq 1 12); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' "$url" || true)
+              [ "$code" = "200" ] && break
+              sleep 5
+            done
+            echo "$url : HTTP $code" | tee -a "$GITHUB_STEP_SUMMARY"
           done
