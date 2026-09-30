@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Prix } from "./Prix";
 import { EtatStock } from "./EtatStock";
-import { Coche, Lot } from "./Icones";
+import { Coche, Lot, Panier } from "./Icones";
 import { LivraisonEstimee } from "./LivraisonEstimee";
 import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
@@ -16,7 +17,10 @@ import type { CodeTheme } from "@/lib/theme";
 
 /* ============================================================================
    LE BLOC DE DÉCISION — prix, choix des déclinaisons, quantité, mise au
-   panier, et la barre d'achat collante du mobile.
+   panier, et la barre d'achat collante du mobile. Réglage de la boutique
+   (commande.achat_express) : « Commander maintenant » mène droit au tunnel
+   avec cette déclinaison et cette quantité seules, le panier n'est pas
+   touché.
 
    Trois règles tenues, toutes venues d'un défaut mesuré :
 
@@ -39,9 +43,12 @@ export function FicheAchat({
   gabarit,
   prixBarres = false,
   delaiJours = null,
+  achatExpress = false,
 }: {
   produit: Produit;
   gabarit: CodeTheme;
+  /** Réglage `commande.achat_express` : le bouton « Commander maintenant ». */
+  achatExpress?: boolean;
   /** L'enveloppe du délai de livraison (jours ouvrés) : la fenêtre estimée. */
   delaiJours?: { min: number; max: number } | null;
   /** Réglage `catalogue.afficher_prix_barres` : l'ancien prix barré à côté du
@@ -132,6 +139,9 @@ export function FicheAchat({
     setAjoute(true);
     ouvrePanier();
   };
+
+  // L'achat express : cette déclinaison, cette quantité, rien d'autre.
+  const lienExpress = variante && disponible ? `/commande?article=${variante.id}&quantite=${quantite}` : null;
 
   /* Les valeurs entièrement épuisées d'un axe : barrées, jamais cachées. */
   const epuisees = (cle: string) => valeursAxe(produit, cle).filter((v) => stockPourValeur(produit, cle, v) === 0);
@@ -252,6 +262,20 @@ export function FicheAchat({
           {ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier}
         </button>
       </div>
+      {achatExpress ? (
+        <div className="fiche-express">
+          {lienExpress ? (
+            <Link className="btn btn-second btn-express" href={lienExpress} prefetch={false}>
+              {t.produit.commanderMaintenant}
+            </Link>
+          ) : (
+            <button type="button" className="btn btn-second btn-express" disabled>
+              {t.produit.commanderMaintenant}
+            </button>
+          )}
+          <p className="legende">{t.produit.commanderMaintenantAide}</p>
+        </div>
+      ) : null}
       <p className="legende fiche-note">{t.produit.stockReel}</p>
       {disponible && delaiJours ? <LivraisonEstimee min={delaiJours.min} max={delaiJours.max} /> : null}
 
@@ -262,10 +286,21 @@ export function FicheAchat({
             <p className="legende truncate">{declinaison() || champ(produit, "nom")}</p>
             {variante ? <Prix millimes={prixApplique * quantite} /> : null}
           </div>
-          <button type="button" className="btn btn-primaire" data-ajoute={ajoute ? "" : undefined} disabled={!disponible} onClick={auPanier}>
-            {ajoute ? <Coche taille={16} /> : null}
-            {ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier}
-          </button>
+          {achatExpress && lienExpress ? (
+            <>
+              {/* Deux actions dans la barre : l'ajout au panier devient une icône. */}
+              <button type="button" className="btn btn-second achat-mobile-icone" data-ajoute={ajoute ? "" : undefined} onClick={auPanier}
+                aria-label={ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier} title={t.produit.ajouterAuPanier}>
+                {ajoute ? <Coche taille={18} /> : <Panier taille={18} />}
+              </button>
+              <Link className="btn btn-primaire" href={lienExpress} prefetch={false}>{t.produit.commanderMaintenant}</Link>
+            </>
+          ) : (
+            <button type="button" className="btn btn-primaire" data-ajoute={ajoute ? "" : undefined} disabled={!disponible} onClick={auPanier}>
+              {ajoute ? <Coche taille={16} /> : null}
+              {ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier}
+            </button>
+          )}
         </div>
       ) : null}
     </div>

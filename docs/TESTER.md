@@ -59,6 +59,7 @@ outils/essayer.sh
 - Survoler une carte : la deuxième photo du produit apparaît (robe à bretelles, pull mérinos, polo).
 - Catalogue → **Filtrer** : cocher une taille ; le tiroir reste ouvert pour cocher la suivante ; « Voir les N résultats » le referme. Retirer un filtre par sa puce. Trier par prix.
 - Fiche produit : choisir une taille, **Ajouter au panier** → le panier s'ouvre, avec la vignette et la jauge « plus que … pour la livraison offerte ».
+- **Achat express** (Selma a le réglage) : sur une fiche, **Commander maintenant** mène droit à la commande avec cet article seul ; le panier reste tel quel. Sur téléphone, la barre collante propose les deux (l'icône du panier, « Commander maintenant »). Au backoffice, Réglages → Commandes → « Depuis la fiche d'un produit » : par le panier, ou achat express en plus.
 
 **Quincaillerie du Sud** (technique)
 - Chercher dans la grande barre, par référence ou par nom : `PV14`, `casque`, `forets`.
@@ -86,7 +87,7 @@ outils/essayer.sh
 Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
 
 ```bash
-outils/base-locale.sh tester                   # 944 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, images de la marque, modules, retrait en magasin, mes commandes, mise en place, accès support, photos à l'import, fiches techniques, supplément au poids, service après-vente, tableau de bord, encaissements, réception, quantité minimale, comptes professionnels, devis)
+outils/base-locale.sh tester                   # 951 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, images de la marque, modules, retrait en magasin, mes commandes, mise en place, accès support, photos à l'import, fiches techniques, supplément au poids, service après-vente, tableau de bord, encaissements, réception, quantité minimale, comptes professionnels, devis, achat express)
 outils/essai-vitrine.sh                        # 26 essais : les boutiques ne se mélangent jamais, le tunnel et le compte ne sont jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)

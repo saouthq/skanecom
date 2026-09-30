@@ -53,7 +53,9 @@ insert into public.reglages (boutique_id, cle, valeur) values
   ('00000000-0000-4000-8000-000000000002', 'retrait.delai_heures',             '2'),
   ('00000000-0000-4000-8000-000000000003', 'commande.prefixe_numero',          '"SEL"'),
   ('00000000-0000-4000-8000-000000000003', 'livraison.frais_fixes_millimes',   '7000'),
-  ('00000000-0000-4000-8000-000000000003', 'livraison.seuil_gratuite_millimes', '250000');
+  ('00000000-0000-4000-8000-000000000003', 'livraison.seuil_gratuite_millimes', '250000'),
+  -- Selma essaie l'achat express : « Commander maintenant » sur ses fiches.
+  ('00000000-0000-4000-8000-000000000003', 'commande.achat_express',           'true');
 
 
 -- ---------------------------------------------------------------------

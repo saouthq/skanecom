@@ -172,6 +172,8 @@ export const fr = {
     caracteristiques: "Caractéristiques",
     description: "Description",
     ajouterAuPanier: "Ajouter au panier",
+    commanderMaintenant: "Commander maintenant",
+    commanderMaintenantAide: "Payé à la livraison · votre panier reste tel quel",
     quantite: "Quantité",
     retirerUnArticle: "Retirer un article",
     ajouterUnArticle: "Ajouter un article",
@@ -329,6 +331,9 @@ export const fr = {
     retourPanier: "Modifier le panier",
     panierVide: "Votre panier est vide.",
     panierVideTexte: "Ajoutez des articles avant de commander.",
+    expressChapo: "Cet article seul, payé à la livraison : votre panier n'est pas touché.",
+    expressIndisponible: "Cet article ne peut pas être commandé pour l'instant.",
+    expressRetour: "Revenir au catalogue",
     fermee: "La commande en ligne n'est pas ouverte dans cette boutique pour le moment.",
 
     etapeCoordonnees: "Vos coordonnées",

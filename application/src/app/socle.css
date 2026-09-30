@@ -644,3 +644,14 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
 /* Hors gabarit (page introuvable) : le titre et « Effacer » sur une ligne. */
 .vus-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-block-end: 1rem; }
 .vus-tete h2 { font-family: var(--theme-font-display); font-size: 1.375rem; }
+
+/* ---- L'achat express (réglage commande.achat_express) : sous « Ajouter au
+   panier », sur toute la largeur ; dans la barre collante, les deux boutons
+   côte à côte, serrés. ---- */
+.fiche-express { display: grid; gap: .375rem; margin-block-start: .625rem; }
+.btn-express { inline-size: 100%; }
+.fiche-express .legende { text-align: center; }
+.achat-mobile:has(.btn + .btn) { gap: .5rem; }
+.achat-mobile .btn.achat-mobile-icone { flex: none; inline-size: 3.25rem; padding-inline: 0; }
+.achat-mobile-icone svg { flex: none; }
+.achat-mobile .btn + .btn { padding-inline: 1.125rem; white-space: nowrap; }

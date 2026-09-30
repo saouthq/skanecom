@@ -169,6 +169,13 @@ export default async function Reglages({
                       { valeur: "automatique", titre: "Confirmée d'office", aide: "La commande passe seule en « à préparer ». Pour une clientèle connue." },
                     ]}
                   />
+                  <Alternative
+                    nom="commande.achat_express" legende="Depuis la fiche d'un produit" valeur={v("commande.achat_express") ? "1" : "0"}
+                    options={[
+                      { valeur: "0", titre: "Par le panier", aide: "L'acheteur ajoute au panier, puis commande. Plusieurs articles, un seul colis." },
+                      { valeur: "1", titre: "Achat express en plus", aide: "«\u00a0Commander maintenant\u00a0» à côté de «\u00a0Ajouter au panier\u00a0» : cet article seul, droit à la commande. Plus rapide sur téléphone." },
+                    ]}
+                  />
                   <div className="champ rg-court">
                     <label htmlFor="max_en_attente">Commandes en attente par numéro</label>
                     <input id="max_en_attente" name="commande.max_en_attente" type="number" min={0} max={50} defaultValue={Number(v("commande.max_en_attente") ?? 3)} />

@@ -36,6 +36,8 @@ type Corps = {
   note?: unknown;
   /** Accepter un devis (module devis) : la commande aux prix du devis. */
   devis?: unknown;
+  /** « express » : l'achat express d'une fiche (le panier n'est pas vidé). */
+  origine?: unknown;
 };
 
 export async function POST(req: Request, { params }: { params: Promise<{ boutique: string }> }) {
@@ -83,7 +85,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
 
   const resultat = data as { numero: string; jeton: string };
   const securise = (req.headers.get("origin") ?? "").startsWith("https:");
-  magasin.set(COOKIE_COMMANDE, `${resultat.numero}.${resultat.jeton}${devis ? ".devis" : ""}`, {
+  const origine = devis ? ".devis" : corps.origine === "express" ? ".express" : "";
+  magasin.set(COOKIE_COMMANDE, `${resultat.numero}.${resultat.jeton}${origine}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: securise,

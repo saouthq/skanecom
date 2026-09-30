@@ -23,7 +23,7 @@
 
 1. ~~Phase 2 du prototype~~ : **faite le 29/09**. Il reste la mesure depuis la Tunisie, à faire quand Skander le souhaite (`deployer`, ouvrir la vitrine sur un téléphone, puis `supprimer`).
 2. ~~Base locale et migrations multi-boutique~~ : **faites le 29/09**. Le détail et les choix faits en route sont dans [`cadrage/03-reprise-maymar.md`](cadrage/03-reprise-maymar.md) §7. Le passage au projet Supabase SkanEcom dans le cloud (région `eu-west-3`) se fera avant l'étape 2.
-3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 944 tests (dont la vitrine, la console, l'import et ses photos, le tunnel de commande, le backoffice, les équipes, le catalogue, les photos, les fiches techniques, les réglages, les clients, les pages légales, les images de la marque, les modules, le retrait en magasin, « mes commandes », la mise en place, l'accès support, le supplément au poids, le service après-vente, le tableau de bord, les encaissements, la réception des arrivages, la quantité minimale, les comptes professionnels et les devis), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
+3. ~~Tests d'isolation pgTAP, bloquants en CI~~ : **faits le 29/09**. 951 tests (dont la vitrine, la console, l'import et ses photos, le tunnel de commande, le backoffice, les équipes, le catalogue, les photos, les fiches techniques, les réglages, les clients, les pages légales, les images de la marque, les modules, le retrait en magasin, « mes commandes », la mise en place, l'accès support, le supplément au poids, le service après-vente, le tableau de bord, les encaissements, la réception des arrivages, la quantité minimale, les comptes professionnels, les devis et l'achat express), dans le workflow `.github/workflows/base.yml`, qui les lance sur l'image Supabase et sur la base simulée.
 4. **Application — la vitrine multi-boutique : faite le 29/09** (`application/`), à partir de `prototype/vitrine-workers` :
    - fait : boutique trouvée par le domaine puis adresse réécrite en `/_b/<boutique>/…` (`src/proxy.ts`), avec un annuaire embarqué au déploiement (`outils/annuaire.mjs`) pour rester joignable pendant une panne ;
    - fait : thème par boutique (13 jetons de couleur, polices, logo, monogramme, sections d'accueil), validé par la base et par l'application ;
@@ -85,7 +85,7 @@ Il faut un Postgres 16 avec pgTAP et `pg_prove` (Ubuntu : `postgresql-16 postgre
 
 ```bash
 outils/base-locale.sh reinit    # recrée la base : simulation Supabase, migrations, jeu de démo
-outils/base-locale.sh tester    # les 944 tests pgTAP
+outils/base-locale.sh tester    # les 951 tests pgTAP
 outils/base-locale.sh psql      # console SQL
 ```
 

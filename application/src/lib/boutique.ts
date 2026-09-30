@@ -72,6 +72,9 @@ export type Cadre = {
   comptesPro: boolean;
   /** La demande de devis (module devis) : depuis le panier, suivie dans le compte. */
   devis: boolean;
+  /** Réglage `commande.achat_express` : « Commander maintenant » sur la fiche,
+   *  droit au tunnel avec cet article seul, sans toucher au panier. */
+  achatExpress: boolean;
 };
 
 type Brut = {
@@ -150,6 +153,7 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
     sav: modules.includes("sav") ? { garantieMois: Number(reglage(reglages, "sav.garantie_mois", 0)) || 0 } : null,
     comptesPro: modules.includes("comptes_pro"),
     devis: modules.includes("devis"),
+    achatExpress: reglage<boolean>(reglages, "commande.achat_express", false) === true,
   };
 });
 

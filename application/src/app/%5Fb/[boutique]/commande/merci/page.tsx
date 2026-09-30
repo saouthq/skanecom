@@ -33,7 +33,8 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
   const { boutique } = await params;
   const cadre = await chargeCadre(boutique);
   // « numéro.jeton », ou « numéro.jeton.devis » pour la commande d'un devis
-  // accepté : celle-là ne vide pas le panier du moment.
+  // accepté, « numéro.jeton.express » pour un achat express : celles-là ne
+  // vident pas le panier du moment.
   const [numero, jeton, origine] = ((await cookies()).get(COOKIE_COMMANDE)?.value ?? "").split(".");
 
   let commande: CommandeSuivie | null = null;
@@ -89,7 +90,9 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
 
   return (
     <Gabarit className="enveloppe flex-1 merci-page">
-      {origine === "devis" ? null : <FinDeCommande boutique={cadre.boutique.slug} creeLe={commande.cree_le} />}
+      {origine === "devis" ? null : (
+        <FinDeCommande boutique={cadre.boutique.slug} creeLe={commande.cree_le} videLePanier={origine !== "express"} />
+      )}
       <section className="merci" aria-labelledby="merci-titre">
         <header className="merci-tete">
           <p className="etiquette merci-etiquette">

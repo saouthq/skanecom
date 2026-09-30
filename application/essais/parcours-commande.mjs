@@ -212,6 +212,35 @@ console.log("\n== 2. Maison Selma, sur téléphone ==");
     verifie(!deborde, "rien ne déborde en largeur");
     await capture(page, "selma-telephone-conditions");
   });
+
+  await etape("achat express : un autre article, droit à la commande, le panier intact", async () => {
+    // Selma a le réglage commande.achat_express (jeu de démo) ; la robe S de
+    // l'étape d'avant attend dans le panier.
+    await page.goto(S + "/produit/robe-longue-boheme", { waitUntil: "networkidle" });
+    await page.locator(".valeur", { hasText: /^M$/ }).tap();
+    const express = page.locator(".fiche-express .btn-express");
+    verifie((await express.innerText()).includes("Commander maintenant"), "la fiche propose « Commander maintenant » sous l'ajout au panier");
+    await capture(page, "selma-telephone-fiche-express");
+    await express.tap();
+    await page.waitForURL(/\/commande\?article=/);
+    await page.locator(".tunnel-recap-bascule").waitFor();
+    verifie((await page.locator(".tunnel-tete").innerText()).includes("votre panier n'est pas touché"), "le tunnel dit que le panier n'est pas touché");
+    await page.locator(".tunnel-recap-bascule").tap();
+    const recap = page.locator(".tunnel-recap-corps");
+    verifie((await recap.locator(".tunnel-ligne").count()) === 1 && (await recap.innerText()).includes("Robe longue"), "le récapitulatif : cette robe seule");
+    verifie((await page.getByRole("button", { name: "Modifier le panier" }).count()) === 0, "rien à modifier : l'article vient de sa fiche");
+    await capture(page, "selma-telephone-tunnel-express");
+    await confirmeNumero(page, "20555777", "20 555 777");
+    await remplitAdresse(page, { nom: "Leila Gharbi", adresse: "3 avenue Habib Bourguiba", ville: "Sousse", gouvernorat: "Sousse" });
+    await page.locator(".tunnel-conditions input[type=checkbox]").check();
+    await page.locator(".tunnel-bouton").tap();
+    await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
+    await page.locator(".merci").waitFor();
+    verifie((await page.locator(".merci").innerText()).includes("289,000"), "la commande : la robe longue, à son prix");
+    await pause(400);
+    verifie((await page.locator("header .bouton-panier-compte").innerText().catch(() => "")).trim() === "1", "le panier garde la robe S de tout à l'heure");
+    await capture(page, "selma-telephone-merci-express");
+  });
   await ctx.close();
 }
 

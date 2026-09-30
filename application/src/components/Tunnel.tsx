@@ -46,7 +46,9 @@ import type { CodeTheme } from "@/lib/theme";
      tant que le panier ne change pas ;
    · si la boutique propose le retrait en magasin (module), l'acheteur choisit
      entre la livraison à domicile et le retrait, gratuit : plus d'adresse à
-     saisir, le magasin, ses horaires et son temps de préparation à la place.
+     saisir, le magasin, ses horaires et son temps de préparation à la place ;
+   · l'achat express (réglage commande.achat_express) : un article venu de sa
+     fiche, commandé seul — le panier du navigateur n'est ni lu ni vidé.
    ========================================================================== */
 
 type Gouvernorat = { code: string; nom: string };
@@ -84,6 +86,7 @@ export function Tunnel({
   retractationJours,
   retrait,
   devisNumero = null,
+  express = null,
 }: {
   gabarit: CodeTheme;
   boutiqueId: string;
@@ -98,6 +101,8 @@ export function Tunnel({
   /** Accepter un devis (module devis) : ses lignes et ses prix, figés ; le
    *  compte est exigé, la commande passe par public.accepter_devis. */
   devisNumero?: string | null;
+  /** L'achat express : la déclinaison et la quantité choisies sur la fiche. */
+  express?: { varianteId: string; quantite: number } | null;
 }) {
   const compteObligatoire = compteReglage || Boolean(devisNumero);
   const id = useId();
@@ -137,9 +142,11 @@ export function Tunnel({
   const focusAlerte = useRef(false);
   const focusApresConnexion = useRef(false);
 
-  // Les lignes : celles du panier ; au tunnel d'un devis, celles du devis
-  // (relues en base avec ses prix, jamais modifiables ici).
-  const lignesDevis = useMemo<LignePanier[]>(
+  // Les lignes : celles du panier ; au tunnel d'un devis ou d'un achat
+  // express, celles que la base a relues (avec leurs prix), jamais
+  // modifiables ici.
+  const fige = Boolean(devisNumero || express);
+  const lignesLues = useMemo<LignePanier[]>(
     () =>
       (devis?.lignes ?? []).map((l) => ({
         varianteId: l.variante_id,
@@ -153,10 +160,13 @@ export function Tunnel({
       })),
     [devis],
   );
-  const lignesPanier = useMemo(() => (devisNumero ? lignesDevis : (panierLu?.lignes ?? [])), [devisNumero, lignesDevis, panierLu]);
+  const lignesPanier = useMemo(() => (fige ? lignesLues : (panierLu?.lignes ?? [])), [fige, lignesLues, panierLu]);
   const lignes = useMemo(
-    () => lignesPanier.map((l) => ({ variante_id: l.varianteId, quantite: l.quantite })),
-    [lignesPanier],
+    () =>
+      express
+        ? [{ variante_id: express.varianteId, quantite: express.quantite }]
+        : lignesPanier.map((l) => ({ variante_id: l.varianteId, quantite: l.quantite })),
+    [express, lignesPanier],
   );
   const cleLignes = JSON.stringify(lignes);
   const cleDevis = devisNumero ? `devis:${devisNumero}` : cleLignes;
@@ -390,6 +400,7 @@ export function Tunnel({
         body: JSON.stringify({
           cle: cleDeCommande(boutique, cleDevis),
           ...(devisNumero ? { devis: devisNumero } : {}),
+          ...(express ? { origine: "express" } : {}),
           lignes,
           contact: { nom: champs.nom.trim(), telephone, accepte_conditions: accepte },
           livraison: enRetrait
@@ -443,7 +454,18 @@ export function Tunnel({
       <div className="tunnel-attente" aria-busy="true">{t.commun.chargement}</div>
     );
   }
-  if (panierLu === null && !devisNumero) {
+  if (express && devis === null) {
+    return devisEnPanne ? (
+      <div className="listing-vide tunnel-vide">
+        <h2>{t.commande.expressIndisponible}</h2>
+        <p>{messagePanne?.texte ?? t.commande.erreur}</p>
+        <a className="btn btn-primaire" href="/catalogue">{t.commande.expressRetour}</a>
+      </div>
+    ) : (
+      <div className="tunnel-attente" aria-busy="true">{t.commun.chargement}</div>
+    );
+  }
+  if (panierLu === null && !fige) {
     return <div className="tunnel-attente" aria-busy="true">{t.commun.chargement}</div>;
   }
   if (lignesPanier.length === 0) {
@@ -473,7 +495,7 @@ export function Tunnel({
         onBascule={() => setRecapOuvert((o) => !o)}
         zone={zone}
         retrait={enRetrait}
-        fige={Boolean(devisNumero)}
+        fige={fige}
       />
 
       <form className="tunnel-formulaire" noValidate onSubmit={confirmer}>
