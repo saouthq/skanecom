@@ -84,6 +84,8 @@ export type Cadre = {
   /** Réglage `commande.relance_paniers`, avec un compte obligatoire : le panier d'un client
    *  connecté est gardé, relançable une fois. */
   relancePaniers: boolean;
+  /** Réglage `catalogue.favoris` : le cœur des cartes et des fiches, « Mes favoris ». */
+  favoris: boolean;
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
@@ -187,6 +189,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     prevenirRetour: reglage<boolean>(reglages, "catalogue.prevenir_retour", false) === true,
     relancePaniers: reglage<boolean>(reglages, "commande.relance_paniers", false) === true
       && reglage<boolean>(reglages, "compte.obligatoire", true) !== false,
+    favoris: reglage<boolean>(reglages, "catalogue.favoris", false) === true,
     avis: modules.includes("avis"),
     promotions: modules.includes("promotions"),
     pages: brut.pages ?? [],

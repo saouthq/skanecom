@@ -1,5 +1,6 @@
 "use client";
 
+import { BoutonFavori } from "./BoutonFavori";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Prix } from "./Prix";
@@ -289,6 +290,7 @@ export function FicheAchat({
           {ajoute ? <Coche taille={16} /> : null}
           {ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier}
         </button>
+        <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="fiche-favori" />
       </div>
       {achatExpress ? (
         <div className="fiche-express">

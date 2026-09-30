@@ -833,6 +833,19 @@ export const fr = {
     catalogue: "Voir le catalogue",
   },
 
+  /** Les favoris (lib/favoris.ts, app/_b/[boutique]/favoris). */
+  favoris: {
+    titre: "Mes favoris",
+    chapo: "Les pièces que vous avez aimées, à leur prix et leur stock d'aujourd'hui.",
+    lien: "Favoris",
+    lienAria: (n: number) => (n ? `Mes favoris, ${n} pièce${n > 1 ? "s" : ""}` : "Mes favoris"),
+    ajouter: (nom: string) => `Ajouter aux favoris : ${nom}`,
+    retirer: (nom: string) => `Retirer des favoris : ${nom}`,
+    videTitre: "Aucun favori pour l'instant",
+    videTexte: "Touchez le cœur d'une pièce : elle vous attendra ici, et dans votre compte si vous êtes connecté.",
+    catalogue: "Voir le catalogue",
+  },
+
   /** « Prévenez-moi de son retour » (components/AlerteRetour.tsx). */
   alerte: {
     ouvrir: "Prévenez-moi de son retour",

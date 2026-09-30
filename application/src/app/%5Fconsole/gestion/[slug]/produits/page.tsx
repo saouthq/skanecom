@@ -32,13 +32,18 @@ export default async function Catalogue({
   const page = Math.max(1, Number.parseInt(recherche.page ?? "1", 10) || 1);
 
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_liste_produits", {
-    p_boutique_id: boutique.boutique_id,
-    p_filtre: filtre.cle,
-    p_recherche: q || null,
-    p_limite: PAR_PAGE,
-    p_decalage: (page - 1) * PAR_PAGE,
-  });
+  const [{ data, error }, { data: fav }] = await Promise.all([
+    sb.rpc("gestion_liste_produits", {
+      p_boutique_id: boutique.boutique_id,
+      p_filtre: filtre.cle,
+      p_recherche: q || null,
+      p_limite: PAR_PAGE,
+      p_decalage: (page - 1) * PAR_PAGE,
+    }),
+    // Les favoris (réglage catalogue.favoris) : combien de clients aiment chaque pièce.
+    sb.rpc("gestion_favoris", { p_boutique_id: boutique.boutique_id }),
+  ]);
+  const favoris = (fav as { actif: boolean; produits: Record<string, number> } | null)?.produits ?? {};
   if (error) throw new Error(`Catalogue illisible : ${error.message}`);
   const liste = data as ListeProduits;
   const pages = Math.max(1, Math.ceil(liste.total / PAR_PAGE));
@@ -110,7 +115,10 @@ export default async function Catalogue({
                 </span>
                 <span className="cat-ligne-nom">
                   <strong>{p.nom}</strong>
-                  <span>{[p.marque, p.categorie].filter(Boolean).join(" · ") || "Sans rayon"}</span>
+                  <span>
+                    {[p.marque, p.categorie].filter(Boolean).join(" · ") || "Sans rayon"}
+                    {favoris[p.id] ? <span className="cat-favoris"> · {favoris[p.id]} favori{favoris[p.id] > 1 ? "s" : ""}</span> : null}
+                  </span>
                 </span>
                 <span className="cat-ligne-etat">
                   {p.publie

@@ -379,6 +379,12 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
                 rappeler une fois ; il est effacé après 60 jours ;
               </li>
             ) : null}
+            {cadre.favoris ? (
+              <li>
+                les pièces mises en favori par un acheteur connecté, pour qu&apos;elles le suivent d&apos;un appareil à
+                l&apos;autre : la boutique n&apos;en voit que le nombre, pièce par pièce ;
+              </li>
+            ) : null}
             {cadre.prevenirRetour ? (
               <li>
                 le téléphone ou l&apos;adresse électronique laissé pour être prévenu du retour d&apos;une pièce épuisée : il ne sert

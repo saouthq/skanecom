@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Photo } from "./Photo";
 import { EtatStock } from "./EtatStock";
 import { AjoutRapide } from "./AjoutRapide";
+import { BoutonFavori } from "./BoutonFavori";
 import { PrixCarte } from "./PrixCarte";
 import { NoteCarte } from "./NoteCarte";
 import { couleurDeColoris } from "@/lib/coloris";
@@ -79,7 +80,8 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
   const autres = declinaisons(produit);
 
   return (
-    <Link className="ed-carte" href={`/produit/${produit.slug}`}>
+    <div className="ed-carte">
+    <Link className="ed-carte-lien" href={`/produit/${produit.slug}`}>
       <Photo
         photo={urlPhoto(produit)}
         survol={photoSurvol(produit)}
@@ -107,6 +109,8 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
         ) : null}
       </span>
     </Link>
+    <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="carte-favori" />
+    </div>
   );
 }
 
@@ -149,6 +153,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
           </span>
         ) : null}
       </Link>
+      <BoutonFavori slug={produit.slug} nom={nom} className="carte-favori" />
       <div className="te-carte-bas">
         <EtatStock etat={etat} restant={restant} />
         {prix !== null ? (

@@ -1,3 +1,4 @@
+import { FavorisActifs } from "@/components/FavorisActifs";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import "../../globals.css";
@@ -77,9 +78,11 @@ export default async function RacineBoutique({ children, params }: Props) {
         <a className="saut-contenu" href="#principal">
           {t.commun.sauterAuContenu}
         </a>
-        <Entete cadre={cadre} />
-        {children}
-        <Pied cadre={cadre} />
+        <FavorisActifs actif={cadre.favoris}>
+          <Entete cadre={cadre} />
+          {children}
+          <Pied cadre={cadre} />
+        </FavorisActifs>
         {cadre.whatsappFlottant && cadre.whatsapp ? <BoutonWhatsApp numero={cadre.whatsapp} nom={cadre.boutique.nom} /> : null}
         <Apparitions />
         <TransitionsVue />

@@ -1,3 +1,4 @@
+import { BoutonFavori } from "@/components/BoutonFavori";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -194,6 +195,8 @@ function FicheEditoriale({ cadre, produit, fil, avis }: { cadre: Cadre; produit:
       {/* data-fiche : la photo d'une carte y atterrit (TransitionsVue), l'envol vers le panier en part. */}
       <div className="ed-fiche" data-fiche={produit.slug}>
         <GalerieEditoriale photos={photosProduit(produit)} nom={champ(produit, "nom")} />
+        {/* Au téléphone, le cœur se pose sur la photo (la rangée d'achat n'a pas la place). */}
+        <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="carte-favori fiche-favori-photo" />
 
         <div className="ed-fiche-panneau">
           <div className="ed-fiche-collant">
@@ -261,6 +264,7 @@ function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: 
       <FilAriane etapes={fil} />
       <div className="te-fiche" data-fiche={produit.slug}>
         <GalerieVignettes photos={photosProduit(produit)} />
+        <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="carte-favori fiche-favori-photo" />
 
         <div className="te-fiche-achat">
           {produit.marque ? <p className="te-fiche-marque">{produit.marque}</p> : null}

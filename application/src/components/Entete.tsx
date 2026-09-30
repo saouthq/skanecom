@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bulle, Loupe, Personne } from "./Icones";
 import { BoutonPanier } from "./BoutonPanier";
+import { LienFavoris } from "./LienFavoris";
 import { ChampRecherche } from "./ChampRecherche";
 import { NavRayons } from "./NavRayons";
 import { EnteteDefilant, MenuMobile, type EntreeMenu } from "./EnteteClient";
@@ -65,6 +66,7 @@ function entreesMenu(cadre: Cadre): EntreeMenu[] {
     })),
     { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue },
     { cle: "recherche", href: "/recherche", nom: t.commun.rechercher },
+    ...(cadre.favoris ? [{ cle: "favoris", href: "/favoris", nom: t.favoris.titre }] : []),
     ...(avecComptes(cadre) ? [{ cle: "compte", href: "/compte", nom: t.compte.lien }] : []),
   ];
 }
@@ -114,6 +116,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
             <Link className="icone-btn" href="/recherche" aria-label={t.commun.rechercher}>
               <Loupe />
             </Link>
+            {cadre.favoris ? <LienFavoris className="icone-btn cache-mobile lien-favoris" /> : null}
             {avecComptes(cadre) ? (
               <Link className="icone-btn cache-mobile" href="/compte" aria-label={t.compte.lien}>
                 <Personne />
@@ -170,6 +173,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
                 <span>{t.annonce.conseil}</span>
               </a>
             ) : null}
+            {cadre.favoris ? <LienFavoris className="te-action cache-mobile lien-favoris" avecLibelle /> : null}
             {avecComptes(cadre) ? (
               <Link className="te-action cache-mobile" href="/compte">
                 <Personne taille={22} />

@@ -760,3 +760,58 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
   html[data-gabarit] .listing-outils select,
   html[data-gabarit] .identification-canal span { min-block-size: 44px; }
 }
+
+/* --- Les favoris ----------------------------------------------------------- */
+/* Le cœur d'une carte : par-dessus la photo, en haut à droite (à gauche en
+   arabe), hors du lien de la carte. */
+.favori {
+  display: inline-grid; place-items: center; inline-size: 2.5rem; block-size: 2.5rem; padding: 0;
+  border: 0; border-radius: 999px; cursor: pointer; color: var(--theme-encre);
+  background: color-mix(in srgb, var(--theme-surface) 88%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 4px 14px -6px rgb(0 0 0 / .22);
+  backdrop-filter: blur(6px);
+  transition: transform .2s var(--theme-courbe), color .2s;
+}
+.favori:hover { transform: scale(1.06); }
+.favori:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 2px; }
+.favori[aria-pressed="true"] { color: var(--theme-accent, #b4232c); }
+.favori[aria-pressed="true"] svg { animation: favori-bat .36s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes favori-bat { 40% { transform: scale(1.28); } }
+@media (prefers-reduced-motion: reduce) { .favori, .favori[aria-pressed="true"] svg { transition: none; animation: none; } }
+.carte-favori { position: absolute; z-index: 2; inset-block-start: .625rem; inset-inline-end: .625rem; }
+/* À la souris, la grille reste aux photos : le cœur paraît au survol de la
+   carte, au clavier, ou quand la pièce est déjà aimée. Au doigt, il est là. */
+@media (hover: hover) and (pointer: fine) {
+  .carte-favori[aria-pressed="false"] { opacity: 0; transition: opacity .2s var(--theme-courbe), transform .2s var(--theme-courbe); }
+  :is(.ed-carte, .te-carte):hover .carte-favori, .carte-favori:focus-visible { opacity: 1; }
+}
+/* Sur la fiche : un bouton carré, de la hauteur de « Ajouter au panier ». */
+.fiche-favori {
+  flex: none; inline-size: 3.25rem; block-size: auto; align-self: stretch; border-radius: var(--theme-radius-doux);
+  border: 1px solid var(--theme-contour-champ); background: var(--theme-surface); box-shadow: none; backdrop-filter: none;
+}
+.fiche-favori:hover { transform: none; border-color: var(--theme-encre); }
+/* Dans l'en-tête, le compte en pastille, en haut du cœur. */
+.lien-favoris { position: relative; }
+.icone-btn.lien-favoris .favoris-compte { position: absolute; inset-block-start: 3px; inset-inline-end: 1px; }
+.favoris-compte {
+  display: inline-grid; place-items: center; min-inline-size: 1.125rem; block-size: 1.125rem; padding-inline: .25rem;
+  border-radius: 999px; background: var(--theme-encre); color: var(--theme-fond); font-size: .6875rem; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.favoris-vide {
+  display: grid; justify-items: center; gap: .75rem; padding: clamp(2.5rem, 8vw, 5rem) 1.25rem; text-align: center;
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+.favoris-vide .legende { max-inline-size: 42ch; margin: 0 0 .5rem; }
+.favoris-vide-icone { display: grid; place-items: center; inline-size: 3.5rem; block-size: 3.5rem; border-radius: 999px; background: var(--theme-surface-2); }
+.favoris-vide-titre { margin: 0; font-family: var(--theme-font-display); font-size: 1.5rem; }
+.te-action:hover .favoris-compte { text-decoration: none; }
+/* La fiche au téléphone : la rangée d'achat garde la quantité et le bouton ;
+   le cœur passe sur la photo, en haut à droite. */
+:is(.ed-fiche, .te-fiche) { position: relative; }
+.fiche-favori-photo { display: none; }
+@media (max-width: 479px) {
+  .fiche-favori-photo { display: inline-grid; }
+  .achat .fiche-favori { display: none; }
+}

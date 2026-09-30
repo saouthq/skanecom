@@ -72,6 +72,29 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     await capture(page, "selma-survol-carte");
   });
 
+  await etape("les favoris : un cœur au clavier, l'en-tête compte, « Mes favoris »", async () => {
+    // Selma a les favoris (supabase/seed-favoris.sql) ; le cœur suit la carte au clavier.
+    const carte = page.locator(".ed-carte", { hasText: "Robe à bretelles en lin" });
+    await carte.locator(".ed-carte-lien").focus();
+    await page.keyboard.press("Tab");
+    const coeur = carte.locator(".carte-favori");
+    verifie(await coeur.evaluate((e) => e === document.activeElement && getComputedStyle(e).opacity === "1"),
+      "Tab après la carte : son cœur, qui paraît au focus");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.querySelector(".lien-favoris .favoris-compte")?.textContent === "1", null, { timeout: 3000 });
+    verifie((await coeur.getAttribute("aria-pressed")) === "true" && (await coeur.getAttribute("aria-label")).startsWith("Retirer des favoris"),
+      "Entrée : aimée, le bouton le dit, l'en-tête compte 1");
+    await clic(page, page.locator(".lien-favoris").first());
+    await page.waitForURL(/\/favoris\?s=robe-bretelles-terracotta$/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".ed-carte").count()) === 1, "« Mes favoris » : la pièce, relue en base");
+    await capture(page, "selma-favoris");
+    await clic(page, page.locator(".carte-favori").first());
+    await page.locator(".favoris-vide").waitFor({ timeout: 5000 });
+    verifie((await page.locator(".favoris-vide").innerText()).includes("Aucun favori"), "retirée : la page dit quoi faire");
+    await page.goto(S + "/categorie/robes", { waitUntil: "networkidle" });
+  });
+
   await etape("tiroir de filtres : cocher, il se rouvre", async () => {
     await clic(page, page.locator(".btn-filtrer"));
     await pause(400);
@@ -220,6 +243,7 @@ console.log("\n== 2. Maymar, au clavier seul ==");
 
   await etape("catalogue, tiroir de filtres au clavier", async () => {
     await page.goto(M + "/catalogue", { waitUntil: "networkidle" });
+    verifie((await page.locator(".carte-favori, .lien-favoris").count()) === 0, "Maymar n'a pas de favoris (réglage coupé) : ni cœur, ni lien");
     verifie(await tabJusqua((f) => f.nom.includes("Filtrer")), "Tab atteint « Filtrer »");
     await page.keyboard.press("Enter");
     await pause(400);
