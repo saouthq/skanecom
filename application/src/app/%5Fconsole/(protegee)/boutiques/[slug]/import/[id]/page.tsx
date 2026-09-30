@@ -6,6 +6,7 @@ import { exigeAdmin } from "@/lib/console/session";
 import { dateJournal, deNom } from "@/lib/console/libelles";
 import { formatePrix } from "@/lib/prix";
 import type { LigneImport } from "@/lib/console/import";
+import { valeurAvecUnite } from "@/lib/caracteristiques";
 import { Icone } from "@/components/console/Icone";
 
 export const metadata: Metadata = { title: "Rapport d'import" };
@@ -13,6 +14,9 @@ export const metadata: Metadata = { title: "Rapport d'import" };
 type Rapport = {
   lignes: number; produits: number; produits_nouveaux: number; variantes_nouvelles: number; variantes_modifiees: number;
   stocks_ajustes: number; rayons_nouveaux: string[]; erreurs: { ligne: number; message: string }[]; erreurs_total: number;
+  /** Les caractéristiques reconnues dans le fichier (B9) ; absentes des rapports d'avant. */
+  caracteristiques?: { cle: string; label: string; unite: string | null; type: "texte" | "nombre" }[];
+  fiches_techniques?: number;
 };
 type Import = {
   id: string; fichier: string; statut: "pret" | "applique"; created_at: string; applique_le: string | null;
@@ -40,6 +44,7 @@ export default async function RapportImport({ params }: { params: Promise<{ slug
   if (!imp || imp.boutique.slug !== slug) notFound();
   const r = imp.rapport;
   const produitsModifies = r.produits - r.produits_nouveaux;
+  const caracteristiques = r.caracteristiques ?? [];
 
   return (
     <>
@@ -71,6 +76,12 @@ export default async function RapportImport({ params }: { params: Promise<{ slug
         {r.rayons_nouveaux.length > 0 ? (
           <p className="text-encre-doux">Rayons créés : <span className="text-encre">{r.rayons_nouveaux.join(", ")}</span></p>
         ) : null}
+        {caracteristiques.length > 0 ? (
+          <p className="text-encre-doux">
+            Fiche technique : <span className="text-encre">{caracteristiques.map((c) => c.label).join(", ")}</span>
+            {r.fiches_techniques ? ` · ${r.fiches_techniques} produit${r.fiches_techniques > 1 ? "s" : ""}` : ""}
+          </p>
+        ) : null}
 
         {r.erreurs.length > 0 ? (
           <section className="carte defile" aria-labelledby="t-erreurs">
@@ -94,6 +105,7 @@ export default async function RapportImport({ params }: { params: Promise<{ slug
               <tr>
                 <th>Ligne</th><th>Produit</th><th>Référence</th><th>Prix</th><th>Stock</th>
                 {imp.axes.map((a) => <th key={a.cle}>{a.label}</th>)}
+                {caracteristiques.map((c) => <th key={`car-${c.cle}`}>{c.label}</th>)}
                 <th>Rayon</th>
               </tr>
             </thead>
@@ -106,6 +118,9 @@ export default async function RapportImport({ params }: { params: Promise<{ slug
                   <td className="tabular-nums whitespace-nowrap">{l.prix_millimes !== null ? formatePrix(l.prix_millimes) : "—"}</td>
                   <td className="tabular-nums">{l.stock ?? "—"}</td>
                   {imp.axes.map((a) => <td key={a.cle}>{l.options[a.cle] ?? ""}</td>)}
+                  {caracteristiques.map((c) => (
+                    <td key={`car-${c.cle}`} className="whitespace-nowrap">{l.caracteristiques?.[c.cle] ? valeurAvecUnite(l.caracteristiques[c.cle], c) : ""}</td>
+                  ))}
                   <td className="text-encre-doux">{l.rayon.map((x) => x.nom).join(" › ")}</td>
                 </tr>
               ))}

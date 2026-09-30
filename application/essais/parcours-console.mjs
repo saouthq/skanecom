@@ -902,6 +902,40 @@ await etape("agir comme un administrateur, et ce que voit le propriétaire", asy
   await capture(page, "backoffice-equipe-support");
 });
 
+await etape("le support définit une caractéristique ; l'import remplit la fiche technique", async () => {
+  // Au backoffice du client (accès « agir ») : la puissance, en watts, pour les perceuses.
+  await page.goto(`${CONSOLE}/gestion/${SLUG}/produits/caracteristiques`, { waitUntil: "networkidle" });
+  const form = page.locator("section:has(#t-nouvel-attribut) form");
+  await form.locator("#label-nouveau").fill("Puissance");
+  await form.locator("#unite-nouveau").fill("W");
+  await clic(page, form.locator(".opt", { hasText: "Perceuses" }).first());
+  await clic(page, form.getByRole("button", { name: "Ajouter la caractéristique" }));
+  await page.waitForURL(/ok=/);
+  verifie((await page.getByRole("status").innerText()).includes("« Puissance » ajoutée"), "« Puissance » définie par le support, au nom de l'administrateur");
+  // Puis, dans la console, le même fichier avec la colonne « Puissance (W) ».
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/import`, { waitUntil: "networkidle" });
+  const puissances = { "PP18-SEULE": "710 W", "PP18-KIT": "710" };
+  await page.locator("#fichier").setInputFiles({
+    name: "catalogue-outillage-puissance.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: classeur([[...ENTETES, "Puissance (W)"], ...CATALOGUE.map((l) => [...l, puissances[l[1]] ?? ""])]),
+  });
+  await clic(page, page.getByRole("button", { name: "Vérifier le fichier" }));
+  await page.waitForURL(/\/import\/[0-9a-f-]{36}$/);
+  await page.waitForLoadState("networkidle");
+  const texte = await page.locator("main").innerText();
+  verifie(/Fiche technique : Puissance · 1 produit/.test(texte), "le rapport reconnaît la colonne comme la fiche technique, pas comme un axe");
+  verifie(/710\sW/.test(await page.locator("section:has(#t-apercu)").innerText()), "l'aperçu montre la puissance avec son unité");
+  await clic(page, page.getByRole("button", { name: /^Importer 2 produits/ }));
+  await page.waitForURL(new RegExp(`/boutiques/${SLUG}\\?ok=`));
+  const vitrine = await ctx.newPage();
+  await vitrine.goto(`${VITRINE}/categorie/perceuses/puissance=710`, { waitUntil: "networkidle" });
+  const liste = await vitrine.locator("main").innerText();
+  verifie(liste.includes("Perceuse à percussion 18 V") && /Puissance/i.test(liste) && /710\sW/.test(liste),
+    "la vitrine filtre sur la puissance importée");
+  await vitrine.close();
+});
+
 await etape("la console montre l'accès ouvert", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}/support`, { waitUntil: "networkidle" });
   const carte = await page.locator(".sp-actif").innerText();

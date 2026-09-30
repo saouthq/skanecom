@@ -271,6 +271,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les fiches techniques** (migration 27, `20260929102600_catalogue_attributs.sql`, 30 tests dans `supabase/tests/28_attributs.sql`) : `public.attributs` (clé, libellé, unité, type `texte` ou `nombre`, filtrable, sur la carte, position) et `public.rayon_attributs` ; `produits.caracteristiques` (jsonb par clé, vérifié par `private.valide_caracteristiques`) ; `gestion_attributs`, `gestion_enregistrer_attribut`, `gestion_deplacer_attribut`, `gestion_retirer_attribut`, `gestion_fiche_technique`, `gestion_enregistrer_caracteristiques` ; `vitrine_produits.caracteristiques` ; `liste_produits` fait hériter les caractéristiques filtrables par chaque déclinaison (filtres, facettes et comptes comme des axes ; les nombres triés comme des nombres ; la recherche les lit).
 
+**Puis l'import des fiches techniques** (migration 28, `20260929102700_import_caracteristiques.sql`, 10 tests dans `supabase/tests/29_import_caracteristiques.sql`) : `console_preparer_import` et `console_appliquer_import` reprises (mêmes signatures) : `caracteristiques` par ligne, concordance entre les lignes d'un produit, caractéristique inconnue signalée, `caracteristiques` et `fiches_techniques` au rapport, fusion dans `produits.caracteristiques` à l'application.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

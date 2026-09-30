@@ -73,6 +73,7 @@ export default async function Import({ params, searchParams }: {
             <tr><td>Marque, Description</td><td>Texte libre.</td></tr>
             <tr><td>Poids</td><td>En grammes, ou en kg si la colonne s&apos;appelle « Poids (kg) ».</td></tr>
             <tr><td>Publié</td><td>« non » pour garder un produit hors de la vitrine ; les nouveaux produits sont publiés sinon.</td></tr>
+            <tr><td><i>Une caractéristique</i></td><td>Sous son nom au backoffice (« Puissance » ou « Puissance (W) ») : la fiche technique du produit, la même sur toutes ses lignes.</td></tr>
             <tr><td><i>Toute autre colonne</i></td><td>Un axe de variante, sous son nom : Couleur, Taille, Tension, Conditionnement…</td></tr>
           </tbody>
         </table>

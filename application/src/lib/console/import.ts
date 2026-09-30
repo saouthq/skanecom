@@ -11,6 +11,10 @@ import type { Lignes } from "./tableur";
      Produit · Référence · Prix · Prix barré · Stock · Rayon · Marque ·
      Description · Poids · Publié
 
+   Une colonne qui porte le nom d'une CARACTÉRISTIQUE de la boutique (B9 :
+   « Puissance », « Puissance (W) ») remplit la fiche technique du produit :
+   une valeur par produit, vérifiée (un nombre pour un nombre, l'unité ôtée).
+
    TOUTE AUTRE COLONNE est un axe de variante, sous son propre nom :
    « Couleur », « Taille », « Tension », « Conditionnement »…
 
@@ -35,12 +39,17 @@ export type LigneImport = {
   poids_grammes: number | null;
   publie: boolean | null;
   options: Record<string, string>;
+  /** La fiche technique (B9), par clé de caractéristique. */
+  caracteristiques: Record<string, string>;
   erreurs: string[];
 };
 
 export type Axe = { cle: string; label: string; position: number };
 
-export type Lecture = { lignes: LigneImport[]; axes: Axe[]; erreurs: string[] };
+/** Une caractéristique de la boutique (public.attributs), telle que l'import la reconnaît. */
+export type AttributImport = { cle: string; label: string; unite: string | null; type: "texte" | "nombre" };
+
+export type Lecture = { lignes: LigneImport[]; axes: Axe[]; caracteristiques: AttributImport[]; erreurs: string[] };
 
 export const LIMITE_LIGNES = 5000;
 
@@ -108,14 +117,34 @@ function booleen(texte: string): boolean | null {
   return null;
 }
 
-export function lisLignes(tableau: Lignes): Lecture {
+/** Les en-têtes sous lesquels on reconnaît une caractéristique : son nom,
+ *  avec ou sans son unité (« Puissance », « Puissance (W) », « Puissance W »). */
+function entetesDe(a: AttributImport): string[] {
+  const noms = [a.label, a.cle.replace(/_/g, " ")];
+  if (a.unite) noms.push(`${a.label} (${a.unite})`, `${a.label} ${a.unite}`, `${a.label} en ${a.unite}`);
+  return noms.map(entete);
+}
+
+/** La valeur d'une cellule pour une caractéristique : un nombre s'écrit
+ *  avec un point, sans unité ni espace ; `undefined` s'il est illisible. */
+export function valeurCaracteristique(v: string, a: AttributImport): string | undefined {
+  let t = v.replace(/[\s\u00a0\u202f]+/g, " ").trim();
+  if (a.unite) t = t.replace(new RegExp(`\\s*${a.unite.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}$`, "i"), "").trim();
+  if (a.type === "texte") return t.slice(0, 80);
+  t = t.replace(/ /g, "").replace(",", ".");
+  return /^-?\d{1,9}(\.\d{1,4})?$/.test(t) ? t : undefined;
+}
+
+export function lisLignes(tableau: Lignes, attributs: AttributImport[] = []): Lecture {
   const erreurs: string[] = [];
   const iEntete = tableau.findIndex((l) => l.some((c) => c.trim() !== ""));
-  if (iEntete === -1) return { lignes: [], axes: [], erreurs: ["Le fichier est vide."] };
+  if (iEntete === -1) return { lignes: [], axes: [], caracteristiques: [], erreurs: ["Le fichier est vide."] };
 
-  // Chaque colonne : un champ connu, un axe de variante, ou rien (vide).
-  const colonnes: ({ champ: Champ; kg?: boolean } | { axe: Axe } | null)[] = [];
+  // Chaque colonne : un champ connu, une caractéristique de la boutique, un
+  // axe de variante, ou rien (vide).
+  const colonnes: ({ champ: Champ; kg?: boolean } | { axe: Axe } | { attribut: AttributImport } | null)[] = [];
   const axes: Axe[] = [];
+  const caracteristiques: AttributImport[] = [];
   const vus = new Set<string>();
   tableau[iEntete].forEach((brut, i) => {
     const e = entete(brut);
@@ -125,6 +154,13 @@ export function lisLignes(tableau: Lignes): Lecture {
       if (vus.has(champ)) erreurs.push(`La colonne « ${brut} » apparaît deux fois.`);
       vus.add(champ);
       colonnes[i] = { champ, kg: champ === "poids" && e.includes("kg") };
+      return;
+    }
+    const attribut = attributs.find((a) => entetesDe(a).includes(e));
+    if (attribut) {
+      if (caracteristiques.some((a) => a.cle === attribut.cle)) erreurs.push(`La colonne « ${brut} » apparaît deux fois.`);
+      caracteristiques.push(attribut);
+      colonnes[i] = { attribut };
       return;
     }
     const cle = cleAxe(brut);
@@ -137,7 +173,7 @@ export function lisLignes(tableau: Lignes): Lecture {
     if (!vus.has(requis)) erreurs.push(`Colonne obligatoire absente : « ${SYNONYMES[requis][0]} ».`);
   }
   if (axes.length > 6) erreurs.push(`Six axes de variante au plus (couleur, taille…) ; ce fichier en a ${axes.length} : ${axes.map((a) => a.label).join(", ")}.`);
-  if (erreurs.length > 0) return { lignes: [], axes, erreurs };
+  if (erreurs.length > 0) return { lignes: [], axes, caracteristiques, erreurs };
 
   const lignes: LigneImport[] = [];
   for (let r = iEntete + 1; r < tableau.length; r++) {
@@ -149,12 +185,19 @@ export function lisLignes(tableau: Lignes): Lecture {
     }
     const l: LigneImport = {
       ligne: r + 1, produit: "", produit_slug: "", reference: "", prix_millimes: null, prix_barre_millimes: null,
-      stock: null, rayon: [], marque: null, description: null, poids_grammes: null, publie: null, options: {}, erreurs: [],
+      stock: null, rayon: [], marque: null, description: null, poids_grammes: null, publie: null, options: {}, caracteristiques: {}, erreurs: [],
     };
     colonnes.forEach((col, i) => {
       if (!col) return;
       const v = (cellules[i] ?? "").trim();
       if ("axe" in col) { if (v) l.options[col.axe.cle] = v.slice(0, 80); return; }
+      if ("attribut" in col) {
+        if (!v) return;
+        const valeur = valeurCaracteristique(v, col.attribut);
+        if (valeur === undefined) l.erreurs.push(`« ${col.attribut.label} » : un nombre est attendu, pas « ${v} »`);
+        else if (valeur) l.caracteristiques[col.attribut.cle] = valeur;
+        return;
+      }
       switch (col.champ) {
         case "produit": l.produit = v.slice(0, 200); break;
         case "reference": l.reference = v.slice(0, 64); break;
@@ -205,7 +248,7 @@ export function lisLignes(tableau: Lignes): Lecture {
     lignes.push(l);
   }
   if (lignes.length === 0 && erreurs.length === 0) erreurs.push("Aucune ligne de produit sous les en-têtes.");
-  return { lignes, axes, erreurs };
+  return { lignes, axes, caracteristiques, erreurs };
 }
 
 /** Le modèle à télécharger : les en-têtes et deux exemples. */
