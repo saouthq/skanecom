@@ -817,6 +817,26 @@ export const fr = {
     suiviTexte: "Son numéro et votre téléphone suffisent : aucun compte n'est demandé.",
   },
 
+  /** « Prévenez-moi de son retour » (components/AlerteRetour.tsx). */
+  alerte: {
+    ouvrir: "Prévenez-moi de son retour",
+    titre: "Nous vous écrivons dès son retour.",
+    telephone: "Votre téléphone",
+    email: "Votre adresse e-mail",
+    parEmail: "Par e-mail plutôt",
+    parTelephone: "Par téléphone plutôt",
+    discret: "Il ne sert qu'à ce message, puis il est effacé.",
+    envoyer: "Me prévenir",
+    envoi: "Un instant…",
+    notee: (contact: string, telephone: boolean) => `C'est noté : nous vous prévenons ${telephone ? "au" : "à"} ${contact} dès son retour.`,
+    deja: (contact: string) => `C'est déjà noté pour ${contact} : nous vous prévenons dès son retour.`,
+    erreur: "La demande n'a pas pu être notée. Réessayez dans un instant.",
+    saisieTelephone: "Il manque des chiffres : un numéro tunisien en a huit, par exemple 20 123 456.",
+    saisieEmail: "Cette adresse e-mail est incomplète : vous@exemple.tn, par exemple.",
+    indisponibleTexte: "Choisissez une autre combinaison, ou laissez-nous un moyen de vous prévenir de son retour.",
+    ruptureExpliquee: (valeurs: string) =>
+      `${valeurs} : en rupture. Choisissez-la pour qu'on vous prévienne de son retour.`,
+  },
   suivi: {
     titre: "Suivre ma commande",
     etiquette: "Sans compte",

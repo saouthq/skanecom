@@ -201,7 +201,7 @@ function FicheEditoriale({ cadre, produit, fil, avis }: { cadre: Cadre; produit:
             {produit.marque ? <p className="etiquette">{produit.marque}</p> : null}
             <h1>{champ(produit, "nom")}</h1>
             <ResumeAvis avis={avis} />
-            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} />
+            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} />
 
             <ul className="ed-rassure">
               {lignes.map((r) => (
@@ -267,7 +267,7 @@ function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: 
           <h1>{champ(produit, "nom")}</h1>
           <ResumeAvis avis={avis} />
           <SpecsVariante mode="ref" />
-          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} />
+          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} />
 
           <ul className="te-rassure">
             {rassurances(cadre).map((r) => (

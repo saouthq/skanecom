@@ -33,12 +33,13 @@ export default async function BackofficeBoutique({
   // pas l'un après l'autre : chaque page du backoffice les attend.
   const sb = await clientSession();
   const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }] = await Promise.all([
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }] = await Promise.all([
     sb.rpc("gestion_sav_etat", etat),
     sb.rpc("gestion_pro_etat", etat),
     sb.rpc("gestion_devis_etat", etat),
     sb.rpc("gestion_avis_etat", etat),
     sb.rpc("gestion_promotions_etat", etat),
+    sb.rpc("gestion_alertes_etat", etat),
   ]);
   // Le service après-vente, si la boutique a le module : ses demandes à rappeler.
   const etatSav = sav as { actif: boolean; nouvelles: number } | null;
@@ -74,6 +75,17 @@ export default async function BackofficeBoutique({
           : undefined,
       }]
     : [];
+  // Le réassort, si la boutique prévient du retour des pièces (ou a des
+  // demandes en cours) : ceux dont la pièce est revenue, à prévenir.
+  const etatReassort = ra as { actif: boolean; a_prevenir: number; ouvertes: number } | null;
+  const lienReassort = etatReassort?.actif || etatReassort?.ouvertes
+    ? [{
+        href: `/gestion/${slug}/reassort`, libelle: "Réassort", icone: "cloche" as const,
+        extra: etatReassort.a_prevenir
+          ? <span className="app-nav-compte" aria-label={`${etatReassort.a_prevenir} personne${etatReassort.a_prevenir > 1 ? "s" : ""} à prévenir`}>{etatReassort.a_prevenir}</span>
+          : undefined,
+      }]
+    : [];
   const badgeSav = etatSav?.nouvelles
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
     : undefined;
@@ -93,6 +105,7 @@ export default async function BackofficeBoutique({
       : []),
     ...lienDevis,
     { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
+    ...lienReassort,
     { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
     ...lienAvis,
     ...lienPromo,

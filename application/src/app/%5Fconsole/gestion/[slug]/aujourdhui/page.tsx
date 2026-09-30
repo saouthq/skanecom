@@ -79,13 +79,16 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
   const confirme = CONFIRMER.includes(boutique.role);
-  const [{ data, error }, { data: file }] = await Promise.all([
+  const [{ data, error }, { data: file }, { data: alertes }] = await Promise.all([
     sb.rpc("gestion_aujourdhui", { p_boutique_id: boutique.boutique_id }),
     // La première de la file « à confirmer » : la plus ancienne (gestion_liste_commandes).
     confirme
       ? sb.rpc("gestion_liste_commandes", { p_boutique_id: boutique.boutique_id, p_etape: "a_confirmer", p_recherche: null, p_limite: 1, p_decalage: 0 })
       : Promise.resolve({ data: null }),
+    // Les clients dont la pièce est revenue (« Prévenez-moi de son retour »).
+    sb.rpc("gestion_alertes_etat", { p_boutique_id: boutique.boutique_id }),
   ]);
+  const reassort = alertes as { actif: boolean; a_prevenir: number; ouvertes: number } | null;
   if (error) throw new Error(`Aujourd'hui illisible : ${error.message}`);
   const e = data as Etat;
   const prochaine = ((file as { commandes?: Prochaine[] } | null)?.commandes ?? [])[0] ?? null;
@@ -130,6 +133,11 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
     ...(e.modules.avis !== null
       ? [{ cle: "avis", nombre: e.modules.avis, icone: "etoile" as const, href: `${base}/avis`,
           titre: "Avis à relire", detail: e.modules.avis ? "Relisez-les avant qu'ils paraissent sur la vitrine." : "Aucun avis à relire." }]
+      : []),
+    ...(reassort && (reassort.actif || reassort.ouvertes)
+      ? [{ cle: "reassort", nombre: reassort.a_prevenir, icone: "cloche" as const, href: `${base}/reassort`,
+          titre: reassort.a_prevenir > 1 ? "Clients à prévenir" : "Client à prévenir",
+          detail: reassort.a_prevenir ? "Leur pièce est de retour en stock : le message est prêt." : "Personne n'attend une pièce revenue." }]
       : []),
     ...(e.modules.comptes_pro !== null
       ? [{ cle: "pros", nombre: e.modules.comptes_pro, icone: "personne" as const, href: `${base}/clients/pros`,

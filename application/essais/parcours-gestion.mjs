@@ -1345,7 +1345,7 @@ console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoy
   await ctx.close();
 }
 
-console.log("\n== 4 bis. La gérante de Maison Selma : les codes promo, les prix barrés ==");
+console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés, réassort ==");
 {
   // Selma a le module promotions (supabase/seed-promotions.sql). En CI, le
   // parcours de commande a pu se servir de BIENVENUE10 avant : rien ici ne
@@ -1484,6 +1484,42 @@ console.log("\n== 4 bis. La gérante de Maison Selma : les codes promo, les prix
     verifie((await page.locator(".message-succes").first().innerText()).includes("« Promo de la rentrée » terminée : 8 prix rendus"), "terminée : les huit prix rendus");
     verifie((await operation.innerText()).includes("Terminée") && (await operation.getByRole("button").count()) === 0,
       "elle passe avec les terminées, sans geste");
+  });
+  await etape("le réassort : qui prévenir, le message prêt, le retour d'une pièce", async () => {
+    const lien = page.locator(".app-cote").getByRole("link", { name: /^Réassort/ });
+    const nav = (await lien.innerText()).replace(/\s+/g, " ");
+    verifie(/Réassort\s*2/.test(nav), `la navigation : « Réassort », deux personnes à prévenir (${nav})`);
+    await clic(page, lien);
+    await page.waitForURL(/\/reassort$/);
+    await page.waitForLoadState("networkidle");
+    const chemise = page.locator(".ra-piece", { hasText: "Chemise en popeline de coton" }).filter({ hasText: "Bleu ciel · M" });
+    const whatsapp = decodeURIComponent((await chemise.locator("a[href^='https://wa.me/']").first().getAttribute("href")) ?? "");
+    verifie(whatsapp.includes("wa.me/21620400104") && whatsapp.includes("est de retour chez Maison Selma") && whatsapp.includes("/produit/chemise-popeline"),
+      "de retour : le message WhatsApp prêt — la pièce, la boutique, le lien de sa fiche");
+    verifie(((await chemise.locator("a[href^='mailto:']").getAttribute("href")) ?? "").startsWith("mailto:yasmine.demo@exemple.tn"), "et l'e-mail, pour qui l'a laissé");
+    await capture(page, "gestion-reassort", true);
+    await t.envoie(page, chemise.locator(".ra-contact").first().getByRole("button", { name: "Prévenue" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("Prévenue : son contact est effacé"), "« Prévenue » : son contact s'efface");
+    verifie((await chemise.locator(".ra-contact").count()) === 1, "il reste une personne à prévenir");
+
+    const robe = page.locator(".ra-piece", { hasText: "Robe midi en jersey" });
+    verifie((await robe.innerText()).replace(/\s+/g, " ").includes("3 personnes l'attendent"), "attendue : la robe midi en XL, trois personnes");
+    await clic(page, robe.getByRole("link", { name: "Réceptionner un arrivage" }));
+    await page.waitForURL(/\/produits\/[0-9a-f-]{36}/);
+    await page.waitForLoadState("networkidle");
+    const xl = page.locator(".var", { hasText: "SEL03-GRI-XL" });
+    await clic(page, xl.locator("summary", { hasText: "Mouvement de stock" }));
+    await clic(page, xl.locator("input[name=quantite]"));
+    await tape(page, "4");
+    await t.envoie(page, xl.getByRole("button", { name: "Valider" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("Réception de 4 pièces"), "un arrivage de quatre robes en XL");
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: /^Réassort/ }));
+    await page.waitForURL(/\/reassort$/);
+    await page.waitForLoadState("networkidle");
+    const revenue = page.locator(".ra-piece[data-revenue]", { hasText: "Robe midi en jersey" });
+    verifie((await revenue.locator(".ra-contact").count()) === 3, "l'arrivage : les trois personnes passent « à prévenir »");
+    await t.envoie(page, revenue.getByRole("button", { name: "Toutes prévenues" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("3 personnes prévenues"), "« Toutes prévenues » : trois contacts effacés d'un geste");
   });
   await ctx.close();
 }

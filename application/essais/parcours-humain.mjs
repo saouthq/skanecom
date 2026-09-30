@@ -636,6 +636,28 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
       "« Suivre une autre commande » au clavier : le formulaire revient, le curseur dans le numéro");
   });
 
+  await etape("une taille épuisée : « Prévenez-moi de son retour », au clavier", async () => {
+    // Le combishort en M : épuisé dans toutes ses couleurs.
+    await page.goto(S + "/produit/combishort-fleurs", { waitUntil: "networkidle" });
+    const taille = page.locator(".axe", { hasText: "Taille" }).getByRole("button", { name: "M", exact: true });
+    verifie(!(await taille.isDisabled()) && (await taille.getAttribute("data-epuise")) === "", "la taille épuisée reste barrée, mais se choisit");
+    verifie((await page.locator(".axe-note").first().innerText().catch(() => "")).includes("Choisissez-la pour qu'on vous prévienne de son retour"),
+      "et la note le dit");
+    await clic(page, taille);
+    const bloc = page.locator(".fiche-indisponible");
+    verifie((await bloc.innerText().catch(() => "")).includes("n'est pas disponible"), "choisie : la fiche dit qu'elle n'est pas disponible");
+    await bloc.getByRole("button", { name: "Prévenez-moi de son retour" }).focus();
+    await page.keyboard.press("Enter");
+    verifie(await page.evaluate(() => document.activeElement?.getAttribute("type") === "tel"), "Entrée : le curseur dans le téléphone");
+    await tape(page, "20 555 777");
+    await page.keyboard.press("Enter");
+    const notee = page.locator(".alerte-retour-notee");
+    await notee.waitFor({ timeout: 8000 }).catch(() => {});
+    verifie((await notee.innerText().catch(() => "")).includes("au 20 555 777"), "« C'est noté », avec le numéro tel qu'on le lit");
+    verifie(await page.evaluate(() => document.activeElement?.classList.contains("alerte-retour-notee")), "le focus passe à la réponse");
+    await capture(page, "selma-alerte-retour");
+  });
+
   await etape("pendant la commande, pas de bouton WhatsApp", async () => {
     await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
     await clic(page, page.locator(".valeur", { hasText: /^M$/ }));

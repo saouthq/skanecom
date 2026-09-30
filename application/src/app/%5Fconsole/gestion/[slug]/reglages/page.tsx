@@ -585,6 +585,8 @@ export default async function Reglages({
                   <div className="choix">
                     <Case cle="catalogue.afficher_prix_barres" valeur={Boolean(v("catalogue.afficher_prix_barres"))} titre="Afficher les prix barrés"
                       aide="L'ancien prix, barré, à côté du prix payé — pour les déclinaisons qui en ont un." />
+                    <Case cle="catalogue.prevenir_retour" valeur={Boolean(v("catalogue.prevenir_retour"))} titre="Prévenir du retour d'une pièce épuisée"
+                      aide="Sur une déclinaison épuisée, la fiche propose « Prévenez-moi de son retour » ; quand le stock revient, l'écran Réassort dit qui prévenir, message prêt." />
                   </div>
                   <div className="grille-champs">
                     <div className="champ">

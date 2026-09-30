@@ -14,6 +14,7 @@ import { prixApplique as prixDe, usePrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
 import { etatVariante, minimumVariante, stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
+import { AlerteRetour } from "./AlerteRetour";
 import type { CodeTheme } from "@/lib/theme";
 
 /* ============================================================================
@@ -45,11 +46,15 @@ export function FicheAchat({
   prixBarres = false,
   delaiJours = null,
   achatExpress = false,
+  prevenirRetour = false,
 }: {
   produit: Produit;
   gabarit: CodeTheme;
   /** Réglage `commande.achat_express` : le bouton « Commander maintenant ». */
   achatExpress?: boolean;
+  /** Réglage `catalogue.prevenir_retour` : sur une déclinaison indisponible,
+   *  « Prévenez-moi de son retour » ; une valeur épuisée reste alors choisissable. */
+  prevenirRetour?: boolean;
   /** L'enveloppe du délai de livraison (jours ouvrés) : la fenêtre estimée. */
   delaiJours?: { min: number; max: number } | null;
   /** Réglage `catalogue.afficher_prix_barres` : l'ancien prix barré à côté du
@@ -217,7 +222,8 @@ export function FicheAchat({
                     aria-pressed={choix[axe.cle] === valeur}
                     aria-label={estCouleur ? valeur : undefined}
                     title={estCouleur ? valeur : undefined}
-                    disabled={epuise}
+                    disabled={epuise && !prevenirRetour}
+                    data-epuise={epuise && prevenirRetour ? "" : undefined}
                     onClick={() => setChoix((c) => ({ ...c, [axe.cle]: valeur }))}
                   >
                     {estCouleur ? (
@@ -232,7 +238,11 @@ export function FicheAchat({
                 );
               })}
             </div>
-            {horsStock.length > 0 ? <p className="legende axe-note">{t.produit.ruptureExpliquee(horsStock.join(", "))}</p> : null}
+            {horsStock.length > 0 ? (
+              <p className="legende axe-note">
+                {prevenirRetour ? t.alerte.ruptureExpliquee(horsStock.join(", ")) : t.produit.ruptureExpliquee(horsStock.join(", "))}
+              </p>
+            ) : null}
           </fieldset>
         );
       })}
@@ -241,11 +251,13 @@ export function FicheAchat({
         <div className="fiche-indisponible">
           <p>{t.produit.sousMinimumTitre}</p>
           <p className="legende">{t.produit.sousMinimumTexte(stock, minimum)}</p>
+          {prevenirRetour ? <AlerteRetour key={variante.id} varianteId={variante.id} /> : null}
         </div>
       ) : variante && !disponible ? (
         <div className="fiche-indisponible">
           <p>{t.produit.indisponibleTitre}</p>
-          <p className="legende">{t.produit.indisponibleTexte}</p>
+          <p className="legende">{prevenirRetour ? t.alerte.indisponibleTexte : t.produit.indisponibleTexte}</p>
+          {prevenirRetour ? <AlerteRetour key={variante.id} varianteId={variante.id} /> : null}
         </div>
       ) : null}
 

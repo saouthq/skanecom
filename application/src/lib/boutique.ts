@@ -79,6 +79,8 @@ export type Cadre = {
   /** Réglage `commande.achat_express` : « Commander maintenant » sur la fiche,
    *  droit au tunnel avec cet article seul, sans toucher au panier. */
   achatExpress: boolean;
+  /** Réglage `catalogue.prevenir_retour` : « Prévenez-moi de son retour ». */
+  prevenirRetour: boolean;
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
@@ -179,6 +181,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     comptesPro: modules.includes("comptes_pro"),
     devis: modules.includes("devis"),
     achatExpress: reglage<boolean>(reglages, "commande.achat_express", false) === true,
+    prevenirRetour: reglage<boolean>(reglages, "catalogue.prevenir_retour", false) === true,
     avis: modules.includes("avis"),
     promotions: modules.includes("promotions"),
     pages: brut.pages ?? [],

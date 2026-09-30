@@ -73,6 +73,7 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
   ],
   vitrine: [
     { cle: "catalogue.afficher_prix_barres", genre: "booleen" },
+    { cle: "catalogue.prevenir_retour", genre: "booleen" },
     { cle: "contact.whatsapp", genre: "numero" },
     { cle: "contact.telephone", genre: "numero" },
     { cle: "catalogue.revendeur_officiel", genre: "texte" },
@@ -183,6 +184,7 @@ const LIBELLES_COURTS: Record<string, string> = {
   "paiement.cod_actif": "Paiement à la livraison",
   "paiement.konnect_actif": "Paiement en ligne",
   "catalogue.afficher_prix_barres": "Prix barrés",
+  "catalogue.prevenir_retour": "Prévenir du retour",
   "catalogue.revendeur_officiel": "Revendeur officiel",
   "sav.garantie_mois": "Garantie annoncée",
   "avis.moderation": "Publication des avis",

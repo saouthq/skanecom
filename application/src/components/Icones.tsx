@@ -198,6 +198,16 @@ export function Lot({ taille = 18, className }: Props) {
   );
 }
 
+/** Une cloche : « Prévenez-moi de son retour ». */
+export function Cloche({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
+      <path d="M10 20.5a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
 /** Une enveloppe : le code reçu par e-mail. */
 export function Enveloppe({ taille = 18, className }: Props) {
   return (

@@ -373,6 +373,12 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
               {compte && verification !== "sms" ? " (elle sert alors aussi à recevoir le code de connexion)" : ""} ;
             </li>
             <li>les commandes : articles, montants, dates, suivi de la livraison, refus éventuels ;</li>
+            {cadre.prevenirRetour ? (
+              <li>
+                le téléphone ou l&apos;adresse électronique laissé pour être prévenu du retour d&apos;une pièce épuisée : il ne sert
+                qu&apos;à ce message, et il est effacé dès que la personne est prévenue ;
+              </li>
+            ) : null}
             <li>les échanges avec la boutique au sujet d&apos;une commande (appel de confirmation, note de livraison).</li>
           </ul>
         ),

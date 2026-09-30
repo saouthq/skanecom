@@ -125,7 +125,7 @@ select throws_ok(
 
 select ok(
   (public.configuration_publique(tests.id('A')) -> 'reglages' ->> 'livraison.mode_frais') = 'zone'
-  and not (public.configuration_publique(tests.id('A')) -> 'reglages') ? 'commande.prefixe_numero'
+  and not (public.configuration_publique(tests.id('A')) -> 'reglages') ? 'commande.max_en_attente'
   and not (public.configuration_publique(tests.id('A')) -> 'reglages') ? 'paiement.konnect_actif',
   'la vitrine lit les réglages publics effectifs, ni les internes, ni ceux d''un module inactif');
 

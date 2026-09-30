@@ -89,6 +89,9 @@ html:has(.tunnel-page, .compte-page) { scroll-padding-block: calc(var(--entete-h
   background: var(--theme-surface); border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux);
 }
 .tunnel-tel { transition: border-color .18s var(--theme-courbe), box-shadow .25s var(--theme-courbe); }
+/* Dans un champ (une colonne), la base de 14rem serait une hauteur : le
+   téléphone du suivi et de l'alerte de retour montait à 224 px. */
+.champ > .tunnel-tel { flex: none; }
 .tunnel-tel:focus-within {
   border-color: var(--theme-encre);
   box-shadow: 0 0 0 1px var(--theme-encre), 0 0 0 5px color-mix(in srgb, var(--theme-encre) 8%, transparent);

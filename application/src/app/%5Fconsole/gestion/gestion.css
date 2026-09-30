@@ -1447,3 +1447,23 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .pb-terminer .aide { margin: 0; }
 .bo-remise dt, .bo-remise dd { color: var(--ui-vert); }
 .bo-remise dt { display: inline-flex; align-items: center; }
+
+/* ---- Réassort (« Prévenez-moi de son retour ») ---- */
+.ra-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: .875rem; }
+@media (min-width: 1000px) { .ra-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ra-piece { display: grid; gap: .75rem; align-content: start; padding: 1.125rem 1.25rem; scroll-margin-block-start: 5rem; }
+.ra-tete { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .75rem; align-items: center; }
+.ra-photo { position: relative; inline-size: 52px; block-size: 52px; border-radius: var(--ui-r); overflow: hidden; background: var(--ui-doux); display: grid; place-items: center; color: var(--ui-texte-3); }
+.ra-photo img { object-fit: cover; }
+.ra-nom { display: grid; gap: .125rem; min-inline-size: 0; }
+.ra-nom a { font-weight: 600; color: inherit; overflow-wrap: anywhere; }
+.ra-nom a:hover { color: var(--ui-accent); }
+.ra-quand { margin: 0; }
+.ra-contacts { list-style: none; margin: 0; padding: 0; display: grid; border-block-start: 1px solid var(--ui-bord-leger); }
+.ra-contact { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .75rem; padding-block: .625rem; border-block-end: 1px solid var(--ui-bord-leger); }
+.ra-qui { display: grid; gap: .0625rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.ra-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ra-gestes > form { display: contents; }
+.ra-toutes { display: flex; justify-content: flex-end; }
+.ra-attente { margin: 0; font-size: .875rem; color: var(--ui-texte-2); }
+.ra-attente b { color: var(--ui-texte); font-weight: 600; }

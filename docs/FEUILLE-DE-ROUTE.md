@@ -42,7 +42,7 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 
 - [x] **Codes promo** (30/09, module, coupé chez Maymar dont la charte refuse la promotion) : pourcentage, montant, livraison offerte, minimum d'achat, dates, nombre d'utilisations, une fois par client ; ce que chaque code rapporte ; partage sur WhatsApp.
 - [x] **Prix barrés d'un rayon** (30/09, le même module) : une remise sur un rayon ou tout le catalogue, l'aperçu avant de lancer, l'ancien prix barré ; terminer rend les prix d'avant (sauf ceux changés à la main). Reste : une fin programmée (à une date), et le rappel de l'opération sur la fiche produit du backoffice.
-- **« Prévenez-moi du retour »** sur une déclinaison épuisée : SMS, e-mail ou WhatsApp au réassort.
+- [x] **« Prévenez-moi de son retour »** (30/09, réglage) sur une déclinaison épuisée : le téléphone ou l'e-mail laissé sur la fiche ; au réassort, l'équipe voit qui prévenir, message WhatsApp prêt, et le contact s'efface. Reste : l'envoi automatique par SMS ou e-mail, quand les fournisseurs seront branchés.
 - **Favoris** dans le navigateur, puis rattachés au compte.
 - **Paniers abandonnés** : la liste au backoffice avec le message WhatsApp prêt ; la relance automatique en réglage.
 - Ventes associées (« complétez avec »), lots ; avis clients avec photos.
