@@ -23,7 +23,8 @@ const M = t.adresse("maymar.localhost");
 const Q = t.adresse("quincaillerie.localhost");
 const S = t.adresse("mode.localhost");
 // Les pages introuvables sont visitées exprès.
-const espion = (page, nom) => t.espion(page, nom, (url) => /\/produit\/(perceuse|robe-)/.test(url));
+// Les 404 voulues : la fiche d'un produit d'une autre boutique, une adresse inconnue.
+const espion = (page, nom) => t.espion(page, nom, (url) => /\/produit\/(perceuse|robe-)|\/une\/adresse\/inconnue/.test(url));
 const navigateur = await t.navigateur();
 const compte = (page) => page.locator("header .bouton-panier-compte").innerText().catch(() => "");
 const tiroirOuvert = (page, classe) => page.locator(`.tiroir.${classe}[role=dialog]`).isVisible().catch(() => false);
@@ -160,6 +161,10 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     await page.goto(S + "/produit/perceuse-visseuse-14v", { waitUntil: "networkidle" });
     await capture(page, "selma-404");
     verifie(await page.locator("header.ed-entete").count() === 1 && await page.locator("footer.ed-pied").count() === 1, "la page introuvable garde l'en-tête et le pied de la boutique");
+    // Une adresse qui ne ressemble à rien : la même page, pas celle du framework.
+    const r = await page.goto(S + "/une/adresse/inconnue", { waitUntil: "networkidle" });
+    verifie(r?.status() === 404 && await page.locator("header.ed-entete").count() === 1 && await page.locator("#q-introuvable").count() === 1,
+      `une adresse inconnue : 404 à l'habit de la boutique, la recherche proposée (HTTP ${r?.status()})`);
   });
   await ctx.close();
 }
@@ -268,6 +273,26 @@ console.log("\n== 3. Sur téléphone (tactile) ==");
   const ctx = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "mobile");
+
+  /* Rien ne dépasse l'écran, page parcourue jusqu'en bas : un élément qui
+     déborde élargit la page et le téléphone la dézoome tout entière (le
+     30/09 : le texte pour lecteurs d'écran d'une carte, dans une bande
+     glissante, n'apparaissait qu'au défilement). */
+  const sansDebord = async (url, nom) => {
+    await page.goto(url, { waitUntil: "networkidle" });
+    const h = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (let y = 0; y < h; y += 500) { await page.evaluate((v) => window.scrollTo(0, v), y); await pause(120); }
+    await pause(800);
+    const m = await page.evaluate(() => ({ vue: window.innerWidth, page: document.documentElement.scrollWidth, ecran: document.documentElement.clientWidth }));
+    verifie(m.vue === 390 && m.page <= m.ecran, `${nom} : pas de défilement horizontal, page parcourue (${m.page} px pour ${m.ecran})`);
+    await page.evaluate(() => window.scrollTo(0, 0));
+  };
+
+  await etape("les accueils tiennent dans l'écran", async () => {
+    await sansDebord(S + "/", "Selma");
+    await sansDebord(M + "/", "Maymar");
+    await sansDebord(Q + "/", "Quincaillerie");
+  });
 
   await etape("Selma : accueil et menu", async () => {
     await page.goto(S + "/", { waitUntil: "networkidle" });

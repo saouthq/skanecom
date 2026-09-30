@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CarteProduit } from "./CarteProduit";
 import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
+import { TuileFin } from "./TuileFin";
 import { Billets, Camion, Fleche, Retour, Telephone } from "./Icones";
 import { descendance, type Cadre } from "@/lib/boutique";
 import type { Produit } from "@/lib/catalogue";
@@ -186,18 +187,19 @@ function Collections({ section, cadre }: { section: Extract<Section, { type: "ra
 function Selection({ section, cadre, produits }: { section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
   const lien = section.lien ?? (section.rayon ? `/categorie/${section.rayon}` : "/catalogue");
   const unSeulRayon = new Set(produits.map((p) => p.categorie?.slug)).size <= 1;
+  const titre = texte(section.textes, "titre", t.accueil.selectionTitreEditorial);
+  const total = section.rayon
+    ? descendance(cadre.categories, section.rayon).reduce((n, c) => n + (c.nb_produits ?? 0), 0)
+    : cadre.boutique.nb_produits;
   return (
     <section className="enveloppe ed-section">
-      <TeteSection
-        titre={texte(section.textes, "titre", t.accueil.selectionTitreEditorial)}
-        etiquette={texte(section.textes, "etiquette") || undefined}
-        lien={lien}
-      />
+      <TeteSection titre={titre} etiquette={texte(section.textes, "etiquette") || undefined} lien={lien} />
       {produits.length > 0 ? (
-        <div className="ed-grille" data-rayon-unique={unSeulRayon ? "" : undefined}>
+        <div className="ed-grille rail-mobile" data-rayon-unique={unSeulRayon ? "" : undefined}>
           {produits.map((p) => (
             <CarteProduit key={p.id} produit={p} gabarit="editorial" prixBarres={cadre.prixBarres} />
           ))}
+          <TuileFin href={lien} titre={titre} compte={total ? t.catalogue.modeles(total) : null} gabarit="editorial" />
         </div>
       ) : (
         <div className="listing-vide">

@@ -605,6 +605,7 @@ html:has(.visionneuse[open]) { overflow: hidden; }
    qui déborde jusqu'au bord de l'écran sur téléphone ; les cartes entrent
    de la droite, en cascade. ---- */
 .vus-rail {
+  position: relative;
   display: grid; grid-auto-flow: column; grid-auto-columns: clamp(8.75rem, 36vw, 11.5rem); gap: clamp(.75rem, 1.6vw, 1.25rem);
   list-style: none; margin: 0 calc(-1 * var(--theme-marge)); padding: .25rem var(--theme-marge) .875rem;
   overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: var(--theme-marge);
@@ -655,3 +656,23 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
 .achat-mobile .btn.achat-mobile-icone { flex: none; inline-size: 3.25rem; padding-inline: 0; }
 .achat-mobile-icone svg { flex: none; }
 .achat-mobile .btn + .btn { padding-inline: 1.125rem; white-space: nowrap; }
+
+/* ---- Les sélections de l'accueil, sur téléphone : une bande qu'on fait
+   glisser, la carte suivante entrevue au bord, la tuile « tout voir » au
+   bout — plutôt qu'une grille de deux colonnes sur six écrans de haut. ---- */
+/* (Sous html[data-gabarit] : ces règles passent devant celles des grilles de
+   chaque gabarit, chargées après le socle.) */
+@media (max-width: 699px) {
+  /* position: relative — le texte réservé aux lecteurs d'écran d'une carte
+     (.sr-only, en position absolue) se range dans la bande, et ne l'élargit
+     plus au-delà de l'écran (le téléphone dézoomait la page entière). */
+  html[data-gabarit] .rail-mobile {
+    position: relative;
+    display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 64%;
+    overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin-inline: calc(-1 * var(--theme-marge)); padding-inline: var(--theme-marge); scroll-padding-inline: var(--theme-marge);
+  }
+  html[data-gabarit] .rail-mobile::-webkit-scrollbar { display: none; }
+  html[data-gabarit] .rail-mobile > * { scroll-snap-align: start; }
+  html[data-gabarit] .rail-mobile > .tuile-fin:nth-child(n) { display: flex; }
+}

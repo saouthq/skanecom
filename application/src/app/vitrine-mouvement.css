@@ -25,6 +25,12 @@ html.js-apparitions :is(.ed-section, .ed-recit, .ed-engagements, .te-section)[da
 @keyframes v-monte { from { opacity: 0; transform: translate3d(0, 28px, 0); } }
 @keyframes v-monte-doux { from { opacity: 0; transform: translate3d(0, 16px, 0); } }
 
+/* ---- Les photos arrivent en fondu (Apparitions.tsx les marque chargées) ---- */
+html.js-photos .cadre-image img.photo-principale:not([data-chargee]) { opacity: 0; }
+html.js-photos .cadre-image img.photo-principale[data-attendue] {
+  transition: opacity .7s var(--theme-courbe), transform 1.4s var(--theme-courbe);
+}
+
 /* ---- Le titre d'ouverture, ligne après ligne ---- */
 /* Chaque ligne est un bloc (le <br> qui la sépare devient inutile) : un
    bloc peut monter, une ligne de texte en ligne ne le peut pas. */

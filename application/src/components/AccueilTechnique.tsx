@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CarteProduit } from "./CarteProduit";
 import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
+import { TuileFin } from "./TuileFin";
 import { Billets, Bulle, Camion, Fleche, Magasin, Retour } from "./Icones";
 import { descendance, type Cadre } from "@/lib/boutique";
 import type { Categorie, Produit } from "@/lib/catalogue";
@@ -126,14 +127,19 @@ function Rayons({ section, cadre }: { section: Extract<Section, { type: "rayons"
 
 function Selection({ section, cadre, produits }: { section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
   const lien = section.lien ?? (section.rayon ? `/categorie/${section.rayon}` : "/catalogue");
+  const titre = texte(section.textes, "titre", t.accueil.selectionTitreTechnique);
+  const total = section.rayon
+    ? descendance(cadre.categories, section.rayon).reduce((n, c) => n + (c.nb_produits ?? 0), 0)
+    : cadre.boutique.nb_produits;
   return (
     <section className="te-section">
-      <Tete titre={texte(section.textes, "titre", t.accueil.selectionTitreTechnique)} lien={lien} />
+      <Tete titre={titre} lien={lien} />
       {produits.length > 0 ? (
-        <div className="te-grille te-grille-rang">
+        <div className="te-grille te-grille-rang rail-mobile">
           {produits.map((p) => (
             <CarteProduit key={p.id} produit={p} gabarit="technique" prixBarres={cadre.prixBarres} />
           ))}
+          <TuileFin href={lien} titre={titre} compte={total ? t.catalogue.references(total) : null} gabarit="technique" />
         </div>
       ) : (
         <div className="listing-vide">
