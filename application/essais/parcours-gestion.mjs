@@ -464,6 +464,37 @@ console.log("\n== 2. Le gérant, double authentification ==");
   });
 
   let nouveau = "";
+  await etape("tout un arrivage en une fois : Catalogue → Réception", async () => {
+    await page.goto(`${C}/gestion/maymar/produits`, { waitUntil: "networkidle" });
+    await clic(page, page.getByRole("link", { name: "Réception" }));
+    await page.waitForURL(/produits\/reception$/);
+    await page.waitForLoadState("networkidle");
+    verifie(await page.locator(".rc-produit").count() === 4, `les quatre valises, leurs déclinaisons en vente (${await page.locator(".rc-quantite").count()})`);
+    await clic(page, page.locator(".rc-filtre input"));
+    await tape(page, "business");
+    const visibles = page.locator(".rc-produit:not([hidden])");
+    verifie(await visibles.count() === 1, "le filtre va droit à la valise cabine business");
+    const lignes = visibles.locator(".rc-ligne");
+    const avant = await Promise.all([0, 1].map(async (i) => Number((await lignes.nth(i).locator(".rc-stock").innerText()).match(/(\d+) en stock/)[1])));
+    await clic(page, lignes.nth(0).locator(".rc-quantite"));
+    await tape(page, "10");
+    await page.keyboard.press("Enter");
+    verifie((await page.evaluate(() => document.activeElement?.id)) === (await lignes.nth(1).locator(".rc-quantite").getAttribute("id")),
+      "Entrée passe à la déclinaison suivante (sans envoyer)");
+    await tape(page, "6");
+    verifie((await lignes.nth(0).locator(".rc-stock").innerText()).includes(`→ ${avant[0] + 10}`), "le nouveau stock s'affiche avant l'envoi");
+    verifie((await page.locator(".rc-total").innerText()).includes("16 pièces sur 2 déclinaisons"), "le total de l'arrivage suit la saisie");
+    await clic(page, page.locator(".rc-note"));
+    await tape(page, "BL 2026-114");
+    await capture(page, "gestion-reception");
+    await envoie(page.getByRole("button", { name: "Enregistrer la réception" }));
+    verifie((await ok()).includes("16 pièces sur 2 déclinaisons"), `« ${await ok()} »`);
+    await clic(page, page.locator(".rc-filtre input"));
+    await tape(page, "business");
+    const apres = await Promise.all([0, 1].map(async (i) => Number((await page.locator(".rc-produit:not([hidden]) .rc-ligne").nth(i).locator(".rc-stock").innerText()).match(/(\d+) en stock/)[1])));
+    verifie(apres[0] === avant[0] + 10 && apres[1] === avant[1] + 6, `les deux stocks ont monté (${avant.join(", ")} → ${apres.join(", ")})`);
+  });
+
   await etape("un produit neuf, puis en vitrine", async () => {
     await page.goto(`${C}/gestion/maymar/produits`, { waitUntil: "networkidle" });
     await clic(page, page.getByRole("link", { name: "Nouveau produit" }));
@@ -1131,6 +1162,7 @@ console.log("\n== 4. Le préparateur d'une autre boutique ==");
   await etape("au catalogue : il tient le stock, pas les fiches", async () => {
     await page.goto(`${C}/gestion/quincaillerie-demo/produits`, { waitUntil: "networkidle" });
     verifie(await page.getByRole("link", { name: "Nouveau produit" }).count() === 0, "pas de bouton « Nouveau produit »");
+    verifie(await page.getByRole("link", { name: "Réception" }).count() === 1, "mais la réception d'un arrivage, oui : c'est lui qui déballe");
     await clic(page, page.locator(".cat-ligne-lien").first());
     await page.waitForURL(/\/produits\/[0-9a-f-]{36}/);
     await page.waitForLoadState("networkidle");

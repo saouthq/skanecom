@@ -283,6 +283,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis l'export des versements** (migration 33, `20260929103200_export_versements.sql`) : `gestion_export(boutique, 'versements')` (reçu le, transporteur, reçu, attendu, écart, colis, commandes, référence, note, saisi par et le, annulé le).
 
+**Puis la réception d'un arrivage** (migration 34, `20260929103300_reception_arrivage.sql`, 16 tests dans `supabase/tests/34_reception.sql`) : `gestion_reception_catalogue(boutique)` (les déclinaisons en vente, produit par produit, avec stock et seuil) et `gestion_reception(boutique, lignes, note)` (plusieurs réceptions par `mouvement_stock`, tout ou rien, verrouillées dans l'ordre des identifiants).
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

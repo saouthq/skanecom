@@ -6,7 +6,7 @@ import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { urlFichier } from "@/lib/photos";
-import { FILTRES_CATALOGUE, PEUT_MODIFIER, type ListeProduits } from "@/lib/gestion/catalogue";
+import { FILTRES_CATALOGUE, PEUT_MODIFIER, PEUT_STOCKER, type ListeProduits } from "@/lib/gestion/catalogue";
 import { RaccourciRecherche } from "@/components/console/Raccourcis";
 
 export const metadata: Metadata = { title: "Catalogue" };
@@ -45,6 +45,7 @@ export default async function Catalogue({
   const base = `/gestion/${slug}/produits`;
   const lien = (f: string, p = 1) => `${base}?filtre=${f}${q ? `&q=${encodeURIComponent(q)}` : ""}${p > 1 ? `&page=${p}` : ""}`;
   const peutCreer = PEUT_MODIFIER.includes(boutique.role);
+  const peutRecevoir = PEUT_STOCKER.includes(boutique.role);
 
   return (
     <>
@@ -64,6 +65,7 @@ export default async function Catalogue({
               <RaccourciRecherche cible="q" />
               <button type="submit" className="btn btn-second">Chercher</button>
             </form>
+            {peutRecevoir ? <Link href={`${base}/reception`} className="btn btn-second"><Icone nom="colis" /> Réception</Link> : null}
             <Link href={`${base}/caracteristiques`} className="btn btn-second"><Icone nom="modules" /> Caractéristiques</Link>
             {peutCreer ? (
               <Link href={`${base}/nouveau`} className="btn btn-primaire"><Icone nom="plus" /> Nouveau produit</Link>
