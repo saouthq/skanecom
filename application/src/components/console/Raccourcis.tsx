@@ -68,3 +68,35 @@ export function SuiviSommaire({ sommaire }: { sommaire: string }) {
   }, [sommaire]);
   return null;
 }
+
+/** Au retour d'un appel (ou de WhatsApp) : le téléphone repasse sur le
+ *  backoffice, la fiche amène le résultat à noter à l'écran, le fait
+ *  pulser, et place le focus sur son premier bouton (« Confirmée »). On ne
+ *  quitte pas la fiche en oubliant de noter l'appel. */
+export function RetourAppel({ cible }: { cible: string }) {
+  useEffect(() => {
+    let parti = false;
+    const clic = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('a[href^="tel:"], a[href*="wa.me"]')) parti = true;
+    };
+    const retour = () => {
+      if (!parti || document.visibilityState !== "visible") return;
+      parti = false;
+      const zone = document.getElementById(cible);
+      if (!zone) return;
+      zone.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+      zone.dataset.retourAppel = "";
+      window.setTimeout(() => delete zone.dataset.retourAppel, 4000);
+      zone.querySelector<HTMLElement>("button[type=submit]")?.focus({ preventScroll: true });
+    };
+    document.addEventListener("click", clic);
+    document.addEventListener("visibilitychange", retour);
+    window.addEventListener("focus", retour);
+    return () => {
+      document.removeEventListener("click", clic);
+      document.removeEventListener("visibilitychange", retour);
+      window.removeEventListener("focus", retour);
+    };
+  }, [cible]);
+  return null;
+}

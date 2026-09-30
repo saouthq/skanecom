@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
+import { RetourAppel } from "@/components/console/Raccourcis";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
 import { lieu, type Magasin } from "@/lib/commande";
@@ -301,7 +302,9 @@ export default async function FicheCommande({
                         <Icone nom="message" /> WhatsApp
                       </a>
                     </div>
-                    <form action={action} method="post" className="bo-resultats">
+                    <form action={action} method="post" className="bo-resultats" id="resultat-appel">
+                      <RetourAppel cible="resultat-appel" />
+                      <p className="bo-retour-appel" aria-hidden="true"><Icone nom="telephone" taille={14} /> Comment s&apos;est passé l&apos;appel ?</p>
                       <input type="hidden" name="action" value="appel" />
                       <div className="bo-resultats-rang">
                         <fieldset className="segments">

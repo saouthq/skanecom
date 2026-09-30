@@ -171,6 +171,16 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     await page.waitForURL(new RegExp(`commandes/${num(9)}$`));
     verifie((await page.locator(".bo-journal").innerText()).includes("Appel · Injoignable"), "l'historique garde le premier appel");
     await capture(page, "gestion-fiche-a-confirmer");
+    // Le gérant appelle (le lien tel: ouvre le téléphone), puis revient sur la fiche.
+    await page.evaluate(() => {
+      window.addEventListener("click", (e) => { if (e.target.closest('a[href^="tel:"]')) e.preventDefault(); }, { capture: true, once: true });
+      document.querySelector('a[href^="tel:"]').click();
+      window.dispatchEvent(new Event("focus"));
+    });
+    await page.locator("#resultat-appel[data-retour-appel]").waitFor({ timeout: 3000 });
+    verifie((await page.locator("#resultat-appel .bo-retour-appel").innerText()).includes("Comment s'est passé l'appel"),
+      "au retour de l'appel, la fiche demande comment il s'est passé");
+    verifie((await page.evaluate(() => document.activeElement?.textContent?.trim())) === "Confirmée", "le focus attend sur « Confirmée »");
     await clic(page, page.getByRole("button", { name: "Injoignable" }));
     await page.waitForURL(/fait=appel-injoignable/);
     verifie((await message(page)).includes("injoignable"), "« Injoignable » : l'appel est noté");

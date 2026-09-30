@@ -924,3 +924,14 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .rc-produit-tete { padding-inline: 1rem; }
   .rc-barre .btn { inline-size: 100%; }
 }
+
+/* Au retour d'un appel (RetourAppel) : le résultat à noter pulse, et le dit. */
+.bo-retour-appel { display: none; }
+.bo-resultats[data-retour-appel] { position: relative; border-radius: 12px; animation: bo-retour-appel 1.2s ease-out 2; }
+.bo-resultats[data-retour-appel] .bo-retour-appel {
+  display: inline-flex; align-items: center; gap: .375rem; margin: 0 0 .625rem; padding: .25rem .625rem; border-radius: 999px;
+  background: color-mix(in srgb, #16A34A 12%, transparent); color: #15803D; font-size: .8125rem; font-weight: 600;
+  animation: ui-glisse .3s var(--ui-courbe, ease) backwards;
+}
+@keyframes bo-retour-appel { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, #16A34A 45%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+@media (prefers-reduced-motion: reduce) { .bo-resultats[data-retour-appel] { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, #16A34A 35%, transparent); } }
