@@ -9,6 +9,7 @@
 3. [`03-reprise-maymar.md`](03-reprise-maymar.md) — **La reprise du code Maymar.** Ce qu'on garde, ce qu'on corrige, le modèle de données multi-boutique.
 4. [`04-risques-et-decisions.md`](04-risques-et-decisions.md) — **À trancher.** Décisions prises et ouvertes, registre des risques, actions immédiates.
 5. [`05-etude-outillage-quincaillerie.md`](05-etude-outillage-quincaillerie.md) — **Les clients 2 et 3.** Ce dont ont besoin le représentant DeWalt et la quincaillerie, et les modules qui en découlent.
+6. [`06-directive-design.md`](06-directive-design.md) — **Le niveau de qualité.** Directive permanente de Skander (30/09) sur le design, l'expérience, le mouvement et le frontend, au même rang que le PRD : le PRD dit quoi construire, elle dit à quel niveau.
 
 Prototype technique : [`../../prototype/vitrine-workers/RAPPORT.md`](../../prototype/vitrine-workers/RAPPORT.md). La vitrine Maymar tourne sur Cloudflare Workers : phase locale réussie le 28/09, phase chez Cloudflare réussie le 29/09 (panne de la base et séparation du cache entre deux domaines).
 
