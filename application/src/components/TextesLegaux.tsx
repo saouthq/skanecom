@@ -373,6 +373,12 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
               {compte && verification !== "sms" ? " (elle sert alors aussi à recevoir le code de connexion)" : ""} ;
             </li>
             <li>les commandes : articles, montants, dates, suivi de la livraison, refus éventuels ;</li>
+            {cadre.relancePaniers ? (
+              <li>
+                le contenu du panier d&apos;un acheteur connecté qui n&apos;a pas fini sa commande : la boutique peut le lui
+                rappeler une fois ; il est effacé après 60 jours ;
+              </li>
+            ) : null}
             {cadre.prevenirRetour ? (
               <li>
                 le téléphone ou l&apos;adresse électronique laissé pour être prévenu du retour d&apos;une pièce épuisée : il ne sert

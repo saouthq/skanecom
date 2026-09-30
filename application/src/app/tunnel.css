@@ -144,6 +144,9 @@ html:has(.tunnel-page, .compte-page) { scroll-padding-block: calc(var(--entete-h
 }
 .tunnel-identite p { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: .9375rem; }
 .tunnel-identite svg { color: var(--theme-succes); flex: none; }
+/* Les paniers abandonnés (réglage de la boutique) : ce que la boutique pourra
+   faire du panier, dit juste sous l'identité vérifiée. */
+.tunnel-relance { margin: -.5rem 0 0; text-wrap: pretty; }
 
 .tunnel-livraison {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem; margin: 0;

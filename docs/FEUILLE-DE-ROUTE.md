@@ -41,10 +41,10 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 ### C. Vendre plus
 
 - [x] **Codes promo** (30/09, module, coupé chez Maymar dont la charte refuse la promotion) : pourcentage, montant, livraison offerte, minimum d'achat, dates, nombre d'utilisations, une fois par client ; ce que chaque code rapporte ; partage sur WhatsApp.
-- [x] **Prix barrés d'un rayon** (30/09, le même module) : une remise sur un rayon ou tout le catalogue, l'aperçu avant de lancer, l'ancien prix barré ; terminer rend les prix d'avant (sauf ceux changés à la main). Reste : une fin programmée (à une date), et le rappel de l'opération sur la fiche produit du backoffice.
+- [x] **Prix barrés d'un rayon** (30/09, le même module) : une remise sur un rayon ou tout le catalogue, l'aperçu avant de lancer, l'ancien prix barré ; terminer rend les prix d'avant (sauf ceux changés à la main). Reste : une fin programmée (à une date).
 - [x] **« Prévenez-moi de son retour »** (30/09, réglage) sur une déclinaison épuisée : le téléphone ou l'e-mail laissé sur la fiche ; au réassort, l'équipe voit qui prévenir, message WhatsApp prêt, et le contact s'efface. Reste : l'envoi automatique par SMS ou e-mail, quand les fournisseurs seront branchés.
 - **Favoris** dans le navigateur, puis rattachés au compte.
-- **Paniers abandonnés** : la liste au backoffice avec le message WhatsApp prêt ; la relance automatique en réglage.
+- [x] **Paniers abandonnés** (30/09, réglage, avec le compte obligatoire) : le panier d'un client connecté, au backoffice une heure plus tard, message WhatsApp prêt, une relance ; la commande qui a suivi. Reste : la relance automatique (SMS, e-mail), quand les fournisseurs seront branchés.
 - Ventes associées (« complétez avec »), lots ; avis clients avec photos.
 
 ### D. Tous les métiers

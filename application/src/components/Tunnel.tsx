@@ -113,6 +113,7 @@ export function Tunnel({
   devisNumero = null,
   express = null,
   codesPromo = false,
+  relancePaniers = false,
 }: {
   gabarit: CodeTheme;
   boutiqueId: string;
@@ -133,6 +134,8 @@ export function Tunnel({
   express?: { varianteId: string; quantite: number } | null;
   /** Le module promotions : le champ du code promo (jamais sur un devis). */
   codesPromo?: boolean;
+  /** Réglage `commande.relance_paniers` : le tunnel prévient qu'un panier laissé peut être rappelé, une fois. */
+  relancePaniers?: boolean;
 }) {
   const compteObligatoire = compteReglage || Boolean(devisNumero);
   const id = useId();
@@ -567,6 +570,7 @@ export function Tunnel({
                 </button>
               </div>
               {session.telephone ? null : champTelephone(t.connexion.telephoneAideEmail)}
+              {relancePaniers && !devisNumero ? <p className="legende tunnel-relance">{t.commande.relancePaniers}</p> : null}
             </>
           ) : compteObligatoire ? (
             <Identification

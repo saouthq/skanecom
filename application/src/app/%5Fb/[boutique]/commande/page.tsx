@@ -69,6 +69,7 @@ export default async function Commande({
         devisNumero={devis}
         express={express}
         codesPromo={cadre.promotions}
+        relancePaniers={cadre.relancePaniers}
       />
     </Gabarit>
   );

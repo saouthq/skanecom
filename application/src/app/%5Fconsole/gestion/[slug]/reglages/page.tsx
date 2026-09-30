@@ -187,6 +187,13 @@ export default async function Reglages({
                       { valeur: "1", titre: "Achat express en plus", aide: "«\u00a0Commander maintenant\u00a0» à côté de «\u00a0Ajouter au panier\u00a0» : cet article seul, droit à la commande. Plus rapide sur téléphone." },
                     ]}
                   />
+                  <Alternative
+                    nom="commande.relance_paniers" legende="Un panier laissé sans commande" valeur={v("commande.relance_paniers") ? "1" : "0"}
+                    options={[
+                      { valeur: "0", titre: "Rien n'est gardé", aide: "Un panier non commandé reste dans le navigateur de l'acheteur, et nulle part ailleurs. Couper efface les paniers gardés." },
+                      { valeur: "1", titre: "Une relance possible", aide: "Le panier d'un acheteur connecté s'affiche une heure plus tard (Paniers) : l'équipe le relance une fois, message prêt. Il faut un compte pour commander ; le tunnel et la confidentialité le disent." },
+                    ]}
+                  />
                   <div className="champ rg-court">
                     <label htmlFor="max_en_attente">Commandes en attente par numéro</label>
                     <input id="max_en_attente" name="commande.max_en_attente" type="number" min={0} max={50} defaultValue={Number(v("commande.max_en_attente") ?? 3)} />

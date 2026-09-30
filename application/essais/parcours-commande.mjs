@@ -101,6 +101,11 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
 
   await etape("numéro confirmé par SMS", async () => {
     await confirmeNumero(page, "20555123", "20 555 123");
+    // Selma relance ses paniers abandonnés (supabase/seed-paniers.sql) : la
+    // cliente connectée le lit sous son identité, avant de rien remplir.
+    const relance = page.locator(".tunnel-relance");
+    verifie(await relance.isVisible() && (await relance.innerText()).includes("pourra vous écrire une fois"),
+      "connectée : le tunnel dit que la boutique pourra lui rappeler son panier, une fois");
     await capture(page, "selma-commande-numero-confirme");
   });
 
@@ -404,6 +409,14 @@ console.log("\n== 2 bis. Maison Selma : un code promo, au clavier ==");
     await page.keyboard.press("Enter");
     await page.locator(".tunnel-promo .champ-erreur:not(:empty)").waitFor({ timeout: 5000 });
     verifie((await page.locator(".tunnel-promo .champ-erreur").innerText()).includes("déjà utilisé"), "le même compte ne le reprend pas : « déjà utilisé »");
+    // Les paniers abandonnés : ce panier laissé en route est gardé par la
+    // base (le récapitulatif d'une cliente connectée), pour une relance.
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    const garde = await (await fetch(`${RELAIS}/rest/v1/paniers_suivis?boutique_id=eq.00000000-0000-4000-8000-000000000003&telephone=eq.${encodeURIComponent("+21620555999")}&select=articles,sous_total_millimes,relance_le`, {
+      headers: { apikey: cle, authorization: `Bearer ${cle}` },
+    })).json();
+    verifie(Array.isArray(garde) && garde.length === 1 && garde[0].articles === 1 && garde[0].sous_total_millimes === 289000 && garde[0].relance_le === null,
+      `commandé puis rempli de nouveau : un panier neuf, relançable (${JSON.stringify(garde).slice(0, 90)})`);
   });
   await ctx.close();
 }
@@ -429,6 +442,7 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
 
   await etape("numéro, adresse à Sfax, puis le retrait en magasin", async () => {
     await confirmeNumero(page, "98765432", "98 765 432");
+    verifie((await page.locator(".tunnel-relance").count()) === 0, "la quincaillerie ne relance pas ses paniers : le tunnel n'en dit rien");
     const choix = page.locator(".tunnel-choix");
     verifie((await choix.count()) === 1 && (await choix.locator('input[value="domicile"]').isChecked()),
       "le retrait est proposé ; la livraison à domicile reste le choix par défaut");

@@ -81,6 +81,9 @@ export type Cadre = {
   achatExpress: boolean;
   /** Réglage `catalogue.prevenir_retour` : « Prévenez-moi de son retour ». */
   prevenirRetour: boolean;
+  /** Réglage `commande.relance_paniers`, avec un compte obligatoire : le panier d'un client
+   *  connecté est gardé, relançable une fois. */
+  relancePaniers: boolean;
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
@@ -182,6 +185,8 @@ export function cadreDe(brut: CadreBrut): Cadre {
     devis: modules.includes("devis"),
     achatExpress: reglage<boolean>(reglages, "commande.achat_express", false) === true,
     prevenirRetour: reglage<boolean>(reglages, "catalogue.prevenir_retour", false) === true,
+    relancePaniers: reglage<boolean>(reglages, "commande.relance_paniers", false) === true
+      && reglage<boolean>(reglages, "compte.obligatoire", true) !== false,
     avis: modules.includes("avis"),
     promotions: modules.includes("promotions"),
     pages: brut.pages ?? [],

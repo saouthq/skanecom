@@ -33,13 +33,14 @@ export default async function BackofficeBoutique({
   // pas l'un après l'autre : chaque page du backoffice les attend.
   const sb = await clientSession();
   const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }] = await Promise.all([
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }] = await Promise.all([
     sb.rpc("gestion_sav_etat", etat),
     sb.rpc("gestion_pro_etat", etat),
     sb.rpc("gestion_devis_etat", etat),
     sb.rpc("gestion_avis_etat", etat),
     sb.rpc("gestion_promotions_etat", etat),
     sb.rpc("gestion_alertes_etat", etat),
+    sb.rpc("gestion_paniers_etat", etat),
   ]);
   // Le service après-vente, si la boutique a le module : ses demandes à rappeler.
   const etatSav = sav as { actif: boolean; nouvelles: number } | null;
@@ -86,6 +87,16 @@ export default async function BackofficeBoutique({
           : undefined,
       }]
     : [];
+  // Les paniers abandonnés, si la boutique les relance : ceux à relancer.
+  const etatPaniers = pn as { actif: boolean; a_relancer: number } | null;
+  const lienPaniers = etatPaniers?.actif
+    ? [{
+        href: `/gestion/${slug}/paniers`, libelle: "Paniers", icone: "panier" as const,
+        extra: etatPaniers.a_relancer
+          ? <span className="app-nav-compte" aria-label={`${etatPaniers.a_relancer} panier${etatPaniers.a_relancer > 1 ? "s" : ""} à relancer`}>{etatPaniers.a_relancer}</span>
+          : undefined,
+      }]
+    : [];
   const badgeSav = etatSav?.nouvelles
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
     : undefined;
@@ -107,6 +118,7 @@ export default async function BackofficeBoutique({
     { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
     ...lienReassort,
     { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
+    ...lienPaniers,
     ...lienAvis,
     ...lienPromo,
     ...(etatSav?.actif

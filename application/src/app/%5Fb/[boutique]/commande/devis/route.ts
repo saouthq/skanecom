@@ -39,5 +39,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
     }
     return reponse({ ok: false, raison, message: error.message }, 422);
   }
+  // Les paniers abandonnés (réglage commande.relance_paniers, compte
+  // obligatoire) : le panier d'une personne connectée est gardé à chaque
+  // récapitulatif, relu par la base. Un visiteur : rien, pas même l'appel.
+  // Un échec ne gêne jamais le devis.
+  if (!devis && cadre.relancePaniers && (await sb.auth.getSession()).data.session) {
+    const { error: garde } = await sb.rpc("garder_panier", { p_boutique_id: cadre.boutique.id, p_lignes: corps?.lignes ?? [] });
+    if (garde) console.error(`garder_panier (${boutique}) : ${garde.code} ${garde.message}`);
+  }
   return reponse({ ok: true, devis: data });
 }

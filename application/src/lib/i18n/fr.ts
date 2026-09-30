@@ -496,6 +496,7 @@ export const fr = {
     aCorriger: "Quelques informations manquent : elles sont signalées ci-dessous.",
     horsLigne: "La connexion a été coupée. Réessayez : votre commande ne sera pas passée deux fois.",
     totalChange: "Un prix ou un frais a changé. Vérifiez le nouveau total, puis confirmez.",
+    relancePaniers: "Si vous ne finissez pas votre commande, la boutique pourra vous écrire une fois pour vous la rappeler.",
     stockChange: "Un article n'est plus disponible dans la quantité demandée. Ajustez le récapitulatif.",
     minimumNonAtteint: "Un article se commande par lot : sa quantité est sous le minimum. Ajustez le récapitulatif.",
     enAttente: "Ce numéro a déjà des commandes en attente de confirmation. La boutique vous appelle ; vous pourrez commander de nouveau ensuite.",

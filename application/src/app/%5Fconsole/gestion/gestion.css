@@ -1467,3 +1467,18 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .ra-toutes { display: flex; justify-content: flex-end; }
 .ra-attente { margin: 0; font-size: .875rem; color: var(--ui-texte-2); }
 .ra-attente b { color: var(--ui-texte); font-weight: 600; }
+
+/* ---- Paniers abandonnés ---- */
+.pn-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.pn-qui, .pn-montant { display: grid; gap: .0625rem; min-inline-size: 0; }
+.pn-qui b { font-weight: 600; overflow-wrap: anywhere; }
+.pn-montant { justify-items: end; text-align: end; flex: none; }
+.pn-montant b { font-weight: 650; }
+.pn-lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.pn-ligne { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .625rem; align-items: center; }
+.pn-photo { inline-size: 40px; block-size: 40px; }
+.pn-article { display: grid; gap: .0625rem; font-size: .875rem; min-inline-size: 0; }
+.pn-ligne[data-hors-vente] .pn-article > span:first-child { color: var(--ui-texte-3); text-decoration: line-through; }
+.pn-issue { margin: 0; font-size: .875rem; color: var(--ui-texte-2); }
+.pn-issue-ok { color: var(--ui-vert); font-weight: 500; }
+.pn-issue a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }

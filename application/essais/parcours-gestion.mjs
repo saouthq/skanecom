@@ -1521,6 +1521,32 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     await t.envoie(page, revenue.getByRole("button", { name: "Toutes prévenues" }));
     verifie((await page.locator(".message-succes").first().innerText()).includes("3 personnes prévenues"), "« Toutes prévenues » : trois contacts effacés d'un geste");
   });
+
+  await etape("les paniers abandonnés : qui relancer, le message prêt, une fois", async () => {
+    const lien = page.locator(".app-cote").getByRole("link", { name: /^Paniers/ });
+    const nav = (await lien.innerText()).replace(/\s+/g, " ");
+    const compte = Number(/Paniers\s*(\d+)/.exec(nav)?.[1] ?? 0);
+    await clic(page, lien);
+    await page.waitForURL(/\/paniers$/);
+    await page.waitForLoadState("networkidle");
+    const aRelancer = page.locator("section[aria-labelledby='t-a-relancer'] .pn-panier");
+    verifie(compte >= 2 && (await aRelancer.count()) === compte, `la navigation compte les paniers à relancer, l'écran les montre (${nav})`);
+    const premier = aRelancer.filter({ hasText: "20 700 101" });
+    const texte = (await premier.innerText()).replace(/\s+/g, " ");
+    verifie(texte.includes("Robe à bretelles en lin") && texte.includes("Pull col rond en laine mérinos") && texte.includes("418,000 TND") && /Laissé il y a \d+ h/.test(texte),
+      `le panier : ce qu'il contient, son montant, depuis quand (${texte.slice(0, 140)})`);
+    const whatsapp = decodeURIComponent((await premier.locator("a[href^='https://wa.me/']").getAttribute("href")) ?? "");
+    verifie(whatsapp.includes("wa.me/21620700101") && whatsapp.includes("vous aviez laissé un panier chez Maison Selma") && whatsapp.includes("/commande"),
+      "le message WhatsApp prêt : le panier, la boutique, le lien pour finir");
+    await capture(page, "gestion-paniers", true);
+    await t.envoie(page, premier.getByRole("button", { name: "Relancé" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("Relancé"), "« Relancé » : la page le dit");
+    const relance = page.locator("section[aria-labelledby='t-relances'] .pn-panier", { hasText: "20 700 101" });
+    verifie((await relance.count()) === 1 && (await relance.getByRole("button").count()) === 0 && (await relance.innerText()).includes("Pas de commande depuis la relance"),
+      "il passe avec les paniers relancés, sans plus de bouton : une fois pour toutes");
+    const r = await posteBrut(ctx, "/gestion/maison-selma/paniers/action", { geste: "relance", panier: (await relance.getAttribute("id")).replace("panier-", "") });
+    verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("déjà été traité"), `relancer deux fois, posté à la main : la base refuse (${r.status})`);
+  });
   await ctx.close();
 }
 

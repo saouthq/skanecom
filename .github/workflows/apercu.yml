@@ -37,6 +37,7 @@ on:
       - "supabase/seed-suite.sql"
       - "supabase/seed-promotions.sql"
       - "supabase/seed-reassort.sql"
+      - "supabase/seed-paniers.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -114,6 +115,7 @@ jobs:
           installe graines seed-suite.sql supabase/seed-suite.sql
           installe graines seed-promotions.sql supabase/seed-promotions.sql
           installe graines seed-reassort.sql supabase/seed-reassort.sql
+          installe graines seed-paniers.sql supabase/seed-paniers.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu

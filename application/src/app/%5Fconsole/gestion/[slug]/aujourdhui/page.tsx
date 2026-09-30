@@ -79,7 +79,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
   const confirme = CONFIRMER.includes(boutique.role);
-  const [{ data, error }, { data: file }, { data: alertes }] = await Promise.all([
+  const [{ data, error }, { data: file }, { data: alertes }, { data: paniers }] = await Promise.all([
     sb.rpc("gestion_aujourdhui", { p_boutique_id: boutique.boutique_id }),
     // La première de la file « à confirmer » : la plus ancienne (gestion_liste_commandes).
     confirme
@@ -87,7 +87,10 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
       : Promise.resolve({ data: null }),
     // Les clients dont la pièce est revenue (« Prévenez-moi de son retour »).
     sb.rpc("gestion_alertes_etat", { p_boutique_id: boutique.boutique_id }),
+    // Les paniers laissés sans commande (réglage commande.relance_paniers).
+    sb.rpc("gestion_paniers_etat", { p_boutique_id: boutique.boutique_id }),
   ]);
+  const relances = paniers as { actif: boolean; a_relancer: number } | null;
   const reassort = alertes as { actif: boolean; a_prevenir: number; ouvertes: number } | null;
   if (error) throw new Error(`Aujourd'hui illisible : ${error.message}`);
   const e = data as Etat;
@@ -138,6 +141,11 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
       ? [{ cle: "reassort", nombre: reassort.a_prevenir, icone: "cloche" as const, href: `${base}/reassort`,
           titre: reassort.a_prevenir > 1 ? "Clients à prévenir" : "Client à prévenir",
           detail: reassort.a_prevenir ? "Leur pièce est de retour en stock : le message est prêt." : "Personne n'attend une pièce revenue." }]
+      : []),
+    ...(relances?.actif
+      ? [{ cle: "paniers", nombre: relances.a_relancer, icone: "panier" as const, href: `${base}/paniers`,
+          titre: relances.a_relancer > 1 ? "Paniers à relancer" : "Panier à relancer",
+          detail: relances.a_relancer ? "Laissés sans commande depuis plus d'une heure : le message est prêt." : "Aucun panier laissé en route." }]
       : []),
     ...(e.modules.comptes_pro !== null
       ? [{ cle: "pros", nombre: e.modules.comptes_pro, icone: "personne" as const, href: `${base}/clients/pros`,
