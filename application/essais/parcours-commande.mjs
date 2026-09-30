@@ -387,6 +387,13 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await page.locator(".tunnel-tarif-pro").waitFor({ timeout: 8000 });
     verifie((await page.locator(".tunnel-tarif-pro").innerText()).includes("18,000"), "le récapitulatif : tarif pro, 18 TND d'économie");
     await capture(page, "quincaillerie-tunnel-tarif-pro");
+    // Les cartes d'un rayon aussi : « Pro » et le prix pro, en une lecture pour la page.
+    await page.goto(Q + "/categorie/outillage", { waitUntil: "networkidle" });
+    const carte = page.locator(".te-carte", { hasText: "Perceuse-visseuse" });
+    await carte.locator(".carte-pro").waitFor({ timeout: 8000 });
+    verifie((await carte.locator(".te-carte-prix").innerText()).includes("131,000"), "les cartes du rayon : la pastille « Pro », dès le prix pro");
+    verifie((await page.locator(".te-carte [data-pro]").count()) === (await page.locator(".te-carte").count()), "chaque carte du rayon a son prix pro");
+    await capture(page, "quincaillerie-rayon-prix-pro");
   });
   await ctx.close();
 }

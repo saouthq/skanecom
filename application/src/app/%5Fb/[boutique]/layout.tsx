@@ -62,6 +62,7 @@ export default async function RacineBoutique({ children, params }: Props) {
       lang={langue}
       dir={directionDe(langue)}
       data-boutique={cadre.boutique.slug}
+      data-pro={cadre.comptesPro ? cadre.boutique.id : undefined}
       data-gabarit={cadre.theme.code}
       data-monogramme={cadre.theme.monogramme ? "" : undefined}
       className="h-full"

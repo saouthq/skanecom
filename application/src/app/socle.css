@@ -593,3 +593,10 @@ html:has(.visionneuse[open]) { overflow: hidden; }
 .tunnel-tarif-pro b { font-weight: 600; color: var(--theme-succes); }
 .tunnel-ligne-public { font-size: .75rem; color: var(--theme-encre-doux); }
 .tunnel-ligne-prix:has(.tunnel-ligne-public) { display: grid; justify-items: end; }
+/* Le prix d'une carte, au prix pro pour un pro connecté : la pastille « Pro » devant. */
+.prix-carte { display: contents; }
+.carte-pro {
+  display: inline-flex; align-items: center; padding: .0625rem .375rem; border-radius: 999px; margin-inline-end: .25rem;
+  background: var(--theme-encre); color: var(--theme-fond); font-size: .625rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  vertical-align: .15em; animation: fiche-livraison-arrive .4s var(--theme-courbe) backwards;
+}

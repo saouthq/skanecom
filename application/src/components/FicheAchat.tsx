@@ -8,7 +8,7 @@ import { LivraisonEstimee } from "./LivraisonEstimee";
 import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
-import { usePrixPro } from "@/lib/prix-pro";
+import { prixApplique as prixDe, usePrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
 import { etatVariante, minimumVariante, stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
@@ -39,7 +39,6 @@ export function FicheAchat({
   gabarit,
   prixBarres = false,
   delaiJours = null,
-  prixPro = null,
 }: {
   produit: Produit;
   gabarit: CodeTheme;
@@ -48,9 +47,6 @@ export function FicheAchat({
   /** Réglage `catalogue.afficher_prix_barres` : l'ancien prix barré à côté du
    *  prix, ou jamais. */
   prixBarres?: boolean;
-  /** Module comptes_pro : l'identifiant de la boutique, pour lire les prix
-   *  pro du client connecté (un pro validé) ; `null` sans le module. */
-  prixPro?: string | null;
 }) {
   /* L'état de la déclinaison est PARTAGÉ (SelectionVariante.tsx) : le pavé de
      caractéristiques vit ailleurs dans la page et doit suivre le même choix,
@@ -66,7 +62,7 @@ export function FicheAchat({
 
   // Le prix pro du client connecté, s'il en est un (lu après l'hydratation :
   // la page servie est la même pour tous).
-  const prixPros = usePrixPro(prixPro ?? "", [produit.id], Boolean(prixPro));
+  const prixPros = usePrixPro([produit.id]);
   const prixProVariante = variante ? prixPros[variante.id] : undefined;
   const prixApplique = prixProVariante ?? variante?.prix_millimes ?? 0;
 
@@ -173,7 +169,7 @@ export function FicheAchat({
            change rien au prix (la couleur), on n'affiche rien. */
         const prixParValeur = new Map<string, number>();
         for (const valeur of valeurs) {
-          const prix = produit.variantes.filter((v) => v.options?.[axe.cle] === valeur).map((v) => v.prix_millimes);
+          const prix = produit.variantes.filter((v) => v.options?.[axe.cle] === valeur).map((v) => prixDe(prixPros, v));
           if (prix.length > 0) prixParValeur.set(valeur, Math.min(...prix));
         }
         const axeFaitVarierLePrix = new Set(prixParValeur.values()).size > 1;

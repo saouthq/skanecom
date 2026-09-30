@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Photo } from "./Photo";
-import { Prix } from "./Prix";
 import { EtatStock } from "./EtatStock";
 import { AjoutRapide } from "./AjoutRapide";
+import { PrixCarte } from "./PrixCarte";
 import { couleurDeColoris } from "@/lib/coloris";
 import { champ, t } from "@/lib/i18n";
 import { photoSurvol, urlPhoto } from "@/lib/photos";
@@ -13,7 +13,6 @@ import {
   etatProduit,
   minimumVariante,
   prixDepuis,
-  prixJusqua,
   stockTotal,
   valeursAxe,
   type Produit,
@@ -71,7 +70,6 @@ export function CarteProduit(props: Props) {
 
 function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = false }: Props) {
   const prix = prixDepuis(produit);
-  const prixHaut = prixJusqua(produit);
   const etat = etatProduit(produit);
   const couleurs = colorisDe(produit);
   const reduction = prixBarres ? remise(produit) : null;
@@ -93,12 +91,7 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
       <span className="ed-carte-corps">
         <span className="ed-carte-ligne">
           <h3 className="ed-carte-nom">{champ(produit, "nom")}</h3>
-          {prix !== null ? (
-            <span className="ed-carte-prix">
-              {prixHaut !== null && prixHaut > prix ? <span className="dès">{t.catalogue.aPartirDe}</span> : null}
-              <Prix millimes={prix} />
-            </span>
-          ) : null}
+          {prix !== null ? <PrixCarte classe="ed-carte-prix" produitId={produit.id} variantes={produit.variantes} /> : null}
         </span>
         {couleurs.length > 1 ? (
           <span className="ed-coloris" aria-label={couleurs.join(", ")}>
@@ -117,7 +110,6 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
 
 function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = false }: Props) {
   const prix = prixDepuis(produit);
-  const prixHaut = prixJusqua(produit);
   const etat = etatProduit(produit);
   const restant = stockTotal(produit);
   const reduction = prixBarres ? remise(produit) : null;
@@ -158,9 +150,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
         <EtatStock etat={etat} restant={restant} />
         {prix !== null ? (
           <p className="te-carte-prix">
-            {prixHaut !== null && prixHaut > prix ? <span className="dès">{t.catalogue.aPartirDe}</span> : null}
-            <Prix millimes={prix} fort />
-            <span className="ttc">{t.produit.ttc}</span>
+            <PrixCarte classe="prix-carte" produitId={produit.id} variantes={produit.variantes} fort ttc />
             {prixBarre ? <s className="prix-barre">{formatePrix(prixBarre)}</s> : null}
           </p>
         ) : null}
@@ -179,6 +169,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
             }}
             stock={unique.stock}
             nom={nom}
+            produitId={produit.id}
           />
         ) : (
           <Link className="btn btn-second btn-bloc te-carte-choisir" href={`/produit/${produit.slug}`} aria-label={`${t.produit.choisir} — ${nom}`}>
