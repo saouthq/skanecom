@@ -65,6 +65,10 @@ export type LignePanier = {
   /** COPIE D'AFFICHAGE, facultative : le chemin de la vignette (fichier de la
    *  boutique, `<slug>/…`). Un chemin douteux est ignoré à la lecture. */
   image?: string;
+  /** COPIE, facultative : la quantité minimale de la déclinaison à l'ajout
+   *  (absente = 1). Le tiroir ne descend pas en dessous ; le devis la relit
+   *  en base et refuse une ligne qui ne l'atteint pas. */
+  quantiteMin?: number;
 };
 
 export type Panier = {
@@ -150,8 +154,10 @@ export function litPanier(brut: string | null): Panier {
         Number.isFinite(l?.prixMillimesAjout),
     );
     const propres = lignes.map((l) => {
-      const { image, ...reste } = l;
-      return typeof image === "string" && /^[a-z0-9][a-z0-9/_.-]*$/.test(image) && !image.includes("..") ? { ...reste, image } : reste;
+      const { image, quantiteMin, ...reste } = l;
+      const avecImage =
+        typeof image === "string" && /^[a-z0-9][a-z0-9/_.-]*$/.test(image) && !image.includes("..") ? { ...reste, image } : reste;
+      return Number.isInteger(quantiteMin) && quantiteMin! > 1 && quantiteMin! <= 999 ? { ...avecImage, quantiteMin } : avecImage;
     });
     return { version: PANIER_VERSION, lignes: propres, majLe: objet.majLe ?? "" };
   } catch {
@@ -163,7 +169,13 @@ export function serialisePanier(panier: Panier): string {
   return JSON.stringify({ ...panier, version: PANIER_VERSION, majLe: new Date().toISOString() });
 }
 
-/** Ajoute (ou incrémente) une ligne. Pure : rend un NOUVEAU panier. */
+/** Le minimum d'une ligne (1 sans minimum). */
+export function minimumLigne(ligne: Pick<LignePanier, "quantiteMin">): number {
+  return ligne.quantiteMin && ligne.quantiteMin > 1 ? ligne.quantiteMin : 1;
+}
+
+/** Ajoute (ou incrémente) une ligne. Pure : rend un NOUVEAU panier.
+ *  Jamais sous le minimum de la déclinaison, jamais au-delà du stock. */
 export function ajouteLigne(
   panier: Panier,
   ligne: Omit<LignePanier, "ajouteLe">,
@@ -171,18 +183,23 @@ export function ajouteLigne(
 ): Panier {
   const lignes = [...panier.lignes];
   const index = lignes.findIndex((l) => l.varianteId === ligne.varianteId);
+  const minimum = minimumLigne(ligne);
+  const borne = (q: number) => Math.min(Math.max(q, minimum), Math.max(1, stockMax));
 
   if (index >= 0) {
-    const cumul = lignes[index].quantite + ligne.quantite;
-    lignes[index] = {
+    const suivante: LignePanier = {
       ...lignes[index],
-      quantite: Math.min(cumul, Math.max(1, stockMax)),
+      quantite: borne(lignes[index].quantite + ligne.quantite),
       prixMillimesAjout: ligne.prixMillimesAjout,
     };
+    // Le minimum relu à l'ajout remplace l'ancien (il a pu changer).
+    if (minimum > 1) suivante.quantiteMin = minimum;
+    else delete suivante.quantiteMin;
+    lignes[index] = suivante;
   } else {
     lignes.push({
       ...ligne,
-      quantite: Math.min(ligne.quantite, Math.max(1, stockMax)),
+      quantite: borne(ligne.quantite),
       ajouteLe: new Date().toISOString(),
     });
   }
@@ -199,7 +216,9 @@ export function retireLigne(panier: Panier, varianteId: string): Panier {
 }
 
 /** Change la quantité d'une ligne. Une quantité ≤ 0 retire la ligne : c'est le
- *  geste attendu quand on décrémente jusqu'à zéro. Pure. */
+ *  geste attendu quand on décrémente jusqu'à zéro. Le minimum n'est pas
+ *  imposé ici (le tiroir ne propose pas d'aller dessous ; le tunnel le
+ *  signale et le devis refuse). Pure. */
 export function changeQuantite(
   panier: Panier,
   varianteId: string,

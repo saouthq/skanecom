@@ -176,3 +176,14 @@ export function Bouclier({ taille = 18, className }: Props) {
     </svg>
   );
 }
+
+/** Un lot : trois boîtes empilées (vendu par dix, par cent). */
+export function Lot({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <rect x="3" y="12.5" width="8" height="7.5" rx="1" />
+      <rect x="13" y="12.5" width="8" height="7.5" rx="1" />
+      <rect x="8" y="4" width="8" height="7.5" rx="1" />
+    </svg>
+  );
+}

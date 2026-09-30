@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Prix } from "./Prix";
 import { EtatStock } from "./EtatStock";
-import { Coche } from "./Icones";
+import { Coche, Lot } from "./Icones";
 import { LivraisonEstimee } from "./LivraisonEstimee";
 import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
 import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
-import { etatVariante, stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
+import { etatVariante, minimumVariante, stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
 import type { CodeTheme } from "@/lib/theme";
 
 /* ============================================================================
@@ -51,23 +51,32 @@ export function FicheAchat({
      caractéristiques vit ailleurs dans la page et doit suivre le même choix,
      sans quoi il afficherait la référence d'une autre variante. */
   const { choix, setChoix, variante } = useSelection();
-  const [quantite, setQuantite] = useState(1);
+  // Le minimum de commande de la déclinaison (des vis par dix) : la quantité
+  // part de là et n'y redescend pas en dessous.
+  const minimum = minimumVariante(variante);
+  const [quantite, setQuantite] = useState(minimum);
   const [ajoute, setAjoute] = useState(false);
   const blocAchat = useRef<HTMLDivElement>(null);
   const [barreVisible, setBarreVisible] = useState(false);
 
   const stock = variante?.stock ?? 0;
-  const disponible = Boolean(variante) && stock > 0;
+  const sousMinimum = Boolean(variante) && stock > 0 && stock < minimum;
+  const disponible = Boolean(variante) && stock > 0 && !sousMinimum;
   const technique = gabarit === "technique";
 
-  // La quantité ne dépasse jamais le stock réel de la déclinaison choisie ;
-  // changer de déclinaison efface le « Ajouté ». Ajusté pendant le rendu,
-  // pas dans un effet (un rendu de moins, pas d'état faux affiché).
-  const cleDeclinaison = `${variante?.id ?? ""}:${stock}`;
+  // La quantité ne dépasse jamais le stock réel de la déclinaison choisie, ni
+  // ne descend sous son minimum ; changer de déclinaison efface le « Ajouté ».
+  // Ajusté pendant le rendu, pas dans un effet (un rendu de moins, pas d'état
+  // faux affiché).
+  const cleDeclinaison = `${variante?.id ?? ""}:${stock}:${minimum}`;
   const [declinaisonVue, setDeclinaisonVue] = useState(cleDeclinaison);
+  const [minimumVu, setMinimumVu] = useState(minimum);
   if (declinaisonVue !== cleDeclinaison) {
     setDeclinaisonVue(cleDeclinaison);
-    setQuantite((q) => Math.max(1, Math.min(q, Math.max(1, stock))));
+    setMinimumVu(minimum);
+    // Un autre minimum (les vis au détail par 20, la boîte de 200 à l'unité) :
+    // la quantité repart de lui — jamais 20 boîtes par surprise.
+    setQuantite((q) => (minimumVu !== minimum ? minimum : Math.max(minimum, Math.min(q, Math.max(minimum, stock)))));
     setAjoute(false);
   }
 
@@ -109,6 +118,7 @@ export function FicheAchat({
         quantite,
         prixMillimesAjout: variante.prix_millimes,
         ...(image ? { image } : {}),
+        ...(minimum > 1 ? { quantiteMin: minimum } : {}),
       },
       stock,
     );
@@ -181,7 +191,12 @@ export function FicheAchat({
         );
       })}
 
-      {variante && !disponible ? (
+      {variante && sousMinimum ? (
+        <div className="fiche-indisponible">
+          <p>{t.produit.sousMinimumTitre}</p>
+          <p className="legende">{t.produit.sousMinimumTexte(stock, minimum)}</p>
+        </div>
+      ) : variante && !disponible ? (
         <div className="fiche-indisponible">
           <p>{t.produit.indisponibleTitre}</p>
           <p className="legende">{t.produit.indisponibleTexte}</p>
@@ -192,9 +207,19 @@ export function FicheAchat({
         {variante ? <EtatStock etat={etatVariante(variante)} restant={stock} /> : <span className="etat etat-rupture">{t.stock.rupture}</span>}
       </div>
 
+      {minimum > 1 && !sousMinimum ? (
+        <p className="fiche-minimum" data-minimum={minimum}>
+          <Lot />
+          <span>
+            {t.produit.minimum(minimum)}
+            {variante ? <span className="fiche-minimum-prix"> · {formatePrix(variante.prix_millimes * minimum)}</span> : null}
+          </span>
+        </p>
+      ) : null}
+
       <div className="achat" ref={blocAchat}>
         <div className="qte" role="group" aria-label={t.produit.quantite}>
-          <button type="button" aria-label={t.produit.retirerUnArticle} disabled={quantite <= 1} onClick={() => setQuantite((q) => Math.max(1, q - 1))}>
+          <button type="button" aria-label={t.produit.retirerUnArticle} disabled={quantite <= minimum} onClick={() => setQuantite((q) => Math.max(minimum, q - 1))}>
             −
           </button>
           <span aria-live="polite">{quantite}</span>

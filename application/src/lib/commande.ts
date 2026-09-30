@@ -15,6 +15,9 @@ export type LigneDevis = {
   disponible: boolean;
   quantite: number;
   quantite_disponible: number;
+  /** Le minimum de commande de la déclinaison (migration 35) ; null si elle
+   *  n'est pas vendable. */
+  quantite_min?: number | null;
   produit_nom: string | null;
   produit_slug: string | null;
   variante_libelle: string | null;

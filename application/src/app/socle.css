@@ -475,6 +475,18 @@ input[type="search"]::-webkit-search-cancel-button:hover { background: var(--the
 /* Ajouté : la coche arrive d'un bond, le bouton garde sa place. */
 .btn[data-ajoute] svg { animation: panier-coche .45s cubic-bezier(.34, 1.5, .64, 1); }
 .fiche-note { margin-block-start: -.5rem; }
+/* Vendu par lot (quantité minimale) : dit juste au-dessus du sélecteur, qui
+   part de ce nombre. Une pastille, pas une alerte : c'est une façon de vendre. */
+.fiche-minimum {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: .5rem; margin: 0 0 -.5rem;
+  padding: .375rem .875rem .375rem .625rem; border-radius: 999px; font-size: .8125rem; font-weight: 500; line-height: 1.3;
+  background: color-mix(in srgb, var(--theme-accent) 9%, var(--theme-surface)); color: var(--theme-encre);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-accent) 22%, transparent);
+  animation: fiche-livraison-arrive .5s var(--theme-courbe) backwards;
+}
+.fiche-minimum svg { flex: none; color: var(--theme-accent); }
+.fiche-minimum-prix { font-variant-numeric: tabular-nums; color: var(--theme-encre-doux); }
+.panier-minimum { color: var(--theme-encre); font-weight: 500; }
 
 /* --- Caractéristiques ------------------------------------------------------- */
 .caracteristiques { margin: 0; display: grid; }

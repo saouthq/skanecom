@@ -7,7 +7,7 @@ import { Billets, Bouclier, Camion, Coche, Fleche, Magasin, Panier as IconePanie
 import { Prix } from "./Prix";
 import { Tiroir } from "./Tiroir";
 import { changeQuantitePanier, retireDuPanier, usePanier, usePanierLu } from "@/lib/panier";
-import { nombreArticles, PANIER_OUVRIR, totalMillimes } from "@/lib/panier-contrat";
+import { minimumLigne, nombreArticles, PANIER_OUVRIR, totalMillimes } from "@/lib/panier-contrat";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
@@ -136,7 +136,10 @@ export function BoutonPanier({
           </div>
         ) : (
           <ul className="panier-lignes">
-            {panier.lignes.map((ligne) => (
+            {panier.lignes.map((ligne) => {
+              // Au minimum de la déclinaison, « − » ne descend plus (« Retirer » reste là).
+              const minimum = minimumLigne(ligne);
+              return (
               <li key={ligne.varianteId} className="panier-ligne">
                 <Link href={`/produit/${ligne.produitSlug}`} className="panier-vignette" tabIndex={-1} aria-hidden="true" onClick={() => setOuvert(false)}>
                   {ligne.image ? (
@@ -152,10 +155,14 @@ export function BoutonPanier({
                     </Link>
                     <Prix millimes={ligne.prixMillimesAjout * ligne.quantite} />
                   </div>
-                  <p className="legende tabular-nums">{ligne.sku}</p>
+                  <p className="legende tabular-nums">
+                    {ligne.sku}
+                    {minimum > 1 ? <span className="panier-minimum"> · {t.panier.parMinimum(minimum)}</span> : null}
+                  </p>
                   <div className="panier-ligne-actions">
                     <div className="qte qte-petite" role="group" aria-label={t.produit.quantite}>
-                      <button type="button" aria-label={t.produit.retirerUnArticle} onClick={() => changeQuantitePanier(ligne.varianteId, ligne.quantite - 1)}>
+                      <button type="button" aria-label={t.produit.retirerUnArticle} disabled={minimum > 1 && ligne.quantite <= minimum}
+                              onClick={() => changeQuantitePanier(ligne.varianteId, ligne.quantite - 1)}>
                         −
                       </button>
                       <span>{ligne.quantite}</span>
@@ -169,7 +176,8 @@ export function BoutonPanier({
                   </div>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
 

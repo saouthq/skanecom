@@ -430,6 +430,18 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
     verifie(lignes.length === 2 && !lignes.some((l) => l.includes("Valise") || l.includes("Robe")), `panier de la quincaillerie : ${lignes.map((l) => l.split("\n")[0]).join(" / ")}`);
     note("INFO  ", `jauge : ${(await page.locator(".jauge-livraison p").innerText().catch(() => "(absente)")).trim()}`);
   });
+
+  await etape("vis au détail : par 20 au moins", async () => {
+    await page.keyboard.press("Escape");
+    await page.goto(Q + "/produit/vis-bois-tete-fraisee", { waitUntil: "networkidle" });
+    const qte = () => page.locator(".achat .qte span").innerText().then((x) => x.trim());
+    verifie((await qte()) === "20" && (await page.locator(".achat .qte button").first().isDisabled()),
+      "les vis au détail : le sélecteur part de 20 et « − » s'y arrête");
+    verifie((await page.locator(".fiche-minimum").innerText()).includes("par 20 pièces au moins"), "la fiche dit le minimum, avec le prix du lot");
+    await capture(page, "quinca-fiche-minimum");
+    await clic(page, page.getByRole("button", { name: /^Boîte de 200/ }));
+    verifie((await qte()) === "1" && (await page.locator(".fiche-minimum").count()) === 0, "la boîte de 200 revient à l'unité, sans pastille");
+  });
   await ctx.close();
 }
 

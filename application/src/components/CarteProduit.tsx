@@ -11,6 +11,7 @@ import { valeurAvecUnite } from "@/lib/caracteristiques";
 import {
   coloris as colorisDe,
   etatProduit,
+  minimumVariante,
   prixDepuis,
   prixJusqua,
   stockTotal,
@@ -163,16 +164,18 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
             {prixBarre ? <s className="prix-barre">{formatePrix(prixBarre)}</s> : null}
           </p>
         ) : null}
-        {unique && unique.stock > 0 ? (
+        {unique && unique.stock > 0 && unique.stock >= minimumVariante(unique) ? (
           <AjoutRapide
             ligne={{
               varianteId: unique.id,
               produitSlug: produit.slug,
               sku: unique.sku,
               libelle: nom,
-              quantite: 1,
+              // Des vis par dix : un clic en ajoute dix, le minimum.
+              quantite: minimumVariante(unique),
               prixMillimesAjout: unique.prix_millimes,
               ...(produit.images[0]?.chemin ? { image: produit.images[0].chemin } : {}),
+              ...(minimumVariante(unique) > 1 ? { quantiteMin: minimumVariante(unique) } : {}),
             }}
             stock={unique.stock}
             nom={nom}

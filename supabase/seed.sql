@@ -169,7 +169,7 @@ insert into public.produits (id, boutique_id, categorie_id, slug, nom_fr, descri
    'Atelier Pro', 149000, true, 1),
   ('00000000-0000-4000-8003-000000000012', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8002-000000000014',
    'vis-bois-tete-fraisee', 'Vis à bois tête fraisée',
-   'Acier zingué, empreinte cruciforme. À l''unité ou par boîte de 200.',
+   'Acier zingué, empreinte cruciforme. Au détail, par 20 au moins, ou par boîte de 200.',
    null, 150, true, 1);
 
 insert into public.produit_options (boutique_id, produit_id, cle, label_fr, position) values
@@ -187,6 +187,11 @@ from (values
   ('00000000-0000-4000-8003-000000000012', 'VBF-4X40-B', '{"dimension":"4 × 40 mm","conditionnement":"Boîte de 200"}', 22000::bigint, null::bigint, 25, 1000, 2::smallint),
   ('00000000-0000-4000-8003-000000000012', 'VBF-5X60-U', '{"dimension":"5 × 60 mm","conditionnement":"Unité"}', 250::bigint,    null::bigint, 500,    9, 3::smallint)
 ) as v(produit_id, sku, options, prix_millimes, prix_barre_millimes, stock, poids_grammes, position);
+
+-- Les vis au détail se vendent par 20 au moins (migration 35) ; la boîte de
+-- 200, elle, à l'unité.
+update public.variantes set quantite_min = 20
+ where boutique_id = '00000000-0000-4000-8000-000000000002' and sku in ('VBF-4X40-U', 'VBF-5X60-U');
 
 insert into public.produit_images (boutique_id, produit_id, chemin, alt_fr, position) values
   ('00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8003-000000000011', 'quincaillerie-demo/produits/perceuse-visseuse-1000.webp', 'Perceuse-visseuse sans fil sur fond blanc', 1),

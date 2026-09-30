@@ -50,6 +50,8 @@ export type Declinaison = {
   seuil: number;
   actif: boolean;
   poids: number | null;
+  /** La quantité minimale d'une commande (1 = à l'unité). */
+  minimum: number;
 };
 
 export type FicheProduit = {

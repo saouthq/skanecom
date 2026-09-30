@@ -235,6 +235,7 @@ export default async function FicheProduitBackoffice({
                         <span className="var-nom">{v.libelle ?? "Déclinaison unique"}</span>
                         <span className="var-sku">{v.sku}</span>
                         <span className={etat.classe}>{etat.texte}</span>
+                        {v.minimum > 1 ? <span className="ui-etat" title="Quantité minimale d'une commande">Par {v.minimum} au moins</span> : null}
                         {!v.actif ? <span className="ui-etat">Hors vente</span> : null}
                       </div>
                       <div className="var-corps">
@@ -254,6 +255,12 @@ export default async function FicheProduitBackoffice({
                               <label htmlFor={`seuil-${v.id}`}>Alerte sous</label>
                               <input id={`seuil-${v.id}`} name="seuil" type="number" min={0} max={10000} required defaultValue={v.seuil} />
                             </div>
+                            <div className="champ var-seuil">
+                              <label htmlFor={`min-${v.id}`} title="La plus petite quantité qu'un client peut commander (1 = à l'unité)">Minimum</label>
+                              <input id={`min-${v.id}`} name="minimum" type="number" min={1} max={999} required defaultValue={v.minimum ?? 1}
+                                     aria-describedby={`min-aide-${v.id}`} />
+                              <span id={`min-aide-${v.id}`} className="sr-only">Quantité minimale par commande, 1 pour vendre à l&apos;unité</span>
+                            </div>
                             <label className="opt var-actif">
                               <input type="checkbox" name="actif" value="1" defaultChecked={v.actif} /> En vente
                             </label>
@@ -263,6 +270,7 @@ export default async function FicheProduitBackoffice({
                           <dl className="var-lecture">
                             <div><dt>Prix</dt><dd><Prix millimes={v.prix} /></dd></div>
                             {v.prix_barre ? <div><dt>Prix barré</dt><dd><Prix millimes={v.prix_barre} /></dd></div> : null}
+                            {v.minimum > 1 ? <div><dt>Minimum</dt><dd>{v.minimum} pièces</dd></div> : null}
                           </dl>
                         )}
                         {stocke ? (

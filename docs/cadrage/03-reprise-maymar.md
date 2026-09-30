@@ -285,6 +285,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis la réception d'un arrivage** (migration 34, `20260929103300_reception_arrivage.sql`, 16 tests dans `supabase/tests/34_reception.sql`) : `gestion_reception_catalogue(boutique)` (les déclinaisons en vente, produit par produit, avec stock et seuil) et `gestion_reception(boutique, lignes, note)` (plusieurs réceptions par `mouvement_stock`, tout ou rien, verrouillées dans l'ordre des identifiants).
 
+**Puis la quantité minimale** (migration 35, `20260929103400_quantite_min.sql`, 20 tests dans `supabase/tests/35_quantite_min.sql`) : `variantes.quantite_min` (1 à 999, 1 par défaut), lue par `vitrine_produits` (donc `liste_produits`) et `gestion_produit` (`minimum`) ; `private.chiffre_commande` rend `quantite_min` par ligne, une déclinaison dont le stock est sous son minimum est indisponible, et `complet` exige que chaque ligne l'atteigne (donc `passer_commande` refuse, indice `stock`) ; `gestion_enregistrer_variante` prend un 7ᵉ argument facultatif `p_quantite_min` (null : inchangé ; indice `minimum` hors bornes).
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

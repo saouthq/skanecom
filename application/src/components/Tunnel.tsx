@@ -341,7 +341,8 @@ export function Tunnel({
       setRafraichir((n) => n + 1);
       setRecapOuvert(true);
       focusAlerte.current = true;
-      setAlerte(t.commande.stockChange);
+      const sousMinimum = devis?.lignes.some((l) => l.quantite_disponible > 0 && l.quantite < (l.quantite_min ?? 1));
+      setAlerte(sousMinimum ? t.commande.minimumNonAtteint : t.commande.stockChange);
       return;
     }
 
@@ -820,6 +821,10 @@ function Recap({
             const image = d?.image ?? ligne.image;
             const indisponible = d !== undefined && d.quantite_disponible === 0;
             const reste = d !== undefined && !indisponible && d.quantite_disponible < ligne.quantite ? d.quantite_disponible : null;
+            // Sous le minimum de la déclinaison (des vis par dix) : le devis
+            // n'est pas complet ; on propose d'y passer d'un geste.
+            const minimum = d?.quantite_min ?? 1;
+            const sousMinimum = d !== undefined && !indisponible && reste === null && ligne.quantite < minimum;
             return (
               <li key={ligne.varianteId} className="tunnel-ligne" data-indisponible={indisponible ? "" : undefined}>
                 <span className="tunnel-vignette">
@@ -848,6 +853,13 @@ function Recap({
                       {t.commande.reste(reste)}{" "}
                       <button type="button" className="btn-lien" onClick={() => ramenePanier(ligne.varianteId, reste)}>
                         {t.commande.ajuster(reste)}
+                      </button>
+                    </span>
+                  ) : sousMinimum ? (
+                    <span className="tunnel-ligne-alerte">
+                      {t.commande.sousMinimum(minimum)}{" "}
+                      <button type="button" className="btn-lien" onClick={() => ramenePanier(ligne.varianteId, minimum)}>
+                        {t.commande.ajuster(minimum)}
                       </button>
                     </span>
                   ) : null}

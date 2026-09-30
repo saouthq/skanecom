@@ -59,11 +59,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       const pb = prix(f.get("prix_barre"));
       if (!p) return retour("Prix illisible : écrivez par exemple 189,000.");
       if (pb === undefined) return retour("Prix barré illisible : écrivez par exemple 229,000, ou laissez vide.");
+      // Le minimum : absent du formulaire, il reste tel quel en base.
+      const minimum = texte("minimum") ? Number.parseInt(texte("minimum"), 10) : null;
+      if (minimum !== null && !(minimum >= 1 && minimum <= 999)) return retour("Minimum illisible : de 1 (à l'unité) à 999 pièces.");
       const { error } = await sb.rpc("gestion_enregistrer_variante", {
         p_boutique_id: b, p_variante_id: vid, p_prix: p, p_prix_barre: pb, p_seuil: Number.parseInt(texte("seuil"), 10), p_actif: f.get("actif") === "1",
+        p_quantite_min: minimum,
       });
       if (error) return retour(messageCatalogue(error.hint, error.message));
-      return retour(`Déclinaison enregistrée : ${formateMontant(p)} TND${f.get("actif") === "1" ? "" : ", hors vente"}.`, true);
+      return retour(
+        `Déclinaison enregistrée : ${formateMontant(p)} TND${minimum && minimum > 1 ? `, ${minimum} pièces au moins par commande` : ""}${f.get("actif") === "1" ? "" : ", hors vente"}.`,
+        true,
+      );
     }
 
     case "stock": {

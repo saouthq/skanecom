@@ -57,6 +57,8 @@ export type Variante = {
   seuil_alerte_stock: number;
   poids_grammes: number | null;
   image_chemin: string | null;
+  /** La quantité minimale d'une commande (1 = à l'unité ; migration 35). */
+  quantite_min?: number;
 };
 
 export type Image = {
@@ -219,6 +221,12 @@ export function trouveVariante(p: Produit, choix: Record<string, string>): Varia
   return (
     p.variantes.find((v) => cles.every((c) => (v.options?.[c] ?? "") === (choix[c] ?? ""))) ?? null
   );
+}
+
+/** La plus petite quantité qu'on peut commander de cette déclinaison. */
+export function minimumVariante(v: Pick<Variante, "quantite_min"> | null | undefined): number {
+  const m = v?.quantite_min;
+  return typeof m === "number" && Number.isInteger(m) && m > 1 ? m : 1;
 }
 
 /** La variante proposée d'emblée : la première EN STOCK, sinon la première. */
