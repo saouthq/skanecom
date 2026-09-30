@@ -10,12 +10,17 @@
 # routeur par adresse (outils/apercu/routeur.js). La base est le projet
 # Supabase de l'aperçu (org SkanEcom), jamais celui de la production.
 #
+# La base de l'aperçu suit le code : chaque exécution joue les migrations
+# nouvelles (supabase db push), le jeu de démo la première fois, et les
+# crochets des codes de connexion (supabase/apercu/codes-demo.sql).
+#
 # Secrets requis (Settings → Secrets and variables → Actions) :
 #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID   — déjà là (29/09)
-#   APERCU_SUPABASE_SERVICE_ROLE_KEY              — la clé service_role du projet de l'aperçu
-# Variables (même page, onglet Variables), ou les valeurs par défaut ci-dessous :
-#   APERCU_SUPABASE_URL, APERCU_SUPABASE_CLE_PUBLIQUE (publiques par nature)
-# Tant qu'il en manque une, le workflow le dit et s'arrête sans erreur.
+#   APERCU_SUPABASE_SERVICE_ROLE_KEY              — la clé service_role (legacy) du projet de l'aperçu
+#   APERCU_DB_URL                                 — sa chaîne de connexion « Session pooler », mot de passe compris
+# Le projet (skanecom-apercu, org SkanEcom, eu-west-3) et sa clé publique
+# sont écrits ci-dessous : publics par nature, ils partent dans le navigateur.
+# Tant qu'un secret manque, le workflow le dit et s'arrête sans erreur.
 name: Aperçu en ligne
 
 on:
@@ -40,8 +45,9 @@ env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.APERCU_SUPABASE_SERVICE_ROLE_KEY }}
-  NEXT_PUBLIC_SUPABASE_URL: ${{ vars.APERCU_SUPABASE_URL || '' }}
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.APERCU_SUPABASE_CLE_PUBLIQUE || '' }}
+  APERCU_DB_URL: ${{ secrets.APERCU_DB_URL }}
+  NEXT_PUBLIC_SUPABASE_URL: https://cxvbjwduaisdkvtfjxph.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dmJqd2R1YWlzZGt2dGZqeHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NzA1OTEsImV4cCI6MjEwNjM0NjU5MX0.tpD2NxLa-RZihUeHTnd6R4jdNT6w1uh3PM-rU02gAMA
   WRANGLER: npx -y wrangler@4
   BUCKET: skanecom-fichiers
   CI: "true"
@@ -56,7 +62,7 @@ jobs:
       - name: Tout est-il là ?
         run: |
           manque=""
-          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY; do
+          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID SUPABASE_SERVICE_ROLE_KEY APERCU_DB_URL; do
             [ -n "${!v}" ] || manque="$manque $v"
           done
           if [ -n "$manque" ]; then
@@ -76,6 +82,23 @@ jobs:
         if: env.PRET == '1'
         with:
           node-version: 22
+
+      - uses: supabase/setup-cli@v1
+        if: env.PRET == '1'
+        with:
+          version: latest
+
+      - name: La base de l'aperçu (migrations, jeu de démo, crochets des codes)
+        if: env.PRET == '1'
+        run: |
+          # « y » d'avance : db push demande confirmation avant d'écrire.
+          printf 'y\ny\n' | supabase db push --db-url "$APERCU_DB_URL"
+          # Le jeu de démo une seule fois : la base de l'aperçu vit ensuite sa vie.
+          if [ "$(psql "$APERCU_DB_URL" -tAc 'select count(*) from plateforme.boutiques')" = "0" ]; then
+            psql "$APERCU_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
+            echo "Jeu de démo installé."
+          fi
+          psql "$APERCU_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu
         if: env.PRET == '1'
