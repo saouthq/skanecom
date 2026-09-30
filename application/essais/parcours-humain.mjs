@@ -143,6 +143,11 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     const ld = await page.evaluate(() => JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent));
     verifie(ld.aggregateRating?.ratingValue === 4.7 && ld.aggregateRating?.reviewCount === 3, "la note est dans les données structurées (résultats Google)");
     await capture(page, "selma-fiche-avis");
+    // Sur les cartes du rayon aussi, dans la page servie (public.vitrine_produits).
+    await page.goto(S + "/categorie/robes", { waitUntil: "networkidle" });
+    const note = page.locator(".ed-carte", { hasText: "Robe à bretelles en lin" }).locator(".carte-note");
+    verifie((await note.innerText()).replace(/\s+/g, " ").startsWith("4,7 (3"), `la carte du rayon porte la note (${(await note.innerText()).replace(/\s+/g, " ")})`);
+    verifie((await page.locator(".ed-carte", { hasText: "Robe midi en jersey" }).locator(".carte-note").count()) === 0, "une robe sans avis n'en affiche aucune");
   });
 
   await etape("le panier survit au rechargement", async () => {

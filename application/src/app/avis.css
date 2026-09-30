@@ -118,3 +118,10 @@ html[data-gabarit=technique] .etoiles { --etoile: #F2A900; }
 .av-pli-form { display: grid; gap: .5rem; padding: .75rem; background: var(--ui-doux); border-radius: var(--ui-r); }
 .av-pli-form textarea, .av-pli-form input { inline-size: 100%; }
 .av-pli-form .btn { justify-self: start; }
+
+/* ---- La note sur les cartes du catalogue ---- */
+.carte-note { display: inline-flex; align-items: center; gap: .25rem; font-size: .75rem; line-height: 1; color: var(--theme-encre-doux); }
+.carte-note-moyenne { font-weight: 600; color: var(--theme-encre); font-variant-numeric: tabular-nums; }
+.carte-note-total { font-variant-numeric: tabular-nums; }
+.ed-carte-note { margin-block-start: .375rem; }
+.te-carte-note { margin-block: .125rem .25rem; }

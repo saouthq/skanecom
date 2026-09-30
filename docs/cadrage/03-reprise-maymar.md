@@ -295,6 +295,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis les avis clients** (migration 39, `20260929103800_avis.sql`, 48 tests dans `supabase/tests/39_avis.sql`, 21 mutants tués) : `public.avis` (un par article commandé : note 1 à 5, texte facultatif, auteur montré « Amel B. », déclinaison copiée ; en attente, publié, écarté avec un motif gardé pour l'équipe ; réponse publique de la boutique). Seul un client connecté note un article d'une de ses commandes livrées (`public.donner_avis`) ; la vitrine lit les publiés (`public.avis_produit`, moyenne et répartition) ; l'équipe publie, écarte, répond (`public.gestion_moderer_avis`, propriétaire et administrateur, au journal). Réglage du module : `avis.moderation` (relu avant publication par défaut, ou automatique).
 
+**Puis la note sur les cartes** (migration 40, `20260929103900_note_cartes.sql`, 7 tests dans `supabase/tests/40_note_cartes.sql`) : `public.note_produit` (moyenne et nombre des avis publiés, NULL sans avis ou sans le module), portée par `public.vitrine_produits` en dernière colonne — les rayons, la recherche et l'accueil l'affichent dans la page servie, sans autre appel.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

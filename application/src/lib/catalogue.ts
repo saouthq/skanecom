@@ -87,6 +87,9 @@ export type Produit = {
   variantes: Variante[];
   images: Image[];
   caracteristiques: Caracteristique[];
+  /** La note de ses avis publiés (module avis) ; null sans avis. Absente
+   *  d'une base qui n'a pas encore la migration 40. */
+  note?: { moyenne: number; total: number } | null;
 };
 
 export type OptionFacette = { valeur: string; compte: number };

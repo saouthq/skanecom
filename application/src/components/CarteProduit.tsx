@@ -3,6 +3,7 @@ import { Photo } from "./Photo";
 import { EtatStock } from "./EtatStock";
 import { AjoutRapide } from "./AjoutRapide";
 import { PrixCarte } from "./PrixCarte";
+import { NoteCarte } from "./NoteCarte";
 import { couleurDeColoris } from "@/lib/coloris";
 import { champ, t } from "@/lib/i18n";
 import { photoSurvol, urlPhoto } from "@/lib/photos";
@@ -93,6 +94,7 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
           <h3 className="ed-carte-nom">{champ(produit, "nom")}</h3>
           {prix !== null ? <PrixCarte classe="ed-carte-prix" produitId={produit.id} variantes={produit.variantes} /> : null}
         </span>
+        <NoteCarte note={produit.note} classe="ed-carte-note" />
         {couleurs.length > 1 ? (
           <span className="ed-coloris" aria-label={couleurs.join(", ")}>
             {couleurs.slice(0, 5).map((c) => (
@@ -130,6 +132,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
         </Photo>
         {produit.marque ? <span className="te-carte-marque">{produit.marque}</span> : null}
         <h3 className="te-carte-nom">{nom}</h3>
+        <NoteCarte note={produit.note} classe="te-carte-note" />
         <span className="te-carte-ref">
           {unique ? (
             <>
