@@ -74,6 +74,29 @@ export function pastilleConfiance(n: Confiance): { texte: string; classe: string
   return null;
 }
 
+/** Ce qu'on peut dire d'un client avant de l'appeler — la réponse d'abord :
+ *  nouveau (aucune livraison tentée), fiable (livré, jamais refusé), à
+ *  prendre avec prudence (un refus), à risque (deux refus, ou la moitié des
+ *  livraisons tentées). La confiance posée par l'équipe se lit à part. */
+export function verdictClient(c: Pick<FicheClient, "nb_refus" | "chiffres">): { niveau: "neuf" | "fiable" | "prudence" | "risque"; texte: string } {
+  const livrees = c.chiffres.livrees;
+  const tentees = c.nb_refus + livrees;
+  const s = (n: number) => (n > 1 ? "s" : "");
+  if (tentees === 0) {
+    const n = c.chiffres.en_cours;
+    return {
+      niveau: "neuf",
+      texte: n ? `Nouveau client : ${n === 1 ? "sa première commande est en cours" : `${n} commandes en cours`}, rien de livré encore.` : "Aucune livraison tentée pour l'instant.",
+    };
+  }
+  if (c.nb_refus === 0) return { niveau: "fiable", texte: `Fiable : ${livrees} livraison${s(livrees)}, aucun refus.` };
+  const taux = Math.round((c.nb_refus / tentees) * 100);
+  return {
+    niveau: c.nb_refus >= 2 || taux >= 50 ? "risque" : "prudence",
+    texte: `${c.nb_refus} refus sur ${tentees} livraison${s(tentees)} tentée${s(tentees)} (${taux} %).`,
+  };
+}
+
 /** Le taux de refus d'un client, en mots : « 1 refus sur 3 livraisons tentées ». */
 export function tauxRefus(refus: number, livrees: number): string | null {
   const tentees = refus + livrees;

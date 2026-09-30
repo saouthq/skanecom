@@ -379,6 +379,8 @@ console.log("\n== 3. Sur téléphone (tactile) ==");
   await etape("Maymar : fiche et barre collante", async () => {
     await page.goto(M + "/produit/valise-rigide-abs-4-roues", { waitUntil: "networkidle" });
     await capture(page, "mobile-fiche");
+    // Un saut, pas un défilement : le bloc d'achat passe de sous l'écran à
+    // au-dessus sans jamais le croiser (la touche Fin, une ancre).
     await page.evaluate(() => window.scrollBy(0, 1800)); await pause(700);
     await capture(page, "mobile-fiche-barre-collante");
     verifie(await page.locator(".achat-mobile").isVisible(), "la barre d'achat collante apparaît quand le bloc d'achat sort de l'écran");

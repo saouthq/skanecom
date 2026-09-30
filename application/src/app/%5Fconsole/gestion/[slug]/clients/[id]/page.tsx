@@ -6,15 +6,17 @@ import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { LIBELLES_ORIGINE_REFUS, libelleStatut, lienAppel, lienWhatsApp, quand, telephoneLisible } from "@/lib/gestion/libelles";
-import { LIBELLES_CONFIANCE, NIVEAUX, PEUT_JUGER, pastilleConfiance, tauxRefus, type FicheClient } from "@/lib/gestion/clients";
+import { LIBELLES_CONFIANCE, NIVEAUX, PEUT_JUGER, pastilleConfiance, verdictClient, type FicheClient } from "@/lib/gestion/clients";
 import { CarteComptePro } from "@/components/console/ComptePro";
 import { PEUT_DECIDER_PRO, type FicheComptePro } from "@/lib/gestion/pro";
 
 export const metadata: Metadata = { title: "Client" };
 
 /* ============================================================================
-   LA FICHE D'UN CLIENT — d'un coup d'œil : combien il a commandé, reçu,
-   refusé, payé ; puis sa confiance (normal, surveillé, bloqué, avec le
+   LA FICHE D'UN CLIENT — d'un coup d'œil, la réponse à la question qu'on se
+   pose avant d'envoyer un colis payé à la livraison : nouveau, fiable, à
+   prendre avec prudence, à risque — puis ses chiffres en une ligne (commandé,
+   livré, refusé, encaissé) ; sa confiance (normal, surveillé, bloqué, avec le
    pourquoi), ses commandes, ses adresses, la note de l'équipe.
 
    L'adresse accepte l'identifiant du client ou son numéro (depuis la fiche
@@ -46,7 +48,7 @@ export default async function FicheClientBackoffice({
   const juge = PEUT_JUGER.includes(boutique.role);
   const action = `/gestion/${slug}/clients/${c.id}/action`;
   const confiance = pastilleConfiance(c.niveau_risque);
-  const taux = tauxRefus(c.nb_refus, c.chiffres.livrees);
+  const verdict = verdictClient(c);
   const prenom = (c.nom ?? "").split(/\s+/)[0] || "";
   const maintenant = new Date();
 
@@ -82,15 +84,18 @@ export default async function FicheClientBackoffice({
         {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
         {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
 
-        <dl className="chiffres-cles" style={{ marginBlockEnd: 0 }}>
-          <div className="chiffre-cle"><dt><Icone nom="commandes" /> Commandes</dt><dd>{c.nb_commandes}</dd></div>
-          <div className="chiffre-cle"><dt><Icone nom="camion" /> Livrées</dt><dd>{c.chiffres.livrees}</dd></div>
-          <div className="chiffre-cle" data-alerte={c.nb_refus > 0 ? "" : undefined}>
-            <dt><Icone nom="refus" /> Refus</dt><dd>{c.nb_refus}</dd>
-            {taux ? <p className="aide cl-taux">{taux}</p> : null}
-          </div>
-          <div className="chiffre-cle"><dt><Icone nom="billet" /> Encaissé</dt><dd><Prix millimes={c.chiffres.encaisse} /></dd></div>
-        </dl>
+        {/* La réponse d'abord (peut-on lui envoyer un colis ?), puis ses chiffres, sur une ligne. */}
+        <section className="cl-verdict" data-niveau={verdict.niveau} aria-label="Ce qu'on sait de ce client">
+          <p className="cl-verdict-texte"><span className="cl-verdict-point" aria-hidden="true" />{verdict.texte}</p>
+          <p className="cl-verdict-chiffres">
+            <span className="ligne-points">
+              <span><b className="tabular-nums">{c.nb_commandes}</b> commande{c.nb_commandes > 1 ? "s" : ""}</span>
+              <span><b className="tabular-nums">{c.chiffres.livrees}</b> livrée{c.chiffres.livrees > 1 ? "s" : ""}</span>
+              <span><b className="tabular-nums">{c.nb_refus}</b> refus</span>
+              <span><b><Prix millimes={c.chiffres.encaisse} /></b> encaissés</span>
+            </span>
+          </p>
+        </section>
 
         <div className="grille-2">
           <div className="pile">

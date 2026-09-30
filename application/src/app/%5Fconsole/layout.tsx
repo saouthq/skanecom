@@ -5,6 +5,7 @@ import "./finitions.css";
 import "./mouvement.css";
 import { Suspense } from "react";
 import { EnvoiFormulaires, ProgressionNavigation } from "@/components/console/Retours";
+import { AncresDouces } from "@/components/AncresDouces";
 import { feuilleDuTheme, themeDeLaBoutique } from "@/lib/theme";
 
 /* ============================================================================
@@ -48,6 +49,7 @@ export default function RacineConsole({ children }: { children: React.ReactNode 
       <body className="console min-h-full flex flex-col bg-fond text-encre">
         <Suspense fallback={null}><ProgressionNavigation /></Suspense>
         <EnvoiFormulaires />
+        <AncresDouces />
         {children}
       </body>
     </html>

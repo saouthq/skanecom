@@ -244,10 +244,28 @@ await etape("bon code : la console s'ouvre", async () => {
   await page.keyboard.press("Enter");
   await page.waitForURL((u) => u.pathname === "/");
   await page.waitForLoadState("networkidle");
+  // Le poste de pilotage : une tuile par boutique, à sa couleur, avec sa semaine.
+  const tuiles = await page.locator(".pl-tuile .pl-nom").allInnerTexts();
+  verifie(tuiles.includes("Maymar") && tuiles.includes("Quincaillerie du Sud"),
+    `le poste de pilotage : ${tuiles.length} boutiques en tuiles, dont Maymar et la quincaillerie`);
+  const maymar = page.locator(".pl-tuile", { has: page.locator(".pl-nom", { hasText: /^Maymar$/ }) });
+  verifie((await maymar.locator(".pl-semaine rect").count()) === 7 && /\d+ commandes? en 7 jours/.test(await maymar.innerText()),
+    "chaque tuile a sa semaine : une barre par jour, les commandes des sept jours");
+  verifie((await maymar.locator(".pl-attente").innerText()).includes("à confirmer"), "et ce qui attend (Maymar : des commandes à confirmer)");
+  const accent = await maymar.evaluate((e) => getComputedStyle(e).getPropertyValue("--pl-accent").trim());
+  verifie(/^#[0-9a-f]{6}$/i.test(accent), `à la couleur de sa vitrine (${accent})`);
+  verifie((await page.locator(".pl-vigilance").innerText()).includes("Maymar"),
+    "« À surveiller » : les commandes de Maymar qui attendent depuis des heures");
+  await capture(page, "console-tableau");
+  // La même chose en liste, au clavier : le sélecteur d'affichage, puis Entrée.
+  await page.getByRole("link", { name: "Liste" }).focus();
+  await page.keyboard.press("Enter");
+  await page.waitForURL(/vue=liste/);
+  await page.waitForLoadState("networkidle");
   const lignes = await page.locator("tbody tr").allInnerTexts();
   verifie(lignes.some((l) => l.includes("Maymar")) && lignes.some((l) => l.includes("Quincaillerie")),
-    `tableau des boutiques : ${lignes.length} boutiques, dont Maymar et la quincaillerie`);
-  await capture(page, "console-tableau");
+    `en liste : ${lignes.length} boutiques, dont Maymar et la quincaillerie`);
+  await capture(page, "console-tableau-liste");
 });
 
 /* ------------------------------------------------------------------ */
@@ -656,8 +674,12 @@ await etape("la liste de mise en place", async () => {
   verifie((await carte.locator(".mp-compte").innerText()).includes(`${faites + 1} sur 10`), `l'avancement : ${faites + 1} sur 10`);
   await capture(page, "console-mise-en-place", true);
   await page.goto(`${CONSOLE}/`, { waitUntil: "networkidle" });
+  const tuile = page.locator(".pl-tuile", { has: page.locator(".pl-nom", { hasText: "Outillage Pro Démo" }) }).last();
+  verifie((await tuile.locator(".pl-mise-tete").innerText()).includes(`${faites + 1}/10`) && (await tuile.locator(".pl-mise-suite").innerText()).startsWith("Prochaine"),
+    "le poste de pilotage montre l'avancement de chacune, et sa prochaine étape");
+  await page.goto(`${CONSOLE}/?vue=liste`, { waitUntil: "networkidle" });
   const ligne = page.locator("tr", { hasText: "Outillage Pro Démo" }).last();
-  verifie((await ligne.locator(".mp-mini").innerText()).includes(`${faites + 1}/10`), "la liste des boutiques montre l'avancement de chacune");
+  verifie((await ligne.locator(".mp-mini").innerText()).includes(`${faites + 1}/10`), "la liste aussi");
 });
 
 /* ------------------------------------------------------------------ */

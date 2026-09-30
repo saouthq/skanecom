@@ -42,7 +42,12 @@
 }
 
 @layer base {
-  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  /* Pas de défilement doux sur <html> : le routeur ramène une nouvelle page
+     en haut sans couper scroll-behavior — doux, il s'arrêtait sous l'en-tête
+     collant (84 px sur téléphone), le titre caché. Les ancres de la page
+     (#avis, le sommaire des pages légales, les réglages) défilent en douceur,
+     au clic seulement (components/AncresDouces.tsx). */
+  html { -webkit-text-size-adjust: 100%; }
   body {
     background-color: var(--theme-fond);
     color: var(--theme-encre);

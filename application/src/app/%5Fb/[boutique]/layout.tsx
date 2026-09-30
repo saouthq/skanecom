@@ -10,6 +10,7 @@ import { Pied } from "@/components/Pied";
 import { BoutonWhatsApp } from "@/components/BoutonWhatsApp";
 import { Apparitions } from "@/components/Apparitions";
 import { TransitionsVue } from "@/components/TransitionsVue";
+import { AncresDouces } from "@/components/AncresDouces";
 import { Suspense } from "react";
 import { ProgressionNavigation } from "@/components/console/Retours";
 
@@ -82,6 +83,7 @@ export default async function RacineBoutique({ children, params }: Props) {
         {cadre.whatsappFlottant && cadre.whatsapp ? <BoutonWhatsApp numero={cadre.whatsapp} nom={cadre.boutique.nom} /> : null}
         <Apparitions />
         <TransitionsVue />
+        <AncresDouces />
         <Suspense fallback={null}>
           <ProgressionNavigation />
         </Suspense>

@@ -1087,7 +1087,9 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await page.waitForLoadState("networkidle");
     ficheClient = page.url();
     verifie(true, "le lien par numéro mène à la fiche (adresse canonique)");
-    verifie((await page.locator(".chiffre-cle", { hasText: "Refus" }).innerText()).includes("1"), "un refus, compté par la base");
+    const verdict = await page.locator(".cl-verdict").innerText();
+    verifie(/1 refus sur \d+ livraisons? tentées? \(\d+ %\)/.test(verdict) && (await page.locator(".cl-verdict-chiffres").innerText()).includes("1 refus"),
+      `un refus, compté par la base, dit en tête de fiche (« ${verdict.split("\n")[0]} »)`);
     verifie((await page.locator(".cl-commande", { hasText: num(6) }).innerText()).includes("Refusée"), "la commande refusée est dans son historique");
     await capture(page, "gestion-client", true);
   });

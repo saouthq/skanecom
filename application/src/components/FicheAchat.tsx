@@ -95,12 +95,17 @@ export function FicheAchat({
     setAjoute(false);
   }
 
+  /* Le champ observé descend très loin sous l'écran : le bloc n'en sort que
+     par le haut. Un saut qui le passe d'un coup (la touche Fin, une ancre,
+     « réduire les animations ») franchit donc la limite comme un défilement —
+     observé à l'écran seul, il passait de « dessous » à « dessus » sans
+     jamais le croiser, et la barre ne venait pas. */
   useEffect(() => {
     const cible = blocAchat.current;
     if (!cible) return;
     const observateur = new IntersectionObserver(
-      ([entree]) => setBarreVisible(!entree.isIntersecting && entree.boundingClientRect.top < 0),
-      { threshold: 0 },
+      ([entree]) => setBarreVisible(!entree.isIntersecting),
+      { rootMargin: "0px 0px 100000px 0px", threshold: 0 },
     );
     observateur.observe(cible);
     return () => observateur.disconnect();

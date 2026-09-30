@@ -29,7 +29,8 @@ const JOUR_LONG = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "nume
 
 function Evolution({ maintenant, avant, inverse = false, points = false }: { maintenant: number | null | undefined; avant: number | null | undefined; inverse?: boolean; points?: boolean }) {
   const d = delta(maintenant, avant, points);
-  if (!d) return <span className="tb-evolution tb-neutre">— période précédente sans données</span>;
+  // Rien à comparer (une boutique neuve) : on ne le dit pas quatre fois.
+  if (!d) return null;
   const bon = d.sens === 0 ? null : (d.sens > 0) !== inverse;
   return (
     <span className={`tb-evolution ${bon === null ? "tb-neutre" : bon ? "tb-bon" : "tb-mauvais"}`}>
@@ -89,7 +90,7 @@ export default async function TableauDeBord({
             <article className="carte tb-chiffre tb-chiffre-fort">
               <p className="tb-libelle">Encaissé</p>
               <p className="tb-valeur"><Compteur valeur={c.encaisse_millimes ?? 0} format="montant" /> <span>TND</span></p>
-              <p className="tb-detail">{c.livrees} commande{(c.livrees ?? 0) > 1 ? "s" : ""} livrée{(c.livrees ?? 0) > 1 ? "s" : ""} · panier moyen {formateMontant(c.panier_moyen_millimes ?? 0)} TND</p>
+              <p className="tb-detail">{c.livrees} commande{(c.livrees ?? 0) > 1 ? "s" : ""} livrée{(c.livrees ?? 0) > 1 ? "s" : ""}</p>
               <Evolution maintenant={c.encaisse_millimes} avant={p.encaisse_millimes} />
             </article>
             <article className="carte tb-chiffre">
@@ -98,6 +99,9 @@ export default async function TableauDeBord({
               <p className="tb-detail">
                 {c.a_confirmer ? <Link href={`/gestion/${slug}?etape=a_confirmer`}>{c.a_confirmer} à confirmer</Link> : "aucune à confirmer"}
                 {enRoute > 0 ? ` · ${enRoute} en préparation ou en route` : ""}
+                {/* Sur les commandes reçues (non annulées), pas sur les livrées :
+                    rangé ici, il ne se lit pas comme l'encaissé divisé par les livrées. */}
+                {c.panier_moyen_millimes ? <> · <span className="whitespace-nowrap">panier moyen {formateMontant(c.panier_moyen_millimes)} TND</span></> : null}
               </p>
               <Evolution maintenant={c.recues} avant={p.recues} />
             </article>

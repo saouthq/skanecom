@@ -875,3 +875,119 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 .crl-grille-telephone .crl-cadre { inline-size: 375px; max-inline-size: 100%; justify-self: center; block-size: 46rem; }
 .crl-texte summary { cursor: pointer; font-size: .8125rem; color: var(--ui-texte-2); }
 .crl-texte pre { margin: .5rem 0 0; padding: .75rem; white-space: pre-wrap; font-size: .8125rem; background: var(--ui-doux); border-radius: var(--ui-r); }
+
+/* ==========================================================================
+   LE POSTE DE PILOTAGE — l'accueil de la console (page.tsx, TuileBoutique).
+   Chaque boutique à sa couleur (--pl-accent, posée sur la tuile) : sa photo
+   d'ouverture en couverture, son monogramme ; dessous, sa semaine, ce qui
+   attend, sa mise en place. En tête, ce qui demande un regard.
+   ========================================================================== */
+/* Des morceaux séparés par un point — « 3 boutiques · 37 produits · … » —,
+   jamais en tête de ligne : chaque morceau porte son point devant lui, dans
+   une marge que le parent rogne (overflow: hidden) ; celui d'un morceau
+   revenu à la ligne sort du cadre, et disparaît. */
+.ligne-points { display: flex; flex-wrap: wrap; row-gap: .125rem; margin-inline-start: -1rem; }
+.ligne-points > span { position: relative; padding-inline-start: 1rem; white-space: nowrap; }
+.ligne-points > span::before { content: "·"; position: absolute; inset-inline-start: .375rem; color: var(--ui-texte-3); }
+.ligne-points b { color: var(--ui-texte); font-weight: 600; }
+.page-description:has(.pl-synthese) { max-inline-size: none; overflow: hidden; }
+
+.pl-vues { align-self: center; }
+.pl-vues a { display: inline-flex; align-items: center; gap: .375rem; padding: .3125rem .75rem; border-radius: 6px; font-weight: 500; color: var(--ui-texte-2); }
+.pl-vues a:hover { color: var(--ui-texte); }
+.pl-vues a[aria-current="page"] { background: var(--ui-panneau); color: var(--ui-texte); box-shadow: var(--ui-ombre-s); }
+.pl-vues a:focus-visible { outline: none; box-shadow: var(--ui-anneau); }
+
+/* ---- À surveiller ---- */
+.pl-vigilance { margin-block-end: 1.5rem; }
+.pl-vigilance-titre { display: flex; align-items: center; gap: .5rem; margin: 0 0 .5rem; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ui-texte-3); }
+.pl-compte { display: inline-grid; place-items: center; min-inline-size: 20px; block-size: 20px; padding-inline: 6px; border-radius: 999px; font-size: .75rem; letter-spacing: 0; color: #fff; background: var(--ui-texte); }
+.pl-vigilance-liste { display: grid; margin: 0; padding: 0; list-style: none; background: var(--ui-panneau); border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l); box-shadow: var(--ui-ombre-xs); overflow: hidden; }
+.pl-vigilance-liste li + li { border-block-start: 1px solid var(--ui-bord-leger); }
+.pl-vigilance-liste a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .75rem; min-block-size: 44px; padding: .625rem 1rem; color: var(--ui-texte-2); }
+.pl-vigilance-liste a:hover { background: var(--ui-survol); color: var(--ui-texte); }
+.pl-vigilance-liste a:focus-visible { outline: none; box-shadow: inset var(--ui-anneau); }
+.pl-vigilance-liste b { color: var(--ui-texte); font-weight: 600; }
+.pl-point { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--ui-bleu); }
+.pl-vigilance-liste [data-niveau="attention"] .pl-point { background: #F59E0B; }
+.pl-vigilance-liste [data-niveau="urgent"] .pl-point { background: var(--ui-rouge); box-shadow: 0 0 0 3px var(--ui-rouge-fond); }
+.pl-vigilance-calme { margin: 0; padding: .75rem 1rem; border: 1px dashed var(--ui-bord); border-radius: var(--ui-r-l); color: var(--ui-texte-3); font-size: .875rem; }
+
+/* ---- Les tuiles ---- */
+.pl-grille { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
+.pl-tuile {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--ui-panneau); border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l); box-shadow: var(--ui-ombre-xs);
+  transition: transform var(--ui-d2) var(--ui-courbe), box-shadow var(--ui-d2) var(--ui-courbe), border-color var(--ui-d1);
+}
+.pl-tuile:hover { transform: translateY(-2px); box-shadow: var(--ui-ombre-m); border-color: var(--ui-bord-fort); }
+.pl-tuile:has(.pl-lien:focus-visible) { box-shadow: var(--ui-anneau), var(--ui-ombre-m); }
+.pl-lien { display: flex; flex-direction: column; flex: 1; color: inherit; }
+.pl-lien:focus-visible { outline: none; }
+
+.pl-couverture {
+  position: relative; display: grid; align-items: end; aspect-ratio: 16 / 7; overflow: hidden;
+  background: linear-gradient(135deg, var(--pl-accent), color-mix(in srgb, var(--pl-accent) 55%, #000));
+}
+.pl-couverture::after { content: ""; position: absolute; inset-inline: 0; inset-block-end: 0; block-size: 3px; background: var(--pl-accent); }
+.pl-photo { object-fit: cover; transition: transform .6s var(--ui-courbe); }
+.pl-tuile:hover .pl-photo { transform: scale(1.03); }
+.pl-photo-vide {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 90% at 85% 0%, color-mix(in srgb, #fff 22%, transparent), transparent 60%),
+    linear-gradient(135deg, var(--pl-accent), color-mix(in srgb, var(--pl-accent) 50%, #000));
+}
+.pl-voile { position: absolute; inset: 0; background: linear-gradient(to top, rgb(9 9 11 / .78), rgb(9 9 11 / .32) 50%, rgb(9 9 11 / .04) 85%); }
+.pl-etiquettes { position: absolute; inset-block-start: .625rem; inset-inline-end: .625rem; z-index: 1; display: flex; gap: .375rem; }
+.pl-etiquettes > * { box-shadow: 0 1px 2px rgb(0 0 0 / .18); }
+.pl-identite { position: relative; z-index: 1; display: flex; align-items: center; gap: .625rem; min-inline-size: 0; padding: .875rem 1rem; color: #fff; }
+.pl-monogramme {
+  flex: none; display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 10px;
+  background: #fff; color: var(--pl-accent); font-weight: 700; font-size: 1.05rem; box-shadow: 0 2px 8px rgb(0 0 0 / .25);
+}
+.pl-masque { inline-size: 26px; block-size: 26px; background: var(--pl-accent); mask-size: contain; mask-repeat: no-repeat; mask-position: center; -webkit-mask-size: contain; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; }
+.pl-nom-bloc { display: grid; min-inline-size: 0; }
+.pl-tuile .pl-nom { margin: 0; font-size: 1.0625rem; font-weight: 650; letter-spacing: -.01em; line-height: 1.25; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgb(0 0 0 / .25); }
+.pl-hote { font-size: .75rem; color: rgb(255 255 255 / .82); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pl-corps { display: grid; gap: .875rem; padding: 1rem; }
+.pl-activite { display: flex; align-items: center; gap: .875rem; }
+.pl-semaine { flex: none; inline-size: 70px; block-size: 28px; }
+.pl-semaine rect { fill: color-mix(in srgb, var(--pl-accent) 38%, #fff); }
+.pl-semaine rect[data-aujourdhui] { fill: var(--pl-accent); }
+.pl-semaine rect[data-vide] { fill: var(--ui-bord); }
+.pl-chiffres { display: grid; margin: 0; font-size: .875rem; color: var(--ui-texte-2); line-height: 1.4; }
+.pl-chiffres b { color: var(--ui-texte); font-weight: 600; }
+.pl-encaisse { font-size: .8125rem; color: var(--ui-texte-3); }
+
+.pl-attente { display: flex; align-items: center; gap: .5rem; margin: 0; padding: .5rem .625rem; border-radius: var(--ui-r); font-size: .8125rem; color: var(--ui-texte-2); background: var(--ui-doux); }
+.pl-attente b { color: var(--ui-texte); }
+.pl-attente[data-longue] { color: var(--ui-ambre); background: var(--ui-ambre-fond); box-shadow: inset 0 0 0 1px var(--ui-ambre-bord); }
+.pl-attente[data-longue] b { color: inherit; }
+.pl-attente-rien { color: var(--ui-texte-3); background: none; padding-inline: 0; }
+
+.pl-mise { display: grid; gap: .375rem; font-size: .8125rem; }
+.pl-mise-tete { display: flex; justify-content: space-between; color: var(--ui-texte-2); font-weight: 500; }
+.pl-mise-barre { display: block; block-size: 6px; border-radius: 999px; background: var(--ui-doux); overflow: hidden; }
+.pl-mise-barre > span { display: block; block-size: 100%; border-radius: inherit; background: var(--ui-vert); }
+.pl-mise-suite { color: var(--ui-texte-3); }
+
+.pl-pied { position: relative; display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-block-start: auto; padding: .625rem 1rem; border-block-start: 1px solid var(--ui-bord-leger); font-size: .8125rem; }
+.pl-support { display: inline-flex; align-items: center; gap: .25rem; padding: .125rem .5rem; border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--ui-violet); background: var(--ui-violet-fond); box-shadow: inset 0 0 0 1px var(--ui-violet-bord); }
+.pl-vitrine { display: inline-flex; align-items: center; gap: .3125rem; min-block-size: 32px; padding-inline: .5rem; margin-inline-end: -.5rem; border-radius: var(--ui-r-s); font-weight: 500; color: var(--ui-texte-2); }
+.pl-vitrine:hover { color: var(--ui-texte); background: var(--ui-doux); }
+.pl-vitrine:focus-visible { outline: none; box-shadow: var(--ui-anneau); }
+
+.pl-semaine-cellule { display: inline-flex; align-items: center; gap: .5rem; }
+.pl-semaine-cellule .pl-semaine { inline-size: 56px; block-size: 20px; }
+
+@media (max-width: 699px) {
+  .pl-vues { display: none; }
+  .pl-couverture { aspect-ratio: 16 / 8; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pl-tuile, .pl-photo { transition: none; }
+  .pl-tuile:hover { transform: none; }
+  .pl-tuile:hover .pl-photo { transform: none; }
+}
