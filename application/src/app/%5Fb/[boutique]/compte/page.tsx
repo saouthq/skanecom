@@ -25,7 +25,7 @@ export default async function PageCompte({ params }: { params: Promise<{ boutiqu
         <h1>{t.compte.titre}</h1>
         <p className="legende">{t.compte.chapo}</p>
       </header>
-      <Compte boutiqueId={cadre.boutique.id} sav={Boolean(cadre.sav)} pro={cadre.comptesPro} />
+      <Compte boutiqueId={cadre.boutique.id} sav={Boolean(cadre.sav)} pro={cadre.comptesPro} devis={cadre.devis} />
     </Gabarit>
   );
 }

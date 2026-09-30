@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Billets, Camion, Coche, Magasin as IconeMagasin } from "./Icones";
 import { Prix } from "./Prix";
+import { ConnexionSms } from "./ConnexionSms";
 import { ouvrePanier, ramenePanier, retireDuPanier, usePanierLu } from "@/lib/panier";
 import type { LignePanier } from "@/lib/panier-contrat";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
@@ -66,6 +67,7 @@ type Erreurs = Partial<Record<keyof Champs | "code", string>>;
 const CHAMPS_VIDES: Champs = { telephone: "", nom: "", ligne1: "", ligne2: "", ville: "", gouvernorat: "", codePostal: "", note: "" };
 const ORDRE: (keyof Champs)[] = ["telephone", "nom", "ligne1", "ville", "gouvernorat", "codePostal"];
 const ATTENTE_RENVOI = 30;
+const JOUR_DEVIS = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone: "Africa/Tunis" });
 
 function valeurNumerique(saisie: string, max: number): string {
   return saisie.replace(/\D/g, "").slice(0, max);
@@ -75,12 +77,13 @@ export function Tunnel({
   gabarit,
   boutiqueId,
   boutique,
-  compteObligatoire,
+  compteObligatoire: compteReglage,
   rappel,
   cod,
   gouvernorats,
   retractationJours,
   retrait,
+  devisNumero = null,
 }: {
   gabarit: CodeTheme;
   boutiqueId: string;
@@ -92,7 +95,11 @@ export function Tunnel({
   retractationJours: number;
   /** Le magasin, si la boutique propose le retrait ; null sinon. */
   retrait: Magasin | null;
+  /** Accepter un devis (module devis) : ses lignes et ses prix, figés ; le
+   *  compte est exigé, la commande passe par public.accepter_devis. */
+  devisNumero?: string | null;
 }) {
+  const compteObligatoire = compteReglage || Boolean(devisNumero);
   const id = useId();
   const router = useRouter();
   const panierLu = usePanierLu();
@@ -109,10 +116,12 @@ export function Tunnel({
   // Le devis de la base.
   const [devis, setDevis] = useState<Devis | null>(null);
   const [devisEnPanne, setDevisEnPanne] = useState(false);
+  const [messagePanne, setMessagePanne] = useState<{ raison: Raison; texte: string } | null>(null);
   const [rafraichir, setRafraichir] = useState(0);
 
   // Le compte de l'acheteur (connexion par code SMS).
   const [session, setSession] = useState<{ telephone: string } | null>(null);
+  const connecte = session !== null;
   const [etapeCode, setEtapeCode] = useState<"numero" | "code">("numero");
   const [numeroCode, setNumeroCode] = useState("");
   const [saisieCode, setSaisieCode] = useState("");
@@ -128,21 +137,42 @@ export function Tunnel({
   const focusAlerte = useRef(false);
   const focusApresConnexion = useRef(false);
 
-  const lignesPanier = useMemo(() => panierLu?.lignes ?? [], [panierLu]);
+  // Les lignes : celles du panier ; au tunnel d'un devis, celles du devis
+  // (relues en base avec ses prix, jamais modifiables ici).
+  const lignesDevis = useMemo<LignePanier[]>(
+    () =>
+      (devis?.lignes ?? []).map((l) => ({
+        varianteId: l.variante_id,
+        produitSlug: l.produit_slug ?? "",
+        sku: l.sku ?? "",
+        libelle: l.produit_nom ?? "",
+        quantite: l.quantite,
+        prixMillimesAjout: l.prix_unitaire_millimes ?? 0,
+        ajouteLe: "",
+        ...(l.image ? { image: l.image } : {}),
+      })),
+    [devis],
+  );
+  const lignesPanier = useMemo(() => (devisNumero ? lignesDevis : (panierLu?.lignes ?? [])), [devisNumero, lignesDevis, panierLu]);
   const lignes = useMemo(
     () => lignesPanier.map((l) => ({ variante_id: l.varianteId, quantite: l.quantite })),
     [lignesPanier],
   );
   const cleLignes = JSON.stringify(lignes);
+  const cleDevis = devisNumero ? `devis:${devisNumero}` : cleLignes;
 
   // Le devis suit le panier, le mode de livraison et le gouvernorat.
   useEffect(() => {
-    if (cleLignes === "[]") return;
+    if (cleDevis === "[]") return;
     const arret = new AbortController();
+    const gouvernorat = JSON.stringify(enRetrait ? null : champs.gouvernorat || null);
+    const mode = enRetrait ? "retrait" : "domicile";
     fetch("/commande/devis", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: `{"lignes":${cleLignes},"gouvernorat":${JSON.stringify(enRetrait ? null : champs.gouvernorat || null)},"mode":"${enRetrait ? "retrait" : "domicile"}"}`,
+      body: cleDevis.startsWith("devis:")
+        ? `{"devis":${JSON.stringify(cleDevis.slice(6))},"gouvernorat":${gouvernorat},"mode":"${mode}"}`
+        : `{"lignes":${cleDevis},"gouvernorat":${gouvernorat},"mode":"${mode}"}`,
       signal: arret.signal,
     })
       .then((r) => r.json() as Promise<ReponseDevis>)
@@ -150,13 +180,17 @@ export function Tunnel({
         if (rep.ok) {
           setDevis(rep.devis);
           setDevisEnPanne(false);
-        } else setDevisEnPanne(true);
+        } else {
+          setDevisEnPanne(true);
+          setMessagePanne({ raison: rep.raison, texte: rep.message });
+        }
       })
       .catch((e: unknown) => {
         if ((e as Error).name !== "AbortError") setDevisEnPanne(true);
       });
     return () => arret.abort();
-  }, [cleLignes, champs.gouvernorat, enRetrait, rafraichir]);
+    // Relu aussi à la connexion : le devis d'un client, le prix d'un pro.
+  }, [cleDevis, champs.gouvernorat, enRetrait, rafraichir, connecte]);
 
   // La session : lue au montage, puis suivie (connexion, déconnexion).
   useEffect(() => {
@@ -354,7 +388,8 @@ export function Tunnel({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          cle: cleDeCommande(boutique, cleLignes),
+          cle: cleDeCommande(boutique, cleDevis),
+          ...(devisNumero ? { devis: devisNumero } : {}),
           lignes,
           contact: { nom: champs.nom.trim(), telephone, accepte_conditions: accepte },
           livraison: enRetrait
@@ -386,7 +421,29 @@ export function Tunnel({
     setEnvoi(false);
   }
 
-  if (panierLu === null) {
+  if (devisNumero && devis === null) {
+    // Le lien du devis ouvert sans session : la connexion, sur place ; le
+    // devis se relit dès qu'elle s'ouvre.
+    if (devisEnPanne && messagePanne?.raison === "compte") {
+      return connecte ? (
+        <div className="tunnel-attente" aria-busy="true">{t.commun.chargement}</div>
+      ) : (
+        <div className="tunnel-vide">
+          <ConnexionSms titre={t.devis.connexionAccepterTitre} texte={t.devis.connexionAccepterTexte} />
+        </div>
+      );
+    }
+    return devisEnPanne ? (
+      <div className="listing-vide tunnel-vide">
+        <h2>{t.devis.indisponible}</h2>
+        <p>{messagePanne?.texte ?? t.commande.erreur}</p>
+        <a className="btn btn-primaire" href="/compte">{t.devis.voirMesDevis}</a>
+      </div>
+    ) : (
+      <div className="tunnel-attente" aria-busy="true">{t.commun.chargement}</div>
+    );
+  }
+  if (panierLu === null && !devisNumero) {
     return <div className="tunnel-attente" aria-busy="true">{t.commun.chargement}</div>;
   }
   if (lignesPanier.length === 0) {
@@ -416,6 +473,7 @@ export function Tunnel({
         onBascule={() => setRecapOuvert((o) => !o)}
         zone={zone}
         retrait={enRetrait}
+        fige={Boolean(devisNumero)}
       />
 
       <form className="tunnel-formulaire" noValidate onSubmit={confirmer}>
@@ -790,6 +848,7 @@ function Recap({
   onBascule,
   zone,
   retrait,
+  fige = false,
 }: {
   panier: LignePanier[];
   devis: Devis | null;
@@ -798,6 +857,8 @@ function Recap({
   onBascule: () => void;
   zone: string | null;
   retrait: boolean;
+  /** Les lignes d'un devis : ni retirer, ni ajuster, ni revenir au panier. */
+  fige?: boolean;
 }) {
   const parId = new Map<string, LigneDevis>((devis?.lignes ?? []).map((l) => [l.variante_id, l]));
   const total = devis?.total_millimes ?? devis?.sous_total_millimes ?? null;
@@ -811,9 +872,11 @@ function Recap({
       <div id="recap-corps" className="tunnel-recap-corps">
         <div className="tunnel-recap-tete">
           <h2 id="recap-titre">{t.commande.recapitulatif}</h2>
-          <button type="button" className="btn-lien legende" onClick={ouvrePanier}>
-            {t.commande.retourPanier}
-          </button>
+          {fige ? null : (
+            <button type="button" className="btn-lien legende" onClick={ouvrePanier}>
+              {t.commande.retourPanier}
+            </button>
+          )}
         </div>
         <ul className="tunnel-lignes">
           {panier.map((ligne) => {
@@ -844,23 +907,29 @@ function Recap({
                   {indisponible ? (
                     <span className="tunnel-ligne-alerte">
                       {t.commande.indisponible}{" "}
-                      <button type="button" className="btn-lien" onClick={() => retireDuPanier(ligne.varianteId)}>
-                        {t.commande.retirer}
-                      </button>
+                      {fige ? null : (
+                        <button type="button" className="btn-lien" onClick={() => retireDuPanier(ligne.varianteId)}>
+                          {t.commande.retirer}
+                        </button>
+                      )}
                     </span>
                   ) : reste !== null ? (
                     <span className="tunnel-ligne-alerte">
                       {t.commande.reste(reste)}{" "}
-                      <button type="button" className="btn-lien" onClick={() => ramenePanier(ligne.varianteId, reste)}>
-                        {t.commande.ajuster(reste)}
-                      </button>
+                      {fige ? null : (
+                        <button type="button" className="btn-lien" onClick={() => ramenePanier(ligne.varianteId, reste)}>
+                          {t.commande.ajuster(reste)}
+                        </button>
+                      )}
                     </span>
                   ) : sousMinimum ? (
                     <span className="tunnel-ligne-alerte">
                       {t.commande.sousMinimum(minimum)}{" "}
-                      <button type="button" className="btn-lien" onClick={() => ramenePanier(ligne.varianteId, minimum)}>
-                        {t.commande.ajuster(minimum)}
-                      </button>
+                      {fige ? null : (
+                        <button type="button" className="btn-lien" onClick={() => ramenePanier(ligne.varianteId, minimum)}>
+                          {t.commande.ajuster(minimum)}
+                        </button>
+                      )}
                     </span>
                   ) : null}
                 </span>
@@ -877,6 +946,12 @@ function Recap({
 
         {devis ? (
           <dl className="tunnel-totaux">
+            {devis.tarif === "devis" && devis.devis ? (
+              <div className="tunnel-tarif-pro tunnel-tarif-devis">
+                <dt>{t.devis.tarif(devis.devis.numero)}</dt>
+                <dd className="legende">{t.devis.valableJusquau(JOUR_DEVIS.format(new Date(`${devis.devis.valide_jusqu_au}T12:00:00`)))}</dd>
+              </div>
+            ) : null}
             {devis.tarif === "pro" ? (
               <div className="tunnel-tarif-pro">
                 <dt><span className="pro-badge">{t.pro.badge}</span> {t.pro.tarifApplique}</dt>

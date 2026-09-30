@@ -1,0 +1,83 @@
+/* ============================================================================
+   LA DEMANDE DE DEVIS (module devis) — la page de demande, « Mes devis » dans
+   le compte, le lien du tiroir du panier. Mêmes jetons que « Mes commandes » :
+   les deux gabarits l'habillent sans une ligne de plus.
+   ========================================================================== */
+
+/* Le lien sous « Commander », dans le tiroir */
+.panier-devis {
+  display: grid; gap: .125rem; margin-block-start: .25rem; padding: .75rem .875rem; text-align: center;
+  border-radius: var(--theme-radius-doux); border: 1px dashed var(--theme-filet-fort); color: var(--theme-encre); text-decoration: none;
+  transition: border-color .2s, background .2s;
+}
+.panier-devis:hover { border-color: var(--theme-encre); background: var(--theme-surface-2); }
+.panier-devis b { font-weight: 600; font-size: .9375rem; }
+
+/* La page de demande */
+.devis-page-corps { display: grid; gap: 1.25rem; }
+.devis-panier, .devis-formulaire, .devis-envoyee {
+  display: grid; gap: .875rem; padding: clamp(1rem, 2.5vw, 1.375rem);
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+  animation: fiche-livraison-arrive .45s var(--theme-courbe) backwards;
+}
+.devis-formulaire { animation-delay: .06s; }
+.devis-panier-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; }
+.devis-panier-tete h2 { font-size: 1.0625rem; }
+.devis-panier-total { display: flex; justify-content: space-between; margin: 0; padding-block-start: .75rem; border-block-start: 1px solid var(--theme-filet); font-weight: 600; }
+.devis-envoyee { justify-items: center; text-align: center; padding-block: 2rem; }
+.devis-envoyee-icone {
+  display: grid; place-items: center; inline-size: 56px; block-size: 56px; border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-succes) 14%, var(--theme-surface)); color: var(--theme-succes);
+  animation: panier-coche .5s cubic-bezier(.34, 1.5, .64, 1) backwards;
+}
+.devis-envoyee h2 { font-size: 1.25rem; }
+.devis-envoyee .legende { max-inline-size: 30rem; }
+
+/* Les lignes (page de demande et « Mes devis ») */
+.devis-lignes { display: grid; margin: 0; padding: 0; list-style: none; }
+.devis-ligne { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding-block: .625rem; border-block-start: 1px solid var(--theme-filet); }
+.devis-ligne:first-child { border-block-start: 0; }
+.devis-vignette { position: relative; inline-size: 56px; block-size: 56px; border-radius: var(--theme-radius-doux); overflow: hidden; background: var(--theme-surface-2); display: grid; place-items: center; }
+.devis-vignette img { object-fit: cover; }
+.devis-ligne-corps { display: grid; gap: .125rem; min-inline-size: 0; }
+.devis-ligne-nom { font-weight: 500; font-size: .9375rem; overflow-wrap: anywhere; }
+.devis-ligne-prix { display: grid; justify-items: end; gap: .125rem; font-size: .9375rem; white-space: nowrap; }
+.devis-ligne-catalogue { font-size: .75rem; color: var(--theme-encre-doux); }
+
+/* « Mes devis » */
+.devis-mes {
+  display: grid; gap: .75rem; padding: clamp(1rem, 2.5vw, 1.25rem);
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+  animation: fiche-livraison-arrive .45s var(--theme-courbe) backwards;
+}
+.devis-mes h2 { font-size: 1.0625rem; }
+.devis-mes > ul { display: grid; gap: .875rem; margin: 0; padding: 0; list-style: none; }
+.devis-carte { display: grid; gap: .75rem; padding-block-start: .875rem; border-block-start: 1px solid var(--theme-filet); }
+.devis-carte:first-child { border-block-start: 0; padding-block-start: 0; }
+.devis-carte-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.devis-carte-qui { display: grid; gap: .0625rem; }
+.devis-carte-qui b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.devis-statut {
+  flex: none; padding: .25rem .625rem; border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap;
+  background: var(--theme-surface-2); color: var(--theme-encre);
+}
+.devis-carte[data-statut="envoye"] .devis-statut { background: var(--theme-encre); color: var(--theme-surface); }
+.devis-carte[data-statut="accepte"] .devis-statut { background: color-mix(in srgb, var(--theme-succes) 14%, var(--theme-surface)); color: var(--theme-succes); }
+.devis-carte[data-statut="annule"] .devis-statut,
+.devis-carte[data-statut="expire"] .devis-statut { background: color-mix(in srgb, var(--theme-erreur) 10%, var(--theme-surface)); color: var(--theme-erreur); }
+.devis-carte[data-statut="envoye"] { position: relative; }
+.devis-totaux { display: grid; gap: .375rem; margin: 0; padding-block-start: .625rem; border-block-start: 1px solid var(--theme-filet); }
+.devis-totaux > div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: .875rem; }
+.devis-totaux dd { margin: 0; }
+.devis-total { font-weight: 600; font-size: 1rem !important; }
+.devis-note { margin: 0; padding: .75rem .875rem; border-radius: var(--theme-radius-doux); background: var(--theme-surface-2); }
+.devis-note p { margin: .25rem 0 0; font-size: .875rem; }
+.devis-motif { margin: 0; }
+.devis-carte-pied { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
+.devis-gestes { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-inline-start: auto; }
+.devis-refus { display: grid; gap: .5rem; padding: .75rem .875rem; border-radius: var(--theme-radius-doux); background: var(--theme-surface-2); animation: fiche-livraison-arrive .3s var(--theme-courbe) backwards; }
+.devis-refus label { font-size: .875rem; font-weight: 500; }
+.devis-refus .btn-lien { justify-self: start; }
+
+/* Le tunnel d'un devis : le tarif dit d'où viennent les prix */
+.tunnel-tarif-devis dt { font-weight: 600; }

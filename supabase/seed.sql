@@ -814,3 +814,45 @@ begin
   values (q, v_id, 'valide', 'Électricité Trabelsi', '7654321B/A/000', 'Électricienne', now() - interval '40 days', now() - interval '39 days');
 end
 $$;
+
+-- ---------------------------------------------------------------------
+-- Les devis (migration 37) : la quincaillerie a le module. Le plombier
+-- demande un devis pour un chantier (à chiffrer) ; l'électricienne a reçu
+-- le sien (envoyé, valable douze jours, livraison offerte).
+-- ---------------------------------------------------------------------
+insert into plateforme.modules_actifs (boutique_id, module) values
+  ('00000000-0000-4000-8000-000000000002', 'devis');
+
+do $$
+declare
+  q constant uuid := '00000000-0000-4000-8000-000000000002';
+  v_plombier uuid := (select id from public.clients where boutique_id = q and telephone = '+21698765001');
+  v_electricienne uuid := (select id from public.clients where boutique_id = q and telephone = '+21622345002');
+  v_id uuid;
+begin
+  insert into public.devis (boutique_id, rang, numero, client_id, message, created_at)
+  values (q, 1, 'DEV-00001', v_plombier,
+          'Rénovation de deux salles de bains à Sfax : livraison sur le chantier la semaine prochaine si possible.',
+          now() - interval '2 hours')
+  returning id into v_id;
+  insert into public.devis_lignes (boutique_id, devis_id, variante_id, position, quantite, produit_nom, variante_libelle, sku, prix_catalogue_millimes)
+  select q, v_id, v.id, x.pos, x.qte, coalesce(p.nom_fr, p.nom_ar), private.libelle_variante(q, p.id, v.options), v.sku, v.prix_millimes
+    from (values ('VBF-4X40-B', 10, 1), ('FC-6', 20, 2), ('PV14-SEULE', 2, 3)) as x(sku, qte, pos)
+    join public.variantes v on v.boutique_id = q and v.sku = x.sku
+    join public.produits p on p.boutique_id = v.boutique_id and p.id = v.produit_id;
+
+  insert into public.devis (boutique_id, rang, numero, client_id, statut, message, note_boutique, frais_livraison_millimes,
+                            valide_jusqu_au, envoye_le, created_at)
+  values (q, 2, 'DEV-00002', v_electricienne, 'envoye', 'Tableau électrique d''un immeuble : forets et visserie.',
+          'Prix valables pour la quantité ; livraison offerte à Sfax.', 0,
+          (now() at time zone 'Africa/Tunis')::date + 12, now() - interval '1 day', now() - interval '2 days')
+  returning id into v_id;
+  insert into public.devis_lignes (boutique_id, devis_id, variante_id, position, quantite, produit_nom, variante_libelle, sku,
+                                   prix_catalogue_millimes, prix_devis_millimes)
+  select q, v_id, v.id, x.pos, x.qte, coalesce(p.nom_fr, p.nom_ar), private.libelle_variante(q, p.id, v.options), v.sku, v.prix_millimes,
+         (round(v.prix_millimes * 0.85 / 100) * 100)::bigint
+    from (values ('FC-4', 30, 1), ('VBF-5X60-U', 400, 2)) as x(sku, qte, pos)
+    join public.variantes v on v.boutique_id = q and v.sku = x.sku
+    join public.produits p on p.boutique_id = v.boutique_id and p.id = v.produit_id;
+end
+$$;

@@ -35,12 +35,15 @@ export function BoutonPanier({
   gabarit,
   seuilGratuite,
   assurances = [],
+  devis = false,
 }: {
   gabarit: CodeTheme;
   /** Livraison offerte dès ce montant (réglage de la boutique), ou jamais. */
   seuilGratuite: number | null;
   /** Rappelées sous les articles (lib/faits.ts). */
   assurances?: Assurance[];
+  /** La demande de devis (module devis) : un lien sous « Commander ». */
+  devis?: boolean;
 }) {
   const panier = usePanier();
   const [ouvert, setOuvert] = useState(false);
@@ -106,6 +109,12 @@ export function BoutonPanier({
                   {t.panier.commander}
                   <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />
                 </Link>
+                {devis ? (
+                  <Link href="/devis" className="panier-devis" onClick={() => setOuvert(false)}>
+                    <b>{t.devis.demander}</b>
+                    <span className="legende">{t.devis.demanderAide}</span>
+                  </Link>
+                ) : null}
               </>
             ) : null}
             <button type="button" className="btn btn-second btn-bloc" onClick={() => setOuvert(false)}>

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { chargeCadre } from "@/lib/boutique";
 import { clientAcheteur } from "@/lib/supabase-acheteur";
 import { memeOrigine } from "@/lib/origine";
-import { COOKIE_COMMANDE, raisonDe, type Raison, type ReponsePasser } from "@/lib/commande";
+import { COOKIE_COMMANDE, NUMERO_DEVIS, raisonDe, type Raison, type ReponsePasser } from "@/lib/commande";
 
 /* ============================================================================
    PASSER COMMANDE — la page envoie le panier, le contact, l'adresse et le
@@ -20,6 +20,7 @@ export const dynamic = "force-dynamic";
 
 const STATUTS: Partial<Record<Raison, number>> = {
   boutique: 404, compte: 401, bloque: 403, en_attente: 429, stock: 409, total: 409, cle: 409,
+  devis: 404, expire: 410, deja: 409, module: 404,
 };
 
 function reponse(corps: ReponsePasser, statut = 200): Response {
@@ -33,6 +34,8 @@ type Corps = {
   livraison?: unknown;
   total?: unknown;
   note?: unknown;
+  /** Accepter un devis (module devis) : la commande aux prix du devis. */
+  devis?: unknown;
 };
 
 export async function POST(req: Request, { params }: { params: Promise<{ boutique: string }> }) {
@@ -49,21 +52,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   const magasin = await cookies();
   const sb = await clientAcheteur();
 
-  const { data, error } = await sb.rpc("passer_commande", {
-    p_boutique_id: cadre.boutique.id,
-    p_cle_idempotence: corps.cle,
-    p_lignes: corps.lignes ?? [],
-    p_contact: corps.contact ?? {},
-    p_livraison: corps.livraison ?? {},
-    p_total_attendu_millimes: Math.round(corps.total),
-    p_note: typeof corps.note === "string" ? corps.note : null,
-  });
+  const devis = typeof corps.devis === "string" && NUMERO_DEVIS.test(corps.devis) ? corps.devis : null;
+  const { data, error } = devis
+    ? await sb.rpc("accepter_devis", {
+        p_boutique_id: cadre.boutique.id,
+        p_numero: devis,
+        p_cle_idempotence: corps.cle,
+        p_contact: corps.contact ?? {},
+        p_livraison: corps.livraison ?? {},
+      })
+    : await sb.rpc("passer_commande", {
+        p_boutique_id: cadre.boutique.id,
+        p_cle_idempotence: corps.cle,
+        p_lignes: corps.lignes ?? [],
+        p_contact: corps.contact ?? {},
+        p_livraison: corps.livraison ?? {},
+        p_total_attendu_millimes: Math.round(corps.total),
+        p_note: typeof corps.note === "string" ? corps.note : null,
+      });
   if (error) {
     const raison = raisonDe(error.hint);
     // Un refus prévu porte un message écrit pour l'acheteur (la base le
     // rédige) ; une erreur imprévue reste dans le journal du serveur.
     if (raison === "inconnue") {
-      console.error(`passer_commande (${boutique}) : ${error.code} ${error.message}`);
+      console.error(`${devis ? "accepter_devis" : "passer_commande"} (${boutique}) : ${error.code} ${error.message}`);
       return reponse({ ok: false, raison, message: "Erreur du serveur" }, 500);
     }
     return reponse({ ok: false, raison, message: error.message }, STATUTS[raison] ?? 422);
@@ -71,7 +83,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
 
   const resultat = data as { numero: string; jeton: string };
   const securise = (req.headers.get("origin") ?? "").startsWith("https:");
-  magasin.set(COOKIE_COMMANDE, `${resultat.numero}.${resultat.jeton}`, {
+  magasin.set(COOKIE_COMMANDE, `${resultat.numero}.${resultat.jeton}${devis ? ".devis" : ""}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: securise,

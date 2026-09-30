@@ -52,18 +52,23 @@ export type Devis = {
   supplement_poids_millimes?: number;
   /** Module comptes_pro : « pro » quand le prix pro d'un pro validé
    *  s'applique, et ce qu'il économise sur le prix public. */
-  tarif?: "pro" | "public";
+  tarif?: "pro" | "public" | "devis";
   economie_pro_millimes?: number | null;
+  /** Au tunnel d'un devis (module devis) : son numéro, sa validité, la note. */
+  devis?: { numero: string; valide_jusqu_au: string; note: string | null };
   total_millimes: number | null;
 };
 
 /** Les raisons de refus de la base, plus deux de la vitrine. */
 export type Raison =
   | "boutique" | "cle" | "panier" | "contact" | "adresse" | "compte" | "stock" | "total"
-  | "en_attente" | "bloque" | "paiement" | "conditions" | "retrait" | "reseau" | "inconnue";
+  | "en_attente" | "bloque" | "paiement" | "conditions" | "retrait" | "reseau" | "inconnue"
+  // Le devis accepté (module devis) : introuvable, expiré, déjà accepté, module coupé.
+  | "devis" | "expire" | "deja" | "module";
 
 const RAISONS: Raison[] = [
   "boutique", "cle", "panier", "contact", "adresse", "compte", "stock", "total", "en_attente", "bloque", "paiement", "conditions", "retrait",
+  "devis", "expire", "deja", "module",
 ];
 
 export function raisonDe(indice: string | null | undefined): Raison {
@@ -112,6 +117,9 @@ export type CommandeSuivie = {
 /** Le cookie qui garde « numéro.jeton » de la dernière commande, pour la
  *  page de fin (HttpOnly : aucun script ne le lit). */
 export const COOKIE_COMMANDE = "skanecom_commande";
+
+/** Un numéro de devis (DEV-00012). */
+export const NUMERO_DEVIS = /^DEV-\d{5,}$/;
 
 /** Les 8 chiffres d'un numéro tunisien saisi, ou null. Accepte « 20 123 456 »,
  *  « +216 20 123 456 », « 0021620123456 ». La base revérifie. */

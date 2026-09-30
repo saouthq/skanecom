@@ -5,6 +5,7 @@ import { cadre as chargeCadre } from "@/lib/boutique";
 import { identiteLegale } from "@/lib/legal";
 import { supabase } from "@/lib/supabase";
 import { t } from "@/lib/i18n";
+import { NUMERO_DEVIS } from "@/lib/commande";
 
 /* ============================================================================
    LA PAGE DE COMMANDE — le cadre de la boutique (réglages : compte
@@ -22,16 +23,24 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function Commande({ params }: { params: Promise<{ boutique: string }> }) {
-  const { boutique } = await params;
+export default async function Commande({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ boutique: string }>;
+  searchParams: Promise<{ devis?: string }>;
+}) {
+  const [{ boutique }, recherche] = await Promise.all([params, searchParams]);
   const cadre = await chargeCadre(boutique);
+  // Accepter un devis (module devis) : le tunnel à ses prix.
+  const devis = cadre.devis && recherche.devis && NUMERO_DEVIS.test(recherche.devis) ? recherche.devis : null;
   const { data: gouvernorats } = await supabase.from("gouvernorats").select("code, nom_fr").order("position");
 
   return (
     <Gabarit className="enveloppe flex-1 tunnel-page">
       <header className="tunnel-tete">
-        <h1>{t.commande.titre}</h1>
-        <p className="legende">{cadre.retrait ? t.commande.rassuranceRetrait : t.commande.rassurance}</p>
+        <h1>{devis ? t.devis.tunnelTitre(devis) : t.commande.titre}</h1>
+        <p className="legende">{devis ? t.devis.tunnelChapo : cadre.retrait ? t.commande.rassuranceRetrait : t.commande.rassurance}</p>
       </header>
       <Tunnel
         gabarit={cadre.theme.code}
@@ -43,6 +52,7 @@ export default async function Commande({ params }: { params: Promise<{ boutique:
         gouvernorats={(gouvernorats ?? []).map((g) => ({ code: g.code as string, nom: g.nom_fr as string }))}
         retractationJours={identiteLegale(cadre).retractationJours}
         retrait={cadre.retrait}
+        devisNumero={devis}
       />
     </Gabarit>
   );

@@ -447,8 +447,8 @@ await etape("les modules de la boutique", async () => {
   const lignes = page.locator(".md-module");
   verifie((await lignes.count()) === 6 && (await page.locator(".md-module[data-actif]").count()) === 0,
     `${await lignes.count()} modules, aucun actif pour une boutique neuve`);
-  const devis = page.locator('.md-module[data-module="devis"]');
-  verifie((await devis.innerText()).includes("À venir") && (await devis.getByRole("button").count()) === 0,
+  const aVenir = page.locator('.md-module[data-module="paiement_en_ligne"]');
+  verifie((await aVenir.innerText()).includes("À venir") && (await aVenir.getByRole("button").count()) === 0,
     "un module pas encore construit est « à venir », sans bouton");
   await clic(page, page.getByRole("button", { name: "Activer : Demander conseil (WhatsApp)" }));
   await page.waitForURL(/ok=/);
@@ -461,7 +461,7 @@ await etape("les modules de la boutique", async () => {
   // Une activation postée à la main pour un module à venir : la base refuse.
   const refus = await brut(ctx, "POST", `/boutiques/${SLUG}/modules/changer`, {
     entetes: { origin: CONSOLE },
-    formulaire: { boutique_id: await page.locator('input[name="boutique_id"]').first().inputValue(), module: "devis", actif: "true" },
+    formulaire: { boutique_id: await page.locator('input[name="boutique_id"]').first().inputValue(), module: "paiement_en_ligne", actif: "true" },
   });
   verifie(refus.status === 303 && decodeURIComponent(refus.location.replace(/\+/g, " ")).includes("à venir"), "un module à venir, posté à la main : la base refuse");
   await clic(page, page.getByRole("button", { name: "Couper : Demander conseil (WhatsApp)" }));

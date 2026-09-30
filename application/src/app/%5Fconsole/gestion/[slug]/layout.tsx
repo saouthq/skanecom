@@ -37,6 +37,15 @@ export default async function BackofficeBoutique({
   const badgePro = etatPro?.actif && etatPro.demandes
     ? <span className="app-nav-compte" aria-label={`${etatPro.demandes} demande${etatPro.demandes > 1 ? "s" : ""} de compte pro`}>{etatPro.demandes}</span>
     : undefined;
+  // Les devis, si la boutique a le module : ceux à chiffrer.
+  const { data: dv } = await (await clientSession()).rpc("gestion_devis_etat", { p_boutique_id: boutique.boutique_id });
+  const etatDevis = dv as { actif: boolean; a_chiffrer: number } | null;
+  const badgeDevis = etatDevis?.a_chiffrer
+    ? <span className="app-nav-compte" aria-label={`${etatDevis.a_chiffrer} à chiffrer`}>{etatDevis.a_chiffrer}</span>
+    : undefined;
+  const lienDevis = etatDevis?.actif || etatDevis?.a_chiffrer
+    ? [{ href: `/gestion/${slug}/devis`, libelle: "Devis", icone: "fichier" as const, extra: badgeDevis }]
+    : [];
   const badgeSav = etatSav?.nouvelles
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
     : undefined;
@@ -53,6 +62,7 @@ export default async function BackofficeBoutique({
           { href: `/gestion/${slug}/encaissements`, libelle: "Encaissements", icone: "billet" as const },
         ]
       : []),
+    ...lienDevis,
     { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
     { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
     ...(etatSav?.actif

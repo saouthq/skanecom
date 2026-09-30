@@ -70,6 +70,8 @@ export type Cadre = {
   /** Les comptes professionnels (module comptes_pro) : demande depuis le
    *  compte, prix pro lus par le navigateur du pro connecté. */
   comptesPro: boolean;
+  /** La demande de devis (module devis) : depuis le panier, suivie dans le compte. */
+  devis: boolean;
 };
 
 type Brut = {
@@ -147,6 +149,7 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
     revendeurOfficiel: texteDe("catalogue.revendeur_officiel") || null,
     sav: modules.includes("sav") ? { garantieMois: Number(reglage(reglages, "sav.garantie_mois", 0)) || 0 } : null,
     comptesPro: modules.includes("comptes_pro"),
+    devis: modules.includes("devis"),
   };
 });
 

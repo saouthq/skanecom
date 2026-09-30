@@ -395,6 +395,79 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     verifie((await page.locator(".te-carte [data-pro]").count()) === (await page.locator(".te-carte").count()), "chaque carte du rayon a son prix pro");
     await capture(page, "quincaillerie-rayon-prix-pro");
   });
+
+  await etape("devis : le panier demandé, chiffré, accepté au tunnel", async () => {
+    // Le panier : dix forets seulement (la perceuse de l'étape d'avant en sort), envoyés en demande de devis.
+    await page.goto(Q + "/produit/forets-metal-cobalt", { waitUntil: "networkidle" });
+    await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (k.startsWith("skanecom.panier.")) localStorage.removeItem(k); });
+    await page.reload({ waitUntil: "networkidle" });
+    for (let i = 0; i < 9; i++) await page.locator(".achat .qte button").last().click();
+    await clic(page, page.locator(".achat .btn-ajout"));
+    const tiroir = page.locator(".tiroir-panier[role=dialog]");
+    await tiroir.waitFor();
+    await clic(page, tiroir.locator(".panier-devis"));
+    await page.waitForURL(/\/devis$/);
+    await page.locator(".devis-formulaire").waitFor({ timeout: 8000 });
+    verifie((await page.locator(".devis-ligne").count()) >= 1, "la page de demande reprend le panier");
+    await clic(page, page.getByLabel(/Votre chantier/));
+    await tape(page, "Atelier à Gabès, livraison avant la fin du mois");
+    await clic(page, page.getByRole("button", { name: "Envoyer la demande de devis" }));
+    await page.locator(".devis-envoyee").waitFor({ timeout: 8000 });
+    const numero = (await page.locator(".devis-envoyee h2").innerText()).match(/DEV-\d+/)?.[0] ?? "";
+    verifie(numero === "DEV-00003", `la demande part (${numero}), le panier devient une demande`);
+    await capture(page, "quincaillerie-devis-envoye");
+    // La boutique chiffre et envoie (clé de service de l'API locale, comme le ferait le backoffice).
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    const entetes = { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json", prefer: "return=minimal" };
+    const ici = "boutique_id=eq.00000000-0000-4000-8000-000000000002";
+    const [{ id }] = await (await fetch(`${RELAIS}/rest/v1/devis?${ici}&numero=eq.${numero}&select=id`, { headers: entetes })).json();
+    await fetch(`${RELAIS}/rest/v1/devis_lignes?${ici}&devis_id=eq.${id}`, { method: "PATCH", headers: entetes, body: JSON.stringify({ prix_devis_millimes: 3500 }) });
+    const valide = new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10);
+    const r = await fetch(`${RELAIS}/rest/v1/devis?${ici}&id=eq.${id}`, { method: "PATCH", headers: entetes,
+      body: JSON.stringify({ statut: "envoye", envoye_le: new Date().toISOString(), valide_jusqu_au: valide, frais_livraison_millimes: 0, note_boutique: "Prix atelier" }) });
+    verifie(r.ok, `la boutique l'envoie (${r.status})`);
+    // « Mes devis » : prêt, accepté au tunnel, à ses prix.
+    await page.goto(Q + "/compte", { waitUntil: "networkidle" });
+    const carte = page.locator(".devis-carte", { hasText: numero });
+    await carte.waitFor({ timeout: 8000 });
+    verifie((await carte.innerText()).includes("Prêt") && (await carte.innerText()).includes("35,000"), "« Mes devis » : prêt, 10 × 3,500 = 35,000 TND");
+    await capture(page, "quincaillerie-mes-devis");
+    await clic(page, carte.getByRole("link", { name: "Accepter et commander" }));
+    await page.waitForURL(/\/commande\?devis=/);
+    await page.locator(".tunnel-tarif-devis").waitFor({ timeout: 8000 });
+    verifie((await page.getByRole("button", { name: "Modifier le panier" }).count()) === 0, "au tunnel du devis, ses lignes sont figées");
+    for (const [label, valeur] of [["Nom et prénom", "Hédi Mansouri"], [/^Adresse/, "Zone industrielle, lot 12"], ["Ville ou délégation", "Gabès"]]) {
+      await page.getByLabel(label).fill(valeur);
+    }
+    await page.getByLabel("Gouvernorat", { exact: true }).selectOption({ label: "Gabès" });
+    await page.waitForTimeout(800);
+    verifie((await page.locator(".tunnel-totaux").innerText()).includes("35,000"), "le récapitulatif : les prix du devis, livraison offerte");
+    await capture(page, "quincaillerie-tunnel-devis");
+    await page.locator(".tunnel-conditions input[type=checkbox]").check();
+    await clic(page, page.locator(".tunnel-bouton"));
+    await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
+    await page.locator(".merci").waitFor();
+    verifie((await page.locator(".merci").innerText()).includes("35,000"), "la commande naît aux prix du devis (35,000 TND)");
+    await capture(page, "quincaillerie-merci-devis");
+  });
+
+  await etape("devis : le lien ouvert sans session, la connexion sur place", async () => {
+    // L'électricienne du jeu de démo (compte relié par outils/api-locale.sh) ouvre
+    // le lien de son devis sur un autre téléphone : pas de session.
+    const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: "fr-FR" });
+    const p = await tel.newPage();
+    await p.goto(Q + "/commande?devis=DEV-00002", { waitUntil: "networkidle" });
+    const connexion = p.locator(".tunnel-vide .connexion-sms");
+    await connexion.waitFor({ timeout: 8000 });
+    verifie((await connexion.innerText()).includes("Votre devis vous attend"), "sans session : la connexion par SMS, pas une erreur");
+    await p.getByLabel("Téléphone").fill("22 345 002");
+    await p.getByRole("button", { name: "Recevoir le code" }).click();
+    await p.getByLabel("Code reçu par SMS").fill(await codeRecu("22345002"));
+    await p.locator(".tunnel-tarif-devis").waitFor({ state: "attached", timeout: 8000 });
+    verifie((await p.locator(".tunnel-recap").textContent()).includes("Prix du devis DEV-00002"), "connectée : le devis s'ouvre, à ses prix");
+    await capture(p, "quincaillerie-devis-lien-connexion");
+    await tel.close();
+  });
   await ctx.close();
 }
 

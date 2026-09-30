@@ -35,6 +35,7 @@ const annee = new Date().getFullYear();
 const num = (n) => `MAY-${annee}-${String(n).padStart(5, "0")}`;
 const attendue = (url) => url.includes("/gestion/maison-selma");
 await sansDoubleAuthentification("gerant@maymar.test");
+await sansDoubleAuthentification("gerant@quincaillerie.test");
 const navigateur = await t.navigateur();
 
 /* TOTP (RFC 6238), le même calcul que parcours-console.mjs. */
@@ -1180,7 +1181,56 @@ console.log("\n== 3. L'employé des appels, sur téléphone ==");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 4. Le préparateur d'une autre boutique ==");
+console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoyé ==");
+{
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "gerant-quincaillerie");
+
+  await etape("connexion, double authentification", async () => {
+    await connexion(page, "gerant@quincaillerie.test");
+    await page.waitForURL(/double-authentification/, { timeout: 15000 });
+    const secret = (await page.locator("[data-secret-totp]").textContent()).trim();
+    await clic(page, page.locator("#code"));
+    await tape(page, totp(secret));
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/gestion\/quincaillerie-demo$/, { timeout: 15000 });
+    verifie(true, "le propriétaire de la quincaillerie entre dans son backoffice");
+  });
+
+  await etape("les devis : la demande du plombier, chiffrée et envoyée", async () => {
+    const nav = page.getByRole("navigation").getByRole("link", { name: /^Devis/ }).first();
+    verifie((await nav.innerText()).includes("1"), "« Devis » porte la pastille de la demande à chiffrer");
+    await clic(page, nav);
+    await page.waitForURL(/\/devis$/);
+    await page.waitForLoadState("networkidle");
+    await capture(page, "gestion-devis-liste");
+    await clic(page, page.locator(".dv-ligne-lien", { hasText: "DEV-00001" }));
+    await page.waitForURL(/\/devis\/DEV-00001$/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".dv-demande").innerText()).includes("salles de bains"), "la fiche : ce que le client a écrit");
+    verifie((await page.locator(".dv-ligne").count()) === 3, "trois lignes, chacune avec son stock et son prix catalogue");
+    const premier = page.locator(".dv-ligne input[name^='prix:']").first();
+    verifie((await premier.inputValue()) === "19,000", "le prix pro est proposé d'emblée (la boîte de 200 vis : 19,000)");
+    await clic(page, page.locator("#dv-remise"));
+    await tape(page, "10");
+    await clic(page, page.getByRole("button", { name: "Appliquer à toutes les lignes" }));
+    verifie((await premier.inputValue()) === "19,800", "10 % sous le catalogue, sur chaque ligne (22,000 → 19,800)");
+    await clic(page, page.locator("input[name=frais_mode][value=offerte]"));
+    verifie((await page.locator(".dv-ecart dd").innerText()).includes("−10"), "l'écart au catalogue se lit pendant la saisie");
+    await capture(page, "gestion-devis-chiffrage");
+    await clic(page, page.getByRole("button", { name: "Envoyer le devis" }));
+    await page.waitForURL(/ok=/, { timeout: 15000 });
+    verifie((await page.locator(".message-succes").first().innerText()).includes("Devis envoyé"), "envoyé : le client le voit dans son compte");
+    const wa = decodeURIComponent((await page.locator("a[href^='https://wa.me/']").first().getAttribute("href")) ?? "");
+    verifie(wa.includes("Votre devis DEV-00001 est prêt"), "le message WhatsApp est prêt, avec le total et la validité");
+    verifie((await page.locator(".ui-etat", { hasText: "Envoyé" }).count()) >= 1, "la fiche dit « Envoyé »");
+    await capture(page, "gestion-devis-envoye");
+  });
+  await ctx.close();
+}
+
+console.log("\n== 5. Le préparateur d'une autre boutique ==");
 {
   const ctx = await navigateur.newContext({ viewport: { width: 1280, height: 860 }, locale: "fr-FR" });
   const page = await ctx.newPage();
@@ -1278,6 +1328,14 @@ console.log("\n== 4. Le préparateur d'une autre boutique ==");
     await page.goto(`${C}/gestion/quincaillerie-demo/export/clients`, { waitUntil: "networkidle" });
     verifie(decodeURIComponent(page.url().replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur exportent"),
       "l'adresse de l'export, tapée à la main : la base refuse");
+  });
+
+  await etape("les devis : il lit, il ne chiffre pas", async () => {
+    await page.goto(`${C}/gestion/quincaillerie-demo/devis/DEV-00002`, { waitUntil: "networkidle" });
+    verifie(await page.locator(".dv-form").count() === 0, "la fiche d'un devis, sans le chiffrage");
+    const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/devis/DEV-00002/action", { action: "annuler", motif: "Essai" });
+    verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("revient à la direction"),
+      `annuler à la main : la base refuse (${r.status})`);
   });
 
   await etape("les clients : il voit, il ne juge pas", async () => {

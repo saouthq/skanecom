@@ -1002,3 +1002,80 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .pro-acces-texte strong { font-weight: 600; }
 .pro-acces-texte .discret { font-size: .8125rem; }
 .pro-acces > svg { color: var(--ui-texte-3); flex: none; }
+
+/* ---------------------------------------------------------------------------
+   Les devis (module devis) : la liste, la fiche, le chiffrage ligne par
+   ligne (prix saisi, total qui suit), la barre des totaux collée en bas.
+   --------------------------------------------------------------------------- */
+.dv-ligne-lien { grid-template-areas: "img nom prix" "img etat date"; }
+.dv-ligne-etat { grid-area: etat; display: flex; flex-wrap: wrap; gap: .375rem; }
+.dv-ligne-date { grid-area: date; justify-self: end; font-size: .8125rem; color: var(--ui-texte-3); white-space: nowrap; }
+.dv-ligne-detail { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 900px) {
+  .dv-ligne-lien {
+    grid-template-columns: 40px minmax(0, 2fr) 10rem 9.5rem 11rem;
+    grid-template-areas: "img nom etat date prix";
+  }
+  .dv-ligne-date { justify-self: start; }
+}
+.dv-demande { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .25rem .75rem; padding: 1rem 1.125rem; }
+.dv-demande > svg { color: var(--ui-texte-3); margin-block-start: .125rem; }
+.dv-demande blockquote { margin: 0; font-size: .9375rem; font-style: italic; }
+.dv-demande .aide { grid-column: 2; }
+
+.dv-form { display: grid; }
+.dv-remise { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; padding: .875rem 1.25rem; border-block-end: 1px solid var(--ui-bord-leger); background: var(--ui-survol); }
+.dv-remise > label { font-size: .8125rem; font-weight: 500; color: var(--ui-texte-2); }
+.dv-remise-champ { display: inline-flex; align-items: center; gap: .375rem; }
+.dv-remise-champ .entree { inline-size: 4.5rem; text-align: end; }
+.dv-lignes { display: grid; margin: 0; padding: 0; list-style: none; }
+.dv-ligne {
+  display: grid; grid-template-columns: minmax(0, 1fr) 9.5rem 8.5rem; align-items: center; gap: .5rem 1rem;
+  padding: .875rem 1.25rem; border-block-start: 1px solid var(--ui-bord-leger); animation: ui-monte .3s var(--ui-courbe, ease) backwards;
+}
+.dv-ligne:first-child { border-block-start: 0; }
+.dv-ligne[data-invalide] { background: var(--ui-rouge-fond); }
+.dv-ligne-quoi { display: grid; gap: .125rem; min-inline-size: 0; }
+.dv-ligne-quoi b { font-weight: 600; }
+.dv-ligne-quoi .discret { font-size: .8125rem; }
+.dv-ligne-faits { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .875rem; margin-block-start: .25rem; font-size: .8125rem; }
+.dv-manque { display: inline-flex; align-items: center; gap: .25rem; color: var(--ui-ambre); font-weight: 500; }
+.dv-pro { color: var(--ui-violet); font-weight: 500; }
+.dv-ligne-prix > label { font-size: .75rem; color: var(--ui-texte-2); font-weight: 500; }
+.dv-ligne-prix input { text-align: end; }
+.dv-ligne-total { justify-self: end; font-weight: 600; white-space: nowrap; }
+.dv-lecture .dv-ligne { grid-template-columns: minmax(0, 1fr) auto 8.5rem; }
+
+.dv-bas { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .6fr) minmax(0, 1.6fr); gap: 1rem 1.25rem; padding: 1rem 1.25rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.dv-frais { display: grid; gap: .375rem; margin: 0; padding: 0; border: 0; }
+.dv-frais legend { font-size: .8125rem; font-weight: 500; color: var(--ui-texte-2); margin-block-end: .25rem; }
+.dv-frais-montant { display: flex; align-items: center; gap: .5rem; }
+.dv-frais-montant .entree { inline-size: 7rem; text-align: end; }
+
+.dv-barre {
+  position: sticky; inset-block-end: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.25rem;
+  padding: .875rem 1.25rem; border-block-start: 1px solid var(--ui-bord); background: color-mix(in srgb, var(--ui-panneau) 94%, transparent);
+  backdrop-filter: blur(8px); border-end-start-radius: var(--ui-r-l, 12px); border-end-end-radius: var(--ui-r-l, 12px);
+}
+.dv-totaux { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; margin: 0; }
+.dv-totaux dt { font-size: .75rem; color: var(--ui-texte-3); }
+.dv-totaux dd { margin: 0; font-weight: 500; }
+.dv-total dd { font-size: 1.125rem; font-weight: 700; }
+.dv-ecart dd { color: var(--ui-vert); font-weight: 600; }
+.dv-ecart[data-hausse] dd { color: var(--ui-ambre); }
+.dv-gestes { display: inline-flex; flex-wrap: wrap; gap: .5rem; }
+
+.dv-annuler { padding: 1rem 1.125rem; }
+.dv-annuler > summary { cursor: pointer; font-weight: 600; list-style: none; }
+.dv-annuler > summary::-webkit-details-marker { display: none; }
+.dv-annuler-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem .75rem; margin-block-start: .875rem; }
+.dv-annuler-form .champ { flex: 1 1 18rem; }
+
+@media (max-width: 760px) {
+  .dv-ligne { grid-template-columns: minmax(0, 1fr) 8.5rem; }
+  .dv-ligne-quoi { grid-column: 1 / -1; }
+  .dv-ligne-total { align-self: end; padding-block-end: .5rem; }
+  .dv-bas { grid-template-columns: 1fr; }
+  .dv-barre { inset-block-end: calc(var(--onglets-h, 64px) + env(safe-area-inset-bottom, 0px)); }
+  .dv-gestes, .dv-gestes .btn { flex: 1; }
+}

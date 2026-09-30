@@ -32,7 +32,9 @@ export const metadata: Metadata = {
 export default async function Merci({ params }: { params: Promise<{ boutique: string }> }) {
   const { boutique } = await params;
   const cadre = await chargeCadre(boutique);
-  const [numero, jeton] = ((await cookies()).get(COOKIE_COMMANDE)?.value ?? "").split(".");
+  // « numéro.jeton », ou « numéro.jeton.devis » pour la commande d'un devis
+  // accepté : celle-là ne vide pas le panier du moment.
+  const [numero, jeton, origine] = ((await cookies()).get(COOKIE_COMMANDE)?.value ?? "").split(".");
 
   let commande: CommandeSuivie | null = null;
   if (numero && jeton) {
@@ -87,7 +89,7 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
 
   return (
     <Gabarit className="enveloppe flex-1 merci-page">
-      <FinDeCommande boutique={cadre.boutique.slug} creeLe={commande.cree_le} />
+      {origine === "devis" ? null : <FinDeCommande boutique={cadre.boutique.slug} creeLe={commande.cree_le} />}
       <section className="merci" aria-labelledby="merci-titre">
         <header className="merci-tete">
           <p className="etiquette merci-etiquette">

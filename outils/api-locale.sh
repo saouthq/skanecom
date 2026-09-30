@@ -16,7 +16,11 @@
 # Backoffice des boutiques, même adresse, mot de passe « equipe-locale-skanecom » :
 #   gerant@maymar.test (propriétaire, double authentification),
 #   appels@maymar.test (confirmation), prepa@quincaillerie.test (préparation),
-#   gerant@selma.test (propriétaire).
+#   gerant@quincaillerie.test (propriétaire, double authentification : les
+#   comptes pro, les devis), gerant@selma.test (propriétaire).
+# Clients à compte de la quincaillerie (code SMS, affiché en local) :
+#   98 765 001 (le plombier, compte pro en attente, devis à chiffrer),
+#   22 345 002 (l'électricienne, pro validée, devis prêt à accepter).
 #
 # Prérequis : la base locale (outils/base-locale.sh reinit) et Node.
 # Adresse : http://127.0.0.1:54321 (comme `supabase start`).
@@ -36,7 +40,9 @@ ADMIN_EMAIL=admin@skanecom.test
 ADMIN_MDP=console-locale-skanecom
 EQUIPE_MDP=equipe-locale-skanecom
 # courriel:boutique:rôle — l'équipe de développement des boutiques de démo.
-EQUIPE="gerant@maymar.test:maymar:proprietaire appels@maymar.test:maymar:confirmateur prepa@quincaillerie.test:quincaillerie-demo:preparateur gerant@selma.test:maison-selma:proprietaire"
+EQUIPE="gerant@maymar.test:maymar:proprietaire appels@maymar.test:maymar:confirmateur prepa@quincaillerie.test:quincaillerie-demo:preparateur gerant@quincaillerie.test:quincaillerie-demo:proprietaire gerant@selma.test:maison-selma:proprietaire"
+# téléphone:boutique — les fiches clients du jeu de démo qui ont un compte.
+CLIENTS="+21698765001:quincaillerie-demo +21622345002:quincaillerie-demo"
 . "$RACINE/outils/gotrue.sh"
 
 mkdir -p "$OUTILS"
@@ -143,6 +149,7 @@ ENV
        curl -sf -o /dev/null "http://127.0.0.1:54321/auth/v1/health"; then
       admin_de_developpement
       equipe_de_developpement
+      clients_de_developpement
       echo "API locale prête : http://127.0.0.1:54321 (clés dans .outils/api-locale.env)"
       return
     fi
@@ -180,6 +187,26 @@ equipe_de_developpement() {
       select b.id, u.id, '$role' from plateforme.boutiques b, auth.users u
       where b.slug = '$slug' and u.email = '$email'
       on conflict do nothing;" > /dev/null
+  done
+}
+
+# Les clients à compte du jeu de démo (comptes pro, devis) : leur numéro
+# devient un compte GoTrue, relié à leur fiche, comme s'ils s'étaient
+# connectés une fois par code SMS.
+clients_de_developpement() {
+  local cle; cle=$(jeton service_role)
+  local ligne tel slug
+  for ligne in $CLIENTS; do
+    IFS=: read -r tel slug <<< "$ligne"
+    curl -s -o /dev/null -X POST "http://127.0.0.1:54321/auth/v1/admin/users" \
+      -H "apikey: $cle" -H "authorization: Bearer $cle" -H "content-type: application/json" \
+      -d "{\"phone\":\"$tel\",\"phone_confirm\":true}"
+    psql -X -q -h 127.0.0.1 -p "$PORT_BASE" -U postgres -d "$BASE" -v ON_ERROR_STOP=1 -c "
+      update public.clients c set user_id = u.id
+        from plateforme.boutiques b, auth.users u
+       where b.slug = '$slug' and c.boutique_id = b.id and c.telephone = '$tel' and c.user_id is null
+         and u.phone = ltrim('$tel', '+')
+         and not exists (select 1 from public.clients x where x.boutique_id = b.id and x.user_id = u.id);" > /dev/null
   done
 }
 

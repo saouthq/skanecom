@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import Image from "next/image";
 import { Coche } from "./Icones";
 import { EspacePro } from "./EspacePro";
+import { MesDevis } from "./MesDevis";
 import { Prix } from "./Prix";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import { chiffresTelephone, lieu, telephoneLisible, type Magasin } from "@/lib/commande";
@@ -28,7 +29,8 @@ import { t } from "@/lib/i18n";
 
    Avec les comptes professionnels (module comptes_pro), l'espace pro vient
    sous l'identité : demander un compte, ou lire où en est le sien
-   (EspacePro.tsx).
+   (EspacePro.tsx). Avec la demande de devis (module devis), « Mes devis »
+   (MesDevis.tsx) : les prix, et « Accepter et commander ».
    ========================================================================== */
 
 type LigneMienne = { id: string; produit_nom: string; variante_libelle: string | null; quantite: number; image: string | null };
@@ -61,7 +63,7 @@ type CommandeMienne = {
 const ATTENTE_RENVOI = 30;
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
-export function Compte({ boutiqueId, sav = false, pro = false }: { boutiqueId: string; sav?: boolean; pro?: boolean }) {
+export function Compte({ boutiqueId, sav = false, pro = false, devis = false }: { boutiqueId: string; sav?: boolean; pro?: boolean; devis?: boolean }) {
   // undefined : la session n'est pas encore lue.
   const [session, setSession] = useState<{ telephone: string } | null | undefined>(undefined);
   const [commandes, setCommandes] = useState<CommandeMienne[] | null>(null);
@@ -265,6 +267,7 @@ export function Compte({ boutiqueId, sav = false, pro = false }: { boutiqueId: s
       </div>
 
       {pro ? <EspacePro boutiqueId={boutiqueId} /> : null}
+      {devis ? <MesDevis boutiqueId={boutiqueId} /> : null}
 
       {erreurListe ? (
         <p className="tunnel-alerte" role="alert">{t.compte.erreur}</p>
