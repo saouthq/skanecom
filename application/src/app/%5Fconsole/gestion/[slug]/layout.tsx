@@ -49,7 +49,10 @@ export default async function BackofficeBoutique({
           liens: [
             lienCommandes,
             ...(DIRECTION.includes(boutique.role)
-              ? [{ href: `/gestion/${slug}/tableau`, libelle: "Tableau de bord", icone: "graphique" as const }]
+              ? [
+                  { href: `/gestion/${slug}/tableau`, libelle: "Tableau de bord", icone: "graphique" as const },
+                  { href: `/gestion/${slug}/encaissements`, libelle: "Encaissements", icone: "billet" as const },
+                ]
               : []),
             { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
             { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },

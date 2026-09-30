@@ -496,3 +496,38 @@ html[data-gabarit] .ui-progression {
 html[data-gabarit] .ui-progression[data-etat="court"] { opacity: 1; transform: scaleX(.8); transition: transform 8s cubic-bezier(.1, .7, .1, 1), opacity .15s; }
 html[data-gabarit] .ui-progression[data-etat="fin"] { opacity: 0; transform: scaleX(1); transition: transform .25s var(--theme-courbe), opacity .35s .25s; }
 @media print { .ui-progression { display: none; } }
+
+/* --- La visionneuse (components/Visionneuse.tsx) ----------------------------
+   Les photos de la fiche en plein écran, sur fond sombre : on glisse d'une
+   photo à l'autre, le compteur et la croix en haut, les flèches sur les
+   côtés (ordinateur). */
+.galerie-agrandir { display: block; inline-size: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; color: inherit; }
+.visionneuse {
+  inline-size: 100vw; block-size: 100dvh; max-inline-size: none; max-block-size: none; margin: 0; padding: 0; border: 0;
+  background: color-mix(in srgb, #0B0B0C 94%, transparent); color: #fff; overflow: hidden;
+}
+.visionneuse[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); animation: visionneuse-ouvre .28s var(--theme-courbe); }
+.visionneuse::backdrop { background: transparent; }
+@keyframes visionneuse-ouvre { from { opacity: 0; transform: scale(.985); } }
+html:has(.visionneuse[open]) { overflow: hidden; }
+.visionneuse-tete { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem 1rem .75rem 1.25rem; }
+.visionneuse-compteur { margin: 0; font-size: .875rem; font-variant-numeric: tabular-nums; opacity: .8; }
+.visionneuse-fermer, .visionneuse-fleche {
+  display: grid; place-items: center; inline-size: 44px; block-size: 44px; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgb(255 255 255 / .1); color: #fff; transition: background-color .2s, opacity .2s;
+}
+.visionneuse-fermer:hover, .visionneuse-fleche:hover:not(:disabled) { background: rgb(255 255 255 / .2); }
+.visionneuse :focus-visible { outline-color: #fff; }
+.visionneuse-piste { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior: contain; }
+.visionneuse-piste::-webkit-scrollbar { display: none; }
+.visionneuse-vue { position: relative; flex: 0 0 100%; scroll-snap-align: start; margin-block-end: 1rem; }
+.visionneuse-vue img { object-fit: contain; }
+.visionneuse-fleche { position: absolute; inset-block-start: 50%; translate: 0 -50%; display: none; }
+.visionneuse-fleche:disabled { opacity: .25; cursor: default; }
+.visionneuse-fleche[data-sens="avant"] { inset-inline-start: 1.25rem; }
+.visionneuse-fleche[data-sens="apres"] { inset-inline-end: 1.25rem; }
+.visionneuse-fleche[data-sens="avant"] svg { rotate: 90deg; }
+.visionneuse-fleche[data-sens="apres"] svg { rotate: -90deg; }
+[dir="rtl"] .visionneuse-fleche[data-sens="avant"] svg { rotate: -90deg; }
+[dir="rtl"] .visionneuse-fleche[data-sens="apres"] svg { rotate: 90deg; }
+@media (hover: hover) and (min-width: 700px) { .visionneuse-fleche { display: grid; } }

@@ -85,7 +85,7 @@ outils/essayer.sh
 Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
 
 ```bash
-outils/base-locale.sh tester                   # 769 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, images de la marque, modules, retrait en magasin, mes commandes, mise en place, accès support, photos à l'import, fiches techniques, supplément au poids, service après-vente, tableau de bord)
+outils/base-locale.sh tester                   # 797 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, images de la marque, modules, retrait en magasin, mes commandes, mise en place, accès support, photos à l'import, fiches techniques, supplément au poids, service après-vente, tableau de bord, encaissements)
 outils/essai-vitrine.sh                        # 26 essais : les boutiques ne se mélangent jamais, le tunnel et le compte ne sont jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)

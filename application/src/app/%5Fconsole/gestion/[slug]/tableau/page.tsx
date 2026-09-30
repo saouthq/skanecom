@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EnTetePage } from "@/components/console/Coquille";
+import { Compteur } from "@/components/console/Compteur";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { formateMontant } from "@/lib/prix";
@@ -87,13 +88,13 @@ export default async function TableauDeBord({
           <section className="tb-chiffres" aria-label="Les chiffres de la période">
             <article className="carte tb-chiffre tb-chiffre-fort">
               <p className="tb-libelle">Encaissé</p>
-              <p className="tb-valeur">{formateMontant(c.encaisse_millimes ?? 0)} <span>TND</span></p>
+              <p className="tb-valeur"><Compteur valeur={c.encaisse_millimes ?? 0} format="montant" /> <span>TND</span></p>
               <p className="tb-detail">{c.livrees} commande{(c.livrees ?? 0) > 1 ? "s" : ""} livrée{(c.livrees ?? 0) > 1 ? "s" : ""} · panier moyen {formateMontant(c.panier_moyen_millimes ?? 0)} TND</p>
               <Evolution maintenant={c.encaisse_millimes} avant={p.encaisse_millimes} />
             </article>
             <article className="carte tb-chiffre">
               <p className="tb-libelle">Commandes reçues</p>
-              <p className="tb-valeur">{c.recues}</p>
+              <p className="tb-valeur"><Compteur valeur={c.recues ?? 0} /></p>
               <p className="tb-detail">
                 {c.a_confirmer ? <Link href={`/gestion/${slug}?etape=a_confirmer`}>{c.a_confirmer} à confirmer</Link> : "aucune à confirmer"}
                 {enRoute > 0 ? ` · ${enRoute} en préparation ou en route` : ""}
@@ -102,7 +103,7 @@ export default async function TableauDeBord({
             </article>
             <article className="carte tb-chiffre">
               <p className="tb-libelle">Taux de confirmation</p>
-              <p className="tb-valeur">{pourcent(c.taux_confirmation)}</p>
+              <p className="tb-valeur">{c.taux_confirmation != null ? <Compteur valeur={c.taux_confirmation} format="pourcent" /> : pourcent(null)}</p>
               <p className="tb-detail">
                 {c.confirmees} confirmée{(c.confirmees ?? 0) > 1 ? "s" : ""}
                 {c.confirmation_minutes != null ? ` · en ${duree(c.confirmation_minutes)} (médiane)` : ""}
@@ -111,7 +112,7 @@ export default async function TableauDeBord({
             </article>
             <article className="carte tb-chiffre">
               <p className="tb-libelle">Refus à la livraison</p>
-              <p className="tb-valeur">{pourcent(c.taux_refus)}</p>
+              <p className="tb-valeur">{c.taux_refus != null ? <Compteur valeur={c.taux_refus} format="pourcent" /> : pourcent(null)}</p>
               <p className="tb-detail">
                 {c.refusees ? `${c.refusees} colis revenu${(c.refusees ?? 0) > 1 ? "s" : ""} · ${formateMontant(c.perdu_millimes ?? 0)} TND non encaissés` : "aucun colis revenu"}
               </p>

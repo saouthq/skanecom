@@ -750,3 +750,26 @@ begin
   end loop;
 end
 $$;
+
+-- ---------------------------------------------------------------------
+-- L'argent des livreurs : Aramex a reversé le colis livré le plus tôt,
+-- moins ses frais (6 TND retenus) ; le plus récent est encore chez lui.
+-- ---------------------------------------------------------------------
+do $$
+declare
+  b constant uuid := '00000000-0000-4000-8000-000000000001';
+  v_commande public.commandes;
+  v_id uuid;
+begin
+  select c.* into v_commande from public.commandes c
+   where c.boutique_id = b and c.statut = 'livree' and c.mode_paiement = 'cod' and c.mode_livraison = 'domicile'
+   order by c.livree_at limit 1;
+  insert into public.versements (boutique_id, transporteur, recu_le, attendu_millimes, recu_millimes, reference, numeros, auteur_id, created_at)
+  values (b, v_commande.transporteur, (v_commande.livree_at at time zone 'Africa/Tunis')::date + 4, v_commande.total_millimes,
+          v_commande.total_millimes - 6000, 'VIR ARAMEX 0915', array[v_commande.numero],
+          (select id from auth.users where email = 'gerant@maymar.test'), v_commande.livree_at + interval '4 days')
+  returning id into v_id;
+  insert into public.versement_commandes (boutique_id, versement_id, commande_id, montant_millimes)
+  values (b, v_id, v_commande.id, v_commande.total_millimes);
+end
+$$;

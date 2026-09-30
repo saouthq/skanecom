@@ -743,7 +743,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .tb-chiffre { display: grid; gap: .375rem; align-content: start; }
 .tb-libelle { font-size: .8125rem; font-weight: 500; color: var(--ui-texte-2); }
 .tb-valeur { font-size: clamp(1.75rem, 3vw, 2.125rem); font-weight: 600; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.tb-valeur span { font-size: .875rem; font-weight: 500; color: var(--ui-texte-3); letter-spacing: 0; }
+.tb-valeur span:not([data-compteur]) { font-size: .875rem; font-weight: 500; color: var(--ui-texte-3); letter-spacing: 0; }
 .tb-detail { font-size: .8125rem; color: var(--ui-texte-2); }
 .tb-detail a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .tb-evolution { font-size: .75rem; font-weight: 600; margin-block-start: .25rem; }
@@ -752,7 +752,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .tb-mauvais { color: var(--ui-rouge); }
 .tb-neutre { color: var(--ui-texte-3); font-weight: 400; }
 .tb-chiffre-fort { background: var(--ui-texte); border-color: var(--ui-texte); color: var(--ui-panneau); }
-.tb-chiffre-fort .tb-libelle, .tb-chiffre-fort .tb-detail, .tb-chiffre-fort .tb-valeur span { color: color-mix(in srgb, var(--ui-panneau) 72%, transparent); }
+.tb-chiffre-fort .tb-libelle, .tb-chiffre-fort .tb-detail, .tb-chiffre-fort .tb-valeur span:not([data-compteur]) { color: color-mix(in srgb, var(--ui-panneau) 72%, transparent); }
 .tb-chiffre-fort .tb-bon { color: #86EFAC; }
 .tb-chiffre-fort .tb-mauvais { color: #FCA5A5; }
 .tb-chiffre-fort .tb-neutre, .tb-chiffre-fort .tb-evolution .discret { color: color-mix(in srgb, var(--ui-panneau) 60%, transparent); }
@@ -807,3 +807,66 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .tb-produit-nom { grid-area: nom; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: .875rem; }
 .tb-produit-q { grid-area: q; font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .tb-produit-m { grid-area: m; font-size: .75rem; color: var(--ui-texte-3); font-variant-numeric: tabular-nums; }
+
+/* ==========================================================================
+   LES ENCAISSEMENTS (B12, 2e partie) — livreur par livreur, les colis à
+   reverser et la saisie du versement ; le journal des versements.
+   ========================================================================== */
+.console .carte.ec-groupe { --ec-marge: 1.5rem; padding: 0; overflow: hidden; }
+.ec-groupe-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin: 0; padding: 1.25rem var(--ec-marge) 1rem; }
+.ec-groupe-total { margin: 0; font-size: 1.375rem; font-weight: 650; letter-spacing: -.01em; white-space: nowrap; }
+.ec-form { display: grid; }
+.ec-colis-tete { padding: .5rem var(--ec-marge); border-block: 1px solid var(--ui-bord); background: var(--ui-survol); font-size: .8125rem; color: var(--ui-texte-2); }
+.ec-tout { display: inline-flex; align-items: center; gap: .625rem; cursor: pointer; }
+.ec-colis { display: grid; margin: 0; padding: 0; list-style: none; }
+.ec-colis > li + li { border-block-start: 1px solid var(--ui-bord-leger, var(--ui-bord)); }
+.ec-colis-ligne {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .875rem;
+  padding: .75rem var(--ec-marge); cursor: pointer; transition: background-color .15s, opacity .2s;
+}
+.ec-colis-lecture .ec-colis-ligne { grid-template-columns: minmax(0, 1fr) auto; cursor: default; }
+.ec-colis-ligne:hover { background: var(--ui-survol); }
+.ec-form .ec-colis-ligne:not([data-coche]) { opacity: .55; }
+.ec-colis-ligne input[type="checkbox"], .ec-tout input { inline-size: 18px; block-size: 18px; accent-color: var(--ui-texte); }
+.ec-colis-qui { display: grid; min-inline-size: 0; font-size: .875rem; }
+.ec-colis-qui > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-texte-2); }
+.ec-colis-quand { font-size: .8125rem; color: var(--ui-texte-2); white-space: nowrap; }
+.ec-colis-quand[data-ancien] { color: #B45309; }
+.ec-colis-montant { font-size: .9375rem; font-weight: 600; white-space: nowrap; text-align: end; }
+.ec-saisie {
+  display: grid; grid-template-columns: minmax(9rem, 1fr) minmax(9rem, 1fr) minmax(12rem, 1.6fr); gap: 1rem;
+  padding: 1rem var(--ec-marge); border-block-start: 1px solid var(--ui-bord);
+}
+.ec-pied {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem;
+  padding: .875rem var(--ec-marge); border-block-start: 1px solid var(--ui-bord); background: var(--ui-survol);
+}
+.ec-bilan { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; margin: 0; font-size: .875rem; color: var(--ui-texte-2); }
+.ec-bilan b { color: var(--ui-texte); font-weight: 600; }
+.ec-ecart { padding: .1875rem .625rem; border-radius: 999px; font-weight: 600; transition: background-color .2s, color .2s; }
+.ec-ecart[data-sens="nul"] { background: color-mix(in srgb, #16A34A 12%, transparent); color: #15803D; }
+.ec-ecart[data-sens="moins"] { background: color-mix(in srgb, #DC2626 11%, transparent); color: #B91C1C; }
+.ec-ecart[data-sens="plus"] { background: color-mix(in srgb, #2563EB 11%, transparent); color: #1D4ED8; }
+@media (max-width: 699px) {
+  .console .carte.ec-groupe { --ec-marge: 1rem; }
+  .ec-colis-ligne { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .ec-colis-quand { grid-column: 2; grid-row: 2; }
+  .ec-colis-montant { grid-column: 3; grid-row: 1 / span 2; }
+  .ec-saisie { grid-template-columns: 1fr 1fr; }
+  .ec-reference { grid-column: 1 / -1; }
+  .ec-pied .btn { inline-size: 100%; }
+  .ec-groupe-total { font-size: 1.125rem; }
+}
+
+.ec-versements { display: grid; margin: 0; padding: 0; list-style: none; }
+.ec-versement { padding-block: .875rem; border-block-start: 1px solid var(--ui-bord); }
+.ec-versement[data-annule] { opacity: .6; }
+.ec-versement[data-annule] .ec-versement-montant { text-decoration: line-through; }
+.ec-versement-tete { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: .5rem 1rem; }
+.ec-versement-quoi { display: grid; min-inline-size: 0; font-size: .875rem; }
+.ec-versement-quoi .discret { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ec-versement-montant { font-weight: 600; white-space: nowrap; }
+.ec-versement-colis { margin-block-start: .375rem; font-size: .8125rem; }
+.ec-versement-colis > summary { cursor: pointer; color: var(--ui-texte-2); inline-size: fit-content; }
+.ec-numeros { display: flex; flex-wrap: wrap; gap: .25rem .75rem; margin: .5rem 0; }
+.ec-annuler { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-block-start: .5rem; padding: .625rem .75rem; border-radius: var(--ui-r-s, 8px); background: var(--ui-survol); }

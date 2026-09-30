@@ -279,6 +279,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis le tableau de bord** (migration 31, `20260929103000_tableau_de_bord.sql`, 18 tests dans `supabase/tests/32_tableau_de_bord.sql`) : `gestion_tableau_de_bord(boutique, jours)` (7, 30 ou 90 ; propriétaire, administrateur, lecture) rend, pour les commandes passées sur la période (heure de Tunis, hors `a_arbitrer`) et pour la période précédente, la synthèse (reçues, confirmées, livrées, refusées, annulées, en cours, à confirmer, encaissé, perdu aux refus, panier moyen, taux de confirmation et de refus, délai médian de confirmation), puis `par_jour`, `refus_origines`, `gouvernorats` et `produits`. Rien n'est stocké : tout est calculé à la demande.
 
+**Puis l'argent des livreurs** (migration 32, `20260929103100_encaissements.sql`, 28 tests dans `supabase/tests/33_encaissements.sql`) : `public.versements` (transporteur, reçu le, attendu, reçu, référence, note, les numéros des colis figés, auteur, annulation) et `public.versement_commandes` (un colis n'est rapproché qu'une fois : unicité `(boutique_id, commande_id)`), sans lecture ni écriture directe par l'API ; `gestion_encaissements(boutique)` (à recevoir par transporteur, les 50 derniers versements, les trente jours), `gestion_enregistrer_versement(boutique, transporteur, numéros, reçu, date, référence, note)` et `gestion_annuler_versement(boutique, versement)` (propriétaire et administrateur).
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

@@ -147,6 +147,9 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     verifie((await page.locator(".app-cote .app-compte-role").innerText()).includes("Confirmation"), "son rôle est affiché");
     verifie(await page.locator(".app-cote").getByRole("link", { name: "Tableau de bord" }).count() === 0,
       "le chiffre d'affaires ne le regarde pas : pas de tableau de bord");
+    verifie(await page.locator(".app-cote").getByRole("link", { name: "Encaissements" }).count() === 0, "ni les encaissements");
+    await page.goto(`${C}/gestion/maymar/encaissements`, { waitUntil: "networkidle" });
+    verifie(/\/gestion\/maymar$/.test(new URL(page.url()).pathname), "même par l'adresse : retour aux commandes");
   });
 
   await etape("la liste « à confirmer »", async () => {
@@ -901,6 +904,36 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await page.waitForURL(/jours=7/);
     await page.waitForLoadState("networkidle");
     verifie(await page.locator(".tb-barres li").count() === 7, "sur 7 jours : sept points");
+  });
+
+  await etape("les encaissements : l'argent resté chez les livreurs", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Encaissements" }));
+    await page.waitForURL(/\/gestion\/maymar\/encaissements/);
+    const chiffres = await page.locator(".tb-chiffres").innerText();
+    verifie(["Chez les livreurs", "Reçu sur 30 jours", "Écart sur 30 jours"].every((x) => chiffres.includes(x)), "l'argent en un coup d'œil : chez les livreurs, reçu, écart");
+    const demo = page.locator(".ec-versement", { hasText: "VIR ARAMEX 0915" });
+    verifie((await demo.count()) === 1 && (await demo.innerText()).includes("−6,000 TND"), "le journal garde le versement d'Aramex du jeu de démo, 6 TND retenus");
+    const groupe = page.locator(".ec-groupe").first();
+    const livreur = (await groupe.locator("h2").innerText()).trim();
+    const colis = await groupe.locator(".ec-colis-ligne").count();
+    const total = (await groupe.locator(".ec-groupe-total").innerText()).replace(/[^\d,]/g, "");
+    verifie(colis >= 1, `${livreur} : ${colis} colis livré(s), ${total} TND pas encore reversés`);
+    verifie((await groupe.locator(".ec-bilan").innerText()).includes("Le compte est bon"), "tout coché, le montant proposé est l'attendu");
+    const moins5 = (Number(total.replace(",", ".")) - 5).toFixed(3).replace(".", ",");
+    await groupe.locator("input[name=recu]").fill(moins5);
+    verifie((await groupe.locator(".ec-bilan").innerText()).includes("Écart −5,000 TND"), `${moins5} TND reçus : l'écart s'affiche pendant la saisie (−5,000)`);
+    await groupe.locator("input[name=reference]").fill("VIR-PARCOURS");
+    await capture(page, "gestion-encaissements");
+    await clic(page, groupe.getByRole("button", { name: /Enregistrer le versement/ }));
+    await page.waitForURL(/fait=verse/);
+    verifie((await page.locator(".message-succes").innerText()).includes("écart de −5,000 TND"), "le versement est enregistré, son écart annoncé");
+    const saisi = page.locator(".ec-versement", { hasText: "VIR-PARCOURS" });
+    verifie((await saisi.innerText()).includes("−5,000 TND") && (await saisi.innerText()).includes("gerant@maymar.test"), "il entre au journal, avec son auteur");
+    await clic(page, saisi.locator("summary"));
+    await clic(page, saisi.getByRole("button", { name: "Annuler ce versement" }));
+    await page.waitForURL(/fait=annule/);
+    verifie((await page.locator(".ec-versement", { hasText: "VIR-PARCOURS" }).innerText()).includes("Annulé"), "une saisie erronée s'annule : elle reste au journal, barrée");
+    verifie((await page.locator(".ec-groupe").first().locator(".ec-colis-ligne").count()) === colis, "ses colis redeviennent à recevoir");
   });
 
   await etape("les données de la boutique, dans un tableur", async () => {

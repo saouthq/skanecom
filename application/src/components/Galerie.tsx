@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Photo, type PhotoAffichable } from "./Photo";
+import { Visionneuse } from "./Visionneuse";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -18,6 +19,7 @@ import { t } from "@/lib/i18n";
 export function GalerieEditoriale({ photos, nom }: { photos: PhotoAffichable[]; nom?: string }) {
   const piste = useRef<HTMLDivElement>(null);
   const [vue, setVue] = useState(0);
+  const [agrandie, setAgrandie] = useState<number | null>(null);
 
   if (photos.length === 0) {
     return (
@@ -39,12 +41,14 @@ export function GalerieEditoriale({ photos, nom }: { photos: PhotoAffichable[]; 
       <div ref={piste} className="ed-galerie-piste" data-impair={impair ? "" : undefined} onScroll={suit}>
         {photos.map((p, i) => (
           <div key={p.src} className="ed-galerie-vue">
-            <Photo
-              photo={p}
-              ratio="4 / 5"
-              prioritaire={i === 0}
-              tailles={impair && i === 0 ? "(min-width: 900px) 56vw, 100vw" : "(min-width: 900px) 28vw, 100vw"}
-            />
+            <button type="button" className="galerie-agrandir" aria-label={t.produit.agrandir(i + 1, photos.length)} onClick={() => setAgrandie(i)}>
+              <Photo
+                photo={p}
+                ratio="4 / 5"
+                prioritaire={i === 0}
+                tailles={impair && i === 0 ? "(min-width: 900px) 56vw, 100vw" : "(min-width: 900px) 28vw, 100vw"}
+              />
+            </button>
           </div>
         ))}
       </div>
@@ -53,17 +57,25 @@ export function GalerieEditoriale({ photos, nom }: { photos: PhotoAffichable[]; 
           {vue + 1} / {photos.length}
         </p>
       ) : null}
+      <Visionneuse photos={photos} depart={agrandie} onFermer={() => setAgrandie(null)} />
     </div>
   );
 }
 
 export function GalerieVignettes({ photos }: { photos: PhotoAffichable[] }) {
   const [vue, setVue] = useState(0);
+  const [agrandie, setAgrandie] = useState<number | null>(null);
   const principale = photos[vue] ?? null;
   return (
     <div className="te-galerie" role="region" aria-label={t.produit.galerieAria}>
       <div className="te-galerie-principale">
-        <Photo photo={principale} ratio="1 / 1" prioritaire tailles="(min-width: 1000px) 44vw, 100vw" />
+        {principale ? (
+          <button type="button" className="galerie-agrandir" aria-label={t.produit.agrandir(vue + 1, photos.length)} onClick={() => setAgrandie(vue)}>
+            <Photo photo={principale} ratio="1 / 1" prioritaire tailles="(min-width: 1000px) 44vw, 100vw" />
+          </button>
+        ) : (
+          <Photo photo={null} ratio="1 / 1" />
+        )}
       </div>
       {photos.length > 1 ? (
         <div className="te-galerie-vignettes">
@@ -74,6 +86,7 @@ export function GalerieVignettes({ photos }: { photos: PhotoAffichable[] }) {
           ))}
         </div>
       ) : null}
+      {photos.length > 0 ? <Visionneuse photos={photos} depart={agrandie} onFermer={() => setAgrandie(null)} /> : null}
     </div>
   );
 }

@@ -263,6 +263,18 @@ console.log("\n== 3. Sur téléphone (tactile) ==");
     await pause(500);
     verifie((await page.locator(".ed-galerie-compteur").innerText()).replace(/\s/g, "") === "2/3", "faire glisser la galerie : le compteur passe à 2 / 3");
     await capture(page, "mobile-selma-galerie");
+    await page.locator(".ed-galerie-vue").nth(1).locator(".galerie-agrandir").tap();
+    const visionneuse = page.locator("dialog.visionneuse[open]");
+    await visionneuse.waitFor({ timeout: 5000 });
+    await pause(400);
+    verifie((await visionneuse.locator(".visionneuse-compteur").innerText()).includes("Photo 2 sur 3"), "toucher la photo l'ouvre en plein écran, sur celle-là");
+    await capture(page, "mobile-selma-visionneuse");
+    await visionneuse.locator(".visionneuse-piste").evaluate((p) => p.scrollTo({ left: 2 * p.clientWidth, behavior: "instant" }));
+    await pause(300);
+    verifie((await visionneuse.locator(".visionneuse-compteur").innerText()).includes("Photo 3 sur 3"), "on y glisse d'une photo à l'autre");
+    await visionneuse.locator(".visionneuse-fermer").tap();
+    await pause(200);
+    verifie((await page.locator("dialog.visionneuse[open]").count()) === 0, "la croix la referme");
   });
 
   await etape("Maymar : tiroir de filtres au doigt", async () => {
