@@ -8,7 +8,8 @@ import { Coche, Lot, Panier } from "./Icones";
 import { LivraisonEstimee } from "./LivraisonEstimee";
 import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
-import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
+import { ajouteAuPanier, annonceAjout } from "@/lib/panier";
+import { photoVisible } from "@/lib/envol";
 import { prixApplique as prixDe, usePrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
@@ -117,7 +118,7 @@ export function FicheAchat({
     return declinaison() ? `${nom} · ${declinaison()}` : nom;
   };
 
-  const auPanier = () => {
+  const auPanier = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!variante || !disponible) return;
     const image =
       variante.image_chemin ??
@@ -137,7 +138,17 @@ export function FicheAchat({
       stock,
     );
     setAjoute(true);
-    ouvrePanier();
+    // La photo qu'on regarde part vers le panier ; sinon, une pastille part du bouton.
+    const bouton = e.currentTarget;
+    annonceAjout({
+      libelle: libelle(),
+      quantite,
+      prixMillimes: prixApplique,
+      ...(image ? { image } : {}),
+      depuis: photoVisible(document.querySelector(`[data-fiche="${CSS.escape(produit.slug)}"]`)) ?? bouton,
+      bouton,
+      auClavier: e.detail === 0,
+    });
   };
 
   // L'achat express : cette déclinaison, cette quantité, rien d'autre.

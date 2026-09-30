@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   clePanier,
+  PANIER_AJOUT,
   PANIER_EVENEMENT,
   PANIER_OUVRIR,
   PANIER_VIDE,
@@ -12,6 +13,7 @@ import {
   nombreArticles,
   retireLigne,
   serialisePanier,
+  type AjoutAnnonce,
   type LignePanier,
   type Panier,
 } from "./panier-contrat";
@@ -51,9 +53,15 @@ export function ajouteAuPanier(ligne: Omit<LignePanier, "ajouteLe">, stockMax: n
   ecrit(ajouteLigne(lit(), ligne, stockMax));
 }
 
-/** Ouvre le tiroir du panier (posé dans l'en-tête), après un ajout. */
+/** Ouvre le tiroir du panier (posé dans l'en-tête). */
 export function ouvrePanier(): void {
   window.dispatchEvent(new CustomEvent(PANIER_OUVRIR));
+}
+
+/** Après un ajout : l'en-tête fait voler la photo jusqu'au panier et montre
+ *  la confirmation (components/ConfirmationAjout.tsx). */
+export function annonceAjout(ajout: AjoutAnnonce): void {
+  window.dispatchEvent(new CustomEvent<AjoutAnnonce>(PANIER_AJOUT, { detail: ajout }));
 }
 
 export function retireDuPanier(varianteId: string): void {

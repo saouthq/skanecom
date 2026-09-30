@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Coche, Panier } from "./Icones";
-import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
+import { ajouteAuPanier, annonceAjout } from "@/lib/panier";
+import { photoVisible } from "@/lib/envol";
 import { prixApplique, usePrixPro } from "@/lib/prix-pro";
 import { t } from "@/lib/i18n";
 import type { LignePanier } from "@/lib/panier-contrat";
@@ -27,10 +28,21 @@ export function AjoutRapide({ ligne, stock, nom, produitId }: {
       className="btn btn-primaire btn-bloc te-carte-ajout"
       data-ajoute={ajoute ? "" : undefined}
       aria-label={`${ligne.quantite > 1 ? t.produit.ajouterLot(ligne.quantite) : t.produit.ajouterAuPanier} — ${nom}`}
-      onClick={() => {
-        ajouteAuPanier({ ...ligne, prixMillimesAjout: prixApplique(pro, { id: ligne.varianteId, prix_millimes: ligne.prixMillimesAjout }) }, stock);
+      onClick={(e) => {
+        const prix = prixApplique(pro, { id: ligne.varianteId, prix_millimes: ligne.prixMillimesAjout });
+        ajouteAuPanier({ ...ligne, prixMillimesAjout: prix }, stock);
         setAjoute(true);
-        ouvrePanier();
+        // La photo de la carte part vers le panier.
+        const bouton = e.currentTarget;
+        annonceAjout({
+          libelle: ligne.libelle,
+          quantite: ligne.quantite,
+          prixMillimes: prix,
+          ...(ligne.image ? { image: ligne.image } : {}),
+          depuis: photoVisible(bouton.closest(".te-carte")) ?? bouton,
+          bouton,
+          auClavier: e.detail === 0,
+        });
       }}
     >
       {ajoute ? <Coche taille={18} /> : <Panier taille={18} />}

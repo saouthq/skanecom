@@ -112,6 +112,11 @@
 }
 /* Pendant la commande et sur sa page de fin : rien ne détourne de « Confirmer ». */
 html:has(.tunnel-page, .merci) .whatsapp-flottant { display: none; }
+/* La confirmation d'un ajout, en bas du téléphone : il s'efface le temps qu'elle est là. */
+@media (max-width: 699px) {
+  .whatsapp-flottant { transition: transform .3s var(--theme-courbe), box-shadow .3s var(--theme-courbe), opacity .2s; }
+  html:has(.confirmation-ajout) .whatsapp-flottant { opacity: 0; pointer-events: none; }
+}
 @media print { .whatsapp-flottant { display: none; } }
 
 /* --- Les réseaux, au pied de page ------------------------------------------ */

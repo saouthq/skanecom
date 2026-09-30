@@ -50,7 +50,7 @@ html[data-gabarit=technique] .etoiles { --etoile: #F2A900; }
 .avis-item-tete b { font-weight: 600; font-size: .9375rem; }
 .avis-verifie {
   display: inline-flex; align-items: center; gap: .25rem; padding: .125rem .5rem; border-radius: 999px;
-  font-size: .6875rem; font-weight: 600; letter-spacing: .02em;
+  font-size: .75rem; font-weight: 600; letter-spacing: .02em;
   color: #1E6B3A; background: color-mix(in srgb, #1E6B3A 10%, transparent);
 }
 .avis-item .legende { margin: 0; }

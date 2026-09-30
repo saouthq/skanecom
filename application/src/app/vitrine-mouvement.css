@@ -44,6 +44,25 @@ html.js-photos .cadre-image img.photo-principale[data-attendue] {
 @keyframes v-ligne { from { opacity: 0; transform: translate3d(0, .5em, 0); filter: blur(4px); } }
 .te-banniere-contenu > :not(h1) { animation: v-monte .9s var(--theme-courbe) .5s backwards; }
 
+/* ---- L'ouverture a de la profondeur ----
+   Au défilement, la photo recule (elle glisse moins vite que la page et
+   s'approche à peine) et le texte, devant, s'en va plus vite en s'effaçant :
+   deux plans. Des animations liées au défilement, sans script : les
+   navigateurs qui ne les ont pas gardent l'ouverture immobile. Sur l'élément
+   qui porte déjà l'entrée, jamais : sur son conteneur. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ed-ouverture[data-premiere] .ed-ouverture-image {
+      animation: ouverture-profondeur linear both; animation-timeline: scroll(root block); animation-range: 0 100svh;
+    }
+    .ed-ouverture[data-premiere] .ed-ouverture-contenu {
+      animation: ouverture-devant linear both; animation-timeline: scroll(root block); animation-range: 0 70svh;
+    }
+  }
+}
+@keyframes ouverture-profondeur { to { transform: translate3d(0, 24%, 0) scale(1.05); } }
+@keyframes ouverture-devant { to { transform: translate3d(0, -48px, 0); opacity: 0; } }
+
 /* ---- Les cartes ---- */
 @media (hover: hover) {
   .te-carte { transition: transform .35s var(--theme-courbe), border-color .2s, box-shadow .35s var(--theme-courbe); }
@@ -63,6 +82,37 @@ html[data-gabarit] .btn:active:not(:disabled) { transform: scale(.97); }
 .icone-fleche { transition: transform .3s var(--v-ressort); }
 .btn:hover .icone-fleche { transform: translateX(3px); }
 [dir="rtl"] .btn:hover .icone-fleche { transform: translateX(-3px) scaleX(-1); }
+
+/* ---- La photo qui mène à la fiche (components/TransitionsVue.tsx) ----
+   La photo de la carte grandit jusqu'à sa place sur la fiche ; la page, elle,
+   sort vite et entre en montant à peine. L'en-tête et le bouton WhatsApp ne
+   sont pas du voyage : nommés, ils restent où ils sont. */
+html[data-vt] :is(.ed-entete, .te-entete) { view-transition-name: vt-entete; }
+html[data-vt] .whatsapp-flottant { view-transition-name: vt-whatsapp; }
+/* Au départ, la carte au repos : pas sa photo de survol, pas son zoom. */
+[data-vt-depart] .photo-survol { opacity: 0 !important; transition: none !important; }
+[data-vt-depart] .photo-principale { transform: none !important; transition: none !important; }
+html[data-vt]::view-transition-group(vt-photo) { z-index: 1; animation-duration: .62s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+/* L'ancienne page s'efface presque avant que la nouvelle n'arrive : pas de double exposition. */
+html[data-vt]::view-transition-old(root) { animation: vt-sort .16s cubic-bezier(.4, 0, 1, 1) both; }
+html[data-vt]::view-transition-new(root) { animation: vt-entre .4s cubic-bezier(.2, .8, .2, 1) .12s both; }
+@keyframes vt-sort { to { opacity: 0; } }
+@keyframes vt-entre { from { opacity: 0; transform: translate3d(0, 10px, 0); } }
+
+/* ---- L'envol vers le panier (lib/envol.ts) ---- */
+.envol { position: fixed; z-index: 58; pointer-events: none; }
+.envol-y, .envol-corps { inline-size: 100%; block-size: 100%; }
+.envol, .envol-y, .envol-corps { will-change: transform; }
+.envol-corps {
+  overflow: hidden; background: var(--theme-surface-2); border-radius: var(--theme-radius-carte);
+  box-shadow: 0 18px 40px -14px rgb(0 0 0 / .42), 0 2px 8px rgb(0 0 0 / .12);
+}
+.envol-copie { inline-size: 100% !important; block-size: 100% !important; aspect-ratio: auto !important; }
+.envol-pastille {
+  display: grid; place-items: center; border-radius: 50%; background: var(--theme-encre); color: var(--theme-fond);
+  font-family: var(--theme-font-display); font-size: 1.25rem;
+}
+.envol-pastille img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 
 /* ---- Le tiroir ---- */
 .tiroir-voile { backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }

@@ -191,7 +191,8 @@ function FicheEditoriale({ cadre, produit, fil, avis }: { cadre: Cadre; produit:
 
   return (
     <FournisseurSelection produit={produit}>
-      <div className="ed-fiche">
+      {/* data-fiche : la photo d'une carte y atterrit (TransitionsVue), l'envol vers le panier en part. */}
+      <div className="ed-fiche" data-fiche={produit.slug}>
         <GalerieEditoriale photos={photosProduit(produit)} nom={champ(produit, "nom")} />
 
         <div className="ed-fiche-panneau">
@@ -258,7 +259,7 @@ function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: 
   return (
     <FournisseurSelection produit={produit}>
       <FilAriane etapes={fil} />
-      <div className="te-fiche">
+      <div className="te-fiche" data-fiche={produit.slug}>
         <GalerieVignettes photos={photosProduit(produit)} />
 
         <div className="te-fiche-achat">

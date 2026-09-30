@@ -41,8 +41,28 @@ export const PANIER_VERSION = 1;
  *  bougerait pas après un ajout. */
 export const PANIER_EVENEMENT = "skanecom:panier";
 
-/** Demande d'ouverture du tiroir (après un ajout) : l'en-tête l'écoute. */
+/** Demande d'ouverture du tiroir (« modifier le panier » du tunnel) : l'en-tête
+ *  l'écoute. */
 export const PANIER_OUVRIR = "skanecom:panier-ouvrir";
+
+/** Un ajout vient d'avoir lieu : l'en-tête fait voler la photo jusqu'au
+ *  panier, puis montre la confirmation. Détail : `AjoutAnnonce`. */
+export const PANIER_AJOUT = "skanecom:panier-ajout";
+
+export type AjoutAnnonce = {
+  libelle: string;
+  quantite: number;
+  /** Le prix unitaire appliqué à l'ajout (prix pro compris). */
+  prixMillimes: number;
+  /** Le chemin de la photo (`LignePanier.image`), s'il y en a une. */
+  image?: string;
+  /** D'où part l'envol : la photo à l'écran, sinon le bouton pressé. */
+  depuis?: Element | null;
+  /** Le bouton pressé : le focus y revient à la fermeture. */
+  bouton?: HTMLElement | null;
+  /** Ajout au clavier : la confirmation prend le focus (à la souris, non). */
+  auClavier?: boolean;
+};
 
 export type LignePanier = {
   /** L'unité vendue, stockée et facturée : `variantes.id` (schéma Iris).

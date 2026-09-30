@@ -108,7 +108,7 @@
 
 /* --- Prix et états ------------------------------------------------------ */
 .prix { font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
-.prix .dev { margin-inline-start: .25em; font-size: .78em; letter-spacing: .02em; color: var(--theme-encre-doux); }
+.prix .dev { margin-inline-start: .25em; font-size: max(.78em, .75rem); letter-spacing: .02em; color: var(--theme-encre-doux); }
 .prix-fort { font-size: 1.375rem; font-weight: 500; }
 .prix-barre { color: var(--theme-encre-doux); text-decoration: line-through; font-variant-numeric: tabular-nums; }
 
@@ -210,7 +210,7 @@
 .cadre-image .photo-survol { opacity: 0; transition: opacity .5s var(--theme-courbe); }
 .attente-photo {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .875rem;
-  font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; color: var(--theme-encre-doux);
+  font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--theme-encre-doux);
 }
 /* Le monogramme de la boutique en filigrane, s'il existe (thème). */
 .attente-photo .filigrane { display: none; }
@@ -332,7 +332,7 @@ input[type="search"]::-webkit-search-cancel-button:hover { background: var(--the
 .suggestion-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; color: var(--theme-encre-doux); }
 .suggestion-detail:empty { display: none; }
 .suggestion-prix { display: grid; justify-items: end; font-size: .875rem; font-weight: 500; }
-.suggestion-des { font-size: .6875rem; font-weight: 400; color: var(--theme-encre-doux); }
+.suggestion-des { font-size: .75rem; font-weight: 400; color: var(--theme-encre-doux); }
 .suggestion-tout {
   display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-block-start: .25rem;
   padding: .75rem .625rem; border-block-start: 1px solid var(--theme-filet); border-radius: max(var(--theme-radius-doux), 3px);
@@ -409,6 +409,52 @@ input[type="search"]::-webkit-search-cancel-button:hover { background: var(--the
 .panier-total { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: .875rem; }
 .tiroir-panier .tiroir-pied { display: grid; gap: .5rem; }
 .tiroir-panier .tiroir-pied .btn { margin-block-start: .5rem; }
+/* La confirmation d'ajout (ConfirmationAjout.tsx) : sous l'en-tête sur grand
+   écran, une feuille en bas sur téléphone ; elle suit les rayons du thème. */
+.confirmation-ajout {
+  position: fixed; z-index: 55; inset-block-start: var(--confirmation-haut, calc(var(--entete-h) + .75rem)); inset-inline-end: var(--theme-marge);
+  inline-size: min(23.5rem, calc(100vw - 2 * var(--theme-marge))); display: grid; gap: .875rem; padding: 1rem 1rem 1.125rem;
+  background: var(--theme-surface); color: var(--theme-encre); border: 1px solid var(--theme-filet);
+  border-radius: max(var(--theme-radius-carte), 4px); box-shadow: var(--theme-shadow-releve);
+  animation: confirmation-entre .42s cubic-bezier(.16, 1, .3, 1) both;
+}
+.confirmation-ajout[data-sortie] { pointer-events: none; animation: confirmation-part .2s cubic-bezier(.4, 0, 1, 1) forwards; }
+@keyframes confirmation-entre { from { opacity: 0; transform: translate3d(0, -10px, 0) scale(.98); } }
+@keyframes confirmation-part { to { opacity: 0; transform: translate3d(0, -6px, 0); } }
+.confirmation-tete { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.confirmation-titre { display: inline-flex; align-items: center; gap: .5rem; font-size: .875rem; font-weight: 600; }
+.confirmation-titre svg { color: var(--theme-succes); }
+.confirmation-fermer {
+  display: grid; place-items: center; inline-size: 44px; block-size: 44px; margin: -.75rem; margin-inline-start: 0;
+  border: 0; background: transparent; color: var(--theme-encre-doux); cursor: pointer; border-radius: 50%;
+}
+.confirmation-fermer:hover { color: var(--theme-encre); background: var(--theme-surface-2); }
+.confirmation-article { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: .875rem; align-items: center; }
+.confirmation-vignette {
+  position: relative; display: grid; place-items: center; aspect-ratio: 4 / 5; overflow: hidden;
+  background: var(--theme-surface-2); border-radius: var(--theme-radius-net);
+  font-family: var(--theme-font-display); font-size: 1.5rem; color: color-mix(in srgb, var(--theme-encre) 38%, transparent);
+}
+.confirmation-vignette img { object-fit: cover; }
+.confirmation-texte { display: grid; gap: .25rem; min-inline-size: 0; }
+.confirmation-libelle { font-size: .875rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.confirmation-prix { display: flex; align-items: baseline; gap: .5rem; font-size: .875rem; }
+.confirmation-livraison { margin: 0; padding-block-start: .75rem; border-block-start: 1px solid var(--theme-filet); }
+.confirmation-livraison[data-atteinte] { color: var(--theme-succes); }
+.confirmation-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.confirmation-actions .btn { min-block-size: 44px; padding-inline: .75rem; }
+@media (max-width: 699px) {
+  .confirmation-ajout {
+    inset-block: auto 0; inset-inline: 0; inline-size: auto; padding: 1rem var(--theme-marge) calc(1rem + env(safe-area-inset-bottom));
+    border: 0; border-block-start: 1px solid var(--theme-filet); border-radius: 0;
+    border-start-start-radius: var(--theme-radius-bloc); border-start-end-radius: var(--theme-radius-bloc);
+    box-shadow: var(--theme-shadow-feuille); animation-name: confirmation-monte;
+  }
+  .confirmation-ajout[data-sortie] { animation-name: confirmation-descend; }
+}
+@keyframes confirmation-monte { from { transform: translate3d(0, 100%, 0); } }
+@keyframes confirmation-descend { to { transform: translate3d(0, 100%, 0); } }
+
 .jauge-livraison { padding-block: .25rem 1rem; border-block-end: 1px solid var(--theme-filet); font-size: .8125rem; }
 .jauge-livraison p { margin-block-end: .5rem; }
 .jauge { display: block; block-size: 4px; background: var(--theme-filet); border-radius: 2px; overflow: hidden; }
@@ -559,7 +605,7 @@ html:has(.visionneuse[open]) { overflow: hidden; }
    appliqué et l'économie. Le badge « Pro » à la couleur de la boutique. */
 .pro-badge {
   display: inline-flex; align-items: center; padding: .125rem .5rem; border-radius: 999px; vertical-align: .125em;
-  background: var(--theme-encre); color: var(--theme-fond); font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  background: var(--theme-encre); color: var(--theme-fond); font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
 }
 .pro-espace {
   display: grid; gap: 1rem; margin-block-end: 1.5rem; padding: 1.125rem 1.25rem;
@@ -597,7 +643,7 @@ html:has(.visionneuse[open]) { overflow: hidden; }
 .prix-carte { display: contents; }
 .carte-pro {
   display: inline-flex; align-items: center; padding: .0625rem .375rem; border-radius: 999px; margin-inline-end: .25rem;
-  background: var(--theme-encre); color: var(--theme-fond); font-size: .625rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  background: var(--theme-encre); color: var(--theme-fond); font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
   vertical-align: .15em; animation: fiche-livraison-arrive .4s var(--theme-courbe) backwards;
 }
 
@@ -625,11 +671,11 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
 .vus-photo[data-etat=rupture] img { opacity: .5; filter: grayscale(.5); }
 .vus-rupture {
   position: absolute; inset-block-end: .5rem; inset-inline-start: .5rem; padding: .125rem .5rem;
-  font-size: .6875rem; font-weight: 600; letter-spacing: .02em;
+  font-size: .75rem; font-weight: 600; letter-spacing: .02em;
   color: var(--theme-encre); background: color-mix(in srgb, var(--theme-surface) 88%, transparent);
   border-radius: 999px; backdrop-filter: blur(6px);
 }
-.vus-marque { font-size: .6875rem; letter-spacing: .08em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.vus-marque { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--theme-encre-doux); }
 .vus-nom {
   font-size: .875rem; line-height: 1.35;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -675,4 +721,26 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
   html[data-gabarit] .rail-mobile::-webkit-scrollbar { display: none; }
   html[data-gabarit] .rail-mobile > * { scroll-snap-align: start; }
   html[data-gabarit] .rail-mobile > .tuile-fin:nth-child(n) { display: flex; }
+}
+
+/* ---- Au doigt : 44 px pour tout ce qui se touche ----
+   Mesuré sur téléphone (390 px) : les liens légaux du pied faisaient 21 px de
+   haut, le résumé des avis 22, les pastilles de couleur 38, les réseaux et
+   les rayons 40. Sur un écran tactile, chaque cible fait au moins 44 px — sans
+   changer le dessin : la zone grandit, pas le trait. */
+@media (pointer: coarse) {
+  html[data-gabarit] .pied-legal a,
+  html[data-gabarit] a.lien-souligne:not(p *),
+  html[data-gabarit] .ed-lien-fleche,
+  html[data-gabarit] .fiche-avis-resume,
+  html[data-gabarit] .ed-entete-liste .sous-rayons a,
+  html[data-gabarit] .ed-ouverture-actions .lien-souligne,
+  html[data-gabarit] .te-lien-fleche,
+  html[data-gabarit] footer a[href^="https://wa.me/"]:not(.pied-reseaux a) { display: inline-flex; align-items: center; min-block-size: 44px; }
+  html[data-gabarit] :is(.te-carte .btn, .btn-filtrer, .sous-rayons a, .opt) { min-block-size: 44px; }
+  html[data-gabarit] :is(.ed-logo, .te-logo) { display: flex; align-items: center; min-block-size: 44px; }
+  html[data-gabarit] footer .pied-reseaux a { inline-size: 2.75rem; block-size: 2.75rem; }
+  html[data-gabarit] .axe .valeur-couleur { inline-size: 44px; block-size: 44px; min-block-size: 44px; }
+  html[data-gabarit] .listing-outils select,
+  html[data-gabarit] .identification-canal span { min-block-size: 44px; }
 }

@@ -346,6 +346,10 @@ export const fr = {
     continuer: "Continuer mes achats",
     fermer: "Fermer le panier",
     ajoute: "Ajouté au panier",
+    /** La confirmation légère qui suit un ajout (au lieu du tiroir). */
+    voir: (n: number) => `Voir le panier (${n})`,
+    fermerConfirmation: "Fermer la confirmation",
+    quantiteFois: (n: number) => `× ${n}`,
     titreCompte: (n: number) => `Panier (${n})`,
     resteAvantGratuite: (montant: string) => `Plus que ${montant} pour la livraison offerte.`,
     gratuiteAtteinte: "La livraison vous est offerte.",

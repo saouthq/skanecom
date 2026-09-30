@@ -6,8 +6,10 @@ import Link from "next/link";
 import { Billets, Bouclier, Camion, Coche, Fleche, Magasin, Panier as IconePanier } from "./Icones";
 import { Prix } from "./Prix";
 import { Tiroir } from "./Tiroir";
+import { ConfirmationAjout } from "./ConfirmationAjout";
 import { changeQuantitePanier, retireDuPanier, usePanier, usePanierLu } from "@/lib/panier";
-import { minimumLigne, nombreArticles, PANIER_OUVRIR, totalMillimes } from "@/lib/panier-contrat";
+import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalMillimes, type AjoutAnnonce } from "@/lib/panier-contrat";
+import { envole } from "@/lib/envol";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
@@ -23,8 +25,11 @@ const ICONES_ASSURANCE = { billets: Billets, camion: Camion, bouclier: Bouclier,
    « Commander » mène au tunnel (/commande), qui relit tout en base avant de
    laisser commander. Aucun bouton mort : il n'apparaît qu'avec des articles.
 
-   Le tiroir s'ouvre aussi tout seul après un ajout (événement PANIER_OUVRIR) :
-   on voit ce qu'on vient de mettre de côté, et le chemin du retour.
+   Après un ajout (événement PANIER_AJOUT), la photo de l'article s'envole
+   jusqu'ici (lib/envol.ts), le compteur rebondit à son arrivée, puis la
+   confirmation se pose (ConfirmationAjout) : « Commander » ou « Voir le
+   panier ». Le tiroir ne s'ouvre plus de lui-même — seulement à la demande
+   (ce bouton, la confirmation, le tunnel : PANIER_OUVRIR).
 
    Le compteur est rendu à 0 par le serveur puis corrigé au montage — le
    panier vit dans le navigateur, l'HTML servi ne peut pas le connaître.
@@ -57,30 +62,85 @@ export function BoutonPanier({
   const nLu = lu ? nombreArticles(lu) : null;
   const [bonds, setBonds] = useState(0);
   const nVu = useRef<number | null>(null);
+  // Un article en vol : le rebond attend son arrivée.
+  const enVol = useRef(0);
   useEffect(() => {
     if (nLu === null) return;
-    if (nVu.current !== null && nLu > nVu.current) setBonds((b) => b + 1);
+    if (nVu.current !== null && nLu > nVu.current && enVol.current === 0) setBonds((b) => b + 1);
     nVu.current = nLu;
   }, [nLu]);
 
+  const bouton = useRef<HTMLButtonElement>(null);
+  const retour = useRef<HTMLElement | null>(null);
+  const [confirmation, setConfirmation] = useState<(AjoutAnnonce & { id: number }) | null>(null);
+  const [annonce, setAnnonce] = useState("");
+
   useEffect(() => {
-    const ouvre = () => setOuvert(true);
+    const ouvre = () => {
+      retour.current = null;
+      setConfirmation(null);
+      setOuvert(true);
+    };
+    let dernier = 0;
+    const auAjout = (e: Event) => {
+      const ajout = (e as CustomEvent<AjoutAnnonce>).detail;
+      if (!ajout) return;
+      const id = ++dernier;
+      enVol.current += 1;
+      setConfirmation(null);
+      // Lu par les lecteurs d'écran tout de suite ; l'espace final change le
+      // texte d'un ajout à l'autre, pour qu'un second ajout soit lu aussi.
+      setAnnonce(`${t.panier.ajoute} : ${ajout.libelle}${id % 2 ? "" : " "}`);
+      void envole(ajout.depuis, bouton.current, {
+        image: ajout.image ? urlFichier(ajout.image) : null,
+        initiale: ajout.libelle.trim().charAt(0),
+      }).then(() => {
+        enVol.current = Math.max(0, enVol.current - 1);
+        setBonds((b) => b + 1);
+        // Deux ajouts rapprochés : une seule confirmation, la dernière.
+        if (id === dernier) setConfirmation({ ...ajout, id });
+      });
+    };
     window.addEventListener(PANIER_OUVRIR, ouvre);
-    return () => window.removeEventListener(PANIER_OUVRIR, ouvre);
+    window.addEventListener(PANIER_AJOUT, auAjout);
+    return () => {
+      window.removeEventListener(PANIER_OUVRIR, ouvre);
+      window.removeEventListener(PANIER_AJOUT, auAjout);
+    };
   }, []);
 
   const reste = seuilGratuite !== null ? Math.max(0, seuilGratuite - total) : null;
 
   return (
     <>
+      <p className="sr-only" aria-live="polite">{annonce}</p>
+      {confirmation && !ouvert ? (
+        <ConfirmationAjout
+          key={confirmation.id}
+          ajout={confirmation}
+          n={n}
+          reste={panier.lignes.length > 0 ? reste : null}
+          onFermer={() => setConfirmation(null)}
+          onVoir={() => {
+            retour.current = confirmation.bouton ?? null;
+            setConfirmation(null);
+            setOuvert(true);
+          }}
+        />
+      ) : null}
       <button
+        ref={bouton}
         type="button"
         className="bouton-panier"
         data-gabarit-panier={gabarit}
         aria-label={t.panier.ouvrir(n)}
         aria-haspopup="dialog"
         aria-expanded={ouvert}
-        onClick={() => setOuvert(true)}
+        onClick={() => {
+          retour.current = null;
+          setConfirmation(null);
+          setOuvert(true);
+        }}
       >
         <IconePanier taille={gabarit === "technique" ? 24 : 20} />
         <span className="bouton-panier-texte" aria-hidden="true">{t.commun.panier}</span>
@@ -92,6 +152,7 @@ export function BoutonPanier({
       <Tiroir
         ouvert={ouvert}
         onFermer={() => setOuvert(false)}
+        retour={retour}
         titre={t.panier.titre}
         entete={<h2 className="tiroir-titre">{t.panier.titreCompte(n)}</h2>}
         etiquetteFermer={t.panier.fermer}

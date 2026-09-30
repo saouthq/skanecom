@@ -29,7 +29,7 @@ html[data-gabarit="editorial"] body { font-size: .9375rem; letter-spacing: -.003
 html[data-gabarit="editorial"] :where(h1, h2, h3) { letter-spacing: -.015em; line-height: 1.02; }
 
 /* Surtitres : les seules petites capitales du gabarit. */
-html[data-gabarit="editorial"] .etiquette { font-size: .6875rem; letter-spacing: .16em; font-weight: 500; }
+html[data-gabarit="editorial"] .etiquette { font-size: .75rem; letter-spacing: .15em; font-weight: 500; }
 
 /* Boutons : casse normale, hauts, nets. */
 html[data-gabarit="editorial"] .btn {
