@@ -75,7 +75,10 @@ export default async function Courriels({ searchParams }: { searchParams: Promis
               <span className="crl-de">{x.cle === "invitation" || x.cle === "mot-de-passe" ? MARQUE_PLATEFORME.nom : choisie?.nom}</span>
               <span className="crl-sujet">{x.courriel.sujet}</span>
             </div>
-            <iframe className="crl-cadre" title={x.courriel.sujet} srcDoc={x.courriel.html} sandbox="" loading="lazy" />
+            {/* Pas de chargement différé : le contenu est déjà dans la page (quatre
+                e-mails), et un cadre différé hors de l'écran ne se charge jamais —
+                la capture pleine page le montrait vide. */}
+            <iframe className="crl-cadre" title={x.courriel.sujet} srcDoc={x.courriel.html} sandbox="" />
             <details className="crl-texte">
               <summary>Version texte</summary>
               <pre>{x.courriel.texte}</pre>
