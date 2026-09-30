@@ -100,6 +100,7 @@ export default async function Reglages({
   const konnect = r.get("paiement.konnect_actif");
   const retraitActif = Boolean(r.get("retrait.adresse")?.module_actif);
   const savActif = Boolean(r.get("sav.garantie_mois")?.module_actif);
+  const avisActif = Boolean(r.get("avis.moderation")?.module_actif);
   const retraitIncomplet = retraitActif && (!String(v("retrait.adresse") ?? "").trim() || !String(v("retrait.ville") ?? "").trim());
   const maintenant = new Date();
   const prefixe = String(v("commande.prefixe_numero") ?? "");
@@ -120,6 +121,7 @@ export default async function Reglages({
     ["poids", "Supplément au poids", "colis"],
     ...(retraitActif ? [["retrait", "Retrait en magasin", "boutique"] as [string, string, string]] : []),
     ...(savActif ? [["sav", "Service après-vente", "outil"] as [string, string, string]] : []),
+    ...(avisActif ? [["avis", "Avis clients", "etoile"] as [string, string, string]] : []),
     ["paiement", "Paiement", "billet"],
     ["vitrine", "Vitrine et contact", "boutique"],
     ["legal", "Informations légales", "fichier"],
@@ -511,6 +513,29 @@ export default async function Reglages({
                     </div>
                     <p className="aide rg-fixe">
                       <Icone nom="outil" taille={14} /> <span><a href={`/gestion/${slug}/sav`}>Les demandes des clients</a> : à rappeler, en cours, closes.</span>
+                    </p>
+                  </fieldset>
+                  <Pied modifie={modifie} />
+                </form>
+              </Section>
+            ) : null}
+
+            {/* ---------------- Avis clients (module) ---------------- */}
+            {avisActif ? (
+              <Section id="avis" icone="etoile" titre="Avis clients"
+                description="Seul un client livré note l'article reçu, depuis « Mes commandes » ; vous publiez, écartez ou répondez dans Avis.">
+                <form action={action} method="post">
+                  <input type="hidden" name="section" value="avis" />
+                  <fieldset className="pile rg-corps" disabled={!modifie}>
+                    <Alternative
+                      nom="avis.moderation" legende="Quand un client donne son avis" valeur={String(v("avis.moderation") ?? "a_priori")}
+                      options={[
+                        { valeur: "a_priori", titre: "Relu avant publication", conseil: "Conseillé", aide: "L'avis attend votre relecture dans Avis ; rien ne paraît sans vous." },
+                        { valeur: "automatique", titre: "Publié aussitôt", aide: "L'avis paraît tout de suite sur la fiche ; vous pouvez l'écarter ensuite." },
+                      ]}
+                    />
+                    <p className="aide rg-fixe">
+                      <Icone nom="etoile" taille={14} /> <span><a href={`/gestion/${slug}/avis`}>Les avis des clients</a> : à relire, publiés, écartés.</span>
                     </p>
                   </fieldset>
                   <Pied modifie={modifie} />

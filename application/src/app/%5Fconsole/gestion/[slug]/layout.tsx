@@ -46,6 +46,15 @@ export default async function BackofficeBoutique({
   const lienDevis = etatDevis?.actif || etatDevis?.a_chiffrer
     ? [{ href: `/gestion/${slug}/devis`, libelle: "Devis", icone: "fichier" as const, extra: badgeDevis }]
     : [];
+  // Les avis clients, si la boutique a le module : ceux à relire.
+  const { data: av } = await (await clientSession()).rpc("gestion_avis_etat", { p_boutique_id: boutique.boutique_id });
+  const etatAvis = av as { actif: boolean; a_moderer: number } | null;
+  const badgeAvis = etatAvis?.a_moderer
+    ? <span className="app-nav-compte" aria-label={`${etatAvis.a_moderer} avis à relire`}>{etatAvis.a_moderer}</span>
+    : undefined;
+  const lienAvis = etatAvis?.actif || etatAvis?.a_moderer
+    ? [{ href: `/gestion/${slug}/avis`, libelle: "Avis", icone: "etoile" as const, extra: badgeAvis }]
+    : [];
   const badgeSav = etatSav?.nouvelles
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
     : undefined;
@@ -65,6 +74,7 @@ export default async function BackofficeBoutique({
     ...lienDevis,
     { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
     { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
+    ...lienAvis,
     ...(etatSav?.actif
       ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
       : []),

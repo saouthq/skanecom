@@ -129,6 +129,22 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     verifie((await compte(page)) === "2", "le compteur de l'en-tête dit 2");
   });
 
+  await etape("les avis vérifiés de la robe (module avis, jeu de démo)", async () => {
+    const resume = page.locator(".fiche-avis-resume");
+    verifie((await resume.innerText()).replace(/\s+/g, " ").includes("4,7 3 avis"), `sous le titre : la note et le nombre d'avis (${(await resume.innerText()).replace(/\s+/g, " ")})`);
+    await clic(page, resume);
+    await pause(1000);
+    const section = page.locator("#avis");
+    verifie(await section.isVisible() && (await section.boundingBox()).y < 400, "un clic mène à la section des avis");
+    const texte = await section.textContent();
+    verifie((await section.locator(".avis-item").count()) === 3 && texte.includes("Achat vérifié") && texte.includes("Réponse de la boutique"),
+      "trois avis publiés, « Achat vérifié », la réponse de la boutique");
+    verifie(!texte.includes("Yosra"), "l'avis encore en relecture n'y est pas");
+    const ld = await page.evaluate(() => JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent));
+    verifie(ld.aggregateRating?.ratingValue === 4.7 && ld.aggregateRating?.reviewCount === 3, "la note est dans les données structurées (résultats Google)");
+    await capture(page, "selma-fiche-avis");
+  });
+
   await etape("le panier survit au rechargement", async () => {
     await page.reload({ waitUntil: "networkidle" });
     await pause(300);

@@ -79,6 +79,9 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
   sav: [
     { cle: "sav.garantie_mois", genre: "entier" },
   ],
+  avis: [
+    { cle: "avis.moderation", genre: "choix" },
+  ],
   legal: [
     { cle: "legal.raison_sociale", genre: "texte" },
     { cle: "legal.forme_juridique", genre: "texte" },
@@ -174,6 +177,7 @@ const LIBELLES_COURTS: Record<string, string> = {
   "catalogue.afficher_prix_barres": "Prix barrés",
   "catalogue.revendeur_officiel": "Revendeur officiel",
   "sav.garantie_mois": "Garantie annoncée",
+  "avis.moderation": "Publication des avis",
   "contact.whatsapp": "WhatsApp",
   "contact.telephone": "Téléphone",
   "legal.raison_sociale": "Raison sociale",

@@ -75,6 +75,9 @@ export type Cadre = {
   /** Réglage `commande.achat_express` : « Commander maintenant » sur la fiche,
    *  droit au tunnel avec cet article seul, sans toucher au panier. */
   achatExpress: boolean;
+  /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
+   *  depuis « Mes commandes ». */
+  avis: boolean;
 };
 
 type Brut = {
@@ -154,6 +157,7 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
     comptesPro: modules.includes("comptes_pro"),
     devis: modules.includes("devis"),
     achatExpress: reglage<boolean>(reglages, "commande.achat_express", false) === true,
+    avis: modules.includes("avis"),
   };
 });
 

@@ -9,10 +9,12 @@ import { GalerieEditoriale, GalerieVignettes } from "@/components/Galerie";
 import { FournisseurSelection } from "@/components/SelectionVariante";
 import { SpecsVariante } from "@/components/SpecsVariante";
 import { VusRecemment } from "@/components/VusRecemment";
+import { AvisProduit, ResumeAvis } from "@/components/AvisProduit";
 import { Billets, Bouclier, Bulle, Camion, Magasin, Retour, Telephone } from "@/components/Icones";
 import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
 import { chargeProduit, listeProduits, prixDepuis, type Produit } from "@/lib/catalogue";
 import { photosProduit } from "@/lib/photos";
+import { chargeAvis, type AvisProduit as Avis } from "@/lib/avis";
 import { formatePrix, prixDecimal } from "@/lib/prix";
 import { lienConseil } from "@/lib/faits";
 import { texte } from "@/lib/theme";
@@ -95,12 +97,13 @@ export default async function FicheProduit({ params }: Params) {
   const rayon = produit.categorie;
   const gabarit = cadre.theme.code;
 
-  /* Des voisins du même rayon, pris par la base. */
-  const voisins = (
-    await listeProduits(cadre.boutique.id, rayon ? { rayon: rayon.slug } : {}, "selection", 1, gabarit === "technique" ? 6 : 5)
-  ).produits
-    .filter((p) => p.id !== produit.id)
-    .slice(0, gabarit === "technique" ? 5 : 4);
+  /* Des voisins du même rayon, pris par la base ; les avis publiés (module avis). */
+  const [liste, avis] = await Promise.all([
+    listeProduits(cadre.boutique.id, rayon ? { rayon: rayon.slug } : {}, "selection", 1, gabarit === "technique" ? 6 : 5),
+    cadre.avis ? chargeAvis(cadre.boutique.id, produit.id) : Promise.resolve(null),
+  ]);
+  const voisins = liste.produits.filter((p) => p.id !== produit.id).slice(0, gabarit === "technique" ? 5 : 4);
+  const note = avis && avis.total > 0 && avis.moyenne !== null ? avis : null;
 
   const fil: Etape[] = [
     ...(rayon ? [{ nom: champ(rayon, "nom"), href: `/categorie/${rayon.slug}` }] : [{ nom: t.commun.toutLeCatalogue, href: "/catalogue" }]),
@@ -124,15 +127,32 @@ export default async function FicheProduit({ params }: Params) {
       priceCurrency: "TND",
       availability: v.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
     })),
+    // Des avis vérifiés (clients livrés), publiés par la boutique.
+    aggregateRating: note ? { "@type": "AggregateRating", ratingValue: note.moyenne, reviewCount: note.total, bestRating: 5, worstRating: 1 } : undefined,
+    review: note
+      ? note.avis.slice(0, 5).map((a) => ({
+          "@type": "Review",
+          author: { "@type": "Person", name: a.auteur },
+          datePublished: a.cree_le.slice(0, 10),
+          reviewRating: { "@type": "Rating", ratingValue: a.note, bestRating: 5, worstRating: 1 },
+          ...(a.texte ? { reviewBody: a.texte } : {}),
+        }))
+      : undefined,
   };
 
   return (
     <Gabarit className={gabarit === "technique" ? "enveloppe flex-1" : "flex-1"}>
       {gabarit === "technique" ? (
-        <FicheTechnique cadre={cadre} produit={produit} fil={fil} />
+        <FicheTechnique cadre={cadre} produit={produit} fil={fil} avis={avis} />
       ) : (
-        <FicheEditoriale cadre={cadre} produit={produit} fil={fil} />
+        <FicheEditoriale cadre={cadre} produit={produit} fil={fil} avis={avis} />
       )}
+
+      <AvisProduit
+        avis={avis}
+        section={gabarit === "technique" ? "te-section" : "enveloppe ed-section"}
+        tete={gabarit === "technique" ? "te-section-tete" : "ed-section-tete"}
+      />
 
       {voisins.length > 0 ? (
         <section className={gabarit === "technique" ? "te-section" : "enveloppe ed-section"}>
@@ -163,7 +183,7 @@ export default async function FicheProduit({ params }: Params) {
   );
 }
 
-function FicheEditoriale({ cadre, produit, fil }: { cadre: Cadre; produit: Produit; fil: Etape[] }) {
+function FicheEditoriale({ cadre, produit, fil, avis }: { cadre: Cadre; produit: Produit; fil: Etape[]; avis: Avis | null }) {
   const origine = texte(cadre.theme.textes, "origine") || undefined;
   const politiqueRetour = texte(cadre.theme.textes, "politique_retour");
   const description = champ(produit, "description");
@@ -179,6 +199,7 @@ function FicheEditoriale({ cadre, produit, fil }: { cadre: Cadre; produit: Produ
             <FilAriane etapes={fil} />
             {produit.marque ? <p className="etiquette">{produit.marque}</p> : null}
             <h1>{champ(produit, "nom")}</h1>
+            <ResumeAvis avis={avis} />
             <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} />
 
             <ul className="ed-rassure">
@@ -229,7 +250,7 @@ function FicheEditoriale({ cadre, produit, fil }: { cadre: Cadre; produit: Produ
   );
 }
 
-function FicheTechnique({ cadre, produit, fil }: { cadre: Cadre; produit: Produit; fil: Etape[] }) {
+function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: Produit; fil: Etape[]; avis: Avis | null }) {
   const conseil = lienConseil(cadre);
   const description = champ(produit, "description");
   const rayon = produit.categorie ? champ(produit.categorie, "nom") : null;
@@ -243,6 +264,7 @@ function FicheTechnique({ cadre, produit, fil }: { cadre: Cadre; produit: Produi
         <div className="te-fiche-achat">
           {produit.marque ? <p className="te-fiche-marque">{produit.marque}</p> : null}
           <h1>{champ(produit, "nom")}</h1>
+          <ResumeAvis avis={avis} />
           <SpecsVariante mode="ref" />
           <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} />
 

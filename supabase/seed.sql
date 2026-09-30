@@ -858,3 +858,111 @@ begin
     join public.produits p on p.boutique_id = v.boutique_id and p.id = v.produit_id;
 end
 $$;
+
+-- ---------------------------------------------------------------------
+-- Les avis clients (migration 39) : les trois boutiques ont le module.
+-- Maison Selma garde les commandes livrées de son hiver 2025 (numérotées
+-- SEL-2025-…, le compteur de l'année n'y est pour rien) et les avis de ses
+-- clientes ; le stock du jour ne bouge pas (ce qui a été vendu venait d'un
+-- autre arrivage, rentré au journal). Un avis attend la relecture de
+-- Selma ; Maymar a celui de sa première commande livrée.
+-- ---------------------------------------------------------------------
+insert into plateforme.modules_actifs (boutique_id, module) values
+  ('00000000-0000-4000-8000-000000000001', 'avis'),
+  ('00000000-0000-4000-8000-000000000002', 'avis'),
+  ('00000000-0000-4000-8000-000000000003', 'avis');
+
+do $$
+declare
+  s constant uuid := '00000000-0000-4000-8000-000000000003';
+  m constant uuid := '00000000-0000-4000-8000-000000000001';
+  a          record;
+  t0         timestamptz;
+  v_client   uuid;
+  v_commande uuid;
+  v_ligne    public.commande_lignes;
+  v_devis    jsonb;
+  v_stock    integer;
+begin
+  for a in
+    select * from (values
+      ( 1, 'Amel Ben Salah',  '+21620111201', 'SEL01-TER-M', 'Tunis',    'tunis',    date '2025-11-04', 5,
+        'Le lin est beau et tombe très bien. Taille normalement : j''ai pris mon M habituel.', 'publie', 'Merci Amel ! Ravies qu''elle vous plaise.'),
+      ( 2, 'Nour Kallel',     '+21620111202', 'SEL01-TER-S', 'Sousse',   'sousse',   date '2025-11-12', 5,
+        'Couleur magnifique, exactement comme sur les photos. Livrée en deux jours à Sousse.', 'publie', null),
+      ( 3, 'Rania Dridi',     '+21620111203', 'SEL01-TER-M', 'Ariana',   'ariana',   date '2025-11-20', 4,
+        'Très jolie robe, un peu longue pour moi (1,60 m), rien de grave.', 'publie', null),
+      ( 4, 'Sonia Mejri',     '+21620111204', 'SEL02-ECR-M', 'Nabeul',   'nabeul',   date '2025-11-26', 5,
+        'Légère et élégante. Le livreur a appelé avant de passer, très pratique.', 'publie', null),
+      ( 5, 'Meriem Ayari',    '+21620111205', 'SEL02-ECR-S', 'Tunis',    'tunis',    date '2025-12-03', 4, null, 'publie', null),
+      ( 6, 'Ines Bouzid',     '+21620111206', 'SEL04-VIC-M', 'Monastir', 'monastir', date '2025-12-09', 5,
+        'Coupe ample et confortable, le coton ne froisse presque pas.', 'publie', null),
+      ( 7, 'Salma Hachicha',  '+21620111207', 'SEL09-VER-M', 'Sfax',     'sfax',     date '2025-12-15', 4,
+        'Chaud et doux ; la couleur est un peu plus foncée qu''en photo.', 'publie', 'Merci Salma : nous avons ajouté une photo à la lumière du jour.'),
+      ( 8, 'Yosra Ferchichi', '+21620111208', 'SEL01-TER-L', 'Bizerte',  'bizerte',  date '2025-12-20', 3,
+        'Belle matière, mais le L taille petit : prenez une taille au-dessus.', 'en_attente', null)
+    ) as t(n, nom, tel, sku, ville, gouv, le, note, texte, statut, reponse)
+    order by n
+  loop
+    t0 := a.le + time '10:30';
+    insert into public.clients (boutique_id, nom, telephone, created_at) values (s, a.nom, a.tel, t0) returning id into v_client;
+    v_devis := private.chiffre_commande(s,
+      jsonb_build_array(jsonb_build_object('variante_id', (select v.id from public.variantes v where v.boutique_id = s and v.sku = a.sku), 'quantite', 1)),
+      a.gouv, false);
+    insert into public.commandes (boutique_id, numero, origine, client_id, contact_nom, contact_telephone,
+                                  livraison_ligne1, livraison_ville, livraison_gouvernorat, livraison_zone_nom,
+                                  sous_total_millimes, frais_livraison_millimes, total_millimes, created_at)
+    values (s, 'SEL-2025-' || lpad((40 + a.n)::text, 5, '0'), 'vitrine', v_client, a.nom, a.tel, 'Adresse de démonstration', a.ville, a.gouv,
+            v_devis -> 'zone' ->> 'nom_fr', (v_devis ->> 'sous_total_millimes')::bigint, (v_devis ->> 'frais_livraison_millimes')::bigint,
+            (v_devis ->> 'total_millimes')::bigint, t0)
+    returning id into v_commande;
+    insert into public.commande_lignes (boutique_id, commande_id, variante_id, produit_nom, variante_libelle, sku,
+                                        prix_unitaire_millimes, quantite, total_ligne_millimes)
+    select s, v_commande, (l ->> 'variante_id')::uuid, l ->> 'produit_nom', l ->> 'variante_libelle', l ->> 'sku',
+           (l ->> 'prix_unitaire_millimes')::bigint, 1, (l ->> 'prix_unitaire_millimes')::bigint
+    from jsonb_array_elements(v_devis -> 'lignes') l
+    returning * into v_ligne;
+
+    -- Vendu sur un arrivage d'alors : la pièce revient au stock du jour.
+    perform set_config('skanecom.ecriture_stock', 'on', true);
+    update public.variantes set stock = stock + 1 where boutique_id = s and id = v_ligne.variante_id returning stock into v_stock;
+    perform set_config('skanecom.ecriture_stock', '', true);
+    insert into public.stock_mouvements (boutique_id, variante_id, delta, stock_apres, motif, commentaire, created_at)
+    values (s, v_ligne.variante_id, 1, v_stock, 'reception', 'Arrivage de l''hiver 2025 (jeu de démo)', t0);
+
+    insert into public.confirmations (boutique_id, commande_id, canal, resultat, created_at)
+    values (s, v_commande, 'appel', 'confirmee', t0 + interval '45 minutes');
+    update public.commandes set statut = 'confirmee' where id = v_commande;
+    update public.commandes set statut = 'expediee', transporteur = 'Aramex', numero_suivi = 'TN' || (47100000 + a.n * 211) where id = v_commande;
+    update public.commandes set statut = 'livree', statut_paiement = 'paye' where id = v_commande;
+    update public.commande_evenements e
+       set created_at = t0 + case e.statut_apres when 'recue' then interval '0' when 'confirmee' then interval '45 minutes'
+                                                 when 'expediee' then interval '20 hours' else interval '44 hours' end
+     where e.commande_id = v_commande;
+    update public.commandes
+       set confirmee_at = t0 + interval '45 minutes', expediee_at = t0 + interval '20 hours',
+           livree_at = t0 + interval '44 hours', cloturee_at = t0 + interval '44 hours'
+     where id = v_commande;
+
+    insert into public.avis (boutique_id, produit_id, commande_id, ligne_id, client_id, note, texte, auteur, variante_libelle,
+                             statut, reponse, repondu_le, modere_le, created_at)
+    select s, v.produit_id, v_commande, v_ligne.id, v_client, a.note, a.texte, private.nom_public(a.nom), v_ligne.variante_libelle,
+           a.statut, a.reponse, case when a.reponse is not null then t0 + interval '5 days' end,
+           case when a.statut = 'publie' then t0 + interval '4 days' end, t0 + interval '3 days'
+      from public.variantes v where v.boutique_id = s and v.id = v_ligne.variante_id;
+  end loop;
+
+  -- Maymar : l'avis de sa première commande livrée.
+  insert into public.avis (boutique_id, produit_id, commande_id, ligne_id, client_id, note, texte, auteur, variante_libelle,
+                           statut, modere_le, created_at)
+  select m, v.produit_id, c.id, l.id, c.client_id, 5,
+         'Solide, les roues tournent bien et la serrure TSA rassure. Livrée à Sfax en trois jours.',
+         private.nom_public(c.contact_nom), l.variante_libelle, 'publie', c.livree_at + interval '3 days', c.livree_at + interval '2 days'
+    from public.commandes c
+    join public.commande_lignes l on l.boutique_id = c.boutique_id and l.commande_id = c.id
+    join public.variantes v on v.boutique_id = l.boutique_id and v.id = l.variante_id
+   where c.boutique_id = m and c.statut = 'livree'
+   order by c.livree_at
+   limit 1;
+end
+$$;

@@ -5,11 +5,13 @@ import Image from "next/image";
 import { Coche } from "./Icones";
 import { EspacePro } from "./EspacePro";
 import { MesDevis } from "./MesDevis";
+import { AvisCommande } from "./DonnerAvis";
 import { Prix } from "./Prix";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import { chiffresTelephone, lieu, telephoneLisible, type Magasin } from "@/lib/commande";
 import { urlFichier } from "@/lib/photos";
 import { t } from "@/lib/i18n";
+import type { MonAvis } from "@/lib/avis";
 
 /* ============================================================================
    MES COMMANDES — le compte de l'acheteur dans cette boutique : son numéro,
@@ -63,13 +65,22 @@ type CommandeMienne = {
 const ATTENTE_RENVOI = 30;
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
-export function Compte({ boutiqueId, sav = false, pro = false, devis = false }: { boutiqueId: string; sav?: boolean; pro?: boolean; devis?: boolean }) {
+export function Compte({ boutiqueId, sav = false, pro = false, devis = false, avis = false }: {
+  boutiqueId: string;
+  sav?: boolean;
+  pro?: boolean;
+  devis?: boolean;
+  /** Module avis : sous une commande livrée, chaque article à noter. */
+  avis?: boolean;
+}) {
   // undefined : la session n'est pas encore lue.
   const [session, setSession] = useState<{ telephone: string } | null | undefined>(undefined);
   const [commandes, setCommandes] = useState<CommandeMienne[] | null>(null);
   const [erreurListe, setErreurListe] = useState(false);
   const [demandes, setDemandes] = useState<DemandeMienne[]>([]);
   const [relecture, setRelecture] = useState(0);
+  const [mesAvis, setMesAvis] = useState<MonAvis[]>([]);
+  const [relectureAvis, setRelectureAvis] = useState(0);
 
   const [etape, setEtape] = useState<"numero" | "code">("numero");
   const [telephone, setTelephone] = useState("");
@@ -122,6 +133,20 @@ export function Compte({ boutiqueId, sav = false, pro = false, devis = false }: 
       actif = false;
     };
   }, [session, sav, boutiqueId, relecture]);
+
+  // Les avis déjà donnés, avec le module ; relus après chaque avis.
+  useEffect(() => {
+    if (!session || !avis) return;
+    let actif = true;
+    supabaseNavigateur()
+      .rpc("mes_avis", { p_boutique_id: boutiqueId })
+      .then(({ data, error }) => {
+        if (actif && !error) setMesAvis((data as MonAvis[] | null) ?? []);
+      });
+    return () => {
+      actif = false;
+    };
+  }, [session, avis, boutiqueId, relectureAvis]);
 
   useEffect(() => {
     if (attente <= 0) return;
@@ -302,7 +327,17 @@ export function Compte({ boutiqueId, sav = false, pro = false, devis = false }: 
           ) : null}
           <ul className="compte-liste" role="list">
             {commandes.map((c) => (
-              <Carte key={c.numero} c={c} boutiqueId={boutiqueId} sav={sav} demandes={demandes} surDemande={() => setRelecture((n) => n + 1)} />
+              <Carte
+                key={c.numero}
+                c={c}
+                boutiqueId={boutiqueId}
+                sav={sav}
+                demandes={demandes}
+                surDemande={() => setRelecture((n) => n + 1)}
+                avis={avis}
+                mesAvis={mesAvis}
+                surAvis={() => setRelectureAvis((n) => n + 1)}
+              />
             ))}
           </ul>
         </>
@@ -334,12 +369,15 @@ function Frise({ statut, retrait }: { statut: string; retrait: boolean }) {
   );
 }
 
-function Carte({ c, boutiqueId, sav, demandes, surDemande }: {
+function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, mesAvis, surAvis }: {
   c: CommandeMienne;
   boutiqueId: string;
   sav: boolean;
   demandes: DemandeMienne[];
   surDemande: () => void;
+  avis: boolean;
+  mesAvis: MonAvis[];
+  surAvis: () => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [envoyee, setEnvoyee] = useState<string | null>(null);
@@ -410,6 +448,15 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande }: {
             </button>
           )}
         </div>
+      ) : null}
+      {avis && c.statut === "livree" ? (
+        <AvisCommande
+          boutiqueId={boutiqueId}
+          numero={c.numero}
+          lignes={c.lignes}
+          mesAvis={mesAvis.filter((a) => a.commande === c.numero)}
+          surAvis={surAvis}
+        />
       ) : null}
     </li>
   );

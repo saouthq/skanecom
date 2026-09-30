@@ -445,7 +445,7 @@ await etape("les modules de la boutique", async () => {
   await clic(page, page.getByRole("link", { name: /^Modules/ }));
   await page.waitForURL(/\/modules$/);
   const lignes = page.locator(".md-module");
-  verifie((await lignes.count()) === 6 && (await page.locator(".md-module[data-actif]").count()) === 0,
+  verifie((await lignes.count()) === 7 && (await page.locator(".md-module[data-actif]").count()) === 0,
     `${await lignes.count()} modules, aucun actif pour une boutique neuve`);
   const aVenir = page.locator('.md-module[data-module="paiement_en_ligne"]');
   verifie((await aVenir.innerText()).includes("À venir") && (await aVenir.getByRole("button").count()) === 0,

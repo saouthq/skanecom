@@ -373,6 +373,49 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await capture(page, "quincaillerie-garantie-sav", true);
   });
 
+  await etape("retirée : l'avis sur l'article reçu, relu, puis sur la fiche", async () => {
+    await page.goto(Q + "/compte", { waitUntil: "networkidle" });
+    const bloc = page.locator(".compte-carte").first().locator(".avis-commande");
+    await bloc.waitFor({ timeout: 8000 });
+    verifie((await bloc.innerText()).includes("Perceuse"), "sous la commande retirée : l'article reçu, à noter");
+    await clic(page, bloc.getByRole("button", { name: "Donner mon avis" }));
+    const f = bloc.locator(".avis-formulaire");
+    await clic(page, f.getByRole("button", { name: "Publier mon avis" }));
+    verifie((await f.getByRole("alert").innerText()).includes("Choisissez une note"), "sans note, rien ne part");
+    await clic(page, f.locator(".avis-saisie-etoiles label").nth(4));
+    verifie((await f.locator(".avis-saisie-mot").innerText()).includes("Excellent"), "cinq étoiles : « Excellent »");
+    await clic(page, f.getByLabel(/Votre avis/));
+    await tape(page, "Puissante et légère, la batterie de rechange change tout sur un chantier.");
+    await capture(page, "quincaillerie-avis-formulaire");
+    await clic(page, f.getByRole("button", { name: "Publier mon avis" }));
+    await bloc.locator(".avis-merci").waitFor({ timeout: 8000 });
+    verifie((await bloc.locator(".avis-merci").innerText()).includes("après relecture"), "l'avis part, relu avant publication (réglage par défaut)");
+    await pause(600);
+    verifie((await bloc.innerText()).includes("En relecture"), "l'article dit « En relecture »");
+    // Ce que la vitrine lit (public.avis_produit, la fonction de la fiche — la
+    // page, elle, se renouvelle dans les cinq minutes de son cache).
+    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    const lue = async () => (await (await fetch(`${RELAIS}/rest/v1/rpc/avis_produit`, {
+      method: "POST",
+      headers: { apikey: anon, authorization: `Bearer ${anon}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_boutique_id: "00000000-0000-4000-8000-000000000002",
+        p_produit_id: (await (await fetch(`${RELAIS}/rest/v1/vitrine_produits?boutique_id=eq.00000000-0000-4000-8000-000000000002&slug=eq.perceuse-visseuse-14v&select=id`,
+          { headers: { apikey: anon, authorization: `Bearer ${anon}` } })).json())[0]?.id }),
+    })).json());
+    verifie((await lue()).total === 0, "en relecture : la vitrine n'en montre rien");
+    // La boutique le publie (clé de service de l'API locale, comme le ferait le backoffice).
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    const r = await fetch(`${RELAIS}/rest/v1/avis?boutique_id=eq.00000000-0000-4000-8000-000000000002&statut=eq.en_attente`, {
+      method: "PATCH",
+      headers: { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json", prefer: "return=minimal" },
+      body: JSON.stringify({ statut: "publie", modere_le: new Date().toISOString() }),
+    });
+    verifie(r.ok, `la boutique le publie (${r.status})`);
+    const publie = await lue();
+    verifie(publie.total === 1 && publie.moyenne === 5 && publie.avis[0].texte.includes("la batterie de rechange change tout") && !("client" in publie.avis[0]),
+      "publié : la vitrine lit la note et l'avis (sans rien du client que son prénom)");
+  });
+
   await etape("les conditions de vente, gabarit technique", async () => {
     await page.goto(Q + "/conditions-de-vente", { waitUntil: "networkidle" });
     verifie((await page.locator("main").innerText()).includes("offerte à partir de 500,000"), "le seuil de livraison offerte de la quincaillerie");

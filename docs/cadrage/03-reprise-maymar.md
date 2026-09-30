@@ -293,6 +293,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis l'achat express** (migration 38, `20260929103700_achat_express.sql`, 7 tests dans `supabase/tests/38_achat_express.sql`) : un réglage seulement, `commande.achat_express` (coupé par défaut, lu par la vitrine) — « Commander maintenant » sur la fiche mène au tunnel avec cet article seul, sans toucher au panier ; la commande passe par `public.passer_commande` comme une autre.
 
+**Puis les avis clients** (migration 39, `20260929103800_avis.sql`, 48 tests dans `supabase/tests/39_avis.sql`, 21 mutants tués) : `public.avis` (un par article commandé : note 1 à 5, texte facultatif, auteur montré « Amel B. », déclinaison copiée ; en attente, publié, écarté avec un motif gardé pour l'équipe ; réponse publique de la boutique). Seul un client connecté note un article d'une de ses commandes livrées (`public.donner_avis`) ; la vitrine lit les publiés (`public.avis_produit`, moyenne et répartition) ; l'équipe publie, écarte, répond (`public.gestion_moderer_avis`, propriétaire et administrateur, au journal). Réglage du module : `avis.moderation` (relu avant publication par défaut, ou automatique).
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.
