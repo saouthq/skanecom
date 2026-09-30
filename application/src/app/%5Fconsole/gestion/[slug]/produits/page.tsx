@@ -7,6 +7,7 @@ import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { urlFichier } from "@/lib/photos";
 import { FILTRES_CATALOGUE, PEUT_MODIFIER, type ListeProduits } from "@/lib/gestion/catalogue";
+import { RaccourciRecherche } from "@/components/console/Raccourcis";
 
 export const metadata: Metadata = { title: "Catalogue" };
 
@@ -58,7 +59,9 @@ export default async function Catalogue({
               <span className="bo-recherche-champ">
                 <Icone nom="recherche" />
                 <input id="q" name="q" type="search" className="entree" defaultValue={q} placeholder="Nom, marque ou référence" autoComplete="off" />
+                <kbd className="bo-recherche-touche" aria-hidden="true">/</kbd>
               </span>
+              <RaccourciRecherche cible="q" />
               <button type="submit" className="btn btn-second">Chercher</button>
             </form>
             <Link href={`${base}/caracteristiques`} className="btn btn-second"><Icone nom="modules" /> Caractéristiques</Link>

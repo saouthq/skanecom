@@ -4,6 +4,7 @@ import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { AlertesCommandes } from "@/components/console/Veille";
+import { RaccourciRecherche } from "@/components/console/Raccourcis";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { lieu } from "@/lib/commande";
 import {
@@ -98,7 +99,9 @@ export default async function Commandes({
               <span className="bo-recherche-champ">
                 <Icone nom="recherche" />
                 <input id="q" name="q" type="search" className="entree" defaultValue={q} placeholder="Numéro, nom ou téléphone" autoComplete="off" />
+                <kbd className="bo-recherche-touche" aria-hidden="true">/</kbd>
               </span>
+              <RaccourciRecherche cible="q" />
               <button type="submit" className="btn btn-second">Chercher</button>
             </form>
             {etape.cle === "a_confirmer" ? <AlertesCommandes /> : null}
@@ -135,14 +138,16 @@ export default async function Commandes({
         </div>
       ) : (
         <ul className="bo-liste" role="list">
-          {liste.commandes.map((c) => {
+          {liste.commandes.map((c, i) => {
             const aConfirmer = c.statut === "recue" || c.statut === "a_arbitrer";
+            const premier = i === 0 && page === 1 && !q && etape.cle === "a_confirmer" && liste.commandes.length > 1;
             return (
               <li key={c.numero} className="bo-ligne" data-statut={c.statut}>
                 <Link href={`/gestion/${slug}/commandes/${c.numero}`} className="bo-ligne-lien">
                   <span className="bo-ligne-id">
                     <span className="bo-numero">{c.numero}</span>
                     <span className="bo-age" title={c.cree_le}><Icone nom="horloge" taille={13} /> {age(c.cree_le, maintenant)}</span>
+                    {premier ? <span className="bo-premier">À appeler en premier</span> : null}
                   </span>
                   <span className="bo-ligne-client">
                     <span className="avatar" aria-hidden="true">{initiales(c.contact_nom)}</span>

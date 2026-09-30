@@ -277,6 +277,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis le service après-vente** (migration 30, `20260929102900_sav.sql`, 34 tests dans `supabase/tests/31_sav.sql`) : réglages `sav.garantie_mois` (module `sav`) et `catalogue.revendeur_officiel` ; `public.sav_demandes` (numéro par boutique, l'article copié de la commande, numéro de série, description, statut `nouvelle` → `en_cours` → `resolue` / `refusee` avec son issue documentée ; une seule demande ouverte par ligne de commande) et `public.sav_evenements` (l'historique) ; `sav_demander` et `mes_sav` pour le client connecté (commande livrée, la sienne), `gestion_sav_etat`, `gestion_liste_sav`, `gestion_sav`, `gestion_avancer_sav` pour l'équipe (étape affichée revérifiée) ; `mes_commandes` rend l'identifiant de chaque ligne ; `gestion_export` rend aussi les demandes.
 
+**Puis le tableau de bord** (migration 31, `20260929103000_tableau_de_bord.sql`, 18 tests dans `supabase/tests/32_tableau_de_bord.sql`) : `gestion_tableau_de_bord(boutique, jours)` (7, 30 ou 90 ; propriétaire, administrateur, lecture) rend, pour les commandes passées sur la période (heure de Tunis, hors `a_arbitrer`) et pour la période précédente, la synthèse (reçues, confirmées, livrées, refusées, annulées, en cours, à confirmer, encaissé, perdu aux refus, panier moyen, taux de confirmation et de refus, délai médian de confirmation), puis `par_jour`, `refus_origines`, `gouvernorats` et `produits`. Rien n'est stocké : tout est calculé à la demande.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

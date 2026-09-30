@@ -68,7 +68,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
 
     case "stock": {
       const vid = texte("variante_id");
-      const retour = ici(`var-${vid}`);
+      // Une erreur garde le mouvement de stock ouvert (stock=…), pour corriger.
+      const retour = (m: string, ok = false) =>
+        vers(`${fiche}?${new URLSearchParams(ok ? { ok: m } : { erreur: m, stock: vid })}#var-${vid}`);
       const quantite = Number.parseInt(texte("quantite"), 10);
       if (!Number.isFinite(quantite) || quantite < 0) return retour("Quantité illisible.");
       const mode = texte("mode");

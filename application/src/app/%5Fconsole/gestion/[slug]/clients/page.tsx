@@ -6,6 +6,7 @@ import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { quand, telephoneLisible } from "@/lib/gestion/libelles";
 import { FILTRES_CLIENTS, pastilleConfiance, type ListeClients } from "@/lib/gestion/clients";
+import { RaccourciRecherche } from "@/components/console/Raccourcis";
 
 export const metadata: Metadata = { title: "Clients" };
 
@@ -57,7 +58,9 @@ export default async function Clients({
             <span className="bo-recherche-champ">
               <Icone nom="recherche" />
               <input id="q" name="q" type="search" className="entree" defaultValue={q} placeholder="Nom, numéro ou e-mail" autoComplete="off" />
+              <kbd className="bo-recherche-touche" aria-hidden="true">/</kbd>
             </span>
+            <RaccourciRecherche cible="q" />
             <button type="submit" className="btn btn-second">Chercher</button>
           </form>
         }

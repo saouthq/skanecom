@@ -4,6 +4,7 @@ import { CompteurCommandes } from "@/components/console/Veille";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { BandeauSupport } from "@/components/console/AccesSupport";
+import { DIRECTION } from "@/lib/gestion/tableau";
 
 /* ============================================================================
    LE BACKOFFICE D'UNE BOUTIQUE — pour son équipe (PRD §6.2), sur téléphone
@@ -27,6 +28,13 @@ export default async function BackofficeBoutique({
   // Le service après-vente, si la boutique a le module : ses demandes à rappeler.
   const { data: sav } = await (await clientSession()).rpc("gestion_sav_etat", { p_boutique_id: boutique.boutique_id });
   const etatSav = sav as { actif: boolean; nouvelles: number } | null;
+  const badgeSav = etatSav?.nouvelles
+    ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
+    : undefined;
+  const lienCommandes = {
+    href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes" as const, exact: true, aussi: [`/gestion/${slug}/commandes/`],
+    extra: <CompteurCommandes slug={slug} />,
+  };
 
   return (
     <Coquille
@@ -39,17 +47,14 @@ export default async function BackofficeBoutique({
         {
           titre: "Boutique",
           liens: [
-            {
-              href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes", exact: true, aussi: [`/gestion/${slug}/commandes/`],
-              extra: <CompteurCommandes slug={slug} />,
-            },
+            lienCommandes,
+            ...(DIRECTION.includes(boutique.role)
+              ? [{ href: `/gestion/${slug}/tableau`, libelle: "Tableau de bord", icone: "graphique" as const }]
+              : []),
             { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
             { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },
             ...(etatSav?.actif
-              ? [{
-                  href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const,
-                  extra: etatSav.nouvelles ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span> : undefined,
-                }]
+              ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
               : []),
             ...(boutique.role === "proprietaire" || boutique.role === "admin"
               ? [{ href: `/gestion/${slug}/equipe`, libelle: "Équipe", icone: "equipe" as const }]
@@ -57,6 +62,13 @@ export default async function BackofficeBoutique({
             { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
           ],
         },
+      ]}
+      onglets={[
+        lienCommandes,
+        { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
+        ...(etatSav?.actif ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }] : []),
+        { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },
+        { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
       ]}
       email={user.email ?? ""}
       role={boutique.support_jusqu_a

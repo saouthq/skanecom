@@ -45,6 +45,12 @@ export function creeTesteur() {
     async capture(page, nom, pleine = false) {
       n += 1;
       const fichier = `${dossier}/${String(n).padStart(2, "0")}-${nom}.png`;
+      // Une capture pleine page montre tout : les sections qui attendent
+      // d'entrer à l'écran pour apparaître sont posées d'emblée.
+      if (pleine) await page.evaluate(() => document.documentElement.classList.remove("js-apparitions")).catch(() => {});
+      // Les entrées animées finissent avant la capture (les boucles, elles, tournent toujours).
+      await page.waitForFunction(() => document.getAnimations().every((x) => x.playState !== "running" || x.effect?.getTiming().iterations === Infinity),
+        null, { timeout: 3000 }).catch(() => {});
       await page.screenshot({ path: fichier, fullPage: pleine });
       return fichier;
     },

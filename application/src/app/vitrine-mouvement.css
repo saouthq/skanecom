@@ -1,0 +1,71 @@
+/* ==========================================================================
+   LE MOUVEMENT DE LA VITRINE — commun aux deux gabarits (html[data-gabarit]),
+   sur les jetons du thème (--theme-courbe). La console n'en voit rien.
+
+   · au défilement, les sections et les cartes montent en place, en cascade
+     (components/Apparitions.tsx pose data-vu) ;
+   · à l'arrivée, le titre d'ouverture monte ligne après ligne ;
+   · les cartes se soulèvent, leur photo s'approche ; les boutons s'enfoncent
+     sous le doigt ;
+   · le tiroir du panier arrive avec un léger élan, sur un voile flouté ;
+   · « réduire les animations » : tout est posé d'emblée.
+   ========================================================================== */
+
+html[data-gabarit] { --v-ressort: cubic-bezier(.34, 1.3, .64, 1); }
+
+/* ---- Au défilement ---- */
+html.js-apparitions :is(.apparait, .ed-section, .ed-recit, .ed-engagements, .te-section, .ed-carte, .te-carte,
+  .te-pied-services li, .ed-pied-grille > *, .te-pied-grille > *, .sav-grille > section):not([data-vu]) { opacity: 0; }
+html.js-apparitions :is(.apparait, .ed-section, .ed-recit, .ed-engagements, .te-section, .ed-carte, .te-carte,
+  .te-pied-services li, .ed-pied-grille > *, .te-pied-grille > *, .sav-grille > section)[data-vu] {
+  animation: v-monte .9s var(--theme-courbe) var(--delai, 0ms) backwards;
+}
+/* Les sections montent moins que les cartes : elles sont grandes. */
+html.js-apparitions :is(.ed-section, .ed-recit, .ed-engagements, .te-section)[data-vu] { animation-name: v-monte-doux; }
+@keyframes v-monte { from { opacity: 0; transform: translate3d(0, 28px, 0); } }
+@keyframes v-monte-doux { from { opacity: 0; transform: translate3d(0, 16px, 0); } }
+
+/* ---- Le titre d'ouverture, ligne après ligne ---- */
+/* Chaque ligne est un bloc (le <br> qui la sépare devient inutile) : un
+   bloc peut monter, une ligne de texte en ligne ne le peut pas. */
+:is(.ed-ouverture, .ed-ouverture-socle, .ed-ouverture-texte-seul, .te-banniere) h1 > span {
+  display: block; animation: v-ligne 1s var(--theme-courbe) backwards;
+}
+:is(.ed-ouverture, .ed-ouverture-socle, .ed-ouverture-texte-seul, .te-banniere) h1 > span > br { display: none; }
+:is(.ed-ouverture, .ed-ouverture-socle, .ed-ouverture-texte-seul, .te-banniere) h1 > span:nth-child(1) { animation-delay: .2s; }
+:is(.ed-ouverture, .ed-ouverture-socle, .ed-ouverture-texte-seul, .te-banniere) h1 > span:nth-child(2) { animation-delay: .32s; }
+:is(.ed-ouverture, .ed-ouverture-socle, .ed-ouverture-texte-seul, .te-banniere) h1 > span:nth-child(3) { animation-delay: .44s; }
+@keyframes v-ligne { from { opacity: 0; transform: translate3d(0, .5em, 0); filter: blur(4px); } }
+.te-banniere-contenu > :not(h1) { animation: v-monte .9s var(--theme-courbe) .5s backwards; }
+
+/* ---- Les cartes ---- */
+@media (hover: hover) {
+  .te-carte { transition: transform .35s var(--theme-courbe), border-color .2s, box-shadow .35s var(--theme-courbe); }
+  .te-carte:hover { transform: translateY(-3px); }
+  .te-carte .photo-principale { transition: transform 1.2s var(--theme-courbe); }
+  .te-carte:hover .photo-principale { transform: scale(1.045); }
+  .ed-carte .cadre-image { transition: box-shadow .5s var(--theme-courbe); }
+  .ed-carte:hover .cadre-image { box-shadow: 0 18px 40px -22px color-mix(in srgb, var(--theme-encre) 45%, transparent); }
+}
+
+/* ---- Les boutons ---- */
+html[data-gabarit] .btn { transition: background-color .2s var(--theme-courbe), color .2s, border-color .2s, box-shadow .25s var(--theme-courbe), transform .15s var(--theme-courbe); }
+html[data-gabarit] .btn:active:not(:disabled) { transform: scale(.97); }
+@media (hover: hover) {
+  html[data-gabarit] .btn-primaire:hover:not(:disabled) { box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--theme-encre) 60%, transparent); }
+}
+.icone-fleche { transition: transform .3s var(--v-ressort); }
+.btn:hover .icone-fleche { transform: translateX(3px); }
+[dir="rtl"] .btn:hover .icone-fleche { transform: translateX(-3px) scaleX(-1); }
+
+/* ---- Le tiroir ---- */
+.tiroir-voile { backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.tiroir-panneau { animation-duration: .45s; animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
+.tiroir-panier .panier-ligne, .tiroir-panier li { animation: v-monte .5s var(--theme-courbe) .12s backwards; }
+
+/* ---- Réduire les animations ---- */
+@media (prefers-reduced-motion: reduce) {
+  html[data-gabarit] *, html[data-gabarit] *::before, html[data-gabarit] *::after {
+    animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important;
+  }
+}

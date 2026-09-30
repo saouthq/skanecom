@@ -234,6 +234,10 @@ export function Tunnel({
     return e;
   }, [champs, compteObligatoire, session, enRetrait]);
 
+  // Une étape remplie se coche (le numéro devient une coche) : on voit où l'on en est.
+  const etapeUneFaite = !erreurs.telephone;
+  const etapeDeuxFaite = !erreurs.nom && !erreurs.ligne1 && !erreurs.ville && !erreurs.gouvernorat && !erreurs.codePostal;
+
   const change = (cle: keyof Champs) => (valeur: string) => setChamps((c) => ({ ...c, [cle]: valeur }));
 
   async function envoyerCode() {
@@ -423,7 +427,7 @@ export function Tunnel({
         {!cod ? <p className="tunnel-alerte">{t.commande.fermee}</p> : null}
 
         {/* 1 — Vos coordonnées */}
-        <fieldset className="tunnel-etape">
+        <fieldset className="tunnel-etape" data-faite={etapeUneFaite ? "" : undefined}>
           <legend>
             <span className="tunnel-num" aria-hidden="true">1</span>
             {t.commande.etapeCoordonnees}
@@ -527,7 +531,7 @@ export function Tunnel({
         </fieldset>
 
         {/* 2 — Livraison */}
-        <fieldset className="tunnel-etape">
+        <fieldset className="tunnel-etape" data-faite={etapeDeuxFaite ? "" : undefined}>
           <legend>
             <span className="tunnel-num" aria-hidden="true">2</span>
             {t.commande.etapeLivraison}

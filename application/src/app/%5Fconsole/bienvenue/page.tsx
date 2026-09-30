@@ -3,6 +3,7 @@ import Link from "next/link";
 import { clientSession } from "@/lib/console/session";
 import { LONGUEUR_MOT_DE_PASSE } from "@/lib/console/equipe";
 import { Porte } from "@/components/console/Porte";
+import { ChampMotDePasse } from "@/components/console/ChampMotDePasse";
 
 export const metadata: Metadata = { title: "Bienvenue" };
 
@@ -67,13 +68,12 @@ export default async function Bienvenue({ searchParams }: {
         </div>
         <div className="champ">
           <label htmlFor="mot_de_passe">Mot de passe</label>
-          <input id="mot_de_passe" name="mot_de_passe" type="password" autoComplete="new-password" required
-            minLength={LONGUEUR_MOT_DE_PASSE} aria-describedby="aide-mdp" autoFocus />
+          <ChampMotDePasse id="mot_de_passe" name="mot_de_passe" autoComplete="new-password" minLength={LONGUEUR_MOT_DE_PASSE} decritPar="aide-mdp" autoFocus />
           <p className="aide" id="aide-mdp">{LONGUEUR_MOT_DE_PASSE} caractères au moins. Une phrase courte se retient mieux qu&apos;un mot compliqué.</p>
         </div>
         <div className="champ">
           <label htmlFor="confirmation">Le même, une seconde fois</label>
-          <input id="confirmation" name="confirmation" type="password" autoComplete="new-password" required minLength={LONGUEUR_MOT_DE_PASSE} />
+          <ChampMotDePasse id="confirmation" name="confirmation" autoComplete="new-password" minLength={LONGUEUR_MOT_DE_PASSE} />
         </div>
         <button type="submit" className="btn btn-primaire btn-bloc btn-grand">Enregistrer et entrer</button>
       </form>

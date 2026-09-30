@@ -140,8 +140,9 @@ export function AlertesCommandes() {
     return <span className="bo-alertes discret" title="Réautorisez les notifications de ce site dans les réglages du navigateur">Alertes bloquées par le navigateur</span>;
   }
   return (
-    <button type="button" className="btn btn-second" onClick={async () => setChoix(await Notification.requestPermission())}>
-      <Icone nom="alerte" /> Me prévenir des nouvelles commandes
+    <button type="button" className="btn btn-second" title="Une notification à chaque nouvelle commande, tant que le backoffice est ouvert"
+      onClick={async () => setChoix(await Notification.requestPermission())}>
+      <Icone nom="cloche" /> Activer les alertes
     </button>
   );
 }

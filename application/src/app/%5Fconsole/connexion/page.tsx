@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { acces, accesEquipe } from "@/lib/console/session";
 import { Porte } from "@/components/console/Porte";
+import { ChampMotDePasse } from "@/components/console/ChampMotDePasse";
 
 export const metadata: Metadata = { title: "Connexion" };
 
@@ -33,7 +34,7 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
         </div>
         <div className="champ">
           <label htmlFor="mot_de_passe">Mot de passe</label>
-          <input id="mot_de_passe" name="mot_de_passe" type="password" autoComplete="current-password" required />
+          <ChampMotDePasse id="mot_de_passe" name="mot_de_passe" autoComplete="current-password" />
         </div>
         <button type="submit" className="btn btn-primaire btn-bloc btn-grand">Se connecter</button>
       </form>

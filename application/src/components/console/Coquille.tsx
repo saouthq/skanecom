@@ -16,6 +16,8 @@ export type LienCoquille = {
   aussi?: string[];
   /** Après le libellé : un compteur tenu à jour (la veille des commandes). */
   extra?: React.ReactNode;
+  /** Le libellé court de la barre d'onglets du téléphone. */
+  court?: string;
 };
 export type GroupeCoquille = { titre?: string; liens: LienCoquille[] };
 
@@ -67,7 +69,22 @@ function Compte({ email, role }: { email: string; role: string }) {
   );
 }
 
-export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, email, role, bandeau, children }: {
+/** Sur téléphone, les destinations principales en bas de l'écran. */
+function Onglets({ liens }: { liens: LienCoquille[] }) {
+  return (
+    <nav className="app-onglets" aria-label="Accès rapide">
+      {liens.map((l) => (
+        <LienNav key={l.href} href={l.href} exact={l.exact} aussi={l.aussi}>
+          <Icone nom={l.icone} taille={20} />
+          <span>{l.court ?? l.libelle}</span>
+          {l.extra}
+        </LienNav>
+      ))}
+    </nav>
+  );
+}
+
+export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, onglets, email, role, bandeau, children }: {
   accueil: string;
   titre: string;
   sousTitre: string;
@@ -75,6 +92,8 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, em
   logo: React.ReactNode;
   changer?: { href: string; libelle: string };
   groupes: GroupeCoquille[];
+  /** Sur téléphone, les quatre ou cinq destinations du quotidien, en bas. */
+  onglets?: LienCoquille[];
   email: string;
   role: string;
   /** Au-dessus du contenu, sur toutes les pages : l'accès support en cours. */
@@ -91,7 +110,7 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, em
     </Link>
   );
   return (
-    <div className="app">
+    <div className={onglets?.length ? "app app-avec-onglets" : "app"}>
       <a className="saut-contenu" href="#principal">Aller au contenu</a>
 
       <aside className="app-cote">
@@ -124,6 +143,7 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, em
         {bandeau}
         <div className="app-contenu">{children}</div>
       </main>
+      {onglets?.length ? <Onglets liens={onglets} /> : null}
     </div>
   );
 }

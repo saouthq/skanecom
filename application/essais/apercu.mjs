@@ -37,6 +37,8 @@ for (const [ecran, options] of [
         document.documentElement.style.scrollBehavior = "auto";
         for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)); }
         window.scrollTo(0, 0);
+        // Tout est posé d'emblée pour la capture (les apparitions au défilement).
+        document.documentElement.classList.remove("js-apparitions");
         await new Promise((r) => setTimeout(r, 200));
       });
       await page.waitForLoadState("networkidle");

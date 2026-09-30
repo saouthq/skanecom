@@ -145,6 +145,8 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
     verifie(true, "l'employé des appels entre directement dans le backoffice de Maymar");
     verifie((await page.locator(".app-cote .app-compte-role").innerText()).includes("Confirmation"), "son rôle est affiché");
+    verifie(await page.locator(".app-cote").getByRole("link", { name: "Tableau de bord" }).count() === 0,
+      "le chiffre d'affaires ne le regarde pas : pas de tableau de bord");
   });
 
   await etape("la liste « à confirmer »", async () => {
@@ -407,6 +409,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
     const premiere = page.locator(".var").first();
     stockAvant = Number((await premiere.locator(".var-tete").innerText()).match(/(\d+) en stock|Stock bas · (\d+)/)?.slice(1).find(Boolean) ?? 0);
     await capture(page, "gestion-produit", true);
+    await clic(page, premiere.locator("summary", { hasText: "Mouvement de stock" }));
     await clic(page, premiere.locator("input[name=quantite]"));
     await tape(page, "5");
     await clic(page, premiere.locator("input[name=commentaire]"));
@@ -419,11 +422,13 @@ console.log("\n== 2. Le gérant, double authentification ==");
 
   await etape("inventaire et casse", async () => {
     const premiere = page.locator(".var").first();
+    await clic(page, premiere.locator("summary", { hasText: "Mouvement de stock" }));
     await clic(page, premiere.getByLabel("Casse"));
     await clic(page, premiere.locator("input[name=quantite]"));
     await tape(page, "999");
     await envoie(premiere.getByRole("button", { name: "Valider" }));
     verifie((await page.getByRole("alert").innerText()).includes("Il ne reste que"), "une casse plus grande que le stock est refusée");
+    verifie(await page.locator(".var").first().locator(".var-pli").evaluate((d) => d.open), "le mouvement de stock reste ouvert, pour corriger");
     await clic(page, page.locator(".var").first().getByLabel("Inventaire"));
     await clic(page, page.locator(".var").first().locator("input[name=quantite]"));
     await tape(page, "4");
@@ -880,6 +885,22 @@ console.log("\n== 2. Le gérant, double authentification ==");
       "l'historique : chaque geste, avec son auteur");
     verifie(!(await page.locator(".app-cote").getByRole("link", { name: /SAV/ }).innerText()).match(/\d/), "plus rien à rappeler");
     await capture(page, "gestion-sav-fiche", true);
+  });
+
+  await etape("le tableau de bord : ce que la période a donné", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Tableau de bord" }));
+    await page.waitForURL(/\/gestion\/maymar\/tableau/);
+    await page.locator(".tb-chiffres").waitFor();
+    const chiffres = await page.locator(".tb-chiffres").innerText();
+    verifie(["Encaissé", "Commandes reçues", "Taux de confirmation", "Refus à la livraison"].every((x) => chiffres.includes(x)),
+      "quatre chiffres : l'encaissé, les commandes, la confirmation, les refus");
+    verifie(await page.locator(".tb-barres li").count() === 30, "sur 30 jours, un point par jour");
+    verifie((await page.locator("section:has(#tb-refus)").innerText()).includes("Le client"), "les refus disent d'où ils viennent");
+    await capture(page, "gestion-tableau-de-bord", true);
+    await clic(page, page.getByRole("link", { name: "7 jours" }));
+    await page.waitForURL(/jours=7/);
+    await page.waitForLoadState("networkidle");
+    verifie(await page.locator(".tb-barres li").count() === 7, "sur 7 jours : sept points");
   });
 
   await etape("les données de la boutique, dans un tableur", async () => {

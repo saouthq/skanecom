@@ -1,0 +1,233 @@
+/* ==========================================================================
+   LES FINITIONS DE L'INTERFACE DE TRAVAIL — ce qui fait passer un outil
+   propre à un outil qu'on a plaisir à ouvrir : de la profondeur (des ombres
+   en couches, un panneau qui se décolle du fond), des repères qui bougent
+   (l'onglet actif, la page courante), des lignes qui répondent au doigt et
+   à la souris, une porte d'entrée qui dit ce que l'outil fait, et sur
+   téléphone une barre d'onglets à portée de pouce.
+
+   S'ajoute à console.css (mêmes jetons --ui-*) ; le mouvement est dans
+   mouvement.css.
+   ========================================================================== */
+
+.console {
+  --ui-r: 10px;
+  --ui-r-l: 14px;
+  --ui-r-xl: 20px;
+  --ui-ombre-xs: 0 1px 2px rgb(24 24 27 / .05);
+  --ui-ombre-s: 0 1px 2px rgb(24 24 27 / .04), 0 2px 6px -1px rgb(24 24 27 / .06);
+  --ui-ombre-m: 0 1px 2px rgb(24 24 27 / .04), 0 4px 10px -2px rgb(24 24 27 / .06), 0 12px 28px -8px rgb(24 24 27 / .12);
+  --ui-ombre-l: 0 2px 4px rgb(24 24 27 / .04), 0 12px 24px -6px rgb(24 24 27 / .10), 0 32px 64px -16px rgb(24 24 27 / .24);
+  --ui-degrade: linear-gradient(135deg, #4F46E5 0%, #7C3AED 55%, #C026D3 100%);
+}
+.console h1 { font-size: 1.625rem; line-height: 2.125rem; font-weight: 650; letter-spacing: -0.026em; }
+@media (min-width: 1024px) { .console h1 { font-size: 1.75rem; line-height: 2.25rem; } }
+
+/* --------------------------------------------------------------------------
+   LA PORTE — deux panneaux sur ordinateur
+   -------------------------------------------------------------------------- */
+.porte { display: grid; grid-template-columns: minmax(0, 1fr); place-items: stretch; padding: 0; }
+.porte::before { display: none; }
+.porte-marque { display: none; }
+.porte-cote {
+  position: relative; display: grid; place-items: center; padding: 2.5rem 1rem 3rem; min-block-size: 100dvh;
+  background:
+    radial-gradient(60rem 30rem at 50% -10%, rgb(99 102 241 / .10), transparent 70%),
+    var(--ui-fond);
+}
+.porte-carte { padding: 1.5rem; border-radius: var(--ui-r-xl); box-shadow: var(--ui-ombre-l); border-color: var(--ui-bord-leger); }
+.porte-tete h1 { font-size: 1.5rem; line-height: 2rem; }
+.porte-boite { animation: ui-monte var(--ui-d4, 480ms) cubic-bezier(.2, .8, .2, 1) backwards; }
+
+@media (min-width: 1000px) {
+  .porte { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+  .porte-cote { background: var(--ui-panneau); }
+  .porte-cote .porte-tete .app-logo { display: none; }
+  .porte-cote .porte-boite { max-inline-size: 23rem; }
+  .porte-cote .porte-tete { justify-items: start; text-align: start; }
+  .porte-cote .porte-tete h1 { font-size: 1.875rem; line-height: 2.25rem; letter-spacing: -0.03em; }
+  .porte-cote .porte-carte { padding: 0; border: 0; box-shadow: none; background: transparent; }
+  .porte-cote .porte-pied { text-align: start; padding-block-start: 1.25rem; border-block-start: 1px solid var(--ui-bord-leger); }
+  .porte-marque {
+    position: relative; isolation: isolate; overflow: hidden;
+    display: grid; grid-template-rows: auto 1fr auto; gap: 2rem; padding: 2.5rem 3rem 3rem;
+    min-block-size: 100dvh; color: #fff;
+    background:
+      radial-gradient(38rem 28rem at 12% 8%, rgb(99 102 241 / .55), transparent 62%),
+      radial-gradient(34rem 30rem at 92% 36%, rgb(168 85 247 / .38), transparent 60%),
+      radial-gradient(40rem 26rem at 40% 110%, rgb(236 72 153 / .26), transparent 60%),
+      #0C0B14;
+  }
+  /* Une trame fine, qui s'efface vers les bords. */
+  .porte-marque::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background-image: linear-gradient(rgb(255 255 255 / .07) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / .07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black, transparent);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black, transparent);
+  }
+  /* Les lueurs dérivent, lentement. */
+  .porte-marque::after {
+    content: ""; position: absolute; inset: -20%; z-index: -2; pointer-events: none;
+    background: radial-gradient(30rem 22rem at 30% 30%, rgb(79 70 229 / .45), transparent 60%),
+                radial-gradient(26rem 20rem at 70% 70%, rgb(192 38 211 / .30), transparent 60%);
+    animation: porte-derive 18s ease-in-out infinite alternate;
+  }
+  @keyframes porte-derive { to { transform: translate3d(6%, -4%, 0) rotate(8deg); } }
+
+  .porte-marque-nom { display: flex; align-items: center; gap: .75rem; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; }
+  .porte-marque-nom .app-logo { inline-size: 34px; block-size: 34px; background: rgb(255 255 255 / .12); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .18); backdrop-filter: blur(8px); }
+  .porte-marque-texte { display: grid; gap: .5rem; max-inline-size: 30rem; font-size: 1rem; line-height: 1.55; color: rgb(255 255 255 / .72); }
+  .porte-marque-texte b { font-size: clamp(1.5rem, 2.4vw, 2rem); line-height: 1.15; font-weight: 650; letter-spacing: -0.03em; color: #fff; }
+
+  .porte-scene { position: relative; align-self: center; justify-self: center; inline-size: min(100%, 30rem); block-size: 22rem; }
+  .ps-carte {
+    position: absolute; display: grid; gap: .625rem; padding: 1rem 1.125rem; border-radius: 16px;
+    background: rgb(255 255 255 / .08); color: #fff;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14), 0 24px 48px -16px rgb(0 0 0 / .5);
+    backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    animation: ps-entre .8s cubic-bezier(.2, .8, .2, 1) both, ps-flotte 7s ease-in-out infinite alternate;
+  }
+  .ps-commande { inset-block-start: 0; inset-inline-start: 0; inline-size: 18rem; animation-delay: .15s, 1s; }
+  .ps-livree { inset-block-start: 7.5rem; inset-inline-end: 0; display: flex; align-items: center; gap: .75rem; animation-delay: .35s, 1.6s; }
+  .ps-mois { inset-block-end: 0; inset-inline-start: 3rem; inline-size: 17rem; animation-delay: .55s, 2.2s; }
+  @keyframes ps-entre { from { opacity: 0; transform: translateY(18px) scale(.97); } }
+  @keyframes ps-flotte { to { translate: 0 -8px; } }
+  .ps-ligne { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: .8125rem; }
+  .ps-ligne b { font-weight: 600; }
+  .ps-doux { color: rgb(255 255 255 / .62); font-size: .8125rem; }
+  .ps-pastille { font-style: normal; padding: .125rem .5rem; border-radius: 999px; font-size: .6875rem; font-weight: 600; background: rgb(251 191 36 / .18); color: #FCD34D; box-shadow: inset 0 0 0 1px rgb(251 191 36 / .35); }
+  .ps-boutons { display: flex; gap: .5rem; }
+  .ps-bouton { flex: 1; padding: .5rem; border-radius: 10px; text-align: center; font-style: normal; font-size: .75rem; font-weight: 600; background: rgb(255 255 255 / .1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); }
+  .ps-bouton-plein { background: #fff; color: #0C0B14; box-shadow: none; }
+  .ps-coche {
+    display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; border-radius: 999px;
+    background: rgb(34 197 94 / .2); box-shadow: inset 0 0 0 1px rgb(74 222 128 / .45);
+  }
+  .ps-coche::after { content: ""; inline-size: .5rem; block-size: .875rem; margin-block-start: -.125rem; border: solid #4ADE80; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+  .ps-livree > span { display: grid; gap: .0625rem; font-size: .875rem; }
+  .ps-chiffre { font-size: 1.75rem; line-height: 1; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .ps-chiffre small { font-size: .75rem; font-weight: 500; color: rgb(255 255 255 / .6); }
+  .ps-barres { display: flex; align-items: flex-end; gap: 5px; block-size: 3.5rem; }
+  .ps-barres i {
+    flex: 1; border-radius: 4px 4px 2px 2px; background: linear-gradient(180deg, #A5B4FC, rgb(165 180 252 / .35));
+    transform-origin: bottom; animation: ps-pousse .7s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .ps-barres i:last-child { background: linear-gradient(180deg, #F0ABFC, rgb(240 171 252 / .4)); }
+  @keyframes ps-pousse { from { transform: scaleY(0); } }
+}
+
+/* Le mot de passe, avec son œil. */
+.champ-mdp { position: relative; display: block; }
+.console .champ .champ-mdp input { padding-inline-end: 2.75rem; }
+.champ-mdp-oeil {
+  position: absolute; inset-block: 0; inset-inline-end: .25rem; margin-block: auto; display: grid; place-items: center;
+  inline-size: 2.25rem; block-size: 2.25rem; border: 0; border-radius: 8px; background: transparent; color: var(--ui-texte-3); cursor: pointer;
+  transition: color .15s, background-color .15s;
+}
+.champ-mdp-oeil:hover { color: var(--ui-texte); background: var(--ui-doux); }
+.champ-mdp-oeil[aria-pressed="true"] { color: var(--ui-accent); }
+
+/* --------------------------------------------------------------------------
+   LA COQUILLE
+   -------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .app-principal {
+    box-shadow: 0 1px 2px rgb(24 24 27 / .04), 0 8px 24px -12px rgb(24 24 27 / .10);
+    background:
+      radial-gradient(48rem 14rem at 50% -6rem, color-mix(in srgb, var(--ui-accent) 6%, transparent), transparent 70%),
+      var(--ui-panneau);
+  }
+  .app-cote { padding: .875rem .75rem; }
+}
+.app-nav-lien { position: relative; block-size: 36px; transition: background-color var(--ui-d1, .12s), color var(--ui-d1, .12s); }
+.app-nav-lien[aria-current="page"] { box-shadow: 0 1px 2px rgb(24 24 27 / .06), 0 0 0 1px var(--ui-bord-leger); }
+.app-nav-lien[aria-current="page"]::before {
+  content: ""; position: absolute; inset-inline-start: -.75rem; inset-block: .5rem; inline-size: 3px; border-radius: 0 3px 3px 0;
+  background: var(--ui-degrade); animation: nav-repere .32s cubic-bezier(.2, .8, .2, 1) both;
+}
+.app-nav-lien[aria-current="page"] .icone { color: var(--ui-accent); }
+@keyframes nav-repere { from { transform: scaleY(0); } }
+.app-menu-feuille .app-nav-lien[aria-current="page"]::before { display: none; }
+.console .app-nav-compte { box-shadow: 0 0 0 2px var(--ui-fond); }
+.app-logo { background: linear-gradient(145deg, #2A2A31, #0E0E12); }
+
+/* --------------------------------------------------------------------------
+   ONGLETS : le repère glisse en place
+   -------------------------------------------------------------------------- */
+.onglets a { transition: color var(--ui-d1, .12s); border-radius: 8px 8px 0 0; }
+.onglets a:hover { background: color-mix(in srgb, var(--ui-texte) 3%, transparent); }
+.onglets a[aria-current="page"]::after { transform-origin: center; animation: onglet-repere .36s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes onglet-repere { from { transform: scaleX(.2); opacity: 0; } }
+.compte-onglet { transition: background-color .2s, color .2s; }
+
+/* --------------------------------------------------------------------------
+   LISTES : une ligne répond au survol et au doigt
+   -------------------------------------------------------------------------- */
+.bo-ligne { transition: transform var(--ui-d2, .2s) var(--ui-courbe, ease), box-shadow var(--ui-d2, .2s), border-color var(--ui-d2, .2s); }
+@media (hover: hover) {
+  .bo-ligne:hover { transform: translateY(-1px); box-shadow: var(--ui-ombre-m); border-color: var(--ui-bord-fort); z-index: 1; }
+}
+.bo-ligne:active { transform: scale(.995); }
+.bo-appel { transition: background-color .15s, color .15s; }
+.bo-appel:hover { background: var(--ui-vert-fond); }
+
+/* --------------------------------------------------------------------------
+   CARTES, CHAMPS
+   -------------------------------------------------------------------------- */
+.console .carte { border-color: var(--ui-bord-leger); box-shadow: 0 1px 2px rgb(24 24 27 / .04), 0 1px 1px rgb(24 24 27 / .02); }
+.console .champ input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+.console .champ select, .console .champ textarea, .console .entree { border-color: #A1A1AA; }
+.console .choix-carte:has(input:checked) { background: color-mix(in srgb, var(--ui-accent) 3%, var(--ui-panneau)); }
+
+/* --------------------------------------------------------------------------
+   VIDE : un état vide qui a de l'allure
+   -------------------------------------------------------------------------- */
+.vide { border-style: solid; border-color: var(--ui-bord-leger); background: radial-gradient(22rem 10rem at 50% 0, color-mix(in srgb, var(--ui-accent) 6%, transparent), transparent 70%), var(--ui-survol); }
+.vide-icone {
+  inline-size: 52px; block-size: 52px; border-radius: 16px; color: var(--ui-accent);
+  background: linear-gradient(180deg, var(--ui-panneau), color-mix(in srgb, var(--ui-accent) 6%, var(--ui-panneau)));
+  box-shadow: var(--ui-ombre-m), inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 18%, var(--ui-bord));
+  animation: vide-flotte 4s ease-in-out infinite alternate;
+}
+@keyframes vide-flotte { to { transform: translateY(-3px); } }
+
+/* --------------------------------------------------------------------------
+   TÉLÉPHONE : la barre d'onglets, à portée de pouce
+   -------------------------------------------------------------------------- */
+.app-onglets { display: none; }
+/* « screen » : à l'impression (une feuille A4 a la largeur d'un téléphone),
+   ni barre d'onglets, ni sa marge. */
+@media screen and (max-width: 1023px) {
+  .app-onglets {
+    position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 35;
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: .25rem;
+    padding: .375rem .5rem calc(.375rem + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--ui-panneau) 93%, transparent);
+    backdrop-filter: saturate(1.8) blur(18px); -webkit-backdrop-filter: saturate(1.8) blur(18px);
+    border-block-start: 1px solid var(--ui-bord);
+  }
+  .app-onglets a {
+    position: relative; display: grid; justify-items: center; align-content: center; gap: 3px; min-block-size: 52px;
+    border-radius: 12px; font-size: .6875rem; font-weight: 500; color: var(--ui-texte-3);
+    -webkit-tap-highlight-color: transparent; transition: color .15s;
+  }
+  .app-onglets a .icone { transition: transform .25s cubic-bezier(.34, 1.4, .64, 1); }
+  .app-onglets a:active .icone { transform: scale(.9); }
+  .app-onglets a[aria-current="page"] { color: var(--ui-texte); font-weight: 600; }
+  .app-onglets a[aria-current="page"]::before {
+    content: ""; position: absolute; inset-block-start: 5px; inline-size: 48px; block-size: 28px; border-radius: 999px;
+    background: color-mix(in srgb, var(--ui-accent) 12%, transparent); animation: onglet-bas .3s cubic-bezier(.34, 1.4, .64, 1) both;
+  }
+  .app-onglets a[aria-current="page"] .icone { color: var(--ui-accent); }
+  @keyframes onglet-bas { from { transform: scale(.5); opacity: 0; } }
+  .console .app-onglets .app-nav-compte { position: absolute; inset-block-start: 3px; inset-inline-start: calc(50% + 6px); margin: 0; }
+  .app-avec-onglets .app-contenu { padding-block-end: calc(6rem + env(safe-area-inset-bottom)); }
+  /* Une fiche qui a sa propre barre d'action (appeler le client) la garde
+     seule en bas : deux barres empilées mangeraient l'écran. */
+  .app-avec-onglets:has(.bo-barre-mobile) .app-onglets { display: none; }
+}
+
+@media print {
+  .ui-progression, .app-onglets { display: none !important; }
+}

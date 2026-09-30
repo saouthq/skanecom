@@ -1,0 +1,92 @@
+/* ==========================================================================
+   LE MOUVEMENT DE L'INTERFACE DE TRAVAIL — console et backoffice.
+
+   Le mouvement dit ce qui se passe, il ne décore pas :
+   · une page arrive : son contenu monte d'un souffle, bloc après bloc
+     (40 ms d'écart, jamais plus de 320 ms en tout) ;
+   · un geste part : le bouton le dit (« envoi » : un anneau qui tourne),
+     et un second clic n'envoie rien ;
+   · une navigation prend du temps : une barre fine court en haut ;
+   · un message arrive : il glisse à sa place ;
+   · ce qui se survole se soulève d'un pixel, ce qui se presse s'enfonce.
+   Courbes de sortie (rapides au départ, douces à l'arrivée), durées de 120
+   à 480 ms. « Réduire les animations » (réglage du système) : tout est
+   instantané.
+   ========================================================================== */
+
+.console {
+  --ui-courbe: cubic-bezier(.2, .8, .2, 1);
+  --ui-courbe-ressort: cubic-bezier(.34, 1.4, .64, 1);
+  --ui-d1: 120ms;
+  --ui-d2: 200ms;
+  --ui-d3: 320ms;
+  --ui-d4: 480ms;
+}
+
+/* ---- Une page arrive ---- */
+@keyframes ui-monte { from { opacity: 0; transform: translateY(8px); } }
+@keyframes ui-apparait { from { opacity: 0; } }
+/* « backwards » : l'animation finie, plus aucune transformation ne reste
+   posée (un transform sur un ancêtre piégerait les barres position: fixed). */
+.app-contenu > * { animation: ui-monte var(--ui-d4) var(--ui-courbe) backwards; }
+.app-contenu > :has(.bo-barre-mobile) { animation-name: ui-apparait; }
+.app-contenu > :nth-child(2) { animation-delay: 40ms; }
+.app-contenu > :nth-child(3) { animation-delay: 80ms; }
+.app-contenu > :nth-child(4) { animation-delay: 120ms; }
+.app-contenu > :nth-child(n+5) { animation-delay: 160ms; }
+
+/* Les lignes d'une liste suivent, une à une (les dix premières). */
+.bo-liste > li, .ui-cascade > * { animation: ui-monte var(--ui-d3) var(--ui-courbe) backwards; }
+.bo-liste > li:nth-child(1), .ui-cascade > :nth-child(1) { animation-delay: 60ms; }
+.bo-liste > li:nth-child(2), .ui-cascade > :nth-child(2) { animation-delay: 90ms; }
+.bo-liste > li:nth-child(3), .ui-cascade > :nth-child(3) { animation-delay: 120ms; }
+.bo-liste > li:nth-child(4), .ui-cascade > :nth-child(4) { animation-delay: 150ms; }
+.bo-liste > li:nth-child(5), .ui-cascade > :nth-child(5) { animation-delay: 180ms; }
+.bo-liste > li:nth-child(6), .ui-cascade > :nth-child(6) { animation-delay: 210ms; }
+.bo-liste > li:nth-child(7), .ui-cascade > :nth-child(7) { animation-delay: 240ms; }
+.bo-liste > li:nth-child(8), .ui-cascade > :nth-child(8) { animation-delay: 270ms; }
+.bo-liste > li:nth-child(n+9), .ui-cascade > :nth-child(n+9) { animation-delay: 300ms; }
+
+/* ---- Survol, pression ---- */
+.console .btn { transition: background-color var(--ui-d1), border-color var(--ui-d1), box-shadow var(--ui-d2), color var(--ui-d1), transform var(--ui-d1) var(--ui-courbe); }
+.console .btn:active:not(:disabled) { transform: scale(.98); }
+.console .btn-primaire:hover:not(:disabled) { box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 4px 12px -2px rgb(24 24 27 / .35); }
+
+/* ---- Un geste part : le bouton le dit ---- */
+@keyframes ui-tourne { to { transform: rotate(1turn); } }
+.console .btn[data-envoi] { position: relative; color: transparent !important; pointer-events: none; }
+.console .btn[data-envoi] > * { visibility: hidden; }
+.console .btn[data-envoi]::after {
+  content: ""; position: absolute; inset: 0; margin: auto; inline-size: 16px; block-size: 16px; border-radius: 50%;
+  border: 2px solid currentColor; border-inline-end-color: transparent; animation: ui-tourne .6s linear infinite;
+}
+.console .btn-primaire[data-envoi]::after, .console .btn-succes[data-envoi]::after { border-color: #fff; border-inline-end-color: transparent; }
+.console .btn-second[data-envoi]::after, .console .btn-fantome[data-envoi]::after, .console .btn-danger[data-envoi]::after { border-color: var(--ui-texte-2); border-inline-end-color: transparent; }
+
+/* ---- Une navigation prend du temps ---- */
+.ui-progression {
+  position: fixed; inset-inline: 0; inset-block-start: 0; z-index: 100; block-size: 2px; pointer-events: none;
+  transform-origin: left; transform: scaleX(0); opacity: 0;
+  background: linear-gradient(90deg, var(--ui-accent), #8B5CF6);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ui-accent) 60%, transparent);
+}
+.ui-progression[data-etat="court"] { opacity: 1; transform: scaleX(.8); transition: transform 8s cubic-bezier(.1, .7, .1, 1), opacity var(--ui-d1); }
+.ui-progression[data-etat="fin"] { opacity: 0; transform: scaleX(1); transition: transform var(--ui-d2) var(--ui-courbe), opacity var(--ui-d3) var(--ui-d2); }
+
+/* ---- Un message arrive ---- */
+@keyframes ui-glisse { from { opacity: 0; transform: translateY(-6px) scale(.99); } }
+.console .message { animation: ui-glisse var(--ui-d3) var(--ui-courbe) backwards; }
+
+/* ---- Menus, plis ---- */
+.console details.bo-pli > summary .bo-pli-chevron { transition: transform var(--ui-d2) var(--ui-courbe); }
+.console details.bo-pli[open] > summary .bo-pli-chevron { transform: rotate(180deg); }
+.console details.bo-pli[open] > :not(summary) { animation: ui-monte var(--ui-d3) var(--ui-courbe) backwards; }
+
+/* ---- Réduire les animations ---- */
+@media (prefers-reduced-motion: reduce) {
+  .console *, .console *::before, .console *::after {
+    animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+  }
+  .console .btn[data-envoi]::after { animation: ui-tourne 1.2s linear infinite !important; }
+}

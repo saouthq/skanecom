@@ -7,6 +7,7 @@ import { urlFichier } from "@/lib/photos";
 import { directionDe, localeOgDe, t } from "@/lib/i18n";
 import { Entete } from "@/components/Entete";
 import { Pied } from "@/components/Pied";
+import { Apparitions } from "@/components/Apparitions";
 
 /* ============================================================================
    LE LAYOUT RACINE D'UNE BOUTIQUE
@@ -73,6 +74,7 @@ export default async function RacineBoutique({ children, params }: Props) {
         <Entete cadre={cadre} />
         {children}
         <Pied cadre={cadre} />
+        <Apparitions />
       </body>
     </html>
   );

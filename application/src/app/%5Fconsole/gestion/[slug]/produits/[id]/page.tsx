@@ -43,7 +43,7 @@ export default async function FicheProduitBackoffice({
   searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
-  searchParams: Promise<{ ok?: string; erreur?: string }>;
+  searchParams: Promise<{ ok?: string; erreur?: string; stock?: string }>;
 }) {
   const [{ slug, id }, messages] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
@@ -266,6 +266,12 @@ export default async function FicheProduitBackoffice({
                           </dl>
                         )}
                         {stocke ? (
+                          /* Le mouvement de stock, plié : on l'ouvre pour une réception, un
+                             inventaire, une casse. Resté ouvert après une erreur. */
+                          <details className="var-pli" open={messages.stock === v.id ? true : undefined}>
+                            <summary className="btn btn-second btn-petit var-pli-bouton">
+                              <Icone nom="colis" taille={14} /> Mouvement de stock
+                            </summary>
                           <form action={action} method="post" className="var-stock">
                             <input type="hidden" name="action" value="stock" />
                             <input type="hidden" name="variante_id" value={v.id} />
@@ -287,6 +293,7 @@ export default async function FicheProduitBackoffice({
                             </div>
                             <button type="submit" className="btn btn-primaire btn-petit">Valider</button>
                           </form>
+                          </details>
                         ) : null}
                       </div>
                     </li>
