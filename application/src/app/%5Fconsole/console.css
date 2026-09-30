@@ -854,3 +854,6 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 .pi-lot-retirer > summary::-webkit-details-marker { display: none; }
 .pi-lot-retirer[open] > summary { display: none; }
 .pi-lot-confirmer { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; font-size: .8125rem; color: var(--ui-texte-2); }
+
+/* Aperçu en ligne : les codes de connexion, lisibles d'un coup d'œil. */
+.codes-apercu-code { font-size: 1.125rem; font-weight: 600; letter-spacing: .18em; font-family: var(--ui-mono, ui-monospace, monospace); }

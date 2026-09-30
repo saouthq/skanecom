@@ -6,7 +6,9 @@
 //   node outils/annuaire.mjs
 //
 // Variables : NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY (la
-// fonction est réservée à la clé de service). En local :
+// fonction est réservée à la clé de service). ANNUAIRE_EN_PLUS, facultative :
+// des domaines de plus, en JSON { "hote": "slug" } — l'aperçu en ligne
+// (.github/workflows/apercu.yml) y met ses adresses workers.dev. En local :
 //   set -a; . .outils/api-locale.env; set +a; node outils/annuaire.mjs
 import { writeFile } from "node:fs/promises";
 
@@ -27,7 +29,8 @@ if (!reponse.ok) {
   process.exit(1);
 }
 
-const annuaire = Object.fromEntries((await reponse.json()).map((l) => [l.hote, l.slug]));
+const enPlus = JSON.parse(process.env.ANNUAIRE_EN_PLUS || "{}");
+const annuaire = { ...Object.fromEntries((await reponse.json()).map((l) => [l.hote, l.slug])), ...enPlus };
 const cible = new URL("../application/src/annuaire.genere.json", import.meta.url);
 await writeFile(cible, JSON.stringify(annuaire, null, 2) + "\n");
 console.log(`${Object.keys(annuaire).length} domaines écrits dans application/src/annuaire.genere.json`);

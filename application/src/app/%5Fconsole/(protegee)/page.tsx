@@ -8,19 +8,28 @@ import { Icone } from "@/components/console/Icone";
 
 export const metadata: Metadata = { title: "Boutiques" };
 
+type CodeApercu = { le: string; canal: "sms" | "email"; destinataire: string; code: string };
+
+const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" });
+
 type Ligne = {
   id: string; slug: string; nom: string; statut: string; hote_principal: string | null;
   domaines: string[]; theme: string | null; nb_produits: number; created_at: string;
 };
 
-/* Le tableau de bord de la plateforme : toutes les boutiques, leur état. */
+/* Le tableau de bord de la plateforme : toutes les boutiques, leur état.
+   Sur l'aperçu en ligne seulement (supabase/apercu/codes-demo.sql), les codes
+   de connexion que Supabase aurait envoyés par SMS ou par e-mail. */
 export default async function Tableau() {
   await exigeAdmin();
   const service = clientService();
-  const [{ data, error }, { data: avancements }] = await Promise.all([
+  const [{ data, error }, { data: avancements }, { data: codesApercu }] = await Promise.all([
     service.rpc("console_boutiques"),
     service.rpc("console_avancements"),
+    // Absente hors de l'aperçu : l'erreur la cache, rien d'autre.
+    service.rpc("console_codes_apercu"),
   ]);
+  const codes = Array.isArray(codesApercu) ? (codesApercu as CodeApercu[]) : null;
   if (error) throw new Error(`Boutiques illisibles : ${error.message}`);
   const boutiques = (data ?? []) as Ligne[];
   const avancement = (avancements ?? {}) as Record<string, { faites: number; total: number }>;
@@ -92,6 +101,37 @@ export default async function Tableau() {
           </table>
         </div>
       )}
+
+      {codes ? (
+        <section className="carte mt-6" aria-labelledby="codes-apercu">
+          <div className="carte-tete">
+            <h2 id="codes-apercu" className="carte-titre-icone"><Icone nom="cle" /> Codes de connexion de l&apos;aperçu</h2>
+            <Link href="/" className="btn-lien aide">Actualiser</Link>
+          </div>
+          <p className="aide">
+            Sur l&apos;aperçu, aucun SMS ni e-mail ne part : le code demandé sur une vitrine s&apos;affiche ici, une heure.
+          </p>
+          {codes.length === 0 ? (
+            <p className="aide mt-3">Aucun code demandé dans la dernière heure.</p>
+          ) : (
+            <div className="defile mt-3">
+              <table className="tableau">
+                <thead><tr><th>À</th><th>Par</th><th>Pour</th><th className="text-end">Code</th></tr></thead>
+                <tbody>
+                  {codes.map((c, i) => (
+                    <tr key={`${c.le}-${i}`}>
+                      <td className="tabular-nums discret">{HEURE.format(new Date(c.le))}</td>
+                      <td>{c.canal === "sms" ? "SMS" : "E-mail"}</td>
+                      <td>{c.destinataire}</td>
+                      <td className="text-end"><b className="tabular-nums codes-apercu-code">{c.code}</b></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ) : null}
     </>
   );
 }
