@@ -211,6 +211,14 @@ jobs:
         run: |
           $WRANGLER r2 bucket create "$BUCKET" 2>&1 | tail -2 || true
           $WRANGLER r2 bucket dev-url enable "$BUCKET" -y 2>&1 | tail -2 || true
+          # Le logo et le monogramme d'une boutique s'appliquent en masque CSS
+          # (la couleur de l'en-tête les teint) : une image d'un autre domaine
+          # n'y sert qu'avec l'en-tête CORS. Sans lui, le logo de Maymar était
+          # invisible en ligne (contrôle visuel du 30/09). Lecture seule, tout
+          # le monde : le bucket est public de toute façon.
+          echo '{"rules":[{"allowed":{"origins":["*"],"methods":["GET","HEAD"]},"maxAgeSeconds":86400}]}' > /tmp/cors.json
+          $WRANGLER r2 bucket cors set "$BUCKET" --file /tmp/cors.json -y 2>&1 | tail -2
+          $WRANGLER r2 bucket cors list "$BUCKET" 2>&1 | tail -6
           URL=$($WRANGLER r2 bucket dev-url get "$BUCKET" 2>&1 | grep -oE 'https://pub-[a-z0-9]+\.r2\.dev' | head -1)
           if [ -z "$URL" ]; then echo "::error::Adresse publique du bucket introuvable"; exit 1; fi
           echo "NEXT_PUBLIC_FICHIERS_URL=$URL" >> "$GITHUB_ENV"
