@@ -90,9 +90,14 @@ reinit() {
     echo "  migration $(basename "$f")"
     psql_en postgres -d "$BASE" -f "$f"
   done
-  if [ "${1:-}" != "--vide" ] && [ -f "$RACINE/supabase/seed.sql" ]; then
-    echo "  jeu de démo supabase/seed.sql"
-    psql_en postgres -d "$BASE" -f "$RACINE/supabase/seed.sql"
+  if [ "${1:-}" != "--vide" ]; then
+    # Le jeu de démo, puis sa suite (fichiers à part : l'aperçu en ligne joue
+    # chaque jeu une seule fois — supabase/functions/apercu-installer).
+    for f in seed.sql seed-suite.sql; do
+      [ -f "$RACINE/supabase/$f" ] || continue
+      echo "  jeu de démo supabase/$f"
+      psql_en postgres -d "$BASE" -f "$RACINE/supabase/$f"
+    done
   fi
   # Si l'API locale tourne, PostgREST relit le schéma (nouvelles fonctions).
   psql_en postgres -d "$BASE" -c "notify pgrst, 'reload schema'" > /dev/null

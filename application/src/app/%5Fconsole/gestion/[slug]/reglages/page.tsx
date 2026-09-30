@@ -598,11 +598,42 @@ export default async function Reglages({
                       <span className="aide">Affiché sur la vitrine.</span>
                     </div>
                   </div>
+                  <div className="choix">
+                    <Case cle="vitrine.whatsapp_flottant" valeur={Boolean(v("vitrine.whatsapp_flottant"))} titre="Bouton WhatsApp sur toutes les pages"
+                      aide="Un rond vert en bas de l'écran ouvre la conversation avec votre numéro WhatsApp (jamais pendant la commande)." />
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="horaires">Horaires du service client <span className="discret">(facultatif)</span></label>
+                    <input id="horaires" name="contact.horaires" defaultValue={String(v("contact.horaires") ?? "")} maxLength={160}
+                      placeholder="Ex. Du lundi au samedi, de 9 h à 19 h" />
+                    <span className="aide">Sur la page Contact, sous le téléphone.</span>
+                  </div>
+                  <div className="grille-champs">
+                    <div className="champ">
+                      <label htmlFor="instagram">Instagram <span className="discret">(facultatif)</span></label>
+                      <input id="instagram" name="contact.instagram" defaultValue={String(v("contact.instagram") ?? "")} maxLength={200} placeholder="@votre.boutique" />
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="facebook">Facebook <span className="discret">(facultatif)</span></label>
+                      <input id="facebook" name="contact.facebook" defaultValue={String(v("contact.facebook") ?? "")} maxLength={200} placeholder="votre.boutique" />
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="tiktok">TikTok <span className="discret">(facultatif)</span></label>
+                      <input id="tiktok" name="contact.tiktok" defaultValue={String(v("contact.tiktok") ?? "")} maxLength={200} placeholder="@votre.boutique" />
+                    </div>
+                  </div>
+                  <span className="aide rg-aide-reseaux">Le compte (« @votre.boutique ») ou l&apos;adresse du profil : au pied de page et sur la page Contact.</span>
                   <div className="champ">
                     <label htmlFor="revendeur">Revendeur officiel <span className="discret">(facultatif)</span></label>
                     <input id="revendeur" name="catalogue.revendeur_officiel" defaultValue={String(v("catalogue.revendeur_officiel") ?? "")} maxLength={80}
                       placeholder="Ex. Revendeur officiel DeWalt" />
                     <span className="aide">En tête de la vitrine et sur les fiches produit, si la marque vous a agréé.</span>
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="annonce">Annonce en tête du site <span className="discret">(facultatif)</span></label>
+                    <input id="annonce" name="vitrine.annonce" defaultValue={String(v("vitrine.annonce") ?? "")} maxLength={140}
+                      placeholder="Ex. La collection d'été est arrivée" />
+                    <span className="aide">Une phrase courte, avant les faits de service (paiement à la livraison, délais…). Vide : les faits seuls.</span>
                   </div>
                 </fieldset>
                 <Pied modifie={modifie} />

@@ -1,11 +1,69 @@
 import Link from "next/link";
 import { Logo } from "./Entete";
-import { Billets, Bouclier, Bulle, Camion, Magasin, Retour } from "./Icones";
+import { Billets, Bouclier, Bulle, Camion, Facebook, Instagram, LogoWhatsApp, Magasin, Retour, TikTok } from "./Icones";
 import { champ, t } from "@/lib/i18n";
 import { texte } from "@/lib/theme";
 import { lienConseil } from "@/lib/faits";
+import { aUnContact, contactDe } from "@/lib/contact";
 import { PAGES_LEGALES } from "@/lib/legal";
 import type { Cadre } from "@/lib/boutique";
+
+const ICONES_RESEAU = { instagram: Instagram, facebook: Facebook, tiktok: TikTok };
+const NOMS_RESEAU = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok" };
+
+/** La boutique elle-même : ses pages (celles qu'elle met au pied), le
+ *  contact s'il y en a un, le suivi d'une commande, la garantie. */
+function ListeBoutique({ cadre }: { cadre: Cadre }) {
+  const pages = cadre.pages.filter((p) => p.dans_pied);
+  return (
+    <ul>
+      {pages.map((p) => (
+        <li key={p.slug}>
+          <Link href={`/${p.slug}`}>{champ(p, "titre")}</Link>
+        </li>
+      ))}
+      {aUnContact(contactDe(cadre)) ? (
+        <li>
+          <Link href="/contact">{t.pied.contact}</Link>
+        </li>
+      ) : null}
+      <li>
+        <Link href="/suivi">{t.pied.suivreCommande}</Link>
+      </li>
+      {cadre.sav ? (
+        <li>
+          <Link href="/garantie-et-sav">{t.sav.lienPied}</Link>
+        </li>
+      ) : null}
+    </ul>
+  );
+}
+
+/** Les réseaux de la boutique, et WhatsApp : des pastilles rondes. */
+function Reseaux({ cadre, classe }: { cadre: Cadre; classe: string }) {
+  if (cadre.reseaux.length === 0 && !cadre.whatsapp) return null;
+  return (
+    <ul className={classe} aria-label={t.pied.reseaux}>
+      {cadre.reseaux.map((r) => {
+        const Icone = ICONES_RESEAU[r.reseau];
+        return (
+          <li key={r.reseau}>
+            <a href={r.url} target="_blank" rel="noopener noreferrer me" aria-label={t.pied.reseauAria(NOMS_RESEAU[r.reseau], r.compte)}>
+              <Icone taille={18} />
+            </a>
+          </li>
+        );
+      })}
+      {cadre.whatsapp ? (
+        <li>
+          <a href={`https://wa.me/${cadre.whatsapp}`} target="_blank" rel="noopener noreferrer" aria-label={t.contact.ecrireWhatsapp}>
+            <LogoWhatsApp taille={17} />
+          </a>
+        </li>
+      ) : null}
+    </ul>
+  );
+}
 
 /* ============================================================================
    PIED DE PAGE — un par gabarit.
@@ -60,10 +118,17 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
   return (
     <footer className="ed-pied mt-auto">
       <div className="enveloppe ed-pied-grille">
-        <div className="ed-pied-intro">{resume ? <p>{resume}</p> : null}</div>
+        <div className="ed-pied-intro">
+          {resume ? <p>{resume}</p> : null}
+          <Reseaux cadre={cadre} classe="pied-reseaux" />
+        </div>
         <div>
           <p className="ed-pied-titre">{t.pied.catalogue}</p>
           <ListeRayons cadre={cadre} />
+        </div>
+        <div>
+          <p className="ed-pied-titre">{t.pied.laBoutique}</p>
+          <ListeBoutique cadre={cadre} />
         </div>
         <div>
           <p className="ed-pied-titre">{t.pied.commander}</p>
@@ -72,7 +137,6 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
             {livraison.delai ? <li>{livraison.delai}</li> : null}
             <li>{t.produit.refusPossible}</li>
             {retour ? <li>{retour}</li> : null}
-            {cadre.sav ? <li><Link href="/garantie-et-sav">{t.sav.lienPied}</Link></li> : null}
           </ul>
         </div>
       </div>
@@ -117,10 +181,21 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
         <div>
           <Logo cadre={cadre} />
           {resume ? <p className="te-pied-resume">{resume}</p> : null}
+          {conseil ? (
+            <a className="te-pied-conseil" href={conseil} target="_blank" rel="noopener noreferrer">
+              <Bulle taille={20} />
+              {t.produit.conseilLien}
+            </a>
+          ) : null}
+          <Reseaux cadre={cadre} classe="pied-reseaux te-pied-reseaux" />
         </div>
         <div>
           <p className="te-pied-titre">{t.pied.catalogue}</p>
           <ListeRayons cadre={cadre} />
+        </div>
+        <div>
+          <p className="te-pied-titre">{t.pied.laBoutique}</p>
+          <ListeBoutique cadre={cadre} />
         </div>
         <div>
           <p className="te-pied-titre">{t.pied.services}</p>
@@ -128,18 +203,8 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
             {livraison.cod ? <li>{t.pied.paiementLivraison}</li> : null}
             {livraison.delai ? <li>{livraison.delai}</li> : null}
             {cadre.retrait ? <li>{t.produit.retraitMagasin}</li> : null}
-            {cadre.sav ? <li><Link href="/garantie-et-sav">{t.sav.lienPied}</Link></li> : null}
           </ul>
         </div>
-        {conseil ? (
-          <div>
-            <p className="te-pied-titre">{t.pied.contact}</p>
-            <a className="te-pied-conseil" href={conseil} target="_blank" rel="noopener noreferrer">
-              <Bulle taille={20} />
-              {t.produit.conseilLien}
-            </a>
-          </div>
-        ) : null}
       </div>
       <div className="enveloppe te-pied-bas">
         <Droits cadre={cadre} />

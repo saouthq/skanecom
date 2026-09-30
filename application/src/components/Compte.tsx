@@ -51,7 +51,7 @@ type DemandeMienne = {
   cree_le: string;
 };
 
-type CommandeMienne = {
+export type CommandeMienne = {
   numero: string;
   statut: string;
   cree_le: string;
@@ -238,18 +238,10 @@ function Frise({ statut, retrait }: { statut: string; retrait: boolean }) {
   );
 }
 
-function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, mesAvis, surAvis }: {
-  c: CommandeMienne;
-  boutiqueId: string;
-  sav: boolean;
-  demandes: DemandeMienne[];
-  surDemande: () => void;
-  avis: boolean;
-  mesAvis: MonAvis[];
-  surAvis: () => void;
-}) {
-  const [ouvert, setOuvert] = useState(false);
-  const [envoyee, setEnvoyee] = useState<string | null>(null);
+/** Ce qu'on lit d'une commande : son numéro, sa date, son état et sa frise,
+ *  son contenu, où elle va et le suivi du transporteur. Partagé avec le
+ *  suivi sans compte (SuiviCommande.tsx). */
+export function ResumeCommande({ c }: { c: CommandeMienne }) {
   const retrait = c.mode_livraison === "retrait";
   const statut = (retrait ? t.commande.statutRetrait[c.statut] : undefined) ?? t.commande.statut[c.statut] ?? c.statut;
   const etat = (retrait ? t.compte.etatRetrait[c.statut] : undefined) ?? t.compte.etat[c.statut] ?? "";
@@ -262,10 +254,8 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, mesAvis, surAvi
     : c.ville
       ? t.compte.livraisonA(lieu(c.ville, c.gouvernorat))
       : null;
-  const cloturee = ["livree", "refusee", "annulee"].includes(c.statut);
-
   return (
-    <li className="compte-carte" data-statut={c.statut} data-cloturee={cloturee ? "" : undefined}>
+    <>
       <div className="compte-carte-tete">
         <div>
           <p className="compte-numero">{c.numero}</p>
@@ -296,6 +286,27 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, mesAvis, surAvi
           {suivi}
         </p>
       ) : null}
+    </>
+  );
+}
+
+function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, mesAvis, surAvis }: {
+  c: CommandeMienne;
+  boutiqueId: string;
+  sav: boolean;
+  demandes: DemandeMienne[];
+  surDemande: () => void;
+  avis: boolean;
+  mesAvis: MonAvis[];
+  surAvis: () => void;
+}) {
+  const [ouvert, setOuvert] = useState(false);
+  const [envoyee, setEnvoyee] = useState<string | null>(null);
+  const cloturee = ["livree", "refusee", "annulee"].includes(c.statut);
+
+  return (
+    <li className="compte-carte" data-statut={c.statut} data-cloturee={cloturee ? "" : undefined}>
+      <ResumeCommande c={c} />
       {sav && c.statut === "livree" ? (
         <div className="sav-carte">
           {envoyee ? <p className="sav-envoyee" role="status"><Coche taille={16} /> {t.sav.envoyee(envoyee)}</p> : null}

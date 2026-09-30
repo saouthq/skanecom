@@ -509,5 +509,93 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
   await ctx.close();
 }
 
+/* ------------------------------------------------------------------ */
+console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suivi ==");
+{
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  espion(page, "contenus");
+
+  await etape("le pied mène aux pages de la boutique et à ses réseaux", async () => {
+    await page.goto(S + "/", { waitUntil: "networkidle" });
+    verifie((await page.locator(".ed-annonce").first().innerText()).includes("Le lin d'été est arrivé"), "l'annonce de la boutique, en tête du site");
+    const pied = page.locator("footer.ed-pied");
+    verifie(await pied.locator("a[href='/a-propos']").count() === 1 && await pied.locator("a[href='/guide-des-tailles']").count() === 1,
+      "« À propos » et « Guide des tailles » au pied de page");
+    const reseaux = pied.locator(".pied-reseaux a");
+    const liens = await reseaux.evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+    verifie(liens.some((h) => h.startsWith("https://www.instagram.com/maison.selma")) && liens.some((h) => h.startsWith("https://www.tiktok.com/@maison.selma"))
+      && liens.some((h) => h.startsWith("https://wa.me/")), `les réseaux au pied : Instagram, TikTok, WhatsApp (${liens.length} liens)`);
+    const hauts = await reseaux.evaluateAll((as) => as.map((a) => Math.round(a.getBoundingClientRect().top)));
+    verifie(new Set(hauts).size === 1, "sur une seule ligne");
+    const bouton = page.locator("a.whatsapp-flottant");
+    verifie(await bouton.isVisible() && (await bouton.getAttribute("href") ?? "").startsWith("https://wa.me/21670000003?text="),
+      "le bouton WhatsApp, sur toutes les pages, message déjà commencé");
+    await clic(page, pied.locator("a[href='/guide-des-tailles']"));
+    await page.waitForURL(/\/guide-des-tailles$/);
+    await page.waitForLoadState("networkidle");
+    verifie(await page.locator("h1").innerText() === "Guide des tailles", "la page écrite au backoffice s'ouvre, son titre en tête");
+    verifie(await page.locator(".page-boutique-texte h2").count() >= 2 && await page.locator(".page-boutique-texte li").count() >= 5,
+      "ses intertitres et sa liste des tailles, mis en forme");
+    await capture(page, "selma-guide-des-tailles", true);
+  });
+
+  await etape("questions fréquentes : un accordéon, la première ouverte", async () => {
+    await page.goto(S + "/questions-frequentes", { waitUntil: "networkidle" });
+    const plis = page.locator(".page-questions .pli");
+    verifie(await plis.count() === 6, "six questions");
+    verifie(await plis.first().getAttribute("open") !== null && await plis.nth(1).getAttribute("open") === null, "la première ouverte, les autres repliées");
+    await clic(page, plis.nth(3).locator("summary"));
+    await pause(300);
+    verifie((await plis.nth(3).innerText()).includes("14 jours"), "une question s'ouvre au clic, sa réponse lisible");
+    verifie(await plis.nth(3).locator("a[href='/guide-des-tailles']").count() === 1, "un lien du texte mène à une autre page de la boutique");
+    verifie((await page.locator(".page-boutique-aide").innerText()).includes("Écrivez-nous"), "et en bas, « Écrivez-nous »");
+    await capture(page, "selma-questions");
+  });
+
+  await etape("contact : les canaux de la boutique", async () => {
+    await page.goto(S + "/contact", { waitUntil: "networkidle" });
+    const canaux = await page.locator("a.contact-canal").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+    verifie(canaux.some((h) => h.startsWith("https://wa.me/21670000003")) && canaux.includes("tel:+21670000003") && canaux.some((h) => h.startsWith("mailto:")),
+      `WhatsApp, téléphone, e-mail (${canaux.length} canaux)`);
+    verifie((await page.locator("main").innerText()).includes("de 10 h à 19 h"), "avec les horaires");
+    await capture(page, "selma-contact");
+  });
+
+  await etape("suivre une commande, sans compte", async () => {
+    await clic(page, page.locator(".contact-suivi a"));
+    await page.waitForURL(/\/suivi$/);
+    await page.waitForLoadState("networkidle");
+    await clic(page, page.locator("#suivi-numero"));
+    await tape(page, "SEL-2025-00048");
+    await clic(page, page.locator("#suivi-telephone"));
+    await tape(page, "20 000 000");
+    await page.keyboard.press("Enter");
+    const alerte = page.locator(".suivi-formulaire [role=alert]");
+    await alerte.waitFor({ timeout: 8000 }).catch(() => {});
+    verifie((await alerte.innerText().catch(() => "")).includes("Aucune commande"), "un autre téléphone : « aucune commande », sans dire lequel des deux est faux");
+    await page.locator("#suivi-telephone").fill("");
+    await clic(page, page.locator("#suivi-telephone"));
+    await tape(page, "20 111 208");
+    await page.keyboard.press("Enter");
+    const resultat = page.locator(".suivi-resultat");
+    await resultat.waitFor({ timeout: 8000 }).catch(() => {});
+    verifie(await resultat.count() === 1 && (await resultat.innerText()).includes("SEL-2025-00048"), "le bon téléphone : la commande, sa frise, son contenu");
+    verifie(await page.evaluate(() => document.activeElement?.classList.contains("suivi-resultat")), "le focus passe au résultat (lecteurs d'écran)");
+    await capture(page, "selma-suivi");
+  });
+
+  await etape("pendant la commande, pas de bouton WhatsApp", async () => {
+    await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
+    await clic(page, page.locator(".valeur", { hasText: /^M$/ }));
+    await clic(page, page.locator(".achat .btn-ajout"));
+    await pause(600);
+    await page.goto(S + "/commande", { waitUntil: "networkidle" });
+    verifie(await page.locator(".tunnel-page").count() === 1, "le tunnel de commande est ouvert");
+    verifie(!(await page.locator("a.whatsapp-flottant").isVisible().catch(() => false)), "le tunnel ne montre rien qui détourne de « Confirmer »");
+  });
+  await ctx.close();
+}
+
 await navigateur.close();
 process.exit(t.bilan());

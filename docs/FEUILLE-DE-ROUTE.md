@@ -26,15 +26,17 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 - [x] **E-mails aux couleurs de la boutique** : Supabase ne rédige plus rien ; le crochet « Send Email » confie l'événement à l'application, qui écrit au nom de la boutique (logo, couleurs, gabarit) ; galerie dans la console.
 - [x] **Contrôle visuel de l'aperçu en ligne** après chaque déploiement (captures en artefact).
 - [x] Audit de toutes les pages des trois vitrines, sur ordinateur et téléphone : page introuvable du framework sur une adresse inconnue, pastille du panier invisible (gabarit éditorial), sections d'accueil incomplètes, photos qui se peignent sur l'aplat — corrigés le 30/09.
+- [x] La galerie des e-mails de la console ne se chargeait jamais entière en CI (cadres en chargement différé hors de l'écran) : chargée d'emblée.
 - [ ] Cartes du gabarit technique alignées d'une carte à l'autre (prix barré, pastilles).
 - [ ] Déploiement en deux temps avec cache prérempli, nettoyage des anciennes versions du cache.
 
-### B. Une vitrine complète : contenus et confiance
+### B. Une vitrine complète : contenus et confiance — en cours
 
-- Pages de contenu écrites au backoffice : À propos, Questions fréquentes, Contact (horaires, adresse, carte, WhatsApp), Livraison et retours, Guide des tailles.
-- Réseaux sociaux (Instagram, Facebook, TikTok) au pied de page, bouton WhatsApp flottant (réglage), partage d'une fiche.
-- Bandeau d'annonce réglable ; pied de page enrichi (moyens de paiement, transporteurs, lettre d'information avec consentement).
-- « Suivre ma commande » sans compte (numéro de commande et téléphone).
+- [x] **Les pages de la boutique**, écrites au backoffice (écran « Pages ») : un texte ou des questions-réponses (un accordéon dans la vitrine), servies à leur adresse (`/a-propos`), un lien au pied de page, dans l'ordre choisi. L'éditeur montre la page à mesure qu'on l'écrit ; la mise en forme tient en quelques signes (intertitres, gras, listes, liens), posée par une barre d'outils ou au clavier ; un refus s'affiche sous le champ, le texte ne se perd jamais (brouillon gardé sur l'appareil, version relue à l'enregistrement : un collègue n'est jamais écrasé). Trois modèles composés des réglages de la boutique (questions fréquentes, livraison et retours, à propos), et la liste des pages qu'elle a d'office (conditions de vente, contact…) avec les réglages qui les nourrissent.
+- [x] **Contact** (téléphone, WhatsApp, e-mail, magasin et son itinéraire, horaires, réseaux) — la page n'existe que si la boutique a un moyen d'être jointe.
+- [x] **Réseaux sociaux** (Instagram, Facebook, TikTok) au pied de page, **bouton WhatsApp flottant** (réglage ; jamais pendant la commande), **bandeau d'annonce** réglable.
+- [x] **« Suivre ma commande » sans compte** : le numéro et le téléphone qui l'a passée ; une réponse qui ne dit pas lequel des deux est faux ; cinq essais manqués par numéro et par heure.
+- [ ] Partage d'une fiche ; pied de page enrichi (moyens de paiement, transporteurs, lettre d'information avec consentement).
 
 ### C. Vendre plus
 

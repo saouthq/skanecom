@@ -1250,6 +1250,84 @@ console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoy
     verifie((await page.locator(".ui-etat", { hasText: "Envoyé" }).count()) >= 1, "la fiche dit « Envoyé »");
     await capture(page, "gestion-devis-envoye");
   });
+
+  await etape("les pages de la boutique : les siennes, les modèles, celles d'office", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Pages" }));
+    await page.waitForURL(/\/pages$/);
+    await page.waitForLoadState("networkidle");
+    const titres = await page.locator(".pg-ligne .pg-titre").allInnerTexts();
+    verifie(titres.join(" · ") === "Questions fréquentes · Le magasin", `ses deux pages, dans l'ordre du pied de page (${titres.join(" · ")})`);
+    verifie(await page.locator(".pg-modele", { hasText: "Livraison et retours" }).count() === 1, "le modèle qu'elle n'a pas encore écrit lui est proposé");
+    verifie((await page.locator(".pg-auto").innerText()).includes("Garantie et SAV"), "les pages d'office, dont la garantie (module SAV), avec leurs réglages");
+    await capture(page, "gestion-pages", true);
+  });
+
+  await etape("une page d'après un modèle : composée des réglages, écrite, publiée", async () => {
+    await clic(page, page.locator(".pg-modele", { hasText: "Livraison et retours" }));
+    await page.waitForURL(/\/pages\/nouvelle\?modele=livraison$/);
+    await page.waitForLoadState("networkidle");
+    const corps = page.locator("#pg-corps");
+    verifie((await corps.inputValue()).includes("au magasin de Sfax"), "le texte vient des réglages : le retrait au magasin de Sfax");
+    verifie(await page.locator("#pg-slug").inputValue() === "livraison-et-retours", "l'adresse est posée");
+    verifie((await page.locator(".pg-apercu h2").allInnerTexts()).includes("Retrait en magasin"), "l'aperçu montre la page mise en forme");
+    await clic(page, corps);
+    await page.keyboard.press("Control+End");
+    await tape(page, "\n\nUne question ? Appelez le magasin.");
+    await page.keyboard.press("Shift+Home");
+    await page.keyboard.press("Control+b");
+    await pause(300);
+    verifie((await corps.inputValue()).endsWith("**Une question ? Appelez le magasin.**"), "Ctrl+B met la ligne choisie en gras");
+    verifie(await page.locator(".pg-apercu strong", { hasText: "Appelez le magasin" }).count() === 1, "l'aperçu suit la frappe");
+    await page.locator("#pg-slug").fill("contact");
+    await clic(page, page.getByRole("button", { name: /^Enregistrer/ }));
+    verifie((await page.locator("#err-slug").innerText().catch(() => "")).includes("déjà une page"),
+      "« /contact » : refusée sous le champ, avant tout envoi, le texte gardé");
+    await page.locator("#pg-slug").fill("livraison-et-retours");
+    await clic(page, page.locator("input[name=publie]"));
+    await clic(page, page.getByRole("button", { name: /Enregistrer et publier/ }));
+    await page.waitForURL(/\/pages\/[0-9a-f-]{36}\?ok=/, { timeout: 15000 });
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".pg-retour").innerText()).includes("publiée"), "publiée : l'éditeur passe à l'adresse de la page, qui le dit");
+    await capture(page, "gestion-page-publiee", true);
+    // Par le navigateur : lui seul résout les domaines *.localhost des boutiques.
+    const vitrine = await ctx.newPage();
+    const r = await vitrine.goto(`${t.adresse("quincaillerie.localhost")}/livraison-et-retours`, { waitUntil: "domcontentloaded" });
+    verifie(r?.status() === 200 && (await vitrine.locator("main").innerText()).includes("Appelez le magasin"), `la vitrine la sert à son adresse (HTTP ${r?.status()})`);
+    await vitrine.close();
+  });
+
+  await etape("deux écrans sur la même page : pas d'écrasement", async () => {
+    const autre = await ctx.newPage();
+    t.espion(autre, "gerant-quincaillerie-2");
+    await autre.goto(page.url().split("?")[0], { waitUntil: "networkidle" });
+    await autre.locator("#pg-titre").fill("Livraison, retrait et retours");
+    await autre.getByRole("button", { name: /^Enregistrer/ }).click();
+    await autre.locator(".pg-retour.message-succes").waitFor({ timeout: 10000 });
+    await autre.close();
+    await page.locator("#pg-titre").fill("Livraison et retours, en bref");
+    await clic(page, page.getByRole("button", { name: /^Enregistrer/ }));
+    await page.locator(".pg-retour.message-erreur").waitFor({ timeout: 10000 }).catch(() => {});
+    verifie((await page.locator(".pg-retour").innerText().catch(() => "")).includes("modifiée entre-temps"), "l'écran périmé est refusé, avec la marche à suivre");
+    verifie(await page.locator("#pg-titre").inputValue() === "Livraison et retours, en bref", "et rien de ce qui a été tapé n'est perdu");
+  });
+
+  await etape("ranger, puis retirer une page", async () => {
+    // Des changements non enregistrés : le navigateur demande avant de partir.
+    page.once("dialog", (d) => d.accept());
+    await page.goto(`${C}/gestion/quincaillerie-demo/pages`, { waitUntil: "networkidle" });
+    await clic(page, page.getByRole("button", { name: "Monter « Livraison, retrait et retours »" }));
+    await page.waitForLoadState("networkidle");
+    const titres = await page.locator(".pg-ligne .pg-titre").allInnerTexts();
+    verifie(titres[1] === "Livraison, retrait et retours", `montée d'un cran (${titres.join(" · ")})`);
+    await clic(page, page.locator(".pg-ligne .pg-titre", { hasText: "Livraison, retrait et retours" }));
+    await page.waitForURL(/\/pages\/[0-9a-f-]{36}$/);
+    await page.waitForLoadState("networkidle");
+    await clic(page, page.locator(".pg-retrait summary"));
+    await clic(page, page.getByRole("button", { name: "Oui, retirer la page" }));
+    await page.waitForURL(/\/pages\?ok=/, { timeout: 15000 });
+    verifie((await page.locator(".message-succes").innerText()).includes("Page retirée"), "retirée : elle quitte la boutique et son pied de page");
+    verifie(await page.locator(".pg-ligne").count() === 2, "la liste revient à deux pages");
+  });
   await ctx.close();
 }
 
@@ -1351,6 +1429,13 @@ console.log("\n== 5. Le préparateur d'une autre boutique ==");
     await page.goto(`${C}/gestion/quincaillerie-demo/export/clients`, { waitUntil: "networkidle" });
     verifie(decodeURIComponent(page.url().replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur exportent"),
       "l'adresse de l'export, tapée à la main : la base refuse");
+  });
+
+  await etape("les pages de la boutique : ni le lien, ni l'écriture", async () => {
+    verifie(await page.locator(".app-cote a[href$='/pages']").count() === 0, "pas de lien « Pages » pour le préparateur");
+    const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/pages/action", { geste: "enregistrer", slug: "essai", titre: "Essai", corps: "Un essai" });
+    verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur écrivent"),
+      `écrire une page à la main : la base refuse (${r.status})`);
   });
 
   await etape("les devis : il lit, il ne chiffre pas", async () => {

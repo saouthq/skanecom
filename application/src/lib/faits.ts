@@ -21,6 +21,12 @@ export function faitsDeService(cadre: Cadre): string[] {
   return faits;
 }
 
+/** Le bandeau en tête du site : l'annonce de la boutique d'abord (réglage
+ *  vitrine.annonce), puis ses faits de service. */
+export function bandeau(cadre: Cadre): string[] {
+  return cadre.annonce ? [cadre.annonce, ...faitsDeService(cadre)] : faitsDeService(cadre);
+}
+
 export type Assurance = { icone: "billets" | "camion" | "bouclier" | "magasin"; texte: string };
 
 /** Ce que le tiroir du panier rappelle sous les articles, au moment d'aller

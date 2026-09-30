@@ -109,6 +109,30 @@ const TRACES = {
     </>
   ),
   bas: <path d="m6 9 6 6 6-6" />,
+  haut: <path d="m18 15-6-6-6 6" />,
+  gras: <path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8" />,
+  italique: (
+    <>
+      <path d="M19 4h-9M14 20H5M15 4 9 20" />
+    </>
+  ),
+  intertitre: (
+    <>
+      <path d="M4 12h8M4 18V6M12 18V6" />
+      <path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1" />
+    </>
+  ),
+  liste: (
+    <>
+      <path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13" />
+    </>
+  ),
+  question: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" />
+    </>
+  ),
   selecteur: (
     <>
       <path d="m7 15 5 5 5-5" />

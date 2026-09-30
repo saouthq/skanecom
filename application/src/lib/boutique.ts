@@ -2,6 +2,7 @@ import { cache } from "react";
 import { supabase } from "./supabase";
 import { themeDeLaBoutique, type Theme } from "./theme";
 import { formatePrix } from "./prix";
+import { reseauxDe, type Reseau } from "./reseaux";
 import { t } from "./i18n";
 import type { Categorie } from "./catalogue";
 import type { Magasin } from "./commande";
@@ -28,6 +29,9 @@ export type Zone = {
 };
 
 export type TranchePoids = { jusqu_a_grammes: number | null; supplement_millimes: number };
+
+/** Une page de la boutique (À propos, questions fréquentes…), publiée. */
+export type PageDeBoutique = { slug: string; titre_fr: string; titre_ar: string | null; genre: "texte" | "questions"; dans_pied: boolean };
 
 export type Cadre = {
   boutique: {
@@ -78,15 +82,28 @@ export type Cadre = {
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
+  /** Les pages publiées de la boutique, dans son ordre (migration 43). */
+  pages: PageDeBoutique[];
+  /** Ses comptes Instagram, Facebook, TikTok (réglages contact.*). */
+  reseaux: Reseau[];
+  /** Les horaires du service client, tels qu'écrits (page Contact). */
+  horaires: string | null;
+  /** Réglage `vitrine.whatsapp_flottant` : le bouton WhatsApp sur toutes les pages. */
+  whatsappFlottant: boolean;
+  /** Réglage `vitrine.annonce` : une phrase en tête du site, avant les faits de service. */
+  annonce: string | null;
 };
 
-type Brut = {
+/** Ce que rendent public.boutique_publique (la vitrine, boutique ouverte) et
+ *  public.gestion_cadre (le backoffice, même en préparation). */
+export type CadreBrut = {
   boutique: Cadre["boutique"];
   configuration: { reglages: Record<string, unknown>; modules: string[] } | null;
   theme: Record<string, unknown> | null;
   categories: Categorie[];
   zones: Zone[];
   tranches_poids: TranchePoids[] | null;
+  pages?: PageDeBoutique[];
 };
 
 function reglage<T>(reglages: Record<string, unknown>, cle: string, defaut: T): T {
@@ -106,9 +123,11 @@ function delai(zones: Zone[]): { min: number; max: number } | null {
 export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => {
   const { data, error } = await supabase.rpc("boutique_publique", { p_slug: slug });
   if (error) throw new Error(`Boutique illisible : ${error.message}`);
-  if (!data) return null;
+  return data ? cadreDe(data as CadreBrut) : null;
+});
 
-  const brut = data as Brut;
+/** Le cadre, composé de ce que la base a rendu. */
+export function cadreDe(brut: CadreBrut): Cadre {
   const reglages = brut.configuration?.reglages ?? {};
   const modeFrais = reglage(reglages, "livraison.mode_frais", "fixe");
   const fraisMillimes = Number(reglage(reglages, "livraison.frais_fixes_millimes", 0));
@@ -158,8 +177,13 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
     devis: modules.includes("devis"),
     achatExpress: reglage<boolean>(reglages, "commande.achat_express", false) === true,
     avis: modules.includes("avis"),
+    pages: brut.pages ?? [],
+    reseaux: reseauxDe(reglages),
+    horaires: texteDe("contact.horaires") || null,
+    whatsappFlottant: reglage<boolean>(reglages, "vitrine.whatsapp_flottant", false) === true && whatsapp.length >= 8,
+    annonce: texteDe("vitrine.annonce") || null,
   };
-});
+}
 
 /** Le cadre, ou une erreur explicite : le layout a déjà renvoyé 404 pour une
  *  boutique inconnue, les pages peuvent donc compter dessus. */

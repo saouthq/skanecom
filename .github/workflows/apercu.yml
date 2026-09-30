@@ -34,6 +34,7 @@ on:
       - "application/**"
       - "supabase/migrations/**"
       - "supabase/seed.sql"
+      - "supabase/seed-suite.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -108,6 +109,7 @@ jobs:
             installe migration "${b#*_}" "$f" "${b%%_*}"
           done
           installe graines seed.sql supabase/seed.sql
+          installe graines seed-suite.sql supabase/seed-suite.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu

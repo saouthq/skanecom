@@ -6,7 +6,7 @@ import { NavRayons } from "./NavRayons";
 import { EnteteDefilant, MenuMobile, type EntreeMenu } from "./EnteteClient";
 import { champ, t } from "@/lib/i18n";
 import { urlFichier } from "@/lib/photos";
-import { assurancesPanier, faitsDeService, lienConseil } from "@/lib/faits";
+import { assurancesPanier, bandeau, faitsDeService, lienConseil } from "@/lib/faits";
 import type { Cadre } from "@/lib/boutique";
 
 /* ============================================================================
@@ -81,6 +81,7 @@ export function Entete({ cadre }: { cadre: Cadre }) {
 
 function EnteteEditorial({ cadre }: { cadre: Cadre }) {
   const faits = faitsDeService(cadre);
+  const annonces = bandeau(cadre);
   // Cinq rayons au plus à côté du logo ; « Tout le catalogue » s'il reste
   // de la place (sinon, il est dans le menu, les sections et le pied).
   const liens = [
@@ -89,10 +90,10 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
   ];
   return (
     <>
-      {faits.length > 0 ? (
+      {annonces.length > 0 ? (
         <div className="ed-annonce">
           <p>
-            {faits.slice(0, 2).map((f, i) => (
+            {annonces.slice(0, 2).map((f, i) => (
               <span key={f} className={i > 0 ? "cache-mobile" : undefined}>
                 {f}
               </span>
@@ -128,6 +129,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
 
 function EnteteTechnique({ cadre }: { cadre: Cadre }) {
   const faits = faitsDeService(cadre);
+  const annonces = bandeau(cadre);
   const conseil = lienConseil(cadre);
   const liens = [
     { cle: "catalogue", href: "/catalogue", nom: t.commun.tousLesRayons },
@@ -135,10 +137,10 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
   ];
   return (
     <>
-      {faits.length > 0 ? (
+      {annonces.length > 0 ? (
         <div className="te-utilitaire">
           <ul className="enveloppe">
-            {faits.map((f, i) => (
+            {annonces.map((f, i) => (
               <li key={f} className={i > 0 ? "cache-mobile" : undefined}>
                 {f}
               </li>

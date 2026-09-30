@@ -1,0 +1,141 @@
+/* ============================================================================
+   LES CONTENUS DE LA BOUTIQUE (feuille de route B) — ses pages (À propos,
+   questions fréquentes…), Contact, le suivi sans compte, le bouton WhatsApp,
+   les réseaux du pied de page. Communs aux deux gabarits : les polices, les
+   couleurs et les angles viennent des jetons du thème ; ce qui diffère se
+   règle sous html[data-gabarit="technique"].
+   ========================================================================== */
+
+/* --- Une page de la boutique : la colonne de lecture -------------------- */
+.page-boutique { max-inline-size: 44rem; margin-inline: auto; padding-block: clamp(2rem, 5vw, 4rem) clamp(2.5rem, 6vw, 4.5rem); }
+.page-boutique-tete { margin-block-end: clamp(1.75rem, 4vw, 2.75rem); }
+.page-boutique-tete h1 {
+  margin-block-start: 1.25rem; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: .96; letter-spacing: -.02em; text-wrap: balance;
+}
+.page-boutique-texte { font-size: 1.0625rem; line-height: 1.75; color: color-mix(in srgb, var(--theme-encre) 88%, var(--theme-encre-doux)); }
+.page-boutique-texte > * + * { margin-block-start: 1.1em; }
+.page-boutique-texte h2 { margin-block-start: 2.25em; font-size: clamp(1.625rem, 3vw, 2.125rem); line-height: 1.1; color: var(--theme-encre); }
+.page-boutique-texte h3 { margin-block-start: 1.75em; font-family: var(--theme-font-texte); font-size: 1.0625rem; font-weight: 600; color: var(--theme-encre); }
+.page-boutique-texte h2 + *, .page-boutique-texte h3 + * { margin-block-start: .6em; }
+.page-boutique-texte ul, .page-boutique-texte ol { padding-inline-start: 1.25rem; }
+.page-boutique-texte ul { list-style: disc; }
+.page-boutique-texte ol { list-style: decimal; }
+.page-boutique-texte li + li { margin-block-start: .4em; }
+.page-boutique-texte ul li::marker { color: var(--theme-accent); }
+.page-boutique-texte a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.page-boutique-texte a:hover { text-decoration-color: transparent; }
+.page-boutique-texte strong { font-weight: 600; color: var(--theme-encre); }
+/* Le premier paragraphe se lit en chapeau. */
+.page-boutique[data-genre="texte"] .page-boutique-texte > p:first-child { font-size: 1.1875rem; line-height: 1.6; color: var(--theme-encre); }
+.page-boutique-texte > .page-questions { margin-block-start: 2.25rem; }
+.page-questions .pli > summary { font-size: 1.0625rem; }
+.page-questions .pli > div > * + * { margin-block-start: .75em; }
+.page-boutique-pied { display: grid; gap: 1.25rem; margin-block-start: clamp(2.5rem, 6vw, 4rem); padding-block-start: 1.5rem; border-block-start: 1px solid var(--theme-filet); }
+.page-boutique-aide { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1rem; margin: 0; font-size: 1rem; }
+.page-boutique-lien { display: inline-flex; align-items: center; gap: .375rem; }
+
+/* --- Contact --------------------------------------------------------------- */
+.contact-page { padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 7vw, 5.5rem); }
+.contact-tete { max-inline-size: 44rem; margin-block-end: clamp(2rem, 5vw, 3.5rem); }
+.contact-tete h1 { margin-block: .75rem 1rem; font-size: clamp(2.75rem, 7vw, 5rem); line-height: .95; letter-spacing: -.02em; }
+.contact-grille { display: grid; gap: clamp(2rem, 5vw, 4rem); }
+@media (min-width: 900px) { .contact-grille { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; } }
+.contact-canaux { display: grid; gap: .75rem; list-style: none; margin: 0; padding: 0; }
+.contact-canal {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1.125rem;
+  padding: 1.25rem 1.375rem; border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+  background: var(--theme-surface); color: var(--theme-encre); text-decoration: none;
+  transition: border-color .2s var(--theme-courbe), box-shadow .35s var(--theme-courbe), transform .35s var(--theme-courbe);
+}
+.contact-canal:hover { border-color: var(--theme-filet-fort); box-shadow: 0 14px 34px -22px color-mix(in srgb, var(--theme-encre) 45%, transparent); transform: translateY(-2px); }
+.contact-canal:hover .icone-fleche { transform: translateX(3px); }
+.contact-canal-icone {
+  display: grid; place-items: center; inline-size: 3rem; block-size: 3rem; border-radius: 50%;
+  background: var(--theme-surface-2); color: var(--theme-encre);
+}
+.contact-canal[data-canal="whatsapp"] .contact-canal-icone { background: #25D366; color: #fff; }
+.contact-canal-texte { display: grid; gap: .125rem; min-inline-size: 0; }
+.contact-canal-texte b { font-size: 1.0625rem; font-weight: 600; }
+.contact-canal-texte > span:not(.legende) { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.contact-infos { display: grid; gap: 2rem; }
+.contact-infos section { display: grid; gap: .5rem; justify-items: start; }
+.contact-infos h2 { font-family: var(--theme-font-texte); font-size: .8125rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.contact-lieu { display: flex; gap: .625rem; align-items: flex-start; margin: 0; font-size: 1rem; }
+.contact-lieu svg { flex: none; margin-block-start: .2rem; }
+.contact-reseaux { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0; padding: 0; }
+.contact-reseaux a {
+  display: inline-flex; align-items: center; gap: .5rem; padding: .5rem .875rem; border: 1px solid var(--theme-filet);
+  border-radius: 999px; font-size: .875rem; background: var(--theme-surface); transition: border-color .2s;
+}
+.contact-reseaux a:hover { border-color: var(--theme-encre); }
+.contact-suivi { padding: 1.25rem; border-radius: var(--theme-radius-carte); background: var(--theme-surface-2); }
+.contact-suivi p { margin: 0 0 .5rem; color: var(--theme-encre-doux); font-size: .9375rem; }
+
+/* --- Suivre ma commande ------------------------------------------------------ */
+.suivi-page { max-inline-size: 36rem; padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 7vw, 5.5rem); }
+.suivi-tete { margin-block-end: 2rem; }
+.suivi-tete h1 { margin-block: .75rem 1rem; font-size: clamp(2.5rem, 6vw, 4rem); line-height: .96; letter-spacing: -.02em; }
+.suivi-formulaire {
+  display: grid; gap: 1.25rem; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--theme-filet);
+  border-radius: var(--theme-radius-carte); background: var(--theme-surface);
+}
+.suivi-formulaire .champ input:not([type]) , .suivi-formulaire #suivi-numero { text-transform: uppercase; letter-spacing: .04em; }
+.suivi-formulaire #suivi-numero::placeholder { text-transform: none; letter-spacing: 0; }
+.suivi-resultat { display: grid; gap: 1rem; justify-items: start; outline: none; animation: fiche-livraison-arrive .45s var(--theme-courbe); }
+.suivi-resultat .compte-carte { inline-size: 100%; }
+.suivi-compte { margin-block-start: 1.5rem; }
+
+/* --- Le bouton WhatsApp, sur toutes les pages -------------------------------- */
+.whatsapp-flottant {
+  position: fixed; z-index: 44; inset-block-end: calc(1.25rem + env(safe-area-inset-bottom)); inset-inline-end: 1.25rem;
+  display: inline-flex; align-items: center; gap: .625rem; block-size: 3.5rem; min-inline-size: 3.5rem; padding-inline: 14px;
+  border-radius: 999px; background: #25D366; color: #fff; text-decoration: none;
+  box-shadow: 0 10px 28px -8px rgb(0 0 0 / .32), 0 2px 6px rgb(0 0 0 / .12);
+  animation: whatsapp-arrive .6s var(--theme-courbe) 1.2s backwards;
+  transition: transform .3s var(--theme-courbe), box-shadow .3s var(--theme-courbe);
+}
+.whatsapp-flottant:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 16px 34px -10px rgb(0 0 0 / .38), 0 2px 6px rgb(0 0 0 / .12); }
+.whatsapp-flottant:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 3px; }
+.whatsapp-flottant svg { flex: none; }
+/* Le libellé paraît au survol, sur grand écran seulement. */
+.whatsapp-flottant-bulle {
+  max-inline-size: 0; overflow: hidden; white-space: nowrap; font-size: .9375rem; font-weight: 600;
+  transition: max-inline-size .4s var(--theme-courbe), margin .4s var(--theme-courbe);
+}
+@media (hover: hover) and (min-width: 900px) {
+  .whatsapp-flottant:hover .whatsapp-flottant-bulle, .whatsapp-flottant:focus-visible .whatsapp-flottant-bulle { max-inline-size: 14rem; margin-inline-end: .25rem; }
+}
+@keyframes whatsapp-arrive { from { opacity: 0; transform: translateY(12px) scale(.9); } }
+/* Au-dessus de la barre d'achat collante de la fiche (téléphone). */
+@media (max-width: 899px) {
+  html:has(.achat-mobile) .whatsapp-flottant { inset-block-end: calc(5.75rem + env(safe-area-inset-bottom)); }
+}
+/* Pendant la commande et sur sa page de fin : rien ne détourne de « Confirmer ». */
+html:has(.tunnel-page, .merci) .whatsapp-flottant { display: none; }
+@media print { .whatsapp-flottant { display: none; } }
+
+/* --- Les réseaux, au pied de page ------------------------------------------ */
+/* « footer ul » : plus fort que la liste en colonne des pieds (.ed-pied ul). */
+footer ul.pied-reseaux { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 1.5rem 0 0; padding: 0; }
+.pied-reseaux a {
+  display: grid; place-items: center; inline-size: 2.5rem; block-size: 2.5rem; border-radius: 50%;
+  border: 1px solid var(--theme-filet-fort); color: inherit; background: none !important;
+  transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe), border-color .2s var(--theme-courbe);
+}
+.pied-reseaux a:hover { background-color: var(--theme-encre) !important; border-color: var(--theme-encre); color: var(--theme-fond); }
+html[data-gabarit="technique"] .te-pied-reseaux a { border-color: color-mix(in srgb, var(--theme-surface) 28%, transparent); }
+html[data-gabarit="technique"] .te-pied-reseaux a:hover { background-color: var(--theme-accent) !important; border-color: var(--theme-accent); color: var(--theme-encre); }
+html[data-gabarit="technique"] .te-pied-conseil { margin-block-start: 1.25rem; }
+
+/* Le pied éditorial passe à quatre colonnes : la présentation, le catalogue,
+   la boutique, commander. */
+@media (min-width: 700px) {
+  .ed-pied-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .ed-pied-grille { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whatsapp-flottant, .suivi-resultat { animation: none; }
+}

@@ -6,6 +6,7 @@ import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { BandeauSupport } from "@/components/console/AccesSupport";
 import { DIRECTION } from "@/lib/gestion/tableau";
 import { PEUT_MODIFIER, PEUT_STOCKER } from "@/lib/gestion/catalogue";
+import { PEUT_ECRIRE } from "@/lib/gestion/pages";
 import type { ElementPalette } from "@/lib/gestion/palette";
 import { OuvrirPalette, Palette } from "@/components/console/Palette";
 
@@ -79,6 +80,10 @@ export default async function BackofficeBoutique({
     ...(etatSav?.actif
       ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
       : []),
+    // Les pages de la boutique (À propos, questions…) : la direction.
+    ...(DIRECTION.includes(boutique.role)
+      ? [{ href: `/gestion/${slug}/pages`, libelle: "Pages", icone: "note" as const }]
+      : []),
     ...(boutique.role === "proprietaire" || boutique.role === "admin"
       ? [{ href: `/gestion/${slug}/equipe`, libelle: "Équipe", icone: "equipe" as const }]
       : []),
@@ -95,6 +100,9 @@ export default async function BackofficeBoutique({
       : []),
     ...(etatPro?.actif
       ? [{ groupe: "Aller à", icone: "etoile" as const, href: `/gestion/${slug}/clients/pros`, titre: "Comptes professionnels" }]
+      : []),
+    ...(PEUT_ECRIRE.includes(boutique.role)
+      ? [{ groupe: "Aller à", icone: "note" as const, href: `/gestion/${slug}/pages/nouvelle`, titre: "Nouvelle page de la boutique" }]
       : []),
   ];
 
