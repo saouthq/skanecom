@@ -4,7 +4,7 @@
 begin;
 \ir outils.psql
 
-select plan(28);
+select plan(30);
 
 create function tests.indice(p_sql text) returns text
 language plpgsql as $$
@@ -91,6 +91,16 @@ select is(public.gestion_paniers_etat(tests.id('A')) ->> 'a_relancer', '1', 'la 
 reset role; select tests.connecte('proprio_b');
 select is((select count(*)::integer from public.paniers_suivis where boutique_id = tests.id('A')), 0, 'une autre boutique ne voit rien des paniers de A');
 select throws_ok($$ select public.gestion_paniers(tests.id('A')) $$, '42501', null, 'ni leur écran');
+
+-- Le lien de la relance : le panier, pour n'importe quel navigateur.
+reset role;
+insert into tests.ids (nom, id) select 'panier_a', id from public.paniers_suivis where boutique_id = tests.id('A');
+select tests.anonyme();
+select results_eq($$ select e #>> '{lignes,0,produit}', (e #>> '{lignes,0,quantite}')::integer, (e #>> '{lignes,0,disponible}')::boolean,
+                            jsonb_array_length(e -> 'lignes'), e::text ~ '2162|Client A'
+                       from (select public.panier_a_reprendre(tests.id('A'), tests.id('panier_a')) e) x $$,
+  $$ values ('Valise cabine', 2, true, 1, false) $$, 'le lien de la relance, sans compte : les pièces, rien de la personne');
+select is(public.panier_a_reprendre(tests.id('B'), tests.id('panier_a')), null, 'l''identifiant ne vaut que dans sa boutique');
 
 reset role; select tests.connecte('prepa_a');
 select throws_ok($$ select public.gestion_geste_panier(tests.id('A'), pg_temp.le_panier(), 'relance') $$,

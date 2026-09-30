@@ -85,6 +85,18 @@
 .suivi-resultat .compte-carte { inline-size: 100%; }
 .suivi-compte { margin-block-start: 1.5rem; }
 
+/* --- Le panier d'une relance (paniers abandonnés) ------------------------- */
+.reprise-page { max-inline-size: 36rem; padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 7vw, 5.5rem); }
+.reprise {
+  display: grid; gap: 1.25rem; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--theme-filet);
+  border-radius: var(--theme-radius-carte); background: var(--theme-surface);
+}
+.reprise-lignes { list-style: none; margin: 0; padding: 0; }
+.reprise-lignes .tunnel-ligne:first-child { padding-block-start: 0; }
+.reprise-lignes a.tunnel-ligne-nom { color: inherit; text-decoration: none; }
+.reprise-lignes a.tunnel-ligne-nom:hover { text-decoration: underline; text-underline-offset: 3px; }
+.reprise-note { margin: 0; text-align: center; }
+
 /* --- Le bouton WhatsApp, sur toutes les pages -------------------------------- */
 .whatsapp-flottant {
   position: fixed; z-index: 44; inset-block-end: calc(1.25rem + env(safe-area-inset-bottom)); inset-inline-end: 1.25rem;

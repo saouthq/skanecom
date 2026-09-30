@@ -92,7 +92,7 @@ export async function proxy(request: NextRequest) {
       // Le tunnel de commande et le compte sont propres à chaque acheteur :
       // jamais en cache, jamais indexés, et l'adresse ne part pas chez un
       // site tiers.
-      if (pathname === "/commande" || pathname.startsWith("/commande/") || pathname === "/compte") {
+      if (pathname === "/commande" || pathname.startsWith("/commande/") || pathname === "/compte" || pathname.startsWith("/panier/")) {
         reponse.headers.set("cache-control", "private, no-store");
         reponse.headers.set("x-robots-tag", "noindex, nofollow");
         reponse.headers.set("referrer-policy", "same-origin");

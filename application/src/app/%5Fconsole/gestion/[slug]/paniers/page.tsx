@@ -115,7 +115,7 @@ function CartePanier({ p, boutique, vitrine, slug, maintenant, relance, action }
   p: PanierSuivi; boutique: string; vitrine: string | null; slug: string; maintenant: Date; relance: boolean; action: string;
 }) {
   const aRelancer = p.etat === "a_relancer";
-  const message = messageRelance(p, boutique, vitrine ? `${vitrine}/commande` : null);
+  const message = messageRelance(p, boutique, vitrine ? `${vitrine}/panier/${p.id}` : null);
   const ecrire = p.telephone
     ? `https://wa.me/${p.telephone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`
     : p.email ? `mailto:${p.email}?subject=${encodeURIComponent(`Votre panier chez ${boutique}`)}&body=${encodeURIComponent(message)}` : null;

@@ -1536,8 +1536,8 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     verifie(texte.includes("Robe à bretelles en lin") && texte.includes("Pull col rond en laine mérinos") && texte.includes("418,000 TND") && /Laissé il y a \d+ h/.test(texte),
       `le panier : ce qu'il contient, son montant, depuis quand (${texte.slice(0, 140)})`);
     const whatsapp = decodeURIComponent((await premier.locator("a[href^='https://wa.me/']").getAttribute("href")) ?? "");
-    verifie(whatsapp.includes("wa.me/21620700101") && whatsapp.includes("vous aviez laissé un panier chez Maison Selma") && whatsapp.includes("/commande"),
-      "le message WhatsApp prêt : le panier, la boutique, le lien pour finir");
+    verifie(whatsapp.includes("wa.me/21620700101") && whatsapp.includes("vous aviez laissé un panier chez Maison Selma") && /\/panier\/[0-9a-f-]{36}/.test(whatsapp),
+      "le message WhatsApp prêt : le panier, la boutique, le lien qui le remet dans le navigateur");
     await capture(page, "gestion-paniers", true);
     await t.envoie(page, premier.getByRole("button", { name: "Relancé" }));
     verifie((await page.locator(".message-succes").first().innerText()).includes("Relancé"), "« Relancé » : la page le dit");
@@ -1546,6 +1546,22 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
       "il passe avec les paniers relancés, sans plus de bouton : une fois pour toutes");
     const r = await posteBrut(ctx, "/gestion/maison-selma/paniers/action", { geste: "relance", panier: (await relance.getAttribute("id")).replace("panier-", "") });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("déjà été traité"), `relancer deux fois, posté à la main : la base refuse (${r.status})`);
+    // Le lien du message, ouvert sur un autre téléphone : le panier revient.
+    const adresse = /https?:\/\/\S+\/panier\/[0-9a-f-]{36}/.exec(whatsapp)?.[0] ?? "";
+    verifie(adresse !== "", `le message porte le lien du panier (${adresse || "absent"})`);
+    const autre = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
+    const tel = await autre.newPage();
+    t.espion(tel, "selma-reprise");
+    await tel.goto(adresse, { waitUntil: "networkidle" });
+    const repris = (await tel.locator(".reprise .tunnel-ligne").allInnerTexts()).map((x) => x.replace(/\s+/g, " "));
+    verifie(repris.length === 2 && repris[0].includes("Robe à bretelles en lin") && repris[1].includes("Pull col rond"),
+      `sur un autre téléphone, le lien montre le panier (${repris.join(" | ").slice(0, 120)})`);
+    await capture(tel, "gestion-paniers-lien");
+    await tel.getByRole("button", { name: "Reprendre ma commande" }).tap();
+    await tel.waitForURL(/\/commande$/);
+    await tel.locator(".tunnel-ligne").first().waitFor({ state: "attached" });
+    verifie((await tel.locator(".tunnel-ligne").count()) === 2, "« Reprendre ma commande » : le tunnel s'ouvre, le panier dedans");
+    await autre.close();
   });
   await ctx.close();
 }

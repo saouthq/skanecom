@@ -68,6 +68,20 @@ export function retireDuPanier(varianteId: string): void {
   ecrit(retireLigne(lit(), varianteId));
 }
 
+/** Le lien d'une relance (/panier/<id>) : les pièces gardées par la boutique
+ *  reviennent dans ce navigateur. Une pièce déjà au panier garde la plus
+ *  grande des deux quantités : rien n'est doublé. */
+export function reprendsPanier(lignes: { ligne: Omit<LignePanier, "ajouteLe">; stock: number }[]): void {
+  let panier = lit();
+  for (const { ligne, stock } of lignes) {
+    const deja = panier.lignes.find((l) => l.varianteId === ligne.varianteId);
+    panier = deja
+      ? changeQuantite(panier, ligne.varianteId, Math.max(deja.quantite, ligne.quantite), stock)
+      : ajouteLigne(panier, ligne, stock);
+  }
+  ecrit(panier);
+}
+
 /** Après une commande passée : le panier est devenu une commande. */
 export function videPanier(): void {
   ecrit(PANIER_VIDE);

@@ -818,6 +818,21 @@ export const fr = {
     suiviTexte: "Son numéro et votre téléphone suffisent : aucun compte n'est demandé.",
   },
 
+  /** Le lien d'une relance de panier (app/_b/[boutique]/panier/[id]). */
+  reprise: {
+    etiquette: "Votre panier",
+    titre: "Votre panier vous attend",
+    chapo: (boutique: string) => `Les pièces que vous aviez choisies chez ${boutique}, à leur prix d'aujourd'hui.`,
+    reprendre: "Reprendre ma commande",
+    plusDisponible: "Plus disponible",
+    epuiseTitre: "Ces pièces ne sont plus disponibles",
+    epuiseChapo: "Depuis votre visite, elles sont parties. D'autres vous attendent au catalogue.",
+    prixDuJour: "Les prix et la livraison sont relus au moment de commander.",
+    perdu: "Ce panier n'est plus gardé",
+    perduTexte: "Il a peut-être été commandé, ou il date de plus de 60 jours. La boutique vous attend.",
+    catalogue: "Voir le catalogue",
+  },
+
   /** « Prévenez-moi de son retour » (components/AlerteRetour.tsx). */
   alerte: {
     ouvrir: "Prévenez-moi de son retour",
