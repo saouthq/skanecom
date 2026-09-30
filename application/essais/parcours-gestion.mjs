@@ -518,6 +518,9 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await tape(page, "Taille");
     await clic(page, page.locator("#axe-val-0"));
     await tape(page, "S, M, L");
+    const apercu = (await page.locator(".apercu-declinaisons").innerText()).replace(/\s+/g, " ");
+    verifie(apercu.includes("3 déclinaisons") && apercu.includes("S, M, L") && apercu.includes("HOUSSE-DE-PROTECTION-S"),
+      `pendant la saisie, l'aperçu : « ${apercu} »`);
     await capture(page, "gestion-nouveau-produit");
     await clic(page, page.getByRole("button", { name: "Créer le produit" }));
     await page.waitForURL(/\/produits\/[0-9a-f-]{36}\?ok=/);

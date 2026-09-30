@@ -308,3 +308,8 @@
   .palette-entree { grid-column: 3; grid-row: 1 / span 2; }
 }
 @media (prefers-reduced-motion: reduce) { .palette[open], .palette[open]::backdrop, .palette-attente { animation: none; } }
+
+/* Deux champs côte à côte gardent la même hauteur de saisie, même quand
+   l'aide de l'un tient sur deux lignes (sans cela, la grille étire le champ
+   le plus court). */
+.console .champ { align-content: start; }

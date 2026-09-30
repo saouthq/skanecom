@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EnTetePage } from "@/components/console/Coquille";
+import { ApercuDeclinaisons } from "@/components/console/ApercuDeclinaisons";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { PEUT_MODIFIER } from "@/lib/gestion/catalogue";
@@ -71,6 +72,7 @@ export default async function NouveauProduit({ params, searchParams }: {
               </div>
             </div>
           ))}
+          <ApercuDeclinaisons />
         </fieldset>
 
         <div className="champ">
