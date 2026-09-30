@@ -223,6 +223,9 @@
   @keyframes onglet-bas { from { transform: scale(.5); opacity: 0; } }
   .console .app-onglets .app-nav-compte { position: absolute; inset-block-start: 3px; inset-inline-start: calc(50% + 6px); margin: 0; }
   .app-avec-onglets .app-contenu { padding-block-end: calc(6rem + env(safe-area-inset-bottom)); }
+  /* Le focus et les ancres s'arrêtent sous l'en-tête et au-dessus de la
+     barre d'onglets : rien ne s'y cache. */
+  html:has(.app-avec-onglets) { scroll-padding-block: 4.5rem calc(5.5rem + env(safe-area-inset-bottom)); }
   /* Une fiche qui a sa propre barre d'action (appeler le client) la garde
      seule en bas : deux barres empilées mangeraient l'écran. */
   .app-avec-onglets:has(.bo-barre-mobile) .app-onglets { display: none; }

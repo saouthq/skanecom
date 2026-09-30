@@ -622,6 +622,8 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   display: inline-grid; place-items: center; font-size: .6875rem; font-weight: 700; font-variant-numeric: tabular-nums;
   background: var(--ui-ambre); color: #fff;
 }
+/* Ce qui tourne sans attendre personne (des prix barrés en cours) : en vert, pas en alerte. */
+.console .app-nav-compte.app-nav-compte-doux { background: var(--ui-vert-fond); color: var(--ui-vert); box-shadow: inset 0 0 0 1px var(--ui-vert-bord), 0 0 0 2px var(--ui-fond); }
 .bo-alertes { display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; font-weight: 500; color: var(--ui-vert); white-space: nowrap; }
 .bo-alertes.discret { color: var(--ui-texte-3); }
 
@@ -1423,5 +1425,25 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .pm-case input { margin-block-start: .1875rem; inline-size: 16px; block-size: 16px; accent-color: var(--ui-texte); }
 .pm-case > span { display: grid; gap: .125rem; }
 .pm-case b { font-weight: 500; font-size: .875rem; }
+
+/* Les écrans promotions : une respiration entre les blocs. */
+.pm-synthese, .pm-section, .pm-nouveau, .pb-apercu { margin-block-end: 1.5rem; }
+
+/* ---- Prix barrés d'un rayon (module promotions) ---- */
+.pb-reglage { align-items: center; }
+.pb-nom { margin: 0; font-size: .9375rem; font-weight: 600; letter-spacing: -.005em; min-inline-size: 0; overflow-wrap: anywhere; }
+@media (min-width: 700px) { .pb-grille { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+.pb-apercu { scroll-margin-block-start: 5rem; border-style: dashed; }
+.pb-apercu-total { margin: 0; font-size: 1rem; }
+.pb-apercu-total b { font-weight: 650; }
+.pb-exemples { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.pb-exemples li {
+  display: inline-flex; align-items: baseline; gap: .4375rem; padding: .375rem .75rem; border-radius: 999px;
+  background: var(--ui-doux); font-size: .875rem; color: var(--ui-texte-3);
+}
+.pb-exemples s { text-decoration-thickness: 1px; }
+.pb-exemples b { color: var(--ui-texte); font-weight: 600; }
+.pb-terminer { display: grid; gap: .75rem; justify-items: start; max-inline-size: 34rem; }
+.pb-terminer .aide { margin: 0; }
 .bo-remise dt, .bo-remise dd { color: var(--ui-vert); }
 .bo-remise dt { display: inline-flex; align-items: center; }

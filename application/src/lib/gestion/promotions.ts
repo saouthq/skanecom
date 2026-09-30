@@ -2,8 +2,9 @@ import type { Role } from "@/lib/console/session";
 import { formateMontant } from "@/lib/prix";
 
 /* ============================================================================
-   LES CODES PROMO AU BACKOFFICE (module promotions) — types, libellés et
-   phrases de l'écran (supabase/migrations/…_promotions.sql).
+   LES PROMOTIONS AU BACKOFFICE (module promotions) — les codes promo et les
+   prix barrés d'un rayon : types, libellés et phrases des écrans
+   (supabase/migrations/…_promotions.sql, …_soldes.sql).
    ========================================================================== */
 
 export type TypeCode = "pourcentage" | "montant" | "livraison";
@@ -106,6 +107,66 @@ export function messagePromotions(indice: string | undefined, message: string): 
       return "Les codes promo ne sont pas ouverts pour cette boutique : ils s'activent depuis la console SkanEcom.";
     case "introuvable":
       return "Ce code n'existe plus dans cette boutique.";
+    default:
+      return message;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   LES PRIX BARRÉS D'UN RAYON (…_soldes.sql) — une opération baisse d'un coup
+   les prix d'un rayon, l'ancien prix barré ; terminée, elle les rend.
+   ------------------------------------------------------------------------- */
+
+export type OperationPrix = {
+  id: string;
+  nom: string;
+  pourcentage: number;
+  statut: "en_cours" | "terminees";
+  rayon: { id: string; nom: string; slug: string; sous_rayons: number } | null;
+  lancees_le: string;
+  terminees_le: string | null;
+  lancees_par: string | null;
+  terminees_par: string | null;
+  declinaisons: number;
+  produits: number;
+  /** Terminée : les déclinaisons dont l'équipe avait changé le prix, gardé tel quel. */
+  gardees: number;
+  vendues: number;
+  ventes_millimes: number;
+};
+
+export type EcranPrixBarres = {
+  actif: boolean;
+  /** Le réglage catalogue.afficher_prix_barres : la vitrine montre-t-elle l'ancien prix ? */
+  prix_barres: boolean;
+  rayons: { id: string; nom: string; declinaisons: number }[];
+  /** Les déclinaisons en vente dans tout le catalogue. */
+  declinaisons: number;
+  soldes: OperationPrix[];
+};
+
+export type ApercuPrix = {
+  declinaisons: number;
+  deja_soldees: number;
+  produits: number;
+  exemples: { avant: number; apres: number }[];
+};
+
+/** « 1 déclinaison », « 12 déclinaisons ». */
+export function pluriel(n: number, un: string, plusieurs = `${un}s`): string {
+  return `${n.toLocaleString("fr-FR")} ${n > 1 ? plusieurs : un}`;
+}
+
+export function messagePrixBarres(indice: string | undefined, message: string): string {
+  switch (indice) {
+    case "role":
+      return "Votre rôle dans l'équipe ne permet pas ce geste : des prix barrés sont des prix, ils reviennent à la direction.";
+    case "module":
+      return "Les promotions ne sont pas ouvertes pour cette boutique : elles s'activent depuis la console SkanEcom.";
+    case "introuvable":
+      return "Cette opération n'existe plus dans cette boutique.";
+    case "etat":
+      return "Cette opération est déjà terminée : ses prix ont été rendus.";
     default:
       return message;
   }

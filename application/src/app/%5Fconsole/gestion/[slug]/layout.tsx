@@ -63,10 +63,16 @@ export default async function BackofficeBoutique({
   const lienAvis = etatAvis?.actif || etatAvis?.a_moderer
     ? [{ href: `/gestion/${slug}/avis`, libelle: "Avis", icone: "etoile" as const, extra: badgeAvis }]
     : [];
-  // Les codes promo, si la boutique a le module (ou en a eu) : la direction.
-  const etatPromo = pm as { actif: boolean; codes: number } | null;
-  const lienPromo = DIRECTION.includes(boutique.role) && (etatPromo?.actif || etatPromo?.codes)
-    ? [{ href: `/gestion/${slug}/promotions`, libelle: "Codes promo", icone: "etiquette" as const }]
+  // Les promotions (codes, prix barrés), si la boutique a le module ou en a
+  // eu : la direction. Une opération en cours se signale.
+  const etatPromo = pm as { actif: boolean; codes: number; soldes: number; soldes_en_cours: number } | null;
+  const lienPromo = DIRECTION.includes(boutique.role) && (etatPromo?.actif || etatPromo?.codes || etatPromo?.soldes)
+    ? [{
+        href: `/gestion/${slug}/promotions`, libelle: "Promotions", icone: "etiquette" as const,
+        extra: etatPromo?.soldes_en_cours
+          ? <span className="app-nav-compte app-nav-compte-doux" aria-label={`${etatPromo.soldes_en_cours} opération${etatPromo.soldes_en_cours > 1 ? "s" : ""} de prix barrés en cours`}>{etatPromo.soldes_en_cours}</span>
+          : undefined,
+      }]
     : [];
   const badgeSav = etatSav?.nouvelles
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>

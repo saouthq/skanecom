@@ -1345,7 +1345,7 @@ console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoy
   await ctx.close();
 }
 
-console.log("\n== 4 bis. La gérante de Maison Selma : les codes promo ==");
+console.log("\n== 4 bis. La gérante de Maison Selma : les codes promo, les prix barrés ==");
 {
   // Selma a le module promotions (supabase/seed-promotions.sql). En CI, le
   // parcours de commande a pu se servir de BIENVENUE10 avant : rien ici ne
@@ -1368,7 +1368,7 @@ console.log("\n== 4 bis. La gérante de Maison Selma : les codes promo ==");
   });
 
   await etape("ses codes, et ce qu'ils ont rapporté", async () => {
-    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Codes promo" }));
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Promotions" }));
     await page.waitForURL(/\/promotions$/);
     await page.waitForLoadState("networkidle");
     verifie((await page.locator(".pm-section").first().locator(".pm-carte").count()) >= 4, "les codes en cours d'abord (quatre au jeu de démo)");
@@ -1411,10 +1411,79 @@ console.log("\n== 4 bis. La gérante de Maison Selma : les codes promo ==");
     await tape(page, "5");
     await t.envoie(page, nouveau().getByRole("button", { name: "Créer le code" }));
     verifie((await page.getByRole("alert").first().innerText()).includes("existe déjà"), "le même code deux fois : refusé");
+    const rappel = await page.evaluate(() => {
+      const e = document.querySelector("#nouveau .geste-refus");
+      const r = e?.getBoundingClientRect();
+      return Boolean(e?.textContent?.includes("existe déjà") && r && r.top >= 0 && r.bottom <= innerHeight);
+    });
+    verifie(rappel, "le refus, affiché en tête de page hors de l'écran, est redit près du bouton");
     await t.envoie(page, carte("RENTREE15").getByRole("button", { name: "Retirer" }));
     verifie((await carte("RENTREE15").count()) === 0 && (await page.locator(".message-succes").first().innerText()).includes("retiré"), "jamais servi : il se retire");
     const r = await posteBrut(ctx, "/gestion/maison-selma/promotions/action", { geste: "enregistrer", code: "ENORME", type: "pourcentage", valeur: "95" });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("1 à 90"), `95 % posté à la main : la base refuse (${r.status})`);
+  });
+
+  await etape("les prix barrés d'un rayon : l'aperçu, le lancement, la vitrine, la fin", async () => {
+    await clic(page, page.locator("nav.onglets").getByRole("link", { name: "Prix barrés" }));
+    await page.waitForURL(/\/prix-barres$/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".pb-reglage").innerText()).includes("n'affiche pas les prix barrés"), "la vitrine de Selma cache les prix barrés : l'écran le dit d'emblée");
+    const form = page.locator("#nouvelle form").first();
+    await clic(page, form.getByLabel("Le nom de l'opération"));
+    await tape(page, "Promo de la rentrée");
+    const maille = await form.locator("select[name=rayon] option", { hasText: /^Maille/ }).getAttribute("value");
+    await form.locator("select[name=rayon]").selectOption(maille);
+    await clic(page, form.getByLabel("La remise"));
+    await tape(page, "20");
+    await t.envoie(page, form.getByRole("button", { name: "Voir ce que ça change" }));
+    const apercu = page.locator("#apercu");
+    await apercu.waitFor({ timeout: 8000 }).catch(() => {});
+    const texteApercu = (await apercu.innerText().catch(() => "")).replace(/\s+/g, " ");
+    verifie(texteApercu.includes("8 déclinaisons") && texteApercu.includes("199,000") && texteApercu.includes("159,000 TND"),
+      `« Voir ce que ça change » : huit déclinaisons, des exemples de prix (${texteApercu.slice(0, 110)})`);
+    verifie(await page.evaluate(() => document.activeElement?.id === "apercu"), "l'écran va à l'aperçu, le focus aussi");
+    verifie((await page.locator("#t-en-cours .compte-onglet").innerText()).trim() === "0", "rien n'est encore lancé");
+    verifie(await apercu.getByLabel("Afficher les prix barrés sur la vitrine").isChecked(), "« afficher les prix barrés » proposé, déjà coché");
+    await capture(page, "gestion-prix-barres-apercu");
+    await t.envoie(page, apercu.getByRole("button", { name: /Lancer à −20\s%/ }));
+    const lancee = (await page.locator(".message-succes").first().innerText()).replace(/\s+/g, " ");
+    verifie(lancee.includes("« Promo de la rentrée » lancée : 8 déclinaisons à −20 %") && lancee.includes("affiche maintenant les prix barrés"),
+      `lancée : la page le dit (${lancee.slice(0, 90)}…)`);
+    const operation = page.locator(".pm-carte", { hasText: "Promo de la rentrée" });
+    const vue = await page.waitForFunction(() => {
+      const c = document.activeElement?.closest(".pm-carte");
+      const r = c?.getBoundingClientRect();
+      return Boolean(c?.textContent?.includes("Promo de la rentrée") && r && r.top >= 0 && r.bottom <= innerHeight);
+    }, null, { timeout: 3000, polling: 100 }).then(() => true, () => false);
+    verifie(vue && (await operation.innerText()).includes("En cours"), "l'écran va à l'opération, en cours, le focus aussi");
+    verifie((await page.locator(".pb-reglage").count()) === 0, "le réglage des prix barrés s'est allumé du même geste");
+
+    // La vitrine. En CI, le parcours humain a vu ce rayon bien avant : une
+    // page vue il y a plus de cinq minutes (revalidate = 300) sert encore
+    // l'ancienne version une fois, le temps de se refaire.
+    const vitrine = await ctx.newPage();
+    t.espion(vitrine, "vitrine-prix-barres");
+    const SE = t.adresse("mode.localhost");
+    let rayon = "";
+    for (let i = 0; i < 3 && !/−20\s%/.test(rayon); i++) {
+      if (i) await pause(1500);
+      await vitrine.goto(SE + "/categorie/maille", { waitUntil: "networkidle" });
+      rayon = await vitrine.locator("main").innerText();
+    }
+    verifie(/−20\s%/.test(rayon), "la vitrine : les pièces de la maille marquées −20 %");
+    await clic(vitrine, vitrine.locator(".ed-carte").first());
+    await vitrine.waitForURL(/\/produit\//);
+    await vitrine.waitForLoadState("networkidle");
+    const barre = await vitrine.locator(".prix-barre").first().innerText().catch(() => "");
+    verifie(/\d/.test(barre), `la fiche : l'ancien prix barré à côté du nouveau (${barre})`);
+    await capture(vitrine, "vitrine-prix-barres-fiche");
+    await vitrine.close();
+
+    await clic(page, operation.locator("summary", { hasText: "Terminer" }));
+    await t.envoie(page, operation.getByRole("button", { name: "Terminer et rendre les prix" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("« Promo de la rentrée » terminée : 8 prix rendus"), "terminée : les huit prix rendus");
+    verifie((await operation.innerText()).includes("Terminée") && (await operation.getByRole("button").count()) === 0,
+      "elle passe avec les terminées, sans geste");
   });
   await ctx.close();
 }

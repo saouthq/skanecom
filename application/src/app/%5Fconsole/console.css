@@ -376,6 +376,9 @@
 .console .message-erreur { background: var(--ui-rouge-fond); border-color: var(--ui-rouge-bord); color: #7F1D1D; }
 .console .message-erreur::before { color: var(--ui-rouge); --message-icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E"); }
 .console .message a { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+/* Posés par le geste en place sous le formulaire (components/console/Retours.tsx). */
+.console .geste-coupure, .console .geste-refus { margin-block-start: .75rem; }
+.console form > .geste-refus { margin-block-start: 0; }
 
 /* --------------------------------------------------------------------------
    TABLEAUX

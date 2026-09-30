@@ -14,7 +14,7 @@ export const LIBELLES_MODULES: Record<string, string> = {
   comptes_pro: "Comptes professionnels",
   devis: "Demande de devis",
   avis: "Avis clients",
-  promotions: "Codes promo",
+  promotions: "Promotions",
 };
 
 export const LIBELLES_THEME: Record<string, string> = {

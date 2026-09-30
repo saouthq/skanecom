@@ -181,6 +181,7 @@ export function EnvoiFormulaires() {
     const envoieEnPlace = async (form: HTMLFormElement, submitter: HTMLElement | null, bouton: HTMLElement | null) => {
       annonce(false);
       if (form.nextElementSibling?.classList.contains("geste-coupure")) form.nextElementSibling.remove();
+      document.querySelectorAll(".geste-refus").forEach((n) => n.remove());
       // Le bouton pressé porte souvent le geste (name="resultat" value="confirmee") :
       // FormData(form) ne le lit pas, il s'ajoute à la main.
       const donnees = new FormData(form);
@@ -252,6 +253,24 @@ export function EnvoiFormulaires() {
         if (pli?.open) {
           if (pli.contains(document.activeElement)) focus = pli.querySelector<HTMLElement>(":scope > summary");
           pli.open = false;
+        }
+      }
+
+      // Refusé, le formulaire reste où il est. Si le refus s'affiche hors de
+      // l'écran (en tête de page, le formulaire plus bas), il est redit près
+      // du bouton, là où l'on regarde : au-dessus du pied de carte s'il y en
+      // a un, sinon sous le formulaire. Sans rôle d'alerte : celui d'en haut
+      // est déjà lu par les lecteurs d'écran.
+      if (retourUrl.searchParams.has("erreur") && form.isConnected) {
+        const refus = document.querySelector<HTMLElement>("#principal .message-erreur[role=alert]");
+        const r = refus?.getBoundingClientRect();
+        if (refus && r && !refus.contains(form) && (r.bottom < 0 || r.top > window.innerHeight)) {
+          const rappel = document.createElement("p");
+          rappel.className = "message message-erreur geste-refus";
+          rappel.textContent = refus.textContent;
+          const pied = form.querySelector(":scope > .carte-pied");
+          if (pied) pied.before(rappel);
+          else form.after(rappel);
         }
       }
 

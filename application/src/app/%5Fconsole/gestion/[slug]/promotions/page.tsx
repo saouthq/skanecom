@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { BoutonCopier } from "@/components/console/BoutonCopier";
 import { FormCodePromo } from "@/components/console/FormCodePromo";
+import { OngletsPromotions } from "@/components/console/OngletsPromotions";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { quand } from "@/lib/gestion/libelles";
 import { formateMontant } from "@/lib/prix";
@@ -39,7 +40,8 @@ export default async function Promotions({
   ]);
   if (error) throw new Error(`Codes promo illisibles : ${error.message}`);
   const liste = data as ListeCodes;
-  if (!liste.actif && liste.codes.length === 0) notFound();
+  // Module coupé, sans code : il reste peut-être des prix barrés à rendre.
+  if (!liste.actif && liste.codes.length === 0) redirect(`/gestion/${slug}/promotions/prix-barres`);
   // L'adresse de la vitrine, pour le message à partager.
   const hote = cadre?.boutique.hote_principal ?? null;
   const vitrine = hote ? adresseVitrine(hote, hoteConsole) : null;
@@ -56,7 +58,7 @@ export default async function Promotions({
   return (
     <>
       <EnTetePage
-        titre="Codes promo"
+        titre="Promotions"
         description={
           liste.actif
             ? "Des codes à donner — en story, dans le colis, à une cliente fidèle : un pourcentage, un montant ou la livraison offerte. La base les vérifie à chaque commande ; une commande passée garde sa remise."
@@ -64,9 +66,10 @@ export default async function Promotions({
         }
         actions={regle ? <a className="btn btn-primaire" href="#nouveau"><Icone nom="etiquette" /> Nouveau code</a> : undefined}
       />
+      <OngletsPromotions slug={slug} courant="codes" />
 
-      {recherche.ok ? <p className="message message-succes" role="status">{recherche.ok}</p> : null}
-      {recherche.erreur ? <p className="message message-erreur" role="alert">{recherche.erreur}</p> : null}
+      {recherche.ok ? <p className="message message-succes mb-4" role="status">{recherche.ok}</p> : null}
+      {recherche.erreur ? <p className="message message-erreur mb-4" role="alert">{recherche.erreur}</p> : null}
 
       {c.utilisations > 0 ? (
         <section className="carte pm-synthese" aria-label="Ce que les codes ont rapporté">

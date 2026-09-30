@@ -49,11 +49,16 @@ export default async function FicheProduitBackoffice({
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const [{ data, error }, { data: technique }, { data: pro }] = await Promise.all([
+  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }] = await Promise.all([
     sb.rpc("gestion_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_fiche_technique", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id }),
+    sb.rpc("gestion_soldes_du_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
   ]);
+  // Les prix barrés en cours sur ce produit (module promotions) : chaque
+  // déclinaison remisée le dit, et ce qu'il advient d'un prix changé ici.
+  const operations = (remises as { id: string; nom: string; pourcentage: number; variantes: string[] }[] | null) ?? [];
+  const operationDe = new Map(operations.flatMap((o) => o.variantes.map((v) => [v, o] as const)));
   // Le prix pro de chaque déclinaison, avec le module des comptes professionnels.
   const avecPrixPro = Boolean((pro as { actif: boolean } | null)?.actif);
   if (error) throw new Error(`Produit illisible : ${error.message}`);
@@ -229,6 +234,16 @@ export default async function FicheProduitBackoffice({
                   <p>Le stock ne change que par un mouvement : réception d&apos;un arrivage, inventaire, casse. Chaque mouvement est gardé.</p>
                 </div>
               </div>
+              {operations.length > 0 ? (
+                <p className="message mb-4">
+                  <span>
+                    En prix barrés : {operations.map((o, i) => (
+                      <span key={o.id}>{i > 0 ? ", " : ""}« {o.nom} » (−{o.pourcentage}&nbsp;%)</span>
+                    ))}. À la fin, chaque déclinaison retrouve son prix d&apos;avant ; un prix changé ici entre-temps reste tel qu&apos;il est saisi.{" "}
+                    <Link href={`/gestion/${slug}/promotions/prix-barres`}>Voir les prix barrés</Link>
+                  </span>
+                </p>
+              ) : null}
               <ul className="var-liste" role="list">
                 {f.variantes.map((v) => {
                   const etat = etatStock(v.stock, v.seuil);
@@ -239,6 +254,9 @@ export default async function FicheProduitBackoffice({
                         <span className="var-sku">{v.sku}</span>
                         <span className={etat.classe}>{etat.texte}</span>
                         {v.minimum > 1 ? <span className="ui-etat" title="Quantité minimale d'une commande">Par {v.minimum} au moins</span> : null}
+                        {operationDe.has(v.id) ? (
+                          <span className="ui-etat ui-etat-violet" title={`Prix barrés : « ${operationDe.get(v.id)!.nom} »`}>−{operationDe.get(v.id)!.pourcentage}&nbsp;%</span>
+                        ) : null}
                         {!v.actif ? <span className="ui-etat">Hors vente</span> : null}
                       </div>
                       <div className="var-corps">
