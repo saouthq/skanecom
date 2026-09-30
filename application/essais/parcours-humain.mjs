@@ -625,6 +625,15 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
     verifie(await resultat.count() === 1 && (await resultat.innerText()).includes("SEL-2025-00048"), "le bon téléphone : la commande, sa frise, son contenu");
     verifie(await page.evaluate(() => document.activeElement?.classList.contains("suivi-resultat")), "le focus passe au résultat (lecteurs d'écran)");
     await capture(page, "selma-suivi");
+    let bouton = false;
+    for (let i = 0; i < 15 && !bouton; i++) {
+      await page.keyboard.press("Tab");
+      bouton = await page.evaluate(() => document.activeElement?.textContent?.trim() === "Suivre une autre commande");
+    }
+    await page.keyboard.press("Enter");
+    await page.locator("#suivi-numero").waitFor({ timeout: 4000 }).catch(() => {});
+    verifie(bouton && await page.evaluate(() => document.activeElement?.id === "suivi-numero"),
+      "« Suivre une autre commande » au clavier : le formulaire revient, le curseur dans le numéro");
   });
 
   await etape("pendant la commande, pas de bouton WhatsApp", async () => {

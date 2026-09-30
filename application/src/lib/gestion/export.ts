@@ -23,7 +23,7 @@ export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Co
       { cle: "adresse", titre: "Adresse" }, { cle: "complement", titre: "Complément" },
       { cle: "ville", titre: "Ville" }, { cle: "gouvernorat", titre: "Gouvernorat" }, { cle: "code_postal", titre: "Code postal" },
       { cle: "zone", titre: "Zone" }, { cle: "sous_total", titre: "Sous-total", format: "montant" },
-      { cle: "frais_livraison", titre: "Frais de livraison", format: "montant" }, { cle: "remise", titre: "Remise", format: "montant" },
+      { cle: "frais_livraison", titre: "Frais de livraison", format: "montant" }, { cle: "remise", titre: "Remise", format: "montant" }, { cle: "code_promo", titre: "Code promo" },
       { cle: "total", titre: "Total", format: "montant" }, { cle: "paiement", titre: "Paiement" },
       { cle: "statut_paiement", titre: "Statut du paiement" }, { cle: "transporteur", titre: "Transporteur" },
       { cle: "suivi", titre: "Numéro de suivi" }, { cle: "refus_origine", titre: "Refus : origine" },

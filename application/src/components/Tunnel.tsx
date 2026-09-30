@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Billets, Camion, Coche, Magasin as IconeMagasin } from "./Icones";
+import { Billets, Camion, Coche, Etiquette, Magasin as IconeMagasin } from "./Icones";
 import { Prix } from "./Prix";
 import { Connexion, Identification } from "./Connexion";
 import { ouvrePanier, ramenePanier, retireDuPanier, usePanierLu } from "@/lib/panier";
@@ -12,7 +12,10 @@ import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import {
   chiffresTelephone,
   cleDeCommande,
+  codeGarde,
+  gardeCode,
   telephoneLisible,
+  type CodeDevis,
   type Devis,
   type LigneDevis,
   type Magasin,
@@ -52,7 +55,12 @@ import type { CodeTheme } from "@/lib/theme";
      entre la livraison à domicile et le retrait, gratuit : plus d'adresse à
      saisir, le magasin, ses horaires et son temps de préparation à la place ;
    · l'achat express (réglage commande.achat_express) : un article venu de sa
-     fiche, commandé seul — le panier du navigateur n'est ni lu ni vidé.
+     fiche, commandé seul — le panier du navigateur n'est ni lu ni vidé ;
+   · un code promo (module promotions), derrière « Vous avez un code
+     promo ? » pour ne pas envoyer chercher un code ailleurs : la base dit
+     s'il s'applique (la remise, le total) ou pourquoi pas ; il est gardé le
+     temps de la visite. Refusé à la commande (sa limite atteinte entre-temps,
+     déjà servi pour ce numéro), il tombe et le total se recalcule sans lui.
    ========================================================================== */
 
 type Gouvernorat = { code: string; nom: string };
@@ -84,6 +92,9 @@ function amene(el: HTMLElement | null | undefined) {
   el.scrollIntoView({ block: "center", behavior: "auto" });
 }
 
+/** Rien à écouter : la valeur gardée ne change que par ce composant. */
+const rienAEcouter = () => () => {};
+
 function valeurNumerique(saisie: string, max: number): string {
   return saisie.replace(/\D/g, "").slice(0, max);
 }
@@ -101,6 +112,7 @@ export function Tunnel({
   retrait,
   devisNumero = null,
   express = null,
+  codesPromo = false,
 }: {
   gabarit: CodeTheme;
   boutiqueId: string;
@@ -119,6 +131,8 @@ export function Tunnel({
   devisNumero?: string | null;
   /** L'achat express : la déclinaison et la quantité choisies sur la fiche. */
   express?: { varianteId: string; quantite: number } | null;
+  /** Le module promotions : le champ du code promo (jamais sur un devis). */
+  codesPromo?: boolean;
 }) {
   const compteObligatoire = compteReglage || Boolean(devisNumero);
   const id = useId();
@@ -133,6 +147,18 @@ export function Tunnel({
   const refConditions = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<ModeLivraison>("domicile");
   const enRetrait = mode === "retrait" && retrait !== null;
+
+  // Le code promo tapé (module promotions), gardé le temps de la visite :
+  // celui du navigateur tant que l'acheteur n'y touche pas (lu après
+  // l'hydratation, la page servie est la même pour tous).
+  const avecCodes = codesPromo && !devisNumero;
+  const codeDuNavigateur = useSyncExternalStore(rienAEcouter, () => (avecCodes ? codeGarde(boutique) : null), () => null);
+  const [codeTouche, setCodeTouche] = useState<string | null | undefined>(undefined);
+  const code = codeTouche === undefined ? codeDuNavigateur : codeTouche;
+  const changeCode = (nouveau: string | null) => {
+    setCodeTouche(nouveau);
+    gardeCode(boutique, nouveau);
+  };
 
   // Le devis de la base.
   const [devis, setDevis] = useState<Devis | null>(null);
@@ -186,12 +212,13 @@ export function Tunnel({
     const arret = new AbortController();
     const gouvernorat = JSON.stringify(enRetrait ? null : champs.gouvernorat || null);
     const mode = enRetrait ? "retrait" : "domicile";
+    const avecCode = avecCodes && code ? `,"code":${JSON.stringify(code)}` : "";
     fetch("/commande/devis", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: cleDevis.startsWith("devis:")
         ? `{"devis":${JSON.stringify(cleDevis.slice(6))},"gouvernorat":${gouvernorat},"mode":"${mode}"}`
-        : `{"lignes":${cleDevis},"gouvernorat":${gouvernorat},"mode":"${mode}"}`,
+        : `{"lignes":${cleDevis},"gouvernorat":${gouvernorat},"mode":"${mode}"${avecCode}}`,
       signal: arret.signal,
     })
       .then((r) => r.json() as Promise<ReponseDevis>)
@@ -208,8 +235,9 @@ export function Tunnel({
         if ((e as Error).name !== "AbortError") setDevisEnPanne(true);
       });
     return () => arret.abort();
-    // Relu aussi à la connexion : le devis d'un client, le prix d'un pro.
-  }, [cleDevis, champs.gouvernorat, enRetrait, rafraichir, connecte]);
+    // Relu aussi à la connexion : le devis d'un client, le prix d'un pro ;
+    // et au code promo tapé.
+  }, [cleDevis, champs.gouvernorat, enRetrait, rafraichir, connecte, avecCodes, code]);
 
   // La session : lue au montage, puis suivie (connexion, déconnexion).
   useEffect(() => {
@@ -336,6 +364,11 @@ export function Tunnel({
         // La boutique a cessé de proposer le retrait entre-temps.
         setMode("domicile");
         return setAlerte(t.commande.retraitIndisponible);
+      case "code":
+        // Vu appliqué, refusé à la commande : il tombe, le total se recalcule.
+        changeCode(null);
+        setRecapOuvert(true);
+        return setAlerte(t.promo.refuseCommande(message));
       default:
         return setAlerte(t.commande.erreur);
     }
@@ -391,12 +424,15 @@ export function Tunnel({
               },
           total: devis.total_millimes,
           note: champs.note.trim() || null,
+          // Le code, s'il s'applique : un code refusé ne part pas.
+          ...(avecCodes && code && devis.code?.applique ? { code } : {}),
         }),
       });
       const rep = (await r.json()) as ReponsePasser;
       if (rep.ok) {
         // La page de fin vide le panier et oublie la clé : d'ici là, un
         // nouvel envoi du même panier rendrait la même commande.
+        gardeCode(boutique, null);
         router.push("/commande/merci");
         return; // le bouton reste en « envoi » jusqu'à la page suivante
       }
@@ -682,7 +718,7 @@ export function Tunnel({
               <span>{zone ? t.commande.livraisonVers(zone) : t.commande.livraison}</span>
               {delai ? <span>{delai}</span> : null}
               <span className="tunnel-livraison-frais">
-                {devis.frais_livraison_millimes === 0 ? t.commande.livraisonOfferte : formatePrix(devis.frais_livraison_millimes)}
+                {devis.frais_livraison_millimes === 0 || livraisonParCode(devis) ? t.commande.livraisonOfferte : formatePrix(devis.frais_livraison_millimes)}
               </span>
             </p>
           ) : null}
@@ -703,6 +739,7 @@ export function Tunnel({
             <Billets taille={22} />
           </label>
           {rappel ? <p className="legende tunnel-rappel">{enRetrait ? t.commande.appelConfirmationRetrait : t.commande.appelConfirmation}</p> : null}
+          {avecCodes ? <ChampCode id={id} code={code} devis={devis} onAppliquer={changeCode} onRetirer={() => changeCode(null)} /> : null}
           <div className="champ">
             <label htmlFor={`${id}-note`}>
               {enRetrait ? t.commande.noteRetrait : t.commande.note} <span className="facultatif">({t.commande.facultatif})</span>
@@ -800,6 +837,134 @@ function Champ({
   );
 }
 
+/** La livraison offerte par un code promo appliqué. */
+function livraisonParCode(devis: Devis): boolean {
+  return Boolean(devis.code?.applique && devis.code.type === "livraison");
+}
+
+/** « bienvenue 10 » → « BIENVENUE10 », comme la base range les codes. */
+const normalise = (code: string) => code.toUpperCase().replace(/\s+/g, "");
+
+/** Pourquoi un code ne s'applique pas, dit à l'acheteur. */
+function raisonDuCode(info: CodeDevis): string {
+  const r = t.promo.raisons;
+  switch (info.raison) {
+    case "pas_encore":
+      return r.pas_encore(info.debut ? JOUR_DEVIS.format(new Date(info.debut)) : "");
+    case "minimum":
+      return r.minimum(formatePrix(info.minimum_millimes ?? 0), formatePrix(info.manque_millimes ?? 0));
+    case "coupe": return r.coupe;
+    case "expire": return r.expire;
+    case "devis": return r.devis;
+    case "epuise": return r.epuise;
+    case "deja": return r.deja;
+    case "retrait": return r.retrait;
+    case "offerte": return r.offerte;
+    default: return r.inconnu;
+  }
+}
+
+/** Le code promo, replié derrière « Vous avez un code promo ? » : un champ
+ *  vide qui s'étale donnerait envie d'aller chercher un code ailleurs.
+ *  Tapé, la base dit s'il s'applique ; Entrée l'applique sans envoyer la
+ *  commande. Appliqué, il devient une pastille qu'on peut retirer. */
+function ChampCode({ id, code, devis, onAppliquer, onRetirer }: {
+  id: string;
+  code: string | null;
+  devis: Devis | null;
+  onAppliquer: (code: string) => void;
+  onRetirer: () => void;
+}) {
+  const [ouvert, setOuvert] = useState(false);
+  const [saisie, setSaisie] = useState<string | null>(null);
+  const refSaisie = useRef<HTMLInputElement>(null);
+  const refApplique = useRef<HTMLDivElement>(null);
+  const aFocaliser = useRef<"saisie" | "applique" | null>(null);
+
+  // La réponse de la base pour CE code (une réponse plus ancienne ne compte pas).
+  const info = code && devis?.code && devis.code.code === normalise(code) ? devis.code : null;
+  const enCours = Boolean(code) && !info;
+  const applique = Boolean(info?.applique);
+  const refuse = info && !info.applique ? raisonDuCode(info) : null;
+  const deplie = ouvert || Boolean(code);
+  const valeur = saisie ?? code ?? "";
+
+  useEffect(() => {
+    const cible = aFocaliser.current === "saisie" ? refSaisie.current : aFocaliser.current === "applique" && applique ? refApplique.current : null;
+    if (!cible) return;
+    aFocaliser.current = null;
+    cible.focus();
+  });
+
+  const appliquer = () => {
+    const c = normalise(valeur);
+    if (!c) return;
+    aFocaliser.current = "applique";
+    onAppliquer(c);
+  };
+
+  if (!deplie) {
+    return (
+      <div className="tunnel-promo">
+        <button type="button" className="btn-lien tunnel-promo-ouvrir" aria-expanded={false}
+          onClick={() => { aFocaliser.current = "saisie"; setOuvert(true); }}>
+          <Etiquette taille={16} /> {t.promo.ouvrir}
+        </button>
+      </div>
+    );
+  }
+  if (applique && info) {
+    const offerte = info.type === "livraison";
+    return (
+      <div className="tunnel-promo tunnel-promo-applique" ref={refApplique} tabIndex={-1} role="status">
+        <span className="tunnel-promo-puce">
+          <Coche taille={14} /> <b>{info.code}</b> <span>{t.promo.offre(info.type, info.valeur, formatePrix)}</span>
+        </span>
+        <span className="legende">
+          {offerte
+            ? devis?.frais_livraison_millimes === null ? t.promo.livraisonAttente : t.promo.livraisonOfferte
+            : info.type === "montant" ? t.promo.deduit : t.promo.economie(formatePrix(devis?.remise_millimes ?? 0))}
+        </span>
+        <button type="button" className="btn-lien legende" aria-label={t.promo.retirer}
+          onClick={() => { aFocaliser.current = "saisie"; setSaisie(""); setOuvert(true); onRetirer(); }}>
+          {t.promo.retirerCourt}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="champ tunnel-promo">
+      <label htmlFor={`${id}-code`}>{t.promo.libelle}</label>
+      <div className="tunnel-promo-rangee">
+        <input
+          id={`${id}-code`}
+          ref={refSaisie}
+          value={valeur}
+          maxLength={40}
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          enterKeyHint="done"
+          aria-invalid={refuse ? true : undefined}
+          aria-describedby={`${id}-code-message`}
+          onChange={(e) => setSaisie(e.target.value.replace(/[^A-Za-z0-9 _-]/g, ""))}
+          onKeyDown={(e) => {
+            // Entrée applique le code : elle n'envoie pas la commande.
+            if (e.key === "Enter") {
+              e.preventDefault();
+              appliquer();
+            }
+          }}
+        />
+        <button type="button" className="btn btn-second" onClick={appliquer} disabled={!normalise(valeur) || enCours} aria-busy={enCours || undefined}>
+          {enCours ? t.promo.verification : t.promo.appliquer}
+        </button>
+      </div>
+      <p id={`${id}-code-message`} className="champ-erreur" aria-live="polite">{refuse ?? ""}</p>
+    </div>
+  );
+}
+
 /** Le récapitulatif : les lignes du panier telles que la base les vend. */
 function Recap({
   panier,
@@ -822,7 +987,9 @@ function Recap({
   fige?: boolean;
 }) {
   const parId = new Map<string, LigneDevis>((devis?.lignes ?? []).map((l) => [l.variante_id, l]));
-  const total = devis?.total_millimes ?? devis?.sous_total_millimes ?? null;
+  // Sans gouvernorat, pas de frais : le total des articles (remise déduite).
+  const total = devis ? (devis.total_millimes ?? devis.sous_total_millimes - (devis.remise_millimes ?? 0)) : null;
+  const offerteParCode = devis ? livraisonParCode(devis) : false;
 
   return (
     <aside className="tunnel-recap" data-ouvert={ouvert ? "" : undefined} aria-labelledby="recap-titre">
@@ -928,6 +1095,11 @@ function Recap({
               <dd>
                 {retrait && devis.mode === "retrait" ? (
                   t.commande.gratuit
+                ) : offerteParCode ? (
+                  <>
+                    {devis.frais_livraison_millimes ? <s className="tunnel-barre">{formatePrix(devis.frais_livraison_millimes)}</s> : null}{" "}
+                    {t.commande.livraisonOfferte}
+                  </>
                 ) : devis.frais_livraison_millimes === null ? (
                   <span className="legende">{t.commande.selonGouvernorat}</span>
                 ) : devis.frais_livraison_millimes === 0 ? (
@@ -943,11 +1115,17 @@ function Recap({
                 <dd><Prix millimes={devis.supplement_poids_millimes} /></dd>
               </div>
             ) : null}
+            {devis.code?.applique && devis.code.type !== "livraison" && devis.remise_millimes ? (
+              <div className="tunnel-remise">
+                <dt>{t.promo.ligne(devis.code.code)}</dt>
+                <dd>−<Prix millimes={devis.remise_millimes} /></dd>
+              </div>
+            ) : null}
             <div className="tunnel-total">
               <dt>
                 {t.commande.total} <span className="ttc">{t.commande.ttc}</span>
               </dt>
-              <dd><Prix millimes={devis.total_millimes ?? devis.sous_total_millimes} fort /></dd>
+              <dd><Prix millimes={total ?? devis.sous_total_millimes} fort /></dd>
             </div>
           </dl>
         ) : (

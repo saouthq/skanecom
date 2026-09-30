@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ResumeCommande, type CommandeMienne } from "./Compte";
 import { t } from "@/lib/i18n";
 
@@ -20,6 +20,20 @@ export function SuiviCommande({ exemple }: { exemple: string }) {
   const [commande, setCommande] = useState<CommandeMienne | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const resultat = useRef<HTMLDivElement>(null);
+  const champNumero = useRef<HTMLInputElement>(null);
+  const retourAuFormulaire = useRef(false);
+
+  // Le focus suit ce qui remplace l'autre : le résultat quand il paraît (un
+  // lecteur d'écran le lit), le numéro quand on en cherche une autre. Posé au
+  // moment où React attache le bloc, jamais avant : un requestAnimationFrame
+  // lancé après la réponse pouvait passer avant le rendu, et le focus se perdait.
+  useLayoutEffect(() => {
+    if (commande) resultat.current?.focus();
+    else if (retourAuFormulaire.current) {
+      retourAuFormulaire.current = false;
+      champNumero.current?.focus();
+    }
+  }, [commande]);
 
   async function chercher(e: React.FormEvent) {
     e.preventDefault();
@@ -35,7 +49,6 @@ export function SuiviCommande({ exemple }: { exemple: string }) {
       const d = (await r.json()) as Reponse;
       if (d.ok) {
         setCommande(d.commande);
-        requestAnimationFrame(() => resultat.current?.focus());
       } else {
         setCommande(null);
         setErreur(d.raison === "introuvable" ? t.suivi.introuvable : d.raison === "serveur" ? t.suivi.erreur : (d.message ?? t.suivi.erreur));
@@ -53,7 +66,7 @@ export function SuiviCommande({ exemple }: { exemple: string }) {
         <div className="compte-carte" data-statut={commande.statut}>
           <ResumeCommande c={commande} />
         </div>
-        <button type="button" className="btn-lien legende" onClick={() => { setCommande(null); setNumero(""); }}>
+        <button type="button" className="btn-lien legende" onClick={() => { retourAuFormulaire.current = true; setCommande(null); setNumero(""); }}>
           {t.suivi.autre}
         </button>
       </div>
@@ -65,6 +78,7 @@ export function SuiviCommande({ exemple }: { exemple: string }) {
       <div className="champ">
         <label htmlFor="suivi-numero">{t.suivi.numero}</label>
         <input
+          ref={champNumero}
           id="suivi-numero"
           name="numero"
           autoComplete="off"

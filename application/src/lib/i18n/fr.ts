@@ -546,6 +546,38 @@ export const fr = {
     } as Record<string, string>,
   },
 
+  /** Les codes promo (module promotions), au tunnel et sur la page de fin. */
+  promo: {
+    ouvrir: "Vous avez un code promo ?",
+    libelle: "Code promo",
+    appliquer: "Appliquer",
+    verification: "Vérification du code",
+    retirer: "Retirer le code",
+    retirerCourt: "Retirer",
+    ligne: (code: string) => `Code ${code}`,
+    offre: (type: string | null, valeur: number | null, montant: (m: number) => string) =>
+      type === "pourcentage" ? `−${valeur} %` : type === "montant" ? `−${montant(valeur ?? 0)}` : "Livraison offerte",
+    economie: (montant: string) => `Vous économisez ${montant}.`,
+    /** Un montant fixe : il se lit déjà sur la pastille. */
+    deduit: "Déduits de vos articles.",
+    livraisonOfferte: "La livraison vous est offerte.",
+    livraisonAttente: "La livraison vous sera offerte : il reste à choisir votre gouvernorat.",
+    raisons: {
+      inconnu: "Ce code n'existe pas dans cette boutique : vérifiez qu'il est bien écrit.",
+      coupe: "Ce code n'est plus valable.",
+      pas_encore: (jour: string) => `Ce code sera valable à partir du ${jour}.`,
+      expire: "Ce code a expiré.",
+      devis: "Un code promo ne s'applique pas à un devis : son prix est déjà négocié.",
+      epuise: "Ce code a déjà servi autant de fois que prévu.",
+      deja: "Vous avez déjà utilisé ce code : il vaut une fois par client.",
+      minimum: (minimum: string, manque: string) => `Ce code vaut dès ${minimum} d'achat : il vous manque ${manque}.`,
+      retrait: "Le retrait en magasin est déjà gratuit : ce code n'a rien à offrir ici.",
+      offerte: "La livraison vous est déjà offerte : gardez ce code pour une autre fois.",
+    },
+    /** Refusé à la commande (sa limite atteinte entre-temps, déjà servi pour ce numéro). */
+    refuseCommande: (raison: string) => `${raison.replace(/[.\s]*$/, "")}. Le total est recalculé sans lui : vérifiez-le, puis confirmez.`,
+  },
+
   pro: {
     badge: "Pro",
     invitationTitre: "Vous êtes un professionnel ?",

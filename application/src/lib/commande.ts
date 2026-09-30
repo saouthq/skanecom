@@ -56,7 +56,27 @@ export type Devis = {
   economie_pro_millimes?: number | null;
   /** Au tunnel d'un devis (module devis) : son numéro, sa validité, la note. */
   devis?: { numero: string; valide_jusqu_au: string; note: string | null };
+  /** Le code promo tapé (module promotions) : appliqué, ou pourquoi pas. */
+  code?: CodeDevis | null;
+  /** Ce que le code retire (déjà déduit de total_millimes). */
+  remise_millimes?: number;
   total_millimes: number | null;
+};
+
+/** Pourquoi un code tapé ne s'applique pas (private.applique_code). */
+export type RaisonCode =
+  | "inconnu" | "coupe" | "pas_encore" | "expire" | "devis" | "epuise" | "deja" | "minimum" | "retrait" | "offerte";
+
+export type CodeDevis = {
+  code: string;
+  applique: boolean;
+  raison: RaisonCode | null;
+  type: "pourcentage" | "montant" | "livraison" | null;
+  valeur: number | null;
+  minimum_millimes: number | null;
+  manque_millimes: number | null;
+  debut: string | null;
+  fin: string | null;
 };
 
 /** Les raisons de refus de la base, plus deux de la vitrine. */
@@ -64,11 +84,13 @@ export type Raison =
   | "boutique" | "cle" | "panier" | "contact" | "adresse" | "compte" | "stock" | "total"
   | "en_attente" | "bloque" | "paiement" | "conditions" | "retrait" | "reseau" | "inconnue"
   // Le devis accepté (module devis) : introuvable, expiré, déjà accepté, module coupé.
-  | "devis" | "expire" | "deja" | "module";
+  | "devis" | "expire" | "deja" | "module"
+  // Le code promo, refusé à la commande alors que l'acheteur l'avait vu appliqué.
+  | "code";
 
 const RAISONS: Raison[] = [
   "boutique", "cle", "panier", "contact", "adresse", "compte", "stock", "total", "en_attente", "bloque", "paiement", "conditions", "retrait",
-  "devis", "expire", "deja", "module",
+  "devis", "expire", "deja", "module", "code",
 ];
 
 export function raisonDe(indice: string | null | undefined): Raison {
@@ -110,6 +132,8 @@ export type CommandeSuivie = {
   sous_total_millimes: number;
   frais_livraison_millimes: number;
   remise_millimes: number;
+  /** Le code promo appliqué (module promotions). */
+  code_promo: string | null;
   total_millimes: number;
   lignes: LigneSuivie[];
 };
@@ -117,6 +141,9 @@ export type CommandeSuivie = {
 /** Le cookie qui garde « numéro.jeton » de la dernière commande, pour la
  *  page de fin (HttpOnly : aucun script ne le lit). */
 export const COOKIE_COMMANDE = "skanecom_commande";
+
+/** Un code promo tel que l'acheteur le tape (la base le range en capitales). */
+export const SAISIE_CODE = /^[A-Za-z0-9 _-]{1,40}$/;
 
 /** Un numéro de devis (DEV-00012). */
 export const NUMERO_DEVIS = /^DEV-\d{5,}$/;
@@ -168,6 +195,26 @@ export function cleDeCommande(boutique: string, empreinte: string): string {
     window.sessionStorage.setItem(cleStockage(boutique), JSON.stringify({ empreinte, cle: nouvelle }));
   } catch {}
   return nouvelle;
+}
+
+/* Le code promo appliqué, gardé le temps de la visite (onglet) : revenir au
+   panier puis au tunnel ne le fait pas retaper. Oublié à la commande. */
+const cleCode = (boutique: string) => `skanecom.code.${boutique}`;
+
+export function codeGarde(boutique: string): string | null {
+  try {
+    const c = window.sessionStorage.getItem(cleCode(boutique));
+    return c && SAISIE_CODE.test(c) ? c : null;
+  } catch {
+    return null;
+  }
+}
+
+export function gardeCode(boutique: string, code: string | null): void {
+  try {
+    if (code) window.sessionStorage.setItem(cleCode(boutique), code);
+    else window.sessionStorage.removeItem(cleCode(boutique));
+  } catch {}
 }
 
 export function oublieCleDeCommande(boutique: string): void {

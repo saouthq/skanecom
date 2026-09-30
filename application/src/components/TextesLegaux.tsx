@@ -156,6 +156,21 @@ export function conditionsDeVente(cadre: Cadre): { intro: React.ReactNode; secti
           </p>
         ),
       },
+      ...(cadre.promotions
+        ? [{
+            id: "codes-promo",
+            titre: "Codes promo",
+            corps: (
+              <p>
+                La boutique peut proposer des codes promo, chacun à ses conditions : montant minimum d&apos;achat, dates de validité,
+                nombre d&apos;utilisations, une fois par client. Un seul code par commande ; il s&apos;applique au montant des articles
+                (ou efface les frais de livraison, pour un code de livraison offerte), jamais au prix d&apos;un devis, déjà négocié. La
+                remise est affichée au récapitulatif avant la confirmation et reste acquise à la commande. Une commande annulée rend le
+                code, qui peut servir de nouveau s&apos;il est encore valable.
+              </p>
+            ),
+          }]
+        : []),
       {
         id: "livraison",
         titre: "Livraison",

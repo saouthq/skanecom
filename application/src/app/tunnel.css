@@ -161,6 +161,45 @@ html:has(.tunnel-page, .compte-page) { scroll-padding-block: calc(var(--entete-h
 .tunnel-mode svg { color: var(--theme-encre-doux); }
 .tunnel-rappel { margin: -.25rem 0 0; }
 
+/* --- Le code promo (module promotions) --------------------------------------
+   Replié par défaut : un lien discret, pas un champ vide qui enverrait
+   chercher un code ailleurs. Appliqué : une pastille, le code et ce qu'il
+   offre, et ce qu'on y gagne. */
+.tunnel-promo { margin: 0; }
+.tunnel-promo-ouvrir {
+  display: inline-flex; align-items: center; gap: .5rem; min-block-size: 44px;
+  font-size: .9375rem; color: var(--theme-encre);
+}
+.tunnel-promo-ouvrir svg { color: var(--theme-encre-doux); }
+.tunnel-promo-rangee { display: flex; gap: .5rem; }
+.champ .tunnel-promo-rangee input { flex: 1 1 auto; min-inline-size: 0; text-transform: uppercase; letter-spacing: .04em; }
+.champ .tunnel-promo-rangee input::placeholder { text-transform: none; letter-spacing: 0; }
+.tunnel-promo-rangee > .btn { flex: 0 0 auto; }
+/* Le code et « Retirer » sur la première ligne ; ce qu'on y gagne dessous
+   (sur une ligne, dès que la place le permet). */
+.tunnel-promo-applique {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "puce retirer" "gain gain";
+  align-items: center; gap: .125rem .875rem;
+  padding: .5rem .5rem .625rem 1rem; border-radius: var(--theme-radius-net);
+  border: 1px dashed color-mix(in srgb, var(--theme-succes) 55%, transparent);
+  background: color-mix(in srgb, var(--theme-succes) 7%, var(--theme-fond));
+  outline: none;
+}
+.tunnel-promo-applique:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-succes) 30%, transparent); }
+.tunnel-promo-puce { display: inline-flex; align-items: center; gap: .375rem; color: var(--theme-succes); }
+.tunnel-promo-puce b { font-weight: 600; letter-spacing: .04em; color: var(--theme-encre); }
+.tunnel-promo-puce span { font-weight: 500; }
+.tunnel-promo-puce { grid-area: puce; }
+.tunnel-promo-applique .legende { grid-area: gain; }
+.tunnel-promo-applique .btn-lien { grid-area: retirer; min-block-size: 44px; padding-inline: .5rem; }
+@media (min-width: 700px) {
+  .tunnel-promo-applique { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "puce gain retirer"; padding-block: .375rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tunnel-promo-applique { animation: tunnel-promo-pose .32s var(--theme-courbe) both; }
+  @keyframes tunnel-promo-pose { from { opacity: 0; transform: translateY(4px) scale(.985); } }
+}
+
 .tunnel-envoi { display: grid; gap: .75rem; padding-block-start: 1.25rem; border-block-start: 1px solid var(--theme-filet); }
 
 /* L'accord aux conditions de vente : une case franche, les liens lisibles. */
@@ -241,6 +280,9 @@ html:has(.tunnel-page, .compte-page) { scroll-padding-block: calc(var(--entete-h
 .tunnel-totaux dd { margin: 0; }
 .tunnel-totaux > .tunnel-totaux-detail { margin-block-start: -.25rem; padding-inline-start: .75rem; font-size: .8125rem; }
 .tunnel-totaux-detail dt, .tunnel-totaux-detail dd { color: var(--theme-encre-doux); }
+/* Le code promo : sa remise, en vert ; la livraison qu'il offre, barrée. */
+.tunnel-totaux .tunnel-remise dt, .tunnel-totaux .tunnel-remise dd { color: var(--theme-succes); }
+.tunnel-barre { color: var(--theme-encre-doux); margin-inline-end: .25rem; }
 .tunnel-total { padding-block-start: .875rem; margin-block-start: .375rem; border-block-start: 1px solid var(--theme-filet); }
 .tunnel-total dt { color: var(--theme-encre); font-weight: 500; font-size: 1rem; }
 

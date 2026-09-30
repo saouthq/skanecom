@@ -320,6 +320,95 @@ console.log("\n== 2. Maison Selma, sur téléphone ==");
 }
 
 /* ------------------------------------------------------------------ */
+console.log("\n== 2 bis. Maison Selma : un code promo, au clavier ==");
+{
+  // Selma a le module promotions (supabase/seed-promotions.sql) : BIENVENUE10
+  // (−10 % dès 100 TND, une fois par client), LIVRAISON (offerte dès 150 TND).
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "selma-code-promo");
+  const retirer = () => page.locator(".tunnel-promo-applique").getByRole("button", { name: "Retirer le code" });
+  const dansLeChamp = () => page.evaluate(() => Boolean(document.activeElement?.id?.endsWith("-code")));
+
+  await etape("le code, replié tant qu'on n'en a pas", async () => {
+    await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
+    await clic(page, page.locator(".valeur", { hasText: /^M$/ }));
+    await clic(page, page.locator(".achat .btn-ajout"));
+    await page.locator(".confirmation-ajout").waitFor({ timeout: 3000 });
+    await clic(page, page.locator(".confirmation-ajout").getByRole("link", { name: /^Commander/ }));
+    await page.waitForURL(/\/commande$/);
+    await page.locator(".tunnel-totaux").waitFor();
+    await confirmeNumero(page, "20555999", "20 555 999");
+    await remplitAdresse(page, { nom: "Emna Trabelsi", adresse: "8 rue d'Alger", ville: "Tunis", gouvernorat: "Tunis" });
+    const lien = page.locator(".tunnel-promo-ouvrir");
+    verifie((await lien.innerText()).includes("Vous avez un code promo ?") && (await page.locator(".tunnel-promo input").count()) === 0,
+      "un lien discret, pas un champ vide qui enverrait chercher un code ailleurs");
+    await lien.focus();
+    await page.keyboard.press("Enter");
+    await pause(150);
+    verifie(await dansLeChamp(), "Entrée l'ouvre, le focus dans le champ");
+  });
+
+  await etape("un code inconnu, puis BIENVENUE10", async () => {
+    await tape(page, "noel");
+    await page.keyboard.press("Enter");
+    await page.locator(".tunnel-promo .champ-erreur:not(:empty)").waitFor({ timeout: 5000 });
+    verifie(/\/commande$/.test(page.url()) && (await page.locator(".tunnel-promo .champ-erreur").innerText()).includes("n'existe pas"),
+      "Entrée applique le code sans envoyer la commande ; inconnu, c'est dit sous le champ");
+    await page.keyboard.press("Control+A");
+    await tape(page, "bienvenue10");
+    await page.keyboard.press("Enter");
+    await page.locator(".tunnel-promo-applique").waitFor({ timeout: 5000 });
+    verifie((await page.locator(".tunnel-promo-applique").innerText()).includes("Vous économisez 22,900"), "tapé en minuscules, reconnu : −10 %, soit 22,900 TND");
+    verifie(await page.evaluate(() => Boolean(document.activeElement?.classList.contains("tunnel-promo-applique"))), "le focus passe à la pastille (lue aux lecteurs d'écran)");
+    const totaux = (await page.locator(".tunnel-totaux").innerText()).replace(/\s+/g, " ");
+    verifie(totaux.includes("Code BIENVENUE10") && totaux.includes("213,100"), `le récapitulatif : la remise, le total (${totaux})`);
+    verifie((await page.locator(".tunnel-bouton").innerText()).includes("213,100"), "le bouton annonce le montant remisé");
+    await capture(page, "selma-code-promo");
+  });
+
+  await etape("la livraison offerte, puis la commande", async () => {
+    await clic(page, retirer());
+    await pause(150);
+    verifie(await dansLeChamp(), "retiré : le focus revient au champ");
+    await page.keyboard.press("Control+A");
+    await tape(page, "LIVRAISON");
+    await page.keyboard.press("Enter");
+    await page.locator(".tunnel-promo-applique").waitFor({ timeout: 5000 });
+    verifie((await page.locator(".tunnel-total").innerText()).includes("229,000") && (await page.locator(".tunnel-livraison").innerText()).includes("Offerte"),
+      "LIVRAISON : les frais s'effacent (229,000 TND)");
+    await clic(page, retirer());
+    await pause(150);
+    await page.keyboard.press("Control+A");
+    await tape(page, "BIENVENUE10");
+    await page.keyboard.press("Enter");
+    await page.locator(".tunnel-promo-applique").waitFor({ timeout: 5000 });
+    await page.locator(".tunnel-conditions input[type=checkbox]").check();
+    await clic(page, page.locator(".tunnel-bouton"));
+    await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
+    await page.locator(".merci").waitFor();
+    const recap = (await page.locator(".merci-recap").innerText()).replace(/\s+/g, " ");
+    verifie(recap.includes("Code BIENVENUE10") && recap.includes("213,100"), "la page de fin : le code, la remise, le total");
+    await capture(page, "selma-code-promo-merci");
+  });
+
+  await etape("une fois par client", async () => {
+    await page.goto(S + "/produit/robe-longue-boheme", { waitUntil: "networkidle" });
+    await clic(page, page.locator(".valeur", { hasText: /^M$/ }));
+    await clic(page, page.locator(".achat .btn-ajout"));
+    await page.goto(S + "/commande", { waitUntil: "networkidle" });
+    await page.locator(".tunnel-totaux").waitFor();
+    await clic(page, page.locator(".tunnel-promo-ouvrir"));
+    await pause(150);
+    await tape(page, "BIENVENUE10");
+    await page.keyboard.press("Enter");
+    await page.locator(".tunnel-promo .champ-erreur:not(:empty)").waitFor({ timeout: 5000 });
+    verifie((await page.locator(".tunnel-promo .champ-erreur").innerText()).includes("déjà utilisé"), "le même compte ne le reprend pas : « déjà utilisé »");
+  });
+  await ctx.close();
+}
+
+/* ------------------------------------------------------------------ */
 console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==");
 {
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });

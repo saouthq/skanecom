@@ -82,6 +82,9 @@ export type Cadre = {
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
+  /** Les codes promo (module promotions) : le champ « Vous avez un code ? »
+   *  du tunnel. */
+  promotions: boolean;
   /** Les pages publiées de la boutique, dans son ordre (migration 43). */
   pages: PageDeBoutique[];
   /** Ses comptes Instagram, Facebook, TikTok (réglages contact.*). */
@@ -177,6 +180,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     devis: modules.includes("devis"),
     achatExpress: reglage<boolean>(reglages, "commande.achat_express", false) === true,
     avis: modules.includes("avis"),
+    promotions: modules.includes("promotions"),
     pages: brut.pages ?? [],
     reseaux: reseauxDe(reglages),
     horaires: texteDe("contact.horaires") || null,

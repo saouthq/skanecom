@@ -36,6 +36,7 @@ const num = (n) => `MAY-${annee}-${String(n).padStart(5, "0")}`;
 const attendue = (url) => url.includes("/gestion/maison-selma");
 await sansDoubleAuthentification("gerant@maymar.test");
 await sansDoubleAuthentification("gerant@quincaillerie.test");
+await sansDoubleAuthentification("gerant@selma.test");
 const navigateur = await t.navigateur();
 
 /* TOTP (RFC 6238), le même calcul que parcours-console.mjs. */
@@ -1344,6 +1345,81 @@ console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoy
   await ctx.close();
 }
 
+console.log("\n== 4 bis. La gérante de Maison Selma : les codes promo ==");
+{
+  // Selma a le module promotions (supabase/seed-promotions.sql). En CI, le
+  // parcours de commande a pu se servir de BIENVENUE10 avant : rien ici ne
+  // compte sur ses chiffres, seulement sur ceux des soldes de l'été (finis).
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "gerante-selma");
+  const carte = (code) => page.locator(".pm-carte", { has: page.locator(".pm-ticket", { hasText: new RegExp(`^${code}$`) }) });
+  const nouveau = () => page.locator("#nouveau form");
+
+  await etape("connexion, double authentification", async () => {
+    await connexion(page, "gerant@selma.test");
+    await page.waitForURL(/double-authentification/, { timeout: 15000 });
+    const secret = (await page.locator("[data-secret-totp]").textContent()).trim();
+    await clic(page, page.locator("#code"));
+    await tape(page, totp(secret));
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/gestion\/maison-selma$/, { timeout: 15000 });
+    verifie(true, "la gérante de Maison Selma entre dans son backoffice");
+  });
+
+  await etape("ses codes, et ce qu'ils ont rapporté", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Codes promo" }));
+    await page.waitForURL(/\/promotions$/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".pm-section").first().locator(".pm-carte").count()) >= 4, "les codes en cours d'abord (quatre au jeu de démo)");
+    verifie((await carte("VENTE-PRIVEE").locator(".ui-etat").innerText()).includes("Programmé"), "la vente privée attend son premier jour : programmée");
+    const ete = (await carte("ETE25").innerText()).replace(/\s+/g, " ");
+    verifie(ete.includes("Terminé") && ete.includes("3 commandes") && ete.includes("184,250"), `les soldes de l'été : finis, trois commandes, la remise accordée (${ete.slice(0, 140)})`);
+    verifie((await carte("ETE25").getByRole("button", { name: "Couper" }).count()) === 0 && (await carte("ETE25").getByRole("button", { name: "Retirer" }).count()) === 0,
+      "un code fini par ses dates se règle (pour le prolonger) ; il a servi : il ne se retire pas");
+    const partage = decodeURIComponent((await carte("LIVRAISON").locator("a[href^='https://wa.me/']").getAttribute("href")) ?? "");
+    verifie(partage.includes("code LIVRAISON") && partage.includes("la livraison offerte"), "« Partager » : le message WhatsApp prêt, avec le code et ce qu'il offre");
+    await capture(page, "gestion-codes-promo", true);
+  });
+
+  await etape("un code créé au clavier, coupé, refusé en double, retiré", async () => {
+    await clic(page, nouveau().getByLabel("Le code"));
+    await tape(page, "rentree 15");
+    verifie((await nouveau().getByLabel("Le code").inputValue()) === "RENTREE15", "tapé « rentree 15 » : écrit RENTREE15, en capitales, sans espace");
+    await clic(page, nouveau().getByLabel(/^Un montant/));
+    await clic(page, nouveau().getByLabel("Le montant"));
+    await tape(page, "15");
+    await clic(page, nouveau().getByLabel(/^Dès/));
+    await tape(page, "120");
+    await t.envoie(page, nouveau().getByRole("button", { name: "Créer le code" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("Code RENTREE15 créé"), "créé : la page le dit");
+    // Le défilement vers le code est doux (sauf « réduire les animations ») :
+    // on le laisse arriver, comme l'œil qui le suit.
+    const vu = await page.waitForFunction(() => {
+      const c = document.activeElement?.closest(".pm-carte");
+      const r = c?.getBoundingClientRect();
+      return Boolean(c?.textContent?.includes("RENTREE15") && r && r.top >= 0 && r.bottom <= innerHeight);
+    }, null, { timeout: 3000, polling: 100 }).then(() => true, () => false);
+    verifie(vu, "l'écran va au code créé, en haut de la liste, et le focus aussi");
+    verifie((await carte("RENTREE15").innerText()).includes("−15,000 TND") && (await carte("RENTREE15").innerText()).includes("dès 120,000 TND"), "ce qu'il offre, à quelle condition");
+    await t.envoie(page, carte("RENTREE15").getByRole("button", { name: "Couper" }));
+    verifie((await carte("RENTREE15").locator(".ui-etat").innerText()).includes("Coupé"), "coupé : il passe avec les codes finis, « Réactiver » à la place");
+    await clic(page, nouveau().getByLabel("Le code"));
+    await tape(page, "rentree15");
+    await clic(page, nouveau().getByLabel(/^Un pourcentage/));
+    await clic(page, nouveau().getByLabel("La remise"));
+    await tape(page, "5");
+    await t.envoie(page, nouveau().getByRole("button", { name: "Créer le code" }));
+    verifie((await page.getByRole("alert").first().innerText()).includes("existe déjà"), "le même code deux fois : refusé");
+    await t.envoie(page, carte("RENTREE15").getByRole("button", { name: "Retirer" }));
+    verifie((await carte("RENTREE15").count()) === 0 && (await page.locator(".message-succes").first().innerText()).includes("retiré"), "jamais servi : il se retire");
+    const r = await posteBrut(ctx, "/gestion/maison-selma/promotions/action", { geste: "enregistrer", code: "ENORME", type: "pourcentage", valeur: "95" });
+    verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("1 à 90"), `95 % posté à la main : la base refuse (${r.status})`);
+  });
+  await ctx.close();
+}
+
+/* ------------------------------------------------------------------ */
 console.log("\n== 5. Le préparateur d'une autre boutique ==");
 {
   const ctx = await navigateur.newContext({ viewport: { width: 1280, height: 860 }, locale: "fr-FR" });

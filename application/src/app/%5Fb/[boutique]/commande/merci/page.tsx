@@ -163,6 +163,12 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
                     : commande.frais_livraison_millimes === 0 ? t.commande.livraisonOfferte : <Prix millimes={commande.frais_livraison_millimes} />}
                 </dd>
               </div>
+              {commande.remise_millimes > 0 ? (
+                <div className="tunnel-remise">
+                  <dt>{commande.code_promo ? t.promo.ligne(commande.code_promo) : t.promo.libelle}</dt>
+                  <dd>−<Prix millimes={commande.remise_millimes} /></dd>
+                </div>
+              ) : null}
               <div className="tunnel-total">
                 <dt>
                   {t.commande.total} <span className="ttc">{t.commande.ttc}</span>

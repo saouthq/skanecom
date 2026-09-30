@@ -29,17 +29,25 @@ export default async function BackofficeBoutique({
 }) {
   const { slug } = await params;
   const { user, boutique, boutiques } = await exigeMembre(slug);
+  // L'état des modules de la boutique, pour la navigation — en même temps,
+  // pas l'un après l'autre : chaque page du backoffice les attend.
+  const sb = await clientSession();
+  const etat = { p_boutique_id: boutique.boutique_id };
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }] = await Promise.all([
+    sb.rpc("gestion_sav_etat", etat),
+    sb.rpc("gestion_pro_etat", etat),
+    sb.rpc("gestion_devis_etat", etat),
+    sb.rpc("gestion_avis_etat", etat),
+    sb.rpc("gestion_promotions_etat", etat),
+  ]);
   // Le service après-vente, si la boutique a le module : ses demandes à rappeler.
-  const { data: sav } = await (await clientSession()).rpc("gestion_sav_etat", { p_boutique_id: boutique.boutique_id });
   const etatSav = sav as { actif: boolean; nouvelles: number } | null;
   // Les comptes professionnels, si la boutique a le module : les demandes en attente.
-  const { data: pro } = await (await clientSession()).rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id });
   const etatPro = pro as { actif: boolean; demandes: number } | null;
   const badgePro = etatPro?.actif && etatPro.demandes
     ? <span className="app-nav-compte" aria-label={`${etatPro.demandes} demande${etatPro.demandes > 1 ? "s" : ""} de compte pro`}>{etatPro.demandes}</span>
     : undefined;
   // Les devis, si la boutique a le module : ceux à chiffrer.
-  const { data: dv } = await (await clientSession()).rpc("gestion_devis_etat", { p_boutique_id: boutique.boutique_id });
   const etatDevis = dv as { actif: boolean; a_chiffrer: number } | null;
   const badgeDevis = etatDevis?.a_chiffrer
     ? <span className="app-nav-compte" aria-label={`${etatDevis.a_chiffrer} à chiffrer`}>{etatDevis.a_chiffrer}</span>
@@ -48,13 +56,17 @@ export default async function BackofficeBoutique({
     ? [{ href: `/gestion/${slug}/devis`, libelle: "Devis", icone: "fichier" as const, extra: badgeDevis }]
     : [];
   // Les avis clients, si la boutique a le module : ceux à relire.
-  const { data: av } = await (await clientSession()).rpc("gestion_avis_etat", { p_boutique_id: boutique.boutique_id });
   const etatAvis = av as { actif: boolean; a_moderer: number } | null;
   const badgeAvis = etatAvis?.a_moderer
     ? <span className="app-nav-compte" aria-label={`${etatAvis.a_moderer} avis à relire`}>{etatAvis.a_moderer}</span>
     : undefined;
   const lienAvis = etatAvis?.actif || etatAvis?.a_moderer
     ? [{ href: `/gestion/${slug}/avis`, libelle: "Avis", icone: "etoile" as const, extra: badgeAvis }]
+    : [];
+  // Les codes promo, si la boutique a le module (ou en a eu) : la direction.
+  const etatPromo = pm as { actif: boolean; codes: number } | null;
+  const lienPromo = DIRECTION.includes(boutique.role) && (etatPromo?.actif || etatPromo?.codes)
+    ? [{ href: `/gestion/${slug}/promotions`, libelle: "Codes promo", icone: "etiquette" as const }]
     : [];
   const badgeSav = etatSav?.nouvelles
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
@@ -77,6 +89,7 @@ export default async function BackofficeBoutique({
     { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
     { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
     ...lienAvis,
+    ...lienPromo,
     ...(etatSav?.actif
       ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
       : []),

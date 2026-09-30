@@ -68,6 +68,7 @@ export default async function Commande({
         retrait={cadre.retrait}
         devisNumero={devis}
         express={express}
+        codesPromo={cadre.promotions}
       />
     </Gabarit>
   );

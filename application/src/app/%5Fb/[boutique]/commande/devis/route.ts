@@ -1,10 +1,10 @@
 import { chargeCadre } from "@/lib/boutique";
 import { clientAcheteur } from "@/lib/supabase-acheteur";
-import { NUMERO_DEVIS, raisonDe, type ReponseDevis } from "@/lib/commande";
+import { NUMERO_DEVIS, SAISIE_CODE, raisonDe, type ReponseDevis } from "@/lib/commande";
 
 /* Le devis de la page de commande : le panier du navigateur, relu par la base
    (public.devis_commande) — prix, stock, frais du gouvernorat choisi (ou
-   retrait en magasin, gratuit), total. Rien n'est mis en cache : c'est le
+   retrait en magasin, gratuit), le code promo tapé, total. Rien n'est mis en cache : c'est le
    panier d'une personne — lu avec sa session, comme la commande (un pro
    validé y voit ses prix pro, module comptes_pro). */
 
@@ -19,16 +19,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   const cadre = await chargeCadre(boutique);
   if (!cadre) return reponse({ ok: false, raison: "boutique", message: "Boutique introuvable" }, 404);
 
-  const corps = (await req.json().catch(() => null)) as { lignes?: unknown; gouvernorat?: unknown; mode?: unknown; devis?: unknown } | null;
+  const corps = (await req.json().catch(() => null)) as { lignes?: unknown; gouvernorat?: unknown; mode?: unknown; devis?: unknown; code?: unknown } | null;
   const sb = await clientAcheteur();
   const gouvernorat = typeof corps?.gouvernorat === "string" && corps.gouvernorat ? corps.gouvernorat : null;
   const mode = corps?.mode === "retrait" ? "retrait" : "domicile";
   // Le tunnel d'un devis (module devis) : ses lignes, ses prix et ses frais,
   // pour son client connecté seulement.
   const devis = typeof corps?.devis === "string" && NUMERO_DEVIS.test(corps.devis) ? corps.devis : null;
+  // Le code promo tapé (module promotions) : la base dit s'il s'applique.
+  const code = typeof corps?.code === "string" && SAISIE_CODE.test(corps.code) ? corps.code : null;
   const { data, error } = devis
     ? await sb.rpc("chiffre_devis", { p_boutique_id: cadre.boutique.id, p_numero: devis, p_gouvernorat: gouvernorat, p_mode: mode })
-    : await sb.rpc("devis_commande", { p_boutique_id: cadre.boutique.id, p_lignes: corps?.lignes ?? [], p_gouvernorat: gouvernorat, p_mode: mode });
+    : await sb.rpc("devis_commande", { p_boutique_id: cadre.boutique.id, p_lignes: corps?.lignes ?? [], p_gouvernorat: gouvernorat, p_mode: mode, p_code: code });
   if (error) {
     const raison = raisonDe(error.hint);
     if (raison === "inconnue") {

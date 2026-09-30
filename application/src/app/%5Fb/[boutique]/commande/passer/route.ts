@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { chargeCadre } from "@/lib/boutique";
 import { clientAcheteur } from "@/lib/supabase-acheteur";
 import { memeOrigine } from "@/lib/origine";
-import { COOKIE_COMMANDE, NUMERO_DEVIS, raisonDe, type Raison, type ReponsePasser } from "@/lib/commande";
+import { COOKIE_COMMANDE, NUMERO_DEVIS, SAISIE_CODE, raisonDe, type Raison, type ReponsePasser } from "@/lib/commande";
 
 /* ============================================================================
    PASSER COMMANDE — la page envoie le panier, le contact, l'adresse et le
@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 const STATUTS: Partial<Record<Raison, number>> = {
   boutique: 404, compte: 401, bloque: 403, en_attente: 429, stock: 409, total: 409, cle: 409,
-  devis: 404, expire: 410, deja: 409, module: 404,
+  devis: 404, expire: 410, deja: 409, module: 404, code: 409,
 };
 
 function reponse(corps: ReponsePasser, statut = 200): Response {
@@ -38,6 +38,8 @@ type Corps = {
   devis?: unknown;
   /** « express » : l'achat express d'une fiche (le panier n'est pas vidé). */
   origine?: unknown;
+  /** Le code promo tapé (module promotions). */
+  code?: unknown;
 };
 
 export async function POST(req: Request, { params }: { params: Promise<{ boutique: string }> }) {
@@ -71,6 +73,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
         p_livraison: corps.livraison ?? {},
         p_total_attendu_millimes: Math.round(corps.total),
         p_note: typeof corps.note === "string" ? corps.note : null,
+        p_code: typeof corps.code === "string" && SAISIE_CODE.test(corps.code) ? corps.code : null,
       });
   if (error) {
     const raison = raisonDe(error.hint);

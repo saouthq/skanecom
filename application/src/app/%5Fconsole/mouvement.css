@@ -117,6 +117,14 @@ html[data-vt-geste]::view-transition-image-pair(*.porte) { border-radius: 10px; 
 @keyframes vt-ligne-entre { from { opacity: 0; transform: translateY(8px); } }
 @keyframes vt-message { from { opacity: 0; transform: translateY(-8px); } }
 
+/* La ligne que le geste vient de créer ou de déplacer (Retours.tsx :
+   data-geste-cible) : un halo d'accent qui s'éteint. */
+.console [data-geste-cible] { animation: geste-cible 1.6s cubic-bezier(.2, .8, .2, 1) both; outline: none; }
+@keyframes geste-cible {
+  0%, 35% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-accent) 35%, transparent), var(--ui-ombre-s); }
+  100% { box-shadow: 0 0 0 3px transparent, var(--ui-ombre-s); }
+}
+
 /* ---- Réduire les animations ---- */
 @media (prefers-reduced-motion: reduce) {
   .console *, .console *::before, .console *::after {

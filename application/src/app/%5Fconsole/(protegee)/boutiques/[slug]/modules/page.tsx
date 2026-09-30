@@ -29,6 +29,8 @@ const ICONES: Record<string, NomIcone> = {
   sav: "reglages",
   comptes_pro: "personne",
   devis: "fichier",
+  avis: "etoile",
+  promotions: "etiquette",
 };
 
 export default async function Modules({ params, searchParams }: {

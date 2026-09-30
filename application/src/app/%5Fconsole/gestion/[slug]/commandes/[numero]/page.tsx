@@ -61,6 +61,8 @@ type Fiche = {
   sous_total_millimes: number;
   frais_livraison_millimes: number;
   remise_millimes: number;
+  /** Le code promo appliqué (module promotions). */
+  code_promo: string | null;
   total_millimes: number;
   transporteur: string | null;
   numero_suivi: string | null;
@@ -587,6 +589,12 @@ export default async function FicheCommande({
                   <dt>{retrait ? "Retrait en magasin" : `Livraison${f.livraison.zone ? ` (${f.livraison.zone})` : ""}`}</dt>
                   <dd>{retrait ? "Gratuit" : f.frais_livraison_millimes === 0 ? "Offerte" : <Prix millimes={f.frais_livraison_millimes} />}</dd>
                 </div>
+                {f.remise_millimes > 0 ? (
+                  <div className="bo-remise">
+                    <dt>{f.code_promo ? <>Code promo <span className="pm-ticket pm-ticket-petit">{f.code_promo}</span></> : "Remise"}</dt>
+                    <dd>−<Prix millimes={f.remise_millimes} /></dd>
+                  </div>
+                ) : null}
                 <div className="bo-total">
                   <dt>{retrait ? "À encaisser au retrait" : "À encaisser à la livraison"}</dt>
                   <dd><Prix millimes={f.total_millimes} fort /></dd>

@@ -13,6 +13,8 @@ export const LIBELLES_MODULES: Record<string, string> = {
   sav: "Service après-vente",
   comptes_pro: "Comptes professionnels",
   devis: "Demande de devis",
+  avis: "Avis clients",
+  promotions: "Codes promo",
 };
 
 export const LIBELLES_THEME: Record<string, string> = {

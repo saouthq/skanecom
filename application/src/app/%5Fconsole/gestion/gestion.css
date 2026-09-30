@@ -1364,3 +1364,64 @@ a.pg-titre:hover { color: var(--ui-accent); }
   .pg-ligne:target { animation: none; }
   .pg-modele:hover { transform: none; }
 }
+
+/* =========================================================================
+   CODES PROMO (module promotions) — chaque code comme un ticket : le code en
+   pointillés, ce qu'il offre en grand, ses conditions sur une ligne, ce
+   qu'il a rapporté ; les gestes au pied. Deux colonnes sur ordinateur.
+   ========================================================================= */
+.pm-synthese { padding: .875rem 1.25rem; font-size: .875rem; color: var(--ui-texte-2); }
+.pm-synthese-ligne { margin: 0; overflow: hidden; }
+.pm-synthese b { color: var(--ui-texte); font-weight: 600; }
+.pm-section { display: grid; gap: .75rem; }
+.pm-titre { display: flex; align-items: center; gap: .5rem; font-size: .8125rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ui-texte-2); }
+.pm-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: .875rem; }
+@media (min-width: 1000px) { .pm-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pm-carte { display: grid; gap: .625rem; align-content: start; padding: 1.125rem 1.25rem; scroll-margin-block-start: 5rem; }
+.pm-carte[data-etat="termine"], .pm-carte[data-etat="coupe"] { background: var(--ui-doux); }
+.pm-carte[data-etat="termine"] .pm-offre, .pm-carte[data-etat="coupe"] .pm-offre { color: var(--ui-texte-2); }
+.pm-tete { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.pm-ticket {
+  display: inline-flex; align-items: center; padding: .25rem .625rem; border-radius: 6px;
+  border: 1.5px dashed var(--ui-bord-fort); background: var(--ui-panneau);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .875rem; font-weight: 600; letter-spacing: .06em;
+  color: var(--ui-texte);
+}
+.pm-ticket-petit { padding: .0625rem .375rem; font-size: .75rem; margin-inline-start: .25rem; }
+.pm-offre { margin: 0; font-size: 1.5rem; font-weight: 650; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.pm-conditions { margin: 0; font-size: .8125rem; color: var(--ui-texte-2); overflow: hidden; }
+.pm-chiffres { display: grid; gap: .375rem; font-size: .8125rem; color: var(--ui-texte-2); overflow: hidden; }
+.pm-chiffres p { margin: 0; }
+.pm-chiffres b { color: var(--ui-texte); font-weight: 600; }
+.pm-jauge { display: block; block-size: 4px; border-radius: 999px; background: var(--ui-doux); overflow: hidden; }
+.pm-jauge > span { display: block; block-size: 100%; border-radius: inherit; background: var(--ui-vert); }
+.pm-carte[data-etat="epuise"] .pm-jauge > span { background: #B45309; }
+.pm-note { display: flex; align-items: center; gap: .375rem; margin: 0; }
+.pm-gestes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; padding-block-start: .75rem; margin-block-start: .125rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.pm-gestes > form { display: contents; }
+.pm-pli { flex-basis: 100%; order: 9; }
+.pm-pli[open] > summary { margin-block-end: .75rem; }
+.pm-pli::details-content { flex-basis: 100%; min-inline-size: 0; }
+.pm-pli > summary { list-style: none; inline-size: max-content; }
+.pm-pli > summary::-webkit-details-marker { display: none; }
+.pm-pli:not([open]) { flex-basis: auto; order: 0; }
+.pm-nouveau { scroll-margin-block-start: 5rem; }
+.pm-form { display: grid; gap: 1rem; }
+.pm-form > .carte-pied { margin: .25rem -1.25rem -1.25rem; }
+.pm-carte .pm-form > .carte-pied { margin: .25rem 0 0; padding-inline: 0; background: none; border: 0; }
+.pm-types { grid-template-columns: 1fr; }
+@media (min-width: 760px) { .pm-types { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.pm-grille { display: grid; gap: 1rem; }
+@media (min-width: 600px) { .pm-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pm-unite { display: flex; align-items: center; gap: .5rem; max-inline-size: 14rem; }
+.pm-unite > input { flex: 1 1 auto; min-inline-size: 0; }
+.pm-unite > span { font-size: .875rem; color: var(--ui-texte-2); }
+.pm-saisie-code { text-transform: uppercase; letter-spacing: .06em; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.pm-saisie-code::placeholder { letter-spacing: .06em; }
+.pm-verrou { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0; }
+.pm-case { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .625rem; align-items: start; cursor: pointer; }
+.pm-case input { margin-block-start: .1875rem; inline-size: 16px; block-size: 16px; accent-color: var(--ui-texte); }
+.pm-case > span { display: grid; gap: .125rem; }
+.pm-case b { font-weight: 500; font-size: .875rem; }
+.bo-remise dt, .bo-remise dd { color: var(--ui-vert); }
+.bo-remise dt { display: inline-flex; align-items: center; }

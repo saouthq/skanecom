@@ -210,7 +210,11 @@ export function EnvoiFormulaires() {
       // La même page, à l'adresse de retour (le message du geste) : le
       // serveur la rend entière, sans cache (router.refresh), et elle garde
       // sa place. Le fragment (#t-poids) reste : le serveur ne le voit pas.
-      const cible = retourUrl.pathname + retourUrl.search + (retourUrl.hash || window.location.hash);
+      // Celui que le serveur désigne (?ancre=code-…) devient le fragment :
+      // fetch ne rapporte jamais celui d'une redirection.
+      const ancreDemandee = retourUrl.searchParams.get("ancre");
+      if (ancreDemandee) retourUrl.searchParams.delete("ancre");
+      const cible = retourUrl.pathname + retourUrl.search + (ancreDemandee ? `#${ancreDemandee}` : retourUrl.hash || window.location.hash);
       const avant = repere();
       const miseAJour = async () => {
         if (cible !== window.location.pathname + window.location.search + window.location.hash) {
@@ -249,6 +253,21 @@ export function EnvoiFormulaires() {
           if (pli.contains(document.activeElement)) focus = pli.querySelector<HTMLElement>(":scope > summary");
           pli.open = false;
         }
+      }
+
+      // Le serveur dit où regarder (?ancre=code-…) et ce n'est pas là où le geste
+      // s'est fait : un code créé du formulaire du bas apparaît dans la liste,
+      // un code coupé change de section. L'écran y va, le focus aussi, et la
+      // ligne se signale un instant — sinon on ne verrait pas ce qui a changé.
+      const ancre = ancreDemandee ? document.getElementById(ancreDemandee) : null;
+      if (ancre && !retourUrl.searchParams.has("erreur") && !(form.isConnected && ancre.contains(form))) {
+        const r = ancre.getBoundingClientRect();
+        if (r.top < 0 || r.bottom > window.innerHeight) ancre.scrollIntoView({ block: "center", behavior: reduit.matches ? "auto" : "smooth" });
+        if (!ancre.hasAttribute("tabindex")) ancre.setAttribute("tabindex", "-1");
+        ancre.focus({ preventScroll: true });
+        ancre.dataset.gesteCible = "";
+        window.setTimeout(() => delete ancre.dataset.gesteCible, 1800);
+        return;
       }
 
       // Sinon, le focus reste où il était s'il existe encore, ou passe au
