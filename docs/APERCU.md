@@ -47,30 +47,30 @@ Claude, ensuite, depuis sa session :
 3. crée le projet `skanecom-apercu` (région Paris, `eu-west-3`) — fait le 30/09 ;
 4. met l'adresse du projet et sa clé publique dans le workflow — fait.
 
-De nouveau Skander, sur le tableau de bord Supabase du projet, puis dans
-GitHub → dépôt skanecom → Settings → Secrets and variables → Actions → New
-repository secret (ne jamais les donner à personne, ni les coller dans une
-conversation) :
+De nouveau Skander, une fois, dans GitHub → dépôt skanecom → Settings →
+Secrets and variables → Actions → New repository secret (ne jamais les
+donner à personne, ni les coller dans une conversation) :
 
-5. **Project Settings → API Keys → Legacy API Keys** : la clé `service_role`
-   → secret `APERCU_SUPABASE_SERVICE_ROLE_KEY`.
-6. Rien pour la base : le workflow envoie les migrations à la fonction
-   `apercu-installer` du projet (`supabase/functions/apercu-installer`,
-   déployée par Claude, protégée par la même clé `service_role`), qui les
-   joue avec la connexion que Supabase donne à ses fonctions.
-7. Relancer le workflow « Aperçu en ligne » (onglet Actions → Run
-   workflow) : il installe la base et déploie. Puis, dans Supabase :
-   **Authentication → Hooks** : « Send SMS hook » → Postgres →
-   `private.crochet_sms_apercu` ; « Send Email hook » → Postgres →
-   `private.crochet_email_apercu`.
-8. **Authentication → Sign In / Providers** : activer **Phone** (le crochet
-   tient lieu de fournisseur) et laisser **Email** actif.
-9. **Authentication → URL Configuration** : Site URL = l'adresse de la
-   console de l'aperçu ; Redirect URLs = la même, suivie de `/**`.
-10. **Authentication → Users → Add user** : son adresse e-mail et un mot de
-    passe. Claude l'inscrit ensuite comme administrateur de la plateforme ;
-    la double authentification se règle à la première connexion à la
-    console.
+5. `APERCU_SUPABASE_SERVICE_ROLE_KEY` : la clé `service_role` du projet
+   (Project Settings → API Keys → Legacy API Keys) — fait le 30/09.
+6. `SUPABASE_ACCESS_TOKEN` : un jeton d'accès de son compte Supabase
+   (avatar → Account preferences → Access Tokens → Generate new token).
+
+Le workflow fait ensuite tout, à chaque exécution :
+
+- la base : les migrations envoyées à la fonction `apercu-installer`
+  (`supabase/functions/apercu-installer`, déployée par Claude, protégée par
+  la clé `service_role`), le jeu de démo une fois, les crochets des codes ;
+- l'authentification, par l'API de gestion de Supabase : crochets « Send
+  SMS » et « Send Email » vers `private.crochet_sms_apercu` et
+  `private.crochet_email_apercu`, connexion par téléphone, adresse de la
+  console et adresses de retour, codes à six chiffres valables 24 heures ;
+- l'administrateur (`APERCU_ADMIN_EMAIL`) : invité par un vrai e-mail
+  (`supabase/apercu/invitation.html`, envoyé par le serveur d'e-mails de
+  Supabase, réservé aux membres de l'organisation) s'il n'a pas de compte,
+  puis inscrit dans `plateforme.administrateurs`. Lien périmé : relancer le
+  workflow avec « Renvoyer l'invitation ». La double authentification se
+  règle à la première connexion à la console.
 
 Le jeton Cloudflare du dépôt (ajouté le 29/09) expire fin octobre : le
 renouveler avec le modèle « Edit Cloudflare Workers ».

@@ -19,6 +19,9 @@
 # Secrets requis (Settings → Secrets and variables → Actions) :
 #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID   — déjà là (29/09)
 #   APERCU_SUPABASE_SERVICE_ROLE_KEY              — la clé service_role (legacy) du projet de l'aperçu
+#   SUPABASE_ACCESS_TOKEN                         — jeton d'accès Supabase (compte de Skander) : les
+#                                                   réglages de l'authentification (crochets des codes,
+#                                                   téléphone, adresses) et l'invitation de l'administrateur
 # Le projet (skanecom-apercu, org SkanEcom, eu-west-3) et sa clé publique
 # sont écrits ci-dessous : publics par nature, ils partent dans le navigateur.
 # Tant qu'un secret manque, le workflow le dit et s'arrête sans erreur.
@@ -38,6 +41,11 @@ on:
       - "outils/apercu/**"
       - ".github/workflows/apercu.yml"
   workflow_dispatch:
+    inputs:
+      reinviter:
+        description: "Renvoyer l'invitation de l'administrateur (lien périmé)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -50,6 +58,10 @@ env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.APERCU_SUPABASE_SERVICE_ROLE_KEY }}
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  APERCU_REF: cxvbjwduaisdkvtfjxph
+  # L'administrateur de la plateforme sur l'aperçu : invité par e-mail une fois.
+  APERCU_ADMIN_EMAIL: skanbenamor12@gmail.com
   NEXT_PUBLIC_SUPABASE_URL: https://cxvbjwduaisdkvtfjxph.supabase.co
   NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dmJqd2R1YWlzZGt2dGZqeHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NzA1OTEsImV4cCI6MjEwNjM0NjU5MX0.tpD2NxLa-RZihUeHTnd6R4jdNT6w1uh3PM-rU02gAMA
   WRANGLER: npx -y wrangler@4
@@ -90,15 +102,7 @@ jobs:
       - name: La base de l'aperçu (migrations, jeu de démo, crochets des codes)
         if: env.PRET == '1'
         run: |
-          installe() {  # genre, nom, fichier, [version]
-            jq -n --arg genre "$1" --arg nom "$2" --arg version "${4:-}" --rawfile requete "$3" \
-              '{genre: $genre, nom: $nom, requete: $requete} + (if $version == "" then {} else {version: $version} end)' > /tmp/envoi.json
-            code=$(curl -sS -o /tmp/reponse.json -w '%{http_code}' -X POST "$NEXT_PUBLIC_SUPABASE_URL/functions/v1/apercu-installer" \
-              -H "authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-              -H "content-type: application/json" --data-binary @/tmp/envoi.json)
-            if [ "$code" != "200" ]; then echo "::error::$2 : HTTP $code $(cat /tmp/reponse.json)"; exit 1; fi
-            echo "$2 : $(cat /tmp/reponse.json)"
-          }
+          . outils/apercu/installe.sh
           for f in supabase/migrations/*.sql; do
             b=$(basename "$f" .sql)
             installe migration "${b#*_}" "$f" "${b%%_*}"
@@ -115,6 +119,66 @@ jobs:
           echo "SOUS=$SOUS" >> "$GITHUB_ENV"
           echo "NEXT_PUBLIC_CONSOLE_HOTE=skanecom-apercu-console.$SOUS.workers.dev" >> "$GITHUB_ENV"
           echo "ANNUAIRE_EN_PLUS={\"skanecom-apercu-maymar.$SOUS.workers.dev\":\"maymar\",\"skanecom-apercu-selma.$SOUS.workers.dev\":\"maison-selma\",\"skanecom-apercu-quincaillerie.$SOUS.workers.dev\":\"quincaillerie-demo\"}" >> "$GITHUB_ENV"
+
+      - name: L'authentification (crochets des codes, téléphone, adresses, administrateur)
+        if: env.PRET == '1' && env.SUPABASE_ACCESS_TOKEN != ''
+        run: |
+          . outils/apercu/installe.sh
+          CONSOLE="https://$NEXT_PUBLIC_CONSOLE_HOTE"
+          reglage() {  # un objet JSON → PATCH /config/auth
+            local code
+            code=$(curl -sS -o /tmp/auth.json -w '%{http_code}' -X PATCH "https://api.supabase.com/v1/projects/$APERCU_REF/config/auth" \
+              -H "authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "content-type: application/json" --data-binary @"$1")
+            # Le message seul : la réponse entière est la configuration, avec ses secrets.
+            if [ "$code" != "200" ]; then echo "::error::Réglages de l'authentification : HTTP $code $(jq -r '.message // .msg // .error // "?"' /tmp/auth.json 2>/dev/null)"; return 1; fi
+          }
+          # L'administrateur : invité s'il n'a pas encore de compte (ou sur demande).
+          code=$(curl -sS -o /tmp/utilisateurs.json -w '%{http_code}' "$NEXT_PUBLIC_SUPABASE_URL/auth/v1/admin/users?per_page=1000" \
+            -H "authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY")
+          if [ "$code" != "200" ]; then echo "::error::Comptes illisibles : HTTP $code"; exit 1; fi
+          INVITER=0
+          if ! jq -e --arg e "$APERCU_ADMIN_EMAIL" '.users | any(.email == $e)' /tmp/utilisateurs.json > /dev/null; then INVITER=1; fi
+          if [ "${{ inputs.reinviter }}" = "true" ]; then INVITER=1; fi
+          # Les réglages. Le crochet des e-mails attend l'invitation : elle part,
+          # elle, par le serveur d'e-mails de Supabase (réservé aux membres de
+          # l'organisation — c'est le cas de l'administrateur).
+          jq -n --arg site "$CONSOLE" --arg sous "$SOUS" --rawfile invitation supabase/apercu/invitation.html --argjson crochet_email "$([ $INVITER = 1 ] && echo false || echo true)" '{
+            site_url: $site,
+            uri_allow_list: ("https://*." + $sous + ".workers.dev/**"),
+            external_email_enabled: true,
+            external_phone_enabled: true,
+            sms_provider: "twilio",
+            sms_twilio_account_sid: "apercu",
+            sms_twilio_auth_token: "apercu",
+            sms_twilio_message_service_sid: "apercu",
+            sms_otp_length: 6,
+            mailer_otp_length: 6,
+            mailer_otp_exp: 86400,
+            hook_send_sms_enabled: true,
+            hook_send_sms_uri: "pg-functions://postgres/private/crochet_sms_apercu",
+            hook_send_email_enabled: $crochet_email,
+            hook_send_email_uri: "pg-functions://postgres/private/crochet_email_apercu",
+            mailer_subjects_invite: "Votre accès à la console SkanEcom",
+            mailer_templates_invite_content: $invitation
+          }' > /tmp/reglages.json
+          reglage /tmp/reglages.json
+          echo "Réglages de l'authentification posés (crochet des e-mails : $([ $INVITER = 1 ] && echo 'après l’invitation' || echo actif))."
+          if [ $INVITER = 1 ]; then
+            jq -n --arg e "$APERCU_ADMIN_EMAIL" '{email: $e}' > /tmp/invitation.json
+            code=$(curl -sS -o /tmp/invite.json -w '%{http_code}' -X POST "$NEXT_PUBLIC_SUPABASE_URL/auth/v1/invite" \
+              -H "authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "content-type: application/json" --data-binary @/tmp/invitation.json)
+            if [ "$code" = "200" ]; then echo "Invitation envoyée à $APERCU_ADMIN_EMAIL." | tee -a "$GITHUB_STEP_SUMMARY"
+            else echo "::warning::Invitation : HTTP $code $(jq -r '.msg // .message // .error_description // "?"' /tmp/invite.json 2>/dev/null)"; fi
+            jq -n '{hook_send_email_enabled: true, hook_send_email_uri: "pg-functions://postgres/private/crochet_email_apercu"}' > /tmp/crochet.json
+            reglage /tmp/crochet.json
+            echo "Crochet des e-mails actif."
+          fi
+          # Administrateur de la plateforme (la double authentification se règle
+          # à sa première connexion à la console).
+          [[ "$APERCU_ADMIN_EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+$ ]] || { echo "::error::Adresse de l'administrateur illisible"; exit 1; }
+          printf "insert into plateforme.administrateurs (user_id, role)\n  select u.id, 'super_admin' from auth.users u where lower(u.email) = lower('%s')\n  on conflict (user_id) do nothing;\n" "$APERCU_ADMIN_EMAIL" > /tmp/administrateur.sql
+          installe script administrateur.sql /tmp/administrateur.sql
 
       - name: Le bucket des photos (R2), public par son adresse r2.dev
         if: env.PRET == '1'

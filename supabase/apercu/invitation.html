@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Votre accès à la console SkanEcom</title>
+</head>
+<!-- APERÇU EN LIGNE : l'invitation de l'administrateur de la plateforme,
+     posée par le workflow (.github/workflows/apercu.yml, modèle « invite »
+     de Supabase Auth). Le lien mène à la page d'accueil de la console, qui
+     fait choisir le mot de passe (app/_console/bienvenue). -->
+<body style="margin:0;padding:0;background:#f4f3f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#1c1b19;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f3f0;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e6e3dc;border-radius:12px;">
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 8px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#8a857b;">SkanEcom · aperçu</p>
+              <p style="margin:0 0 16px;font-size:20px;font-weight:600;line-height:1.3;">Votre accès à la console</p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.5;color:#3d3a34;">Choisissez votre mot de passe : la console des boutiques de démonstration s'ouvre ensuite, et vous règlerez la double authentification à la première connexion.</p>
+              <a href="{{ .SiteURL }}/bienvenue?jeton={{ .TokenHash }}&amp;type=invite&amp;e={{ .Email }}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#1c1b19;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;">Choisir mon mot de passe</a>
+              <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#8a857b;">Le lien vaut 24 heures et ne sert qu'une fois.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
