@@ -351,6 +351,43 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
       "et le retrait en magasin, avec son adresse");
     await capture(page, "quincaillerie-conditions-de-vente");
   });
+
+  await etape("compte professionnel : demandé, validé, prix pro jusqu'au devis", async () => {
+    await page.goto(Q + "/compte", { waitUntil: "networkidle" });
+    const espace = page.locator(".pro-espace");
+    await espace.waitFor({ timeout: 8000 });
+    verifie((await espace.innerText()).includes("Vous êtes un professionnel"), "« Mes commandes » invite à demander un compte pro");
+    await clic(page, espace.getByRole("button", { name: "Demander un compte pro" }));
+    await clic(page, page.getByLabel("Raison sociale"));
+    await tape(page, "Atelier Hédi");
+    await clic(page, espace.getByRole("button", { name: "Envoyer la demande" }));
+    await page.locator(".pro-espace[data-statut=demande]").waitFor({ timeout: 8000 });
+    verifie((await espace.innerText()).includes("Demande envoyée"), "la demande part, la page le dit");
+    await capture(page, "quincaillerie-compte-pro-demande");
+    // La boutique valide (clé de service de l'API locale, comme le ferait le backoffice).
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    const r = await fetch(`${RELAIS}/rest/v1/comptes_pro?raison_sociale=eq.${encodeURIComponent("Atelier Hédi")}`, {
+      method: "PATCH",
+      headers: { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json", prefer: "return=minimal" },
+      body: JSON.stringify({ statut: "valide", decide_le: new Date().toISOString() }),
+    });
+    verifie(r.ok, `la boutique valide le compte (${r.status})`);
+    await page.goto(Q + "/produit/perceuse-visseuse-14v", { waitUntil: "networkidle" });
+    const bloc = page.locator(".fiche-prix-pro");
+    await bloc.waitFor({ timeout: 8000 });
+    const texte = (await bloc.innerText()).replace(/\s+/g, " ");
+    verifie(texte.includes("131,000") && texte.includes("149,000"), `la fiche : le prix pro, le public barré à côté (${texte})`);
+    await capture(page, "quincaillerie-fiche-prix-pro");
+    await clic(page, page.locator(".achat .btn-ajout"));
+    await page.locator(".tiroir-panier[role=dialog]").waitFor();
+    verifie((await page.locator(".tiroir-panier .panier-ligne").first().innerText()).includes("131,000"), "le panier : au prix pro");
+    await clic(page, page.locator(".tiroir-panier").getByRole("link", { name: "Commander" }));
+    await page.waitForURL(/\/commande$/);
+    // Le devis lit la session de l'acheteur, comme la commande : même prix des deux côtés.
+    await page.locator(".tunnel-tarif-pro").waitFor({ timeout: 8000 });
+    verifie((await page.locator(".tunnel-tarif-pro").innerText()).includes("18,000"), "le récapitulatif : tarif pro, 18 TND d'économie");
+    await capture(page, "quincaillerie-tunnel-tarif-pro");
+  });
   await ctx.close();
 }
 

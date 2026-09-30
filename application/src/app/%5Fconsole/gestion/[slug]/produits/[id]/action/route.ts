@@ -67,8 +67,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
         p_quantite_min: minimum,
       });
       if (error) return retour(messageCatalogue(error.hint, error.message));
+      // Le prix pro (module comptes_pro) : seulement si le champ est à l'écran ; vide le retire.
+      let pro: number | null = null;
+      if (f.has("prix_pro")) {
+        const pp = prix(f.get("prix_pro"));
+        if (pp === undefined) return retour("Prix pro illisible : écrivez par exemple 166,000, ou laissez vide. Le reste est enregistré.");
+        const { error: e } = await sb.rpc("gestion_enregistrer_prix_pro", { p_boutique_id: b, p_variante_id: vid, p_prix_pro: pp });
+        if (e) return retour(`${messageCatalogue(e.hint, e.message)}. Le reste est enregistré.`);
+        pro = pp;
+      }
       return retour(
-        `Déclinaison enregistrée : ${formateMontant(p)} TND${minimum && minimum > 1 ? `, ${minimum} pièces au moins par commande` : ""}${f.get("actif") === "1" ? "" : ", hors vente"}.`,
+        `Déclinaison enregistrée : ${formateMontant(p)} TND${pro ? `, ${formateMontant(pro)} TND aux pros` : ""}${minimum && minimum > 1 ? `, ${minimum} pièces au moins par commande` : ""}${f.get("actif") === "1" ? "" : ", hors vente"}.`,
         true,
       );
     }

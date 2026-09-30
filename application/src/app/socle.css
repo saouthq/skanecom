@@ -552,3 +552,44 @@ html:has(.visionneuse[open]) { overflow: hidden; }
 }
 .fiche-livraison svg { flex: none; color: var(--theme-succes); }
 @keyframes fiche-livraison-arrive { from { opacity: 0; transform: translateY(4px); } }
+
+/* --- Comptes professionnels (module comptes_pro) ----------------------------
+   Dans « Mes commandes », l'espace pro ; sur la fiche, le prix pro du client
+   validé, le prix public barré à côté ; au récapitulatif du tunnel, le tarif
+   appliqué et l'économie. Le badge « Pro » à la couleur de la boutique. */
+.pro-badge {
+  display: inline-flex; align-items: center; padding: .125rem .5rem; border-radius: 999px; vertical-align: .125em;
+  background: var(--theme-encre); color: var(--theme-fond); font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+}
+.pro-espace {
+  display: grid; gap: 1rem; margin-block-end: 1.5rem; padding: 1.125rem 1.25rem;
+  border-radius: var(--theme-radius-carte); background: var(--theme-surface);
+  box-shadow: inset 0 0 0 1px var(--theme-filet); animation: fiche-livraison-arrive .5s var(--theme-courbe) backwards;
+}
+.pro-espace[data-statut="valide"] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-accent) 40%, transparent); background: color-mix(in srgb, var(--theme-accent) 6%, var(--theme-surface)); }
+.pro-tete { display: flex; flex-wrap: wrap; align-items: center; gap: .875rem 1rem; }
+.pro-icone {
+  display: grid; place-items: center; flex: none; inline-size: 40px; block-size: 40px; border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent) 14%, var(--theme-surface)); color: var(--theme-encre);
+}
+.pro-texte { flex: 1 1 16rem; min-inline-size: 0; display: grid; gap: .25rem; }
+.pro-texte h2 { margin: 0; font-size: 1rem; font-weight: 600; }
+.pro-ouvrir { flex: none; }
+.pro-formulaire { display: grid; gap: .75rem; padding-block-start: 1rem; border-block-start: 1px solid var(--theme-filet); animation: fiche-livraison-arrive .35s var(--theme-courbe) backwards; }
+.pro-formulaire h3 { margin: 0; font-size: .9375rem; font-weight: 600; }
+.pro-champs { display: grid; gap: .875rem 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+.pro-champ-large { grid-column: 1 / -1; }
+.pro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; }
+
+/* Le prix pro sur la fiche */
+.fiche-prix-pro { display: grid; gap: .25rem; }
+.fiche-prix-pro-tete { display: flex; align-items: center; gap: .5rem; font-size: .8125rem; font-weight: 600; color: var(--theme-encre-doux); }
+.fiche-prix-pro .prix-public { font-size: .875rem; color: var(--theme-encre-doux); }
+.fiche-prix-pro .prix-public s { text-decoration-thickness: 1px; }
+.fiche-prix[data-pro] { animation: fiche-livraison-arrive .45s var(--theme-courbe) backwards; }
+
+/* Le tarif pro au récapitulatif du tunnel */
+.tunnel-tarif-pro { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .625rem; font-size: .8125rem; }
+.tunnel-tarif-pro b { font-weight: 600; color: var(--theme-succes); }
+.tunnel-ligne-public { font-size: .75rem; color: var(--theme-encre-doux); }
+.tunnel-ligne-prix:has(.tunnel-ligne-public) { display: grid; justify-items: end; }

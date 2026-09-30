@@ -31,6 +31,12 @@ export default async function BackofficeBoutique({
   // Le service après-vente, si la boutique a le module : ses demandes à rappeler.
   const { data: sav } = await (await clientSession()).rpc("gestion_sav_etat", { p_boutique_id: boutique.boutique_id });
   const etatSav = sav as { actif: boolean; nouvelles: number } | null;
+  // Les comptes professionnels, si la boutique a le module : les demandes en attente.
+  const { data: pro } = await (await clientSession()).rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id });
+  const etatPro = pro as { actif: boolean; demandes: number } | null;
+  const badgePro = etatPro?.actif && etatPro.demandes
+    ? <span className="app-nav-compte" aria-label={`${etatPro.demandes} demande${etatPro.demandes > 1 ? "s" : ""} de compte pro`}>{etatPro.demandes}</span>
+    : undefined;
   const badgeSav = etatSav?.nouvelles
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
     : undefined;
@@ -48,7 +54,7 @@ export default async function BackofficeBoutique({
         ]
       : []),
     { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
-    { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },
+    { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
     ...(etatSav?.actif
       ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
       : []),
@@ -66,6 +72,9 @@ export default async function BackofficeBoutique({
     ...(PEUT_MODIFIER.includes(boutique.role)
       ? [{ groupe: "Aller à", icone: "colis" as const, href: `/gestion/${slug}/produits/nouveau`, titre: "Nouveau produit" }]
       : []),
+    ...(etatPro?.actif
+      ? [{ groupe: "Aller à", icone: "etoile" as const, href: `/gestion/${slug}/clients/pros`, titre: "Comptes professionnels" }]
+      : []),
   ];
 
   return (
@@ -80,7 +89,7 @@ export default async function BackofficeBoutique({
         lienCommandes,
         { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
         ...(etatSav?.actif ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }] : []),
-        { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },
+        { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
         { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
       ]}
       email={user.email ?? ""}

@@ -866,6 +866,9 @@ function Recap({
                 </span>
                 <span className="tunnel-ligne-prix">
                   {d?.total_ligne_millimes != null ? <Prix millimes={d.total_ligne_millimes} /> : null}
+                  {d?.prix_public_millimes ? (
+                    <s className="tunnel-ligne-public">{formatePrix(d.prix_public_millimes * ligne.quantite)}</s>
+                  ) : null}
                 </span>
               </li>
             );
@@ -874,6 +877,12 @@ function Recap({
 
         {devis ? (
           <dl className="tunnel-totaux">
+            {devis.tarif === "pro" ? (
+              <div className="tunnel-tarif-pro">
+                <dt><span className="pro-badge">{t.pro.badge}</span> {t.pro.tarifApplique}</dt>
+                <dd>{devis.economie_pro_millimes ? <b>{t.pro.economie(formatePrix(devis.economie_pro_millimes))}</b> : null}</dd>
+              </div>
+            ) : null}
             <div>
               <dt>{t.commande.sousTotal}</dt>
               <dd><Prix millimes={devis.sous_total_millimes} /></dd>

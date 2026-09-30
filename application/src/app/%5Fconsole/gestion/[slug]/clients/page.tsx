@@ -32,15 +32,19 @@ export default async function Clients({
   const page = Math.max(1, Number.parseInt(recherche.page ?? "1", 10) || 1);
 
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_liste_clients", {
-    p_boutique_id: boutique.boutique_id,
-    p_filtre: filtre.cle,
-    p_recherche: q || null,
-    p_limite: PAR_PAGE,
-    p_decalage: (page - 1) * PAR_PAGE,
-  });
+  const [{ data, error }, { data: pro }] = await Promise.all([
+    sb.rpc("gestion_liste_clients", {
+      p_boutique_id: boutique.boutique_id,
+      p_filtre: filtre.cle,
+      p_recherche: q || null,
+      p_limite: PAR_PAGE,
+      p_decalage: (page - 1) * PAR_PAGE,
+    }),
+    sb.rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id }),
+  ]);
   if (error) throw new Error(`Clients illisibles : ${error.message}`);
   const liste = data as ListeClients;
+  const etatPro = pro as { actif: boolean; demandes: number } | null;
   const pages = Math.max(1, Math.ceil(liste.total / PAR_PAGE));
   const base = `/gestion/${slug}/clients`;
   const lien = (f: string, p = 1) => `${base}?filtre=${f}${q ? `&q=${encodeURIComponent(q)}` : ""}${p > 1 ? `&page=${p}` : ""}`;
@@ -65,6 +69,21 @@ export default async function Clients({
           </form>
         }
       />
+
+      {etatPro?.actif ? (
+        <Link href={`${base}/pros`} className="carte pro-acces" data-demandes={etatPro.demandes > 0 ? "" : undefined}>
+          <span className="pro-acces-icone" aria-hidden="true"><Icone nom="etoile" taille={18} /></span>
+          <span className="pro-acces-texte">
+            <strong>Comptes professionnels</strong>
+            <span className="discret">
+              {etatPro.demandes > 0
+                ? `${etatPro.demandes} demande${etatPro.demandes > 1 ? "s" : ""} en attente de votre réponse`
+                : "Les demandes, les comptes ouverts, leurs prix pro"}
+            </span>
+          </span>
+          <Icone nom="droite" taille={16} />
+        </Link>
+      ) : null}
 
       <nav className="onglets" aria-label="Filtres des clients">
         {FILTRES_CLIENTS.map((f) => (

@@ -8,6 +8,7 @@ import { LivraisonEstimee } from "./LivraisonEstimee";
 import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
+import { usePrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
 import { etatVariante, minimumVariante, stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
@@ -38,6 +39,7 @@ export function FicheAchat({
   gabarit,
   prixBarres = false,
   delaiJours = null,
+  prixPro = null,
 }: {
   produit: Produit;
   gabarit: CodeTheme;
@@ -46,6 +48,9 @@ export function FicheAchat({
   /** Réglage `catalogue.afficher_prix_barres` : l'ancien prix barré à côté du
    *  prix, ou jamais. */
   prixBarres?: boolean;
+  /** Module comptes_pro : l'identifiant de la boutique, pour lire les prix
+   *  pro du client connecté (un pro validé) ; `null` sans le module. */
+  prixPro?: string | null;
 }) {
   /* L'état de la déclinaison est PARTAGÉ (SelectionVariante.tsx) : le pavé de
      caractéristiques vit ailleurs dans la page et doit suivre le même choix,
@@ -58,6 +63,12 @@ export function FicheAchat({
   const [ajoute, setAjoute] = useState(false);
   const blocAchat = useRef<HTMLDivElement>(null);
   const [barreVisible, setBarreVisible] = useState(false);
+
+  // Le prix pro du client connecté, s'il en est un (lu après l'hydratation :
+  // la page servie est la même pour tous).
+  const prixPros = usePrixPro(prixPro ?? "", [produit.id], Boolean(prixPro));
+  const prixProVariante = variante ? prixPros[variante.id] : undefined;
+  const prixApplique = prixProVariante ?? variante?.prix_millimes ?? 0;
 
   const stock = variante?.stock ?? 0;
   const sousMinimum = Boolean(variante) && stock > 0 && stock < minimum;
@@ -116,7 +127,7 @@ export function FicheAchat({
         sku: variante.sku,
         libelle: libelle(),
         quantite,
-        prixMillimesAjout: variante.prix_millimes,
+        prixMillimesAjout: prixApplique,
         ...(image ? { image } : {}),
         ...(minimum > 1 ? { quantiteMin: minimum } : {}),
       },
@@ -133,11 +144,24 @@ export function FicheAchat({
 
   return (
     <div className="fiche-achat">
-      <div className="fiche-prix">
-        {variante ? <Prix millimes={variante.prix_millimes} fort /> : null}
-        {technique && variante ? <span className="ttc">{t.produit.ttc}</span> : null}
-        {prixBarre ? <s className="prix-barre">{formatePrix(prixBarre)}</s> : null}
-      </div>
+      {variante && prixProVariante !== undefined ? (
+        <div className="fiche-prix fiche-prix-pro" data-pro="">
+          <span className="fiche-prix-pro-tete"><span className="pro-badge">{t.pro.badge}</span> {t.pro.prixPro}</span>
+          <span className="fiche-prix">
+            <Prix millimes={prixProVariante} fort />
+            {technique ? <span className="ttc">{t.produit.ttc}</span> : null}
+          </span>
+          <span className="prix-public">
+            {t.pro.prixPublic} <s>{formatePrix(variante.prix_millimes)}</s>
+          </span>
+        </div>
+      ) : (
+        <div className="fiche-prix">
+          {variante ? <Prix millimes={variante.prix_millimes} fort /> : null}
+          {technique && variante ? <span className="ttc">{t.produit.ttc}</span> : null}
+          {prixBarre ? <s className="prix-barre">{formatePrix(prixBarre)}</s> : null}
+        </div>
+      )}
 
       {produit.options.map((axe) => {
         const valeurs = valeursAxe(produit, axe.cle);
@@ -212,7 +236,7 @@ export function FicheAchat({
           <Lot />
           <span>
             {t.produit.minimum(minimum)}
-            {variante ? <span className="fiche-minimum-prix"> · {formatePrix(variante.prix_millimes * minimum)}</span> : null}
+            {variante ? <span className="fiche-minimum-prix"> · {formatePrix(prixApplique * minimum)}</span> : null}
           </span>
         </p>
       ) : null}
@@ -240,7 +264,7 @@ export function FicheAchat({
         <div className="achat-mobile cache-desktop" role="region" aria-label={t.produit.ajouterAuPanier}>
           <div className="min-w-0 flex-1">
             <p className="legende truncate">{declinaison() || champ(produit, "nom")}</p>
-            {variante ? <Prix millimes={variante.prix_millimes * quantite} /> : null}
+            {variante ? <Prix millimes={prixApplique * quantite} /> : null}
           </div>
           <button type="button" className="btn btn-primaire" data-ajoute={ajoute ? "" : undefined} disabled={!disponible} onClick={auPanier}>
             {ajoute ? <Coche taille={16} /> : null}

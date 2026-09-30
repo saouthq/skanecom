@@ -24,6 +24,8 @@ export type LigneDevis = {
   sku: string | null;
   image: string | null;
   prix_unitaire_millimes: number | null;
+  /** Le prix public, quand le prix pro appliqué est plus bas. */
+  prix_public_millimes?: number | null;
   total_ligne_millimes: number | null;
 };
 
@@ -48,6 +50,10 @@ export type Devis = {
    *  ajoute aux frais — déjà compris dans frais_livraison_millimes. */
   poids_grammes?: number;
   supplement_poids_millimes?: number;
+  /** Module comptes_pro : « pro » quand le prix pro d'un pro validé
+   *  s'applique, et ce qu'il économise sur le prix public. */
+  tarif?: "pro" | "public";
+  economie_pro_millimes?: number | null;
   total_millimes: number | null;
 };
 

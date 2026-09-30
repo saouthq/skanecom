@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 import { chargeCadre } from "@/lib/boutique";
+import { clientAcheteur } from "@/lib/supabase-acheteur";
 import { memeOrigine } from "@/lib/origine";
 import { COOKIE_COMMANDE, raisonDe, type Raison, type ReponsePasser } from "@/lib/commande";
 
@@ -47,17 +47,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   }
 
   const magasin = await cookies();
-  const sb = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    cookies: {
-      getAll: () => magasin.getAll(),
-      // Une session expirée est rafraîchie au passage : les nouveaux jetons
-      // repartent dans la réponse.
-      setAll: (liste) => {
-        for (const { name, value, options } of liste) magasin.set(name, value, options);
-      },
-    },
-    global: { headers: { "x-application-name": "skanecom-vitrine" } },
-  });
+  const sb = await clientAcheteur();
 
   const { data, error } = await sb.rpc("passer_commande", {
     p_boutique_id: cadre.boutique.id,

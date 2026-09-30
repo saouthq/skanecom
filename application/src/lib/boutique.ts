@@ -67,6 +67,9 @@ export type Cadre = {
   /** Le service après-vente (module sav) : la garantie annoncée, en mois
    *  (0 : aucune durée) ; `null` sans le module. */
   sav: { garantieMois: number } | null;
+  /** Les comptes professionnels (module comptes_pro) : demande depuis le
+   *  compte, prix pro lus par le navigateur du pro connecté. */
+  comptesPro: boolean;
 };
 
 type Brut = {
@@ -143,6 +146,7 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
       : null,
     revendeurOfficiel: texteDe("catalogue.revendeur_officiel") || null,
     sav: modules.includes("sav") ? { garantieMois: Number(reglage(reglages, "sav.garantie_mois", 0)) || 0 } : null,
+    comptesPro: modules.includes("comptes_pro"),
   };
 });
 

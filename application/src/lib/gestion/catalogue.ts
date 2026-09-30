@@ -52,6 +52,8 @@ export type Declinaison = {
   poids: number | null;
   /** La quantité minimale d'une commande (1 = à l'unité). */
   minimum: number;
+  /** Le prix des comptes professionnels (module comptes_pro), s'il y en a un. */
+  prix_pro?: number | null;
 };
 
 export type FicheProduit = {

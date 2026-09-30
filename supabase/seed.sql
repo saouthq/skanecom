@@ -778,3 +778,39 @@ begin
   values (b, v_id, v_commande.id, v_commande.total_millimes);
 end
 $$;
+
+-- ---------------------------------------------------------------------
+-- Les comptes professionnels (migration 36) : la quincaillerie a le
+-- module ; ses prix pro, environ 12 % sous le prix public ; un plombier
+-- qui attend sa réponse, une électricienne au compte ouvert.
+-- ---------------------------------------------------------------------
+insert into plateforme.modules_actifs (boutique_id, module) values
+  ('00000000-0000-4000-8000-000000000002', 'comptes_pro');
+
+-- Arrondis au dinar (à 10 millimes sous les 10 TND : la vis au détail).
+insert into public.prix_pro (boutique_id, variante_id, prix_millimes)
+select x.boutique_id, x.id, x.pro
+  from (select v.boutique_id, v.id, v.prix_millimes,
+               (round(v.prix_millimes * 0.88 / p.pas) * p.pas)::bigint as pro
+          from public.variantes v
+          cross join lateral (select case when v.prix_millimes >= 10000 then 1000 else 10 end as pas) p
+         where v.boutique_id = '00000000-0000-4000-8000-000000000002' and v.actif) x
+ where x.pro > 0 and x.pro < x.prix_millimes;
+
+do $$
+declare
+  q constant uuid := '00000000-0000-4000-8000-000000000002';
+  v_id uuid;
+begin
+  insert into public.clients (boutique_id, nom, telephone, created_at)
+  values (q, 'Mourad Ben Salem', '+21698765001', now() - interval '3 hours') returning id into v_id;
+  insert into public.comptes_pro (boutique_id, client_id, raison_sociale, matricule_fiscal, metier, message, demande_le)
+  values (q, v_id, 'Plomberie Ben Salem', '1234567A/M/000', 'Plombier',
+          'Chantiers de sanitaire à Sfax et Gabès : j''achète raccords et visserie chaque semaine.', now() - interval '3 hours');
+
+  insert into public.clients (boutique_id, nom, telephone, created_at)
+  values (q, 'Sonia Trabelsi', '+21622345002', now() - interval '40 days') returning id into v_id;
+  insert into public.comptes_pro (boutique_id, client_id, statut, raison_sociale, matricule_fiscal, metier, demande_le, decide_le)
+  values (q, v_id, 'valide', 'Électricité Trabelsi', '7654321B/A/000', 'Électricienne', now() - interval '40 days', now() - interval '39 days');
+end
+$$;

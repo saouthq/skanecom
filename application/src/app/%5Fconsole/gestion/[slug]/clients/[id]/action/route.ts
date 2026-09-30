@@ -1,10 +1,13 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers } from "@/lib/console/http";
 import { LIBELLES_CONFIANCE, messageClients, type Confiance } from "@/lib/gestion/clients";
+import { messagePro } from "@/lib/gestion/pro";
 
 /* ============================================================================
    LES GESTES SUR UN CLIENT — sa confiance (normal, surveillé, bloqué, avec
-   un motif) et la note de l'équipe. Formulaires HTML ordinaires, réponse par
+   un motif), la note de l'équipe, et son compte professionnel (module
+   comptes_pro : valider, refuser, retirer, rouvrir, ouvrir d'emblée ; depuis
+   la fiche ou depuis la liste des comptes pro, où l'on revient). Formulaires HTML ordinaires, réponse par
    une redirection 303 vers la fiche. La base revérifie le rôle
    (…_gestion_clients.sql).
    ========================================================================== */
@@ -50,6 +53,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       const { error } = await sb.rpc("gestion_note_client", { p_boutique_id: boutique.boutique_id, p_client_id: id, p_note: texte("note") });
       if (error) return r(messageClients(error.hint, error.message));
       return r("Note enregistrée.", true);
+    }
+
+    case "compte_pro": {
+      const depuisListe = texte("depuis") === "pros";
+      const r = depuisListe
+        ? (m: string, ok = false) => vers(`/gestion/${slug}/clients/pros?${new URLSearchParams(ok ? { ok: m } : { erreur: m })}`)
+        : retour("t-pro");
+      const decision = texte("decision");
+      const { error } = await sb.rpc("gestion_decider_compte_pro", {
+        p_boutique_id: boutique.boutique_id, p_client_id: id, p_decision: decision,
+        p_motif: texte("motif") || null, p_statut_vu: texte("statut_vu") || null, p_raison_sociale: texte("raison_sociale") || null,
+      });
+      if (error) return r(messagePro(error.hint, error.message));
+      return r(
+        decision === "valide" ? "Compte professionnel ouvert : ses prix pro s'affichent dès sa prochaine visite."
+        : decision === "refuse" ? "Demande refusée : le client lira votre motif dans son compte."
+        : "Compte professionnel retiré : il repaie le prix public.",
+        true,
+      );
     }
 
     default:

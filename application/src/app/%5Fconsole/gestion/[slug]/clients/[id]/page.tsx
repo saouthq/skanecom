@@ -7,6 +7,8 @@ import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { LIBELLES_ORIGINE_REFUS, libelleStatut, lienAppel, lienWhatsApp, quand, telephoneLisible } from "@/lib/gestion/libelles";
 import { LIBELLES_CONFIANCE, NIVEAUX, PEUT_JUGER, pastilleConfiance, tauxRefus, type FicheClient } from "@/lib/gestion/clients";
+import { CarteComptePro } from "@/components/console/ComptePro";
+import { PEUT_DECIDER_PRO, type FicheComptePro } from "@/lib/gestion/pro";
 
 export const metadata: Metadata = { title: "Client" };
 
@@ -36,6 +38,10 @@ export default async function FicheClientBackoffice({
   if (!data) notFound();
   const c = data as FicheClient;
   if (!parId) redirect(`/gestion/${slug}/clients/${c.id}`);
+  // Le compte professionnel (module comptes_pro) : montré avec le module, ou
+  // s'il en existe un d'avant (module coupé depuis).
+  const { data: pro } = await sb.rpc("gestion_compte_pro", { p_boutique_id: boutique.boutique_id, p_client_id: c.id });
+  const fichePro = pro as FicheComptePro | null;
 
   const juge = PEUT_JUGER.includes(boutique.role);
   const action = `/gestion/${slug}/clients/${c.id}/action`;
@@ -160,6 +166,10 @@ export default async function FicheClientBackoffice({
           </div>
 
           <aside className="pile">
+            {fichePro && (fichePro.actif || fichePro.compte) ? (
+              <CarteComptePro fiche={fichePro} action={action} decide={PEUT_DECIDER_PRO.includes(boutique.role)} maintenant={maintenant} />
+            ) : null}
+
             {/* ---------------- Adresses ---------------- */}
             <section className="carte" aria-labelledby="t-adresses">
               <h2 id="t-adresses" className="carte-titre-icone"><Icone nom="lieu" /> Adresses</h2>

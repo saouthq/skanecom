@@ -49,10 +49,13 @@ export default async function FicheProduitBackoffice({
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const [{ data, error }, { data: technique }] = await Promise.all([
+  const [{ data, error }, { data: technique }, { data: pro }] = await Promise.all([
     sb.rpc("gestion_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_fiche_technique", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
+    sb.rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id }),
   ]);
+  // Le prix pro de chaque déclinaison, avec le module des comptes professionnels.
+  const avecPrixPro = Boolean((pro as { actif: boolean } | null)?.actif);
   if (error) throw new Error(`Produit illisible : ${error.message}`);
   if (!data) notFound();
   const f = data as FicheProduit;
@@ -261,6 +264,14 @@ export default async function FicheProduitBackoffice({
                                      aria-describedby={`min-aide-${v.id}`} />
                               <span id={`min-aide-${v.id}`} className="sr-only">Quantité minimale par commande, 1 pour vendre à l&apos;unité</span>
                             </div>
+                            {avecPrixPro ? (
+                              <div className="champ var-pro">
+                                <label htmlFor={`pro-${v.id}`} title="Le prix des comptes professionnels validés ; vide : ils paient le prix public">
+                                  Prix pro <span className="facultatif">TND</span>
+                                </label>
+                                <input id={`pro-${v.id}`} name="prix_pro" inputMode="decimal" defaultValue={v.prix_pro ? formateMontant(v.prix_pro) : ""} placeholder="—" />
+                              </div>
+                            ) : null}
                             <label className="opt var-actif">
                               <input type="checkbox" name="actif" value="1" defaultChecked={v.actif} /> En vente
                             </label>
@@ -271,6 +282,7 @@ export default async function FicheProduitBackoffice({
                             <div><dt>Prix</dt><dd><Prix millimes={v.prix} /></dd></div>
                             {v.prix_barre ? <div><dt>Prix barré</dt><dd><Prix millimes={v.prix_barre} /></dd></div> : null}
                             {v.minimum > 1 ? <div><dt>Minimum</dt><dd>{v.minimum} pièces</dd></div> : null}
+                            {avecPrixPro && v.prix_pro ? <div><dt>Prix pro</dt><dd><Prix millimes={v.prix_pro} /></dd></div> : null}
                           </dl>
                         )}
                         {stocke ? (

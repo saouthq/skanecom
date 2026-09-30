@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import Image from "next/image";
 import { Coche } from "./Icones";
+import { EspacePro } from "./EspacePro";
 import { Prix } from "./Prix";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import { chiffresTelephone, lieu, telephoneLisible, type Magasin } from "@/lib/commande";
@@ -24,6 +25,10 @@ import { t } from "@/lib/i18n";
    « Un problème avec un article ? » : l'article, le numéro de série, ce qui
    ne va pas (public.sav_demander) ; ses demandes et où elles en sont
    s'affichent en tête (public.mes_sav, sans les notes de l'équipe).
+
+   Avec les comptes professionnels (module comptes_pro), l'espace pro vient
+   sous l'identité : demander un compte, ou lire où en est le sien
+   (EspacePro.tsx).
    ========================================================================== */
 
 type LigneMienne = { id: string; produit_nom: string; variante_libelle: string | null; quantite: number; image: string | null };
@@ -56,7 +61,7 @@ type CommandeMienne = {
 const ATTENTE_RENVOI = 30;
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
-export function Compte({ boutiqueId, sav = false }: { boutiqueId: string; sav?: boolean }) {
+export function Compte({ boutiqueId, sav = false, pro = false }: { boutiqueId: string; sav?: boolean; pro?: boolean }) {
   // undefined : la session n'est pas encore lue.
   const [session, setSession] = useState<{ telephone: string } | null | undefined>(undefined);
   const [commandes, setCommandes] = useState<CommandeMienne[] | null>(null);
@@ -258,6 +263,8 @@ export function Compte({ boutiqueId, sav = false }: { boutiqueId: string; sav?: 
         <p><Coche taille={18} /> <span>{t.compte.connecte(telephoneLisible(session.telephone))}</span></p>
         <button type="button" className="btn-lien legende" onClick={() => void deconnecter()}>{t.compte.deconnexion}</button>
       </div>
+
+      {pro ? <EspacePro boutiqueId={boutiqueId} /> : null}
 
       {erreurListe ? (
         <p className="tunnel-alerte" role="alert">{t.compte.erreur}</p>

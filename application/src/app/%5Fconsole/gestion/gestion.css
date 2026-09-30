@@ -944,3 +944,61 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 }
 .apercu-declinaisons b { color: var(--ui-texte); font-weight: 600; }
 .apercu-declinaisons[data-trop] { background: color-mix(in srgb, #DC2626 8%, transparent); color: #B91C1C; }
+
+/* ---------------------------------------------------------------------------
+   Les comptes professionnels (module comptes_pro) : une carte par demande,
+   la raison sociale d'abord, ce que la boutique sait du client, puis les
+   gestes. « Refuser… » se déplie pour dire pourquoi.
+   --------------------------------------------------------------------------- */
+.pro-liste { display: grid; gap: .75rem; margin-block-start: 1rem; }
+.pro-ligne { display: grid; gap: .875rem; padding: 1rem 1.125rem; animation: ui-monte .35s var(--ui-courbe, ease) backwards; }
+.pro-ligne:nth-child(2) { animation-delay: .04s; } .pro-ligne:nth-child(3) { animation-delay: .08s; } .pro-ligne:nth-child(n+4) { animation-delay: .12s; }
+.pro-ligne[data-statut="demande"] { box-shadow: inset 3px 0 0 var(--ui-ambre), var(--ui-ombre-xs); }
+.pro-ligne-tete { display: flex; align-items: center; gap: .75rem; min-inline-size: 0; }
+.pro-ligne-tete .ui-etat { margin-inline-start: auto; flex: none; }
+.pro-ligne-qui { display: grid; min-inline-size: 0; }
+.pro-ligne-qui strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pro-ligne-qui .discret { font-size: .8125rem; }
+.pro-ligne-qui a { color: inherit; text-decoration: underline; text-decoration-color: var(--ui-bord); text-underline-offset: 2px; }
+.pro-ligne-qui a:hover { text-decoration-color: currentColor; }
+.pro-ligne-faits { display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; margin: 0; }
+.pro-ligne-faits dt { font-size: .75rem; color: var(--ui-texte-3); }
+.pro-ligne-faits dd { margin: 0; font-size: .875rem; font-weight: 500; }
+.pro-refus { color: var(--ui-rouge); font-weight: 500; }
+.pro-ligne-message {
+  margin: 0; padding: .625rem .875rem; border-radius: var(--ui-r); background: var(--ui-survol);
+  font-size: .875rem; color: var(--ui-texte-2); font-style: italic;
+}
+.pro-ligne-gestes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; }
+.pro-refuser > summary { list-style: none; }
+.pro-refuser > summary::-webkit-details-marker { display: none; }
+.pro-refuser[open] { flex: 1 1 24rem; min-inline-size: 0; }
+.pro-refuser[open] > summary { display: none; }
+.pro-refuser-form { display: flex; gap: .5rem; animation: ui-monte .25s var(--ui-courbe, ease) backwards; }
+.pro-refuser-form .entree { flex: 1; min-inline-size: 0; }
+
+/* La carte « Compte professionnel » de la fiche client */
+.pro-fiche-etat { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-block-start: .75rem; }
+.pro-fiche-faits { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .75rem 1rem; margin: .875rem 0 0; }
+.pro-fiche-faits dt { font-size: .75rem; color: var(--ui-texte-3); }
+.pro-fiche-faits dd { margin: 0; font-size: .875rem; font-weight: 500; overflow-wrap: anywhere; }
+.pro-fiche-gestes { display: grid; gap: .625rem; margin-block-start: 1rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.pro-fiche-gestes form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-end; }
+.pro-fiche-gestes .champ { flex: 1 1 14rem; }
+.var-prix .var-pro > label { color: var(--ui-violet, #6D28D9); }
+
+/* L'accès aux comptes pro, en tête de la liste des clients */
+.pro-acces {
+  display: flex; align-items: center; gap: .875rem; margin-block: 0 1rem; padding: .875rem 1rem;
+  color: inherit; text-decoration: none; transition: border-color var(--ui-d2, .2s), box-shadow var(--ui-d2, .2s), transform var(--ui-d2, .2s) var(--ui-courbe, ease);
+}
+.pro-acces:hover { border-color: var(--ui-bord-fort, var(--ui-bord)); box-shadow: var(--ui-ombre-s, var(--ui-ombre-xs)); transform: translateY(-1px); }
+.pro-acces-icone {
+  display: grid; place-items: center; flex: none; inline-size: 36px; block-size: 36px; border-radius: 999px;
+  background: var(--ui-violet-fond); color: var(--ui-violet); box-shadow: inset 0 0 0 1px var(--ui-violet-bord);
+}
+.pro-acces[data-demandes] .pro-acces-icone { background: var(--ui-ambre-fond); color: var(--ui-ambre); box-shadow: inset 0 0 0 1px var(--ui-ambre-bord, var(--ui-ambre)); }
+.pro-acces-texte { flex: 1; display: grid; min-inline-size: 0; }
+.pro-acces-texte strong { font-weight: 600; }
+.pro-acces-texte .discret { font-size: .8125rem; }
+.pro-acces > svg { color: var(--ui-texte-3); flex: none; }
