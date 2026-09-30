@@ -937,6 +937,36 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie(await page.locator(".tb-barres li").count() === 7, "sur 7 jours : sept points");
   });
 
+  await etape("la palette (Ctrl+K) : on tape, on arrive", async () => {
+    await page.goto(`${C}/gestion/maymar`, { waitUntil: "networkidle" });
+    await page.keyboard.press("Control+k");
+    const palette = page.locator("dialog.palette[open]");
+    await palette.waitFor({ timeout: 5000 });
+    verifie((await page.evaluate(() => document.activeElement?.closest("dialog.palette") !== null)), "Ctrl+K ouvre la palette, le curseur dans son champ");
+    verifie((await palette.locator(".palette-option").allInnerTexts()).some((x) => x.includes("Encaissements")), "sans rien taper : les pages du backoffice");
+    await tape(page, "amira");
+    await palette.locator(".palette-option", { hasText: "MAY-" }).first().waitFor({ timeout: 8000 });
+    const trouves = (await palette.locator(".palette-option").allInnerTexts()).map((x) => x.replace(/\s+/g, " "));
+    verifie(trouves.some((x) => x.includes("Amira Chaabane") && x.includes("MAY-")) && trouves.some((x) => x.includes("+216 21 778 804")),
+      `« amira » : sa commande et sa fiche client (${trouves.length} résultats)`);
+    await capture(page, "gestion-palette");
+    await page.keyboard.press("ArrowDown");
+    verifie((await palette.locator(".palette-option[aria-selected=true]").innerText()).includes("+216 21 778 804"), "↓ passe au résultat suivant, le focus reste dans le champ");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/gestion\/maymar\/clients\/[0-9a-f-]{36}$/);
+    verifie((await page.locator("dialog.palette[open]").count()) === 0, "Entrée ouvre la fiche client, la palette se referme");
+    await page.getByRole("button", { name: /Rechercher/ }).first().click();
+    await palette.waitFor();
+    await tape(page, "reglages");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/gestion\/maymar\/reglages$/);
+    verifie(true, "« reglages » (sans accent) : Entrée mène aux réglages — le bouton Rechercher ouvre la même palette");
+    await page.keyboard.press("Control+k");
+    await palette.waitFor();
+    await page.keyboard.press("Escape");
+    verifie((await page.locator("dialog.palette[open]").count()) === 0, "Échap la referme");
+  });
+
   await etape("les encaissements : l'argent resté chez les livreurs", async () => {
     await clic(page, page.locator(".app-cote").getByRole("link", { name: "Encaissements" }));
     await page.waitForURL(/\/gestion\/maymar\/encaissements/);

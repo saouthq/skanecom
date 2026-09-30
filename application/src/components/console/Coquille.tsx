@@ -97,7 +97,7 @@ function Onglets({ liens }: { liens: LienCoquille[] }) {
   );
 }
 
-export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, onglets, email, role, bandeau, children }: {
+export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, onglets, email, role, bandeau, recherche, rechercheCompacte, palette, children }: {
   accueil: string;
   titre: string;
   sousTitre: string;
@@ -111,6 +111,11 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, on
   role: string;
   /** Au-dessus du contenu, sur toutes les pages : l'accès support en cours. */
   bandeau?: React.ReactNode;
+  /** Le bouton de recherche de la barre latérale, et celui de l'en-tête du téléphone. */
+  recherche?: React.ReactNode;
+  rechercheCompacte?: React.ReactNode;
+  /** La fenêtre qu'ils ouvrent (une seule par page). */
+  palette?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const marque = (
@@ -135,12 +140,14 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, on
             </Link>
           ) : null}
         </div>
+        {recherche ? <div className="app-cote-recherche">{recherche}</div> : null}
         <Navigation groupes={groupes} />
         <Compte email={email} role={role} />
       </aside>
 
       <header className="app-haut">
         {marque}
+        {rechercheCompacte ? <span className="app-haut-recherche">{rechercheCompacte}</span> : null}
         <MenuMobile>
           <summary className="btn-icone" aria-label="Menu">
             <Icone nom="menu" taille={20} />
@@ -157,6 +164,7 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, on
         <div className="app-contenu">{children}</div>
       </main>
       {onglets?.length ? <Onglets liens={onglets} /> : null}
+      {palette}
     </div>
   );
 }

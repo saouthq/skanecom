@@ -1,10 +1,13 @@
 import { clientSession, exigeMembre } from "@/lib/console/session";
-import { Coquille } from "@/components/console/Coquille";
+import { Coquille, type LienCoquille } from "@/components/console/Coquille";
 import { CompteurCommandes } from "@/components/console/Veille";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { BandeauSupport } from "@/components/console/AccesSupport";
 import { DIRECTION } from "@/lib/gestion/tableau";
+import { PEUT_MODIFIER, PEUT_STOCKER } from "@/lib/gestion/catalogue";
+import type { ElementPalette } from "@/lib/gestion/palette";
+import { OuvrirPalette, Palette } from "@/components/console/Palette";
 
 /* ============================================================================
    LE BACKOFFICE D'UNE BOUTIQUE — pour son équipe (PRD §6.2), sur téléphone
@@ -36,6 +39,35 @@ export default async function BackofficeBoutique({
     extra: <CompteurCommandes slug={slug} />,
   };
 
+  const liens: LienCoquille[] = [
+    lienCommandes,
+    ...(DIRECTION.includes(boutique.role)
+      ? [
+          { href: `/gestion/${slug}/tableau`, libelle: "Tableau de bord", icone: "graphique" as const },
+          { href: `/gestion/${slug}/encaissements`, libelle: "Encaissements", icone: "billet" as const },
+        ]
+      : []),
+    { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
+    { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },
+    ...(etatSav?.actif
+      ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
+      : []),
+    ...(boutique.role === "proprietaire" || boutique.role === "admin"
+      ? [{ href: `/gestion/${slug}/equipe`, libelle: "Équipe", icone: "equipe" as const }]
+      : []),
+    { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
+  ];
+  // La palette (⌘K) : les pages, puis ce que la recherche trouve.
+  const pages: ElementPalette[] = [
+    ...liens.map((l) => ({ groupe: "Aller à", icone: l.icone, href: l.href, titre: l.libelle })),
+    ...(PEUT_STOCKER.includes(boutique.role)
+      ? [{ groupe: "Aller à", icone: "colis" as const, href: `/gestion/${slug}/produits/reception`, titre: "Réception d'un arrivage" }]
+      : []),
+    ...(PEUT_MODIFIER.includes(boutique.role)
+      ? [{ groupe: "Aller à", icone: "colis" as const, href: `/gestion/${slug}/produits/nouveau`, titre: "Nouveau produit" }]
+      : []),
+  ];
+
   return (
     <Coquille
       accueil={`/gestion/${slug}`}
@@ -43,29 +75,7 @@ export default async function BackofficeBoutique({
       sousTitre="Backoffice"
       logo={boutique.nom.trim().charAt(0).toUpperCase()}
       changer={boutiques.length > 1 ? { href: "/gestion", libelle: "Changer de boutique" } : undefined}
-      groupes={[
-        {
-          titre: "Boutique",
-          liens: [
-            lienCommandes,
-            ...(DIRECTION.includes(boutique.role)
-              ? [
-                  { href: `/gestion/${slug}/tableau`, libelle: "Tableau de bord", icone: "graphique" as const },
-                  { href: `/gestion/${slug}/encaissements`, libelle: "Encaissements", icone: "billet" as const },
-                ]
-              : []),
-            { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
-            { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne" },
-            ...(etatSav?.actif
-              ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
-              : []),
-            ...(boutique.role === "proprietaire" || boutique.role === "admin"
-              ? [{ href: `/gestion/${slug}/equipe`, libelle: "Équipe", icone: "equipe" as const }]
-              : []),
-            { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
-          ],
-        },
-      ]}
+      groupes={[{ titre: "Boutique", liens }]}
       onglets={[
         lienCommandes,
         { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
@@ -77,6 +87,9 @@ export default async function BackofficeBoutique({
       role={boutique.support_jusqu_a
         ? `Support · ${MODES_SUPPORT[boutique.role as ModeSupport]?.court ?? boutique.role}`
         : (LIBELLES_ROLE[boutique.role] ?? boutique.role)}
+      recherche={<OuvrirPalette />}
+      rechercheCompacte={<OuvrirPalette compact />}
+      palette={<Palette slug={slug} pages={pages} />}
       bandeau={boutique.support_jusqu_a ? (
         <BandeauSupport slug={slug} mode={boutique.role as ModeSupport} jusqua={boutique.support_jusqu_a} motif={boutique.support_motif} />
       ) : undefined}
