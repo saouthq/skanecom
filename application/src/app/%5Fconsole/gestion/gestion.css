@@ -421,6 +421,25 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .rg-zone-pied { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
 .rg-zone-gestes { display: inline-flex; align-items: center; gap: .5rem; }
 .rg-vide { padding-block: .5rem 0; }
+/* Le barème du supplément au poids : une ligne par tranche, qui se lit
+   comme une phrase — « jusqu'à [20] kg  + [4,000] TND ». */
+.rg-tranches { border: 0; padding: 0; margin: 0; min-inline-size: 0; }
+.rg-tranche {
+  display: grid; align-items: center; gap: .5rem 1.25rem; padding-block: .75rem;
+  grid-template-columns: minmax(11rem, 1fr) auto auto minmax(8.5rem, auto);
+  border-block-end: 1px solid var(--ui-bord-leger);
+}
+.rg-tranche:first-child { padding-block-start: 0; }
+.rg-tranche > form { display: none; }
+.rg-tranche-plage { display: grid; gap: .0625rem; min-inline-size: 0; font-size: .875rem; font-weight: 500; color: var(--ui-texte); }
+.rg-tranche-plage .aide { font-weight: 400; }
+.rg-borne { display: inline-flex; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--ui-texte-3); white-space: nowrap; }
+.console .rg-borne input { inline-size: 5rem; text-align: end; font-variant-numeric: tabular-nums; }
+.console .rg-borne-tnd input { inline-size: 6.25rem; }
+.rg-tranche-gestes { display: inline-flex; align-items: center; justify-content: flex-end; gap: .25rem; }
+.rg-tranche-ajout { border-block-end: 0; padding-block: 1rem 0; }
+.rg-tranche-ajout .rg-tranche-plage { color: var(--ui-texte-2); }
+.rg-poids-manque { margin-block-end: 1rem; }
 
 .rg-gouvernorats {
   display: grid; gap: .5rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
@@ -460,6 +479,9 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 @media (max-width: 699px) {
   .rg-zone-champs, .rg-zone-ajout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .rg-zone-nom { grid-column: 1 / -1; }
+  .rg-tranche { grid-template-columns: auto auto; justify-content: start; gap: .625rem 1rem; }
+  .rg-tranche-plage, .rg-tranche-gestes { grid-column: 1 / -1; }
+  .rg-tranche-gestes { justify-content: flex-start; }
 }
 
 /* ---- Bordereaux de livraison (deux par A4) ---- */

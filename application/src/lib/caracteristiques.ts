@@ -6,6 +6,11 @@
 
 const NOMBRE = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 4 });
 
+/** Un poids tel qu'on le lit : 800 → « 800 g », 9000 → « 9 kg », 2500 → « 2,5 kg ». */
+export function poidsLisible(grammes: number): string {
+  return grammes < 1000 ? `${grammes} g` : `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(grammes / 1000)} kg`;
+}
+
 /** La valeur d'une caractéristique, à la française, avec son unité. */
 export function valeurAvecUnite(valeur: string, a: { unite?: string | null; type?: string | null } | undefined): string {
   if (!a) return valeur;

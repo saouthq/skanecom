@@ -22,6 +22,7 @@ import {
 } from "@/lib/commande";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
+import { poidsLisible } from "@/lib/caracteristiques";
 import { t } from "@/lib/i18n";
 import type { CodeTheme } from "@/lib/theme";
 
@@ -875,6 +876,12 @@ function Recap({
                 )}
               </dd>
             </div>
+            {devis.mode === "domicile" && devis.supplement_poids_millimes && devis.poids_grammes ? (
+              <div className="tunnel-totaux-detail">
+                <dt>{t.commande.supplementPoids(poidsLisible(devis.poids_grammes))}</dt>
+                <dd><Prix millimes={devis.supplement_poids_millimes} /></dd>
+              </div>
+            ) : null}
             <div className="tunnel-total">
               <dt>
                 {t.commande.total} <span className="ttc">{t.commande.ttc}</span>

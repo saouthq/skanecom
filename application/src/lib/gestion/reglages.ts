@@ -36,6 +36,8 @@ export type Zone = {
 export type EtatReglages = {
   reglages: Reglage[];
   zones: Zone[];
+  /** Le supplément selon le poids : jusqu'à N grammes (null : au-delà). */
+  tranches: { id: string; jusqu_a_grammes: number | null; supplement: number }[];
   gouvernorats: { code: string; nom: string; zone_id: string | null }[];
   journal: { le: string; action: string; cible: string | null; avant: Record<string, unknown> | null; apres: Record<string, unknown> | null; auteur: string | null }[];
 };
@@ -55,6 +57,7 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
     { cle: "livraison.frais_fixes_millimes", genre: "montant" },
     { cle: "livraison.seuil_gratuite_millimes", genre: "montant" },
     { cle: "livraison.transporteur", genre: "texte" },
+    { cle: "livraison.supplement_poids", genre: "booleen" },
   ],
   retrait: [
     { cle: "retrait.adresse", genre: "texte" },
@@ -158,6 +161,7 @@ const LIBELLES_COURTS: Record<string, string> = {
   "livraison.frais_fixes_millimes": "Tarif de livraison",
   "livraison.seuil_gratuite_millimes": "Livraison offerte dès",
   "livraison.transporteur": "Transporteur",
+  "livraison.supplement_poids": "Supplément au poids",
   "paiement.cod_actif": "Paiement à la livraison",
   "paiement.konnect_actif": "Paiement en ligne",
   "catalogue.afficher_prix_barres": "Prix barrés",
@@ -187,6 +191,29 @@ function lisible(cle: string, v: unknown): string {
   return v === "" || v === null || v === undefined ? "vide" : String(v);
 }
 
+/** « jusqu'à 5 kg », « au-delà » : une tranche de poids, en mots. */
+export function libelleTranche(jusquA: number | null | undefined): string {
+  return jusquA === null || jusquA === undefined ? "au-delà" : `jusqu'à ${kilos(jusquA)}`;
+}
+
+/** 5000 → « 5 kg » ; 2500 → « 2,5 kg ». */
+export function kilos(grammes: number): string {
+  return `${kilosChamp(grammes)} kg`;
+}
+
+/** 2500 → « 2,5 », pour un champ en kilos. */
+export function kilosChamp(grammes: number | null | undefined): string {
+  return grammes === null || grammes === undefined ? "" : new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3, useGrouping: false }).format(grammes / 1000);
+}
+
+/** Un poids saisi en kilos : « 2,5 » → 2500 g ; vide → null ; illisible → NaN. */
+export function grammesSaisis(texte: string): number | null {
+  const t = texte.replace(/\s|kg/gi, "").replace(",", ".");
+  if (!t) return null;
+  if (!/^\d+(\.\d{1,3})?$/.test(t)) return Number.NaN;
+  return Math.round(Number(t) * 1000);
+}
+
 /** Une ligne du journal en phrases courtes : « Compte client : obligatoire → invité possible ». */
 export function lignesJournal(e: EtatReglages["journal"][number], zones: Map<string, string>, gouvernorats: Map<string, string>): string[] {
   switch (e.action) {
@@ -198,6 +225,10 @@ export function lignesJournal(e: EtatReglages["journal"][number], zones: Map<str
       return [e.avant ? `Zone « ${e.cible} » modifiée` : `Zone « ${e.cible} » créée, ${formateMontant(Number(e.apres?.frais ?? 0))} TND`];
     case "reglages.zone_supprimee":
       return [`Zone « ${e.cible} » supprimée`];
+    case "reglages.tranche_poids":
+      return [`${e.avant ? "Tranche modifiée" : "Tranche ajoutée"} : ${libelleTranche(e.apres?.jusqu_a_grammes as number | null)}, + ${formateMontant(Number(e.apres?.supplement ?? 0))} TND`];
+    case "reglages.tranche_poids_supprimee":
+      return [`Tranche supprimée : ${libelleTranche(e.avant?.jusqu_a_grammes as number | null)}`];
     case "reglages.gouvernorats":
       return Object.keys(e.apres ?? {}).map((code) => {
         const z = e.apres?.[code] as string | null;
@@ -215,6 +246,8 @@ export function messageReglages(indice: string | undefined, message: string): st
       return "Seuls le propriétaire et l'administrateur changent les réglages.";
     case "module":
       return "Ce réglage dépend d'un module que la boutique n'a pas encore : demandez-le à SkanEcom.";
+    case "trop":
+      return "Douze tranches au plus : regroupez-en.";
     default:
       return message;
   }

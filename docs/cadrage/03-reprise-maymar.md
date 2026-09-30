@@ -273,6 +273,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis l'import des fiches techniques** (migration 28, `20260929102700_import_caracteristiques.sql`, 10 tests dans `supabase/tests/29_import_caracteristiques.sql`) : `console_preparer_import` et `console_appliquer_import` reprises (mêmes signatures) : `caracteristiques` par ligne, concordance entre les lignes d'un produit, caractéristique inconnue signalée, `caracteristiques` et `fiches_techniques` au rapport, fusion dans `produits.caracteristiques` à l'application.
 
+**Puis le supplément au poids** (migration 29, `20260929102800_livraison_poids.sql`, 20 tests dans `supabase/tests/30_livraison_poids.sql`) : réglage `livraison.supplement_poids` (booléen, public, coupé par défaut) ; `public.tranches_poids` (jusqu'à N grammes, `null` = au-delà ; une tranche par borne) ; `private.supplement_poids` ; `frais_livraison_millimes(boutique, gouvernorat, sous_total, poids)` (l'ancienne signature à trois arguments est retirée) ; `private.chiffre_commande` pèse le panier et rend `poids_grammes` et `supplement_poids_millimes` ; `boutique_publique.tranches_poids` (null si coupé) ; `gestion_reglages.tranches`, `gestion_enregistrer_tranche`, `gestion_supprimer_tranche` (propriétaire et administrateur, tracées `reglages.tranche_poids` et `reglages.tranche_poids_supprimee`).
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.

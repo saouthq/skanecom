@@ -41,6 +41,10 @@ export type Devis = {
   /** Le magasin, pour un devis en retrait. */
   retrait: Magasin | null;
   frais_livraison_millimes: number | null;
+  /** Le poids du colis (somme des déclinaisons), et le supplément qu'il
+   *  ajoute aux frais — déjà compris dans frais_livraison_millimes. */
+  poids_grammes?: number;
+  supplement_poids_millimes?: number;
   total_millimes: number | null;
 };
 

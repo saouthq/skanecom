@@ -96,11 +96,11 @@ async function posteBrut(contexte, chemin, formulaire) {
 }
 
 /* Les frais de livraison qu'annonce la base à un acheteur (API publique). */
-async function fraisPour(gouvernorat, sousTotal = 1000) {
+async function fraisPour(gouvernorat, sousTotal = 1000, poids = null) {
   const r = await fetch("http://127.0.0.1:54321/rest/v1/rpc/frais_livraison_millimes", {
     method: "POST",
     headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", "content-type": "application/json" },
-    body: JSON.stringify({ p_boutique_id: "00000000-0000-4000-8000-000000000001", p_gouvernorat_code: gouvernorat, p_sous_total_millimes: sousTotal }),
+    body: JSON.stringify({ p_boutique_id: "00000000-0000-4000-8000-000000000001", p_gouvernorat_code: gouvernorat, p_sous_total_millimes: sousTotal, p_poids_grammes: poids }),
   });
   return r.ok ? Number(await r.json()) : Number.NaN;
 }
@@ -733,6 +733,45 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie((await section("gouvernorats").innerText()).includes("2 au tarif fixe"), "l'écran le signale");
   });
 
+  await etape("le supplément au poids, par tranches", async () => {
+    verifie((await section("poids").innerText()).includes("Non appliqué"), "au départ : le tarif seul, quel que soit le poids");
+    const ajoute = async (kg, tnd) => {
+      await page.locator("#tj-neuve").fill(kg);
+      await page.locator("#ts-neuve").fill(tnd);
+      await envoie(page.getByRole("button", { name: "Ajouter la tranche" }));
+    };
+    await ajoute("5", "0");
+    verifie((await ok()).includes("Tranche « jusqu'à 5 kg » ajoutée"), `« ${await ok()} »`);
+    await ajoute("20", "3,000");
+    await ajoute("", "8");
+    verifie((await ok()).includes("Tranche « au-delà » ajoutée"), `« ${await ok()} »`);
+    await ajoute("5", "1");
+    verifie((await page.getByRole("alert").innerText()).includes("déjà une tranche à ce poids"), "deux tranches au même poids : refusé");
+    const tranches = await section("poids").locator(".rg-tranche:not(.rg-tranche-ajout) .rg-tranche-plage").allInnerTexts();
+    verifie(tranches.length === 3 && tranches[1].includes("Plus de 5 kg, jusqu'à 20 kg") && tranches[2].includes("Plus de 20 kg"),
+      `chaque tranche dit sa plage de poids (${tranches.map((x) => x.replace(/\s*\n\s*/, " · ")).join(" | ")})`);
+    verifie(await fraisPour("sfax", 1000, 30000) === 10000, "préparées, les tranches ne comptent pas encore");
+
+    await clic(page, section("livraison").getByText("Supplément selon le poids du colis"));
+    await envoie(section("livraison").getByRole("button", { name: "Enregistrer" }));
+    verifie((await section("poids").innerText()).includes("Appliqué"), "le supplément s'applique");
+    verifie(await fraisPour("sfax", 1000, 4000) === 10000, "un colis de 4 kg : le tarif de la zone");
+    verifie(await fraisPour("sfax", 1000, 12000) === 13000, `12 kg : + 3,000 TND (${await fraisPour("sfax", 1000, 12000)})`);
+    verifie(await fraisPour("sfax", 1000, 30000) === 18000, "30 kg : la tranche « au-delà »");
+    verifie(await fraisPour("tunis", 320000, 30000) === 0, "offerte dès 300 TND : supplément compris");
+
+    await section("poids").locator("input[name=supplement]").nth(1).fill("4,000");
+    await envoie(section("poids").getByRole("button", { name: "Enregistrer" }).nth(1));
+    verifie((await ok()).includes("Tranche « jusqu'à 20 kg » enregistrée"), `« ${await ok()} »`);
+    verifie(await fraisPour("sfax", 1000, 12000) === 14000, "le nouveau supplément compte aussitôt");
+    const j = await journal();
+    verifie(j.includes("Tranche ajoutée : jusqu'à 20 kg, + 3,000 TND") && j.includes("Tranche modifiée : jusqu'à 20 kg, + 4,000 TND"),
+      "chaque tranche passe au journal");
+    verifie(j.includes("Supplément au poids : non → oui"), "et le réglage aussi");
+    await pause(800);
+    await capture(page, "gestion-reglages-poids");
+  });
+
   await etape("un moyen de paiement qu'on ne coupe pas, un WhatsApp", async () => {
     await clic(page, section("paiement").getByText("Paiement à la livraison"));
     await envoie(section("paiement").getByRole("button", { name: "Enregistrer" }));
@@ -790,7 +829,21 @@ console.log("\n== 2. Le gérant, double authentification ==");
     const cgv = await vitrine.locator("main").innerText();
     verifie(cgv.includes("14 jours ouvrables") && cgv.includes("pris en charge par la boutique") && cgv.includes("contact@maymar.test"),
       "les conditions de vente aussi : 14 jours, retour offert, le courriel");
+    verifie(cgv.includes("Supplément selon le poids du colis") && cgv.includes("Plus de 5 kg, jusqu'à 20 kg"),
+      "et le barème du supplément au poids");
     await vitrine.close();
+  });
+
+  await etape("couper le supplément au poids", async () => {
+    await page.goto(`${C}/gestion/maymar/reglages#t-poids`, { waitUntil: "networkidle" });
+    await clic(page, section("livraison").getByText("Supplément selon le poids du colis"));
+    await envoie(section("livraison").getByRole("button", { name: "Enregistrer" }));
+    verifie((await section("poids").innerText()).includes("Non appliqué"), "de nouveau le tarif seul");
+    for (const nom of ["jusqu'à 5 kg", "jusqu'à 20 kg", "au-delà"]) {
+      await envoie(page.getByRole("button", { name: `Supprimer la tranche ${nom}` }));
+    }
+    verifie((await ok()).includes("Tranche supprimée") && await section("poids").locator(".rg-tranche:not(.rg-tranche-ajout)").count() === 0, "les tranches sont retirées");
+    verifie(await fraisPour("sfax", 1000, 30000) === 7000, "30 kg : le tarif fixe, sans supplément");
   });
 
   await etape("les données de la boutique, dans un tableur", async () => {

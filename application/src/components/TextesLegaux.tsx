@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Cadre } from "@/lib/boutique";
 import { formatePrix } from "@/lib/prix";
+import { poidsLisible } from "@/lib/caracteristiques";
 import { identiteLegale, moyensDeContact, numeroLisible, type IdentiteLegale } from "@/lib/legal";
 import type { SectionLegale } from "./PageLegale";
 
@@ -175,7 +176,39 @@ export function conditionsDeVente(cadre: Cadre): { intro: React.ReactNode; secti
             ) : (
               <p>Les frais de livraison dépendent du gouvernorat ; ils sont annoncés avant la confirmation de la commande.</p>
             )}
-            {cadre.seuilGratuiteMillimes ? <p>La livraison est offerte à partir de {formatePrix(cadre.seuilGratuiteMillimes)} d&apos;achats.</p> : null}
+            {cadre.tranchesPoids?.length ? (
+              <table className="legal-table">
+                <caption>Supplément selon le poids du colis, ajouté aux frais de livraison</caption>
+                <thead><tr><th scope="col">Poids du colis</th><th scope="col">Supplément</th></tr></thead>
+                <tbody>
+                  {cadre.tranchesPoids.map((x, i, toutes) => {
+                    const avant = i > 0 ? toutes[i - 1].jusqu_a_grammes : null;
+                    const plage = x.jusqu_a_grammes === null
+                      ? (avant ? `Plus de ${poidsLisible(avant)}` : "Tout colis")
+                      : (avant ? `Plus de ${poidsLisible(avant)}, jusqu'à ${poidsLisible(x.jusqu_a_grammes)}` : `Jusqu'à ${poidsLisible(x.jusqu_a_grammes)}`);
+                    return (
+                      <tr key={x.jusqu_a_grammes ?? "au-dela"}>
+                        <th scope="row">{plage}</th>
+                        <td>{x.supplement_millimes ? formatePrix(x.supplement_millimes) : "Aucun"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : null}
+            {cadre.tranchesPoids?.length ? (
+              <p>
+                Le poids du colis est la somme des poids des articles commandés
+                {cadre.tranchesPoids.at(-1)?.jusqu_a_grammes != null ? " ; au-delà de la dernière tranche, son supplément s'applique" : ""}. Le
+                supplément est compris dans les frais annoncés avant la confirmation de la commande.
+              </p>
+            ) : null}
+            {cadre.seuilGratuiteMillimes ? (
+              <p>
+                La livraison est offerte à partir de {formatePrix(cadre.seuilGratuiteMillimes)} d&apos;achats
+                {cadre.tranchesPoids?.length ? ", supplément selon le poids compris" : ""}.
+              </p>
+            ) : null}
             {cadre.retrait ? (
               <p>
                 L&apos;acheteur peut aussi choisir de retirer sa commande au magasin, sans frais : {cadre.retrait.adresse},{" "}

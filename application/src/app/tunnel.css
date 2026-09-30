@@ -191,6 +191,8 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 .tunnel-totaux > div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: .875rem; }
 .tunnel-totaux dt { color: var(--theme-encre-doux); }
 .tunnel-totaux dd { margin: 0; }
+.tunnel-totaux > .tunnel-totaux-detail { margin-block-start: -.25rem; padding-inline-start: .75rem; font-size: .8125rem; }
+.tunnel-totaux-detail dt, .tunnel-totaux-detail dd { color: var(--theme-encre-doux); }
 .tunnel-total { padding-block-start: .875rem; margin-block-start: .375rem; border-block-start: 1px solid var(--theme-filet); }
 .tunnel-total dt { color: var(--theme-encre); font-weight: 500; font-size: 1rem; }
 

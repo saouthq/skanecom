@@ -1,12 +1,13 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers } from "@/lib/console/http";
 import { millimes } from "@/lib/console/import";
-import { messageReglages, valeursDe, type EtatReglages } from "@/lib/gestion/reglages";
+import { grammesSaisis, libelleTranche, messageReglages, valeursDe, type EtatReglages } from "@/lib/gestion/reglages";
 
 /* ============================================================================
    ENREGISTRER LES RÉGLAGES — une section à la fois (ses seuls champs), une
-   zone, ou le rattachement des gouvernorats. Formulaires HTML ordinaires,
-   réponse par une redirection 303 vers l'écran, à la hauteur de la section.
+   zone, une tranche de poids, ou le rattachement des gouvernorats.
+   Formulaires HTML ordinaires, réponse par une redirection 303 vers l'écran,
+   à la hauteur de la section.
    La base revérifie le rôle et chaque valeur (…_gestion_reglages.sql).
    ========================================================================== */
 
@@ -58,6 +59,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     if (error) return r(messageReglages(error.hint, error.message));
     const n = Number(data ?? 0);
     return r(n ? `Zone supprimée : ${n} gouvernorat${n > 1 ? "s" : ""} au tarif fixe.` : "Zone supprimée.", true);
+  }
+
+  if (section === "tranche") {
+    const r = retour("t-poids");
+    const poids = grammesSaisis(texte("jusqu_a"));
+    const supplement = millimes(texte("supplement"));
+    if (Number.isNaN(poids)) return r("Poids illisible : écrivez par exemple 5 ou 2,5 (en kg).");
+    if (supplement === null || Number.isNaN(supplement)) return r("Supplément illisible : écrivez par exemple 3,000 (0 pour aucun).");
+    const { error } = await sb.rpc("gestion_enregistrer_tranche", {
+      p_boutique_id: b, p_id: texte("tranche_id") || null, p_jusqu_a_grammes: poids, p_supplement: supplement,
+    });
+    if (error) return r(messageReglages(error.hint, error.message));
+    const nom = libelleTranche(poids);
+    return r(texte("tranche_id") ? `Tranche « ${nom} » enregistrée.` : `Tranche « ${nom} » ajoutée.`, true);
+  }
+
+  if (section === "tranche_supprimer") {
+    const r = retour("t-poids");
+    const { error } = await sb.rpc("gestion_supprimer_tranche", { p_boutique_id: b, p_id: texte("tranche_id") });
+    if (error) return r(messageReglages(error.hint, error.message));
+    return r("Tranche supprimée.", true);
   }
 
   if (section === "gouvernorats") {

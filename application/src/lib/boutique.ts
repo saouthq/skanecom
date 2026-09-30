@@ -27,6 +27,8 @@ export type Zone = {
   delai_jours_max: number | null;
 };
 
+export type TranchePoids = { jusqu_a_grammes: number | null; supplement_millimes: number };
+
 export type Cadre = {
   boutique: {
     id: string;
@@ -45,6 +47,9 @@ export type Cadre = {
   /** Les rayons de premier niveau, pour la navigation. */
   racines: Categorie[];
   zones: Zone[];
+  /** Le supplément selon le poids du colis, par tranche (jusqu'à N grammes ;
+   *  null = au-delà) — `null` si la boutique ne l'applique pas. */
+  tranchesPoids: TranchePoids[] | null;
   /** Le montant nu, pour les phrases qui l'écrivent elles-mêmes. `null` en
    *  mode « par zone » : il n'y a alors pas UN frais à annoncer. */
   fraisMillimes: number | null;
@@ -65,6 +70,7 @@ type Brut = {
   theme: Record<string, unknown> | null;
   categories: Categorie[];
   zones: Zone[];
+  tranches_poids: TranchePoids[] | null;
 };
 
 function reglage<T>(reglages: Record<string, unknown>, cle: string, defaut: T): T {
@@ -96,6 +102,7 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
   const whatsapp = String(reglage(reglages, "contact.whatsapp", "")).replace(/\D/g, "");
   const texteDe = (cle: string) => String(reglage(reglages, cle, "")).trim();
   const modules = brut.configuration?.modules ?? [];
+  const auPoids = Boolean(brut.tranches_poids?.some((x) => x.supplement_millimes > 0));
 
   return {
     boutique: brut.boutique,
@@ -105,13 +112,14 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
     categories: brut.categories,
     racines: brut.categories.filter((c) => c.parent_id === null),
     zones: brut.zones,
+    tranchesPoids: auPoids ? brut.tranches_poids : null,
     fraisMillimes: modeFrais === "fixe" ? fraisMillimes : null,
     seuilGratuiteMillimes: seuil > 0 ? seuil : null,
     livraison: {
       frais:
-        modeFrais === "fixe" && fraisMillimes > 0
+        (modeFrais === "fixe" && fraisMillimes > 0
           ? t.livraison.fraisFixes(formatePrix(fraisMillimes), seuilTexte)
-          : t.livraison.fraisParZone(seuilTexte),
+          : t.livraison.fraisParZone(seuilTexte)) + (auPoids ? ` ${t.livraison.supplementPoids}` : ""),
       delai: bornes ? t.livraison.delai(bornes.min, bornes.max) : null,
       cod: reglage(reglages, "paiement.cod_actif", true),
       rappel: reglage(reglages, "commande.mode_confirmation", "telephonique") === "telephonique",

@@ -5,7 +5,7 @@ import { clientSession, exigeMembre } from "@/lib/console/session";
 import { formateMontant } from "@/lib/prix";
 import { quand } from "@/lib/gestion/libelles";
 import { PEUT_MODIFIER } from "@/lib/gestion/catalogue";
-import { lignesJournal, montantChamp, type EtatReglages, type Reglage } from "@/lib/gestion/reglages";
+import { kilos, kilosChamp, libelleTranche, lignesJournal, montantChamp, type EtatReglages, type Reglage } from "@/lib/gestion/reglages";
 import { CHAMPS_LEGAUX } from "@/lib/legal";
 import { EXPORTS } from "@/lib/gestion/export";
 
@@ -102,6 +102,11 @@ export default async function Reglages({
   const maintenant = new Date();
   const prefixe = String(v("commande.prefixe_numero") ?? "");
   const manquants = CHAMPS_LEGAUX.filter((c) => !String(v(c.cle) ?? "").trim()).map((c) => c.libelle);
+  const auPoids = Boolean(v("livraison.supplement_poids"));
+  const dernier = e.tranches.at(-1);
+  // Les déclinaisons en vente sans poids : elles pèsent 0 kg dans le supplément.
+  const { count: sansPoids } = await sb.from("variantes").select("id", { count: "exact", head: true })
+    .eq("boutique_id", boutique.boutique_id).eq("actif", true).is("poids_grammes", null);
 
   return (
     <>
@@ -179,6 +184,10 @@ export default async function Reglages({
                     <label htmlFor="transporteur">Transporteur <span className="discret">(facultatif)</span></label>
                     <input id="transporteur" name="livraison.transporteur" defaultValue={String(v("livraison.transporteur") ?? "")} placeholder="Ex. Aramex, First Delivery…" maxLength={60} />
                     <span className="aide">Affiché à l&apos;acheteur et proposé à l&apos;expédition.</span>
+                  </div>
+                  <div className="choix">
+                    <Case cle="livraison.supplement_poids" valeur={auPoids} titre="Supplément selon le poids du colis"
+                      aide="Le supplément de sa tranche (plus bas) s'ajoute au tarif. La livraison offerte reste offerte, supplément compris." />
                   </div>
                 </fieldset>
                 <Pied modifie={modifie} />
@@ -303,6 +312,110 @@ export default async function Reglages({
               </form>
             </section>
 
+            {/* ---------------- Supplément au poids ---------------- */}
+            <section className="carte" aria-labelledby="t-poids" data-eteinte={auPoids ? undefined : ""}>
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-poids" className="carte-titre-icone">
+                    <Icone nom="colis" /> Supplément au poids
+                    {auPoids ? <span className="ui-etat ui-etat-point ui-etat-vert">Appliqué</span> : <span className="ui-etat">Non appliqué</span>}
+                  </h2>
+                  <p>{auPoids
+                    ? "Le colis pèse la somme de ses articles ; le supplément de sa tranche s'ajoute au tarif de livraison, annoncé à l'acheteur avant qu'il commande."
+                    : "Préparées ici, les tranches ne s'appliquent qu'avec « Supplément selon le poids du colis » (Livraison, ci-dessus)."}</p>
+                </div>
+              </div>
+              {sansPoids ? (
+                <p className={`message ${auPoids ? "rg-manque" : ""} rg-poids-manque`} role="note">
+                  {sansPoids} déclinaison{sansPoids > 1 ? "s actives" : " active"} sans poids : {sansPoids > 1 ? "elles comptent" : "elle compte"} pour 0 kg.{" "}
+                  <a href={`/gestion/${slug}/produits`}>Renseigner au catalogue</a>
+                </p>
+              ) : null}
+              <fieldset className="rg-tranches" disabled={!modifie}>
+                <legend className="sr-only">Les tranches de poids</legend>
+                <ul role="list">
+                  {e.tranches.map((t, i) => {
+                    const avant = i > 0 ? e.tranches[i - 1].jusqu_a_grammes : null;
+                    const plage = t.jusqu_a_grammes === null
+                      ? (avant ? `Plus de ${kilos(avant)}` : "Tous les colis")
+                      : (avant ? `Plus de ${kilos(avant)}, jusqu'à ${kilos(t.jusqu_a_grammes)}` : `Jusqu'à ${kilos(t.jusqu_a_grammes)}`);
+                    const nom = libelleTranche(t.jusqu_a_grammes);
+                    const f = `tranche-${t.id}`;
+                    return (
+                      <li key={t.id} className="rg-tranche">
+                        <form id={f} action={action} method="post">
+                          <input type="hidden" name="section" value="tranche" />
+                          <input type="hidden" name="tranche_id" value={t.id} />
+                        </form>
+                        <span className="rg-tranche-plage">
+                          {plage}
+                          <span className="aide">{t.supplement ? `+ ${formateMontant(t.supplement)} TND` : "Sans supplément"}</span>
+                        </span>
+                        <span className="rg-borne">
+                          jusqu&apos;à
+                          <input form={f} className="entree" name="jusqu_a" inputMode="decimal" defaultValue={kilosChamp(t.jusqu_a_grammes)}
+                            placeholder="au-delà" aria-label={`Tranche ${nom} : poids maximal, en kg (vide : au-delà)`} />
+                          kg
+                        </span>
+                        <span className="rg-borne rg-borne-tnd">
+                          +
+                          <input form={f} className="entree" name="supplement" inputMode="decimal" defaultValue={formateMontant(t.supplement)} required
+                            aria-label={`Tranche ${nom} : supplément, en TND`} />
+                          TND
+                        </span>
+                        {modifie ? (
+                          <span className="rg-tranche-gestes">
+                            <button form={f} className="btn btn-second btn-petit">Enregistrer</button>
+                            <form action={action} method="post">
+                              <input type="hidden" name="section" value="tranche_supprimer" />
+                              <input type="hidden" name="tranche_id" value={t.id} />
+                              <button className="btn-icone ph-retirer" aria-label={`Supprimer la tranche ${nom}`} title="Supprimer">
+                                <Icone nom="corbeille" taille={15} />
+                              </button>
+                            </form>
+                          </span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                  {modifie && e.tranches.length < 12 ? (
+                    <li className="rg-tranche rg-tranche-ajout">
+                      <form id="tranche-neuve" action={action} method="post">
+                        <input type="hidden" name="section" value="tranche" />
+                      </form>
+                      <span className="rg-tranche-plage">
+                        Nouvelle tranche
+                        <span className="aide">« jusqu&apos;à » vide : au-delà de toutes.</span>
+                      </span>
+                      <span className="rg-borne">
+                        jusqu&apos;à
+                        <input id="tj-neuve" form="tranche-neuve" className="entree" name="jusqu_a" inputMode="decimal" placeholder={dernier ? "au-delà" : "5"}
+                          aria-label="Nouvelle tranche : poids maximal, en kg (vide : au-delà)" />
+                        kg
+                      </span>
+                      <span className="rg-borne rg-borne-tnd">
+                        +
+                        <input id="ts-neuve" form="tranche-neuve" className="entree" name="supplement" inputMode="decimal" required placeholder="3,000"
+                          aria-label="Nouvelle tranche : supplément, en TND" />
+                        TND
+                      </span>
+                      <span className="rg-tranche-gestes">
+                        <button form="tranche-neuve" className="btn btn-second btn-petit"><Icone nom="plus" taille={14} /> Ajouter la tranche</button>
+                      </span>
+                    </li>
+                  ) : null}
+                </ul>
+              </fieldset>
+              {e.tranches.length === 0 ? (
+                <p className="aide rg-fixe mt-4">
+                  <Icone nom="colis" taille={14} /> Par exemple : jusqu&apos;à 5 kg sans supplément, jusqu&apos;à 20 kg + 3,000 TND, au-delà + 8,000 TND.
+                </p>
+              ) : dernier && dernier.jusqu_a_grammes !== null ? (
+                <p className="aide rg-fixe mt-4">
+                  <Icone nom="alerte" taille={14} /> Plus lourd que {kilos(dernier.jusqu_a_grammes)} : le supplément de la dernière tranche s&apos;applique.
+                </p>
+              ) : null}
+            </section>
             {/* ---------------- Retrait en magasin (module) ---------------- */}
             {retraitActif ? (
               <Section id="retrait" icone="boutique" titre="Retrait en magasin"
@@ -517,6 +630,7 @@ export default async function Reglages({
                   ["livraison", "Livraison", "camion"],
                   ["zones", "Zones de livraison", "lieu"],
                   ["gouvernorats", "Gouvernorats", "domaine"],
+                  ["poids", "Supplément au poids", "colis"],
                   ...(retraitActif ? [["retrait", "Retrait en magasin", "boutique"]] : []),
                   ["paiement", "Paiement", "billet"],
                   ["vitrine", "Vitrine et contact", "boutique"],

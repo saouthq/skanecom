@@ -250,6 +250,7 @@ export const fr = {
         ? `Livré en ${min} ${min > 1 ? "jours ouvrés" : "jour ouvré"}`
         : `Livré en ${min} à ${max} jours ouvrés`,
     delaiSelonRegion: "selon la région",
+    supplementPoids: "Un supplément s'ajoute pour les colis lourds, selon leur poids.",
   },
 
   recherche: {
@@ -387,6 +388,7 @@ export const fr = {
     livraison: "Livraison",
     livraisonOfferte: "Offerte",
     selonGouvernorat: "Selon le gouvernorat",
+    supplementPoids: (poids: string) => `dont supplément poids (${poids})`,
     total: "Total",
     ttc: "TTC",
     quantite: (n: number) => `Quantité : ${n}`,
