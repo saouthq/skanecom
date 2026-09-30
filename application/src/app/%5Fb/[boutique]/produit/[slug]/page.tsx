@@ -172,7 +172,7 @@ function FicheEditoriale({ cadre, produit, fil }: { cadre: Cadre; produit: Produ
             <FilAriane etapes={fil} />
             {produit.marque ? <p className="etiquette">{produit.marque}</p> : null}
             <h1>{champ(produit, "nom")}</h1>
-            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} />
+            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} />
 
             <ul className="ed-rassure">
               {lignes.map((r) => (
@@ -237,7 +237,7 @@ function FicheTechnique({ cadre, produit, fil }: { cadre: Cadre; produit: Produi
           {produit.marque ? <p className="te-fiche-marque">{produit.marque}</p> : null}
           <h1>{champ(produit, "nom")}</h1>
           <SpecsVariante mode="ref" />
-          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} />
+          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} />
 
           <ul className="te-rassure">
             {rassurances(cadre).map((r) => (

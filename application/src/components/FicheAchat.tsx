@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Prix } from "./Prix";
 import { EtatStock } from "./EtatStock";
 import { Coche } from "./Icones";
+import { LivraisonEstimee } from "./LivraisonEstimee";
 import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
@@ -36,9 +37,12 @@ export function FicheAchat({
   produit,
   gabarit,
   prixBarres = false,
+  delaiJours = null,
 }: {
   produit: Produit;
   gabarit: CodeTheme;
+  /** L'enveloppe du délai de livraison (jours ouvrés) : la fenêtre estimée. */
+  delaiJours?: { min: number; max: number } | null;
   /** Réglage `catalogue.afficher_prix_barres` : l'ancien prix barré à côté du
    *  prix, ou jamais. */
   prixBarres?: boolean;
@@ -204,6 +208,7 @@ export function FicheAchat({
         </button>
       </div>
       <p className="legende fiche-note">{t.produit.stockReel}</p>
+      {disponible && delaiJours ? <LivraisonEstimee min={delaiJours.min} max={delaiJours.max} /> : null}
 
       {/* Barre collante mobile : prix, déclinaison choisie, action. Rien d'autre. */}
       {barreVisible ? (

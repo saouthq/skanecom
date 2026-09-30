@@ -55,7 +55,7 @@ export type Cadre = {
   fraisMillimes: number | null;
   /** Livraison offerte à partir de ce montant d'achat ; `null` = jamais. */
   seuilGratuiteMillimes: number | null;
-  livraison: { frais: string | null; delai: string | null; cod: boolean; rappel: boolean };
+  livraison: { frais: string | null; delai: string | null; delaiJours: { min: number; max: number } | null; cod: boolean; rappel: boolean };
   konnectActif: boolean;
   prixBarres: boolean;
   whatsapp: string | null;
@@ -126,6 +126,7 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
           ? t.livraison.fraisFixes(formatePrix(fraisMillimes), seuilTexte)
           : t.livraison.fraisParZone(seuilTexte)) + (auPoids ? ` ${t.livraison.supplementPoids}` : ""),
       delai: bornes ? t.livraison.delai(bornes.min, bornes.max) : null,
+      delaiJours: bornes,
       cod: reglage(reglages, "paiement.cod_actif", true),
       rappel: reglage(reglages, "commande.mode_confirmation", "telephonique") === "telephonique",
     },

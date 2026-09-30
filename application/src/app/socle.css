@@ -531,3 +531,12 @@ html:has(.visionneuse[open]) { overflow: hidden; }
 [dir="rtl"] .visionneuse-fleche[data-sens="avant"] svg { rotate: -90deg; }
 [dir="rtl"] .visionneuse-fleche[data-sens="apres"] svg { rotate: 90deg; }
 @media (hover: hover) and (min-width: 700px) { .visionneuse-fleche { display: grid; } }
+
+/* La fenêtre de livraison, sous le bloc d'achat (components/LivraisonEstimee.tsx). */
+.fiche-livraison {
+  display: flex; align-items: center; gap: .625rem; margin: 0; padding: .75rem 1rem;
+  border-radius: var(--theme-radius-doux); background: var(--theme-surface-2); font-size: .875rem; line-height: 1.4;
+  animation: fiche-livraison-arrive .5s var(--theme-courbe);
+}
+.fiche-livraison svg { flex: none; color: var(--theme-succes); }
+@keyframes fiche-livraison-arrive { from { opacity: 0; transform: translateY(4px); } }

@@ -255,6 +255,9 @@ export const fr = {
         ? `Livré en ${min} ${min > 1 ? "jours ouvrés" : "jour ouvré"}`
         : `Livré en ${min} à ${max} jours ouvrés`,
     delaiSelonRegion: "selon la région",
+    /** La fenêtre de livraison de la fiche produit (lib/livraison.ts). */
+    estimee: (fenetre: string) => `Commandé aujourd'hui, livré ${fenetre}`,
+    estimeeAide: "Selon votre région : la date exacte vous est donnée à l'appel de confirmation.",
     supplementPoids: "Un supplément s'ajoute pour les colis lourds, selon leur poids.",
   },
 

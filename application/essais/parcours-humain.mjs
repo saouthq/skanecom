@@ -103,6 +103,9 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
 
   await etape("fiche : choisir une taille, mettre au panier", async () => {
     await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
+    await page.locator(".fiche-livraison").waitFor({ timeout: 5000 });
+    const quand = (await page.locator(".fiche-livraison").innerText()).trim();
+    verifie(/^Commandé aujourd'hui, livré (entre le|le) /.test(quand), `la fiche dit quand elle arrive : « ${quand} »`);
     await capture(page, "selma-fiche");
     await clic(page, page.locator(".valeur", { hasText: /^M$/ }));
     verifie((await page.locator(".axe legend .choisi").last().innerText()) === "M", "la taille choisie est affichée");
