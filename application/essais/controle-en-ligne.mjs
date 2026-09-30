@@ -39,10 +39,18 @@ for (const [ecran, options] of [
     const page = await contexte.newPage();
     let erreurs = [];
     let depart = Date.now();
+    // Pendant la capture pleine page, Chromium ramène un instant la fenêtre à
+    // 1×1 px : l'image d'ouverture passe à son cadrage portrait (media
+    // max-width: 699px), le navigateur commence à la charger, puis l'abandonne
+    // quand la fenêtre revient (net::ERR_ABORTED, vu en ligne sur l'accueil de
+    // Maymar). C'est l'instrument, pas la page : ce qui échoue pendant la
+    // capture ne compte pas.
+    let enCapture = false;
     page.on("response", (r) => { if (r.status() >= 400) erreurs.push(`HTTP ${r.status()} ${r.url()}`); });
     // Une requête abandonnée : quand (depuis le début de la page), quoi, et
     // la largeur de l'écran à ce moment — de quoi savoir ce qui l'a demandée.
     page.on("requestfailed", (r) => {
+      if (enCapture) return;
       const largeur = page.viewportSize()?.width;
       erreurs.push(`échec (${r.failure()?.errorText}) ${r.url()} [${r.resourceType()}, à ${Date.now() - depart} ms, écran ${largeur} px]`);
     });
@@ -96,7 +104,11 @@ for (const [ecran, options] of [
       });
       await page.waitForLoadState("networkidle").catch(() => {});
       const fichier = `${SORTIE}/${ecran === "téléphone" ? "telephone" : "ordinateur"}-${nom}-${chemin.replace(/[/?=]+/g, "_").replace(/^_|_$/g, "") || "accueil"}.jpg`;
+      // (L'abandon arrive quand la fenêtre reprend sa taille, juste après la capture.)
+      enCapture = true;
       await page.screenshot({ path: fichier, type: "jpeg", quality: 72, fullPage: true });
+      await new Promise((r) => setTimeout(r, 500));
+      enCapture = false;
 
       const policesOk = etat.enErreur.length === 0 && etat.titreDispo && etat.texteDispo;
       const imagesOk = etat.cassees.length === 0;
