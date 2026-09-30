@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ChampRecherche } from "@/components/ChampRecherche";
 import { Loupe } from "@/components/Icones";
+import { VusRecemment } from "@/components/VusRecemment";
 import { t } from "@/lib/i18n";
 
 /* Page introuvable d'une boutique. Next.js ne lui donne pas les paramètres de
    la route : elle ne connaît donc pas la boutique, mais elle s'affiche dans
    son layout, donc à ses couleurs, et propose une sortie évidente : chercher
-   tout de suite (les pièces se proposent pendant la frappe), ou repartir de
-   l'accueil ou du catalogue. */
+   tout de suite (les pièces se proposent pendant la frappe), repartir de
+   l'accueil ou du catalogue, ou revenir à une pièce vue récemment. */
 export default function Introuvable() {
   return (
     <main id="principal" className="enveloppe flex-1 section">
@@ -32,6 +33,7 @@ export default function Introuvable() {
         <Link className="btn btn-second" href="/">{t.commun.accueil}</Link>
         <Link className="btn btn-second" href="/catalogue">{t.commun.voirLeCatalogue}</Link>
       </div>
+      <VusRecemment section="mt-16" tete="vus-tete" />
     </main>
   );
 }

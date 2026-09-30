@@ -65,6 +65,7 @@ outils/essayer.sh
 - Rayon Outillage électroportatif : colonne de filtres à gauche (diamètre, version, prix, stock).
 - Sur une carte à une seule déclinaison, **Ajouter** met directement au panier.
 - Fiche perceuse : choisir « Kit 2 batteries », la référence suit la version.
+- Ouvrir trois ou quatre fiches, puis une autre : en bas, **Vus récemment** reprend les pièces vues, la plus récente d'abord (prix et stock du moment ; « Effacer » vide la liste). La page introuvable le propose aussi.
 
 **Maymar** : l'accueil, puis la fiche « Valise rigide ABS 4 roues » : choisir Grande 75 cm et Bordeaux — cette combinaison est épuisée, la fiche le dit et le bouton se désactive. Une valeur épuisée dans toutes ses combinaisons reste visible mais barrée : la taille M du combishort (Maison Selma), les forets de 10 mm (quincaillerie).
 

@@ -294,6 +294,12 @@ export const fr = {
       "Le lien est peut-être ancien, ou la pièce n'est plus au catalogue. Le catalogue complet et la recherche sont là.",
   },
 
+  vus: {
+    titre: "Vus récemment",
+    effacer: "Effacer",
+    effacerAria: "Effacer les produits vus récemment",
+  },
+
   panier: {
     titre: "Votre panier",
     ouvrir: (n: number) => (n > 0 ? `Panier, ${n} ${n > 1 ? "articles" : "article"}` : "Panier, vide"),

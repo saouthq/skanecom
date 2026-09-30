@@ -442,6 +442,24 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
     await clic(page, page.getByRole("button", { name: /^Boîte de 200/ }));
     verifie((await qte()) === "1" && (await page.locator(".fiche-minimum").count()) === 0, "la boîte de 200 revient à l'unité, sans pastille");
   });
+
+  await etape("« Vus récemment » : les fiches ouvertes, la plus récente d'abord", async () => {
+    await page.goto(Q + "/produit/coffret-forets-19", { waitUntil: "networkidle" });
+    const rail = page.locator(".vus");
+    await rail.waitFor({ timeout: 8000 });
+    const liens = await rail.locator(".vus-lien").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+    verifie(liens[0] === "/produit/vis-bois-tete-fraisee" && liens[1] === "/produit/perceuse-visseuse-14v" && !liens.includes("/produit/coffret-forets-19"),
+      `le rail : les vis, puis la perceuse, sans la fiche ouverte (${liens.length} pièces)`);
+    verifie((await rail.locator(".vus-carte").first().innerText()).includes("0,150"), "chaque pièce avec son prix, relu en base");
+    await rail.scrollIntoViewIfNeeded();
+    await pause(700);
+    await capture(page, "quinca-vus-recemment");
+    await clic(page, rail.getByRole("button", { name: "Effacer les produits vus récemment" }));
+    await pause(300);
+    await page.reload({ waitUntil: "networkidle" });
+    await pause(500);
+    verifie((await page.locator(".vus").count()) === 0, "« Effacer » : le rail disparaît, et ne revient pas au rechargement");
+  });
   await ctx.close();
 }
 

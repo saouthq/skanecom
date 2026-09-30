@@ -8,6 +8,7 @@ import { FilAriane, type Etape } from "@/components/FilAriane";
 import { GalerieEditoriale, GalerieVignettes } from "@/components/Galerie";
 import { FournisseurSelection } from "@/components/SelectionVariante";
 import { SpecsVariante } from "@/components/SpecsVariante";
+import { VusRecemment } from "@/components/VusRecemment";
 import { Billets, Bouclier, Bulle, Camion, Magasin, Retour, Telephone } from "@/components/Icones";
 import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
 import { chargeProduit, listeProduits, prixDepuis, type Produit } from "@/lib/catalogue";
@@ -150,6 +151,12 @@ export default async function FicheProduit({ params }: Params) {
           </div>
         </section>
       ) : null}
+
+      <VusRecemment
+        courant={produit.slug}
+        section={gabarit === "technique" ? "te-section" : "enveloppe ed-section"}
+        tete={gabarit === "technique" ? "te-section-tete" : "ed-section-tete"}
+      />
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(donnees).replace(/</g, "\\u003c") }} />
     </Gabarit>

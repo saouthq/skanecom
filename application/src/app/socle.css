@@ -600,3 +600,47 @@ html:has(.visionneuse[open]) { overflow: hidden; }
   background: var(--theme-encre); color: var(--theme-fond); font-size: .625rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
   vertical-align: .15em; animation: fiche-livraison-arrive .4s var(--theme-courbe) backwards;
 }
+
+/* ---- « Vus récemment » (components/VusRecemment.tsx) : un rail aimanté,
+   qui déborde jusqu'au bord de l'écran sur téléphone ; les cartes entrent
+   de la droite, en cascade. ---- */
+.vus-rail {
+  display: grid; grid-auto-flow: column; grid-auto-columns: clamp(8.75rem, 36vw, 11.5rem); gap: clamp(.75rem, 1.6vw, 1.25rem);
+  list-style: none; margin: 0 calc(-1 * var(--theme-marge)); padding: .25rem var(--theme-marge) .875rem;
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: var(--theme-marge);
+  scrollbar-width: thin; scrollbar-color: var(--theme-filet) transparent;
+}
+.vus-carte { scroll-snap-align: start; min-inline-size: 0; animation: vus-arrive .55s var(--theme-courbe) backwards; }
+@keyframes vus-arrive { from { opacity: 0; transform: translateX(14px); } }
+.vus-lien { display: grid; gap: .375rem; color: inherit; text-decoration: none; }
+.vus-lien:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 3px; border-radius: var(--theme-radius-net); }
+.vus-photo {
+  position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden;
+  background: var(--theme-surface-2); border-radius: var(--theme-radius-carte);
+}
+html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--theme-surface); border: 1px solid var(--theme-filet); }
+.vus-photo img { object-fit: cover; transition: transform .7s var(--theme-courbe); }
+@media (hover: hover) { .vus-lien:hover .vus-photo img { transform: scale(1.045); } }
+.vus-photo[data-etat=rupture] img { opacity: .5; filter: grayscale(.5); }
+.vus-rupture {
+  position: absolute; inset-block-end: .5rem; inset-inline-start: .5rem; padding: .125rem .5rem;
+  font-size: .6875rem; font-weight: 600; letter-spacing: .02em;
+  color: var(--theme-encre); background: color-mix(in srgb, var(--theme-surface) 88%, transparent);
+  border-radius: 999px; backdrop-filter: blur(6px);
+}
+.vus-marque { font-size: .6875rem; letter-spacing: .08em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.vus-nom {
+  font-size: .875rem; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+@media (hover: hover) { .vus-lien:hover .vus-nom { text-decoration: underline; text-underline-offset: .2em; } }
+.vus-prix { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .375rem; font-size: .875rem; }
+.vus-prix .dès { font-size: .75rem; color: var(--theme-encre-doux); }
+@media (prefers-reduced-motion: reduce) {
+  .vus-carte { animation: none; }
+  .vus-photo img { transition: none; }
+}
+.vus .vus-effacer { white-space: nowrap; }
+/* Hors gabarit (page introuvable) : le titre et « Effacer » sur une ligne. */
+.vus-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-block-end: 1rem; }
+.vus-tete h2 { font-family: var(--theme-font-display); font-size: 1.375rem; }
