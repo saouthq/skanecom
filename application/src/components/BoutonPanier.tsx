@@ -7,6 +7,7 @@ import { Billets, Bouclier, Camion, Coche, Fleche, Magasin, Panier as IconePanie
 import { Prix } from "./Prix";
 import { Tiroir } from "./Tiroir";
 import { ConfirmationAjout } from "./ConfirmationAjout";
+import { EnsembleDuPanier } from "./EnsembleDuPanier";
 import { changeQuantitePanier, retireDuPanier, usePanier, usePanierLu } from "@/lib/panier";
 import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalMillimes, type AjoutAnnonce } from "@/lib/panier-contrat";
 import { envole } from "@/lib/envol";
@@ -41,6 +42,7 @@ export function BoutonPanier({
   seuilGratuite,
   assurances = [],
   devis = false,
+  ensemble = false,
 }: {
   gabarit: CodeTheme;
   /** Livraison offerte dès ce montant (réglage de la boutique), ou jamais. */
@@ -49,6 +51,8 @@ export function BoutonPanier({
   assurances?: Assurance[];
   /** La demande de devis (module devis) : un lien sous « Commander ». */
   devis?: boolean;
+  /** « Souvent achetés avec votre panier » (réglage catalogue.achetes_ensemble). */
+  ensemble?: boolean;
 }) {
   const panier = usePanier();
   const [ouvert, setOuvert] = useState(false);
@@ -250,6 +254,10 @@ export function BoutonPanier({
             })}
           </ul>
         )}
+
+        {ensemble && panier.lignes.length > 0 ? (
+          <EnsembleDuPanier slugs={panier.lignes.map((l) => l.produitSlug)} onChoix={() => setOuvert(false)} />
+        ) : null}
 
         {panier.lignes.length > 0 && assurances.length > 0 ? (
           <ul className="panier-assurances">

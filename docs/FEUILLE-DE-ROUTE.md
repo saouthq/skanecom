@@ -45,7 +45,8 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 - [x] **« Prévenez-moi de son retour »** (30/09, réglage) sur une déclinaison épuisée : le téléphone ou l'e-mail laissé sur la fiche ; au réassort, l'équipe voit qui prévenir, message WhatsApp prêt, et le contact s'efface. Reste : l'envoi automatique par SMS ou e-mail, quand les fournisseurs seront branchés.
 - [x] **Favoris** (30/09, réglage) : un cœur sur les cartes et la fiche, « Mes favoris » relus en base ; gardés dans le navigateur et, pour un client connecté, dans son compte (d'un appareil à l'autre) ; l'équipe voit combien aiment chaque pièce, jamais qui. Reste : prévenir d'une baisse de prix ou d'un retour en stock d'une pièce aimée.
 - [x] **Paniers abandonnés** (30/09, réglage, avec le compte obligatoire) : le panier d'un client connecté, au backoffice une heure plus tard, message WhatsApp prêt avec le lien qui remet le panier dans le navigateur, une relance ; la commande qui a suivi. Reste : la relance automatique (SMS, e-mail), quand les fournisseurs seront branchés.
-- Ventes associées (« complétez avec »), lots ; avis clients avec photos.
+- [x] **Souvent achetés ensemble** (30/09, réglage) : sous la fiche et dans le tiroir du panier, les pièces que les commandes de la boutique réunissent avec celle-ci (180 jours, ni annulées ni refusées), en vente et en stock ; « Vous aimerez aussi » ne les répète pas. Reste : les lots (un prix pour l'ensemble), l'ajout en un geste depuis le tiroir.
+- Avis clients avec photos.
 
 ### D. Tous les métiers
 

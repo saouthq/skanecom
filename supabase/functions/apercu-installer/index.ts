@@ -16,10 +16,13 @@
 // est jointe par SUPABASE_DB_URL, fournie par Supabase à ses fonctions —
 // aucun mot de passe à copier.
 // Déployée par Claude avec le connecteur Supabase (verify_jwt).
+//
+// Une connexion par appel, fermée avant la réponse : le workflow fait un
+// appel par fichier (une soixantaine), et chaque isolat de la fonction
+// gardait la sienne ouverte — la base de l'aperçu (60 connexions, dont
+// trois réservées) finissait par refuser les suivantes (30/09).
 // =====================================================================
 import postgres from "npm:postgres@3.4.5";
-
-const base = postgres(Deno.env.get("SUPABASE_DB_URL") ?? "", { max: 1, prepare: false, onnotice: () => {} });
 
 type Envoi = { genre: "migration" | "graines" | "script"; version?: string; nom: string; requete: string };
 
@@ -55,6 +58,7 @@ Deno.serve(async (req) => {
       || (e.genre === "migration" && !/^\d{14}$/.test(e.version ?? ""))) {
     return reponse({ erreur: "envoi incomplet" }, 400);
   }
+  const base = postgres(Deno.env.get("SUPABASE_DB_URL") ?? "", { max: 1, prepare: false, idle_timeout: 2, onnotice: () => {} });
   try {
     await base.unsafe(`
       create schema if not exists supabase_migrations;
@@ -81,5 +85,7 @@ Deno.serve(async (req) => {
     return reponse({ ok: true });
   } catch (err) {
     return reponse({ erreur: err instanceof Error ? err.message : String(err) }, 500);
+  } finally {
+    await base.end({ timeout: 5 }).catch(() => {});
   }
 });

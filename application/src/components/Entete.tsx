@@ -122,7 +122,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
                 <Personne />
               </Link>
             ) : null}
-            <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} />
+            <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} />
           </div>
         </div>
       </EnteteDefilant>
@@ -180,7 +180,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
                 <span>{t.compte.lien}</span>
               </Link>
             ) : null}
-            <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} />
+            <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} />
           </div>
         </div>
         <div className="te-barre-rayons cache-mobile">

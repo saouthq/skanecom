@@ -86,6 +86,9 @@ export type Cadre = {
   relancePaniers: boolean;
   /** Réglage `catalogue.favoris` : le cœur des cartes et des fiches, « Mes favoris ». */
   favoris: boolean;
+  /** Réglage `catalogue.achetes_ensemble` : les pièces que les commandes réunissent,
+   *  sur la fiche et dans le tiroir du panier. */
+  achetesEnsemble: boolean;
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
@@ -190,6 +193,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     relancePaniers: reglage<boolean>(reglages, "commande.relance_paniers", false) === true
       && reglage<boolean>(reglages, "compte.obligatoire", true) !== false,
     favoris: reglage<boolean>(reglages, "catalogue.favoris", false) === true,
+    achetesEnsemble: reglage<boolean>(reglages, "catalogue.achetes_ensemble", false) === true,
     avis: modules.includes("avis"),
     promotions: modules.includes("promotions"),
     pages: brut.pages ?? [],

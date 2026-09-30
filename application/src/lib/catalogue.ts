@@ -148,6 +148,18 @@ export async function chargeProduit(boutiqueId: string, slug: string): Promise<P
   return (data as Produit | null) ?? null;
 }
 
+/** « Souvent achetés ensemble » (migration 51) : les pièces que les commandes
+ *  de la boutique réunissent avec celles de `slugs`, les plus souvent d'abord,
+ *  publiées et en stock. Une erreur ne coûte que la suggestion : rien. */
+export async function achetesEnsemble(boutiqueId: string, slugs: string[], limite = 4): Promise<Produit[]> {
+  const { data: ensemble, error } = await supabase.rpc("achetes_ensemble", { p_boutique_id: boutiqueId, p_slugs: slugs, p_limite: limite });
+  const ordre = error ? [] : ((ensemble ?? []) as { slug: string }[]).map((e) => e.slug);
+  if (ordre.length === 0) return [];
+  const { data } = await supabase.from("vitrine_produits").select("*").eq("boutique_id", boutiqueId).in("slug", ordre);
+  const parSlug = new Map(((data ?? []) as Produit[]).map((p) => [p.slug, p]));
+  return ordre.map((s) => parSlug.get(s)).filter((p): p is Produit => Boolean(p));
+}
+
 /** Slugs et dates de tous les produits publiés, pour le plan du site. */
 export async function tousLesSlugs(boutiqueId: string): Promise<{ slug: string; created_at: string }[]> {
   const { data, error } = await supabase

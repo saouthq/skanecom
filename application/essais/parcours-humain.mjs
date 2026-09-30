@@ -151,6 +151,11 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     const ligne = page.locator(".tiroir-panier .panier-ligne");
     verifie(await ligne.count() === 1 && (await ligne.innerText()).includes("Robe à bretelles en lin · Terracotta, M"), "la ligne dit le produit et sa déclinaison");
     verifie(await ligne.locator(".panier-vignette img").count() === 1, "la ligne a sa vignette");
+    // Selma propose les pièces achetées ensemble (supabase/seed-ensemble.sql).
+    const ensemble = page.locator(".tiroir-panier .panier-ensemble");
+    await ensemble.waitFor({ timeout: 4000 }).catch(() => {});
+    verifie((await ensemble.count()) === 1 && (await ensemble.innerText()).includes("Sac de voyage en cuir"),
+      "sous l'article, « Souvent achetés avec votre panier » : le sac de voyage");
     note("INFO  ", `sous les articles : ${(await page.locator(".panier-assurances").innerText().catch(() => "(rien)")).replace(/\s+/g, " ").trim()}`);
     note("INFO  ", `jauge : ${(await page.locator(".jauge-livraison p").innerText().catch(() => "(absente)")).trim()}`);
     await capture(page, "selma-tiroir-panier");
@@ -184,6 +189,22 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     const note = page.locator(".ed-carte", { hasText: "Robe à bretelles en lin" }).locator(".carte-note");
     verifie((await note.innerText()).replace(/\s+/g, " ").startsWith("4,7 (3"), `la carte du rayon porte la note (${(await note.innerText()).replace(/\s+/g, " ")})`);
     verifie((await page.locator(".ed-carte", { hasText: "Robe midi en jersey" }).locator(".carte-note").count()) === 0, "une robe sans avis n'en affiche aucune");
+  });
+
+  await etape("« Souvent achetés ensemble » sous la fiche, tiré des commandes", async () => {
+    await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
+    const section = page.locator(".fiche-ensemble");
+    const noms = await section.locator(".ed-carte-nom").allInnerTexts();
+    verifie(noms[0] === "Sac de voyage en cuir" && noms.includes("Chemise ample en lin"),
+      `la robe : le sac (trois commandes), puis la chemise (${noms.join(", ")})`);
+    const voisins = await page.locator("section", { has: page.getByRole("heading", { name: "Vous aimerez aussi" }) }).locator(".ed-carte-nom").allInnerTexts();
+    verifie(voisins.length > 0 && !voisins.some((n) => noms.includes(n)), "« Vous aimerez aussi » ne les répète pas");
+    await section.scrollIntoViewIfNeeded();
+    await capture(page, "selma-achetes-ensemble");
+    await clic(page, section.locator(".ed-carte-lien", { hasText: "Sac de voyage en cuir" }));
+    await page.waitForURL(/\/produit\/sac-voyage-cuir$/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".fiche-ensemble .ed-carte-nom").allInnerTexts()).includes("Robe à bretelles en lin"), "et le sac, en retour, propose la robe");
   });
 
   await etape("le panier survit au rechargement", async () => {
@@ -424,6 +445,7 @@ console.log("\n== 3. Sur téléphone (tactile) ==");
     await feuille.getByRole("button", { name: /^Voir le panier/ }).tap();
     await pause(500);
     verifie(await tiroirOuvert(page, "tiroir-panier"), "« Voir le panier » de la feuille ouvre le tiroir");
+    verifie((await page.locator(".panier-ensemble, .fiche-ensemble").count()) === 0, "Maymar n'a pas le réglage : rien d'« acheté ensemble »");
     await capture(page, "mobile-tiroir-panier");
     await page.locator(".tiroir-panier [data-fermer]").tap();
     await pause(300);

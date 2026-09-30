@@ -13,7 +13,7 @@ import { VusRecemment } from "@/components/VusRecemment";
 import { AvisProduit, ResumeAvis } from "@/components/AvisProduit";
 import { Billets, Bouclier, Bulle, Camion, Magasin, Retour, Telephone } from "@/components/Icones";
 import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
-import { chargeProduit, listeProduits, prixDepuis, type Produit } from "@/lib/catalogue";
+import { achetesEnsemble, chargeProduit, listeProduits, prixDepuis, type Produit } from "@/lib/catalogue";
 import { photosProduit } from "@/lib/photos";
 import { chargeAvis, type AvisProduit as Avis } from "@/lib/avis";
 import { formatePrix, prixDecimal } from "@/lib/prix";
@@ -98,12 +98,17 @@ export default async function FicheProduit({ params }: Params) {
   const rayon = produit.categorie;
   const gabarit = cadre.theme.code;
 
-  /* Des voisins du même rayon, pris par la base ; les avis publiés (module avis). */
-  const [liste, avis] = await Promise.all([
-    listeProduits(cadre.boutique.id, rayon ? { rayon: rayon.slug } : {}, "selection", 1, gabarit === "technique" ? 6 : 5),
+  /* Des voisins du même rayon, pris par la base ; les avis publiés (module
+     avis) ; les pièces que les commandes réunissent avec celle-ci (réglage
+     catalogue.achetes_ensemble) — elles ne se répètent pas dans les voisins. */
+  const parRang = gabarit === "technique" ? 5 : 4;
+  const [liste, avis, ensemble] = await Promise.all([
+    listeProduits(cadre.boutique.id, rayon ? { rayon: rayon.slug } : {}, "selection", 1, cadre.achetesEnsemble ? 2 * parRang + 1 : parRang + 1),
     cadre.avis ? chargeAvis(cadre.boutique.id, produit.id) : Promise.resolve(null),
+    cadre.achetesEnsemble ? achetesEnsemble(cadre.boutique.id, [produit.slug], parRang) : Promise.resolve([]),
   ]);
-  const voisins = liste.produits.filter((p) => p.id !== produit.id).slice(0, gabarit === "technique" ? 5 : 4);
+  const dejaProposes = new Set([produit.id, ...ensemble.map((p) => p.id)]);
+  const voisins = liste.produits.filter((p) => !dejaProposes.has(p.id)).slice(0, parRang);
   const note = avis && avis.total > 0 && avis.moyenne !== null ? avis : null;
 
   const fil: Etape[] = [
@@ -154,6 +159,22 @@ export default async function FicheProduit({ params }: Params) {
         section={gabarit === "technique" ? "te-section" : "enveloppe ed-section"}
         tete={gabarit === "technique" ? "te-section-tete" : "ed-section-tete"}
       />
+
+      {ensemble.length > 0 ? (
+        <section className={`${gabarit === "technique" ? "te-section" : "enveloppe ed-section"} fiche-ensemble`} aria-labelledby="fiche-ensemble-titre">
+          <div className={gabarit === "technique" ? "te-section-tete" : "ed-section-tete"}>
+            <div>
+              <h2 id="fiche-ensemble-titre">{t.ensemble.titre}</h2>
+              <p className="fiche-ensemble-chapo">{t.ensemble.chapo}</p>
+            </div>
+          </div>
+          <div className={gabarit === "technique" ? "te-grille te-grille-rang" : "ed-grille"}>
+            {ensemble.map((p) => (
+              <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {voisins.length > 0 ? (
         <section className={gabarit === "technique" ? "te-section" : "enveloppe ed-section"}>

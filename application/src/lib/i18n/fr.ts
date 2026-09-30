@@ -327,6 +327,13 @@ export const fr = {
     annuler: "Annuler",
   },
 
+  /** « Souvent achetés ensemble » (réglage catalogue.achetes_ensemble). */
+  ensemble: {
+    titre: "Souvent achetés ensemble",
+    chapo: "D'après les commandes de la boutique : ce que les clients prennent avec cette pièce.",
+    panierTitre: "Souvent achetés avec votre panier",
+  },
+
   vus: {
     titre: "Vus récemment",
     effacer: "Effacer",
