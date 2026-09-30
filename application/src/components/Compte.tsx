@@ -301,6 +301,29 @@ export function Compte({ boutiqueId, sav = false }: { boutiqueId: string; sav?: 
   );
 }
 
+/** Le rang d'une commande sur sa frise ; refusée ou annulée : pas de frise. */
+const RANG_FRISE: Record<string, number> = { a_arbitrer: 0, recue: 0, confirmee: 1, expediee: 2, livree: 3 };
+
+/** Reçue → confirmée → expédiée (prête) → livrée (retirée) : l'étape du
+ *  moment est marquée, celles d'avant sont faites. */
+function Frise({ statut, retrait }: { statut: string; retrait: boolean }) {
+  const rang = RANG_FRISE[statut];
+  if (rang === undefined) return null;
+  const etapes = retrait ? t.compte.friseRetrait : t.compte.frise;
+  return (
+    <ol className="compte-frise" aria-label={t.compte.friseAria}>
+      {etapes.map((e, i) => (
+        <li key={e} data-faite={i <= rang ? "" : undefined} aria-current={i === rang ? "step" : undefined} style={{ "--i": i } as React.CSSProperties}>
+          <span className="compte-frise-point" aria-hidden="true">
+            {i < rang || (i === rang && rang === etapes.length - 1) ? <Coche taille={11} /> : null}
+          </span>
+          <span className="compte-frise-nom">{e}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function Carte({ c, boutiqueId, sav, demandes, surDemande }: {
   c: CommandeMienne;
   boutiqueId: string;
@@ -333,6 +356,7 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande }: {
         </div>
         <span className="compte-statut">{statut}</span>
       </div>
+      <Frise statut={c.statut} retrait={retrait} />
       <p className="compte-etat">{etat}</p>
       <div className="compte-contenu">
         <span className="compte-vignettes" aria-hidden="true">

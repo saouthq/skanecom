@@ -66,6 +66,7 @@ html[data-gabarit] .btn:active:not(:disabled) { transform: scale(.97); }
 /* ---- Réduire les animations ---- */
 @media (prefers-reduced-motion: reduce) {
   html[data-gabarit] *, html[data-gabarit] *::before, html[data-gabarit] *::after {
-    animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important;
+    animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
   }
 }

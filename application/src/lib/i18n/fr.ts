@@ -268,6 +268,11 @@ export const fr = {
           : `Aucune pièce trouvée pour « ${q} »`,
     videTexte:
       "Essayez un mot plus court, ou parcourez le catalogue rayon par rayon.",
+    /** Les suggestions pendant la frappe (components/ChampRecherche.tsx). */
+    suggestionsAria: "Suggestions",
+    voirTout: (n: number, q: string) => (n > 1 ? `Voir les ${n} résultats pour « ${q} »` : `Voir le résultat pour « ${q} »`),
+    rienPour: (q: string) => `Rien pour « ${q} » : essayez un mot plus court.`,
+    annonceSuggestions: (n: number) => (n > 1 ? `${n} suggestions` : n === 1 ? "Une suggestion" : "Aucune suggestion"),
   },
 
   introuvable: {
@@ -491,6 +496,10 @@ export const fr = {
     } as Record<string, string>,
     commander: "Voir le catalogue",
     suivre: "Suivre mes commandes",
+    /** La frise de suivi d'une commande en cours ou livrée. */
+    friseAria: "Où en est la commande",
+    frise: ["Reçue", "Confirmée", "Expédiée", "Livrée"],
+    friseRetrait: ["Reçue", "Confirmée", "Prête", "Retirée"],
   },
 
   sav: {

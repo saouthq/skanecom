@@ -277,6 +277,8 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
       && carte.includes("La boutique vous appelle pour la confirmer"),
       "sa commande, où la retirer, et où elle en est");
     verifie((await page.locator(".compte-identite").innerText()).includes("+216 98 765 432"), "connecté avec le numéro confirmé au tunnel");
+    const etapeDuMoment = page.locator(".compte-carte").first().locator(".compte-frise [aria-current=step]");
+    verifie((await etapeDuMoment.innerText()).trim() === "Reçue", "la frise de suivi marque « Reçue » (retrait : Reçue, Confirmée, Prête, Retirée)");
     await capture(page, "quincaillerie-mes-commandes");
     // Un autre numéro, sans commande : la connexion par SMS, puis la liste vide.
     await clic(page, page.getByRole("button", { name: "Se déconnecter" }));
@@ -327,6 +329,8 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await page.locator(".sav-mes").waitFor({ timeout: 8000 });
     verifie((await page.locator(".sav-mes").innerText()).includes("Reçue : la boutique vous rappelle"), "« Mes demandes » dit où elle en est");
     verifie((await carte.innerText()).includes("Retirée au magasin : Route de Tunis, km 3, Sfax"), "la commande dit qu'elle a été retirée");
+    verifie((await carte.locator(".compte-frise [data-faite]").count()) === 4 && (await carte.locator(".compte-frise [aria-current=step]").innerText()).trim() === "Retirée",
+      "la frise est complète, jusqu'à « Retirée »");
     await capture(page, "quincaillerie-sav-envoyee", true);
     await clic(page, carte.getByRole("button", { name: "Un problème avec un article ?" }));
     verifie((await carte.locator(".sav-formulaire").innerText()).includes("demande SAV-00001 en cours")

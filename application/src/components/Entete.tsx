@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Bulle, Loupe, Personne } from "./Icones";
 import { BoutonPanier } from "./BoutonPanier";
+import { ChampRecherche } from "./ChampRecherche";
 import { NavRayons } from "./NavRayons";
 import { EnteteDefilant, MenuMobile, type EntreeMenu } from "./EnteteClient";
 import { champ, t } from "@/lib/i18n";
 import { urlFichier } from "@/lib/photos";
-import { faitsDeService, lienConseil } from "@/lib/faits";
+import { assurancesPanier, faitsDeService, lienConseil } from "@/lib/faits";
 import type { Cadre } from "@/lib/boutique";
 
 /* ============================================================================
@@ -117,7 +118,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
                 <Personne />
               </Link>
             ) : null}
-            <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} />
+            <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} />
           </div>
         </div>
       </EnteteDefilant>
@@ -155,7 +156,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
             <label htmlFor="q-entete" className="sr-only">
               {t.recherche.champAria}
             </label>
-            <input id="q-entete" name="q" type="search" placeholder={t.recherche.placeholder} autoComplete="off" enterKeyHint="search" />
+            <ChampRecherche id="q-entete" placeholder={t.recherche.placeholder} />
             <button type="submit" aria-label={t.recherche.lancer}>
               <Loupe />
             </button>
@@ -173,7 +174,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
                 <span>{t.compte.lien}</span>
               </Link>
             ) : null}
-            <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} />
+            <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} />
           </div>
         </div>
         <div className="te-barre-rayons cache-mobile">

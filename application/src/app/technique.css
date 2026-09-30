@@ -48,14 +48,17 @@ html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent);
 .te-logo .marque-texte { font-family: var(--theme-font-display); font-weight: 800; font-stretch: 72%; font-size: 1.375rem; text-transform: uppercase; letter-spacing: .01em; }
 .te-entete-fin { grid-area: fin; display: flex; align-items: center; gap: 1.25rem; justify-content: flex-end; }
 .te-recherche {
-  grid-area: recherche; display: flex; block-size: 44px; overflow: hidden;
+  grid-area: recherche; position: relative; display: flex; block-size: 44px;
   background: var(--theme-surface); color: var(--theme-encre); border-radius: var(--theme-radius-doux);
 }
 .te-recherche:focus-within { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
 .te-recherche input { flex: 1; min-inline-size: 0; padding-inline: 1rem; border: 0; background: transparent; font-size: 1rem; }
 .te-recherche input:focus-visible { outline: none; }
 .te-recherche input::placeholder { color: var(--theme-encre-doux); }
-.te-recherche button { display: grid; place-items: center; inline-size: 52px; border: 0; background: var(--theme-accent); color: var(--theme-encre); cursor: pointer; }
+.te-recherche button {
+  display: grid; place-items: center; inline-size: 52px; border: 0; background: var(--theme-accent); color: var(--theme-encre); cursor: pointer;
+  border-start-end-radius: var(--theme-radius-doux); border-end-end-radius: var(--theme-radius-doux);
+}
 .te-recherche button:hover { background: color-mix(in srgb, var(--theme-accent) 86%, var(--theme-encre)); }
 @media (min-width: 900px) {
   .te-entete-rang { grid-template-columns: auto minmax(0, 46rem) auto; grid-template-areas: "logo recherche fin"; justify-content: space-between; gap: 2.5rem; padding-block: .875rem; }

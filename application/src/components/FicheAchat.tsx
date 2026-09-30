@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Prix } from "./Prix";
 import { EtatStock } from "./EtatStock";
+import { Coche } from "./Icones";
 import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
@@ -197,7 +198,8 @@ export function FicheAchat({
             +
           </button>
         </div>
-        <button type="button" className="btn btn-primaire btn-ajout" disabled={!disponible} onClick={auPanier}>
+        <button type="button" className="btn btn-primaire btn-ajout" data-ajoute={ajoute ? "" : undefined} disabled={!disponible} onClick={auPanier}>
+          {ajoute ? <Coche taille={16} /> : null}
           {ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier}
         </button>
       </div>
@@ -210,7 +212,8 @@ export function FicheAchat({
             <p className="legende truncate">{declinaison() || champ(produit, "nom")}</p>
             {variante ? <Prix millimes={variante.prix_millimes * quantite} /> : null}
           </div>
-          <button type="button" className="btn btn-primaire" disabled={!disponible} onClick={auPanier}>
+          <button type="button" className="btn btn-primaire" data-ajoute={ajoute ? "" : undefined} disabled={!disponible} onClick={auPanier}>
+            {ajoute ? <Coche taille={16} /> : null}
             {ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier}
           </button>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Panier } from "./Icones";
+import { Coche, Panier } from "./Icones";
 import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
 import { t } from "@/lib/i18n";
 import type { LignePanier } from "@/lib/panier-contrat";
@@ -15,6 +15,7 @@ export function AjoutRapide({ ligne, stock, nom }: { ligne: Omit<LignePanier, "a
     <button
       type="button"
       className="btn btn-primaire btn-bloc te-carte-ajout"
+      data-ajoute={ajoute ? "" : undefined}
       aria-label={`${t.produit.ajouterAuPanier} — ${nom}`}
       onClick={() => {
         ajouteAuPanier(ligne, stock);
@@ -22,7 +23,7 @@ export function AjoutRapide({ ligne, stock, nom }: { ligne: Omit<LignePanier, "a
         ouvrePanier();
       }}
     >
-      <Panier taille={18} />
+      {ajoute ? <Coche taille={18} /> : <Panier taille={18} />}
       {ajoute ? t.panier.ajoute : t.produit.ajouter}
     </button>
   );

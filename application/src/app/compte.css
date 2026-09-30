@@ -54,6 +54,52 @@
 .compte-carte[data-statut="expediee"] .compte-statut { background: var(--theme-encre); color: var(--theme-surface); }
 .compte-etat { margin: 0; font-size: .9375rem; line-height: 1.45; }
 
+/* La frise de suivi : quatre étapes, reliées par un trait qui se remplit
+   jusqu'à celle du moment (qui respire doucement). Livrée : tout en vert. */
+.compte-frise {
+  --frise-teinte: var(--theme-encre);
+  list-style: none; margin: .25rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.compte-carte[data-statut="livree"] .compte-frise { --frise-teinte: var(--theme-succes); }
+.compte-frise li {
+  position: relative; display: grid; justify-items: center; gap: .4375rem; text-align: center;
+  font-size: .75rem; line-height: 1.25; color: var(--theme-encre-doux);
+}
+.compte-frise li[data-faite] { color: var(--theme-encre); }
+.compte-frise li[aria-current] { font-weight: 600; }
+.compte-frise li:not(:first-child)::before {
+  content: ""; position: absolute; inset-block-start: 7px; inset-inline: -50% 50%; block-size: 2px; margin-block-start: -1px;
+  background: var(--theme-filet); z-index: 0;
+}
+.compte-frise li:not(:first-child)::after {
+  content: ""; position: absolute; inset-block-start: 7px; inset-inline: -50% 50%; block-size: 2px; margin-block-start: -1px;
+  background: var(--frise-teinte); transform: scaleX(0); transform-origin: left; z-index: 0;
+}
+[dir="rtl"] .compte-frise li:not(:first-child)::after { transform-origin: right; }
+.compte-frise li[data-faite]:not(:first-child)::after {
+  transform: none; animation: frise-trait .5s var(--theme-courbe) calc(var(--i, 0) * 140ms) backwards;
+}
+@keyframes frise-trait { from { transform: scaleX(0); } }
+.compte-frise-point {
+  position: relative; z-index: 1; display: grid; place-items: center; inline-size: 14px; block-size: 14px; border-radius: 50%;
+  background: var(--theme-surface); box-shadow: inset 0 0 0 2px var(--theme-filet-fort);
+  color: var(--theme-surface); transition: background-color .3s;
+}
+.compte-frise li[data-faite] .compte-frise-point {
+  background: var(--frise-teinte); box-shadow: none;
+  animation: frise-point .4s cubic-bezier(.34, 1.5, .64, 1) calc(var(--i, 0) * 140ms + 120ms) backwards;
+}
+@keyframes frise-point { from { transform: scale(.3); } }
+.compte-frise li[aria-current]:not(:last-child) .compte-frise-point::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--frise-teinte) 30%, transparent);
+  animation: frise-respire 2.4s ease-in-out infinite;
+}
+@keyframes frise-respire { 50% { transform: scale(1.35); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .compte-frise li[aria-current] .compte-frise-point::after { animation: none; }
+}
+
 .compte-contenu { display: flex; align-items: center; gap: .875rem; min-inline-size: 0; }
 .compte-vignettes { display: flex; flex: none; }
 .compte-vignettes .tunnel-vignette { inline-size: 3rem; block-size: 3rem; }

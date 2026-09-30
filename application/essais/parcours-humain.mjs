@@ -112,6 +112,7 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     const ligne = page.locator(".tiroir-panier .panier-ligne");
     verifie(await ligne.count() === 1 && (await ligne.innerText()).includes("Robe à bretelles en lin · Terracotta, M"), "la ligne dit le produit et sa déclinaison");
     verifie(await ligne.locator(".panier-vignette img").count() === 1, "la ligne a sa vignette");
+    note("INFO  ", `sous les articles : ${(await page.locator(".panier-assurances").innerText().catch(() => "(rien)")).replace(/\s+/g, " ").trim()}`);
     note("INFO  ", `jauge : ${(await page.locator(".jauge-livraison p").innerText().catch(() => "(absente)")).trim()}`);
     await capture(page, "selma-tiroir-panier");
     await clic(page, page.locator(".tiroir-panier").getByRole("button", { name: /ajouter un article/i }));
@@ -119,6 +120,9 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     await page.keyboard.press("Escape");
     await pause(300);
     verifie(!(await tiroirOuvert(page, "tiroir-panier")), "Échap ferme le tiroir");
+    await pause(300);
+    verifie((await page.locator(".tiroir").count()) === 0, "il glisse hors de l'écran, puis disparaît");
+    verifie((await page.evaluate(() => document.activeElement?.classList.contains("btn-ajout"))) === true, "le focus revient sur « Ajouter au panier »");
     verifie((await compte(page)) === "2", "le compteur de l'en-tête dit 2");
   });
 
@@ -338,6 +342,30 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
     await page.waitForLoadState("networkidle");
     await capture(page, "quinca-recherche-reference");
     verifie((await page.locator(".recherche-bilan").innerText()).includes("Une pièce trouvée"), "la référence PV14 trouve la perceuse");
+  });
+
+  await etape("recherche : les pièces proposées pendant la frappe", async () => {
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
+    await clic(page, page.locator("#q-entete"));
+    await tape(page, "perc");
+    const panneau = page.locator(".recherche-suggestions[data-ouvert]");
+    await panneau.locator(".suggestion").first().waitFor({ timeout: 8000 });
+    const n = await panneau.locator(".suggestion").count();
+    verifie(n >= 2, `« perc » : ${n} pièces proposées, avant même Entrée`);
+    verifie((await panneau.locator(".suggestion-tout").innerText()).includes("Voir les"), "« Voir les N résultats » les suit");
+    verifie((await page.locator("#q-entete").getAttribute("aria-expanded")) === "true", "le champ annonce sa liste ouverte (combobox)");
+    await capture(page, "quinca-suggestions");
+    await page.keyboard.press("ArrowDown");
+    const choisi = (await panneau.locator(".suggestion[aria-selected=true] .suggestion-nom").innerText()).trim();
+    verifie(Boolean(await page.locator("#q-entete").getAttribute("aria-activedescendant")) && (await page.evaluate(() => document.activeElement?.id)) === "q-entete",
+      `↓ choisit « ${choisi} », le focus reste dans le champ`);
+    await page.keyboard.press("Escape");
+    verifie(!(await panneau.isVisible()), "Échap referme la liste");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/produit\//);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator("h1").first().innerText()).toLowerCase().includes(choisi.toLowerCase()), `Entrée ouvre la fiche de « ${choisi} »`);
   });
 
   await etape("rayon depuis la barre des rayons", async () => {

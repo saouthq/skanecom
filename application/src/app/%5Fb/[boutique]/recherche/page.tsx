@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Gabarit } from "@/components/Gabarit";
 import { CarteProduit } from "@/components/CarteProduit";
 import { EnteteListe } from "@/components/EnteteListe";
+import { ChampRecherche } from "@/components/ChampRecherche";
 import { Loupe } from "@/components/Icones";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { listeProduits } from "@/lib/catalogue";
@@ -38,7 +39,9 @@ export default async function Recherche({
           <label htmlFor="q" className="sr-only">
             {t.recherche.champAria}
           </label>
-          <input id="q" name="q" type="search" defaultValue={requete} placeholder={t.recherche.placeholder} autoComplete="off" enterKeyHint="search" />
+          <span className="recherche-page-champ">
+            <ChampRecherche id="q" defaultValue={requete} placeholder={t.recherche.placeholder} />
+          </span>
           <button type="submit" className="btn btn-primaire">
             <Loupe taille={18} />
             {t.recherche.lancer}

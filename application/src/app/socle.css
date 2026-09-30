@@ -80,8 +80,21 @@
   background: var(--theme-surface); border: 1px solid var(--theme-contour-champ);
   border-radius: var(--theme-radius-doux); font-size: 1rem;  /* 16 px : sous ce seuil iOS zoome */
 }
-.champ input:hover, .champ select:hover { border-color: var(--theme-encre-doux); }
-.champ input:focus-visible, .champ select:focus-visible, .champ textarea:focus-visible { border-color: var(--theme-encre); }
+.champ input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+.champ select, .champ textarea {
+  transition: border-color .18s var(--theme-courbe), box-shadow .25s var(--theme-courbe), background-color .18s;
+}
+.champ input:hover, .champ select:hover, .champ textarea:hover { border-color: var(--theme-encre-doux); }
+/* Le champ où l'on écrit : son bord s'épaissit et un halo l'entoure — plus
+   net qu'un contour décalé, et tout aussi visible. */
+.champ input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):focus-visible,
+.champ select:focus-visible, .champ textarea:focus-visible {
+  outline: none; border-color: var(--theme-encre);
+  box-shadow: 0 0 0 1px var(--theme-encre), 0 0 0 5px color-mix(in srgb, var(--theme-encre) 8%, transparent);
+}
+.champ [aria-invalid="true"]:focus-visible {
+  box-shadow: 0 0 0 1px var(--theme-erreur), 0 0 0 5px color-mix(in srgb, var(--theme-erreur) 13%, transparent);
+}
 
 .opt {
   display: flex; align-items: center; gap: .625rem; min-block-size: 36px;
@@ -157,6 +170,17 @@
 @keyframes tiroir-gauche { from { transform: translateX(-100%); } }
 [dir="rtl"] .tiroir-panneau { animation-name: tiroir-gauche; }
 [dir="rtl"] .tiroir[data-cote="debut"] .tiroir-panneau { animation-name: tiroir-droite; }
+/* La sortie (Tiroir.tsx la tient 260 ms) : le chemin inverse, plus vif —
+   on part plus vite qu'on n'arrive. Plus une fenêtre : rien n'y est cliquable. */
+.tiroir[data-sortie] { pointer-events: none; }
+.tiroir[data-sortie] .tiroir-voile { animation: tiroir-voile-part .24s var(--theme-courbe) forwards; }
+.tiroir[data-sortie] .tiroir-panneau { animation: tiroir-droite-part .26s cubic-bezier(.4, 0, .9, .6) forwards; }
+.tiroir[data-sortie][data-cote="debut"] .tiroir-panneau { animation-name: tiroir-gauche-part; }
+[dir="rtl"] .tiroir[data-sortie] .tiroir-panneau { animation-name: tiroir-gauche-part; }
+[dir="rtl"] .tiroir[data-sortie][data-cote="debut"] .tiroir-panneau { animation-name: tiroir-droite-part; }
+@keyframes tiroir-voile-part { to { opacity: 0; } }
+@keyframes tiroir-droite-part { to { transform: translateX(100%); } }
+@keyframes tiroir-gauche-part { to { transform: translateX(-100%); } }
 
 /* --- Pli (accordéon <details>) ------------------------------------------- */
 .pli { border-block-end: 1px solid var(--theme-filet); }
@@ -255,10 +279,67 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 
 /* --- Recherche ------------------------------------------------------------- */
 .recherche-page { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: 1.25rem; max-inline-size: 40rem; }
+.recherche-page-champ { position: relative; display: flex; flex: 1 1 16rem; min-inline-size: 0; }
 .recherche-page input {
-  flex: 1 1 16rem; min-block-size: 48px; padding: .625rem 1rem; font-size: 1rem;
+  flex: 1; min-inline-size: 0; min-block-size: 48px; padding: .625rem 1rem; font-size: 1rem;
   border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux); background: var(--theme-surface);
+  transition: border-color .18s var(--theme-courbe), box-shadow .25s var(--theme-courbe);
 }
+.recherche-page input:focus-visible {
+  outline: none; border-color: var(--theme-encre);
+  box-shadow: 0 0 0 1px var(--theme-encre), 0 0 0 5px color-mix(in srgb, var(--theme-encre) 8%, transparent);
+}
+
+/* La croix qui vide le champ : celle de la boutique, pas le bleu du système. */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none; appearance: none; inline-size: 18px; block-size: 18px; margin-inline-start: .5rem; cursor: pointer;
+  background: var(--theme-encre-doux);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 14px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+input[type="search"]::-webkit-search-cancel-button:hover { background: var(--theme-encre); }
+
+/* Les suggestions pendant la frappe (components/ChampRecherche.tsx) : un
+   panneau sous le champ, qui arrive d'un léger glissé. */
+.recherche-suggestions {
+  position: absolute; inset-block-start: calc(100% + 6px); inset-inline: 0; z-index: 70; display: none;
+  padding: .375rem; max-block-size: min(70vh, 34rem); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--theme-surface); color: var(--theme-encre); text-align: start;
+  border: 1px solid var(--theme-filet); border-radius: max(var(--theme-radius-carte), 4px); box-shadow: var(--theme-shadow-releve);
+  font-family: var(--theme-font-texte); font-weight: 400; text-transform: none; letter-spacing: 0;
+}
+.recherche-suggestions[data-ouvert] { display: block; animation: suggestions-arrivent .2s var(--theme-courbe); }
+@keyframes suggestions-arrivent { from { opacity: 0; transform: translateY(-4px); } }
+.recherche-suggestions ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.suggestion {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: .875rem;
+  padding: .5rem .625rem; border-radius: max(var(--theme-radius-doux), 3px); cursor: pointer;
+  animation: suggestions-arrivent .25s var(--theme-courbe) backwards;
+}
+.suggestion:nth-child(2) { animation-delay: 30ms; } .suggestion:nth-child(3) { animation-delay: 60ms; }
+.suggestion:nth-child(4) { animation-delay: 90ms; } .suggestion:nth-child(5) { animation-delay: 120ms; }
+.suggestion:nth-child(6) { animation-delay: 150ms; }
+.suggestion[aria-selected="true"], .suggestion-tout[aria-selected="true"] { background: var(--theme-surface-2); }
+.suggestion-photo {
+  position: relative; display: grid; place-items: center; inline-size: 48px; block-size: 48px; overflow: hidden;
+  border-radius: max(var(--theme-radius-net), 2px); background: var(--theme-surface-2);
+  font-family: var(--theme-font-display); font-size: 1.25rem; color: color-mix(in srgb, var(--theme-encre) 38%, transparent);
+}
+.suggestion-photo img { object-fit: cover; }
+.suggestion-texte { display: grid; gap: .125rem; min-inline-size: 0; }
+.suggestion-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9375rem; line-height: 1.3; }
+.suggestion-nom mark { background: none; color: inherit; font-weight: 700; }
+.suggestion-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; color: var(--theme-encre-doux); }
+.suggestion-detail:empty { display: none; }
+.suggestion-prix { display: grid; justify-items: end; font-size: .875rem; font-weight: 500; }
+.suggestion-des { font-size: .6875rem; font-weight: 400; color: var(--theme-encre-doux); }
+.suggestion-tout {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-block-start: .25rem;
+  padding: .75rem .625rem; border-block-start: 1px solid var(--theme-filet); border-radius: max(var(--theme-radius-doux), 3px);
+  font-size: .875rem; font-weight: 600; cursor: pointer;
+}
+.suggestion-tout:hover .icone-fleche, .suggestion-tout[aria-selected="true"] .icone-fleche { transform: translateX(3px); }
+.suggestion-rien { margin: 0; padding: .875rem .75rem; font-size: .875rem; color: var(--theme-encre-doux); }
 .recherche-bilan { margin-block: 1rem 0; font-size: .875rem; color: var(--theme-encre-doux); }
 .recherche-resultats { margin-block: 1rem 3rem; }
 
@@ -302,11 +383,21 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .menu-sous-liste a { display: block; padding-block: .375rem; font-size: .9375rem; color: var(--theme-encre-doux); }
 .menu-faits { list-style: none; margin: 0; padding: 0; display: grid; gap: .375rem; font-size: .8125rem; color: var(--theme-encre-doux); }
 
-.panier-vide { padding-block: 2rem; display: grid; gap: .5rem; }
+.panier-vide { padding-block: 2.5rem; display: grid; gap: .5rem; justify-items: center; text-align: center; }
+.panier-vide-icone {
+  display: grid; place-items: center; inline-size: 64px; block-size: 64px; margin-block-end: .5rem; border-radius: 50%;
+  background: var(--theme-surface-2); color: var(--theme-encre-doux);
+}
 .panier-lignes { list-style: none; margin: 0; padding: 0; }
 .panier-ligne { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 1rem; padding-block: 1rem; border-block-end: 1px solid var(--theme-filet); }
 .panier-vignette { position: relative; display: block; aspect-ratio: 4 / 5; background: var(--theme-surface-2); overflow: hidden; border-radius: var(--theme-radius-net); }
 .panier-vignette img { object-fit: cover; }
+/* Sans photo : l'initiale du produit, composée comme le cartel des fiches. */
+.panier-vignette-attente {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--theme-font-display); font-size: 1.75rem; line-height: 1; color: color-mix(in srgb, var(--theme-encre) 38%, transparent);
+  background: linear-gradient(160deg, var(--theme-surface-2), color-mix(in srgb, var(--theme-surface-2) 70%, var(--theme-filet)));
+}
 .panier-ligne-corps { display: flex; flex-direction: column; gap: .25rem; min-inline-size: 0; }
 .panier-ligne-tete { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
 .panier-libelle { font-size: .875rem; line-height: 1.35; }
@@ -321,7 +412,29 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .jauge-livraison { padding-block: .25rem 1rem; border-block-end: 1px solid var(--theme-filet); font-size: .8125rem; }
 .jauge-livraison p { margin-block-end: .5rem; }
 .jauge { display: block; block-size: 4px; background: var(--theme-filet); border-radius: 2px; overflow: hidden; }
-.jauge > span { display: block; block-size: 100%; background: var(--theme-encre); transition: inline-size .4s var(--theme-courbe); }
+.jauge > span { display: block; block-size: 100%; background: var(--theme-encre); transition: inline-size .6s var(--theme-courbe), background-color .3s; }
+/* À l'ouverture du tiroir, la jauge se remplit jusqu'où l'on en est. */
+.tiroir-panier .jauge > span { transform-origin: left; animation: jauge-remplit .8s var(--theme-courbe) .15s backwards; }
+[dir="rtl"] .tiroir-panier .jauge > span { transform-origin: right; }
+@keyframes jauge-remplit { from { transform: scaleX(0); } }
+.jauge-livraison p { display: flex; align-items: center; gap: .375rem; }
+.jauge-livraison[data-atteinte] p { color: var(--theme-succes); font-weight: 500; }
+.jauge-livraison[data-atteinte] .jauge > span { background: var(--theme-succes); }
+.jauge-livraison[data-atteinte] svg { animation: panier-coche .45s cubic-bezier(.34, 1.5, .64, 1); }
+@keyframes panier-coche { from { opacity: 0; transform: scale(.5); } }
+
+/* Ce qui rassure, sous les articles. */
+.panier-assurances {
+  list-style: none; margin: 1.25rem 0 .25rem; padding: 1rem; display: grid; gap: .625rem;
+  background: var(--theme-surface-2); border-radius: var(--theme-radius-doux); font-size: .8125rem; color: var(--theme-encre-doux);
+}
+.panier-assurances li { display: flex; align-items: center; gap: .625rem; }
+.panier-assurances svg { flex: none; color: var(--theme-encre); }
+.panier-commander { gap: .5rem; }
+
+/* Un article arrive : la pastille du panier rebondit (BoutonPanier.tsx). */
+.bouton-panier-compte[data-bond] { animation: panier-bond .55s cubic-bezier(.34, 1.6, .64, 1); }
+@keyframes panier-bond { 0% { transform: scale(.4); } 45% { transform: scale(1.25); } 100% { transform: scale(1); } }
 
 /* --- Bouton du panier (en-tête) ------------------------------------------- */
 .bouton-panier {
@@ -359,6 +472,8 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .fiche-indisponible { padding: 1rem; background: var(--theme-surface-2); border-radius: var(--theme-radius-doux); font-size: .875rem; }
 .achat { display: flex; gap: .75rem; }
 .btn-ajout { flex: 1; min-inline-size: 0; }
+/* Ajouté : la coche arrive d'un bond, le bouton garde sa place. */
+.btn[data-ajoute] svg { animation: panier-coche .45s cubic-bezier(.34, 1.5, .64, 1); }
 .fiche-note { margin-block-start: -.5rem; }
 
 /* --- Caractéristiques ------------------------------------------------------- */
@@ -367,3 +482,17 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .caracteristiques dt { color: var(--theme-encre-doux); }
 .caracteristiques dd { margin: 0; }
 .plis { border-block-start: 1px solid var(--theme-filet); }
+
+/* --- La barre de navigation ------------------------------------------------
+   Un lien suivi : un trait fin court en haut de l'écran, à la couleur de la
+   boutique, jusqu'à ce que la page suivante soit là (components/console/
+   Retours.tsx, ProgressionNavigation — le même que le backoffice). Sur un
+   réseau mobile lent, on sait que le geste a été pris. */
+html[data-gabarit] .ui-progression {
+  position: fixed; inset-inline: 0; inset-block-start: 0; z-index: 100; block-size: 2px; pointer-events: none;
+  transform-origin: left; transform: scaleX(0); opacity: 0; background: var(--theme-accent);
+}
+[dir="rtl"] .ui-progression { transform-origin: right; }
+html[data-gabarit] .ui-progression[data-etat="court"] { opacity: 1; transform: scaleX(.8); transition: transform 8s cubic-bezier(.1, .7, .1, 1), opacity .15s; }
+html[data-gabarit] .ui-progression[data-etat="fin"] { opacity: 0; transform: scaleX(1); transition: transform .25s var(--theme-courbe), opacity .35s .25s; }
+@media print { .ui-progression { display: none; } }

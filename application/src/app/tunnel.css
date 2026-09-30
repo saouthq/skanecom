@@ -83,12 +83,17 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
   flex: 1 1 14rem; display: flex; align-items: stretch; min-block-size: 48px;
   background: var(--theme-surface); border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux);
 }
-.tunnel-tel:focus-within { border-color: var(--theme-encre); outline: 2px solid var(--theme-encre); outline-offset: 1px; }
+.tunnel-tel { transition: border-color .18s var(--theme-courbe), box-shadow .25s var(--theme-courbe); }
+.tunnel-tel:focus-within {
+  border-color: var(--theme-encre);
+  box-shadow: 0 0 0 1px var(--theme-encre), 0 0 0 5px color-mix(in srgb, var(--theme-encre) 8%, transparent);
+}
 .tunnel-tel > span {
   display: grid; place-items: center; padding-inline: .875rem; border-inline-end: 1px solid var(--theme-filet);
   color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; direction: ltr;
 }
 .champ .tunnel-tel input { flex: 1; min-inline-size: 0; border: 0 !important; background: transparent; outline: none; direction: ltr; }
+.champ .tunnel-tel input:focus-visible { box-shadow: none !important; }  /* le halo est celui du champ entier */
 .champ input.tunnel-code {
   flex: 1 1 10rem; max-inline-size: 14rem; text-align: center; letter-spacing: .5em; font-variant-numeric: tabular-nums;
   font-size: 1.25rem; direction: ltr;
@@ -137,7 +142,13 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 .tunnel-conditions[data-invalide] input { outline: 2px solid var(--theme-erreur); outline-offset: 2px; }
 .tunnel-bouton { justify-content: space-between; min-block-size: 58px; padding-inline: 1.5rem; font-size: .9375rem; }
 .tunnel-bouton .prix .dev { color: inherit; opacity: .75; }
-.tunnel-bouton[aria-busy] { justify-content: center; }
+.tunnel-bouton[aria-busy] { justify-content: center; gap: .75rem; }
+/* Pendant l'envoi : un anneau tourne à côté de « Envoi en cours ». */
+.tunnel-bouton[aria-busy]::before {
+  content: ""; flex: none; inline-size: 1rem; block-size: 1rem; border-radius: 50%;
+  border: 2px solid currentColor; border-inline-end-color: transparent; animation: tunnel-tourne .7s linear infinite;
+}
+@keyframes tunnel-tourne { to { transform: rotate(1turn); } }
 
 .tunnel-alerte {
   margin: 0 0 .5rem; padding: .875rem 1rem; font-size: .9375rem;

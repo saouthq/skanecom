@@ -8,6 +8,8 @@ import { directionDe, localeOgDe, t } from "@/lib/i18n";
 import { Entete } from "@/components/Entete";
 import { Pied } from "@/components/Pied";
 import { Apparitions } from "@/components/Apparitions";
+import { Suspense } from "react";
+import { ProgressionNavigation } from "@/components/console/Retours";
 
 /* ============================================================================
    LE LAYOUT RACINE D'UNE BOUTIQUE
@@ -75,6 +77,9 @@ export default async function RacineBoutique({ children, params }: Props) {
         {children}
         <Pied cadre={cadre} />
         <Apparitions />
+        <Suspense fallback={null}>
+          <ProgressionNavigation />
+        </Suspense>
       </body>
     </html>
   );

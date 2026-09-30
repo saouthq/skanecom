@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Croix } from "./Icones";
 
@@ -19,7 +19,13 @@ import { Croix } from "./Icones";
    Il est posé dans <body> (portail) : l'en-tête collant ne doit pas devenir
    son cadre de référence. Fermé, il n'existe pas — rien ne se rend côté
    serveur, rien ne s'hydrate.
+
+   Il repart comme il est venu : à la fermeture, il glisse hors de l'écran
+   (260 ms) avant de disparaître. Pendant ce temps il n'est plus une fenêtre
+   (ni rôle, ni focus, ni clic : `inert`) — la page est déjà rendue.
    ========================================================================== */
+
+const DUREE_SORTIE = 260;
 
 const FOCUSABLES = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -58,6 +64,17 @@ export function Tiroir({
 }) {
   const panneau = useRef<HTMLDivElement>(null);
   const fermer = useEffectEvent(() => onFermer());
+
+  // Rendu tant qu'il est ouvert, et le temps de sa sortie. Ajusté pendant le
+  // rendu : le tiroir cesse d'être une fenêtre au rendu même qui le ferme.
+  const [present, setPresent] = useState(ouvert);
+  if (ouvert && !present) setPresent(true);
+  const sortie = present && !ouvert;
+  useEffect(() => {
+    if (!sortie) return;
+    const t = window.setTimeout(() => setPresent(false), DUREE_SORTIE);
+    return () => window.clearTimeout(t);
+  }, [sortie]);
 
   useEffect(() => {
     if (!ouvert) return;
@@ -105,17 +122,20 @@ export function Tiroir({
     };
   }, [ouvert, retour]);
 
-  if (!ouvert || typeof document === "undefined") return null;
+  if (!present || typeof document === "undefined") return null;
 
   return createPortal(
     <div
       className={`tiroir ${className}`}
       data-cote={cote}
-      data-instantane={instantane ? "" : undefined}
-      data-feuille={feuille}
-      role="dialog"
-      aria-modal="true"
-      aria-label={titre}
+      data-instantane={instantane && !sortie ? "" : undefined}
+      data-sortie={sortie ? "" : undefined}
+      data-feuille={sortie ? undefined : feuille}
+      role={sortie ? undefined : "dialog"}
+      aria-modal={sortie ? undefined : "true"}
+      aria-label={sortie ? undefined : titre}
+      aria-hidden={sortie ? "true" : undefined}
+      inert={sortie}
     >
       <button type="button" className="tiroir-voile" aria-hidden="true" tabIndex={-1} onClick={onFermer} />
       <div ref={panneau} className="tiroir-panneau">
