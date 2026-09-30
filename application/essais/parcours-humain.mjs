@@ -229,6 +229,11 @@ console.log("\n== 2. Maymar, au clavier seul ==");
     await page.goto(M + "/produit/perceuse-visseuse-14v", { waitUntil: "networkidle" });
     await capture(page, "maymar-404");
     verifie(await page.locator("header .marque").count() === 1 && await page.locator("footer").count() === 1, "la page introuvable garde l'en-tête et le pied de Maymar");
+    await clic(page, page.locator("#q-introuvable"));
+    await tape(page, "valise");
+    const proposees = page.locator(".recherche-suggestions[data-ouvert] .suggestion");
+    await proposees.first().waitFor({ timeout: 8000 });
+    verifie((await proposees.count()) >= 1, `elle propose de chercher : ${await proposees.count()} valise(s) pendant la frappe`);
   });
   await ctx.close();
 }
