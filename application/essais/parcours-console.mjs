@@ -122,6 +122,29 @@ async function brut(contexte, methode, chemin, { entetes = {}, formulaire } = {}
   });
 }
 
+/* Le crochet « Send Email » de Supabase Auth, tel que GoTrue l'appelle :
+   Standard Webhooks, signé avec le secret de développement
+   (outils/api-locale.sh → application/.dev.vars). */
+const SECRET_CROCHET = Buffer.from("secret-de-developpement-skanecom-local-uniquement");
+async function crochetCourriel(evenement, { signe = true, decalageS = 0 } = {}) {
+  const corps = JSON.stringify(evenement);
+  const id = `msg_${Date.now()}`;
+  const horodatage = String(Math.floor(Date.now() / 1000) - decalageS);
+  const signature = createHmac("sha256", SECRET_CROCHET).update(`${id}.${horodatage}.${corps}`).digest("base64");
+  return new Promise((ok, ko) => {
+    const req = http.request({
+      host: "127.0.0.1", port: Number(t.port), method: "POST", path: "/crochets/courriel",
+      headers: {
+        host: new URL(CONSOLE).host, "content-type": "application/json", "content-length": Buffer.byteLength(corps),
+        "webhook-id": id, "webhook-timestamp": horodatage, "webhook-signature": `v1,${signe ? signature : "pas-la-bonne"}`,
+      },
+    }, (r) => { let texte = ""; r.on("data", (m) => (texte += m)); r.on("end", () => ok({ status: r.statusCode, texte })); });
+    req.on("error", ko);
+    req.end(corps);
+  });
+}
+const RELAIS = process.env.RELAIS ?? "http://127.0.0.1:54321";
+
 /* Attend qu'une page réponde comme prévu (l'annuaire de la vitrine
    redemande une boutique fermée toutes les 10 s). */
 async function attendsVitrine(p, url, statut, delaiMs = 20_000) {
@@ -1020,6 +1043,46 @@ await etape("deuxième connexion : seulement le code, plus de QR code", async ()
   await page.keyboard.press("Enter");
   await page.waitForURL((u) => u.pathname === "/");
   verifie(true, "le code de l'application ouvre la console");
+});
+
+/* ------------------------------------------------------------------ */
+console.log("\n== 5. Les e-mails ==");
+
+await etape("la galerie des e-mails, aux couleurs de la boutique choisie", async () => {
+  await clic(page, page.locator(".app-cote").getByRole("link", { name: "E-mails" }));
+  await page.waitForURL(/\/courriels/);
+  await page.waitForLoadState("networkidle");
+  verifie(await page.locator(".crl-cadre").count() === 4, "quatre e-mails : le code, la nouvelle adresse, l'invitation, le mot de passe");
+  const sujet = await page.locator(".crl-sujet").first().innerText();
+  verifie(/^Votre code de connexion — .+/.test(sujet), `le sujet dit qui écrit : « ${sujet} »`);
+  await capture(page, "console-courriels", true);
+  await page.goto(CONSOLE + "/courriels?boutique=quincaillerie-demo&vue=telephone", { waitUntil: "networkidle" });
+  verifie((await page.locator(".crl-sujet").first().innerText()).includes("Quincaillerie du Sud"), "une autre boutique : son nom dans le sujet");
+  await capture(page, "console-courriels-quincaillerie-telephone", true);
+});
+
+await etape("le crochet de Supabase : l'e-mail de la boutique, signé ou rien", async () => {
+  const adresse = `acheteuse-${SUFFIXE}@exemple.tn`;
+  const evenement = {
+    user: { email: adresse },
+    email_data: { token: "246810", email_action_type: "magiclink", redirect_to: "http://mode.localhost:4200/compte", site_url: CONSOLE },
+  };
+  const sans = await crochetCourriel(evenement, { signe: false });
+  verifie(sans.status === 401, `sans la bonne signature : refusé (HTTP ${sans.status})`);
+  const vieux = await crochetCourriel(evenement, { decalageS: 3600 });
+  verifie(vieux.status === 401, `signé il y a une heure (rejoué) : refusé (HTTP ${vieux.status})`);
+  const r = await crochetCourriel(evenement);
+  verifie(r.status === 200, `signé : accepté (HTTP ${r.status} ${r.texte})`);
+  const rendu = await (await fetch(`${RELAIS}/email-dev/rendu/dernier?email=${encodeURIComponent(adresse)}`)).json();
+  verifie(rendu.nom === "Maison Selma" && rendu.sujet === "Votre code de connexion — Maison Selma",
+    `au nom de la boutique du lien de retour : « ${rendu.nom} », « ${rendu.sujet} »`);
+  verifie(rendu.html.includes("246810") && rendu.texte.includes("246810"), "le code, dans l'e-mail et dans sa version texte");
+  const vue = await navigateur.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  await vue.setContent(rendu.html, { waitUntil: "load" });
+  await capture(vue, "courriel-code-selma-telephone", true);
+  await vue.close();
+  const inconnu = await crochetCourriel({ user: { email: adresse }, email_data: { email_action_type: "inconnu" } });
+  verifie(inconnu.status === 400, `un type d'e-mail inconnu : rien ne part (HTTP ${inconnu.status})`);
 });
 await ctx.close();
 

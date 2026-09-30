@@ -35,6 +35,11 @@ export default defineConfig({
       // Production : `wrangler secret put SUPABASE_SERVICE_ROLE_KEY` ; local :
       // application/.dev.vars, écrit par outils/api-locale.sh.
       SUPABASE_SERVICE_ROLE_KEY: bindings.secret(),
+      // Les e-mails (src/lib/courriels) : la signature du crochet de Supabase
+      // Auth, et l'envoi (« relais », « apercu » ou « resend:<clé>:<adresse> »).
+      // Un secret déclaré est exigé partout — en local, seuls ceux-ci passent.
+      COURRIELS_CROCHET_SECRET: bindings.secret(),
+      COURRIELS_ENVOI: bindings.secret(),
     },
   }),
 });

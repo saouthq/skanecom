@@ -857,3 +857,19 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 
 /* Aperçu en ligne : les codes de connexion, lisibles d'un coup d'œil. */
 .codes-apercu-code { font-size: 1.125rem; font-weight: 600; letter-spacing: .18em; font-family: var(--ui-mono, ui-monospace, monospace); }
+
+/* Les e-mails (console → E-mails) : chaque exemple dans sa boîte de réception. */
+.crl-barre { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; justify-content: space-between; margin-block-end: 1.25rem; }
+.crl-segment { display: inline-flex; align-items: center; gap: .375rem; padding: .3125rem .75rem; border-radius: 6px; font-weight: 500; color: var(--ui-texte-2); text-decoration: none; }
+.crl-segment-actif { background: var(--ui-panneau); color: var(--ui-texte); box-shadow: var(--ui-ombre-s); }
+.crl-grille { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 36rem), 1fr)); }
+.crl-grille-telephone { grid-template-columns: repeat(auto-fill, minmax(min(100%, 25rem), 1fr)); }
+.crl-carte { display: grid; gap: .75rem; padding: 1rem; }
+.crl-pour { margin: 0; }
+.crl-boite { display: grid; gap: .125rem; padding: .625rem .875rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r); background: var(--ui-doux); }
+.crl-de { font-weight: 600; font-size: .875rem; }
+.crl-sujet { font-size: .875rem; color: var(--ui-texte-2); }
+.crl-cadre { inline-size: 100%; block-size: 44rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r); background: #fff; }
+.crl-grille-telephone .crl-cadre { inline-size: 375px; max-inline-size: 100%; justify-self: center; block-size: 46rem; }
+.crl-texte summary { cursor: pointer; font-size: .8125rem; color: var(--ui-texte-2); }
+.crl-texte pre { margin: .5rem 0 0; padding: .75rem; white-space: pre-wrap; font-size: .8125rem; background: var(--ui-doux); border-radius: var(--ui-r); }

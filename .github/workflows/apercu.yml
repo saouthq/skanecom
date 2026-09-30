@@ -118,6 +118,11 @@ jobs:
           if [ -z "$SOUS" ] || [ "$SOUS" = "null" ]; then echo "::error::Sous-domaine workers.dev introuvable"; exit 1; fi
           echo "SOUS=$SOUS" >> "$GITHUB_ENV"
           echo "NEXT_PUBLIC_CONSOLE_HOTE=skanecom-apercu-console.$SOUS.workers.dev" >> "$GITHUB_ENV"
+          # Le secret du crochet des e-mails (Supabase Auth → /crochets/courriel) :
+          # tiré de la clé service_role, il n'a pas à être copié nulle part.
+          CROCHET="v1,whsec_$(printf '%s' "skanecom-crochet-courriel:$SUPABASE_SERVICE_ROLE_KEY" | sha256sum | cut -c1-64 | xxd -r -p | base64 -w0)"
+          echo "::add-mask::$CROCHET"
+          echo "COURRIELS_CROCHET_SECRET=$CROCHET" >> "$GITHUB_ENV"
           echo "ANNUAIRE_EN_PLUS={\"skanecom-apercu-maymar.$SOUS.workers.dev\":\"maymar\",\"skanecom-apercu-selma.$SOUS.workers.dev\":\"maison-selma\",\"skanecom-apercu-quincaillerie.$SOUS.workers.dev\":\"quincaillerie-demo\"}" >> "$GITHUB_ENV"
 
       - name: L'authentification (crochets des codes, téléphone, adresses, administrateur)
@@ -142,7 +147,7 @@ jobs:
           # Les réglages. Le crochet des e-mails attend l'invitation : elle part,
           # elle, par le serveur d'e-mails de Supabase (réservé aux membres de
           # l'organisation — c'est le cas de l'administrateur).
-          jq -n --arg site "$CONSOLE" --arg sous "$SOUS" --rawfile invitation supabase/apercu/invitation.html --argjson crochet_email "$([ $INVITER = 1 ] && echo false || echo true)" '{
+          jq -n --arg site "$CONSOLE" --arg sous "$SOUS" --arg console "$NEXT_PUBLIC_CONSOLE_HOTE" --arg crochet "$COURRIELS_CROCHET_SECRET" --rawfile invitation supabase/apercu/invitation.html --argjson crochet_email "$([ $INVITER = 1 ] && echo false || echo true)" '{
             site_url: $site,
             uri_allow_list: ("https://*." + $sous + ".workers.dev/**"),
             external_email_enabled: true,
@@ -157,7 +162,8 @@ jobs:
             hook_send_sms_enabled: true,
             hook_send_sms_uri: "pg-functions://postgres/private/crochet_sms_apercu",
             hook_send_email_enabled: $crochet_email,
-            hook_send_email_uri: "pg-functions://postgres/private/crochet_email_apercu",
+            hook_send_email_uri: ("https://" + $console + "/crochets/courriel"),
+            hook_send_email_secrets: $crochet,
             mailer_subjects_invite: "Votre accès à la console SkanEcom",
             mailer_templates_invite_content: $invitation
           }' > /tmp/reglages.json
@@ -185,7 +191,8 @@ jobs:
               -H "content-type: application/json" --data-binary @/tmp/invitation.json)
             if [ "$code" = "200" ]; then echo "Invitation envoyée à $APERCU_ADMIN_EMAIL." | tee -a "$GITHUB_STEP_SUMMARY"
             else echo "::warning::Invitation : HTTP $code $(jq -r '.msg // .message // .error_description // "?"' /tmp/invite.json 2>/dev/null)"; fi
-            jq -n '{hook_send_email_enabled: true, hook_send_email_uri: "pg-functions://postgres/private/crochet_email_apercu"}' > /tmp/crochet.json
+            jq -n --arg console "$NEXT_PUBLIC_CONSOLE_HOTE" --arg crochet "$COURRIELS_CROCHET_SECRET" \
+              '{hook_send_email_enabled: true, hook_send_email_uri: ("https://" + $console + "/crochets/courriel"), hook_send_email_secrets: $crochet}' > /tmp/crochet.json
             reglage /tmp/crochet.json
             echo "Crochet des e-mails actif."
           fi
@@ -237,6 +244,9 @@ jobs:
         working-directory: application
         run: |
           printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | $WRANGLER secret put SUPABASE_SERVICE_ROLE_KEY --name skanecom-application
+          # Les e-mails : rédigés par l'application, gardés pour la console (rien ne part de l'aperçu).
+          printf '%s' "$COURRIELS_CROCHET_SECRET" | $WRANGLER secret put COURRIELS_CROCHET_SECRET --name skanecom-application
+          printf '%s' "apercu" | $WRANGLER secret put COURRIELS_ENVOI --name skanecom-application
           bun run deploy:response-store
           bun run deploy -- --skip-build
 
@@ -284,3 +294,27 @@ jobs:
             done
             echo "$url : HTTP $code" | tee -a "$GITHUB_STEP_SUMMARY"
           done
+
+      # Ce que voit vraiment un visiteur de l'aperçu : les polices chargées, les
+      # images cassées, les réponses en erreur, sur ordinateur et téléphone ;
+      # une capture de chaque page clé (artefact « apercu-en-ligne »).
+      - name: Contrôle visuel de l'aperçu
+        if: env.PRET == '1'
+        working-directory: application
+        env:
+          CAPTURES: ${{ github.workspace }}/.outils/captures/en-ligne
+        run: |
+          bunx playwright-core install chromium
+          SITES="maymar=https://skanecom-apercu-maymar.$SOUS.workers.dev"
+          SITES="$SITES,selma=https://skanecom-apercu-selma.$SOUS.workers.dev"
+          SITES="$SITES,quincaillerie=https://skanecom-apercu-quincaillerie.$SOUS.workers.dev"
+          SITES="$SITES" node essais/controle-en-ligne.mjs
+
+      - name: Captures de l'aperçu
+        if: always() && env.PRET == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: apercu-en-ligne
+          path: .outils/captures/en-ligne/
+          if-no-files-found: ignore
+          retention-days: 14

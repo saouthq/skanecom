@@ -32,7 +32,14 @@ Le résumé de chaque exécution du workflow donne les adresses exactes.
   `skanecom-fichiers`.
 - **Ni SMS ni e-mail ne partent de l'aperçu** : les codes de connexion sont
   notés dans la base (`supabase/apercu/codes-demo.sql`) et la console les
-  affiche, une heure, sur sa page d'accueil.
+  affiche, une heure, sur sa page d'accueil. Les e-mails, rédigés par
+  l'application aux couleurs de la boutique (secret `COURRIELS_ENVOI` =
+  `apercu`), y sont gardés entiers : « Voir l'e-mail » les montre tels
+  qu'ils seraient partis.
+- **Après chaque déploiement, un navigateur contrôle l'aperçu** : l'accueil,
+  le catalogue et une fiche de chaque boutique, sur ordinateur et téléphone
+  — polices chargées, images cassées, réponses en erreur (résumé du
+  workflow), et une capture de chaque page (artefact « apercu-en-ligne »).
 
 ## La mise en place, une fois
 
@@ -61,10 +68,12 @@ Le workflow fait ensuite tout, à chaque exécution :
 - la base : les migrations envoyées à la fonction `apercu-installer`
   (`supabase/functions/apercu-installer`, déployée par Claude, protégée par
   la clé `service_role`), le jeu de démo une fois, les crochets des codes ;
-- l'authentification, par l'API de gestion de Supabase : crochets « Send
-  SMS » et « Send Email » vers `private.crochet_sms_apercu` et
-  `private.crochet_email_apercu`, connexion par téléphone, adresse de la
-  console et adresses de retour, codes à six chiffres valables 24 heures ;
+- l'authentification, par l'API de gestion de Supabase : crochet « Send
+  SMS » vers `private.crochet_sms_apercu`, crochet « Send Email » vers
+  l'application (`/crochets/courriel` sur l'adresse de la console, signé par
+  un secret dérivé de la clé `service_role`, jamais écrit nulle part),
+  connexion par téléphone, adresse de la console et adresses de retour,
+  codes à six chiffres valables 24 heures ;
 - l'administrateur (`APERCU_ADMIN_EMAIL`) : invité par un vrai e-mail
   (`supabase/apercu/invitation.html`, envoyé par le serveur d'e-mails de
   Supabase, réservé aux membres de l'organisation) s'il n'a pas de compte,

@@ -1,0 +1,83 @@
+# Feuille de route — de la plateforme à l'agence e-commerce
+
+> Écrite le 30/09/2026, tenue à jour à chaque livraison. Skander a confié la direction du projet à Claude le 30/09 (« c'est toi le chef de projet… il faut que tout soit premium et moderne ») ; ce document dit ce qui vient, dans quel ordre, et pourquoi. Le PRD ([`cadrage/01-prd.md`](cadrage/01-prd.md)) reste la référence du périmètre v1 ; ceci en est la suite.
+
+## Le cap
+
+**La meilleure agence de boutiques en ligne pour la Tunisie, qui s'adapte à tous les métiers** : un commerçant — mode, beauté, high-tech, maison, alimentation, outillage — a en quelques jours une boutique premium à son nom, qu'il gère depuis son téléphone, et qui vend vraiment (paiement à la livraison, confirmation, livraison, refus maîtrisés).
+
+## Les règles de la maison (en plus du PRD §5)
+
+1. **Premium par défaut.** Aucune page, aucun e-mail, aucun état vide ne montre le réglage par défaut d'un outil (une page 404 anglaise, un e-mail de Supabase). Un défaut de finition est un défaut.
+2. **Le téléphone d'abord**, pour l'acheteur comme pour l'équipe.
+3. **Ce qui peut se régler se règle** (« fais les deux et mets-le en réglage »), boutique par boutique, jamais par du code propre à un client.
+4. **Tout se vérifie en ligne** : après chaque déploiement, un navigateur ouvre les pages clés de l'aperçu et note polices, images et erreurs (workflow « Aperçu en ligne », étape « Contrôle visuel »).
+5. **Tout se mesure** : ce qu'on ne voit pas dans la console n'est pas sous contrôle.
+
+## Où on en est (30/09)
+
+Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12, vitrine V1 à V4, V7 et V8, deux gabarits (éditorial, technique), l'aperçu en ligne sur Supabase et Cloudflare. Il manque de la v1 : l'interface en arabe (V5) et Konnect (V6, derrière son module).
+
+## Les étapes, dans l'ordre
+
+### A. Fiabilité et finition — en cours
+
+- [x] Vérification par e-mail en plus du SMS (réglage de la boutique).
+- [x] **E-mails aux couleurs de la boutique** : Supabase ne rédige plus rien ; le crochet « Send Email » confie l'événement à l'application, qui écrit au nom de la boutique (logo, couleurs, gabarit) ; galerie dans la console.
+- [x] **Contrôle visuel de l'aperçu en ligne** après chaque déploiement (captures en artefact).
+- [x] Audit de toutes les pages des trois vitrines, sur ordinateur et téléphone : page introuvable du framework sur une adresse inconnue, pastille du panier invisible (gabarit éditorial), sections d'accueil incomplètes, photos qui se peignent sur l'aplat — corrigés le 30/09.
+- [ ] Cartes du gabarit technique alignées d'une carte à l'autre (prix barré, pastilles).
+- [ ] Déploiement en deux temps avec cache prérempli, nettoyage des anciennes versions du cache.
+
+### B. Une vitrine complète : contenus et confiance
+
+- Pages de contenu écrites au backoffice : À propos, Questions fréquentes, Contact (horaires, adresse, carte, WhatsApp), Livraison et retours, Guide des tailles.
+- Réseaux sociaux (Instagram, Facebook, TikTok) au pied de page, bouton WhatsApp flottant (réglage), partage d'une fiche.
+- Bandeau d'annonce réglable ; pied de page enrichi (moyens de paiement, transporteurs, lettre d'information avec consentement).
+- « Suivre ma commande » sans compte (numéro de commande et téléphone).
+
+### C. Vendre plus
+
+- **Codes promo et promotions** (module, coupé chez Maymar dont la charte refuse la promotion) : pourcentage, montant, livraison offerte, minimum de commande, dates, nombre d'usages ; soldes d'une collection en prix barrés.
+- **« Prévenez-moi du retour »** sur une déclinaison épuisée : SMS, e-mail ou WhatsApp au réassort.
+- **Favoris** dans le navigateur, puis rattachés au compte.
+- **Paniers abandonnés** : la liste au backoffice avec le message WhatsApp prêt ; la relance automatique en réglage.
+- Ventes associées (« complétez avec »), lots ; avis clients avec photos.
+
+### D. Tous les métiers
+
+- **Troisième gabarit « commerce »** (high-tech, électroménager, téléphonie, grande distribution) : grand menu des rayons, bannières, comparaison, prix mis en avant, fiches techniques.
+- **Bibliothèque de sections d'accueil**, communes aux gabarits : bannières défilantes, marques, témoignages, questions fréquentes, vidéo, Instagram, « acheter la silhouette ».
+- **Préréglages par métier** dans la console (mode, beauté, bijoux, high-tech, maison, alimentation, outillage) : gabarit, polices, couleurs, sections, caractéristiques et réglages de livraison posés d'un geste — une boutique prête à habiller en dix minutes.
+- **Boutiques de démonstration par métier** (beauté, high-tech, maison), pour la prospection.
+
+### E. Arabe et paiement en ligne
+
+- L'interface entière en arabe (de droite à gauche), la bascule FR/AR par boutique, les contenus bilingues saisis au backoffice.
+- Konnect (V6), derrière son module, qui s'efface si le prestataire tombe.
+
+### F. Console et backoffice : le mouvement
+
+- Une couche de mouvement avec **Motion** (ex-Framer Motion), chargée à la demande (`LazyMotion`) : onglets, listes qui se réordonnent, tiroirs, notifications, compteurs du tableau de bord, gestes au doigt (glisser pour confirmer une commande) ; « réduire les animations » respecté partout.
+- Graphiques du tableau de bord, objectifs du mois.
+
+### G. Tout contrôler
+
+- Surveillance automatique, chaque heure, des boutiques en ligne (pages clés, temps de réponse, polices, images) ; alerte à Skander au premier défaut.
+- Les erreurs de l'application, boutique par boutique, lisibles dans la console.
+- Statistiques de chaque vitrine (visites, pages vues, paniers, conversion), sans cookie ni donnée personnelle.
+- Le tableau de bord de la plateforme : commandes et chiffre d'affaires de toutes les boutiques, santé, avancement des mises en place.
+
+### H. La mise en production (avec Skander)
+
+Ce qui ne se décide pas sans lui, rappelé à chaque point d'étape :
+
+| Sujet | Ce qu'il faut |
+|---|---|
+| SMS | Le fournisseur (prix par SMS, envoi vers les numéros tunisiens) |
+| E-mails | Resend ou Brevo, et un domaine d'envoi vérifié (`COURRIELS_ENVOI`) |
+| Transporteurs | Lesquels brancher en premier (API) |
+| Konnect | Le compte marchand de chaque client qui le veut |
+| Anti-robots | Les clés Turnstile |
+| Maymar | Le domaine `maymar.tn`, les photos selon le protocole (celles reçues ne sont pas montrables), les informations légales |
+| Production | Le projet Supabase `skanecom-prod` |

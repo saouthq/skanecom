@@ -61,6 +61,30 @@ revoke execute on function private.crochet_email_apercu(jsonb) from public, anon
 grant  execute on function private.crochet_sms_apercu(jsonb)   to supabase_auth_admin;
 grant  execute on function private.crochet_email_apercu(jsonb) to supabase_auth_admin;
 
+-- Les e-mails que l'application a rédigés (crochet HTTP /crochets/courriel,
+-- COURRIELS_ENVOI=apercu) : gardés entiers, pour que la console les
+-- montre tels qu'ils seraient arrivés.
+alter table plateforme.codes_apercu add column if not exists expediteur text;
+alter table plateforme.codes_apercu add column if not exists sujet text;
+alter table plateforme.codes_apercu add column if not exists html text;
+alter table plateforme.codes_apercu add column if not exists texte text;
+
+create or replace function public.console_noter_courriel_apercu(
+  p_destinataire text, p_code text, p_expediteur text, p_sujet text, p_html text, p_texte text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from plateforme.codes_apercu where le < now() - interval '1 hour';
+  insert into plateforme.codes_apercu (canal, destinataire, code, expediteur, sujet, html, texte)
+  values ('email', lower(coalesce(p_destinataire, '')), coalesce(p_code, ''), p_expediteur, p_sujet, p_html, p_texte);
+end;
+$$;
+revoke execute on function public.console_noter_courriel_apercu(text, text, text, text, text, text) from public, anon, authenticated;
+grant  execute on function public.console_noter_courriel_apercu(text, text, text, text, text, text) to service_role;
+
 -- La console (clé service_role, administrateur en double authentification) :
 -- les codes de la dernière heure, les plus récents d'abord.
 create or replace function public.console_codes_apercu()
@@ -70,9 +94,24 @@ stable
 security definer
 set search_path = ''
 as $$
-  select coalesce(jsonb_agg(jsonb_build_object('le', c.le, 'canal', c.canal, 'destinataire', c.destinataire, 'code', c.code)
+  select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'le', c.le, 'canal', c.canal, 'destinataire', c.destinataire,
+                                               'code', c.code, 'sujet', c.sujet, 'courriel', c.html is not null)
                             order by c.le desc), '[]'::jsonb)
     from (select * from plateforme.codes_apercu where le > now() - interval '1 hour' order by le desc limit 30) c;
 $$;
 revoke execute on function public.console_codes_apercu() from public, anon, authenticated;
 grant  execute on function public.console_codes_apercu() to service_role;
+
+create or replace function public.console_courriel_apercu(p_id bigint)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object('le', c.le, 'destinataire', c.destinataire, 'expediteur', c.expediteur,
+                            'sujet', c.sujet, 'html', c.html, 'texte', c.texte)
+    from plateforme.codes_apercu c where c.id = p_id and c.html is not null;
+$$;
+revoke execute on function public.console_courriel_apercu(bigint) from public, anon, authenticated;
+grant  execute on function public.console_courriel_apercu(bigint) to service_role;

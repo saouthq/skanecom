@@ -766,6 +766,48 @@ export const fr = {
     rechercheTitre: "Recherche",
   },
 
+  /* Les e-mails : ceux que reçoivent l'acheteur (au nom de la boutique) et
+     l'équipe (au nom de la plateforme). Sujets courts, un seul geste par
+     e-mail, jamais de publicité. */
+  courriels: {
+    plateforme: "SkanEcom",
+    code: {
+      sujet: (marque: string) => `Votre code de connexion — ${marque}`,
+      apercu: (code: string) => `${code} : votre code pour vous connecter.`,
+      titre: "Votre code de connexion",
+      texte: (marque: string) => `Voici le code pour vous connecter à ${marque} et suivre vos commandes.`,
+      consigne: "Tapez ces six chiffres sur la page où vous l'avez demandé.",
+      legende: "À usage unique · ne le communiquez à personne",
+    },
+    invitation: {
+      sujet: (marque: string) => `Votre accès à ${marque}`,
+      apercu: "Choisissez votre mot de passe pour entrer.",
+      titre: (marque: string) => `Votre accès à ${marque}`,
+      texte: "Choisissez votre mot de passe : vous entrez ensuite, et réglez la double authentification si votre rôle la demande.",
+      bouton: "Choisir mon mot de passe",
+    },
+    motDePasse: {
+      sujet: (marque: string) => `Nouveau mot de passe — ${marque}`,
+      apercu: "Le lien pour choisir un nouveau mot de passe.",
+      titre: "Choisir un nouveau mot de passe",
+      texte: "Vous avez demandé à changer de mot de passe. Le lien ci-dessous vous y mène.",
+      bouton: "Choisir un nouveau mot de passe",
+    },
+    changementEmail: {
+      sujet: (marque: string) => `Confirmez votre nouvelle adresse — ${marque}`,
+      apercu: (code: string) => `${code} : le code pour confirmer votre nouvelle adresse.`,
+      titre: "Confirmez votre nouvelle adresse",
+      texte: "Tapez ce code sur la page où vous avez changé d'adresse e-mail.",
+      legende: "À usage unique · ne le communiquez à personne",
+    },
+    lienSecours: "Le bouton ne s'ouvre pas ? Copiez cette adresse dans votre navigateur :",
+    lienUnique: "Ce lien ne sert qu'une fois.",
+    ignorer: "Vous n'avez rien demandé ? Ignorez ce message : sans lui, personne ne peut entrer à votre place.",
+    raisonAcheteur: (marque: string) => `Vous recevez cet e-mail parce que votre adresse a été saisie sur ${marque}.`,
+    raisonEquipe: (marque: string) => `Vous recevez cet e-mail parce qu'un accès à ${marque} a été ouvert à votre adresse.`,
+    propulse: "Boutique propulsée par SkanEcom",
+  },
+
   secours: {
     titre: "La boutique revient dans quelques minutes.",
     texte: "En attendant, vous pouvez commander par WhatsApp : le message est déjà prêt avec votre panier.",

@@ -98,8 +98,12 @@ export function Identification({
     }
     setEnvoi(true);
     setErreur(null);
+    // Par e-mail, l'adresse de la boutique en lien de retour : l'e-mail part
+    // à son nom et à ses couleurs (le crochet des e-mails, lib/courriels).
     const { error } = await supabaseNavigateur().auth.signInWithOtp(
-      cible.canal === "sms" ? { phone: cible.valeur } : { email: cible.valeur },
+      cible.canal === "sms"
+        ? { phone: cible.valeur }
+        : { email: cible.valeur, options: { emailRedirectTo: `${window.location.origin}/compte` } },
     );
     setEnvoi(false);
     if (error) {

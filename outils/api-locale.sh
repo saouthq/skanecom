@@ -148,7 +148,13 @@ NEXT_PUBLIC_CONSOLE_HOTE=console.localhost
 ENV
   # Le secret de la console, tel que le Worker le lit (bindings.secret()) :
   # en local, workerd le prend dans application/.dev.vars (hors dépôt).
-  printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$(jeton service_role)" > "$RACINE/application/.dev.vars"
+  # Les e-mails que l'application rédige (crochet /crochets/courriel) partent
+  # au relais, qui les garde ; le secret du crochet est de développement.
+  {
+    printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$(jeton service_role)"
+    printf 'COURRIELS_ENVOI=relais\n'
+    printf 'COURRIELS_CROCHET_SECRET=v1,whsec_%s\n' "$(printf '%s' "$SECRET_DEV" | base64 -w0)"
+  } > "$RACINE/application/.dev.vars"
 
   for _ in $(seq 1 80); do
     if curl -sf -o /dev/null "http://127.0.0.1:54321/rest/v1/gouvernorats?select=code&limit=1" -H "apikey: $(jeton anon)" &&

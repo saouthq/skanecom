@@ -8,7 +8,7 @@ import { Icone } from "@/components/console/Icone";
 
 export const metadata: Metadata = { title: "Boutiques" };
 
-type CodeApercu = { le: string; canal: "sms" | "email"; destinataire: string; code: string };
+type CodeApercu = { id: number; le: string; canal: "sms" | "email"; destinataire: string; code: string; sujet: string | null; courriel: boolean };
 
 const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" });
 
@@ -109,21 +109,25 @@ export default async function Tableau() {
             <Link href="/" className="btn-lien aide">Actualiser</Link>
           </div>
           <p className="aide">
-            Sur l&apos;aperçu, aucun SMS ni e-mail ne part : le code demandé sur une vitrine s&apos;affiche ici, une heure.
+            Sur l&apos;aperçu, aucun SMS ni e-mail ne part : le code demandé sur une vitrine s&apos;affiche ici, une heure,
+            avec l&apos;e-mail tel qu&apos;il serait arrivé.
           </p>
           {codes.length === 0 ? (
             <p className="aide mt-3">Aucun code demandé dans la dernière heure.</p>
           ) : (
             <div className="defile mt-3">
               <table className="tableau">
-                <thead><tr><th>À</th><th>Par</th><th>Pour</th><th className="text-end">Code</th></tr></thead>
+                <thead><tr><th>À</th><th>Par</th><th>Pour</th><th className="text-end">Code</th><th aria-label="E-mail" /></tr></thead>
                 <tbody>
                   {codes.map((c, i) => (
                     <tr key={`${c.le}-${i}`}>
                       <td className="tabular-nums discret">{HEURE.format(new Date(c.le))}</td>
                       <td>{c.canal === "sms" ? "SMS" : "E-mail"}</td>
                       <td>{c.destinataire}</td>
-                      <td className="text-end"><b className="tabular-nums codes-apercu-code">{c.code}</b></td>
+                      <td className="text-end"><b className="tabular-nums codes-apercu-code">{c.code || "—"}</b></td>
+                      <td className="text-end">
+                        {c.courriel ? <Link href={`/courriels/recu/${c.id}`} className="btn-lien aide">Voir l&apos;e-mail</Link> : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

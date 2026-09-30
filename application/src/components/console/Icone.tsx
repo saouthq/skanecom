@@ -209,6 +209,12 @@ const TRACES = {
       <rect width="7" height="7" x="3" y="14" rx="1.5" />
     </>
   ),
+  courriel: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+    </>
+  ),
   cle: (
     <>
       <circle cx="7.5" cy="15.5" r="5.5" />

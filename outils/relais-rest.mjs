@@ -18,6 +18,9 @@
 // De même pour les e-mails (crochet « Send Email ») : les codes de connexion
 // des acheteurs, notés dans .outils/emails.log, relus par adresse :
 //   http://127.0.0.1:54321/email-dev/dernier?email=leila@exemple.tn
+// Et les e-mails que l'application a rédigés (COURRIELS_ENVOI=relais,
+// src/lib/courriels/envoi.ts), gardés entiers, relus par adresse :
+//   http://127.0.0.1:54321/email-dev/rendu/dernier?email=leila@exemple.tn
 // Lancé par outils/api-locale.sh. Jamais en production.
 import http from "node:http";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -39,6 +42,7 @@ const JOURNAL_SMS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const SMS = new Map(); // numéro (chiffres seuls) → dernier code
 const JOURNAL_EMAILS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.outils/emails.log");
 const EMAILS = new Map(); // adresse (minuscules) → { code, type }
+const RENDUS = new Map(); // adresse (minuscules) → { nom, sujet, html, texte, code }
 
 const chiffres = (texte) => String(texte ?? "").replace(/\D/g, "");
 
@@ -82,6 +86,30 @@ function recoitEmail(req, res) {
       res.writeHead(400, { "content-type": "application/json" }).end('{"error":{"http_code":400,"message":"E-mail illisible"}}');
     }
   });
+}
+
+/* Un e-mail rédigé par l'application : { a, nom, sujet, html, texte, code }. */
+function recoitRendu(req, res) {
+  let corps = "";
+  req.on("data", (morceau) => (corps += morceau));
+  req.on("end", async () => {
+    try {
+      const e = JSON.parse(corps);
+      const adresse = String(e.a ?? "").toLowerCase();
+      if (!adresse) throw new Error("adresse absente");
+      RENDUS.set(adresse, { nom: e.nom, sujet: e.sujet, html: e.html, texte: e.texte, code: e.code ?? null });
+      await appendFile(JOURNAL_EMAILS, `${new Date().toISOString()}  ${adresse}  rendu  « ${e.sujet} » de ${e.nom}\n`);
+      res.writeHead(200, { "content-type": "application/json" }).end("{}");
+    } catch {
+      res.writeHead(400, { "content-type": "application/json" }).end('{"erreur":"e-mail illisible"}');
+    }
+  });
+}
+
+function dernierRendu(url, res) {
+  const rendu = RENDUS.get(String(new URL(url, "http://relais").searchParams.get("email") ?? "").toLowerCase());
+  if (!rendu) return res.writeHead(404, { "content-type": "application/json" }).end("{}");
+  res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify(rendu));
 }
 
 function dernierEmail(url, res) {
@@ -155,6 +183,8 @@ http
     if (req.url === "/sms-dev" && req.method === "POST") return recoitSms(req, res);
     if (req.url.startsWith("/sms-dev/dernier") && req.method === "GET") return dernierSms(req.url, res);
     if (req.url === "/email-dev" && req.method === "POST") return recoitEmail(req, res);
+    if (req.url === "/email-dev/rendu" && req.method === "POST") return recoitRendu(req, res);
+    if (req.url.startsWith("/email-dev/rendu/dernier") && req.method === "GET") return dernierRendu(req.url, res);
     if (req.url.startsWith("/email-dev/dernier") && req.method === "GET") return dernierEmail(req.url, res);
 
     const cible = AMONTS.find((a) => req.url === a.prefixe || req.url.startsWith(a.prefixe + "/") || req.url.startsWith(a.prefixe + "?"));
