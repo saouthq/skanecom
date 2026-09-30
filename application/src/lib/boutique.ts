@@ -62,6 +62,11 @@ export type Cadre = {
   /** Le magasin où retirer ses commandes, si la boutique le propose (module
    *  retrait_magasin, adresse et ville renseignées) ; `null` sinon. */
   retrait: Magasin | null;
+  /** « Revendeur officiel DeWalt » : ce que la boutique affiche d'elle ; `null` sinon. */
+  revendeurOfficiel: string | null;
+  /** Le service après-vente (module sav) : la garantie annoncée, en mois
+   *  (0 : aucune durée) ; `null` sans le module. */
+  sav: { garantieMois: number } | null;
 };
 
 type Brut = {
@@ -135,6 +140,8 @@ export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => 
           delai_heures: Number(reglage(reglages, "retrait.delai_heures", 24)) || 24,
         }
       : null,
+    revendeurOfficiel: texteDe("catalogue.revendeur_officiel") || null,
+    sav: modules.includes("sav") ? { garantieMois: Number(reglage(reglages, "sav.garantie_mois", 0)) || 0 } : null,
   };
 });
 

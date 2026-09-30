@@ -11,10 +11,12 @@ import type { Cadre } from "./boutique";
 
 export function faitsDeService(cadre: Cadre): string[] {
   const faits: string[] = [];
+  if (cadre.revendeurOfficiel) faits.push(cadre.revendeurOfficiel);
   if (cadre.livraison.cod) faits.push(t.annonce.cod);
   if (cadre.seuilGratuiteMillimes) faits.push(t.annonce.livraisonOfferte(formatePrix(cadre.seuilGratuiteMillimes)));
   else if (cadre.livraison.delai) faits.push(cadre.livraison.delai);
   if (cadre.retrait) faits.push(t.annonce.retrait);
+  if (cadre.sav?.garantieMois) faits.push(t.annonce.garantie(cadre.sav.garantieMois));
   if (cadre.modules.includes("conseil_whatsapp") && cadre.whatsapp) faits.push(t.annonce.conseil);
   return faits;
 }

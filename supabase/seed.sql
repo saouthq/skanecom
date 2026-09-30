@@ -699,3 +699,54 @@ update public.produits p set caracteristiques = c.valeurs::jsonb
     ('00000000-0000-4000-8003-000000000024', '{"norme": "EN 397"}')
   ) as c(produit_id, valeurs)
  where p.boutique_id = '00000000-0000-4000-8000-000000000002' and p.id = c.produit_id::uuid;
+
+-- ---------------------------------------------------------------------
+-- Le service après-vente (module sav) : Maymar (garantie 24 mois) et la
+-- quincaillerie (12 mois, revendeur officiel de sa marque d'outillage).
+-- Maymar a deux demandes sur des valises livrées : l'une en cours (la roue),
+-- l'autre toute neuve (la fermeture).
+-- ---------------------------------------------------------------------
+insert into plateforme.modules_actifs (boutique_id, module) values
+  ('00000000-0000-4000-8000-000000000001', 'sav'),
+  ('00000000-0000-4000-8000-000000000002', 'sav');
+
+insert into public.reglages (boutique_id, cle, valeur) values
+  ('00000000-0000-4000-8000-000000000001', 'sav.garantie_mois',            '24'),
+  ('00000000-0000-4000-8000-000000000002', 'sav.garantie_mois',            '12'),
+  ('00000000-0000-4000-8000-000000000002', 'catalogue.revendeur_officiel', '"Revendeur officiel Atelier Pro"');
+
+do $$
+declare
+  b constant uuid := '00000000-0000-4000-8000-000000000001';
+  d record;
+  v_commande public.commandes;
+  v_ligne    public.commande_lignes;
+  v_id       uuid;
+begin
+  for d in select * from (values
+    (1, '+21698321456', 'VAL-ABS-55-BLE', null::text,
+        'La roue arrière droite s''est bloquée au retour de Djerba : la valise ne roule plus, elle frotte par terre.', 4320, 'en_cours',
+        'Il dépose la valise samedi au magasin de Sfax ; roue commandée au fournisseur.'),
+    (2, '+21621778804', 'VAL-ABS-55-BLE', 'ABS55-BL-0921',
+        'La fermeture éclair de la poche avant accroche, et elle s''est ouverte pendant le voyage.', 120, 'nouvelle', null)
+  ) as t(rang, tel, sku, serie, description, minutes, statut, note)
+  loop
+    select c.* into v_commande from public.commandes c
+     where c.boutique_id = b and c.contact_telephone = d.tel and c.statut = 'livree' order by c.created_at limit 1;
+    select l.* into v_ligne from public.commande_lignes l
+     where l.boutique_id = b and l.commande_id = v_commande.id and l.sku = d.sku;
+    insert into public.sav_demandes (boutique_id, rang, numero, client_id, commande_id, ligne_id,
+                                     produit_nom, variante_libelle, sku, numero_serie, description, statut, created_at)
+    values (b, d.rang, 'SAV-' || lpad(d.rang::text, 5, '0'), v_commande.client_id, v_commande.id, v_ligne.id,
+            v_ligne.produit_nom, v_ligne.variante_libelle, v_ligne.sku, d.serie, d.description, d.statut::public.statut_sav,
+            now() - make_interval(mins => d.minutes))
+    returning id into v_id;
+    insert into public.sav_evenements (boutique_id, sav_id, statut_avant, statut_apres, par_client, created_at)
+    values (b, v_id, null, 'nouvelle', true, now() - make_interval(mins => d.minutes));
+    if d.statut = 'en_cours' then
+      insert into public.sav_evenements (boutique_id, sav_id, statut_avant, statut_apres, note, created_at)
+      values (b, v_id, 'nouvelle', 'en_cours', d.note, now() - make_interval(mins => d.minutes - 90));
+    end if;
+  end loop;
+end
+$$;

@@ -1,0 +1,113 @@
+/* ============================================================================
+   LE SERVICE APRÈS-VENTE, CÔTÉ ACHETEUR — la page « Garantie et SAV » et la
+   demande depuis « Mes commandes » (components/Compte.tsx). Commune aux deux
+   gabarits : couleurs, polices et arrondis viennent des jetons du thème ;
+   les champs reprennent ceux du tunnel.
+   ========================================================================== */
+
+/* ---- La page ---- */
+.sav-page { padding-block: clamp(1.5rem, 4vw, 3.25rem) clamp(3rem, 7vw, 6rem); }
+.sav-tete { display: grid; gap: .625rem; max-inline-size: 46rem; margin-block-end: clamp(1.5rem, 4vw, 2.75rem); }
+.sav-tete h1 { font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.02; }
+.sav-chapo { color: var(--theme-encre-doux); font-size: clamp(1rem, 1.6vw, 1.125rem); line-height: 1.55; }
+.sav-revendeur {
+  display: inline-flex; align-items: center; gap: .5rem; justify-self: start; margin: 0;
+  padding: .375rem .75rem; border-radius: 999px; font-size: .8125rem; font-weight: 600;
+  background: color-mix(in srgb, var(--theme-accent) 16%, var(--theme-surface)); color: var(--theme-encre);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-accent) 45%, transparent);
+}
+
+.sav-grille { display: grid; gap: clamp(1rem, 2.5vw, 1.5rem); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) {
+  .sav-grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .sav-grille > .sav-garantie { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr); column-gap: clamp(2rem, 5vw, 4rem); align-items: center; }
+  .sav-garantie > :first-child { grid-row: span 2; }
+}
+.sav-grille > section {
+  display: grid; gap: .875rem; align-content: start; padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+.sav-grille h2 { font-size: clamp(1.25rem, 2.2vw, 1.5rem); }
+.sav-grille p, .sav-grille li { line-height: 1.55; }
+
+.sav-grille > .sav-garantie { background: var(--theme-encre); color: var(--theme-surface); border-color: var(--theme-encre); }
+.sav-garantie p { color: color-mix(in srgb, var(--theme-surface) 82%, transparent); }
+.sav-garantie .sav-duree {
+  display: flex; align-items: baseline; gap: .625rem; margin: 0;
+  font-family: var(--theme-font-display); font-size: 1.5rem; font-weight: 600; line-height: .9; color: var(--theme-surface);
+}
+.sav-duree span { font-size: clamp(4.5rem, 10vw, 7.5rem); letter-spacing: -.03em; color: var(--theme-accent); }
+.sav-garantie h2 { align-self: end; }
+.sav-garantie p:last-child { align-self: start; max-inline-size: 38rem; }
+.sav-duree-icone { color: var(--theme-accent); }
+
+.sav-etapes ol { display: grid; gap: .875rem; margin: 0; padding: 0; list-style: none; }
+.sav-etapes li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .75rem; align-items: start; }
+.sav-etape-num {
+  display: grid; place-items: center; inline-size: 2rem; block-size: 2rem; border-radius: 999px;
+  background: var(--theme-surface-2); font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.sav-etapes .btn { justify-self: start; margin-block-start: .25rem; }
+
+.sav-preparer ul { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.sav-preparer li { position: relative; padding-inline-start: 1.25rem; }
+.sav-preparer li::before {
+  content: ""; position: absolute; inset-inline-start: 0; inset-block-start: .6em;
+  inline-size: .5rem; block-size: .5rem; border-radius: 2px; background: var(--theme-accent);
+}
+.sav-ailleurs { margin: .25rem 0 0; padding-block-start: .875rem; border-block-start: 1px solid var(--theme-filet); color: var(--theme-encre-doux); }
+
+/* ---- Mes demandes (en tête de « Mes commandes ») ---- */
+.sav-mes {
+  display: grid; gap: .625rem; padding: clamp(1rem, 2.5vw, 1.25rem);
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+.sav-mes h2 { font-size: 1.0625rem; }
+.sav-mes ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.sav-mes-ligne {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .375rem 1rem;
+  padding-block: .625rem; border-block-start: 1px solid var(--theme-filet);
+}
+.sav-mes-ligne:first-child { border-block-start: 0; padding-block-start: 0; }
+.sav-mes-texte { display: grid; gap: .0625rem; min-inline-size: 0; }
+.sav-mes-texte b { font-weight: 600; font-size: .9375rem; }
+.sav-mes-texte .legende { color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; }
+.sav-mes-statut {
+  padding: .25rem .625rem; border-radius: 999px; font-size: .75rem; font-weight: 600;
+  background: var(--theme-surface-2); color: var(--theme-encre);
+}
+.sav-mes-ligne[data-statut="resolue"] .sav-mes-statut { background: color-mix(in srgb, var(--theme-succes) 14%, var(--theme-surface)); color: var(--theme-succes); }
+.sav-mes-ligne[data-statut="refusee"] .sav-mes-statut { background: color-mix(in srgb, var(--theme-erreur) 10%, var(--theme-surface)); color: var(--theme-erreur); }
+
+/* ---- Sur une commande livrée ---- */
+.sav-carte { display: grid; gap: .75rem; padding-block-start: .75rem; border-block-start: 1px solid var(--theme-filet); }
+.sav-signaler { justify-self: start; font-size: .875rem; }
+.sav-envoyee { display: flex; align-items: flex-start; gap: .5rem; margin: 0; font-size: .875rem; line-height: 1.45; }
+.sav-envoyee svg { flex: none; margin-block-start: .125rem; color: var(--theme-succes); }
+
+.sav-formulaire { display: grid; gap: .875rem; }
+.sav-formulaire h3 { font-size: 1.0625rem; }
+.sav-formulaire .champ { display: grid; gap: .375rem; }
+.sav-formulaire .legende { color: var(--theme-encre-doux); font-size: .8125rem; }
+.sav-formulaire textarea, .sav-formulaire input:not([type="radio"]) {
+  inline-size: 100%; padding: .75rem .875rem; font: inherit; font-size: 1rem; color: var(--theme-encre);
+  background: var(--theme-surface); border: 1px solid var(--theme-contour-champ, var(--theme-filet-fort)); border-radius: var(--theme-radius-doux);
+}
+.sav-formulaire textarea { resize: vertical; min-block-size: 6.5rem; line-height: 1.5; }
+.sav-formulaire textarea:focus-visible, .sav-formulaire input:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 1px; }
+.sav-formulaire textarea[aria-invalid] { border-color: var(--theme-erreur); }
+.sav-article-seul { margin: 0; font-weight: 600; }
+.sav-deja { margin: 0; }
+.sav-articles { display: grid; gap: .5rem; margin: 0; padding: 0; border: 0; }
+.sav-articles legend { margin-block-end: .5rem; font-size: .875rem; font-weight: 600; }
+.sav-article-choix {
+  display: grid; grid-template-columns: auto 2.5rem minmax(0, 1fr); align-items: center; gap: .75rem;
+  padding: .5rem .75rem; border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-doux); cursor: pointer;
+}
+.sav-article-choix:has(input:checked) { border-color: var(--theme-encre); box-shadow: inset 0 0 0 1px var(--theme-encre); }
+.sav-article-choix[data-pris] { opacity: .55; cursor: default; }
+.sav-article-choix .tunnel-vignette { inline-size: 2.5rem; block-size: 2.5rem; }
+.sav-gestes { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
+
+html[data-gabarit="technique"] .sav-tete h1 { text-transform: uppercase; }
+html[data-gabarit="technique"] .sav-grille > section { border-width: 2px; }

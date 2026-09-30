@@ -8,7 +8,7 @@ import { FilAriane, type Etape } from "@/components/FilAriane";
 import { GalerieEditoriale, GalerieVignettes } from "@/components/Galerie";
 import { FournisseurSelection } from "@/components/SelectionVariante";
 import { SpecsVariante } from "@/components/SpecsVariante";
-import { Billets, Bulle, Camion, Magasin, Retour, Telephone } from "@/components/Icones";
+import { Billets, Bouclier, Bulle, Camion, Magasin, Retour, Telephone } from "@/components/Icones";
 import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
 import { chargeProduit, listeProduits, prixDepuis, type Produit } from "@/lib/catalogue";
 import { photosProduit } from "@/lib/photos";
@@ -76,6 +76,9 @@ function rassurances(cadre: Cadre) {
       : null,
     cadre.livraison.cod && cadre.livraison.rappel
       ? { cle: "rappel", icone: <Telephone />, titre: t.produit.confirmationTelephonique, texte: t.produit.confirmationTelephoniqueTexte }
+      : null,
+    cadre.sav?.garantieMois
+      ? { cle: "garantie", icone: <Bouclier />, titre: t.annonce.garantie(cadre.sav.garantieMois), texte: t.sav.garantieTexte }
       : null,
     { cle: "refus", icone: <Retour />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
   ].filter((r) => r !== null);

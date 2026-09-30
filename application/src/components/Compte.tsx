@@ -19,9 +19,25 @@ import { t } from "@/lib/i18n";
    public.mes_commandes ne rend que ses commandes, et rien de ce que
    l'équipe en écrit. La page servie est la même pour tous (aucune donnée
    personnelle dans le cache).
+
+   Avec le service après-vente (module sav), une commande livrée propose
+   « Un problème avec un article ? » : l'article, le numéro de série, ce qui
+   ne va pas (public.sav_demander) ; ses demandes et où elles en sont
+   s'affichent en tête (public.mes_sav, sans les notes de l'équipe).
    ========================================================================== */
 
-type LigneMienne = { produit_nom: string; variante_libelle: string | null; quantite: number; image: string | null };
+type LigneMienne = { id: string; produit_nom: string; variante_libelle: string | null; quantite: number; image: string | null };
+
+type DemandeMienne = {
+  numero: string;
+  statut: string;
+  issue: string | null;
+  commande: string;
+  ligne_id: string;
+  produit_nom: string;
+  variante_libelle: string | null;
+  cree_le: string;
+};
 
 type CommandeMienne = {
   numero: string;
@@ -40,11 +56,13 @@ type CommandeMienne = {
 const ATTENTE_RENVOI = 30;
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
-export function Compte({ boutiqueId }: { boutiqueId: string }) {
+export function Compte({ boutiqueId, sav = false }: { boutiqueId: string; sav?: boolean }) {
   // undefined : la session n'est pas encore lue.
   const [session, setSession] = useState<{ telephone: string } | null | undefined>(undefined);
   const [commandes, setCommandes] = useState<CommandeMienne[] | null>(null);
   const [erreurListe, setErreurListe] = useState(false);
+  const [demandes, setDemandes] = useState<DemandeMienne[]>([]);
+  const [relecture, setRelecture] = useState(0);
 
   const [etape, setEtape] = useState<"numero" | "code">("numero");
   const [telephone, setTelephone] = useState("");
@@ -83,6 +101,20 @@ export function Compte({ boutiqueId }: { boutiqueId: string }) {
       actif = false;
     };
   }, [session, boutiqueId]);
+
+  // Les demandes de SAV, avec le module ; relues après chaque demande.
+  useEffect(() => {
+    if (!session || !sav) return;
+    let actif = true;
+    supabaseNavigateur()
+      .rpc("mes_sav", { p_boutique_id: boutiqueId })
+      .then(({ data, error }) => {
+        if (actif && !error) setDemandes((data as DemandeMienne[] | null) ?? []);
+      });
+    return () => {
+      actif = false;
+    };
+  }, [session, sav, boutiqueId, relecture]);
 
   useEffect(() => {
     if (attente <= 0) return;
@@ -238,23 +270,55 @@ export function Compte({ boutiqueId }: { boutiqueId: string }) {
           <a className="btn btn-primaire" href="/catalogue">{t.compte.commander}</a>
         </div>
       ) : (
-        <ul className="compte-liste" role="list">
-          {commandes.map((c) => <Carte key={c.numero} c={c} />)}
-        </ul>
+        <>
+          {demandes.length > 0 ? (
+            <section className="sav-mes" aria-labelledby="sav-mes-titre">
+              <h2 id="sav-mes-titre">{t.sav.mesDemandes}</h2>
+              <ul role="list">
+                {demandes.map((d) => {
+                  const issue = d.issue ? t.sav.issue[d.issue] : "";
+                  return (
+                    <li key={d.numero} className="sav-mes-ligne" data-statut={d.statut}>
+                      <span className="sav-mes-texte">
+                        <b>{d.produit_nom}</b>
+                        <span className="legende">{d.numero} · {t.sav.surCommande(d.commande)}</span>
+                      </span>
+                      <span className="sav-mes-statut">{t.sav.statut[d.statut] ?? d.statut}{issue ? ` : ${issue}` : ""}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
+          <ul className="compte-liste" role="list">
+            {commandes.map((c) => (
+              <Carte key={c.numero} c={c} boutiqueId={boutiqueId} sav={sav} demandes={demandes} surDemande={() => setRelecture((n) => n + 1)} />
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
 }
 
-function Carte({ c }: { c: CommandeMienne }) {
+function Carte({ c, boutiqueId, sav, demandes, surDemande }: {
+  c: CommandeMienne;
+  boutiqueId: string;
+  sav: boolean;
+  demandes: DemandeMienne[];
+  surDemande: () => void;
+}) {
+  const [ouvert, setOuvert] = useState(false);
+  const [envoyee, setEnvoyee] = useState<string | null>(null);
   const retrait = c.mode_livraison === "retrait";
   const statut = (retrait ? t.commande.statutRetrait[c.statut] : undefined) ?? t.commande.statut[c.statut] ?? c.statut;
   const etat = (retrait ? t.compte.etatRetrait[c.statut] : undefined) ?? t.compte.etat[c.statut] ?? "";
   const articles = c.lignes.reduce((n, l) => n + l.quantite, 0);
   const vignettes = c.lignes.slice(0, 3);
   const suivi = !retrait && (c.transporteur || c.numero_suivi) ? t.compte.suivi(c.transporteur, c.numero_suivi) : null;
+  const magasin = c.magasin ? `${c.magasin.adresse}, ${c.magasin.ville}` : t.commande.modeRetrait.toLowerCase();
   const destination = retrait
-    ? t.compte.retraitA(c.magasin ? `${c.magasin.adresse}, ${c.magasin.ville}` : t.commande.modeRetrait.toLowerCase())
+    ? (c.statut === "livree" ? t.compte.retireeA(magasin) : t.compte.retraitA(magasin))
     : c.ville
       ? t.compte.livraisonA(lieu(c.ville, c.gouvernorat))
       : null;
@@ -291,6 +355,135 @@ function Carte({ c }: { c: CommandeMienne }) {
           {suivi}
         </p>
       ) : null}
+      {sav && c.statut === "livree" ? (
+        <div className="sav-carte">
+          {envoyee ? <p className="sav-envoyee" role="status"><Coche taille={16} /> {t.sav.envoyee(envoyee)}</p> : null}
+          {ouvert ? (
+            <Signaler
+              boutiqueId={boutiqueId}
+              commande={c}
+              ouvertes={demandes.filter((d) => d.commande === c.numero && (d.statut === "nouvelle" || d.statut === "en_cours"))}
+              fermer={() => setOuvert(false)}
+              envoye={(numero) => {
+                setOuvert(false);
+                setEnvoyee(numero);
+                surDemande();
+              }}
+            />
+          ) : (
+            <button type="button" className="btn-lien sav-signaler" onClick={() => { setEnvoyee(null); setOuvert(true); }} aria-expanded={false}>
+              {t.sav.signaler}
+            </button>
+          )}
+        </div>
+      ) : null}
     </li>
+  );
+}
+
+/** Le formulaire de la demande : l'article (s'il y en a plusieurs), le
+ *  numéro de série, ce qui ne va pas. La base revérifie tout. */
+function Signaler({ boutiqueId, commande, ouvertes, fermer, envoye }: {
+  boutiqueId: string;
+  commande: CommandeMienne;
+  ouvertes: DemandeMienne[];
+  fermer: () => void;
+  envoye: (numero: string) => void;
+}) {
+  const libres = commande.lignes.filter((l) => !ouvertes.some((d) => d.ligne_id === l.id));
+  const [article, setArticle] = useState(libres[0]?.id ?? "");
+  const [serie, setSerie] = useState("");
+  const [probleme, setProbleme] = useState("");
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const refProbleme = useRef<HTMLTextAreaElement>(null);
+  const id = `sav-${commande.numero}`;
+
+  async function envoyer() {
+    if (probleme.trim().length < 10) {
+      setErreur(t.sav.problemeInvalide);
+      refProbleme.current?.focus();
+      return;
+    }
+    setEnvoi(true);
+    setErreur(null);
+    const { data, error } = await supabaseNavigateur().rpc("sav_demander", {
+      p_boutique_id: boutiqueId, p_numero_commande: commande.numero, p_ligne_id: article,
+      p_numero_serie: serie.trim() || null, p_description: probleme.trim(),
+    });
+    setEnvoi(false);
+    if (error) {
+      setErreur(["deja", "trop", "description", "serie", "statut", "module"].includes(error.hint ?? "") ? error.message : t.sav.erreur);
+      return;
+    }
+    envoye(String((data as { numero: string }).numero));
+  }
+
+  return (
+    <form
+      className="sav-formulaire"
+      aria-labelledby={`${id}-titre`}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void envoyer();
+      }}
+    >
+      <h3 id={`${id}-titre`}>{t.sav.formulaireTitre}</h3>
+      {ouvertes.map((d) => (
+        <p key={d.numero} className="legende sav-deja">{d.produit_nom} : {t.sav.enCoursSurArticle(d.numero)}</p>
+      ))}
+      {commande.lignes.length > 1 ? (
+        <fieldset className="sav-articles">
+          <legend>{t.sav.quelArticle}</legend>
+          {commande.lignes.map((l) => {
+            const prise = ouvertes.some((d) => d.ligne_id === l.id);
+            return (
+              <label key={l.id} className="sav-article-choix" data-pris={prise ? "" : undefined}>
+                <input type="radio" name={`${id}-article`} value={l.id} checked={article === l.id} disabled={prise} onChange={() => setArticle(l.id)} />
+                <span className="tunnel-vignette">
+                  {l.image ? <Image src={urlFichier(l.image)} alt="" fill sizes="40px" /> : <span className="attente-photo"><span className="filigrane" /></span>}
+                </span>
+                <span>
+                  {l.produit_nom}
+                  {l.variante_libelle ? <span className="legende"> · {l.variante_libelle}</span> : null}
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+      ) : (
+        <p className="sav-article-seul">
+          {commande.lignes[0]?.produit_nom}
+          {commande.lignes[0]?.variante_libelle ? <span className="legende"> · {commande.lignes[0].variante_libelle}</span> : null}
+        </p>
+      )}
+      <div className="champ">
+        <label htmlFor={`${id}-probleme`}>{t.sav.probleme}</label>
+        <textarea
+          id={`${id}-probleme`}
+          ref={refProbleme}
+          rows={4}
+          maxLength={1000}
+          value={probleme}
+          aria-invalid={erreur === t.sav.problemeInvalide ? true : undefined}
+          aria-describedby={`${id}-probleme-aide`}
+          onChange={(e) => {
+            setProbleme(e.target.value);
+            if (erreur === t.sav.problemeInvalide && e.target.value.trim().length >= 10) setErreur(null);
+          }}
+        />
+        <span id={`${id}-probleme-aide`} className="legende">{t.sav.problemeAide}</span>
+      </div>
+      <div className="champ">
+        <label htmlFor={`${id}-serie`}>{t.sav.serie} <span className="legende">({t.commande.facultatif})</span></label>
+        <input id={`${id}-serie`} maxLength={60} value={serie} onChange={(e) => setSerie(e.target.value)} autoComplete="off" aria-describedby={`${id}-serie-aide`} />
+        <span id={`${id}-serie-aide`} className="legende">{t.sav.serieAide}</span>
+      </div>
+      {erreur ? <p className="champ-erreur" role="alert">{erreur}</p> : null}
+      <div className="sav-gestes">
+        <button type="submit" className="btn btn-primaire" disabled={envoi || !article}>{envoi ? t.sav.envoi : t.sav.envoyer}</button>
+        <button type="button" className="btn-lien" onClick={fermer}>{t.sav.annuler}</button>
+      </div>
+    </form>
   );
 }

@@ -622,3 +622,26 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 @container (max-width: 34rem) {
   .console .ft-champs .choix-2, .console .ft-champs .deux-colonnes { grid-template-columns: 1fr; }
 }
+
+/* ---- Le service après-vente (module sav) ---- */
+.sav-statut-nouvelle { color: var(--ui-ambre); background: var(--ui-ambre-fond); box-shadow: inset 0 0 0 1px var(--ui-ambre-bord); }
+.sav-statut-en_cours { color: var(--ui-bleu); background: var(--ui-bleu-fond); box-shadow: inset 0 0 0 1px var(--ui-bleu-bord); }
+.sav-statut-resolue { color: var(--ui-vert); background: var(--ui-vert-fond); box-shadow: inset 0 0 0 1px var(--ui-vert-bord); }
+.sav-statut-refusee { color: var(--ui-rouge); background: var(--ui-rouge-fond); box-shadow: inset 0 0 0 1px var(--ui-rouge-bord); }
+.sav-cloture-resolue .bo-action-icone { background: var(--ui-vert-fond); color: var(--ui-vert); box-shadow: inset 0 0 0 1px var(--ui-vert-bord); }
+.sav-cloture-refusee .bo-action-icone { background: var(--ui-rouge-fond); color: var(--ui-rouge); box-shadow: inset 0 0 0 1px var(--ui-rouge-bord); }
+.sav-ligne-article { display: grid; gap: .125rem; min-inline-size: 0; }
+.sav-produit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-texte); font-weight: 500; }
+.sav-produit span { color: var(--ui-texte-2); font-weight: 400; }
+.sav-extrait { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-texte-3); font-style: italic; }
+.sav-article { display: grid; gap: .125rem; }
+.sav-article-nom { font-weight: 600; font-size: .9375rem; }
+.sav-description {
+  margin: 1rem 0 0; padding: .875rem 1rem; border-radius: var(--ui-r); background: var(--ui-doux);
+  border-inline-start: 3px solid var(--ui-bord); font-size: .9375rem; line-height: 1.55; white-space: pre-line;
+}
+.sav-faits { margin-block-start: 1rem; }
+.sav-clore { display: grid; gap: .5rem; }
+.sav-ou { margin-block: 1rem .5rem; }
+.sav-noter { display: flex; align-items: flex-end; gap: .5rem; }
+.sav-noter .champ { margin: 0; }

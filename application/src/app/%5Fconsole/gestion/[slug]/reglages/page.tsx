@@ -98,6 +98,7 @@ export default async function Reglages({
   const sansZone = e.gouvernorats.filter((g) => !g.zone_id).length;
   const konnect = r.get("paiement.konnect_actif");
   const retraitActif = Boolean(r.get("retrait.adresse")?.module_actif);
+  const savActif = Boolean(r.get("sav.garantie_mois")?.module_actif);
   const retraitIncomplet = retraitActif && (!String(v("retrait.adresse") ?? "").trim() || !String(v("retrait.ville") ?? "").trim());
   const maintenant = new Date();
   const prefixe = String(v("commande.prefixe_numero") ?? "");
@@ -460,6 +461,31 @@ export default async function Reglages({
               </Section>
             ) : null}
 
+            {/* ---------------- Service après-vente (module) ---------------- */}
+            {savActif ? (
+              <Section id="sav" icone="outil" titre="Service après-vente"
+                description="Vos clients signalent un problème sur un article livré depuis « Mes commandes » ; vous traitez la demande dans SAV.">
+                <form action={action} method="post">
+                  <input type="hidden" name="section" value="sav" />
+                  <fieldset className="pile rg-corps" disabled={!modifie}>
+                    <div className="champ rg-court">
+                      <label htmlFor="garantie">Garantie annoncée</label>
+                      <span className="rg-unite">
+                        <input id="garantie" name="sav.garantie_mois" type="number" min={0} max={120} inputMode="numeric"
+                          defaultValue={Number(v("sav.garantie_mois") ?? 0)} />
+                        <span>mois</span>
+                      </span>
+                      <span className="aide">Sur la vitrine (« Garantie 12 mois ») et sur chaque demande : encore couverte ou non. 0 = la garantie légale et celle du fabricant, sans durée annoncée.</span>
+                    </div>
+                    <p className="aide rg-fixe">
+                      <Icone nom="outil" taille={14} /> <span><a href={`/gestion/${slug}/sav`}>Les demandes des clients</a> : à rappeler, en cours, closes.</span>
+                    </p>
+                  </fieldset>
+                  <Pied modifie={modifie} />
+                </form>
+              </Section>
+            ) : null}
+
             {/* ---------------- Paiement ---------------- */}
             <Section id="paiement" icone="billet" titre="Paiement" description="Comment l'acheteur règle sa commande.">
               <form action={action} method="post">
@@ -505,6 +531,12 @@ export default async function Reglages({
                       <input id="telephone" name="contact.telephone" inputMode="tel" defaultValue={String(v("contact.telephone") ?? "")} placeholder="21671234567" />
                       <span className="aide">Affiché sur la vitrine.</span>
                     </div>
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="revendeur">Revendeur officiel <span className="discret">(facultatif)</span></label>
+                    <input id="revendeur" name="catalogue.revendeur_officiel" defaultValue={String(v("catalogue.revendeur_officiel") ?? "")} maxLength={80}
+                      placeholder="Ex. Revendeur officiel DeWalt" />
+                    <span className="aide">En tête de la vitrine et sur les fiches produit, si la marque vous a agréé.</span>
                   </div>
                 </fieldset>
                 <Pied modifie={modifie} />
@@ -585,7 +617,7 @@ export default async function Reglages({
               <Section id="donnees" icone="importer" titre="Vos données"
                 description="Tout ce que la boutique a enregistré, dans un tableur : ses données sont à elle, elle les emporte quand elle veut.">
                 <ul className="rg-exports" role="list">
-                  {Object.entries(EXPORTS).map(([cle, x]) => (
+                  {Object.entries(EXPORTS).filter(([, x]) => !x.module || (x.module === "sav" && savActif)).map(([cle, x]) => (
                     <li key={cle} className="rg-export">
                       <span className="rg-export-texte">
                         <b>{x.titre}</b>
@@ -632,6 +664,7 @@ export default async function Reglages({
                   ["gouvernorats", "Gouvernorats", "domaine"],
                   ["poids", "Supplément au poids", "colis"],
                   ...(retraitActif ? [["retrait", "Retrait en magasin", "boutique"]] : []),
+                  ...(savActif ? [["sav", "Service après-vente", "outil"]] : []),
                   ["paiement", "Paiement", "billet"],
                   ["vitrine", "Vitrine et contact", "boutique"],
                   ["legal", "Informations légales", "fichier"],

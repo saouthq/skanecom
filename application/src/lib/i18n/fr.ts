@@ -51,6 +51,7 @@ export const fr = {
     livraisonOfferte: (seuil: string) => `Livraison offerte dès ${seuil} d'achat`,
     retrait: "Retrait en magasin",
     conseil: "Conseil sur WhatsApp",
+    garantie: (mois: number) => `Garantie ${mois} mois`,
   },
 
   accueil: {
@@ -470,6 +471,7 @@ export const fr = {
     articles: (n: number) => `${n} article${n > 1 ? "s" : ""}`,
     livraisonA: (lieu: string) => `Livraison à ${lieu}`,
     retraitA: (lieu: string) => `À retirer : ${lieu}`,
+    retireeA: (lieu: string) => `Retirée au magasin : ${lieu}`,
     suivi: (transporteur: string | null, numero: string | null) =>
       [transporteur ? `Avec ${transporteur}` : null, numero ? `suivi ${numero}` : null].filter(Boolean).join(" · "),
     etat: {
@@ -489,6 +491,58 @@ export const fr = {
     } as Record<string, string>,
     commander: "Voir le catalogue",
     suivre: "Suivre mes commandes",
+  },
+
+  sav: {
+    lienPied: "Garantie et SAV",
+    titre: "Garantie et service après-vente",
+    meta: "Garantie et service après-vente",
+    chapo: "Un article livré qui ne fonctionne pas comme il devrait : dites-le à la boutique, elle vous rappelle.",
+    garantieDuree: (mois: number) =>
+      `Les articles vendus par la boutique sont garantis ${mois} mois à compter de la livraison, en plus de la garantie légale.`,
+    garantieLegale: "Les articles bénéficient de la garantie légale et, le cas échéant, de la garantie du fabricant.",
+    commentTitre: "Faire une demande",
+    etapes: [
+      "Ouvrez « Mes commandes » avec le numéro de téléphone de la commande : un code vous arrive par SMS.",
+      "Sur la commande livrée, choisissez l'article et dites ce qui ne va pas — avec son numéro de série si vous l'avez.",
+      "La boutique vous rappelle pour convenir de la suite : dépôt, réparation, échange ou remboursement.",
+    ],
+    preparerTitre: "À garder sous la main",
+    preparer: [
+      "le numéro de la commande (il figure sur le SMS et sur « Mes commandes ») ;",
+      "le numéro de série, s'il y en a un : sur l'étiquette de l'article (sous une machine, dans une valise) ;",
+      "une photo du problème, si la boutique vous la demande.",
+    ],
+    faireDemande: "Faire une demande",
+    ailleurs: "Vous pouvez aussi joindre la boutique :",
+    // Mes commandes
+    signaler: "Un problème avec un article ?",
+    formulaireTitre: "Signaler un problème",
+    quelArticle: "Quel article ?",
+    serie: "Numéro de série",
+    serieAide: "S'il y en a un, sur l'étiquette de l'article.",
+    probleme: "Ce qui ne va pas",
+    problemeAide: "Depuis quand, dans quelles circonstances. 10 caractères au moins.",
+    problemeInvalide: "Décrivez le problème en quelques mots (10 caractères au moins).",
+    envoyer: "Envoyer la demande",
+    envoi: "Envoi…",
+    annuler: "Annuler",
+    envoyee: (numero: string) => `Demande ${numero} envoyée : la boutique vous rappelle pour convenir de la suite.`,
+    erreur: "La demande n'a pas pu partir. Réessayez dans un instant.",
+    mesDemandes: "Mes demandes de service après-vente",
+    surCommande: (commande: string) => `Commande ${commande}`,
+    statut: {
+      nouvelle: "Reçue : la boutique vous rappelle",
+      en_cours: "En cours de traitement",
+      resolue: "Résolue",
+      refusee: "Non prise en charge",
+    } as Record<string, string>,
+    issue: {
+      reparation: "réparé", echange: "échangé", remboursement: "remboursé", conseil: "conseil donné", autre: "",
+      hors_garantie: "hors garantie", mauvaise_utilisation: "usage non couvert", non_constate: "défaut non constaté",
+    } as Record<string, string>,
+    enCoursSurArticle: (numero: string) => `demande ${numero} en cours`,
+    garantieTexte: "Un souci ? Signalez-le depuis « Mes commandes » : la boutique vous rappelle.",
   },
 
   pied: {

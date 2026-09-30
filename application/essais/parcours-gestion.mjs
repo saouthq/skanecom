@@ -250,8 +250,8 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     t.espion(p, "veille", attendue);
     await p.goto(`${C}/gestion/maymar`, { waitUntil: "networkidle" });
     const aConfirmer = Number((await p.locator(".bo-etapes a", { hasText: "À confirmer" }).innerText()).match(/\d+/)?.[0] ?? -1);
-    await p.locator(".app-cote .app-nav-compte").waitFor({ timeout: 5000 });
-    verifie(Number(await p.locator(".app-cote .app-nav-compte").innerText()) === aConfirmer, `le compteur de la navigation : ${aConfirmer} à confirmer`);
+    await p.locator(".app-cote .app-nav-compte[aria-label$=\"à confirmer\"]").waitFor({ timeout: 5000 });
+    verifie(Number(await p.locator(".app-cote .app-nav-compte[aria-label$=\"à confirmer\"]").innerText()) === aConfirmer, `le compteur de la navigation : ${aConfirmer} à confirmer`);
     verifie((await p.title()).startsWith(`(${aConfirmer}) `), `et le titre de l'onglet : « ${await p.title()} »`);
     verifie((await p.locator(".bo-alertes").innerText()).includes("Alertes activées"), "les alertes sont activées (permission donnée)");
 
@@ -269,8 +269,8 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
     // la dernière question, la veille ne se répète pas plus souvent)
     await pause(10500);
     await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
-    await p.waitForFunction((n) => Number(document.querySelector(".app-cote .app-nav-compte")?.textContent) === n, aConfirmer + 1, { timeout: 5000 }).catch(() => {});
-    verifie(Number(await p.locator(".app-cote .app-nav-compte").innerText()) === aConfirmer + 1, "le compteur passe à un de plus, sans recharger la page");
+    await p.waitForFunction((n) => Number(document.querySelector(".app-cote .app-nav-compte[aria-label$=\"à confirmer\"]")?.textContent) === n, aConfirmer + 1, { timeout: 5000 }).catch(() => {});
+    verifie(Number(await p.locator(".app-cote .app-nav-compte[aria-label$=\"à confirmer\"]").innerText()) === aConfirmer + 1, "le compteur passe à un de plus, sans recharger la page");
     const notifs = await p.evaluate(() => window.__notifs);
     verifie(notifs.length === 1 && notifs[0].includes(nouvelle?.numero) && notifs[0].includes("Salma Ben Ali") && notifs[0].includes("189,000 TND"),
       `une notification : « ${notifs[0] ?? "aucune"} »`);
@@ -846,10 +846,46 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie(await fraisPour("sfax", 1000, 30000) === 7000, "30 kg : le tarif fixe, sans supplément");
   });
 
+  await etape("le service après-vente : rappeler, prendre en charge, clore", async () => {
+    await page.goto(`${C}/gestion/maymar`, { waitUntil: "networkidle" });
+    const lienSav = page.locator(".app-cote").getByRole("link", { name: /SAV/ });
+    verifie((await lienSav.innerText()).includes("1"), "la navigation compte la demande à rappeler");
+    await clic(page, lienSav);
+    await page.waitForURL(/\/gestion\/maymar\/sav$/);
+    await page.waitForLoadState("networkidle");
+    const ligne = page.locator(".sav-ligne").first();
+    const texteLigne = await ligne.innerText();
+    verifie(texteLigne.includes("SAV-00002") && texteLigne.includes("Sous garantie") && texteLigne.includes("ABS55-BL-0921"),
+      "la nouvelle demande : sous garantie (24 mois), avec son numéro de série");
+    verifie((await page.locator(".bo-etapes").innerText()).replace(/\s+/g, " ").includes("En cours 1"), "et celle déjà en cours, dans son onglet");
+    await capture(page, "gestion-sav");
+    await clic(page, ligne.locator(".bo-ligne-lien"));
+    await page.waitForURL(/\/sav\/SAV-00002$/);
+    verifie((await page.locator(".sav-description").innerText()).includes("fermeture éclair"), "la fiche dit ce que le client a écrit");
+    const wa = decodeURIComponent((await page.locator("a.bo-whatsapp").getAttribute("href")) ?? "");
+    verifie(wa.includes("SAV-00002") && wa.includes("Amira"), "le message WhatsApp est prêt : le prénom, la demande");
+    await page.locator("#note-prise").fill("Elle passe au magasin jeudi avec la valise");
+    await envoie(page.getByRole("button", { name: "Prendre en charge" }));
+    verifie((await ok()).includes("prise en charge"), `« ${await ok()} »`);
+    const perime = await posteBrut(ctx, "/gestion/maymar/sav/SAV-00002/action", { geste: "refuser", statut: "nouvelle", issue: "hors_garantie" });
+    verifie(perime.status === 303 && (new URLSearchParams(new URL(perime.location, C).search).get("erreur") ?? "").includes("changé entre-temps"),
+      "un second écran resté sur « nouvelle » : le geste est refusé, pas rejoué");
+    await clic(page, page.locator("summary", { hasText: "Résolue" }));
+    await clic(page, page.getByText("Échangé", { exact: true }));
+    await page.locator("#note-resolue").fill("Fermeture remplacée par le fournisseur");
+    await envoie(page.getByRole("button", { name: "Enregistrer : résolue" }));
+    verifie((await ok()).includes("résolue"), `« ${await ok()} »`);
+    const historique = await page.locator("section:has(#historique-titre)").innerText();
+    verifie(historique.includes("Prise en charge") && historique.includes("Résolue — échangé") && historique.includes("gerant@maymar.test"),
+      "l'historique : chaque geste, avec son auteur");
+    verifie(!(await page.locator(".app-cote").getByRole("link", { name: /SAV/ }).innerText()).match(/\d/), "plus rien à rappeler");
+    await capture(page, "gestion-sav-fiche", true);
+  });
+
   await etape("les données de la boutique, dans un tableur", async () => {
     await page.goto(`${C}/gestion/maymar/reglages#t-donnees`, { waitUntil: "networkidle" });
     const donnees = page.locator("section:has(#t-donnees)");
-    verifie(await donnees.getByRole("link", { name: /Télécharger/ }).count() === 5, "cinq exports : commandes, articles, clients, catalogue, stock");
+    verifie(await donnees.getByRole("link", { name: /Télécharger/ }).count() === 6, "six exports : commandes, articles, clients, catalogue, stock, et le SAV (module)");
     const [telechargement] = await Promise.all([
       page.waitForEvent("download"),
       clic(page, donnees.locator(".rg-export", { hasText: "Commandes" }).first().getByRole("link")),

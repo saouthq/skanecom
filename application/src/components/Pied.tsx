@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./Entete";
-import { Billets, Bulle, Camion, Magasin, Retour } from "./Icones";
+import { Billets, Bouclier, Bulle, Camion, Magasin, Retour } from "./Icones";
 import { champ, t } from "@/lib/i18n";
 import { texte } from "@/lib/theme";
 import { lienConseil } from "@/lib/faits";
@@ -72,6 +72,7 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
             {livraison.delai ? <li>{livraison.delai}</li> : null}
             <li>{t.produit.refusPossible}</li>
             {retour ? <li>{retour}</li> : null}
+            {cadre.sav ? <li><Link href="/garantie-et-sav">{t.sav.lienPied}</Link></li> : null}
           </ul>
         </div>
       </div>
@@ -93,6 +94,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
     livraison.cod ? { icone: <Billets taille={22} />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
     livraison.delai ? { icone: <Camion taille={22} />, titre: livraison.delai, texte: livraison.frais ?? "" } : null,
     cadre.retrait ? { icone: <Magasin taille={22} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) } : null,
+    cadre.sav?.garantieMois ? { icone: <Bouclier taille={22} />, titre: t.annonce.garantie(cadre.sav.garantieMois), texte: t.sav.garantieTexte } : null,
     { icone: <Retour taille={22} />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
   ].filter((s) => s !== null);
 
@@ -126,6 +128,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
             {livraison.cod ? <li>{t.pied.paiementLivraison}</li> : null}
             {livraison.delai ? <li>{livraison.delai}</li> : null}
             {cadre.retrait ? <li>{t.produit.retraitMagasin}</li> : null}
+            {cadre.sav ? <li><Link href="/garantie-et-sav">{t.sav.lienPied}</Link></li> : null}
           </ul>
         </div>
         {conseil ? (

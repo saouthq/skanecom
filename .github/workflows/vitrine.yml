@@ -114,7 +114,9 @@ jobs:
         working-directory: application
         env:
           CAPTURES: ${{ github.workspace }}/.outils/captures/commande
-        run: bun run parcours:commande
+        run: |
+          set -a; . ../.outils/api-locale.env; set +a
+          bun run parcours:commande
 
       # Le backoffice : l'équipe de Maymar confirme, expédie, livre, refuse,
       # annule ; rôles, double authentification du gérant, geste périmé.

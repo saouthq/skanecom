@@ -73,6 +73,10 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
     { cle: "catalogue.afficher_prix_barres", genre: "booleen" },
     { cle: "contact.whatsapp", genre: "numero" },
     { cle: "contact.telephone", genre: "numero" },
+    { cle: "catalogue.revendeur_officiel", genre: "texte" },
+  ],
+  sav: [
+    { cle: "sav.garantie_mois", genre: "entier" },
   ],
   legal: [
     { cle: "legal.raison_sociale", genre: "texte" },
@@ -91,6 +95,7 @@ export const TITRES_SECTIONS: Record<string, string> = {
   commandes: "Commandes",
   livraison: "Livraison",
   retrait: "Retrait en magasin",
+  sav: "Service après-vente",
   paiement: "Paiement",
   vitrine: "Vitrine et contact",
   legal: "Informations légales",
@@ -165,6 +170,8 @@ const LIBELLES_COURTS: Record<string, string> = {
   "paiement.cod_actif": "Paiement à la livraison",
   "paiement.konnect_actif": "Paiement en ligne",
   "catalogue.afficher_prix_barres": "Prix barrés",
+  "catalogue.revendeur_officiel": "Revendeur officiel",
+  "sav.garantie_mois": "Garantie annoncée",
   "contact.whatsapp": "WhatsApp",
   "contact.telephone": "Téléphone",
   "legal.raison_sociale": "Raison sociale",
@@ -186,6 +193,7 @@ function lisible(cle: string, v: unknown): string {
   if (cle.endsWith("_millimes")) return `${formateMontant(Number(v ?? 0))} TND`;
   if (cle === "commande.max_en_attente") return Number(v) > 0 ? String(v) : "sans limite";
   if (cle === "legal.retractation_jours") return `${v} jours ouvrables`;
+  if (cle === "sav.garantie_mois") return Number(v) > 0 ? `${v} mois` : "aucune durée";
   if (cle === "legal.retour_frais") return v === "boutique" ? "offerts par la boutique" : "à la charge du client";
   if (typeof v === "boolean") return v ? "oui" : "non";
   return v === "" || v === null || v === undefined ? "vide" : String(v);

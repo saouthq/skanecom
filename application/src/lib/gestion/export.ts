@@ -12,7 +12,7 @@ import { formateMontant } from "@/lib/prix";
 type Format = "texte" | "montant" | "date" | "oui_non" | "nombre";
 type Colonne = { cle: string; titre: string; format?: Format };
 
-export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Colonne[] }> = {
+export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Colonne[]; module?: string }> = {
   commandes: {
     titre: "Commandes",
     aide: "Une ligne par commande : client, adresse, montants, étapes.",
@@ -73,6 +73,18 @@ export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Co
       { cle: "motif", titre: "Motif" }, { cle: "mouvement", titre: "Mouvement", format: "nombre" },
       { cle: "stock_apres", titre: "Stock après", format: "nombre" }, { cle: "commande", titre: "Commande" },
       { cle: "auteur", titre: "Auteur" }, { cle: "commentaire", titre: "Commentaire" },
+    ],
+  },
+  sav: {
+    titre: "Service après-vente",
+    aide: "Une ligne par demande : l'article, ce qu'a dit le client, comment elle s'est close.",
+    module: "sav",
+    colonnes: [
+      { cle: "numero", titre: "Demande" }, { cle: "date", titre: "Date", format: "date" }, { cle: "statut", titre: "Statut" },
+      { cle: "issue", titre: "Issue" }, { cle: "commande", titre: "Commande" }, { cle: "nom", titre: "Nom" },
+      { cle: "telephone", titre: "Téléphone" }, { cle: "produit", titre: "Produit" }, { cle: "declinaison", titre: "Déclinaison" },
+      { cle: "reference", titre: "Référence" }, { cle: "numero_serie", titre: "Numéro de série" },
+      { cle: "description", titre: "Description" }, { cle: "cloturee_le", titre: "Close le", format: "date" },
     ],
   },
 };

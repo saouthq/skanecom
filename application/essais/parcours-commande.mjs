@@ -291,6 +291,55 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await capture(page, "quincaillerie-mes-commandes-vide");
   });
 
+  await etape("retirée : un problème avec un article (service après-vente)", async () => {
+    // La commande est retirée au comptoir : la base le note (clé de service
+    // de l'API locale, comme le ferait le backoffice).
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    const r = await fetch(`${RELAIS}/rest/v1/commandes?numero=eq.QDS-${annee}-00001`, {
+      method: "PATCH",
+      headers: { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json", prefer: "return=minimal" },
+      body: JSON.stringify({ statut: "livree" }),
+    });
+    verifie(r.ok, `la commande est retirée (${r.status})`);
+    await clic(page, page.getByRole("button", { name: "Se déconnecter" }));
+    await page.locator(".compte-connexion").waitFor();
+    await clic(page, page.getByLabel("Téléphone"));
+    await tape(page, "98 765 432");
+    await clic(page, page.getByRole("button", { name: "Recevoir le code" }));
+    await page.getByLabel("Code reçu par SMS").waitFor();
+    await tape(page, await codeRecu("98765432"));
+    const carte = page.locator(".compte-carte").first();
+    await carte.locator(".sav-signaler").waitFor({ timeout: 8000 });
+    await clic(page, carte.getByRole("button", { name: "Un problème avec un article ?" }));
+    const formulaire = carte.locator(".sav-formulaire");
+    verifie((await formulaire.innerText()).includes("Perceuse"), "l'article de la commande est là, sans rien à chercher");
+    await clic(page, formulaire.getByLabel("Ce qui ne va pas"));
+    await tape(page, "Ne marche");
+    await clic(page, formulaire.getByRole("button", { name: "Envoyer la demande" }));
+    verifie((await formulaire.getByRole("alert").innerText()).includes("10 caractères"), "une description trop courte est signalée, rien ne part");
+    await tape(page, " plus : la batterie ne tient pas la charge plus de dix minutes.");
+    await clic(page, formulaire.getByLabel(/Numéro de série/));
+    await tape(page, "PV14-2026-0457");
+    await capture(page, "quincaillerie-sav-formulaire");
+    await clic(page, formulaire.getByRole("button", { name: "Envoyer la demande" }));
+    await carte.locator(".sav-envoyee").waitFor({ timeout: 8000 });
+    verifie((await carte.locator(".sav-envoyee").innerText()).includes("Demande SAV-00001 envoyée"), "la demande est numérotée, la boutique rappelle");
+    await page.locator(".sav-mes").waitFor({ timeout: 8000 });
+    verifie((await page.locator(".sav-mes").innerText()).includes("Reçue : la boutique vous rappelle"), "« Mes demandes » dit où elle en est");
+    verifie((await carte.innerText()).includes("Retirée au magasin : Route de Tunis, km 3, Sfax"), "la commande dit qu'elle a été retirée");
+    await capture(page, "quincaillerie-sav-envoyee", true);
+    await clic(page, carte.getByRole("button", { name: "Un problème avec un article ?" }));
+    verifie((await carte.locator(".sav-formulaire").innerText()).includes("demande SAV-00001 en cours")
+      && await carte.getByRole("button", { name: "Envoyer la demande" }).isDisabled(),
+      "une seconde demande sur le même article : la première est rappelée, rien ne part");
+    await clic(page, carte.getByRole("button", { name: "Annuler" }));
+    await page.goto(Q + "/garantie-et-sav", { waitUntil: "networkidle" });
+    const g = await page.locator("main").innerText();
+    verifie(g.includes("Garantie 12 mois") && g.includes("Revendeur officiel Atelier Pro") && g.includes("Faire une demande"),
+      "la page Garantie et SAV : la garantie annoncée, le revendeur officiel, comment faire");
+    await capture(page, "quincaillerie-garantie-sav", true);
+  });
+
   await etape("les conditions de vente, gabarit technique", async () => {
     await page.goto(Q + "/conditions-de-vente", { waitUntil: "networkidle" });
     verifie((await page.locator("main").innerText()).includes("offerte à partir de 500,000"), "le seuil de livraison offerte de la quincaillerie");

@@ -268,8 +268,16 @@ export function conditionsDeVente(cadre: Cadre): { intro: React.ReactNode; secti
         titre: "Garanties",
         corps: (
           <p>
-            Les produits bénéficient des garanties prévues par la loi et, le cas échéant, de la garantie du fabricant. En cas
-            de produit défectueux ou non conforme, l&apos;acheteur joint la boutique {moyensDeContact(id)}.
+            Les produits bénéficient des garanties prévues par la loi et, le cas échéant, de la garantie du fabricant.
+            {cadre.sav?.garantieMois ? ` La boutique garantit en outre les articles qu'elle vend ${cadre.sav.garantieMois} mois à compter de leur livraison.` : ""}{" "}
+            En cas de produit défectueux ou non conforme, l&apos;acheteur joint la boutique {moyensDeContact(id)}
+            {cadre.sav ? (
+              <>
+                , ou fait une demande de service après-vente depuis « Mes commandes » (voir{" "}
+                <Link href="/garantie-et-sav">garantie et service après-vente</Link>)
+              </>
+            ) : null}
+            .
           </p>
         ),
       },
