@@ -316,6 +316,25 @@ console.log("\n== 2. Le gérant, double authentification ==");
     verifie(true, "le code de l'application ouvre le backoffice");
   });
 
+  await etape("« Aujourd'hui » : ce qui attend l'équipe, chaque carte vers sa liste", async () => {
+    await clic(page, page.locator(".app-nav a", { hasText: "Aujourd'hui" }).first());
+    await page.waitForURL(/\/aujourdhui$/);
+    await page.waitForLoadState("networkidle");
+    const aConfirmer = page.locator(".jd-carte", { hasText: /à confirmer/ }).first();
+    const n = Number((await aConfirmer.locator(".jd-carte-nombre").innerText()).trim());
+    await page.locator(".app-nav .app-nav-compte").first().waitFor({ timeout: 8000 });
+    const pastille = Number((await page.locator(".app-nav .app-nav-compte").first().innerText()).trim());
+    verifie(n > 0 && n === pastille, `les commandes à confirmer : ${n}, comme la pastille de « Commandes »`);
+    verifie((await page.locator(".jd-journee").innerText()).includes("TND"), "la journée, avec ses montants : le gérant est la direction");
+    const stock = page.locator(".jd-stock");
+    verifie((await stock.innerText()).includes("VAL-ABS-75-BOR") && (await stock.innerText()).includes("Épuisé"),
+      "le stock à réassortir : la valise bordeaux épuisée en tête");
+    await capture(page, "gerant-aujourdhui", true);
+    await clic(page, page.locator(".jd-carte", { hasText: "Colis à préparer" }).locator(".jd-carte-lien"));
+    await page.waitForURL(/etape=a_preparer/);
+    verifie(true, "« Colis à préparer » ouvre la liste des commandes à préparer");
+  });
+
   await etape("les bordereaux des commandes à préparer", async () => {
     await page.goto(`${C}/gestion/maymar?etape=a_preparer`, { waitUntil: "networkidle" });
     const bouton = page.getByRole("link", { name: /^Bordereaux \(\d+\)$/ });

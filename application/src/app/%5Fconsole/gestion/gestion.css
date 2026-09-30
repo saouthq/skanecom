@@ -1079,3 +1079,64 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .dv-barre { inset-block-end: calc(var(--onglets-h, 64px) + env(safe-area-inset-bottom, 0px)); }
   .dv-gestes, .dv-gestes .btn { flex: 1; }
 }
+
+/* ==========================================================================
+   « AUJOURD'HUI » — les cartes de ce qui attend l'équipe : un liseré ambre
+   pour ce qui attend un geste, discrètes pour ce qui est à jour.
+   ========================================================================== */
+.jd-titre { margin: 1.5rem 0 .75rem; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ui-texte-2); }
+.jd-titre-discret { color: var(--ui-texte-3); }
+.jd-grille { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); margin: 0; padding: 0; list-style: none; }
+.jd-carte {
+  position: relative; display: grid; align-content: start;
+  background: var(--ui-panneau); border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r-l); box-shadow: var(--ui-ombre-xs);
+  transition: box-shadow .2s, transform .2s, border-color .2s;
+  animation: jd-arrive .45s cubic-bezier(.2, .8, .2, 1) calc(var(--i, 0) * 45ms) backwards;
+}
+.jd-carte[data-a-faire] { border-color: color-mix(in srgb, var(--ui-ambre) 40%, var(--ui-bord-leger)); }
+.jd-carte[data-a-faire]::before {
+  content: ""; position: absolute; inset-block: .875rem; inset-inline-start: -1px; inline-size: 3px;
+  border-radius: 0 3px 3px 0; background: var(--ui-ambre);
+}
+@media (hover: hover) {
+  .jd-carte:hover { box-shadow: var(--ui-ombre-s); transform: translateY(-1px); }
+  .jd-carte:hover .jd-carte-fleche { transform: translateX(2px); color: var(--ui-texte); }
+}
+.jd-carte-lien {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "icone nombre fleche" "titre titre titre" "detail detail detail";
+  align-items: center; gap: .25rem .75rem; padding: 1rem 1.125rem; color: inherit; text-decoration: none; border-radius: inherit;
+}
+.jd-carte-lien:focus-visible { outline: 2px solid var(--ui-anneau); outline-offset: 2px; }
+.jd-carte-icone { grid-area: icone; display: grid; place-items: center; inline-size: 2.125rem; block-size: 2.125rem; border-radius: var(--ui-r); background: var(--ui-doux); color: var(--ui-texte-2); }
+.jd-carte[data-a-faire] .jd-carte-icone { background: color-mix(in srgb, var(--ui-ambre) 14%, transparent); color: var(--ui-ambre); }
+.jd-carte-nombre { grid-area: nombre; font-size: 1.875rem; font-weight: 650; letter-spacing: -.025em; line-height: 1; font-variant-numeric: tabular-nums; }
+.jd-carte-fleche { grid-area: fleche; color: var(--ui-texte-3); transition: transform .2s, color .2s; }
+.jd-carte-titre { grid-area: titre; margin-block-start: .625rem; font-size: .9375rem; font-weight: 600; }
+.jd-carte-detail { grid-area: detail; font-size: .8125rem; line-height: 1.45; color: var(--ui-texte-2); }
+.jd-carte-action { justify-self: start; margin: -.25rem 1.125rem 1rem; font-size: .8125rem; font-weight: 500; color: var(--ui-accent); }
+.jd-grille-calme .jd-carte { background: transparent; box-shadow: none; }
+.jd-grille-calme .jd-carte-nombre { font-size: 1.25rem; color: var(--ui-texte-3); }
+.jd-grille-calme .jd-carte-titre { font-weight: 500; color: var(--ui-texte-2); }
+.jd-calme { display: flex; align-items: center; gap: 1rem; padding: 1.25rem; margin-block-start: 1rem; }
+.jd-calme-icone { display: grid; place-items: center; flex: none; inline-size: 2.75rem; block-size: 2.75rem; border-radius: 999px; color: var(--ui-vert); background: var(--ui-vert-fond); }
+.jd-calme p { margin: .25rem 0 0; }
+.jd-stock, .jd-journee { display: grid; gap: .75rem; margin-block-start: 1rem; padding: 1rem 1.25rem; }
+.jd-stock-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; }
+.jd-stock .btn { justify-self: start; }
+.jd-pieces { display: grid; margin: 0; padding: 0; list-style: none; }
+.jd-piece { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .625rem 0; border-block-end: 1px solid var(--ui-bord-leger); color: inherit; text-decoration: none; }
+.jd-pieces li:last-child .jd-piece { border-block-end: 0; }
+@media (hover: hover) { .jd-piece:hover .jd-piece-nom b { text-decoration: underline; text-underline-offset: .2em; } }
+.jd-piece-nom { display: grid; min-inline-size: 0; font-size: .875rem; }
+.jd-piece-nom b { font-weight: 500; }
+.jd-piece-nom .discret { font-size: .8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jd-chiffres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 0; }
+.jd-chiffres dt { font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ui-texte-3); }
+.jd-chiffres dd { margin: 0; }
+.jd-chiffres dt + dd { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.jd-journee .btn-lien { justify-self: start; }
+@keyframes jd-arrive { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .jd-carte { animation: none; transition: none; }
+  .jd-carte-fleche { transition: none; }
+}

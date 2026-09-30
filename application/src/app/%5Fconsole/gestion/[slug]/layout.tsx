@@ -64,6 +64,7 @@ export default async function BackofficeBoutique({
   };
 
   const liens: LienCoquille[] = [
+    { href: `/gestion/${slug}/aujourdhui`, libelle: "Aujourd'hui", icone: "horloge" },
     lienCommandes,
     ...(DIRECTION.includes(boutique.role)
       ? [

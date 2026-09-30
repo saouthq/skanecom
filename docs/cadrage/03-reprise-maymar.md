@@ -297,6 +297,8 @@ Les pièges 1 à 6 du §3 sont corrigés dans le schéma. Le piège 7 l'est en p
 
 **Puis la note sur les cartes** (migration 40, `20260929103900_note_cartes.sql`, 7 tests dans `supabase/tests/40_note_cartes.sql`) : `public.note_produit` (moyenne et nombre des avis publiés, NULL sans avis ou sans le module), portée par `public.vitrine_produits` en dernière colonne — les rayons, la recherche et l'accueil l'affichent dans la page servie, sans autre appel.
 
+**Puis « Aujourd'hui » au backoffice** (migration 41, `20260929104000_aujourdhui.sql`, 18 tests dans `supabase/tests/41_aujourdhui.sql`) : `public.gestion_aujourdhui`, en un appel pour toute l'équipe — commandes à confirmer (dont à rappeler, et depuis quand), à préparer, en route (et depuis plus de cinq jours), retraits prêts ; ce que demandent les modules actifs ; le stock épuisé ou sous son seuil ; la journée depuis minuit (heure de Tunis), avec les montants pour la direction seulement.
+
 **Pas encore construit**, et prévu :
 - avec la console : `contrats`, `factures` ;
 - avec la suite du backoffice : `expeditions`, `transporteurs_comptes`, `psp_comptes`, `outbox`.
