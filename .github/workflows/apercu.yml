@@ -163,6 +163,21 @@ jobs:
           }' > /tmp/reglages.json
           reglage /tmp/reglages.json
           echo "Réglages de l'authentification posés (crochet des e-mails : $([ $INVITER = 1 ] && echo 'après l’invitation' || echo actif))."
+          # Supabase prend le modèle d'e-mail aussitôt, mais l'adresse du site et
+          # le sujet au redémarrage de son service d'authentification, quelques
+          # secondes plus tard : on l'attend (la connexion par téléphone, activée
+          # du même geste, se lit dans ses réglages publics) avant tout e-mail.
+          attend_reglages() {
+            for _ in $(seq 1 36); do
+              if curl -fsS "$NEXT_PUBLIC_SUPABASE_URL/auth/v1/settings" -H "apikey: $NEXT_PUBLIC_SUPABASE_ANON_KEY" | jq -e '.external.phone == true' > /dev/null 2>&1; then
+                sleep 10  # le service vient de redémarrer : on lui laisse un instant
+                return 0
+              fi
+              sleep 5
+            done
+            echo "::warning::Le service d'authentification n'a pas repris les réglages en trois minutes."
+          }
+          attend_reglages
           if [ $INVITER = 1 ]; then
             jq -n --arg e "$APERCU_ADMIN_EMAIL" '{email: $e}' > /tmp/invitation.json
             code=$(curl -sS -o /tmp/invite.json -w '%{http_code}' -X POST "$NEXT_PUBLIC_SUPABASE_URL/auth/v1/invite" \
@@ -174,6 +189,10 @@ jobs:
             reglage /tmp/crochet.json
             echo "Crochet des e-mails actif."
           fi
+          # Ce que Supabase garde vraiment (rien de secret) : pour vérifier d'un coup d'œil.
+          curl -fsS "https://api.supabase.com/v1/projects/$APERCU_REF/config/auth" -H "authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            | jq '{site_url, uri_allow_list, external_email_enabled, external_phone_enabled, mailer_otp_exp, mailer_subjects_invite,
+                   hook_send_sms_enabled, hook_send_sms_uri, hook_send_email_enabled, hook_send_email_uri}' | tee -a "$GITHUB_STEP_SUMMARY"
           # Administrateur de la plateforme (la double authentification se règle
           # à sa première connexion à la console).
           [[ "$APERCU_ADMIN_EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+$ ]] || { echo "::error::Adresse de l'administrateur illisible"; exit 1; }
