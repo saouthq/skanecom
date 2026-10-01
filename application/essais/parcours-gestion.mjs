@@ -1326,14 +1326,16 @@ if (section("4")) {
     verifie(await attend(async () => (await etatPage()).includes("Dans le brouillon"), 12000), "une seconde plus tard : dans le brouillon");
     verifie(await attend(async () => ((await cadreQ()?.locator("main strong", { hasText: "Appelez le magasin" }).count().catch(() => 0)) ?? 0) === 1, 12000),
       "la vitrine du cadre suit la frappe");
-    const enLigne = await fetch(`${VQ}/livraison-et-retours`).then((r) => r.status).catch(() => 0);
-    verifie(enLigne !== 200, `hors ligne tant que ce n'est pas publié (HTTP ${enLigne})`);
+    // Par le navigateur : lui seul résout les domaines *.localhost des boutiques.
+    const visiteur = await ctx.newPage();
+    const avant = await visiteur.goto(`${VQ}/livraison-et-retours?apercu=fin`, { waitUntil: "domcontentloaded" });
+    verifie(avant?.status() === 404, `hors ligne tant que ce n'est pas publié (HTTP ${avant?.status()})`);
+    await visiteur.close();
     await capture(page, "gestion-page-brouillon", true);
     await clic(page, page.getByRole("button", { name: "Publier" }));
     verifie(await attend(async () => (await page.locator(".ap-retour").first().innerText().catch(() => "")).includes("publiée"), 10000), "« Publier » : la page part avec le reste");
-    // Par le navigateur : lui seul résout les domaines *.localhost des boutiques.
     const vitrine = await ctx.newPage();
-    const r = await vitrine.goto(`${VQ}/livraison-et-retours`, { waitUntil: "domcontentloaded" });
+    const r = await vitrine.goto(`${VQ}/livraison-et-retours?apercu=fin`, { waitUntil: "domcontentloaded" });
     verifie(r?.status() === 200 && (await vitrine.locator("main").innerText()).includes("Appelez le magasin"), `la vitrine la sert à son adresse, aussitôt (HTTP ${r?.status()})`);
     verifie((await vitrine.locator("footer").innerText()).includes("Livraison et retours"), "et son lien est au pied de page");
     await vitrine.close();
@@ -1366,8 +1368,10 @@ if (section("4")) {
     await clic(page, page.getByRole("button", { name: /^Retirer « Livraison, retrait et retours »/ }));
     await clic(page, page.getByRole("button", { name: "Retirer la page" }));
     verifie(await attend(async () => (await page.locator(".pp-ligne").count()) === 2, 10000), "retirée : la liste revient à deux pages");
-    const r = await fetch(`${VQ}/livraison-et-retours`).then((x) => x.status).catch(() => 0);
-    verifie(r === 404, `et la boutique ne la sert plus (HTTP ${r})`);
+    const visiteur = await ctx.newPage();
+    const r = await visiteur.goto(`${VQ}/livraison-et-retours?apercu=fin`, { waitUntil: "domcontentloaded" });
+    verifie(r?.status() === 404, `et la boutique ne la sert plus (HTTP ${r?.status()})`);
+    await visiteur.close();
   });
   await ctx.close();
 }
