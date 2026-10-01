@@ -23,6 +23,7 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
           liens: [
             { href: "/", libelle: "Boutiques", icone: "boutique", exact: true, aussi: ["/boutiques/"] },
             { href: "/nouvelle-boutique", libelle: "Nouvelle boutique", icone: "plus", exact: true },
+            { href: "/modeles", libelle: "Modèles", icone: "ecran" },
             { href: "/courriels", libelle: "E-mails", icone: "courriel" },
           ],
         },

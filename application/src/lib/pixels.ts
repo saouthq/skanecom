@@ -85,10 +85,11 @@ export function chargePixels(pixels: Pixels): void {
   document.head.appendChild(s);
 }
 
-/** Le script en ligne du début de page : il ne charge que si ce navigateur a déjà accepté. */
+/** Le script en ligne du début de page : il ne charge que si ce navigateur a déjà accepté —
+ *  et jamais dans un cadre (l'éditeur, la galerie des modèles de la console : l'équipe, pas un visiteur). */
 export function scriptPixels(boutique: string, pixels: Pixels): string {
   const p = enJson({ c: cleConsentement(boutique), m: pixels.meta, t: pixels.tiktok });
-  return `(function(){try{var p=${p};var v=JSON.parse(localStorage.getItem(p.c)||"null");if(!v||v.choix!=="accepte")return;(${CHARGEUR})(window,document,p.m,p.t)}catch(e){}})();`;
+  return `(function(){try{if(window.self!==window.top)return;var p=${p};var v=JSON.parse(localStorage.getItem(p.c)||"null");if(!v||v.choix!=="accepte")return;(${CHARGEUR})(window,document,p.m,p.t)}catch(e){}})();`;
 }
 
 /* ---- Les événements ---- */

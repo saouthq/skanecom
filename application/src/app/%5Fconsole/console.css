@@ -1012,3 +1012,51 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .mt-gabarit { d
 .mt-appliquer > summary { list-style: none; cursor: pointer; }
 .mt-appliquer > summary::-webkit-details-marker { display: none; }
 .mt-appliquer[open] > summary { display: none; }
+
+/* ---- La galerie des modèles (app/_console/(protegee)/modeles) ------------- */
+.mo-grille { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 30rem), 1fr)); }
+.mo-modele { display: grid; grid-template-rows: auto 1fr; padding: 0; overflow: hidden; }
+.mo-apercu { display: grid; gap: .625rem; padding: .75rem .75rem 0; }
+/* La vitrine en réduction : un cadre au rapport d'un écran, la page posée dedans à son échelle. */
+.mo-cadre {
+  position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: calc(var(--ui-r) - 2px);
+  background: var(--ui-doux); box-shadow: inset 0 0 0 1px var(--ui-bord-leger);
+}
+.mo-cadre iframe {
+  position: absolute; inset-block-start: 0; inset-inline-start: 50%; border: 0; transform-origin: 0 0;
+  pointer-events: none; background: #fff; transition: opacity .3s;
+}
+.mo-cadre[data-appareil="telephone"] iframe { border-radius: 22px; box-shadow: 0 0 0 6px var(--ui-texte), 0 10px 30px -10px rgb(0 0 0 / .35); inset-block-start: 6px; }
+/* Tout l'aperçu ouvre la vitrine ; le libellé paraît au survol et au clavier. */
+.mo-ouvrir { position: absolute; inset: 0; display: grid; place-items: end; padding: .75rem; color: #fff; }
+.mo-ouvrir span {
+  display: inline-flex; align-items: center; gap: .375rem; padding: .375rem .75rem; border-radius: 999px; font-size: .8125rem; font-weight: 500;
+  background: rgb(24 24 27 / .82); opacity: 0; transform: translateY(4px); transition: opacity .2s, transform .2s;
+}
+.mo-ouvrir:hover span, .mo-ouvrir:focus-visible span { opacity: 1; transform: none; }
+.mo-ouvrir:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var(--ui-accent); border-radius: inherit; }
+@media (hover: none) { .mo-ouvrir span { opacity: 1; transform: none; } }
+.mo-appareils { justify-self: start; }
+.mo-appareils button {
+  display: inline-flex; align-items: center; gap: .375rem; padding: .3125rem .75rem; border: 0; border-radius: 6px;
+  background: transparent; font: inherit; font-weight: 500; color: var(--ui-texte-2); cursor: pointer;
+}
+.mo-appareils button:hover { color: var(--ui-texte); }
+.mo-appareils button[aria-pressed="true"] { background: var(--ui-panneau); color: var(--ui-texte); box-shadow: var(--ui-ombre-s); }
+.mo-appareils button:focus-visible { outline: none; box-shadow: var(--ui-anneau); }
+.mo-sans-demo {
+  display: grid; justify-items: center; align-content: center; gap: .75rem; margin: .75rem .75rem 0; aspect-ratio: 16 / 10;
+  padding: 1.5rem; text-align: center; color: var(--ui-texte-2); border-radius: calc(var(--ui-r) - 2px);
+  background: var(--ui-doux); box-shadow: inset 0 0 0 1px var(--ui-bord-leger);
+}
+.mo-sans-demo p { margin: 0; max-inline-size: 28ch; }
+.mo-corps { display: grid; align-content: start; gap: .625rem; padding: 1rem 1.25rem 1.25rem; }
+.mo-titre { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; }
+.mo-titre h2 { margin: 0; font-size: 1.125rem; }
+.mo-demo { font-size: .8125rem; color: var(--ui-texte-2); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--ui-bord-fort); }
+.mo-demo:hover { color: var(--ui-texte); }
+.mo-pour { margin: 0; color: var(--ui-texte-2); }
+.mo-clientes { margin: 0; }
+.mo-clientes a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.mo-gestes { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .25rem; }
+@media (prefers-reduced-motion: reduce) { .mo-cadre iframe, .mo-ouvrir span { transition: none; } }

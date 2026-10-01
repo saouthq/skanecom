@@ -41,6 +41,8 @@ function abonne(rappel: () => void): () => void {
   };
 }
 
+const sansAbonnement = () => () => {};
+
 export function PixelsPub({ boutique, nom, pixels }: { boutique: string; nom: string; pixels: Pixels }) {
   const chemin = usePathname();
   // undefined : pas encore lu (le serveur ne sait rien du choix : le bandeau n'est pas dans la page servie) ; null : pas de choix.
@@ -52,6 +54,8 @@ export function PixelsPub({ boutique, nom, pixels }: { boutique: string; nom: st
   const premiere = useRef(true);
   const retour = useRef<HTMLElement | null>(null);
   const premierBouton = useRef<HTMLButtonElement>(null);
+  // Dans un cadre (l'éditeur, la galerie des modèles de la console) : ni bandeau ni pixels.
+  const enCadre = useSyncExternalStore(sansAbonnement, () => window.self !== window.top, () => false);
 
   useEffect(() => {
     const ouvre = (e: Event) => {
@@ -99,7 +103,7 @@ export function PixelsPub({ boutique, nom, pixels }: { boutique: string; nom: st
     retour.current = null;
   }
 
-  const visible = rouvert || (choix === null && !chemin.startsWith("/commande"));
+  const visible = !enCadre && (rouvert || (choix === null && !chemin.startsWith("/commande")));
   if (!visible) return null;
 
   const plateformes = t.pixels.plateformes(Boolean(pixels.meta), Boolean(pixels.tiktok));

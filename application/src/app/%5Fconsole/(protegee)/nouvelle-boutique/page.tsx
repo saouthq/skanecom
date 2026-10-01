@@ -7,19 +7,9 @@ import { Icone } from "@/components/console/Icone";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
 import { LIBELLES_THEME } from "@/lib/console/libelles";
-import type { Structure } from "@/lib/theme";
+import { STRUCTURES_CONSOLE } from "@/lib/console/structures";
 
 export const metadata: Metadata = { title: "Nouvelle boutique" };
-
-/** Les structures qu'une boutique peut prendre en naissant (l'éditeur en change ensuite). */
-const STRUCTURES_A_LA_CREATION: { code: Structure; aide: string }[] = [
-  { code: "editorial", aide: "Mode, bagages, maroquinerie : grandes images, typographie de magazine." },
-  { code: "bento", aide: "Maison, beauté, marques jeunes : une mosaïque de tuiles, coins ronds." },
-  { code: "immersif", aide: "Mode, luxe : la photo plein écran, les pièces qui glissent, le lookbook." },
-  { code: "technique", aide: "Outillage, quincaillerie, grands catalogues : recherche, références, stock chiffré." },
-  { code: "commerce", aide: "High-tech, électroménager : la recherche d'abord, le grand menu, la comparaison." },
-  { code: "monoproduit", aide: "Une pièce vendue par la publicité : sa page de vente, la commande sur la page." },
-];
 
 /* C1 · Créer une boutique et lui attribuer son domaine. Elle naît « en
    préparation » : rien n'est visible tant qu'on ne l'ouvre pas. Son métier,
@@ -63,7 +53,7 @@ export default async function NouvelleBoutique({ searchParams }: {
         <ChoixMetier metiers={metiers} choisi={v.metier} />
         <fieldset className="choix mt-gabarit">
           <legend>Structure</legend>
-          {STRUCTURES_A_LA_CREATION.map((x) => (
+          {STRUCTURES_CONSOLE.map((x) => (
             <label key={x.code} className="choix-carte">
               <input type="radio" name="theme" value={x.code} defaultChecked={(v.theme ?? "editorial") === x.code} />
               <span>

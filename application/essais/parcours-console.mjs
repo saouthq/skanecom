@@ -294,6 +294,46 @@ await etape("les boutiques de démonstration à part : la synthèse ne compte qu
   verifie((await page.locator("h1").first().innerText()).includes("Démonstration"), "et redevient une démonstration");
 });
 
+await etape("la galerie des modèles : chaque structure, sa démonstration en aperçu vivant", async () => {
+  const stats = [];
+  const compte = (r) => { if (new URL(r.url()).pathname === "/stats") stats.push(r.url()); };
+  page.context().on("request", compte);
+  await clic(page, page.locator(".app-cote, nav").getByRole("link", { name: "Modèles" }).first());
+  await page.waitForURL(/\/modeles$/);
+  await page.waitForLoadState("networkidle");
+  const titres = await page.locator(".mo-modele h2").allInnerTexts();
+  verifie(titres.length === 6 && titres.slice(0, 4).every((x) => ["Bento", "Immersif", "Commerce", "Monoproduit"].includes(x)),
+    `six structures, celles qui ont leur démonstration d'abord : ${titres.join(", ")}`);
+  verifie((await page.locator(".mo-cadre iframe").count()) === 4 && (await page.locator(".mo-sans-demo").count()) === 2,
+    "quatre aperçus vivants ; l'Éditorial et la Technique disent qu'ils n'ont pas encore de démonstration");
+  const bento = page.locator(".mo-modele", { has: page.locator("h2", { hasText: /^Bento$/ }) });
+  await bento.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1500);
+  const cadre = page.frames().find((f) => f.url().includes("maison.localhost"));
+  verifie(Boolean(cadre) && (await cadre.title()).startsWith("Dar Alia"), "Bento : la vraie vitrine de Dar Alia, en réduction");
+  verifie((await page.frames().find((f) => f.url().includes("mode.localhost"))?.locator(".pub-consentement").count()) === 0,
+    "dans le cadre, Maison Selma ne demande pas l'accord pour ses pixels");
+  // Au clavier : de « Ordinateur », Tab puis Entrée sur « Téléphone ».
+  await bento.getByRole("button", { name: "Ordinateur" }).focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(800);
+  verifie(await bento.getByRole("button", { name: "Téléphone" }).getAttribute("aria-pressed") === "true", "au clavier, l'aperçu passe au format téléphone");
+  const r = await bento.locator(".mo-cadre").boundingBox();
+  const f = await bento.locator(".mo-cadre iframe").boundingBox();
+  verifie(f.height <= r.height && Math.abs(f.x + f.width / 2 - (r.x + r.width / 2)) < 2, "le téléphone tient dans le cadre, centré");
+  await capture(page, "console-modeles");
+  verifie(stats.length === 0, "les aperçus ne comptent aucune visite dans les statistiques des démonstrations");
+  page.context().off("request", compte);
+  const [onglet] = await Promise.all([page.context().waitForEvent("page"), bento.locator(".mo-ouvrir").click()]);
+  await onglet.waitForLoadState("domcontentloaded");
+  verifie(new URL(onglet.url()).host.startsWith("maison.localhost"), `un geste sur l'aperçu ouvre la vitrine dans un onglet (${onglet.url()})`);
+  await onglet.close();
+  await clic(page, bento.getByRole("link", { name: "Créer une boutique sur ce modèle" }));
+  await page.waitForURL(/nouvelle-boutique\?theme=bento/);
+  verifie(await page.locator('input[name="theme"]:checked').getAttribute("value") === "bento", "« Créer une boutique sur ce modèle » : la structure Bento déjà choisie");
+});
+
 /* ------------------------------------------------------------------ */
 console.log("\n== 2. Mettre une boutique en place ==");
 
