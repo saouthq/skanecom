@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "./Entete";
 import { Billets, Bouclier, Bulle, Camion, CarteBancaire, Facebook, Instagram, LogoWhatsApp, Magasin, Retour, TikTok } from "./Icones";
 import { LettreInscription } from "./LettreInscription";
+import { MarqueGeante } from "./MarqueGeante";
 import { OuvrirConsentementPub } from "./PixelsPub";
 import { champ, t } from "@/lib/i18n";
 import { texte } from "@/lib/theme";
@@ -191,7 +192,7 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
         </div>
       </div>
       <div className="enveloppe ed-pied-marque" aria-hidden="true">
-        <Logo cadre={cadre} className="marque-geante" />
+        {cadre.theme.logo ? <Logo cadre={cadre} className="marque-geante" /> : <MarqueGeante nom={cadre.boutique.nom} />}
       </div>
       <Moyens cadre={cadre} />
       <div className="enveloppe ed-pied-bas">
