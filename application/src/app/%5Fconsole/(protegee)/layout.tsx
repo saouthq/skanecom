@@ -1,3 +1,5 @@
+// La feuille de la console : ici, pas dans le layout racine (voir ../layout.tsx).
+import "../feuille.css";
 import { exigeAdmin } from "@/lib/console/session";
 import { Coquille, LogoSkanEcom } from "@/components/console/Coquille";
 

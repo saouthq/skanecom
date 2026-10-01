@@ -1,3 +1,5 @@
+// La feuille de la console : ici, pas dans le layout racine (voir ../layout.tsx).
+import "../feuille.css";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { acces, accesEquipe, clientSession } from "@/lib/console/session";

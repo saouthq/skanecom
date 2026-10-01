@@ -5,6 +5,11 @@
    360 px de large ; sur ordinateur, une ligne par commande.
    ========================================================================== */
 
+/* La console d'abord, dans ce même fichier : le backoffice passe après elle
+   (à spécificité égale, ses règles gagnent). Importée ici plutôt qu'à côté
+   dans gestion/layout.tsx, où elle partirait dans une feuille chargée après. */
+@import "../feuille.css";
+
 /* --- États des commandes ------------------------------------------------- */
 .bo-statut {
   display: inline-flex; align-items: center; gap: .375rem; block-size: 22px; padding: 0 .5rem;

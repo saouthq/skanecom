@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import "../globals.css";
-import "./console.css";
-import "./finitions.css";
-import "./mouvement.css";
+/* La feuille de la console (feuille.css : console.css, ses finitions, son
+   mouvement) n'est PAS importée ici : le CSS des deux layouts racines
+   (vitrine et console) part dans une seule feuille, que chaque page de
+   vitrine chargeait avec ces ~75 Ko de console dedans. Chaque entrée
+   l'importe elle-même, en direct depuis son fichier (un module
+   intermédiaire sans composant n'est pas relié à la page) : la coquille
+   protégée et les pages de la porte (connexion, double authentification,
+   bienvenue, refus) ; le backoffice, en tête de gestion.css (importée à
+   côté, elle partirait dans une feuille chargée APRÈS celle du backoffice).
+   Une nouvelle page hors de ces dossiers doit l'importer aussi. */
 import { Suspense } from "react";
 import { EnvoiFormulaires, ProgressionNavigation } from "@/components/console/Retours";
 import { AncresDouces } from "@/components/AncresDouces";

@@ -1,0 +1,7 @@
+/* La feuille de la console, en un fichier : son système (console.css), ses
+   finitions, son mouvement. Importée par chaque entrée de la console — pas
+   par son layout racine (voir layout.tsx) — et en tête de gestion.css, pour
+   que le backoffice passe après elle dans le même fichier. */
+@import "./console.css";
+@import "./finitions.css";
+@import "./mouvement.css";
