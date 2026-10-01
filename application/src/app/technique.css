@@ -190,11 +190,30 @@ html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent);
 }
 .te-carte-bas { display: flex; flex-direction: column; gap: .5rem; margin-block-start: auto; }
 .te-carte-bas .dispo, .te-carte-bas .etat { font-size: .75rem; font-weight: 600; }
+/* Sur deux lignes (une carte étroite) : la coche reste à la première. */
+.te-carte-bas .dispo { align-items: flex-start; line-height: 1.35; }
+.te-carte-bas .dispo svg { flex: none; margin-block-start: .1em; }
 .te-carte-prix { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .375rem; margin: 0; }
 .te-carte-prix .prix-fort { font-size: 1.25rem; font-weight: 800; }
 .te-carte-prix .dès { font-size: .75rem; color: var(--theme-encre-doux); }
 .te-carte-prix .prix-barre { flex-basis: 100%; font-size: .75rem; }
 .te-carte .btn { min-block-size: 42px; padding: .5rem .75rem; font-size: .875rem; }
+/* Dans une grille, les cartes d'une même rangée s'alignent ligne à ligne :
+   chacune occupe quatre rangées de la grille (la fiche, l'état du stock, le
+   prix, le bouton), que la sous-grille partage. Une carte au prix barré, ou
+   dont le stock tient sur deux lignes, ne décale plus ses voisines. */
+@supports (grid-template-rows: subgrid) {
+  .te-grille > .te-carte, .te-grille > .tuile-fin { grid-row: span 4; }
+  .te-grille > .te-carte { display: grid; grid-template-rows: subgrid; row-gap: .5rem; }
+  .te-grille > .te-carte > .te-carte-lien { grid-row: 1; align-self: start; }
+  .te-grille > .te-carte > .te-carte-bas { display: contents; }
+  .te-grille > .te-carte > .te-carte-bas > :first-child { grid-row: 2; align-self: end; }
+  .te-grille > .te-carte > .te-carte-bas > .te-carte-prix { grid-row: 3; align-self: start; }
+  .te-grille > .te-carte > .te-carte-bas > :last-child { grid-row: 4; align-self: end; }
+  /* Le retrait que .te-carte-bas donnait à ses enfants, qu'elle ne tient plus. */
+  .te-grille > .te-carte > .te-carte-bas > * { margin-inline: .25rem; }
+  .te-grille > .te-carte > .te-carte-bas > .btn { inline-size: auto; }
+}
 .te-remise {
   position: absolute; z-index: 1; inset-block-start: .5rem; inset-inline-start: .5rem; padding: .125rem .4rem;
   background: var(--theme-erreur); color: var(--theme-surface); border-radius: var(--theme-radius-net); font-size: .75rem; font-weight: 800;

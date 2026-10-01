@@ -27,7 +27,7 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 - [x] **Contrôle visuel de l'aperçu en ligne** après chaque déploiement (captures en artefact).
 - [x] Audit de toutes les pages des trois vitrines, sur ordinateur et téléphone : page introuvable du framework sur une adresse inconnue, pastille du panier invisible (gabarit éditorial), sections d'accueil incomplètes, photos qui se peignent sur l'aplat — corrigés le 30/09.
 - [x] La galerie des e-mails de la console ne se chargeait jamais entière en CI (cadres en chargement différé hors de l'écran) : chargée d'emblée.
-- [ ] Cartes du gabarit technique alignées d'une carte à l'autre (prix barré, pastilles).
+- [x] **Cartes du gabarit technique alignées d'une carte à l'autre** (01/10) : chaque carte occupe quatre rangées de la grille (la fiche, le stock, le prix, le bouton) que la sous-grille CSS partage ; un prix barré ou un stock sur deux lignes ne décale plus ses voisines (19 à 20 px avant, 0 après ; vérifié par le parcours).
 - [ ] Déploiement en deux temps avec cache prérempli, nettoyage des anciennes versions du cache.
 
 ### B. Une vitrine complète : contenus et confiance — en cours

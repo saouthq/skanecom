@@ -554,6 +554,23 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
     verifie((await page.locator("h1").first().innerText()).toLowerCase().includes(choisi.toLowerCase()), `Entrée ouvre la fiche de « ${choisi} »`);
   });
 
+  await etape("les cartes d'une rangée, alignées ligne à ligne", async () => {
+    await page.goto(Q + "/catalogue", { waitUntil: "networkidle" });
+    // Pour chaque rangée de la grille : l'écart entre les lignes de prix, et entre les boutons, d'une carte à l'autre.
+    const ecarts = await page.evaluate(() => {
+      const rangs = new Map();
+      for (const c of document.querySelectorAll(".te-grille .te-carte")) {
+        const haut = Math.round(c.getBoundingClientRect().top);
+        const y = (sel) => { const e = c.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().top) : null; };
+        if (!rangs.has(haut)) rangs.set(haut, []);
+        rangs.get(haut).push([y(".te-carte-prix"), y(".te-carte-bas .btn, .te-carte-bas button")]);
+      }
+      const ecart = (xs) => { const v = xs.filter((x) => x !== null); return v.length > 1 ? Math.max(...v) - Math.min(...v) : 0; };
+      return [...rangs.values()].filter((g) => g.length > 1).map((g) => Math.max(ecart(g.map((x) => x[0])), ecart(g.map((x) => x[1]))));
+    });
+    verifie(ecarts.length > 0 && ecarts.every((e) => e <= 1), `prix et boutons alignés d'une carte à l'autre, même avec un prix barré (écarts : ${ecarts.join(", ")} px)`);
+  });
+
   await etape("rayon depuis la barre des rayons", async () => {
     const nav = page.getByRole("navigation", { name: /principale/i });
     note("INFO  ", `rayons : ${(await nav.getByRole("link").allInnerTexts()).join(", ")}`);
