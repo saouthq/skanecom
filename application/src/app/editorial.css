@@ -137,7 +137,10 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 
 /* --- Sections de l'accueil ------------------------------------------------ */
 .ed-section { margin-block: calc(clamp(4rem, 8vw, 7.5rem) * var(--echelle-espace, 1)); }
-.ed-section-tete { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin-block-end: 2rem; }
+/* Le lien passe sous le titre quand les deux ne tiennent pas sur une ligne,
+   plutôt que d'écraser le titre (« Vous / aimerez / aussi » au téléphone,
+   en titres amples). */
+.ed-section-tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin-block-end: 2rem; }
 .ed-section-tete h2 { font-size: calc(clamp(2.25rem, 3.8vw, 3.5rem) * var(--echelle-titres, 1)); margin-block-start: .5rem; }
 .ed-section-tete .lien-souligne { white-space: nowrap; padding-block-end: .5rem; }
 

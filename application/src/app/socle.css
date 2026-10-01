@@ -239,6 +239,14 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .fil li + li::before { content: "/"; margin-inline-end: .5rem; color: var(--theme-filet-fort); }
 .fil a:hover { color: var(--theme-encre); text-decoration: underline; text-underline-offset: .2em; }
 .fil [aria-current] { color: var(--theme-encre); }
+/* Au téléphone, une seule ligne : le nom de la page (redit par le titre
+   juste dessous) finit par « … » plutôt que de passer à la ligne derrière
+   un « / » orphelin. */
+@media (max-width: 699px) {
+  .fil ol { flex-wrap: nowrap; }
+  .fil li { flex-shrink: 0; white-space: nowrap; }
+  .fil li:last-child { flex-shrink: 1; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; }
+}
 
 /* --- Listes : outils, puces, pagination, vide ----------------------------- */
 .listing-outils { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding-block: .75rem; }
