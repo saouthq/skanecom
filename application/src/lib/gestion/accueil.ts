@@ -41,6 +41,17 @@ export type AccueilGestion = {
 };
 
 export const MAX_SECTIONS = 12;
+
+/** Les photos que le backoffice téléverse (règles de la console : images-marque). */
+export type EmplacementAccueil = "ouverture" | "ouverture_portrait" | "recit";
+export const EMPLACEMENTS_ACCUEIL: EmplacementAccueil[] = ["ouverture", "ouverture_portrait", "recit"];
+
+/** Le chemin d'une photo déposée par le backoffice — les seules qu'il
+ *  retire du dépôt quand l'accueil ne les emploie plus (jamais une photo de
+ *  la console, sous `<boutique>/marque/`, ni du jeu de démo). */
+export function CHEMIN_PHOTO_ACCUEIL(slug: string): RegExp {
+  return new RegExp(`^${slug.replace(/[^a-z0-9-]/g, "")}/accueil/photo-[a-f0-9]{12}\\.(webp|jpg|png)$`);
+}
 export const LONGUEUR_TEXTE = 600;
 
 export type ChampTexte = { cle: string; libelle: string; long?: boolean; aide?: string };

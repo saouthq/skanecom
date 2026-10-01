@@ -1,6 +1,7 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers } from "@/lib/console/http";
-import { messageAccueil, versBase, MAX_SECTIONS, type SectionBrute } from "@/lib/gestion/accueil";
+import { CHEMIN_PHOTO_ACCUEIL, messageAccueil, versBase, MAX_SECTIONS, type SectionBrute } from "@/lib/gestion/accueil";
+import { retirerFichier } from "@/lib/gestion/fichiers";
 
 /* ============================================================================
    ENREGISTRER L'ACCUEIL — les sections composées à l'écran, dans leur ordre
@@ -10,7 +11,8 @@ import { messageAccueil, versBase, MAX_SECTIONS, type SectionBrute } from "@/lib
    Le composeur envoie en arrière-plan (`accept: application/json`) : la
    réponse dit ce qui a été gardé, ou pourquoi c'est refusé — la composition
    reste à l'écran. Sans script, un formulaire ordinaire et une redirection
-   303. La base revérifie le rôle, la version et la forme (migration 59).
+   303. La base revérifie le rôle, la version et la forme (migration 59), et
+   rend les photos que l'accueil n'emploie plus (migration 61).
    ========================================================================== */
 
 export const dynamic = "force-dynamic";
@@ -57,10 +59,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     p_version: Number.isInteger(version) ? version : null,
   });
   if (error) return refus(messageAccueil(error.hint, error.message), error.hint ?? null);
+  // Les photos que l'accueil n'emploie plus : celles du backoffice quittent le dépôt.
+  const { version: nouvelle, orphelins = [] } = data as { version: number; orphelins?: string[] };
+  const duBackoffice = CHEMIN_PHOTO_ACCUEIL(slug);
+  for (const chemin of orphelins) {
+    if (duBackoffice.test(chemin)) await retirerFichier(chemin).catch((err) => console.error("accueil : retrait de la photo en échec", chemin, err));
+  }
 
   const message = geste === "gabarit"
     ? "L'accueil reprend les sections du gabarit : la boutique le montre d'ici cinq minutes."
     : "Accueil enregistré : la boutique le montre d'ici cinq minutes.";
-  if (enJson) return Response.json({ ok: true, message, version: (data as { version: number }).version }, { headers: { "cache-control": "no-store" } });
+  if (enJson) return Response.json({ ok: true, message, version: nouvelle }, { headers: { "cache-control": "no-store" } });
   return vers(`${page}?${new URLSearchParams({ ok: message })}`);
 }

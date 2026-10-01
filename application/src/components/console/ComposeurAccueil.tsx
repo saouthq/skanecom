@@ -5,8 +5,10 @@ import { Icone } from "@/components/console/Icone";
 import {
   BIBLIOTHEQUE, LONGUEUR_TEXTE, MAX_SECTIONS, TYPES,
   nouvelleSection, problemesAccueil, sectionMasquee, titreParDefaut, versBase,
-  type AccueilGestion, type SectionBrute,
+  type AccueilGestion, type EmplacementAccueil, type SectionBrute,
 } from "@/lib/gestion/accueil";
+import { REGLES } from "@/lib/console/images-marque";
+import { preparerPhoto } from "@/lib/console/photo-navigateur";
 import { definitionDe, type CodeTheme, type TypeSection } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 
@@ -32,6 +34,7 @@ const empreinte = (s: SectionBrute[]) => JSON.stringify(versBase(s));
 
 export function ComposeurAccueil({
   action,
+  photoAction,
   vitrine,
   ecrit,
   accueil,
@@ -40,6 +43,8 @@ export function ComposeurAccueil({
   message,
 }: {
   action: string;
+  /** Où téléverser une photo de section (…/accueil/photo). */
+  photoAction: string;
   vitrine: string | null;
   ecrit: boolean;
   accueil: AccueilGestion & { code: CodeTheme };
@@ -264,7 +269,7 @@ export function ComposeurAccueil({
                 <li key={s.cle} className="ac-section" data-cle={s.cle} data-ouverte={ouvert ? "" : undefined} data-masquee={masquee ? "" : undefined}>
                   <div className="ac-section-ligne">
                     <span className="ac-rang" aria-hidden="true">{i + 1}</span>
-                    <Miniature type={s.type} />
+                    <Miniature type={s.type} photo={s.image ? urlFichier(s.image.chemin) : null} />
                     <div className="ac-section-texte">
                       <b>{entree.nom}</b>
                       <span className="ac-section-titre">{titre.replace(/\n/g, " ")}</span>
@@ -296,7 +301,7 @@ export function ComposeurAccueil({
                   {erreur ? <p className="ac-erreur" tabIndex={-1}>{erreur}</p> : null}
                   {ouvert ? (
                     <div id={idReglages} className="ac-reglages formulaire">
-                      <Reglages s={s} accueil={accueil} code={code} destinations={destinations} ecrit={ecrit} changer={changer} texte={texte} />
+                      <Reglages s={s} accueil={accueil} code={code} destinations={destinations} ecrit={ecrit} changer={changer} texte={texte} photoAction={photoAction} />
                     </div>
                   ) : null}
                 </li>
@@ -410,7 +415,7 @@ function resumeReglage(s: SectionBrute, a: AccueilGestion): string {
 }
 
 function Reglages({
-  s, accueil, code, destinations, ecrit, changer, texte,
+  s, accueil, code, destinations, ecrit, changer, texte, photoAction,
 }: {
   s: SectionBrute;
   accueil: AccueilGestion;
@@ -419,6 +424,7 @@ function Reglages({
   ecrit: boolean;
   changer: (cle: string, x: Partial<SectionBrute>) => void;
   texte: (cle: string, champ: string, valeur: string) => void;
+  photoAction: string;
 }) {
   const cle = s.cle ?? "";
   const id = (champ: string) => `ac-${cle}-${champ}`;
@@ -527,40 +533,153 @@ function Reglages({
         </div>
       ) : null}
 
-      {(s.type === "hero" || s.type === "editorial") && s.image ? (
-        <div className="ac-photo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={urlFichier(s.image.chemin)} alt="" loading="lazy" />
-          <div>
-            <b>La photo de la section</b>
-            <p className="aide">Posée à la mise en place de la boutique. Retirée, la section garde ses textes{s.type === "hero" ? " sur un aplat" : ""}.</p>
-            {s.type === "hero" && !s.image.detouree ? (
-              <fieldset className="ac-alignement">
-                <legend>Le texte sur la photo</legend>
-                {([["debut", "À gauche"], ["fin", "À droite"]] as const).map(([v, l]) => (
-                  <label key={v}>
-                    <input type="radio" name={id("alignement")} value={v} checked={(s.alignement ?? "debut") === v} onChange={() => changer(cle, { alignement: v === "fin" ? "fin" : undefined })} />
-                    {l}
-                  </label>
-                ))}
-              </fieldset>
-            ) : null}
-            <button type="button" className="btn btn-fantome btn-petit" onClick={() => changer(cle, { image: undefined, alignement: undefined })}>
-              <Icone nom="retirer" /> Retirer la photo
-            </button>
-          </div>
-        </div>
+      {s.type === "hero" || s.type === "editorial" ? (
+        <Photos s={s} action={photoAction} ecrit={ecrit} changer={changer} texte={texte} id={id} />
       ) : null}
     </fieldset>
   );
 }
 
 /** Le dessin de la section, en blocs : on la reconnaît d'un coup d'œil. */
-function Miniature({ type }: { type: TypeSection }) {
+function Miniature({ type, photo = null }: { type: TypeSection; photo?: string | null }) {
   const n = { hero: 3, rayons: 3, selection: 4, editorial: 4, engagements: 4, texte: 3, avis: 3, questions: 4, marques: 6 }[type];
+  // Sa photo, s'il en a une : en fond de l'ouverture, à la place de l'image du récit.
+  const fond = photo ? { backgroundImage: `url("${photo}")` } : undefined;
   return (
-    <span className="ac-mini" data-type={type} aria-hidden="true">
-      {Array.from({ length: n }, (_, i) => <i key={i} />)}
+    <span className="ac-mini" data-type={type} data-photo={photo ? "" : undefined} aria-hidden="true" style={type === "hero" ? fond : undefined}>
+      {Array.from({ length: n }, (_, i) => <i key={i} style={type === "editorial" && i === 0 ? fond : undefined} />)}
     </span>
+  );
+}
+
+/** La photo d'une section (l'ouverture, le récit) : la choisir — réduite
+ *  dans le navigateur, déposée par le serveur —, la changer, la retirer ;
+ *  pour l'ouverture, son cadrage pour téléphone et le côté du texte ; sa
+ *  description, pour qui ne la voit pas. Rien n'est publié avant
+ *  « Enregistrer l'accueil ». */
+function Photos({
+  s, action, ecrit, changer, texte, id,
+}: {
+  s: SectionBrute;
+  action: string;
+  ecrit: boolean;
+  changer: (cle: string, x: Partial<SectionBrute>) => void;
+  texte: (cle: string, champ: string, valeur: string) => void;
+  id: (champ: string) => string;
+}) {
+  const cle = s.cle ?? "";
+  const ouverture = s.type === "hero";
+  const principal: EmplacementAccueil = ouverture ? "ouverture" : "recit";
+  const [etat, setEtat] = useState<{ e: EmplacementAccueil; texte: string; erreur?: boolean; enCours?: boolean } | null>(null);
+
+  async function choisir(e: EmplacementAccueil, fichier: File | undefined) {
+    if (!fichier) return;
+    setEtat({ e, texte: "Préparation de la photo…", enCours: true });
+    const p = await preparerPhoto(fichier, e);
+    if ("erreur" in p) { setEtat({ e, texte: p.erreur, erreur: true }); return; }
+    setEtat({ e, texte: "Envoi de la photo…", enCours: true });
+    try {
+      const d = new FormData();
+      d.set("emplacement", e);
+      d.set("fichier", p.blob, p.nom);
+      const r = await fetch(action, { method: "POST", body: d, headers: { accept: "application/json" }, credentials: "same-origin" });
+      const rep = (await r.json().catch(() => null)) as { ok: true; chemin: string } | { ok: false; message: string } | null;
+      if (!rep) throw new Error("réponse illisible");
+      if (!rep.ok) { setEtat({ e, texte: rep.message, erreur: true }); return; }
+      // Une nouvelle photo est un autre sujet : ni son ancien cadrage ni son
+      // ancienne description ne la suivent.
+      if (e === "ouverture_portrait" && s.image) changer(cle, { image: { ...s.image, chemin_portrait: rep.chemin } });
+      else {
+        changer(cle, { image: { chemin: rep.chemin } });
+        if (s.textes?.image_alt_fr) texte(cle, "image_alt", "");
+      }
+      setEtat({ e, texte: e === "ouverture_portrait" ? "Cadrage posé : enregistrez l'accueil pour le publier." : "Photo posée : enregistrez l'accueil pour la publier." });
+    } catch {
+      setEtat({ e, texte: "L'envoi n'a pas abouti (réseau coupé ?) : réessayez.", erreur: true });
+    }
+  }
+
+  const fichier = (e: EmplacementAccueil, libelle: string) => (
+    <label className="btn btn-second btn-petit ac-fichier" data-occupe={etat?.enCours ? "" : undefined}>
+      <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={!ecrit || etat?.enCours}
+        aria-describedby={etat?.e === e ? id(`etat-${e}`) : undefined}
+        onChange={(ev) => { const f = ev.currentTarget.files?.[0]; ev.currentTarget.value = ""; void choisir(e, f); }} />
+      <Icone nom="photo" /> {libelle}
+    </label>
+  );
+  const etatDe = (e: EmplacementAccueil) => etat?.e === e ? (
+    <p id={id(`etat-${e}`)} className={etat.erreur ? "ac-photo-etat ac-photo-erreur" : "ac-photo-etat"} role={etat.erreur ? "alert" : "status"}>
+      {etat.enCours ? <span className="ac-roue" aria-hidden="true" /> : null}{etat.texte}
+    </p>
+  ) : null;
+
+  return (
+    <div className="ac-photo" data-vide={s.image ? undefined : ""}>
+      {s.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={urlFichier(s.image.chemin)} alt="" loading="lazy" />
+      ) : (
+        <span className="ac-photo-vide" aria-hidden="true"><Icone nom="photo" taille={22} /></span>
+      )}
+      <div className="ac-photo-corps">
+        <b>{REGLES[principal].titre}</b>
+        <p className="aide">
+          {REGLES[principal].conseil}
+          {s.image ? ` Retirée, la section garde ses textes${ouverture ? " sur un aplat" : ""}.` : ` Sans photo, la section montre ses textes${ouverture ? " sur un aplat" : ""}.`}
+        </p>
+        <span className="ac-photo-gestes">
+          {fichier(principal, s.image ? "Changer la photo" : "Choisir une photo")}
+          {s.image ? (
+            <button type="button" className="btn btn-fantome btn-petit" onClick={() => { changer(cle, { image: undefined, alignement: undefined }); setEtat(null); }}>
+              <Icone nom="croix" /> Retirer la photo
+            </button>
+          ) : null}
+        </span>
+        {etatDe(principal)}
+
+        {s.image ? (
+          <div className="champ ac-photo-alt">
+            <label htmlFor={id("image_alt")}>Description de la photo</label>
+            <input id={id("image_alt")} type="text" value={s.textes?.image_alt_fr ?? ""} maxLength={LONGUEUR_TEXTE}
+              placeholder="Femme en robe de lin sous une arcade blanche" aria-describedby={`${id("image_alt")}-aide`}
+              onChange={(ev) => texte(cle, "image_alt", ev.currentTarget.value)} />
+            <p id={`${id("image_alt")}-aide`} className="aide">Ce qu&apos;elle montre, pour qui ne la voit pas (lecteurs d&apos;écran, moteurs de recherche).</p>
+          </div>
+        ) : null}
+
+        {ouverture && s.image && !s.image.detouree ? (
+          <>
+            <div className="ac-portrait">
+              {s.image.chemin_portrait ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={urlFichier(s.image.chemin_portrait)} alt="" loading="lazy" />
+              ) : <span className="ac-portrait-vide" aria-hidden="true" />}
+              <div className="ac-photo-corps">
+                <b>{REGLES.ouverture_portrait.titre}</b>
+                <p className="aide">{s.image.chemin_portrait ? "Le téléphone montre ce cadrage en hauteur." : "Sans lui, le téléphone recadre la photo en son centre."} {REGLES.ouverture_portrait.conseil}</p>
+                <span className="ac-photo-gestes">
+                  {fichier("ouverture_portrait", s.image.chemin_portrait ? "Changer le cadrage" : "Choisir un cadrage")}
+                  {s.image.chemin_portrait ? (
+                    <button type="button" className="btn btn-fantome btn-petit" onClick={() => { const { chemin_portrait: _retire, ...reste } = s.image!; void _retire; changer(cle, { image: reste }); setEtat(null); }}>
+                      <Icone nom="croix" /> Retirer le cadrage
+                    </button>
+                  ) : null}
+                </span>
+                {etatDe("ouverture_portrait")}
+              </div>
+            </div>
+            <fieldset className="ac-alignement">
+              <legend>Le texte sur la photo</legend>
+              {([["debut", "À gauche"], ["fin", "À droite"]] as const).map(([v, l]) => (
+                <label key={v}>
+                  <input type="radio" name={id("alignement")} value={v} checked={(s.alignement ?? "debut") === v} onChange={() => changer(cle, { alignement: v === "fin" ? "fin" : undefined })} />
+                  {l}
+                </label>
+              ))}
+            </fieldset>
+          </>
+        ) : null}
+      </div>
+    </div>
   );
 }

@@ -1664,6 +1664,46 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     verifie(JSON.stringify(await plan()) === JSON.stringify(avant), "l'ordre d'avant, enregistré");
   });
 
+  await etape("la photo d'ouverture, depuis le backoffice : réduite, posée, puis retirée du dépôt", async () => {
+    // Une « photo de téléphone » faite dans la page (JPEG).
+    const photo = (l, h, c) => page.evaluate(([l, h, c]) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = l; canvas.height = h;
+      const g = canvas.getContext("2d");
+      const d = g.createLinearGradient(0, 0, l, h);
+      d.addColorStop(0, c); d.addColorStop(1, "#1f1f23");
+      g.fillStyle = d; g.fillRect(0, 0, l, h);
+      return canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
+    }, [l, h, c]).then((b64) => Buffer.from(b64, "base64"));
+    const enregistre = () => page.waitForFunction(() => /Accueil enregistré/.test(document.querySelector(".ac-pied .ac-retour")?.textContent ?? ""), null, { timeout: 15000 });
+    const vignette = () => page.locator(".ac-section[data-ouverte] .ac-photo > img");
+    await page.reload({ waitUntil: "networkidle" });
+    await clic(page, page.getByRole("button", { name: "Régler « Ouverture »" }));
+    const demo = (await vignette().getAttribute("src")).replace(/^.*\/fichiers\//, "");
+    await page.getByLabel("Changer la photo").setInputFiles({ name: "IMG_3001.jpg", mimeType: "image/jpeg", buffer: await photo(800, 500, "#a07050") });
+    await page.locator(".ac-photo-erreur").waitFor({ timeout: 10000 });
+    verifie((await page.locator(".ac-photo-erreur").innerText()).includes("trop petite"), "une photo trop petite : refusée avant l'envoi, la raison dite");
+    await page.getByLabel("Changer la photo").setInputFiles({ name: "IMG_3002.jpg", mimeType: "image/jpeg", buffer: await photo(3000, 2000, "#6d8a9c") });
+    await page.waitForFunction((d) => !document.querySelector(".ac-section[data-ouverte] .ac-photo > img")?.getAttribute("src")?.endsWith(d), demo, { timeout: 20000 });
+    const chemin = (await vignette().getAttribute("src")).replace(/^.*\/fichiers\//, "");
+    verifie(/^maison-selma\/accueil\/photo-[0-9a-f]{12}\.webp$/.test(chemin), `déposée dans le dossier de la boutique : ${chemin}`);
+    const f = await fichierLocal(chemin);
+    verifie(f.status === 200 && tailleWebp(f.octets)[0] === 2400, `réduite dans le navigateur, en WebP (${tailleWebp(f.octets).join(" × ")})`);
+    verifie((await page.getByLabel("Choisir un cadrage").count()) === 1, "une autre photo, un autre sujet : son cadrage pour téléphone est à refaire");
+    await page.getByLabel("Description de la photo").fill("Un dégradé bleu nuit");
+    await page.keyboard.press("Control+s");
+    await enregistre();
+    await page.reload({ waitUntil: "networkidle" });
+    await clic(page, page.getByRole("button", { name: "Régler « Ouverture »" }));
+    verifie((await vignette().getAttribute("src")).endsWith(chemin), "Ctrl+S, rechargée : la photo est celle de l'accueil");
+    verifie((await fichierLocal(demo)).status === 200, "la photo de démonstration d'avant reste au dépôt (le backoffice ne retire que les siennes)");
+    await clic(page, page.getByRole("button", { name: "Retirer la photo" }));
+    await clic(page, page.getByRole("button", { name: /Enregistrer l'accueil/ }));
+    await enregistre();
+    verifie((await fichierLocal(chemin)).status === 404, "retirée et enregistrée : la photo quitte le dépôt");
+    await capture(page, "gestion-accueil-photo");
+  });
+
   await etape("la lettre : les inscrits, une recherche, une adresse retirée à la demande", async () => {
     // Selma a une lettre (supabase/seed-lettre.sql) : 38 inscrits, plus ceux des parcours.
     const lien = page.locator(".app-cote").getByRole("link", { name: "Lettre" });

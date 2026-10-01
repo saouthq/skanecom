@@ -1700,9 +1700,37 @@ a.pg-titre:hover { color: var(--ui-accent); }
   padding: .875rem; border-radius: var(--ui-r); background: var(--ui-panneau); box-shadow: inset 0 0 0 1px var(--ui-bord-leger);
 }
 .ac-photo img { inline-size: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--ui-r-s); background: var(--ui-doux); }
-.ac-photo > div { display: grid; gap: .5rem; justify-items: start; }
+.ac-photo-vide, .ac-portrait-vide {
+  display: grid; place-items: center; inline-size: 100%; aspect-ratio: 4 / 3; border-radius: var(--ui-r-s);
+  color: var(--ui-texte-3); background: var(--ui-survol); box-shadow: inset 0 0 0 1px var(--ui-bord-leger);
+}
+.ac-photo-corps { display: grid; gap: .5rem; justify-items: start; min-inline-size: 0; }
 .ac-photo b { font-size: .8125rem; }
 .ac-photo .aide { margin: 0; }
+.ac-photo-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
+/* Le choix de fichier : un bouton ; l'anneau du clavier sur le bouton. */
+.ac-fichier { position: relative; cursor: pointer; }
+.ac-fichier:has(input:focus-visible) { box-shadow: var(--ui-anneau); outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+.ac-fichier:has(input:disabled) { opacity: .6; cursor: progress; }
+.ac-photo-etat { display: inline-flex; align-items: center; gap: .5rem; margin: 0; font-size: .8125rem; color: var(--ui-vert); }
+.ac-photo-erreur { color: var(--ui-rouge); font-weight: 500; }
+.ac-roue {
+  inline-size: 14px; block-size: 14px; border-radius: 50%; flex: none;
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent); border-block-start-color: currentColor;
+  animation: ac-roue .8s linear infinite;
+}
+@keyframes ac-roue { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) { .ac-roue { animation-duration: 2.4s; } }
+.ac-photo-alt { inline-size: 100%; }
+.ac-photo-alt input { inline-size: 100%; }
+.ac-portrait {
+  display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: .875rem; align-items: start; inline-size: 100%;
+  padding-block-start: .75rem; border-block-start: 1px solid var(--ui-bord-leger);
+}
+.ac-portrait img, .ac-portrait-vide { inline-size: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--ui-r-s); }
+/* La miniature d'une section qui a sa photo. */
+.ac-mini[data-photo][data-type=hero], .ac-mini[data-photo] i[style] { background-size: cover; background-position: center; }
+.ac-mini[data-photo][data-type=hero] i:nth-child(2) { background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .08); }
 .ac-alignement { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin: 0; padding: 0; border: 0; font-size: .8125rem; }
 .ac-alignement legend { padding: 0; margin-block-end: .25rem; font-weight: 500; }
 .ac-alignement label { display: inline-flex; align-items: center; gap: .375rem; min-block-size: 32px; }
@@ -1713,7 +1741,10 @@ a.pg-titre:hover { color: var(--ui-accent); }
   .ac-gestes { grid-column: 1 / -1; justify-content: flex-end; }
   .ac-reglages, .ac-erreur { padding-inline: 1rem; margin-inline: 0; }
   .ac-erreur { padding-inline: 1rem; }
-  .ac-photo { grid-template-columns: 5rem minmax(0, 1fr); }
+  /* La photo au-dessus de ses gestes : le texte et les boutons ont la largeur. */
+  .ac-photo { grid-template-columns: minmax(0, 1fr); }
+  .ac-photo > img, .ac-photo > .ac-photo-vide { max-inline-size: 15rem; }
+  .ac-portrait { grid-template-columns: 4rem minmax(0, 1fr); }
 }
 
 /* ---- Les miniatures : la section dessinée en blocs ---- */

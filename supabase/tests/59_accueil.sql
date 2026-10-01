@@ -50,8 +50,8 @@ select is(tests.indice(format($$ select public.gestion_enregistrer_accueil(%L, '
 reset role; select tests.connecte('proprio_a');
 select is(public.gestion_enregistrer_accueil(tests.id('A'),
   '[{"type": "hero", "textes": {"titre_fr": "La rentrée"}}, {"type": "selection", "tri": "nouveautes", "rayon": "valises", "nombre": 4},
-    {"type": "avis", "nombre": 3}, {"type": "questions", "page": "questions-frequentes", "nombre": 5}, {"type": "marques"}, {"type": "engagements"}]', 1),
-  '{"version": 2}'::jsonb, 'le propriétaire compose : nouveautés, avis, questions, marques');
+    {"type": "avis", "nombre": 3}, {"type": "questions", "page": "questions-frequentes", "nombre": 5}, {"type": "marques"}, {"type": "engagements"}]', 1) -> 'version',
+  '2'::jsonb, 'le propriétaire compose : nouveautés, avis, questions, marques');
 select is(jsonb_path_query_array(public.gestion_accueil(tests.id('A')) -> 'sections', '$[*].type'),
   '["hero", "selection", "avis", "questions", "marques", "engagements"]'::jsonb, 'dans son ordre');
 select is(tests.indice(format($$ select public.gestion_enregistrer_accueil(%L, '[{"type": "hero"}]', 1) $$, tests.id('A'))),
@@ -64,7 +64,7 @@ select is(tests.indice(format($$ select public.gestion_enregistrer_accueil(%L, '
   'section', 'un lien vers une autre origine : refusé');
 select is(tests.indice(format($$ select public.gestion_enregistrer_accueil(%L, '[{"type": "carrousel"}]', 2) $$, tests.id('A'))),
   'section', 'un type inconnu : refusé');
-select is(public.gestion_enregistrer_accueil(tests.id('A'), null, 2), '{"version": 3}'::jsonb, 'NULL : retour à l''accueil du gabarit');
+select is(public.gestion_enregistrer_accueil(tests.id('A'), null, 2) -> 'version', '3'::jsonb, 'NULL : retour à l''accueil du gabarit');
 
 reset role;
 select is((select count(*)::integer from plateforme.journal_audit where boutique_id = tests.id('A') and action = 'accueil.modifier'), 2,

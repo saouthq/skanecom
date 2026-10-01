@@ -58,6 +58,7 @@ export default async function Accueil({
       <ComposeurAccueil
         key={accueil.version ?? 0}
         action={`/gestion/${slug}/accueil/action`}
+        photoAction={`/gestion/${slug}/accueil/photo`}
         vitrine={hote ? adresseVitrine(hote, hoteConsole) : null}
         ecrit={PEUT_ECRIRE.includes(boutique.role) && accueil.theme}
         accueil={{ ...accueil, code }}
