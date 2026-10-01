@@ -20,6 +20,7 @@
    ========================================================================== */
 
 import { contraste, plusLisible } from "./couleur";
+import { typographie } from "./typographie";
 
 export type CodeTheme = "editorial" | "technique";
 export const GABARITS: CodeTheme[] = ["editorial", "technique"];
@@ -490,5 +491,7 @@ export function feuilleDuTheme(theme: Theme, urlFichier: (chemin: string) => str
  *  l'autre langue puis sur le défaut fourni. */
 export function texte(textes: Record<string, string>, cle: string, defaut = "", langue: "fr" | "ar" = "fr"): string {
   const autre = langue === "fr" ? "ar" : "fr";
-  return textes[`${cle}_${langue}`] || textes[`${cle}_${autre}`] || defaut;
+  const v = textes[`${cle}_${langue}`] || textes[`${cle}_${autre}`] || defaut;
+  // En français, les signes doubles ne passent plus seuls à la ligne.
+  return langue === "fr" ? typographie(v) : v;
 }

@@ -1,3 +1,5 @@
+import { paliersDe, totalAvecPaliers, type Palier } from "./paliers";
+
 /* ============================================================================
    CONTRAT DU PANIER — à valider par Max avant qu'il branche le tunnel
 
@@ -97,6 +99,10 @@ export type LignePanier = {
    *  (absente = 1). Le tiroir ne descend pas en dessous ; le devis la relit
    *  en base et refuse une ligne qui ne l'atteint pas. */
   quantiteMin?: number;
+  /** COPIE D'AFFICHAGE, facultative : les prix par quantité du produit à
+   *  l'ajout (« 2 pour 99 », lib/paliers.ts). Le tiroir les applique ; la
+   *  base les relit et les applique au chiffrage. */
+  paliers?: Palier[];
 };
 
 export type Panier = {
@@ -182,10 +188,12 @@ export function litPanier(brut: string | null): Panier {
         Number.isFinite(l?.prixMillimesAjout),
     );
     const propres = lignes.map((l) => {
-      const { image, quantiteMin, ...reste } = l;
+      const { image, quantiteMin, paliers, ...reste } = l;
       const avecImage =
         typeof image === "string" && /^[a-z0-9][a-z0-9/_.-]*$/.test(image) && !image.includes("..") ? { ...reste, image } : reste;
-      return Number.isInteger(quantiteMin) && quantiteMin! > 1 && quantiteMin! <= 999 ? { ...avecImage, quantiteMin } : avecImage;
+      const avecMin = Number.isInteger(quantiteMin) && quantiteMin! > 1 && quantiteMin! <= 999 ? { ...avecImage, quantiteMin } : avecImage;
+      const propresPaliers = paliersDe(paliers);
+      return propresPaliers.length ? { ...avecMin, paliers: propresPaliers } : avecMin;
     });
     return { version: PANIER_VERSION, lignes: propres, majLe: objet.majLe ?? "" };
   } catch {
@@ -220,9 +228,11 @@ export function ajouteLigne(
       quantite: borne(lignes[index].quantite + ligne.quantite),
       prixMillimesAjout: ligne.prixMillimesAjout,
     };
-    // Le minimum relu à l'ajout remplace l'ancien (il a pu changer).
+    // Le minimum relu à l'ajout remplace l'ancien (il a pu changer), les prix par quantité aussi.
     if (minimum > 1) suivante.quantiteMin = minimum;
     else delete suivante.quantiteMin;
+    if (ligne.paliers?.length) suivante.paliers = ligne.paliers;
+    else delete suivante.paliers;
     lignes[index] = suivante;
   } else {
     lignes.push({
@@ -266,5 +276,10 @@ export function changeQuantite(
 }
 
 export function totalMillimes(panier: Panier): number {
-  return panier.lignes.reduce((somme, l) => somme + l.prixMillimesAjout * l.quantite, 0);
+  return panier.lignes.reduce((somme, l) => somme + totalLigne(l).total, 0);
+}
+
+/** Le total d'une ligne, ses prix par quantité appliqués (copie d'affichage). */
+export function totalLigne(l: Pick<LignePanier, "prixMillimesAjout" | "quantite" | "paliers">) {
+  return totalAvecPaliers(l.prixMillimesAjout, l.quantite, l.paliers);
 }

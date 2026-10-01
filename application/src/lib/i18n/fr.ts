@@ -193,6 +193,11 @@ export const fr = {
   },
 
   produit: {
+    offresTitre: "Prix par quantité",
+    offrePieces: (n: number) => (n > 1 ? `${n} pièces` : "1 pièce"),
+    offreUnite: (prix: string) => `${prix} l'unité`,
+    offreUneSeule: "Le prix à l'unité",
+    offreMeilleure: "Le meilleur prix",
     /** L'essentiel de la fiche technique, sous le titre (gabarit technique). */
     essentiel: "L'essentiel",
     toutesCaracteristiques: "Toutes les caractéristiques",
@@ -467,6 +472,7 @@ export const fr = {
   },
 
   panier: {
+    palierApplique: (n: number, prix: string) => `${n} pour ${prix}`,
     titre: "Votre panier",
     ouvrir: (n: number) => (n > 0 ? `Panier, ${n} ${n > 1 ? "articles" : "article"}` : "Panier, vide"),
     vide: "Votre panier est vide.",
@@ -523,6 +529,7 @@ export const fr = {
   },
 
   commande: {
+    palier: (n: number) => `Prix par ${n}`,
     titre: "Commande",
     rassurance: "Vous ne payez rien en ligne : vous réglez au livreur, à la remise du colis.",
     rassuranceRetrait: "Vous ne payez rien en ligne : vous réglez au livreur, ou au comptoir du magasin.",

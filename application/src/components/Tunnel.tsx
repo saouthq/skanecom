@@ -1079,9 +1079,12 @@ function Recap({
                 </span>
                 <span className="tunnel-ligne-prix">
                   {d?.total_ligne_millimes != null ? <Prix millimes={d.total_ligne_millimes} /> : null}
-                  {d?.prix_public_millimes ? (
+                  {d?.total_sans_palier_millimes ? (
+                    <s className="tunnel-ligne-public">{formatePrix(d.total_sans_palier_millimes)}</s>
+                  ) : d?.prix_public_millimes ? (
                     <s className="tunnel-ligne-public">{formatePrix(d.prix_public_millimes * ligne.quantite)}</s>
                   ) : null}
+                  {d?.palier ? <span className="tunnel-ligne-palier">{t.commande.palier(d.palier)}</span> : null}
                 </span>
               </li>
             );

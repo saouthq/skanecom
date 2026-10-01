@@ -9,6 +9,7 @@ import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { urlFichier } from "@/lib/photos";
 import { formateMontant } from "@/lib/prix";
+import { paliersDe } from "@/lib/paliers";
 import { quand } from "@/lib/gestion/libelles";
 import {
   LIBELLES_MOTIF,
@@ -49,12 +50,16 @@ export default async function FicheProduitBackoffice({
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }] = await Promise.all([
+  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }, { data: lusPaliers }] = await Promise.all([
     sb.rpc("gestion_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_fiche_technique", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id }),
     sb.rpc("gestion_soldes_du_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
+    sb.rpc("gestion_paliers", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
   ]);
+  // Les prix par quantité (« 2 pour 99 », migration 71) : trois lignes à remplir.
+  const paliers = paliersDe(lusPaliers);
+  const reglePrix = ["proprietaire", "admin"].includes(boutique.role);
   // Les prix barrés en cours sur ce produit (module promotions) : chaque
   // déclinaison remisée le dit, et ce qu'il advient d'un prix changé ici.
   const operations = (remises as { id: string; nom: string; pourcentage: number; variantes: string[] }[] | null) ?? [];
@@ -338,6 +343,51 @@ export default async function FicheProduitBackoffice({
                   );
                 })}
               </ul>
+            </section>
+
+            {/* ---------------- Les prix par quantité ---------------- */}
+            <section className="carte" aria-labelledby="t-paliers" id="paliers">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-paliers" className="carte-titre-icone"><Icone nom="etiquette" /> Prix par quantité</h2>
+                  <p>« 2 pour 99 » : le prix total de plusieurs pièces. La fiche et la page de vente les proposent ; la commande les applique d&apos;elle-même. Trois au plus.</p>
+                </div>
+              </div>
+              {reglePrix ? (
+                <form action={action} method="post" className="formulaire">
+                  <input type="hidden" name="action" value="paliers" />
+                  <ul className="pq-lignes" role="list">
+                    {[0, 1, 2].map((i) => {
+                      const p = paliers[i];
+                      return (
+                        <li key={i} className="pq-ligne">
+                          <div className="champ">
+                            <label htmlFor={`pq-q-${i}`}>Pièces</label>
+                            <input id={`pq-q-${i}`} name={`palier.${i}.quantite`} type="number" min={2} max={50} inputMode="numeric"
+                                   defaultValue={p?.quantite ?? ""} placeholder={String(i + 2)} />
+                          </div>
+                          <div className="champ">
+                            <label htmlFor={`pq-p-${i}`}>Prix total <span className="facultatif">TND</span></label>
+                            <input id={`pq-p-${i}`} name={`palier.${i}.prix`} inputMode="decimal"
+                                   defaultValue={p ? formateMontant(p.prixMillimes) : ""} placeholder="—" />
+                          </div>
+                          <p className="aide pq-unite">{p ? `soit ${formateMontant(Math.round(p.prixMillimes / p.quantite))} TND l'unité` : ""}</p>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <div className="carte-pied">
+                    <span className="aide">Une ligne vide ne compte pas ; tout vider retire les prix par quantité.</span>
+                    <button type="submit" className="btn btn-second">Enregistrer les prix par quantité</button>
+                  </div>
+                </form>
+              ) : paliers.length ? (
+                <ul className="pq-lecture" role="list">
+                  {paliers.map((p) => <li key={p.quantite}>{p.quantite} pièces : <Prix millimes={p.prixMillimes} /></li>)}
+                </ul>
+              ) : (
+                <p className="aide">Aucun prix par quantité.</p>
+              )}
             </section>
 
             {/* ---------------- Une déclinaison de plus ---------------- */}

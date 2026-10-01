@@ -9,7 +9,7 @@ import { Tiroir } from "./Tiroir";
 import { ConfirmationAjout } from "./ConfirmationAjout";
 import { EnsembleDuPanier } from "./EnsembleDuPanier";
 import { changeQuantitePanier, retireDuPanier, usePanier, usePanierLu } from "@/lib/panier";
-import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalMillimes, type AjoutAnnonce } from "@/lib/panier-contrat";
+import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalLigne, totalMillimes, type AjoutAnnonce } from "@/lib/panier-contrat";
 import { envole } from "@/lib/envol";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
@@ -227,11 +227,15 @@ export function BoutonPanier({
                     <Link href={`/produit/${ligne.produitSlug}`} className="panier-libelle" onClick={() => setOuvert(false)}>
                       {ligne.libelle}
                     </Link>
-                    <Prix millimes={ligne.prixMillimesAjout * ligne.quantite} />
+                    <span className="panier-ligne-prix">
+                      {totalLigne(ligne).palier ? <s className="prix-barre"><Prix millimes={totalLigne(ligne).sansPalier} /></s> : null}
+                      <Prix millimes={totalLigne(ligne).total} />
+                    </span>
                   </div>
                   <p className="legende tabular-nums">
                     {ligne.sku}
                     {minimum > 1 ? <span className="panier-minimum"> · {t.panier.parMinimum(minimum)}</span> : null}
+                    {totalLigne(ligne).palier ? <span className="panier-palier"> · {t.panier.palierApplique(totalLigne(ligne).palier!.quantite, formatePrix(totalLigne(ligne).palier!.prixMillimes))}</span> : null}
                   </p>
                   <div className="panier-ligne-actions">
                     <div className="qte qte-petite" role="group" aria-label={t.produit.quantite}>

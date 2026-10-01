@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { typographie } from "./typographie";
 
 /* ============================================================================
    LE TEXTE D'UNE PAGE — ce que le commerçant écrit au backoffice, en peu de
@@ -16,11 +17,7 @@ export type Bloc =
   | { genre: "h2" | "h3" | "p"; texte: string }
   | { genre: "ul" | "ol"; items: string[] };
 
-/** La typographie française : une espace fine insécable avant « ? ! ; : » »
- *  et après « « » — le signe ne passe plus seul à la ligne. */
-export function typographie(texte: string): string {
-  return texte.replace(/[ \u00a0]+([?!;:»])/g, "\u202f$1").replace(/«[ \u00a0]+/g, "«\u202f");
-}
+export { typographie };
 
 export function blocs(source: string): Bloc[] {
   const sortie: Bloc[] = [];

@@ -1847,6 +1847,44 @@ if (section("4bis")) {
     verifie(fichier.status === 200, `une photo du jeu de démo n'est jamais effacée du dépôt (HTTP ${fichier.status})`);
   });
 
+  await etape("les prix par quantité d'un pull : posés au clavier, vus sur la fiche, retirés", async () => {
+    // Le pull en mérinos : 189,000 l'unité.
+    await page.goto(`${C}/gestion/maison-selma/produits/00000000-0000-4000-8003-000000000109#paliers`, { waitUntil: "networkidle" });
+    const bloc = page.locator("#paliers");
+    await clic(page, bloc.getByLabel("Pièces").first());
+    await tape(page, "2");
+    await clic(page, bloc.getByLabel(/Prix total/).first());
+    await tape(page, "340,000");
+    await clic(page, bloc.getByLabel("Pièces").nth(1));
+    await tape(page, "3");
+    await clic(page, bloc.getByLabel(/Prix total/).nth(1));
+    await tape(page, "520,000");
+    await t.envoie(page, bloc.getByRole("button", { name: "Enregistrer les prix par quantité" }));
+    verifie((await page.locator(".message-erreur").first().innerText().catch(() => "")).includes("l'unité doit coûter moins"),
+      "à 3 pièces, l'unité plus chère qu'à 2 : refusé, la raison dite");
+    await bloc.getByLabel(/Prix total/).nth(1).fill("");
+    await bloc.getByLabel("Pièces").nth(1).fill("");
+    await clic(page, bloc.getByLabel(/Prix total/).first());
+    await page.keyboard.press("Control+A");
+    await tape(page, "340,000");
+    await t.envoie(page, bloc.getByRole("button", { name: "Enregistrer les prix par quantité" }));
+    verifie((await page.locator(".message-succes").first().innerText().catch(() => "")).includes("Prix par quantité enregistrés"), "2 pour 340,000 : enregistré");
+    verifie((await bloc.innerText()).includes("170,000 TND l'unité"), "l'écran dit le prix à l'unité");
+    await capture(page, "gestion-prix-quantite");
+    // La fiche de la vitrine le propose, aussitôt.
+    const v = await navigateur.newPage();
+    await v.goto(`${VS}/produit/pull-merinos`, { waitUntil: "networkidle" });
+    const offres = (await v.locator(".offres .offre").allInnerTexts()).map((x) => x.replace(/\s+/g, " "));
+    verifie(offres.length === 2 && offres[1].includes("2 pièces") && offres[1].includes("340,000"), `la fiche propose « 2 pièces : 340,000 » (${offres.join(" | ")})`);
+    await v.close();
+    // Tout vider : plus de prix par quantité.
+    await page.goto(`${C}/gestion/maison-selma/produits/00000000-0000-4000-8003-000000000109#paliers`, { waitUntil: "networkidle" });
+    await bloc.getByLabel("Pièces").first().fill("");
+    await bloc.getByLabel(/Prix total/).first().fill("");
+    await t.envoie(page, bloc.getByRole("button", { name: "Enregistrer les prix par quantité" }));
+    verifie((await page.locator(".message-succes").first().innerText().catch(() => "")).includes("Plus de prix par quantité"), "vidé : plus de prix par quantité");
+  });
+
   await etape("la publicité : ses pixels, un identifiant illisible refusé sur place, un autre collé avec ses espaces", async () => {
     // Les pixels de Selma (supabase/seed-pixels.sql).
     const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;

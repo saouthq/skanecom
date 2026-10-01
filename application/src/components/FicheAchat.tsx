@@ -18,6 +18,8 @@ import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
 import { etatVariante, minimumVariante, stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
 import { AlerteRetour } from "./AlerteRetour";
+import { OffresQuantite } from "./OffresQuantite";
+import { paliersDe, totalAvecPaliers } from "@/lib/paliers";
 import type { CodeTheme } from "@/lib/theme";
 
 /* ============================================================================
@@ -86,6 +88,8 @@ export function FicheAchat({
   const prixApplique = prixProVariante ?? variante?.prix_millimes ?? 0;
 
   const stock = variante?.stock ?? 0;
+  // Les prix par quantité du produit (« 2 pour 99 ») : la base les appliquera.
+  const paliers = paliersDe(produit.paliers);
   const sousMinimum = Boolean(variante) && stock > 0 && stock < minimum;
   const disponible = Boolean(variante) && stock > 0 && !sousMinimum;
   const technique = gabarit === "technique";
@@ -159,6 +163,7 @@ export function FicheAchat({
         prixMillimesAjout: prixApplique,
         ...(image ? { image } : {}),
         ...(minimum > 1 ? { quantiteMin: minimum } : {}),
+        ...(paliers.length ? { paliers } : {}),
       },
       stock,
     );
@@ -204,6 +209,12 @@ export function FicheAchat({
           {prixBarre ? <s className="prix-barre">{formatePrix(prixBarre)}</s> : null}
         </div>
       )}
+
+      {/* Les prix par quantité (« 2 pour 99 ») : un choix règle la quantité. */}
+      {variante && paliers.length ? (
+        <OffresQuantite prixUnitaire={prixApplique} paliers={paliers} quantite={quantite} stock={stock} minimum={minimum}
+          onChoisir={(q) => setQuantite(q)} />
+      ) : null}
 
       {produit.options.map((axe) => {
         const valeurs = valeursAxe(produit, axe.cle);
@@ -329,7 +340,7 @@ export function FicheAchat({
         <div className="achat-mobile cache-desktop" role="region" aria-label={t.produit.ajouterAuPanier}>
           <div className="min-w-0 flex-1">
             <p className="legende truncate">{declinaison() || champ(produit, "nom")}</p>
-            {variante ? <Prix millimes={prixApplique * quantite} /> : null}
+            {variante ? <Prix millimes={totalAvecPaliers(prixApplique, quantite, paliers).total} /> : null}
           </div>
           {achatExpress && lienExpress ? (
             <>

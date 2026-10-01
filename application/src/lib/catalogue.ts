@@ -90,6 +90,9 @@ export type Produit = {
   /** La note de ses avis publiés (module avis) ; null sans avis. Absente
    *  d'une base qui n'a pas encore la migration 40. */
   note?: { moyenne: number; total: number } | null;
+  /** Les prix par quantité (« 2 pour 99 », migration 71) ; absents d'une
+   *  base qui n'a pas encore la migration 71. */
+  paliers?: { quantite: number; prix_millimes: number }[];
 };
 
 export type OptionFacette = { valeur: string; compte: number };

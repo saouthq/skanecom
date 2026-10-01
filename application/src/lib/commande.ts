@@ -26,6 +26,10 @@ export type LigneDevis = {
   prix_unitaire_millimes: number | null;
   /** Le prix public, quand le prix pro appliqué est plus bas. */
   prix_public_millimes?: number | null;
+  /** Le prix par quantité appliqué (« 2 pour 99 », migration 71) : sa
+   *  quantité, et ce que la ligne aurait coûté sans lui. */
+  palier?: number | null;
+  total_sans_palier_millimes?: number | null;
   total_ligne_millimes: number | null;
 };
 

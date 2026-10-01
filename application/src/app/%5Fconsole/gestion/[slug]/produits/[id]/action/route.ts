@@ -2,6 +2,7 @@ import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers, versAvecErreur } from "@/lib/console/http";
 import { millimes } from "@/lib/console/import";
 import { formateMontant } from "@/lib/prix";
+import { rafraichirVitrine } from "@/lib/console/vitrine-cache";
 import { messageCatalogue, referenceProposee, type FicheProduit } from "@/lib/gestion/catalogue";
 
 /* ============================================================================
@@ -33,8 +34,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const f = await req.formData();
   const texte = (cle: string) => String(f.get(cle) ?? "").trim();
   const fiche = `/gestion/${slug}/produits/${id}`;
-  const ici = (ancre?: string) => (m: string, ok = false) =>
-    vers(`${fiche}?${new URLSearchParams(ok ? { ok: m } : { erreur: m })}${ancre ? `#${ancre}` : ""}`);
+  // Un geste réussi : la vitrine le montre dès la visite suivante (sans attendre son cache).
+  const ici = (ancre?: string) => (m: string, ok = false) => {
+    if (ok) rafraichirVitrine(slug);
+    return vers(`${fiche}?${new URLSearchParams(ok ? { ok: m } : { erreur: m })}${ancre ? `#${ancre}` : ""}`);
+  };
   const b = boutique.boutique_id;
   const sb = await clientSession();
 
@@ -117,6 +121,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
         p_boutique_id: b, p_produit_id: id, p_options: options, p_sku: sku, p_prix: p,
       });
       if (error) return retour(messageCatalogue(error.hint, error.message));
+      rafraichirVitrine(slug);
       return vers(`${fiche}?${new URLSearchParams({ ok: `Déclinaison ajoutée (${sku.toUpperCase()}). Faites la réception de son stock.` })}#var-${vid}`);
     }
 
@@ -131,6 +136,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       });
       if (error) return retour(messageCatalogue(error.hint, error.message));
       return retour("Fiche technique enregistrée.", true);
+    }
+
+    case "paliers": {
+      const retour = ici("paliers");
+      const paliers: { quantite: number; prix_millimes: number }[] = [];
+      for (const i of [0, 1, 2]) {
+        const q = texte(`palier.${i}.quantite`);
+        const p = prix(f.get(`palier.${i}.prix`));
+        if (!q && p === null) continue;
+        if (!/^\d{1,2}$/.test(q) || !p) return retour("Chaque ligne remplie : un nombre de pièces (2 à 50) et un prix total, par exemple 99,000.");
+        paliers.push({ quantite: Number(q), prix_millimes: p });
+      }
+      const { error } = await sb.rpc("gestion_enregistrer_paliers", { p_boutique_id: b, p_produit_id: id, p_paliers: paliers });
+      if (error) return retour(error.hint === "role" ? "Seuls la propriétaire et les administrateurs règlent les prix." : error.message);
+      return retour(paliers.length ? "Prix par quantité enregistrés : la vitrine et la commande les appliquent." : "Plus de prix par quantité sur ce produit.", true);
     }
 
     default:
