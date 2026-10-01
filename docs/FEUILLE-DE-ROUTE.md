@@ -53,15 +53,22 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 
 ### D. Tous les métiers
 
-- **Troisième gabarit « commerce »** (high-tech, électroménager, téléphonie, grande distribution) : grand menu des rayons, bannières, comparaison, prix mis en avant, fiches techniques.
+- **Troisième gabarit « commerce »** (high-tech, électroménager, téléphonie, grande distribution) : grand menu des rayons, bannières, comparaison, prix mis en avant, fiches techniques — c'est la structure « Commerce » de l'étape E.
 - [x] **Composer l'accueil et sa bibliothèque de sections** (01/10) : l'écran « Page d'accueil » du backoffice — les sections de haut en bas, chacune avec sa miniature, ce qu'elle dit et si la vitrine la montrera (ou pourquoi pas encore) ; monter, descendre, régler, retirer (et rétablir), au clavier comme à la souris ; ajouter depuis la bibliothèque ; enregistrer en arrière-plan (⌘S), la version protège un collègue ; revenir à l'accueil du gabarit. Trois sections de plus, communes aux gabarits et tirées de ce que la boutique a déjà : **les avis** (citations de 4 et 5 étoiles, la pièce reçue, la note de tous les avis publiés, en rangées pleines), **les questions** (les premières d'une page de questions, en accordéon), **les marques** (chacune vers ses pièces) ; et la sélection choisit son ordre (la vôtre, ou les nouveautés). **Ses photos aussi** (01/10) : l'ouverture, son cadrage pour téléphone et le récit se choisissent depuis l'écran — réduites dans le navigateur, revérifiées par le serveur, décrites pour qui ne les voit pas ; une photo remplacée quitte le dépôt (celles de la console et du jeu de démo jamais). Reste : bannières défilantes, vidéo, Instagram, « acheter la silhouette ».
 - [x] **Préréglages par métier** (01/10) dans la console — mode, beauté, bijoux, high-tech, maison, épicerie fine, outillage, bagages : le gabarit, la palette, les polices, les rayons et sous-rayons, les caractéristiques de chaque rayon, quelques réglages et la politique de retour, posés d'un geste à la création ou sur une boutique vide ; tout se change ensuite. **Et son accueil** (01/10), pris dans la bibliothèque : la beauté ouvre sur ses nouveautés et ce qu'en disent ses clientes, le high-tech sur ses rayons et ses marques, l'épicerie sur sa sélection — sans un mot écrit d'avance ; chaque section paraît d'elle-même quand la boutique a de quoi la remplir (une seule « Le catalogue arrive » sur une boutique neuve, ni vignette de rayon vide).
 - **Boutiques de démonstration par métier**, pour la prospection. [x] **La beauté** (01/10) : *Yasmine Beauté* (`supabase/seed-beaute.sql`, `beaute.localhost`, et dans l'aperçu en ligne), le préréglage beauté posé à la main — gabarit éditorial, six rayons (soins du visage, corps et bain, cheveux, maquillage, parfums, coffrets), la contenance et le type de peau ; 17 produits d'une marque fictive, 28 déclinaisons (contenances qui font le prix, parfums de savon dont un épuisé, teintes de vernis en pastilles), photos CC0 sans marque lisible ; dix avis vérifiés de commandes livrées en 2025 (deux réponses de la boutique, aucune photo de cliente) ; l'accueil : nouveautés, rayons sur une seule rangée, parfums, le récit du hammam et ses produits, ce qu'en disent ses clientes. [x] **La maison** (01/10) : *Dar Alia* (`supabase/seed-maison.sql`, `maison.localhost`, et dans l'aperçu en ligne), le préréglage maison posé à la main — cinq rayons (cuisine et table, décoration, linge de maison, luminaires, rangement), la matière sur les cartes, les dimensions, l'entretien, le fait main filtrable ; 18 produits d'une marque fictive, 27 déclinaisons (des formats qui font le prix, le grand kilim épuisé, des couleurs en pastilles), photos CC0 sans marque ni pièce de musée ; huit avis vérifiés ; l'accueil : rayons, essentiels, le récit de l'atelier, « Lumière et laine », les avis. Reste le high-tech (avec le gabarit « commerce »).
 
-### E. Arabe et paiement en ligne
+### E. Des vitrines au choix, qui font dire « waouh »
 
-- L'interface entière en arabe (de droite à gauche), la bascule FR/AR par boutique, les contenus bilingues saisis au backoffice.
-- Konnect (V6), derrière son module, qui s'efface si le prestataire tombe.
+Demandé par Skander le 01/10 : d'autres structures que les deux gabarits, modernes et premium, le choix laissé au commerçant, une personnalisation plus poussée, et des sites vitrine. Les maquettes (01/10) attendent son choix : quatre structures, chacune sur ordinateur et téléphone avec les photos d'une boutique de démonstration, et l'éditeur de style cliquable.
+
+- **Bento** (maison, beauté, high-tech, marques jeunes) : l'accueil en mosaïque de tuiles de tailles variées, coins arrondis, ajout au panier depuis la photo, filtres en pastilles, en-tête flottant.
+- **Immersif** (mode, luxe, maison haut de gamme) : la photo (ou la vidéo) plein écran, l'en-tête posé dessus, les collections qui glissent, le lookbook à points cliquables ; fond sombre ou clair.
+- **Commerce** (high-tech, électroménager, outillage, grande distribution) : la recherche d'abord, le grand menu des rayons, bannières, prix barrés et prix pro, stock sur la carte, comparaison ; au téléphone, une barre d'onglets.
+- **Monoproduit** (vente par les publicités Facebook et TikTok) : une page de vente — la promesse, les offres (1, 2 ou 3), le formulaire de commande sur la page, l'utilisation, les avis, les questions ; au téléphone, « Commander » reste en bas.
+- **L'éditeur de style** (écran « Apparence » du backoffice) : couleur, police des titres, coins, boutons, mode sombre, la structure elle-même, l'aperçu en direct sur ordinateur et téléphone, un brouillon et « Publier ».
+- **Le site vitrine** (réglage du type de site) : présenter une activité, ses produits ou ses services, sans commande en ligne — le contact, WhatsApp, la demande de devis, l'adresse et les horaires.
+- Chaque structure a sa boutique de démonstration, dans la galerie des modèles de la console.
 
 ### F. Console et backoffice : le mouvement
 
@@ -76,7 +83,14 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 - [x] **Les visites de chaque vitrine** (01/10, réglage « Mesure d'audience ») : visiteurs, pages vues, commandes et conversion sur 7, 30 ou 90 jours comparés à la période d'avant, le jour par jour, d'où l'on vient (Instagram, Google, Facebook, direct…), sur quel appareil, les fiches et les pages les plus vues — sans cookie ni donnée personnelle (une empreinte salée du jour, illisible le surlendemain ; l'adresse IP jamais gardée ; robots et « ne pas me suivre » écartés). **Le chemin vers la commande et les campagnes** (01/10) : de chaque visite, l'étape la plus loin atteinte (une fiche, le panier, la commande ouverte, la commande passée) et où l'on perd le plus de monde ; les visites venues d'un lien de campagne (utm), ce qu'elles ont vendu, et le lien composé au backoffice pour chaque publication.
 - [x] **Le poste de pilotage de la console** (30/09) : chaque boutique en tuile à sa marque — sa semaine jour par jour, l'encaissé, ce qui attend et depuis quand, la mise en place et la prochaine étape, un accès support ouvert —, la synthèse de la plateforme et « À surveiller » (le plus pressant d'abord). Reste la santé de chaque vitrine (temps de réponse, erreurs), avec la surveillance ci-dessus.
 
-### H. La mise en production (avec Skander)
+### H. Arabe et paiement en ligne — à la fin
+
+Skander, le 01/10 : on prépare l'infrastructure, l'arabe s'intègre à la fin. La structure i18n et le sens de lecture sont prêts depuis le premier écran (PRD) ; chaque écran nouveau les respecte.
+
+- L'interface entière en arabe (de droite à gauche), la bascule FR/AR par boutique, les contenus bilingues saisis au backoffice.
+- Konnect (V6), derrière son module, qui s'efface si le prestataire tombe.
+
+### I. La mise en production (avec Skander)
 
 Ce qui ne se décide pas sans lui, rappelé à chaque point d'étape :
 
