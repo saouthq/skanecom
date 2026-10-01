@@ -1,21 +1,30 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers } from "@/lib/console/http";
-import { contenuDe, versBase } from "@/lib/apparence";
+import { contenuDe, contenuRecu, versBase } from "@/lib/apparence";
+import { CHEMIN_PHOTO_ACCUEIL } from "@/lib/gestion/accueil";
+import { retirerFichier } from "@/lib/gestion/fichiers";
 import { CLES_STYLE, JETONS_COULEUR } from "@/lib/theme";
 
 /* ============================================================================
-   L'APPARENCE — trois gestes :
-   · « brouillon » : l'essai en cours (`contenu`, en JSON), à part du thème
-     publié ; `version_brouillon` est celle lue (vide s'il n'y en avait pas) ;
+   L'ÉDITEUR DE LA VITRINE — trois gestes :
+   · « brouillon » : l'essai en cours (`contenu`, en JSON : l'apparence et
+     l'accueil), à part du thème publié ; `version_brouillon` est celle lue
+     (vide s'il n'y en avait pas) ;
    · « publier » : le contenu passe dans le thème (`version` : celle du thème
      lue à l'ouverture), le brouillon s'efface ;
    · « abandonner » : le brouillon s'efface, la vitrine garde ce qui est publié.
 
+   Publier et abandonner rendent les photos que plus rien n'emploie
+   (migration 66) : celles que le backoffice avait déposées quittent le dépôt
+   (jamais une photo de la console ni du jeu de démo), et l'écran oublie les
+   gestes qui y menaient.
+
    L'écran envoie en arrière-plan (`accept: application/json`) et garde
    l'essai à l'écran quoi qu'il arrive. Sans script, un formulaire ordinaire
    (un champ par réglage : `code`, `polices.titres`, `style.coins`,
-   `couleurs.accent`…) et une redirection 303. La base revérifie le rôle, les
-   versions et chaque valeur (migration 64).
+   `couleurs.accent`… ; l'accueil n'y est pas, il reste tel quel) et une
+   redirection 303. La base revérifie le rôle, les versions et chaque valeur
+   (migrations 64 et 66).
    ========================================================================== */
 
 export const dynamic = "force-dynamic";
@@ -32,6 +41,8 @@ function message(indice: string | undefined, texte: string, geste: string): stri
       return "La boutique n'a pas encore de thème : la console le pose à sa mise en place.";
     case "forme":
       return `Un réglage n'a pas été accepté (${texte.replace(/^themes\.\w+ : /, "")}) : rechargez la page.`;
+    case "vide":
+      return "L'accueil garde une section au moins.";
     default:
       return texte;
   }
@@ -43,7 +54,7 @@ function contenuEnvoye(f: FormData): Record<string, unknown> | null {
   const json = f.get("contenu");
   if (typeof json === "string" && json) {
     try {
-      return versBase(contenuDe(JSON.parse(json)));
+      return contenuRecu(JSON.parse(json));
     } catch {
       return null;
     }
@@ -80,6 +91,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     return /^\d+$/.test(v) ? Number(v) : null;
   };
 
+  // Les photos que plus rien n'emploie : celles du backoffice quittent le dépôt.
+  const duBackoffice = CHEMIN_PHOTO_ACCUEIL(slug);
+  const retirer = async (orphelins: string[] | undefined) => {
+    const retirees: string[] = [];
+    for (const chemin of orphelins ?? []) {
+      if (!duBackoffice.test(chemin)) continue;
+      await retirerFichier(chemin).then(() => retirees.push(chemin), (err) => console.error("éditeur : retrait de la photo en échec", chemin, err));
+    }
+    return retirees;
+  };
+
   const sb = await clientSession();
   if (geste === "brouillon" || geste === "abandonner") {
     const contenu = geste === "brouillon" ? contenuEnvoye(f) : null;
@@ -90,11 +112,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       p_version: entier("version_brouillon"),
     });
     if (error) return refus(message(error.hint, error.message, geste), error.hint ?? null);
-    const rendu = data as { version: number | null; jeton: string | null };
+    const { orphelins, ...rendu } = data as { version: number | null; jeton: string | null; orphelins?: string[] };
+    const retirees = await retirer(orphelins);
     const texte = geste === "abandonner"
-      ? "Brouillon abandonné : la vitrine garde l'apparence publiée."
+      ? "Brouillon abandonné : la vitrine garde ce qui est publié."
       : "Brouillon enregistré : les visiteurs voient toujours la version publiée.";
-    if (enJson) return Response.json({ ok: true, message: texte, brouillon: rendu.version ? rendu : null }, { headers: { "cache-control": "no-store" } });
+    if (enJson) return Response.json({ ok: true, message: texte, brouillon: rendu.version ? rendu : null, orphelins: retirees }, { headers: { "cache-control": "no-store" } });
     return vers(`${page}?${new URLSearchParams({ ok: texte })}`);
   }
 
@@ -107,8 +130,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       p_version: entier("version"),
     });
     if (error) return refus(message(error.hint, error.message, geste), error.hint ?? null);
-    const texte = "Apparence publiée : la boutique la montre d'ici cinq minutes.";
-    if (enJson) return Response.json({ ok: true, message: texte, version: (data as { version: number }).version }, { headers: { "cache-control": "no-store" } });
+    const rendu = data as { version: number; orphelins?: string[] };
+    const retirees = await retirer(rendu.orphelins);
+    const texte = "Vitrine publiée : la boutique la montre d'ici cinq minutes.";
+    if (enJson) return Response.json({ ok: true, message: texte, version: rendu.version, orphelins: retirees }, { headers: { "cache-control": "no-store" } });
     return vers(`${page}?${new URLSearchParams({ ok: texte })}`);
   }
 

@@ -30,36 +30,36 @@ export function AccueilTechnique({ cadre, donnees }: Props) {
       {cadre.theme.sections.map((s, i) => {
         switch (s.type) {
           case "hero":
-            return <Banniere key={i} section={s} cadre={cadre} />;
+            return <Banniere key={i} rang={i} section={s} cadre={cadre} />;
           case "rayons":
-            return <Rayons key={i} section={s} cadre={cadre} />;
+            return <Rayons key={i} rang={i} section={s} cadre={cadre} />;
           case "selection": {
             const produits = selections.get(i) ?? [];
-            return produits.length || donnees.selectionVide === i ? <Selection key={i} section={s} cadre={cadre} produits={produits} /> : null;
+            return produits.length || donnees.selectionVide === i ? <Selection key={i} rang={i} section={s} cadre={cadre} produits={produits} /> : null;
           }
           case "editorial":
-            return <Bandeau key={i} section={s} cadre={cadre} />;
+            return <Bandeau key={i} rang={i} section={s} cadre={cadre} />;
           case "engagements":
-            return <Services key={i} cadre={cadre} />;
+            return <Services key={i} rang={i} cadre={cadre} />;
           case "texte":
-            return <Texte key={i} section={s} />;
+            return <Texte key={i} rang={i} section={s} />;
           case "avis":
             return donnees.avis ? (
-              <div key={i} className="te-section">
+              <div key={i} className="te-section" data-section={i}>
                 <AvisClients avis={donnees.avis} gabarit="technique" tete={<Tete titre={texte(s.textes, "titre", t.accueil.avisTitre)} />} />
               </div>
             ) : null;
           case "questions": {
             const q = donnees.questions.get(i);
             return q ? (
-              <div key={i} className="te-section">
+              <div key={i} className="te-section" data-section={i}>
                 <QuestionsFrequentes questions={q} gabarit="technique" tete={(l) => <Tete titre={texte(s.textes, "titre", t.accueil.questionsTitre)} lien={l.href} libelle={l.libelle} />} />
               </div>
             ) : null;
           }
           case "marques":
             return donnees.marques.length ? (
-              <div key={i} className="te-section">
+              <div key={i} className="te-section" data-section={i}>
                 <Marques marques={donnees.marques} gabarit="technique" tete={<Tete titre={texte(s.textes, "titre", t.accueil.marquesTitre)} />} />
               </div>
             ) : null;
@@ -69,13 +69,13 @@ export function AccueilTechnique({ cadre, donnees }: Props) {
   );
 }
 
-function Banniere({ section, cadre }: { section: Extract<Section, { type: "hero" }>; cadre: Cadre }) {
+function Banniere({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "hero" }>; cadre: Cadre }) {
   const titre = texte(section.textes, "titre", cadre.boutique.nom);
   const chapo = texte(section.textes, "chapo") || texte(cadre.theme.textes, "resume");
   const etiquette = texte(section.textes, "etiquette");
   const image = section.image && !section.image.detouree ? section.image : null;
   return (
-    <section className="te-banniere" data-image={image ? "" : undefined}>
+    <section className="te-banniere" data-section={rang} data-image={image ? "" : undefined}>
       {image ? (
         <PhotoOuverture
           className="te-banniere-image"
@@ -121,7 +121,7 @@ function Tete({ titre, lien, libelle }: { titre: string; lien?: string; libelle?
   );
 }
 
-function Rayons({ section, cadre }: { section: Extract<Section, { type: "rayons" }>; cadre: Cadre }) {
+function Rayons({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "rayons" }>; cadre: Cadre }) {
   const compte = (slug: string) => descendance(cadre.categories, slug).reduce((n, c) => n + (c.nb_produits ?? 0), 0);
   const cartes = cadre.racines.flatMap((r): { c: Categorie; parent: Categorie | null }[] => {
     const enfants = cadre.categories.filter((c) => c.parent_id === r.id);
@@ -131,7 +131,7 @@ function Rayons({ section, cadre }: { section: Extract<Section, { type: "rayons"
   }).filter(({ c }) => compte(c.slug) > 0); // pas de vignette vide
   if (cartes.length === 0) return null;
   return (
-    <section className="te-section">
+    <section className="te-section" data-section={rang}>
       <Tete titre={texte(section.textes, "titre", t.accueil.rayonsTitreTechnique)} lien="/catalogue" libelle={t.commun.toutLeCatalogue} />
       <ul className="te-rayons">
         {cartes.map(({ c, parent }) => (
@@ -151,14 +151,14 @@ function Rayons({ section, cadre }: { section: Extract<Section, { type: "rayons"
   );
 }
 
-function Selection({ section, cadre, produits }: { section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
+function Selection({ rang, section, cadre, produits }: { rang: number; section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
   const lien = section.lien ?? (section.rayon ? `/categorie/${section.rayon}` : "/catalogue");
   const titre = texte(section.textes, "titre", section.tri === "nouveautes" ? t.accueil.selectionNouveautes : t.accueil.selectionTitreTechnique);
   const total = section.rayon
     ? descendance(cadre.categories, section.rayon).reduce((n, c) => n + (c.nb_produits ?? 0), 0)
     : cadre.boutique.nb_produits;
   return (
-    <section className="te-section">
+    <section className="te-section" data-section={rang}>
       <Tete titre={titre} lien={lien} />
       {produits.length > 0 ? (
         <div className="te-grille te-grille-rang rail-mobile">
@@ -177,12 +177,12 @@ function Selection({ section, cadre, produits }: { section: Extract<Section, { t
   );
 }
 
-function Bandeau({ section, cadre }: { section: Extract<Section, { type: "editorial" }>; cadre: Cadre }) {
+function Bandeau({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "editorial" }>; cadre: Cadre }) {
   const titre = texte(section.textes, "titre");
   const corps = texte(section.textes, "texte");
   if (!titre && !corps) return null;
   return (
-    <section className="te-section te-bandeau">
+    <section className="te-section te-bandeau" data-section={rang}>
       {section.image ? (
         <Photo photo={{ src: urlFichier(section.image.chemin), alt: texte(section.textes, "image_alt", cadre.boutique.nom) }} ratio="4 / 3" tailles="(min-width: 900px) 45vw, 100vw" />
       ) : null}
@@ -199,7 +199,7 @@ function Bandeau({ section, cadre }: { section: Extract<Section, { type: "editor
   );
 }
 
-function Services({ cadre }: { cadre: Cadre }) {
+function Services({ rang, cadre }: { rang: number; cadre: Cadre }) {
   const { livraison } = cadre;
   const conseil = lienConseil(cadre);
   const services = [
@@ -212,7 +212,7 @@ function Services({ cadre }: { cadre: Cadre }) {
   ].filter((s) => s !== null);
 
   return (
-    <section className="te-section">
+    <section className="te-section" data-section={rang}>
       <Tete titre={t.accueil.engagementsTitre} />
       <ul className="te-services">
         {services.map((s) => (
@@ -233,12 +233,12 @@ function Services({ cadre }: { cadre: Cadre }) {
   );
 }
 
-function Texte({ section }: { section: Extract<Section, { type: "texte" }> }) {
+function Texte({ rang, section }: { rang: number; section: Extract<Section, { type: "texte" }> }) {
   const titre = texte(section.textes, "titre");
   const corps = texte(section.textes, "texte");
   if (!titre && !corps) return null;
   return (
-    <section className="te-section te-texte">
+    <section className="te-section te-texte" data-section={rang}>
       {titre ? <h2>{titre}</h2> : null}
       {corps ? <p>{corps}</p> : null}
     </section>

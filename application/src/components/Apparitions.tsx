@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { rafraichiALInstant } from "@/lib/apercu-cadre";
 
 /* ============================================================================
    LES APPARITIONS — sur la vitrine, les sections et les cartes montent en
@@ -52,8 +53,9 @@ export function Apparitions() {
       document.querySelectorAll<HTMLElement>(CIBLES_APPARITION).forEach((el) => {
         if ("vu" in el.dataset || el.dataset.suivi) return;
         el.dataset.suivi = "";
-        // Déjà à l'écran (ou au-dessus) : visible tout de suite, sans animation.
-        if (!racine.classList.contains("js-apparitions") && el.getBoundingClientRect().top < hauteur) {
+        // Déjà à l'écran (ou au-dessus) : visible tout de suite, sans animation —
+        // de même pour toute la page rendue de nouveau dans l'aperçu de l'éditeur.
+        if (rafraichiALInstant() || (!racine.classList.contains("js-apparitions") && el.getBoundingClientRect().top < hauteur)) {
           el.dataset.vu = "";
           return;
         }
@@ -63,7 +65,8 @@ export function Apparitions() {
     const suivrePhotos = () => {
       document.querySelectorAll<HTMLImageElement>(".cadre-image img.photo-principale:not([data-chargee]):not([data-attendue])").forEach((img) => {
         const chargee = () => { img.dataset.chargee = ""; };
-        if (img.complete) return chargee();
+        // Déjà là, ou la page vient d'être rendue de nouveau dans l'aperçu : sans fondu.
+        if (img.complete || rafraichiALInstant()) return chargee();
         img.dataset.attendue = "";
         img.addEventListener("load", chargee, { once: true });
         img.addEventListener("error", chargee, { once: true });

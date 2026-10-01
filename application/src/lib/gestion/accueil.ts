@@ -1,4 +1,4 @@
-import type { CodeTheme, TypeSection } from "@/lib/theme";
+import type { CodeTheme, Structure, TypeSection } from "@/lib/theme";
 
 /* ============================================================================
    COMPOSER L'ACCUEIL (backoffice, migration 59) — ce qui se partage entre
@@ -123,11 +123,12 @@ export const BIBLIOTHEQUE: Record<TypeSection, Entree> = {
 /** L'ordre de la bibliothèque. */
 export const TYPES: TypeSection[] = ["hero", "selection", "rayons", "editorial", "avis", "questions", "marques", "engagements", "texte"];
 
-/** Les titres que la vitrine montre quand la section n'a pas le sien. */
-export function titreParDefaut(type: TypeSection, code: CodeTheme, tri?: string): string {
+/** Les titres que la vitrine montre quand la section n'a pas le sien
+ *  (selon la structure : le Bento a ses rayons, sur les textes éditoriaux). */
+export function titreParDefaut(type: TypeSection, code: Structure, tri?: string): string {
   switch (type) {
     case "hero": return "Le nom de la boutique";
-    case "rayons": return code === "technique" ? "Nos rayons" : "Les collections";
+    case "rayons": return code === "technique" ? "Nos rayons" : code === "bento" ? "Les rayons" : "Les collections";
     case "selection": return tri === "nouveautes" ? "Les nouveautés" : code === "technique" ? "Les références du moment" : "La sélection";
     case "avis": return "Ce qu'en disent nos clients";
     case "questions": return "Vos questions";

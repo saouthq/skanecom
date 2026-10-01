@@ -30,6 +30,10 @@ html.js-photos .cadre-image img.photo-principale:not([data-chargee]) { opacity: 
 html.js-photos .cadre-image img.photo-principale[data-attendue] {
   transition: opacity .7s var(--theme-courbe), transform 1.4s var(--theme-courbe);
 }
+/* L'aperçu de l'éditeur, rendu de nouveau sur place : la nouvelle page
+   remplace l'ancienne d'un coup (ApercuApparence.tsx). */
+html[data-ap-rafraichi] .cadre-image img.photo-principale { opacity: 1 !important; }
+html[data-ap-rafraichi] *, html[data-ap-rafraichi] *::before, html[data-ap-rafraichi] *::after { animation: none !important; transition: none !important; }
 
 /* ---- Le titre d'ouverture, ligne après ligne ---- */
 /* Chaque ligne est un bloc (le <br> qui la sépare devient inutile) : un

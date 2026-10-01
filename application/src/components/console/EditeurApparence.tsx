@@ -3,11 +3,15 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Icone } from "./Icone";
 import { BoutonCopier } from "./BoutonCopier";
-import { MESSAGE_APPARENCE, MESSAGE_PRET } from "@/components/ApercuApparence";
+import { PanneauAccueil, type InfosAccueil } from "./PanneauAccueil";
 import {
-  ACCENTS, AMBIANCES, FONDS, avecAccent, encrePour, memeContenu, paletteDerivee, rapportLisible, verdicts, versBase,
+  MESSAGE_ACCUEIL, MESSAGE_APPARENCE, MESSAGE_MONTRER, MESSAGE_PRET, MESSAGE_RECHARGER, MESSAGE_SECTION,
+} from "@/components/ApercuApparence";
+import {
+  ACCENTS, AMBIANCES, FONDS, avecAccent, encrePour, memeContenu, paletteDerivee, photosDe, rapportLisible, sectionsDeStructure, verdicts, versBase,
   type Ambiance, type ContenuApparence, type Mode,
 } from "@/lib/apparence";
+import { BIBLIOTHEQUE, type SectionBrute } from "@/lib/gestion/accueil";
 import { estHex } from "@/lib/couleur";
 import {
   JETONS_COULEUR, POLICES_INFO, pilePolice, REGLAGES_STYLE, STRUCTURES, styleConseille,
@@ -15,15 +19,18 @@ import {
 } from "@/lib/theme";
 
 /* ============================================================================
-   L'ÉDITEUR D'APPARENCE — à gauche les réglages, à droite la VRAIE vitrine
-   (dans un cadre), qui change à chaque geste :
+   L'ÉDITEUR DE LA VITRINE — à gauche les réglages, en deux panneaux (le
+   style, l'accueil), à droite la VRAIE vitrine (dans un cadre), qui change à
+   chaque geste :
 
    · couleurs, polices et style partent au cadre par message (la vitrine les
      applique sans recharger : components/ApercuApparence.tsx) ;
    · chaque geste s'enregistre, une seconde plus tard, dans le BROUILLON (que
      les visiteurs ne voient pas) ; changer de structure recharge le cadre sur
-     l'aperçu du brouillon (la façade le rend : src/proxy.ts) ;
-   · « Publier » met l'apparence en ligne ; « Revenir à la version publiée »
+     l'aperçu du brouillon (la façade le rend : src/proxy.ts), changer
+     l'accueil le rafraîchit sur place ;
+   · sur l'accueil, cliquer une section de l'aperçu ouvre ses réglages ;
+   · « Publier » met le tout en ligne ; « Revenir à la version publiée »
      abandonne le brouillon ; ⌘Z / ⇧⌘Z défont et refont.
 
    Les réglages sont de vrais boutons radio (flèches du clavier dans chaque
@@ -74,10 +81,21 @@ function abonneEcran(signal: () => void) {
   return () => m.removeEventListener("change", signal);
 }
 
+type Panneau = "style" | "accueil";
+const PANNEAUX: { id: Panneau; nom: string; icone: "marque" | "boutique" }[] = [
+  { id: "style", nom: "Style", icone: "marque" },
+  { id: "accueil", nom: "Accueil", icone: "boutique" },
+];
+
+const empreinteSections = (c: ContenuApparence) => JSON.stringify(versBase(c).sections ?? null);
+
 export function EditeurApparence({
-  action, retour: lienRetour, vitrine, ecrit, nom, fiche, version: versionInitiale, publie: publieInitial, brouillon: brouillonInitial, message,
+  action, photoAction, retour: lienRetour, vitrine, ecrit, nom, fiche, panneau: panneauInitial, infos,
+  version: versionInitiale, publie: publieInitial, brouillon: brouillonInitial, message,
 }: {
   action: string;
+  /** Où téléverser une photo de l'accueil. */
+  photoAction: string;
   /** Le backoffice, d'où l'on vient (l'éditeur prend tout l'écran). */
   retour: string;
   vitrine: string | null;
@@ -85,6 +103,10 @@ export function EditeurApparence({
   nom: string;
   /** Une fiche produit de la boutique, à regarder dans l'aperçu. */
   fiche: { chemin: string; nom: string } | null;
+  /** Le panneau ouvert d'abord (l'ancienne adresse « Page d'accueil » ouvre l'accueil). */
+  panneau: Panneau;
+  /** Ce que l'accueil peut montrer : rayons, pages, avis, marques, produits. */
+  infos: InfosAccueil;
   version: number | null;
   publie: ContenuApparence;
   brouillon: { contenu: ContenuApparence; version: number; jeton: string; auteur: string | null; quand: string } | null;
@@ -109,7 +131,15 @@ export function EditeurApparence({
   const [historique, setHistorique] = useState<{ passe: ContenuApparence[]; futur: ContenuApparence[] }>({ passe: [], futur: [] });
   const dernierGeste = useRef<string | null>(null);
   const enVol = useRef(false);
+  const [panneau, setPanneau] = useState<Panneau>(panneauInitial);
+  const [ouverte, setOuverte] = useState<string | null>(null);
   const PAGES_APERCU = fiche ? [PAGES_FIXES[0], PAGES_FIXES[1], { chemin: fiche.chemin, nom: `Fiche : ${fiche.nom}` }, PAGES_FIXES[2]] : PAGES_FIXES;
+
+  /* --- L'accueil : celui du brouillon, ou celui de la structure. */
+  const parStructure = contenu.sections == null;
+  const sections = useMemo(() => contenu.sections ?? sectionsDeStructure(contenu.code), [contenu.sections, contenu.code]);
+  const nomsSections = useMemo(() => sections.map((s) => BIBLIOTHEQUE[s.type].nom), [sections]);
+  const indexDe = (cle: string | null) => (cle === null ? null : sections.findIndex((s) => s.cle === cle));
 
   /* --- Le cadre d'aperçu. */
   const origine = useMemo(() => (vitrine ? new URL(vitrine).origin : null), [vitrine]);
@@ -135,10 +165,31 @@ export function EditeurApparence({
     cadre.current?.contentWindow?.postMessage({ type: MESSAGE_APPARENCE, contenu: versBase(c) }, origine);
   });
 
-  // « Avant / après » : le cadre montre un instant la version publiée (même structure seulement).
+  // « Avant / après » : le cadre montre un instant la version publiée — sur
+  // place quand seul le style diffère, en rechargeant la version publiée
+  // quand la structure ou l'accueil ont changé.
   const [comparer, setComparer] = useState(false);
-  const comparable = publie.code === contenu.code && !memeContenu(publie, contenu);
+  const comparable = !memeContenu(publie, contenu);
+  const parRechargement = publie.code !== contenu.code || empreinteSections(publie) !== empreinteSections(contenu);
   const montre = comparer && comparable ? publie : contenu;
+
+  // L'accueil en cours de réglage : la vitrine du cadre signale ses sections.
+  const envoieAccueil = useEffectEvent(() => {
+    if (!origine) return;
+    const i = indexDe(ouverte);
+    cadre.current?.contentWindow?.postMessage({
+      type: MESSAGE_ACCUEIL, actif: panneau === "accueil" && !(comparer && comparable), noms: nomsSections, choisie: i !== null && i >= 0 ? i : null,
+    }, origine);
+  });
+  useEffect(() => { envoieAccueil(); }, [panneau, nomsSections, ouverte, comparer]);
+
+  // Montrer une section dans l'aperçu (survolée, ouverte, déplacée).
+  const montrer = (cle: string | null, defiler = false) => {
+    if (!origine) return;
+    const i = indexDe(cle);
+    cadre.current?.contentWindow?.postMessage({ type: MESSAGE_MONTRER, section: i !== null && i >= 0 ? i : null, defiler }, origine);
+  };
+
 
   // Chaque geste : la vitrine du cadre le prend aussitôt.
   useEffect(() => { envoieAuCadre(montre); }, [montre]);
@@ -151,12 +202,39 @@ export function EditeurApparence({
     if (typeof m.chemin === "string") setChemin(m.chemin.replace(/[?&]apercu=[^&]*/, "").replace(/\?$/, "") || "/");
     if (m.gabarit && (STRUCTURES as string[]).includes(m.gabarit)) setGabaritCadre(m.gabarit);
     envoieAuCadre(montre);
+    envoieAccueil();
+    // Rendue de nouveau (une section ajoutée, déplacée) : la section ouverte vient sous les yeux.
+    if (panneau === "accueil" && ouverte) montrer(ouverte, true);
+  });
+  // Une section cliquée sur l'aperçu : ses réglages s'ouvrent.
+  const surSection = useEffectEvent((e: MessageEvent) => {
+    if (!origine || e.origin !== origine || e.source !== cadre.current?.contentWindow) return;
+    const m = e.data as { type?: string; section?: unknown } | null;
+    if (m?.type !== MESSAGE_SECTION || !Number.isInteger(m.section)) return;
+    const s = sections[m.section as number];
+    if (!s?.cle) return;
+    setPanneau("accueil");
+    setOnglet("reglages");
+    setOuverte(s.cle);
+    setAnnonce(`« ${BIBLIOTHEQUE[s.type].nom} » ouverte pour la régler`);
+    window.setTimeout(() => {
+      const li = document.querySelector<HTMLElement>(`.pa-liste [data-cle="${s.cle}"]`);
+      li?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      li?.querySelector<HTMLElement>("[data-geste='ouvrir']")?.focus({ preventScroll: true });
+    }, 60);
   });
   useEffect(() => {
-    const ecoute = (e: MessageEvent) => surMessage(e);
+    const ecoute = (e: MessageEvent) => { surMessage(e); surSection(e); };
     window.addEventListener("message", ecoute);
     return () => window.removeEventListener("message", ecoute);
   }, []);
+
+
+  // L'accueil a changé dans le brouillon : la vitrine du cadre se rend de nouveau, sur place.
+  const rafraichir = (jeton: string) => {
+    if (!origine) return;
+    cadre.current?.contentWindow?.postMessage({ type: MESSAGE_RECHARGER, apercu: jeton }, origine);
+  };
 
   const recharger = (jeton: string | null, pageVoulue?: string) => {
     if (!vitrine) return;
@@ -172,7 +250,7 @@ export function EditeurApparence({
     for (const [k, v] of Object.entries(champs)) d.set(k, v);
     const r = await fetch(action, { method: "POST", body: d, headers: { accept: "application/json" }, credentials: "same-origin" });
     const rep = (await r.json().catch(() => null)) as
-      | { ok: true; message: string; brouillon?: Brouillon | null; version?: number }
+      | { ok: true; message: string; brouillon?: Brouillon | null; version?: number; orphelins?: string[] }
       | { ok: false; message: string; indice?: string | null }
       | null;
     if (!rep) throw new Error("réponse illisible");
@@ -184,14 +262,18 @@ export function EditeurApparence({
     const c = contenu;
     const json = JSON.stringify(versBase(c));
     if (json === envoye) return;
-    // Revenu exactement à la version publiée : le brouillon n'a plus lieu d'être.
+    // Revenu exactement à la version publiée : le brouillon n'a plus lieu
+    // d'être — sauf s'il garde une photo que lui seul emploie (l'abandonner
+    // la retirerait du dépôt, et Ctrl+Maj+Z ne la retrouverait plus).
     const identique = memeContenu(c, publie);
     if (identique && !brouillon) { setEnvoye(json); return; }
+    const seules = photosDe(JSON.parse(envoye) as ContenuApparence).filter((x) => !photosDe(publie).includes(x));
+    const abandon = identique && seules.length === 0;
     enVol.current = true;
     setEtat({ genre: "envoi" });
     try {
       const rep = await poste({
-        geste: identique ? "abandonner" : "brouillon",
+        geste: abandon ? "abandonner" : "brouillon",
         contenu: json,
         version_brouillon: brouillon ? String(brouillon.version) : "",
       });
@@ -199,10 +281,16 @@ export function EditeurApparence({
       const nouveau = "brouillon" in rep ? (rep.brouillon ?? null) : null;
       setBrouillon(nouveau);
       setSauveA(nouveau ? `à ${new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" }).format(new Date())}` : null);
+      const accueilChange = JSON.stringify(JSON.parse(envoye).sections ?? null) !== JSON.stringify(JSON.parse(json).sections ?? null);
       setEnvoye(json);
       setEtat({ genre: "repos" });
-      // Une autre structure : la vitrine du cadre doit rendre d'autres composants.
+      // Une autre structure : la vitrine du cadre doit rendre d'autres
+      // composants ; un autre accueil, se rendre de nouveau, sur place.
       if (gabaritCadre !== null && gabaritCadre !== c.code) recharger(nouveau ? `${nouveau.jeton}.${nouveau.version}` : null);
+      else if (accueilChange && !(comparer && parRechargement)) {
+        if (nouveau) rafraichir(`${nouveau.jeton}.${nouveau.version}`);
+        else recharger(null);
+      }
     } catch {
       setEtat({ genre: "erreur", texte: "L'enregistrement n'a pas abouti (réseau coupé ?). Vos réglages sont toujours là." });
     } finally {
@@ -230,16 +318,51 @@ export function EditeurApparence({
 
   /* --- Les gestes : changer, défaire, refaire. */
   const change = (suivant: ContenuApparence, cle: string, dit?: string) => {
-    if (memeContenu(contenu, suivant)) return;
-    setComparer(false);
-    // Le nuancier qu'on promène envoie un geste par teinte : de suite sur la même couleur, un seul pas à défaire.
-    const continu = cle === "accent" || cle === "fond" || cle.startsWith("jeton.");
+    // Comparé tel quel : une espace tapée en fin de champ est un geste (la
+    // forme envoyée à la base, elle, l'ôte).
+    if (JSON.stringify(contenu) === JSON.stringify(suivant)) return;
+    sortirDeComparer();
+    // Le nuancier qu'on promène envoie un geste par teinte, la frappe un geste
+    // par lettre : de suite sur la même couleur, dans le même champ, un seul
+    // pas à défaire.
+    const continu = cle === "accent" || cle === "fond" || cle.startsWith("jeton.") || cle.startsWith("texte.");
     const groupe = continu && dernierGeste.current === cle;
     dernierGeste.current = cle;
     if (!groupe) setHistorique({ passe: [...historique.passe.slice(-49), contenu], futur: [] });
     setContenu(suivant);
     if (dit) setAnnonce(`Aperçu : ${dit}`);
   };
+
+  // Quitter « Avant / après » : la vitrine rechargée sur la version publiée revient sur l'essai.
+  const sortirDeComparer = () => {
+    if (!comparer) return;
+    setComparer(false);
+    if (parRechargement) recharger(brouillon ? `${brouillon.jeton}.${brouillon.version}` : null);
+  };
+
+  const basculerComparer = () => {
+    const vers = !comparer;
+    setComparer(vers);
+    setAnnonce(vers ? "Aperçu : la version publiée" : "Aperçu : votre essai");
+    if (parRechargement) recharger(vers ? null : brouillon ? `${brouillon.jeton}.${brouillon.version}` : null);
+  };
+
+  // Le panneau de l'accueil : l'aperçu se met sur l'accueil.
+  const ouvrirPanneau = (p: Panneau) => {
+    setPanneau(p);
+    if (p === "accueil" && chemin !== "/" && !(comparer && parRechargement)) recharger(brouillon ? `${brouillon.jeton}.${brouillon.version}` : null, "/");
+  };
+
+  // Les gestes qui menaient à des photos retirées du dépôt sont oubliés.
+  const oublier = (orphelins: string[] | undefined) => {
+    if (!orphelins?.length) return false;
+    const mene = (c: ContenuApparence) => photosDe(c).some((x) => orphelins.includes(x));
+    setHistorique((h) => ({ passe: h.passe.filter((c) => !mene(c)), futur: h.futur.filter((c) => !mene(c)) }));
+    return true;
+  };
+
+  const modifierAccueil = (suivantes: SectionBrute[] | null, cle: string, dit?: string) =>
+    change({ ...contenu, sections: suivantes }, cle, dit ? `accueil — ${dit}` : undefined);
 
   const defaire = () => {
     const precedent = historique.passe.at(-1);
@@ -327,6 +450,8 @@ export function EditeurApparence({
       setSauveA(null);
       setEnvoye(json);
       setEtat({ genre: "repos" });
+      setComparer(false);
+      if ("orphelins" in rep) oublier(rep.orphelins);
       setRetour({ ok: true, texte: rep.message });
       recharger(null);
     } catch {
@@ -341,17 +466,23 @@ export function EditeurApparence({
     enVol.current = true;
     setEtat({ genre: "envoi" });
     try {
+      let orphelins: string[] | undefined;
       if (brouillon) {
         const rep = await poste({ geste: "abandonner", version_brouillon: String(brouillon.version) });
         if (!rep.ok) { setEtat({ genre: "erreur", texte: rep.message }); return; }
+        if ("orphelins" in rep) orphelins = rep.orphelins;
       }
       setHistorique({ passe: [...historique.passe, contenu], futur: [] });
+      // Les photos que seul l'essai employait ont quitté le dépôt : il ne se reprend plus.
+      const oublie = oublier(orphelins);
       setContenu(publie);
       setEnvoye(JSON.stringify(versBase(publie)));
       setBrouillon(null);
       setSauveA(null);
+      setOuverte(null);
+      setComparer(false);
       setEtat({ genre: "repos" });
-      setRetour({ ok: true, texte: "Retour à la version publiée (⌘Z pour reprendre l'essai)." });
+      setRetour({ ok: true, texte: oublie ? "Retour à la version publiée." : "Retour à la version publiée (⌘Z pour reprendre l'essai)." });
       recharger(null);
     } catch {
       setEtat({ genre: "erreur", texte: "L'abandon du brouillon n'a pas abouti (réseau coupé ?) : réessayez." });
@@ -410,7 +541,7 @@ export function EditeurApparence({
           <Icone nom="gauche" /><span className="ap-quitter-texte">Backoffice</span>
         </a>
         <div className="ap-barre-titre">
-          <h1>Apparence</h1>
+          <h1>Éditeur de la vitrine</h1>
           <span className="ap-barre-boutique">{nom}</span>
         </div>
         <p className="ap-statut" data-etat={etat.genre === "repos" && enAttente ? "attente" : etat.genre} role={etat.genre === "erreur" ? "alert" : "status"}>
@@ -453,11 +584,44 @@ export function EditeurApparence({
 
       <div className="ap-corps">
         <div className="ap-reglages">
+          <div className="ap-panneaux" role="tablist" aria-label="Ce que vous réglez">
+            {PANNEAUX.map((x, i) => (
+              <button key={x.id} type="button" role="tab" id={`ap-onglet-${x.id}`} aria-selected={panneau === x.id} aria-controls={`ap-panneau-${x.id}`}
+                tabIndex={panneau === x.id ? 0 : -1} onClick={() => ouvrirPanneau(x.id)}
+                onKeyDown={(e) => {
+                  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+                  e.preventDefault();
+                  const suivant = PANNEAUX[(i + (e.key === "ArrowRight" ? 1 : PANNEAUX.length - 1)) % PANNEAUX.length];
+                  ouvrirPanneau(suivant.id);
+                  document.getElementById(`ap-onglet-${suivant.id}`)?.focus();
+                }}>
+                <Icone nom={x.icone} taille={16} /> {x.nom}
+              </button>
+            ))}
+          </div>
           <p className="ap-chapo">
             {ecrit
               ? "Chaque réglage se voit aussitôt sur la vraie vitrine, et s'enregistre dans un brouillon que vos visiteurs ne voient pas. Rien n'est en ligne avant « Publier »."
-              : "Essayez librement : seuls le propriétaire et l'administrateur enregistrent et publient l'apparence."}
+              : "Essayez librement : seuls le propriétaire et l'administrateur enregistrent et publient la vitrine."}
           </p>
+
+          <div className="ap-panneau" role="tabpanel" id="ap-panneau-accueil" aria-labelledby="ap-onglet-accueil" hidden={panneau !== "accueil"}>
+            <PanneauAccueil
+              sections={sections}
+              parStructure={parStructure}
+              structure={contenu.code}
+              nomStructure={NOMS_STRUCTURES[contenu.code].nom}
+              infos={infos}
+              ecrit={ecrit}
+              photoAction={photoAction}
+              ouverte={ouverte}
+              ouvrir={setOuverte}
+              modifier={modifierAccueil}
+              montrer={montrer}
+            />
+          </div>
+
+          <div className="ap-panneau" role="tabpanel" id="ap-panneau-style" aria-labelledby="ap-onglet-style" hidden={panneau !== "style"}>
           {/* 1. La structure */}
           <section className="carte ap-groupe" aria-labelledby="ap-t-structure">
             <h2 id="ap-t-structure">Structure</h2>
@@ -611,6 +775,7 @@ export function EditeurApparence({
             <Groupe cle="densite" valeur={contenu.style.densite} regler={reglerStyle} />
             <Groupe cle="animations" valeur={contenu.style.animations} regler={reglerStyle} />
           </section>
+          </div>
 
           {lienTelephone ? (
             <section className="carte ap-groupe ap-telephone" aria-labelledby="ap-t-tel">
@@ -638,8 +803,8 @@ export function EditeurApparence({
             </div>
             {vitrine ? (
               <button type="button" className="ap-comparer" aria-pressed={comparer && comparable} disabled={!comparable}
-                title={publie.code !== contenu.code ? "La structure a changé : la comparaison se fait à structure égale" : undefined}
-                onClick={() => { setComparer(!comparer); setAnnonce(comparer ? "Aperçu : votre essai" : "Aperçu : la version publiée"); }}>
+                title={parRechargement ? "La structure ou l'accueil ont changé : la version publiée se recharge dans l'aperçu" : undefined}
+                onClick={basculerComparer}>
                 <Icone nom="apercu" /> {comparer && comparable ? "Version publiée" : "Avant / après"}
               </button>
             ) : null}

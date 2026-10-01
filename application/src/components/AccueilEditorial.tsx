@@ -36,22 +36,22 @@ export function AccueilEditorial({ cadre, donnees }: Props) {
       {cadre.theme.sections.map((s, i) => {
         switch (s.type) {
           case "hero":
-            return <Ouverture key={i} section={s} cadre={cadre} premiere={i === 0} collections={collections} />;
+            return <Ouverture key={i} rang={i} section={s} cadre={cadre} premiere={i === 0} collections={collections} />;
           case "rayons":
-            return collections ? <Collections key={i} section={s} cadre={cadre} rayons={garnis} /> : null;
+            return collections ? <Collections key={i} rang={i} section={s} cadre={cadre} rayons={garnis} /> : null;
           case "selection": {
             const produits = selections.get(i) ?? [];
-            return produits.length || donnees.selectionVide === i ? <Selection key={i} section={s} cadre={cadre} produits={produits} /> : null;
+            return produits.length || donnees.selectionVide === i ? <Selection key={i} rang={i} section={s} cadre={cadre} produits={produits} /> : null;
           }
           case "editorial":
-            return <Recit key={i} section={s} cadre={cadre} inverse={i % 2 === 1} />;
+            return <Recit key={i} rang={i} section={s} cadre={cadre} inverse={i % 2 === 1} />;
           case "engagements":
-            return <Engagements key={i} section={s} cadre={cadre} />;
+            return <Engagements key={i} rang={i} section={s} cadre={cadre} />;
           case "texte":
-            return <Texte key={i} section={s} />;
+            return <Texte key={i} rang={i} section={s} />;
           case "avis":
             return donnees.avis ? (
-              <div key={i} className="enveloppe ed-section">
+              <div key={i} className="enveloppe ed-section" data-section={i}>
                 <AvisClients
                   avis={donnees.avis}
                   gabarit="editorial"
@@ -62,7 +62,7 @@ export function AccueilEditorial({ cadre, donnees }: Props) {
           case "questions": {
             const q = donnees.questions.get(i);
             return q ? (
-              <div key={i} className="enveloppe ed-section">
+              <div key={i} className="enveloppe ed-section" data-section={i}>
                 <QuestionsFrequentes
                   questions={q}
                   gabarit="editorial"
@@ -73,7 +73,7 @@ export function AccueilEditorial({ cadre, donnees }: Props) {
           }
           case "marques":
             return donnees.marques.length ? (
-              <div key={i} className="enveloppe ed-section">
+              <div key={i} className="enveloppe ed-section" data-section={i}>
                 <Marques
                   marques={donnees.marques}
                   gabarit="editorial"
@@ -100,7 +100,7 @@ function Lignes({ texte: brut }: { texte: string }) {
   );
 }
 
-function Ouverture({ section, cadre, premiere, collections }: { section: Extract<Section, { type: "hero" }>; cadre: Cadre; premiere: boolean; collections: boolean }) {
+function Ouverture({ rang, section, cadre, premiere, collections }: { rang: number; section: Extract<Section, { type: "hero" }>; cadre: Cadre; premiere: boolean; collections: boolean }) {
   const titre = texte(section.textes, "titre", cadre.boutique.nom);
   const chapo = texte(section.textes, "chapo") || texte(cadre.theme.textes, "resume");
   const etiquette = texte(section.textes, "etiquette");
@@ -112,7 +112,7 @@ function Ouverture({ section, cadre, premiere, collections }: { section: Extract
      posé sur un aplat, à côté du titre, comme sur un socle. */
   if (section.image?.detouree) {
     return (
-      <section className="ed-ouverture-socle">
+      <section className="ed-ouverture-socle" data-section={rang}>
         <div className="enveloppe ed-ouverture-socle-grille">
           <div className="ed-ouverture-texte">
             {etiquette ? <p className="etiquette">{etiquette}</p> : null}
@@ -138,7 +138,7 @@ function Ouverture({ section, cadre, premiere, collections }: { section: Extract
 
   if (!section.image) {
     return (
-      <section className="ed-ouverture-texte-seul enveloppe">
+      <section className="ed-ouverture-texte-seul enveloppe" data-section={rang}>
         {etiquette ? <p className="etiquette">{etiquette}</p> : null}
         <h1>
           <Lignes texte={titre} />
@@ -152,7 +152,7 @@ function Ouverture({ section, cadre, premiere, collections }: { section: Extract
   }
 
   return (
-    <section className="ed-ouverture" data-premiere={premiere ? "" : undefined} data-alignement={section.alignement}>
+    <section className="ed-ouverture" data-section={rang} data-premiere={premiere ? "" : undefined} data-alignement={section.alignement}>
       <PhotoOuverture className="ed-ouverture-image" paysage={urlFichier(section.image.chemin)} portrait={section.image.portrait ? urlFichier(section.image.portrait) : undefined} alt={alt} />
       <div className="ed-ouverture-voile" aria-hidden="true" />
       <div className="enveloppe ed-ouverture-contenu">
@@ -196,10 +196,10 @@ function TeteSection({ titre, etiquette, lien, libelleLien }: { titre: string; e
   );
 }
 
-function Collections({ section, cadre, rayons }: { section: Extract<Section, { type: "rayons" }>; cadre: Cadre; rayons: Cadre["racines"] }) {
+function Collections({ rang, section, cadre, rayons }: { rang: number; section: Extract<Section, { type: "rayons" }>; cadre: Cadre; rayons: Cadre["racines"] }) {
   const compte = (slug: string) => descendance(cadre.categories, slug).reduce((n, c) => n + (c.nb_produits ?? 0), 0);
   return (
-    <section className="enveloppe ed-section" id="collections">
+    <section className="enveloppe ed-section" id="collections" data-section={rang}>
       <TeteSection
         titre={texte(section.textes, "titre", t.accueil.collectionsTitre)}
         etiquette={texte(section.textes, "etiquette") || undefined}
@@ -225,7 +225,7 @@ function Collections({ section, cadre, rayons }: { section: Extract<Section, { t
   );
 }
 
-function Selection({ section, cadre, produits }: { section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
+function Selection({ rang, section, cadre, produits }: { rang: number; section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
   const lien = section.lien ?? (section.rayon ? `/categorie/${section.rayon}` : "/catalogue");
   const unSeulRayon = new Set(produits.map((p) => p.categorie?.slug)).size <= 1;
   const titre = texte(section.textes, "titre", section.tri === "nouveautes" ? t.accueil.selectionNouveautes : t.accueil.selectionTitreEditorial);
@@ -233,7 +233,7 @@ function Selection({ section, cadre, produits }: { section: Extract<Section, { t
     ? descendance(cadre.categories, section.rayon).reduce((n, c) => n + (c.nb_produits ?? 0), 0)
     : cadre.boutique.nb_produits;
   return (
-    <section className="enveloppe ed-section">
+    <section className="enveloppe ed-section" data-section={rang}>
       <TeteSection titre={titre} etiquette={texte(section.textes, "etiquette") || undefined} lien={lien} />
       {produits.length > 0 ? (
         <div className="ed-grille rail-mobile" data-rayon-unique={unSeulRayon ? "" : undefined}>
@@ -252,13 +252,13 @@ function Selection({ section, cadre, produits }: { section: Extract<Section, { t
   );
 }
 
-function Recit({ section, cadre, inverse }: { section: Extract<Section, { type: "editorial" }>; cadre: Cadre; inverse: boolean }) {
+function Recit({ rang, section, cadre, inverse }: { rang: number; section: Extract<Section, { type: "editorial" }>; cadre: Cadre; inverse: boolean }) {
   const titre = texte(section.textes, "titre");
   const corps = texte(section.textes, "texte");
   if (!titre && !corps) return null;
   const lien = section.lien;
   return (
-    <section className="ed-recit" data-inverse={inverse ? "" : undefined} data-sans-image={section.image ? undefined : ""}>
+    <section className="ed-recit" data-section={rang} data-inverse={inverse ? "" : undefined} data-sans-image={section.image ? undefined : ""}>
       {section.image ? (
         <div className="ed-recit-image">
           <Photo
@@ -286,7 +286,7 @@ function Recit({ section, cadre, inverse }: { section: Extract<Section, { type: 
   );
 }
 
-function Engagements({ section, cadre }: { section: Extract<Section, { type: "engagements" }>; cadre: Cadre }) {
+function Engagements({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "engagements" }>; cadre: Cadre }) {
   const { livraison } = cadre;
   const faits = [
     livraison.cod ? { icone: <Billets />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
@@ -304,7 +304,7 @@ function Engagements({ section, cadre }: { section: Extract<Section, { type: "en
   ].filter((f) => f !== null);
 
   return (
-    <section className="ed-engagements">
+    <section className="ed-engagements" data-section={rang}>
       <div className="enveloppe">
         {texte(section.textes, "titre") ? <h2 className="sr-only">{texte(section.textes, "titre")}</h2> : null}
         <ul>
@@ -321,12 +321,12 @@ function Engagements({ section, cadre }: { section: Extract<Section, { type: "en
   );
 }
 
-function Texte({ section }: { section: Extract<Section, { type: "texte" }> }) {
+function Texte({ rang, section }: { rang: number; section: Extract<Section, { type: "texte" }> }) {
   const titre = texte(section.textes, "titre");
   const corps = texte(section.textes, "texte");
   if (!titre && !corps) return null;
   return (
-    <section className="enveloppe ed-section ed-texte">
+    <section className="enveloppe ed-section ed-texte" data-section={rang}>
       {texte(section.textes, "etiquette") ? <p className="etiquette">{texte(section.textes, "etiquette")}</p> : null}
       {titre ? <h2>{titre}</h2> : null}
       {corps ? <p className="chapo">{corps}</p> : null}

@@ -1,10 +1,11 @@
 /* ============================================================================
-   L'APPARENCE — ce que l'écran « Apparence » du backoffice règle et envoie :
-   le gabarit, les 13 couleurs, les polices, le style (lib/theme.ts). Ici,
+   L'APPARENCE — ce que l'éditeur de la vitrine (backoffice) règle et
+   envoie : la structure, les 13 couleurs, les polices, le style
+   (lib/theme.ts) et l'accueil (ses sections, lib/gestion/accueil.ts). Ici,
    ce qui se calcule des deux côtés (l'écran, la route qui enregistre) :
 
    · la forme d'un contenu, relue valeur par valeur (rien d'inconnu ne part
-     vers la base, qui revérifie : migration 64) ;
+     vers la base, qui revérifie : migrations 64 et 66) ;
    · les AMBIANCES, des palettes prêtes, claires ou sombres ;
    · la palette DÉRIVÉE : à partir du fond, du texte et de l'accent, les
      treize couleurs du thème, chacune poussée jusqu'au contraste qu'exige
@@ -12,6 +13,7 @@
    ========================================================================== */
 
 import { contraste, estFoncee, estHex, melange, versContraste } from "./couleur";
+import { BIBLIOTHEQUE, MAX_SECTIONS, versBase as accueilVersBase, type SectionBrute } from "./gestion/accueil";
 import {
   definitionDe, JETONS_COULEUR, POLICES_TEXTE, POLICES_TITRES, structureDe, styleSur,
   type JetonCouleur, type Police, type Structure, type Style,
@@ -25,6 +27,10 @@ export type ContenuApparence = {
   couleurs: Palette;
   polices: { titres: Police; texte: Police };
   style: Style;
+  /** L'accueil : ses sections (null : celles de la structure). Absent,
+   *  l'accueil publié reste tel quel (un brouillon d'avant la migration 66,
+   *  le formulaire sans script). */
+  sections?: SectionBrute[] | null;
 };
 
 /** Le contenu effectif d'un thème lu en base (les défauts du gabarit sous ce
@@ -41,18 +47,65 @@ export function contenuDe(brut: unknown): ContenuApparence {
     titres: (POLICES_TITRES as string[]).includes(String(p.titres)) ? (p.titres as Police) : def.polices.titres,
     texte: (POLICES_TEXTE as string[]).includes(String(p.texte)) ? (p.texte as Police) : def.polices.texte,
   };
-  return { code, couleurs, polices, style: styleSur(b.style, def.style) };
+  return { code, couleurs, polices, style: styleSur(b.style, def.style), ...("sections" in b ? { sections: sectionsLues(b.sections) } : {}) };
 }
 
 /** Ce que la base reçoit : le contenu tel quel (les 13 couleurs, les deux
- *  polices, tout le style) — une boutique réglée à l'écran ne dépend plus des
- *  défauts du gabarit. */
+ *  polices, tout le style, l'accueil) — une boutique réglée à l'écran ne
+ *  dépend plus des défauts du gabarit. */
 export function versBase(c: ContenuApparence): Record<string, unknown> {
-  return { code: c.code, couleurs: { ...c.couleurs }, polices: { ...c.polices }, style: { ...c.style } };
+  return {
+    code: c.code, couleurs: { ...c.couleurs }, polices: { ...c.polices }, style: { ...c.style },
+    ...(c.sections === undefined ? {} : { sections: c.sections === null ? null : (accueilVersBase(c.sections) ?? []) }),
+  };
 }
 
 export function memeContenu(a: ContenuApparence, b: ContenuApparence): boolean {
   return JSON.stringify(versBase(a)) === JSON.stringify(versBase(b));
+}
+
+/* ---- L'accueil, dans le contenu ------------------------------------------- */
+
+/** Les sections lues (thème publié, brouillon) : la forme de la base, une clé
+ *  locale pour l'écran. Ce qui n'est pas une section connue est écarté. */
+function sectionsLues(valeur: unknown): SectionBrute[] | null {
+  if (!Array.isArray(valeur)) return null;
+  return valeur
+    .filter((s): s is SectionBrute => Boolean(s) && typeof s === "object" && typeof (s as { type?: unknown }).type === "string" && (s as { type: string }).type in BIBLIOTHEQUE)
+    .map((s, i) => ({ ...s, cle: `s${i}` }));
+}
+
+/** L'accueil d'une structure, quand la boutique n'a pas composé le sien —
+ *  celui que la vitrine rend (lib/theme.ts), dans la forme de la base. */
+export function sectionsDeStructure(code: Structure): SectionBrute[] {
+  return definitionDe(code).sections.map((s, i) => {
+    const { image, ...reste } = s as Record<string, unknown> & { image?: { chemin: string; portrait?: string; detouree?: boolean } };
+    return {
+      ...(reste as Omit<SectionBrute, "image">),
+      ...(image ? { image: { chemin: image.chemin, ...(image.portrait ? { chemin_portrait: image.portrait } : {}), ...(image.detouree ? { detouree: true } : {}) } } : {}),
+      cle: `d-${code}-${i}`,
+    } as SectionBrute;
+  });
+}
+
+/** Le contenu reçu de l'écran, relu pour la base : null si l'accueil est
+ *  illisible (la route refuse plutôt que de revenir à l'accueil de la
+ *  structure sans le dire). Sans `sections`, l'accueil publié reste. */
+export function contenuRecu(brut: unknown): Record<string, unknown> | null {
+  const b = (brut && typeof brut === "object" ? brut : {}) as Record<string, unknown>;
+  const { sections: _lues, ...c } = contenuDe(b);
+  void _lues;
+  const base = versBase(c);
+  if (!("sections" in b)) return base;
+  if (b.sections === null) return { ...base, sections: null };
+  if (!Array.isArray(b.sections) || b.sections.length === 0 || b.sections.length > MAX_SECTIONS) return null;
+  const sections = accueilVersBase(b.sections as SectionBrute[]);
+  return sections ? { ...base, sections } : null;
+}
+
+/** Les photos qu'emploie un contenu (son accueil). */
+export function photosDe(c: ContenuApparence): string[] {
+  return (c.sections ?? []).flatMap((s) => (s.image ? [s.image.chemin, s.image.chemin_portrait].filter((x): x is string => Boolean(x)) : []));
 }
 
 /* ---- La palette dérivée ---------------------------------------------------- */

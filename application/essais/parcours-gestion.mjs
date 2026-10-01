@@ -1636,40 +1636,80 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     await capture(page, "gestion-objectif");
   });
 
-  await etape("la page d'accueil : la composer, au clavier", async () => {
+  // L'accueil se compose dans l'éditeur de la vitrine, la vraie vitrine à côté.
+  const VS = t.adresse("mode.localhost");
+  const cadreSelma = () => page.frames().find((f) => f.url().startsWith(VS));
+  const statutEditeur = () => page.locator(".ap-statut").innerText().catch(() => "");
+  const attendre = async (fn, ms = 8000) => { const fin = Date.now() + ms; while (Date.now() < fin) { if (await fn().catch(() => false)) return true; await pause(150); } return false; };
+  const plan = () => page.locator(".pa-liste .ac-section-texte > b").evaluateAll((l) => l.map((b) => b.firstChild?.textContent?.trim() ?? ""));
+  const titresCadre = async () => (await cadreSelma()?.evaluate(() => [...document.querySelectorAll("main h2")].map((h) => h.textContent.replace(/\s+/g, " ").trim())).catch(() => null)) ?? [];
+  const avantRecit = async () => {
+    const h = await titresCadre();
+    const avis = h.findIndex((x) => x.startsWith("Ce qu'en disent"));
+    const recit = h.findIndex((x) => x.startsWith("Moins de pièces"));
+    return avis >= 0 && recit >= 0 ? avis < recit : null;
+  };
+  const brouillonEnregistre = () => attendre(async () => (await statutEditeur()).includes("Brouillon enregistré"), 10000);
+
+  await etape("l'accueil, dans l'éditeur de la vitrine : le composer au clavier", async () => {
     // Selma montre ses avis et ses questions (supabase/seed-accueil.sql).
-    const enregistre = () => page.waitForFunction(() => /Accueil enregistré/.test(document.querySelector(".ac-pied .ac-retour")?.textContent ?? ""), null, { timeout: 15000 });
-    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Page d'accueil" }));
-    await page.waitForURL(/\/accueil$/);
-    await page.waitForLoadState("networkidle");
-    const plan = () => page.locator(".ac-section-texte > b").allInnerTexts();
+    // L'ancienne adresse de l'écran « Page d'accueil » mène à l'éditeur, sur l'accueil.
+    await page.goto(`${C}/gestion/maison-selma/accueil`, { waitUntil: "networkidle" });
+    await page.waitForURL(/\/apparence\?panneau=accueil$/);
+    verifie(await page.getByRole("tab", { name: "Accueil" }).getAttribute("aria-selected") === "true", "« Page d'accueil » mène à l'éditeur de la vitrine, sur l'accueil");
+    verifie(await attendre(async () => (await avantRecit()) === false, 15000), "à côté, la vitrine de Selma : le récit, puis les avis");
     const avant = await plan();
     verifie(avant.includes("Avis clients") && avant.includes("Questions fréquentes"), `l'accueil de haut en bas (${avant.join(" > ")})`);
-    verifie((await page.locator(".ac-modele").count()) === 9, "la bibliothèque : neuf sections");
-    verifie(await page.locator(".ac-modele", { hasText: "Avis clients" }).isDisabled(), "une section déjà posée ne s'ajoute pas deux fois");
+    await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
+    verifie((await page.locator(".pa-modeles .ac-modele").count()) === 9, "« Ajouter une section » : la bibliothèque, neuf sections");
+    verifie(await page.locator(".pa-modeles .ac-modele", { hasText: "Avis clients" }).isDisabled(), "une section déjà posée ne s'ajoute pas deux fois");
+    await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
     await page.getByRole("button", { name: "Monter « Avis clients »" }).focus();
     await page.keyboard.press("Enter");
     const apres = await plan();
     verifie(apres.indexOf("Avis clients") === avant.indexOf("Avis clients") - 1, "Entrée : la section monte d'un cran");
     verifie(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")) === "Monter « Avis clients »", "le focus la suit");
-    verifie((await page.locator(".ac-pied").innerText()).includes("pas enregistrés"), "la barre dit qu'il reste à enregistrer");
-    await page.keyboard.press("Control+s");
-    await enregistre();
+    await cadreSelma().evaluate(() => { window.__sansRecharger = true; });
+    verifie(await brouillonEnregistre(), "le brouillon s'enregistre de lui-même");
+    verifie(await attendre(async () => (await avantRecit()) === true, 12000), "l'aperçu se rend de nouveau : les avis passent avant le récit");
+    verifie(await cadreSelma().evaluate(() => window.__sansRecharger === true), "rafraîchi sur place, sans recharger la page du cadre");
     await page.reload({ waitUntil: "networkidle" });
-    verifie(JSON.stringify(await plan()) === JSON.stringify(apres), "Ctrl+S, puis la page rechargée : la composition est gardée");
-    await capture(page, "gestion-accueil", true);
-    // Retirer, rétablir ; puis l'ordre d'avant, pour la suite.
+    await clic(page, page.getByRole("tab", { name: "Accueil" }));
+    verifie(JSON.stringify(await plan()) === JSON.stringify(apres), "la page rechargée : la composition est dans le brouillon");
+    await capture(page, "editeur-accueil", true);
+    // Retirer, rétablir ; puis l'ordre d'avant.
     await clic(page, page.getByRole("button", { name: "Retirer « Questions fréquentes »" }));
     verifie(!(await plan()).includes("Questions fréquentes"), "retirée de l'accueil");
-    await clic(page, page.locator(".ac-pied").getByRole("button", { name: "Rétablir" }));
-    verifie(JSON.stringify(await plan()) === JSON.stringify(apres), "rétablie à sa place, depuis la barre");
+    await clic(page, page.locator(".pa-retour").getByRole("button", { name: "Rétablir" }));
+    verifie(JSON.stringify(await plan()) === JSON.stringify(apres), "rétablie à sa place");
     await clic(page, page.getByRole("button", { name: "Descendre « Avis clients »" }));
-    await clic(page, page.getByRole("button", { name: /Enregistrer l'accueil/ }));
-    await enregistre();
-    verifie(JSON.stringify(await plan()) === JSON.stringify(avant), "l'ordre d'avant, enregistré");
+    verifie(JSON.stringify(await plan()) === JSON.stringify(avant), "l'ordre d'avant");
+    verifie(await attendre(async () => (await avantRecit()) === false, 12000), "et l'aperçu le suit");
   });
 
-  await etape("la photo d'ouverture, depuis le backoffice : réduite, posée, puis retirée du dépôt", async () => {
+  await etape("cliquer une section sur l'aperçu la règle ; le titre tapé y paraît", async () => {
+    const f = cadreSelma();
+    const section = f.locator("[data-section]", { has: f.locator("h2", { hasText: /^Ce qu'en disent/ }) }).first();
+    await section.scrollIntoViewIfNeeded();
+    await section.hover({ position: { x: 60, y: 30 } });
+    verifie(await attendre(async () => (await f.locator("#ap-nom-section").innerText()) === "Avis clients", 4000), "au survol, la section se signale par son nom");
+    await capture(page, "editeur-accueil-survol");
+    const url = f.url();
+    await section.click({ position: { x: 60, y: 30 } });
+    verifie(await attendre(async () => (await page.locator(".pa-liste .ac-section[data-ouverte] .ac-section-texte > b").innerText()).startsWith("Avis clients"), 4000),
+      "un clic sur l'aperçu : ses réglages s'ouvrent dans le panneau");
+    verifie(cadreSelma().url() === url, "et l'aperçu ne suit pas ses liens");
+    const champ = page.locator(".pa-liste .ac-section[data-ouverte]").getByLabel("Titre", { exact: true });
+    await clic(page, champ);
+    await tape(page, "Elles l'ont portée");
+    verifie(await attendre(async () => (await titresCadre()).includes("Elles l'ont portée"), 12000), "le titre tapé paraît dans l'aperçu, une seconde plus tard");
+    await capture(page, "editeur-accueil-titre");
+    await clic(page, page.getByRole("button", { name: "Défaire" }));
+    verifie(await attendre(async () => !(await titresCadre()).includes("Elles l'ont portée") && (await titresCadre()).some((x) => x.startsWith("Ce qu'en disent")), 12000),
+      "« Défaire » : toute la frappe d'un coup, le titre d'avant revient");
+  });
+
+  await etape("la photo d'ouverture, depuis l'éditeur : réduite, posée, publiée, puis retirée du dépôt", async () => {
     // Une « photo de téléphone » faite dans la page (JPEG).
     const photo = (l, h, c) => page.evaluate(([l, h, c]) => {
       const canvas = document.createElement("canvas");
@@ -1680,33 +1720,44 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
       g.fillStyle = d; g.fillRect(0, 0, l, h);
       return canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
     }, [l, h, c]).then((b64) => Buffer.from(b64, "base64"));
-    const enregistre = () => page.waitForFunction(() => /Accueil enregistré/.test(document.querySelector(".ac-pied .ac-retour")?.textContent ?? ""), null, { timeout: 15000 });
-    const vignette = () => page.locator(".ac-section[data-ouverte] .ac-photo > img");
-    await page.reload({ waitUntil: "networkidle" });
-    await clic(page, page.getByRole("button", { name: "Régler « Ouverture »" }));
+    const vignette = () => page.locator(".pa-liste .ac-section[data-ouverte] .ac-photo > img");
+    // Ouvrir l'ouverture (si elle ne l'est pas déjà : un clic de plus la refermerait).
+    const ouvrirOuverture = async () => {
+      const b = page.locator(".pa-liste [data-geste='ouvrir']", { hasText: "Ouverture" });
+      if ((await b.getAttribute("aria-expanded")) !== "true") await clic(page, b);
+    };
+    const publier = async () => {
+      await clic(page, page.getByRole("button", { name: "Publier" }));
+      return attendre(async () => (await page.locator(".ap-retour").first().innerText()).includes("publiée"), 12000);
+    };
+    await ouvrirOuverture();
     const demo = (await vignette().getAttribute("src")).replace(/^.*\/fichiers\//, "");
     await page.getByLabel("Changer la photo").setInputFiles({ name: "IMG_3001.jpg", mimeType: "image/jpeg", buffer: await photo(800, 500, "#a07050") });
     await page.locator(".ac-photo-erreur").waitFor({ timeout: 10000 });
     verifie((await page.locator(".ac-photo-erreur").innerText()).includes("trop petite"), "une photo trop petite : refusée avant l'envoi, la raison dite");
     await page.getByLabel("Changer la photo").setInputFiles({ name: "IMG_3002.jpg", mimeType: "image/jpeg", buffer: await photo(3000, 2000, "#6d8a9c") });
-    await page.waitForFunction((d) => !document.querySelector(".ac-section[data-ouverte] .ac-photo > img")?.getAttribute("src")?.endsWith(d), demo, { timeout: 20000 });
+    await page.waitForFunction((d) => !document.querySelector(".pa-liste .ac-section[data-ouverte] .ac-photo > img")?.getAttribute("src")?.endsWith(d), demo, { timeout: 20000 });
     const chemin = (await vignette().getAttribute("src")).replace(/^.*\/fichiers\//, "");
     verifie(/^maison-selma\/accueil\/photo-[0-9a-f]{12}\.webp$/.test(chemin), `déposée dans le dossier de la boutique : ${chemin}`);
     const f = await fichierLocal(chemin);
     verifie(f.status === 200 && tailleWebp(f.octets)[0] === 2400, `réduite dans le navigateur, en WebP (${tailleWebp(f.octets).join(" × ")})`);
     verifie((await page.getByLabel("Choisir un cadrage").count()) === 1, "une autre photo, un autre sujet : son cadrage pour téléphone est à refaire");
     await page.getByLabel("Description de la photo").fill("Un dégradé bleu nuit");
-    await page.keyboard.press("Control+s");
-    await enregistre();
-    await page.reload({ waitUntil: "networkidle" });
-    await clic(page, page.getByRole("button", { name: "Régler « Ouverture »" }));
-    verifie((await vignette().getAttribute("src")).endsWith(chemin), "Ctrl+S, rechargée : la photo est celle de l'accueil");
-    verifie((await fichierLocal(demo)).status === 200, "la photo de démonstration d'avant reste au dépôt (le backoffice ne retire que les siennes)");
+    verifie(await attendre(async () => (await cadreSelma().evaluate((c) => [...document.querySelectorAll(".ed-ouverture img")].some((i) => (i.currentSrc || i.src).includes(c.split("/").pop())), chemin)), 15000),
+      "l'aperçu montre la nouvelle photo, avant toute publication");
+    verifie(await publier(), "« Publier » : la vitrine et son accueil, d'un coup");
+    verifie((await fichierLocal(demo)).status === 200, "la photo de démonstration d'avant reste au dépôt (l'éditeur ne retire que les siennes)");
+    await ouvrirOuverture();
     await clic(page, page.getByRole("button", { name: "Retirer la photo" }));
-    await clic(page, page.getByRole("button", { name: /Enregistrer l'accueil/ }));
-    await enregistre();
-    verifie((await fichierLocal(chemin)).status === 404, "retirée et enregistrée : la photo quitte le dépôt");
-    await capture(page, "gestion-accueil-photo");
+    verifie(await brouillonEnregistre(), "retirée : le brouillon le garde");
+    verifie((await fichierLocal(chemin)).status === 200, "tant que ce n'est pas publié, la photo reste au dépôt (Ctrl+Z la retrouverait)");
+    verifie(await publier(), "publié sans photo");
+    verifie((await fichierLocal(chemin)).status === 404, "retirée et publiée : la photo quitte le dépôt");
+    await capture(page, "editeur-accueil-photo");
+    // « ← Backoffice » : le menu revient.
+    await clic(page, page.locator(".ap-quitter"));
+    await page.waitForURL(/\/gestion\/maison-selma$/);
+    verifie(await page.locator(".app-cote").isVisible(), "« Backoffice » : retour au backoffice, le menu revient");
   });
 
   await etape("la lettre : les inscrits, une recherche, une adresse retirée à la demande", async () => {
@@ -1896,8 +1947,11 @@ console.log("\n== 5. Le préparateur d'une autre boutique ==");
     const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/pages/action", { geste: "enregistrer", slug: "essai", titre: "Essai", corps: "Un essai" });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur écrivent"),
       `écrire une page à la main : la base refuse (${r.status})`);
-    const a = await posteBrut(ctx, "/gestion/quincaillerie-demo/accueil/action", { geste: "enregistrer", version: "1", sections: JSON.stringify([{ type: "hero" }]) });
-    verifie(a.status === 303 && decodeURIComponent(a.location.replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur composent l'accueil"),
+    const a = await posteBrut(ctx, "/gestion/quincaillerie-demo/apparence/action", {
+      geste: "brouillon", version_brouillon: "",
+      contenu: JSON.stringify({ code: "technique", couleurs: {}, polices: {}, style: {}, sections: [{ type: "hero" }] }),
+    });
+    verifie(a.status === 303 && decodeURIComponent(a.location.replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur règlent"),
       `composer l'accueil à la main : la base refuse (${a.status})`);
   });
 
@@ -1954,8 +2008,8 @@ console.log("\n== 6. L'apparence de la vitrine (Dar Alia) ==");
     verifie(true, "la gérante de Dar Alia entre dans son backoffice");
   });
 
-  await etape("l'écran Apparence : la vraie vitrine à côté", async () => {
-    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Apparence" }));
+  await etape("l'éditeur de la vitrine : la vraie vitrine à côté", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Éditeur de la vitrine" }));
     await page.waitForURL(/\/apparence$/);
     await page.waitForLoadState("networkidle");
     verifie(await attend(async () => (await html("data-gabarit")) === "editorial", 10000), "le cadre montre la vitrine de Dar Alia, telle que publiée");

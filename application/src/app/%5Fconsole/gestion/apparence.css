@@ -261,3 +261,64 @@
 .ap-scene[data-appareil="ordinateur"] .ap-ecran { box-shadow: 0 1px 3px rgb(24 24 27 / .08); }
 .ap-sans-vitrine { display: grid; place-content: center; justify-items: center; gap: .5rem; block-size: 100%; min-block-size: 30rem; padding: 2rem; text-align: center; color: var(--ui-texte-2); }
 .ap-sans-vitrine p { margin: 0; max-inline-size: 30ch; }
+
+/* ---- Les panneaux de l'éditeur : le style, l'accueil ---------------------- */
+.ap-panneaux {
+  position: sticky; inset-block-start: 0; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; padding: .25rem;
+  border-radius: calc(var(--ui-r) + 4px); background: var(--ui-doux); box-shadow: 0 0 0 4px var(--ui-fond);
+}
+.ap-panneaux [role="tab"] {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4375rem; min-block-size: 36px; padding: .375rem .75rem;
+  border: 0; border-radius: var(--ui-r); font: inherit; font-size: .875rem; font-weight: 500; color: var(--ui-texte-2); background: transparent; cursor: pointer;
+}
+.ap-panneaux [role="tab"]:hover { color: var(--ui-texte); }
+.ap-panneaux [role="tab"][aria-selected="true"] { color: var(--ui-texte); background: var(--ui-panneau); box-shadow: var(--ui-ombre-1, 0 1px 2px rgb(0 0 0 / .08)); }
+.ap-panneaux [role="tab"]:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+.ap-panneau { display: flex; flex-direction: column; gap: .875rem; min-inline-size: 0; }
+.ap-panneau[hidden] { display: none; }
+
+/* ---- L'accueil, dans la colonne étroite ----------------------------------- */
+.pa-accueil { display: flex; flex-direction: column; gap: .875rem; }
+.pa-tete { display: grid; gap: .25rem; }
+.pa-tete h2 { margin: 0; }
+.pa-tete .aide { margin: 0; }
+.pa-astuce { display: inline-flex; align-items: center; gap: .375rem; color: var(--ui-texte-3); }
+.pa-liste { margin: .375rem -1.25rem -1.25rem; }
+.pa-ligne { grid-template-columns: minmax(0, 1fr) auto; gap: .375rem; padding: .5rem .625rem .5rem .75rem; }
+.pa-ouvrir {
+  display: grid; grid-template-columns: 3.25rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; min-inline-size: 0; padding: .375rem;
+  border: 0; border-radius: var(--ui-r); font: inherit; text-align: start; color: inherit; background: transparent; cursor: pointer;
+}
+.pa-ouvrir:hover { background: var(--ui-survol); }
+.pa-ouvrir:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 1px; }
+.pa-regler { display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%; color: var(--ui-texte-3); }
+.pa-ouvrir:hover .pa-regler, .ac-section[data-ouverte] .pa-regler { color: var(--ui-texte); background: var(--ui-doux); }
+.pa-ouvrir .ac-mini { inline-size: 3.25rem; }
+.pa-gestes { gap: 0; }
+.pa-gestes .btn-icone { inline-size: 30px; block-size: 30px; }
+.pa-gestes .ac-geste-vide { inline-size: 30px; }
+.pa-liste .ac-reglages { padding: .25rem 1.25rem 1.25rem; }
+.pa-liste .ac-erreur { margin: 0 1.25rem .75rem; }
+.pa-liste .ac-photo { grid-template-columns: minmax(0, 1fr); }
+.pa-liste .ac-photo > img, .pa-liste .ac-photo > .ac-photo-vide { max-inline-size: 12rem; }
+.pa-liste .ac-deux { grid-template-columns: minmax(0, 1fr); }
+.pa-liste .choix-2 { grid-template-columns: minmax(0, 1fr); }
+.pa-retour { margin-block-start: 1.5rem; }
+.pa-biblio { gap: .75rem; }
+.pa-ajouter { justify-content: center; inline-size: 100%; }
+.pa-modeles { display: grid; gap: .375rem; margin: 0; padding: 0; list-style: none; }
+.pa-structure { align-self: flex-start; }
+/* Au téléphone aussi, les gestes restent sur la ligne de leur section. */
+@media (max-width: 719px) {
+  .pa-liste .pa-ligne { grid-template-columns: minmax(0, 1fr) auto; padding: .5rem .5rem .5rem .625rem; }
+  .pa-liste .pa-gestes { grid-column: auto; justify-content: flex-end; }
+  .pa-regler { display: none; }
+  .pa-ouvrir { grid-template-columns: 2.75rem minmax(0, 1fr) auto; gap: .625rem; }
+  .pa-ouvrir .ac-mini { inline-size: 2.75rem; }
+}
+@media (pointer: coarse) {
+  .pa-gestes .btn-icone, .pa-gestes .ac-geste-vide { inline-size: 40px; block-size: 40px; }
+}
+@media (pointer: coarse) and (max-width: 719px) {
+  .pa-gestes .btn-icone, .pa-gestes .ac-geste-vide { inline-size: 36px; }
+}

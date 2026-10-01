@@ -40,22 +40,22 @@ export function AccueilBento({ cadre, donnees }: Props) {
       {cadre.theme.sections.map((s, i) => {
         switch (s.type) {
           case "hero":
-            return <Ouverture key={i} section={s} cadre={cadre} piece={i === 0 ? premiere : null} donnees={donnees} rayons={rayons} />;
+            return <Ouverture key={i} rang={i} section={s} cadre={cadre} piece={i === 0 ? premiere : null} donnees={donnees} rayons={rayons} />;
           case "rayons":
-            return rayons ? <Rayons key={i} section={s} cadre={cadre} liste={garnis} /> : null;
+            return rayons ? <Rayons key={i} rang={i} section={s} cadre={cadre} liste={garnis} /> : null;
           case "selection": {
             const produits = selections.get(i) ?? [];
-            return produits.length || donnees.selectionVide === i ? <Selection key={i} section={s} cadre={cadre} produits={produits} /> : null;
+            return produits.length || donnees.selectionVide === i ? <Selection key={i} rang={i} section={s} cadre={cadre} produits={produits} /> : null;
           }
           case "editorial":
-            return <Recit key={i} section={s} cadre={cadre} />;
+            return <Recit key={i} rang={i} section={s} cadre={cadre} />;
           case "engagements":
-            return <Engagements key={i} cadre={cadre} />;
+            return <Engagements key={i} rang={i} cadre={cadre} />;
           case "texte": {
             const titre = texte(s.textes, "titre");
             const corps = texte(s.textes, "texte");
             return titre || corps ? (
-              <section key={i} className="enveloppe bn-section">
+              <section key={i} className="enveloppe bn-section" data-section={i}>
                 <div className="bn-tuile bn-texte">
                   {texte(s.textes, "etiquette") ? <p className="etiquette">{texte(s.textes, "etiquette")}</p> : null}
                   {titre ? <h2>{titre}</h2> : null}
@@ -66,7 +66,7 @@ export function AccueilBento({ cadre, donnees }: Props) {
           }
           case "avis":
             return donnees.avis ? (
-              <div key={i} className="enveloppe bn-section bn-avis">
+              <div key={i} className="enveloppe bn-section bn-avis" data-section={i}>
                 <AvisClients avis={donnees.avis} gabarit="editorial"
                   tete={<Tete titre={texte(s.textes, "titre", t.accueil.avisTitre)} etiquette={texte(s.textes, "etiquette", t.accueil.avisEtiquette)} />} />
               </div>
@@ -74,7 +74,7 @@ export function AccueilBento({ cadre, donnees }: Props) {
           case "questions": {
             const q = donnees.questions.get(i);
             return q ? (
-              <div key={i} className="enveloppe bn-section">
+              <div key={i} className="enveloppe bn-section" data-section={i}>
                 <QuestionsFrequentes questions={q} gabarit="editorial"
                   tete={() => <Tete titre={texte(s.textes, "titre", t.accueil.questionsTitre)} etiquette={texte(s.textes, "etiquette") || undefined} />} />
               </div>
@@ -82,7 +82,7 @@ export function AccueilBento({ cadre, donnees }: Props) {
           }
           case "marques":
             return donnees.marques.length ? (
-              <div key={i} className="enveloppe bn-section">
+              <div key={i} className="enveloppe bn-section" data-section={i}>
                 <Marques marques={donnees.marques} gabarit="editorial"
                   tete={<Tete titre={texte(s.textes, "titre", t.accueil.marquesTitre)} etiquette={texte(s.textes, "etiquette") || undefined} />} />
               </div>
@@ -126,7 +126,8 @@ function Tete({ titre, etiquette, lien, libelleLien }: { titre: string; etiquett
 /* La première rangée : l'ouverture, et à côté ce que la boutique a de vrai à
    dire tout de suite — sa pièce à la une, le paiement à la livraison, la note
    de ses clients. */
-function Ouverture({ section, cadre, piece, donnees, rayons }: {
+function Ouverture({ rang, section, cadre, piece, donnees, rayons }: {
+  rang: number;
   section: Extract<Section, { type: "hero" }>;
   cadre: Cadre;
   piece: Produit | null;
@@ -145,7 +146,7 @@ function Ouverture({ section, cadre, piece, donnees, rayons }: {
   const cotes = [piece && photo, cadre.livraison.cod, avis].filter(Boolean).length;
 
   return (
-    <section className="enveloppe bn-ouverture">
+    <section className="enveloppe bn-ouverture" data-section={rang}>
       <div className="bn-tuile bn-une" data-photo={section.image ? "" : undefined}>
         {section.image ? (
           <>
@@ -208,10 +209,10 @@ function Ouverture({ section, cadre, piece, donnees, rayons }: {
   );
 }
 
-function Rayons({ section, cadre, liste }: { section: Extract<Section, { type: "rayons" }>; cadre: Cadre; liste: Cadre["racines"] }) {
+function Rayons({ rang, section, cadre, liste }: { rang: number; section: Extract<Section, { type: "rayons" }>; cadre: Cadre; liste: Cadre["racines"] }) {
   const compte = (slug: string) => descendance(cadre.categories, slug).reduce((n, c) => n + (c.nb_produits ?? 0), 0);
   return (
-    <section className="enveloppe bn-section" id="rayons">
+    <section className="enveloppe bn-section" id="rayons" data-section={rang}>
       <Tete titre={texte(section.textes, "titre", t.accueil.bentoRayonsTitre)} etiquette={texte(section.textes, "etiquette") || undefined}
         lien="/catalogue" libelleLien={t.commun.toutLeCatalogue} />
       <ul className="bn-rayons" data-n={Math.min(liste.length, 6)}>
@@ -233,14 +234,14 @@ function Rayons({ section, cadre, liste }: { section: Extract<Section, { type: "
   );
 }
 
-function Selection({ section, cadre, produits }: { section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
+function Selection({ rang, section, cadre, produits }: { rang: number; section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
   const lien = section.lien ?? (section.rayon ? `/categorie/${section.rayon}` : "/catalogue");
   const titre = texte(section.textes, "titre", section.tri === "nouveautes" ? t.accueil.selectionNouveautes : t.accueil.selectionTitreEditorial);
   const total = section.rayon
     ? descendance(cadre.categories, section.rayon).reduce((n, c) => n + (c.nb_produits ?? 0), 0)
     : cadre.boutique.nb_produits;
   return (
-    <section className="enveloppe bn-section">
+    <section className="enveloppe bn-section" data-section={rang}>
       <Tete titre={titre} etiquette={texte(section.textes, "etiquette") || undefined} lien={lien} />
       {produits.length > 0 ? (
         <div className="bn-grille rail-mobile">
@@ -257,12 +258,12 @@ function Selection({ section, cadre, produits }: { section: Extract<Section, { t
   );
 }
 
-function Recit({ section, cadre }: { section: Extract<Section, { type: "editorial" }>; cadre: Cadre }) {
+function Recit({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "editorial" }>; cadre: Cadre }) {
   const titre = texte(section.textes, "titre");
   const corps = texte(section.textes, "texte");
   if (!titre && !corps) return null;
   return (
-    <section className="enveloppe bn-section bn-recit" data-sans-image={section.image ? undefined : ""}>
+    <section className="enveloppe bn-section bn-recit" data-section={rang} data-sans-image={section.image ? undefined : ""}>
       {section.image ? (
         <div className="bn-tuile bn-recit-image">
           <Photo photo={{ src: urlFichier(section.image.chemin), alt: texte(section.textes, "image_alt", cadre.boutique.nom) }}
@@ -284,7 +285,7 @@ function Recit({ section, cadre }: { section: Extract<Section, { type: "editoria
   );
 }
 
-function Engagements({ cadre }: { cadre: Cadre }) {
+function Engagements({ rang, cadre }: { rang: number; cadre: Cadre }) {
   const { livraison } = cadre;
   const faits = [
     livraison.cod ? { icone: <Billets />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
@@ -295,7 +296,7 @@ function Engagements({ cadre }: { cadre: Cadre }) {
     { icone: <Retour />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
   ].filter((f) => f !== null);
   return (
-    <section className="enveloppe bn-section">
+    <section className="enveloppe bn-section" data-section={rang}>
       <ul className="bn-engagements" data-n={faits.length}>
         {faits.map((f) => (
           <li key={f.titre} className="bn-tuile">
