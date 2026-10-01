@@ -74,3 +74,6 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `yasmine-beaute/rayons/soins-du-visage` | [Authentic Stock](https://www.authentic.co) | CC0 | [stocksnap](https://stocksnap.io/photo/beauty-skincare-PBIACLTCLJ) |
 | `yasmine-beaute/rayons/corps-et-bain` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3286046/free-photo-image-soaps-paper-craft-soap-bar) |
 | `yasmine-beaute/rayons/maquillage` | [Freestocks.org](https://stocksnap.io/author/20064) | CC0 | [stocksnap](https://stocksnap.io/photo/makeup-people-G40JKFC5I5) |
+| `yasmine-beaute/produits/huile-parfumee-jasmin` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5955920/free-public-domain-cc0-photo) |
+| `yasmine-beaute/produits/diffuseur-fleur-blanche` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5943580/free-public-domain-cc0-photo) |
+| `yasmine-beaute/produits/eau-florale-bleuet` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5955897/free-public-domain-cc0-photo) |
