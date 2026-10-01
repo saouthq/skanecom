@@ -52,7 +52,8 @@ function racines(cadre: Cadre): Record<string, string> {
 /** Les acheteurs ont-ils un compte (numéro confirmé par SMS) ? C'est le cas
  *  tant que la boutique n'accepte pas les commandes en invité. */
 function avecComptes(cadre: Cadre): boolean {
-  return cadre.reglages["compte.obligatoire"] !== false;
+  // Un site vitrine ne prend pas de commande : rien à suivre dans un compte.
+  return cadre.reglages["compte.obligatoire"] !== false && !cadre.siteVitrine;
 }
 
 function entreesMenu(cadre: Cadre): EntreeMenu[] {
@@ -126,7 +127,8 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
                 <Personne />
               </Link>
             ) : null}
-            <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} />
+            {cadre.siteVitrine ? null : (
+            <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} />)}
           </div>
         </div>
       </EnteteDefilant>
@@ -205,7 +207,8 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
                 <span>{t.compte.lien}</span>
               </Link>
             ) : null}
-            <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} />
+            {cadre.siteVitrine ? null : (
+            <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} />)}
           </div>
         </div>
         <div className="te-barre-rayons cache-mobile">

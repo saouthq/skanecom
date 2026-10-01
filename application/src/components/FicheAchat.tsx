@@ -18,6 +18,7 @@ import { useSelection } from "./SelectionVariante";
 import { etatVariante, minimumVariante, type Produit } from "@/lib/catalogue";
 import { AlerteRetour } from "./AlerteRetour";
 import { AxesDeclinaison } from "./AxesDeclinaison";
+import { ContactProduit, lienWhatsappPiece, type ContactVente } from "./ContactProduit";
 import { OffresQuantite } from "./OffresQuantite";
 import { paliersDe, totalAvecPaliers } from "@/lib/paliers";
 import type { CodeTheme } from "@/lib/theme";
@@ -53,6 +54,7 @@ export function FicheAchat({
   achatExpress = false,
   prevenirRetour = false,
   partage = null,
+  contact = null,
 }: {
   produit: Produit;
   gabarit: CodeTheme;
@@ -63,6 +65,9 @@ export function FicheAchat({
   prevenirRetour?: boolean;
   /** Réglage `vitrine.partage` : « Partager », avec le nom de la boutique pour le message. */
   partage?: { boutique: string } | null;
+  /** Un site vitrine (réglage vitrine.site_vitrine) : ni quantité ni panier,
+   *  « Cette pièce vous intéresse ? » et les moyens de joindre la boutique. */
+  contact?: ContactVente | null;
   /** L'enveloppe du délai de livraison (jours ouvrés) : la fenêtre estimée. */
   delaiJours?: { min: number; max: number } | null;
   /** Réglage `catalogue.afficher_prix_barres` : l'ancien prix barré à côté du
@@ -208,7 +213,7 @@ export function FicheAchat({
       )}
 
       {/* Les prix par quantité (« 2 pour 99 ») : un choix règle la quantité. */}
-      {variante && paliers.length ? (
+      {variante && paliers.length && !contact ? (
         <OffresQuantite prixUnitaire={prixApplique} paliers={paliers} quantite={quantite} stock={stock} minimum={minimum}
           onChoisir={(q) => setQuantite(q)} />
       ) : null}
@@ -243,6 +248,13 @@ export function FicheAchat({
         </p>
       ) : null}
 
+      {contact ? (
+        <div className="fiche-contact-bloc" ref={blocAchat}>
+          <ContactProduit contact={contact} piece={libelle()} reference={variante?.sku ?? null} />
+          <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="fiche-favori fiche-contact-favori" />
+        </div>
+      ) : (
+      <>
       <div className="achat" ref={blocAchat}>
         <div className="qte" role="group" aria-label={t.produit.quantite}>
           <button type="button" aria-label={t.produit.retirerUnArticle} disabled={quantite <= minimum} onClick={() => setQuantite((q) => Math.max(minimum, q - 1))}>
@@ -273,12 +285,25 @@ export function FicheAchat({
           <p className="legende">{t.produit.commanderMaintenantAide}</p>
         </div>
       ) : null}
+      </>
+      )}
       <p className="legende fiche-note">{t.produit.stockReel}</p>
-      {disponible && delaiJours ? <LivraisonEstimee min={delaiJours.min} max={delaiJours.max} /> : null}
+      {disponible && delaiJours && !contact ? <LivraisonEstimee min={delaiJours.min} max={delaiJours.max} /> : null}
       {partage ? <PartagerFiche nom={champ(produit, "nom")} boutique={partage.boutique} /> : null}
 
       {/* Barre collante mobile : prix, déclinaison choisie, action. Rien d'autre. */}
-      {barreVisible ? (
+      {barreVisible && contact ? (
+        <div className="achat-mobile cache-desktop" role="region" aria-label={t.siteVitrine.contact}>
+          <div className="min-w-0 flex-1">
+            <p className="legende truncate">{declinaison() || champ(produit, "nom")}</p>
+            {variante ? <Prix millimes={prixApplique} /> : null}
+          </div>
+          <a className="btn btn-primaire" href={lienWhatsappPiece(contact, libelle(), variante?.sku ?? null) ?? (contact.telephone ? `tel:${contact.telephone.replace(/[^\d+]/g, "")}` : "/contact")}
+            target={contact.whatsapp ? "_blank" : undefined} rel={contact.whatsapp ? "noopener noreferrer" : undefined}>
+            {contact.whatsapp ? t.siteVitrine.whatsapp : contact.telephone ? t.contact.appeler : t.siteVitrine.contact}
+          </a>
+        </div>
+      ) : barreVisible ? (
         <div className="achat-mobile cache-desktop" role="region" aria-label={t.produit.ajouterAuPanier}>
           <div className="min-w-0 flex-1">
             <p className="legende truncate">{declinaison() || champ(produit, "nom")}</p>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Gabarit } from "@/components/Gabarit";
 import { RepriseDuPanier, type LigneReprise } from "@/components/RepriseDuPanier";
+import { CommandeHorsLigne } from "@/components/CommandeHorsLigne";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { t } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
@@ -23,6 +24,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export default async function Reprise({ params }: { params: Promise<{ boutique: string; id: string }> }) {
   const { boutique, id } = await params;
   const cadre = await chargeCadre(boutique);
+  if (cadre.siteVitrine) {
+    return (
+      <Gabarit className="enveloppe flex-1 reprise-page">
+        <CommandeHorsLigne cadre={cadre} />
+      </Gabarit>
+    );
+  }
   let lignes: LigneReprise[] = [];
   if (UUID.test(id)) {
     const { data, error } = await supabase.rpc("panier_a_reprendre", { p_boutique_id: cadre.boutique.id, p_panier_id: id });

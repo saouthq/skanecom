@@ -7,6 +7,7 @@ import { photoVisible } from "@/lib/envol";
 import { prixApplique, usePrixPro } from "@/lib/prix-pro";
 import { t } from "@/lib/i18n";
 import type { LignePanier } from "@/lib/panier-contrat";
+import { useCommandeEnLigne } from "./CommandeEnLigne";
 
 /* L'ajout direct depuis une carte (gabarit technique) — seulement quand le
    produit n'a qu'UNE déclinaison, en stock : il n'y a rien à choisir, on ne
@@ -22,6 +23,9 @@ export function AjoutRapide({ ligne, stock, nom, produitId }: {
 }) {
   const [ajoute, setAjoute] = useState(false);
   const pro = usePrixPro([produitId]);
+  const ouverte = useCommandeEnLigne();
+  // Un site vitrine ne vend pas en ligne : la carte mène à sa fiche, rien d'autre.
+  if (!ouverte) return null;
   return (
     <button
       type="button"

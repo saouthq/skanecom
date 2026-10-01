@@ -764,6 +764,23 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
 .fiche-express { display: grid; gap: .375rem; margin-block-start: .625rem; }
 .btn-express { inline-size: 100%; }
 .fiche-express .legende { text-align: center; }
+
+/* Le site vitrine (réglage vitrine.site_vitrine) : à la place du panier,
+   « Cette pièce vous intéresse ? » et les moyens de joindre la boutique. */
+.fiche-contact-bloc { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .75rem; align-items: start; }
+.fiche-contact {
+  display: grid; gap: .625rem; padding: 1.25rem; border-radius: var(--theme-radius-carte);
+  background: var(--theme-surface-2); border: 1px solid color-mix(in srgb, var(--theme-filet) 70%, transparent);
+}
+.fiche-contact-titre { margin: 0; font-weight: 600; font-size: 1.0625rem; }
+.fiche-contact .legende { margin: 0; text-wrap: pretty; }
+.fiche-contact-actions { display: grid; gap: .5rem; margin-block-start: .375rem; }
+.fiche-contact-actions .btn { inline-size: 100%; justify-content: center; gap: .5rem; min-block-size: 52px; }
+.fiche-contact-email { justify-self: center; font-size: .875rem; }
+.fiche-contact-bloc .fiche-contact-favori { align-self: start; inline-size: 52px; block-size: 52px; min-block-size: 0; }
+.hors-ligne { text-align: center; }
+.hors-ligne-actions { display: grid; justify-items: center; gap: .75rem; margin-block-start: 1.5rem; }
+.hors-ligne-actions .btn { gap: .5rem; min-inline-size: 16rem; justify-content: center; }
 .achat-mobile:has(.btn + .btn) { gap: .5rem; }
 .achat-mobile .btn.achat-mobile-icone { flex: none; inline-size: 3.25rem; padding-inline: 0; }
 .achat-mobile-icone svg { flex: none; }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Gabarit } from "@/components/Gabarit";
 import { Tunnel } from "@/components/Tunnel";
+import { CommandeHorsLigne } from "@/components/CommandeHorsLigne";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { verificationDe } from "@/lib/connexion";
 import { identiteLegale } from "@/lib/legal";
@@ -38,6 +39,14 @@ export default async function Commande({
 }) {
   const [{ boutique }, recherche] = await Promise.all([params, searchParams]);
   const cadre = await chargeCadre(boutique);
+  // Un site vitrine ne prend pas de commande en ligne : comment joindre la boutique.
+  if (cadre.siteVitrine) {
+    return (
+      <Gabarit className="enveloppe flex-1 tunnel-page">
+        <CommandeHorsLigne cadre={cadre} />
+      </Gabarit>
+    );
+  }
   // Accepter un devis (module devis) : le tunnel à ses prix.
   const devis = cadre.devis && recherche.devis && NUMERO_DEVIS.test(recherche.devis) ? recherche.devis : null;
   const quantite = Number.parseInt(recherche.quantite ?? "1", 10);

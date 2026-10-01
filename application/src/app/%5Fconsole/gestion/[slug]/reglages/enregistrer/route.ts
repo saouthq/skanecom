@@ -1,5 +1,6 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers } from "@/lib/console/http";
+import { rafraichirVitrine } from "@/lib/console/vitrine-cache";
 import { millimes } from "@/lib/console/import";
 import { grammesSaisis, libelleTranche, messageReglages, valeursDe, type EtatReglages } from "@/lib/gestion/reglages";
 
@@ -36,8 +37,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const ecran = `/gestion/${slug}/reglages`;
   // Le message revient dans la section envoyée (`dans`), là où l'on regarde : en
   // haut de la page, il était à des milliers de pixels au-dessus de l'écran.
-  const retour = (ancre: string) => (m: string, ok = false) =>
-    vers(`${ecran}?${new URLSearchParams({ ...(ok ? { ok: m } : { erreur: m }), dans: ancre.replace(/^t-/, "") })}#${ancre}`);
+  // Un réglage enregistré paraît aussitôt sur la vitrine (elle ne garde plus ses cinq minutes de cache).
+  const retour = (ancre: string) => (m: string, ok = false) => {
+    if (ok) rafraichirVitrine(slug);
+    return vers(`${ecran}?${new URLSearchParams({ ...(ok ? { ok: m } : { erreur: m }), dans: ancre.replace(/^t-/, "") })}#${ancre}`);
+  };
   const b = boutique.boutique_id;
   const sb = await clientSession();
 
@@ -104,5 +108,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (typeof valeurs === "string") return r(valeurs);
   const { data, error } = await sb.rpc("gestion_enregistrer_reglages", { p_boutique_id: b, p_valeurs: valeurs });
   if (error) return r(messageReglages(error.hint, error.message));
-  return r(Number(data) ? "Réglages enregistrés. La boutique en tient compte dans les cinq minutes." : "Rien n'a changé.", true);
+  return r(Number(data) ? "Réglages enregistrés : la vitrine en tient compte aussitôt." : "Rien n'a changé.", true);
 }

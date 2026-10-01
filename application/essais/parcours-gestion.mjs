@@ -2310,6 +2310,38 @@ if (section("6")) {
     await clic(page, page.getByRole("button", { name: "Revenir à la version publiée" }));
     verifie(await attend(async () => (await html("data-coins")) === "arrondis", 8000), "« Revenir à la version publiée » : l'essai abandonné");
   });
+
+  await etape("le site vitrine : réglé au backoffice, la fiche propose d'écrire ou d'appeler, puis retour à la boutique", async () => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${C}/gestion/dar-alia/reglages`, { waitUntil: "networkidle" });
+    const commandes = page.locator("section:has(#t-commandes)");
+    const statut = () => page.getByRole("status").first().innerText().catch(() => "");
+    verifie(await commandes.getByLabel("Une boutique en ligne").isChecked(), "au départ : une boutique en ligne");
+    await clic(page, commandes.getByText("Un site vitrine", { exact: true }));
+    await t.envoie(page, commandes.getByRole("button", { name: "Enregistrer" }));
+    verifie((await statut()).includes("Réglages enregistrés"), `« ${await statut()} »`);
+    const v = await ctx.newPage();
+    t.espion(v, "site-vitrine");
+    await v.goto(V + "/produit/mug-gres-emaille", { waitUntil: "networkidle" });
+    verifie((await v.locator(".btn-ajout").count()) === 0 && (await v.locator("header .bouton-panier-compte").count()) === 0,
+      "aussitôt sur la vitrine : ni « Ajouter au panier » ni panier dans l'en-tête");
+    const contact = (await v.locator(".fiche-contact").innerText()).replace(/\s+/g, " ");
+    verifie(contact.includes("Cette pièce vous intéresse") && contact.includes("Écrire sur WhatsApp") && contact.includes("+216 70 000 005"),
+      "« Cette pièce vous intéresse ? » : WhatsApp, l'appel, l'e-mail");
+    const lien = decodeURIComponent((await v.locator(".fiche-contact-whatsapp").getAttribute("href")) ?? "");
+    verifie(lien.includes("Mug en grès émaillé (réf. DAR-MUG-GR)"), "le message WhatsApp nomme la pièce et sa référence");
+    await capture(v, "site-vitrine-fiche");
+    await v.goto(V + "/commande", { waitUntil: "networkidle" });
+    verifie((await v.locator("main h1").innerText()).includes("ne prend pas de commande en ligne"), "/commande : la boutique dit comment la joindre");
+    await v.close();
+    await clic(page, commandes.getByText("Une boutique en ligne"));
+    await t.envoie(page, commandes.getByRole("button", { name: "Enregistrer" }));
+    verifie((await statut()).includes("Réglages enregistrés"), "retour à la boutique, enregistré");
+    const w = await ctx.newPage();
+    await w.goto(V + "/produit/mug-gres-emaille", { waitUntil: "networkidle" });
+    verifie((await w.locator(".btn-ajout").count()) === 1 && (await w.locator(".fiche-contact").count()) === 0, "« Ajouter au panier » revient aussitôt");
+    await w.close();
+  });
   await ctx.close();
 }
 

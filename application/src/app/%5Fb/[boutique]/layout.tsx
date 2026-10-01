@@ -13,6 +13,7 @@ import { Entete } from "@/components/Entete";
 import { Pied } from "@/components/Pied";
 import { BoutonWhatsApp } from "@/components/BoutonWhatsApp";
 import { BarreComparaison, ComparaisonActive } from "@/components/Comparaison";
+import { FournisseurCommande } from "@/components/CommandeEnLigne";
 import { BarreOnglets } from "@/components/BarreOnglets";
 import { Apparitions } from "@/components/Apparitions";
 import { TransitionsVue } from "@/components/TransitionsVue";
@@ -101,6 +102,7 @@ export default async function RacineBoutique({ children, params }: Props) {
             <a href="/?apercu=fin">{t.apercu.quitter}</a>
           </p>
         ) : null}
+        <FournisseurCommande ouverte={!cadre.siteVitrine}>
         <FavorisActifs actif={cadre.favoris}>
           <ComparaisonActive actif={commerce}>
             <Entete cadre={cadre} />
@@ -108,8 +110,11 @@ export default async function RacineBoutique({ children, params }: Props) {
             <Pied cadre={cadre} />
             {commerce ? <BarreComparaison /> : null}
           </ComparaisonActive>
-          {commerce ? <BarreOnglets favoris={cadre.favoris} compte={cadre.reglages["compte.obligatoire"] !== false} /> : null}
+          {commerce ? (
+            <BarreOnglets favoris={cadre.favoris} compte={cadre.reglages["compte.obligatoire"] !== false && !cadre.siteVitrine} panier={!cadre.siteVitrine} />
+          ) : null}
         </FavorisActifs>
+        </FournisseurCommande>
         {cadre.whatsappFlottant && cadre.whatsapp ? <BoutonWhatsApp numero={cadre.whatsapp} nom={cadre.boutique.nom} /> : null}
         {cadre.statistiques && !cadre.apercu ? <MesureAudience /> : null}
         <Apparitions />

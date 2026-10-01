@@ -48,6 +48,7 @@ type Genre = "booleen" | "choix" | "entier" | "montant" | "texte" | "numero" | "
 /** Les champs de chaque section de l'écran, dans l'ordre. */
 export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
   commandes: [
+    { cle: "vitrine.site_vitrine", genre: "booleen" },
     { cle: "compte.obligatoire", genre: "booleen" },
     { cle: "compte.verification", genre: "choix" },
     { cle: "commande.mode_confirmation", genre: "choix" },
@@ -188,6 +189,7 @@ export function montantChamp(v: unknown): string {
 /* ---- Le journal : ce qui a changé, en mots ---- */
 
 const LIBELLES_COURTS: Record<string, string> = {
+  "vitrine.site_vitrine": "Site vitrine",
   "compte.obligatoire": "Compte client",
   "compte.verification": "Code de connexion",
   "commande.mode_confirmation": "Confirmation",

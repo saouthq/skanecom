@@ -1057,6 +1057,22 @@ export const fr = {
     rappel: (prix: string, cod: boolean) => (cod ? `Dès ${prix}, payé à la livraison.` : `Dès ${prix}.`),
   },
 
+  /** Le site vitrine (réglage vitrine.site_vitrine) : sans commande en ligne. */
+  siteVitrine: {
+    interesse: "Cette pièce vous intéresse ?",
+    interesseTexte: "Elle ne se commande pas en ligne : écrivez-nous ou appelez, nous vous disons sa disponibilité et comment la recevoir.",
+    whatsapp: "Écrire sur WhatsApp",
+    appeler: (numero: string) => `Appeler le ${numero}`,
+    email: "Écrire un e-mail",
+    contact: "Nous contacter",
+    message: (boutique: string, piece: string, reference: string | null) =>
+      `Bonjour ${boutique}, cette pièce m'intéresse : ${piece}${reference ? ` (réf. ${reference})` : ""}. `,
+    sujet: (piece: string) => `Renseignement : ${piece}`,
+    commandeTitre: "Ce site ne prend pas de commande en ligne",
+    commandeTexte: (boutique: string) => `Pour commander, écrivez à ${boutique} ou appelez : la boutique vous répond et vous dit comment recevoir votre commande.`,
+    voirLeCatalogue: "Voir le catalogue",
+  },
+
   /** « Prévenez-moi de son retour » (components/AlerteRetour.tsx). */
   alerte: {
     ouvrir: "Prévenez-moi de son retour",

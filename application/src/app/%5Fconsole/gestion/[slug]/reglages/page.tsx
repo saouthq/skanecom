@@ -180,6 +180,13 @@ export default async function Reglages({
                 <input type="hidden" name="section" value="commandes" />
                 <fieldset className="pile rg-corps" disabled={!modifie}>
                   <Alternative
+                    nom="vitrine.site_vitrine" legende="Le site" valeur={v("vitrine.site_vitrine") ? "1" : "0"}
+                    options={[
+                      { valeur: "0", titre: "Une boutique en ligne", conseil: "Conseillé", aide: "On commande sur le site : le panier, la commande, le paiement à la livraison." },
+                      { valeur: "1", titre: "Un site vitrine", aide: "Le catalogue, ses prix et son stock, sans panier ni commande : chaque fiche propose WhatsApp, l'appel ou l'e-mail. Les réglages ci-dessous attendent votre retour à la boutique." },
+                    ]}
+                  />
+                  <Alternative
                     nom="compte.obligatoire" legende="Pour commander" valeur={v("compte.obligatoire") ? "1" : "0"}
                     options={[
                       { valeur: "1", titre: "Compte obligatoire", conseil: "Conseillé", aide: "L'acheteur se connecte par un code, avant de commander. Moins de refus à la livraison." },

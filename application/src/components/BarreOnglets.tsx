@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coeur, Loupe, Maison, Menu, Panier as IconePanier, Personne } from "./Icones";
+import { Coeur, Loupe, Maison, Menu, Panier as IconePanier, Personne, Telephone } from "./Icones";
 import { usePanier } from "@/lib/panier";
 import { nombreArticles, PANIER_OUVRIR } from "@/lib/panier-contrat";
 import { useFavoris } from "@/lib/favoris";
@@ -20,7 +20,12 @@ import { MENU_OUVRIR } from "./EnteteClient";
    (commerce.css). Sur ordinateur, elle n'existe pas.
    ========================================================================== */
 
-export function BarreOnglets({ favoris, compte }: { favoris: boolean; compte: boolean }) {
+export function BarreOnglets({ favoris, compte, panier: avecPanier = true }: {
+  favoris: boolean;
+  compte: boolean;
+  /** Un site vitrine (sans commande en ligne) : « Contact » à la place du panier. */
+  panier?: boolean;
+}) {
   const chemin = (usePathname() ?? "/").replace(/^\/_b\/[^/]+/, "") || "/";
   const panier = usePanier();
   const aimes = useFavoris().length;
@@ -51,11 +56,17 @@ export function BarreOnglets({ favoris, compte }: { favoris: boolean; compte: bo
           <Personne taille={22} /> <span>{t.commerce.compte}</span>
         </Link>
       ) : null}
-      <button type="button" className="bo-onglet" aria-haspopup="dialog" aria-label={t.commerce.panierAria(n)}
-        onClick={() => window.dispatchEvent(new CustomEvent(PANIER_OUVRIR))}>
-        <IconePanier taille={22} /> <span aria-hidden="true">{t.commerce.panier}</span>
-        {n ? <span className="bo-pastille" aria-hidden="true">{n}</span> : null}
-      </button>
+      {avecPanier ? (
+        <button type="button" className="bo-onglet" aria-haspopup="dialog" aria-label={t.commerce.panierAria(n)}
+          onClick={() => window.dispatchEvent(new CustomEvent(PANIER_OUVRIR))}>
+          <IconePanier taille={22} /> <span aria-hidden="true">{t.commerce.panier}</span>
+          {n ? <span className="bo-pastille" aria-hidden="true">{n}</span> : null}
+        </button>
+      ) : (
+        <Link href="/contact" className="bo-onglet" aria-current={ici("/contact") ? "page" : undefined}>
+          <Telephone taille={22} /> <span>{t.contact.titre}</span>
+        </Link>
+      )}
     </nav>
   );
 }

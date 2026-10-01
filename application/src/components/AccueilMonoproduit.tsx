@@ -4,6 +4,7 @@ import { GalerieEditoriale } from "./Galerie";
 import { FournisseurSelection } from "./SelectionVariante";
 import { VenteMonoproduit } from "./VenteMonoproduit";
 import { rassurances } from "./Rassurances";
+import { contactVente } from "./ContactProduit";
 import { Coche } from "./Icones";
 import type { Cadre } from "@/lib/boutique";
 import type { DonneesAccueil } from "@/lib/accueil";
@@ -58,7 +59,7 @@ export function AccueilMonoproduit({ cadre, donnees }: Props) {
         return undefined;
       }}
     />
-    {vendu ? <Rappel produit={vendu} cod={cadre.livraison.cod} /> : null}
+    {vendu && !cadre.siteVitrine ? <Rappel produit={vendu} cod={cadre.livraison.cod} /> : null}
     </>
   );
 }
@@ -124,6 +125,7 @@ function PageVente({ rang, section, produit, cadre, donnees, premiere }: {
           prixBarres={cadre.prixBarres}
           prevenirRetour={cadre.prevenirRetour}
           rappel={cadre.livraison.cod && cadre.livraison.rappel}
+          contact={cadre.siteVitrine ? contactVente(cadre) : null}
           tunnel={{
             gabarit: cadre.theme.code,
             boutiqueId: cadre.boutique.id,

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Photo } from "./Photo";
 import { FicheAchat } from "./FicheAchat";
+import { contactVente } from "./ContactProduit";
 import { FournisseurSelection } from "./SelectionVariante";
 import { Fleche } from "./Icones";
 import { photosProduit } from "@/lib/photos";
@@ -46,7 +47,7 @@ export function PieceSaison({ rang, section, produit, cadre, gabarit = "editoria
             <h2 key={titre} data-texte="titre">{titre}</h2>
             {corps ? <p className="ps-corps" key={corps} data-texte="texte">{corps}</p> : null}
             <FicheAchat produit={produit} gabarit={gabarit} prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours}
-              achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} />
+              achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
             <Link className="lien-souligne ps-fiche" href={`/produit/${produit.slug}`}>
               {t.accueil.voirLaFiche} <Fleche taille={14} className="rtl:-scale-x-100" />
             </Link>

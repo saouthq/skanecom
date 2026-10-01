@@ -65,6 +65,12 @@ export type Cadre = {
   konnectActif: boolean;
   prixBarres: boolean;
   whatsapp: string | null;
+  /** Le téléphone et l'e-mail de la boutique (réglages contact.telephone, legal.email). */
+  telephone: string | null;
+  email: string | null;
+  /** Réglage `vitrine.site_vitrine` (migration 73) : un site vitrine, sans
+   *  panier ni commande en ligne ; la fiche propose d'écrire ou d'appeler. */
+  siteVitrine: boolean;
   /** Le magasin où retirer ses commandes, si la boutique le propose (module
    *  retrait_magasin, adresse et ville renseignées) ; `null` sinon. */
   retrait: Magasin | null;
@@ -228,6 +234,9 @@ export function cadreDe(brut: CadreBrut): Cadre {
     konnectActif: reglage(reglages, "paiement.konnect_actif", false),
     prixBarres: reglage(reglages, "catalogue.afficher_prix_barres", false),
     whatsapp: whatsapp.length >= 8 ? whatsapp : null,
+    telephone: texteDe("contact.telephone") || null,
+    email: texteDe("legal.email") || null,
+    siteVitrine: reglage<boolean>(reglages, "vitrine.site_vitrine", false) === true,
     retrait: modules.includes("retrait_magasin") && texteDe("retrait.adresse") && texteDe("retrait.ville")
       ? {
           adresse: texteDe("retrait.adresse"),

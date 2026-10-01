@@ -8,6 +8,7 @@ import { AxesDeclinaison } from "./AxesDeclinaison";
 import { OffresQuantite } from "./OffresQuantite";
 import { Tunnel } from "./Tunnel";
 import { Coche } from "./Icones";
+import { ContactProduit, type ContactVente } from "./ContactProduit";
 import { useSelection } from "./SelectionVariante";
 import { ajouteAuPanier, annonceAjout } from "@/lib/panier";
 import { photoVisible } from "@/lib/envol";
@@ -39,7 +40,7 @@ import { champ, t } from "@/lib/i18n";
 type ProprietesTunnel = Omit<ComponentProps<typeof Tunnel>, "express" | "integre">;
 
 export function VenteMonoproduit({
-  produit, galerie, tete, assurances, tunnel, prixBarres, prevenirRetour, rappel,
+  produit, galerie, tete, assurances, tunnel, prixBarres, prevenirRetour, rappel, contact = null,
 }: {
   produit: Produit;
   /** Les photos (rendues par le serveur). */
@@ -53,6 +54,8 @@ export function VenteMonoproduit({
   prevenirRetour: boolean;
   /** La boutique rappelle pour confirmer (le chapô du formulaire le dit). */
   rappel: boolean;
+  /** Un site vitrine (sans commande en ligne) : ni offres ni formulaire, les moyens de joindre la boutique. */
+  contact?: ContactVente | null;
 }) {
   const { choix, setChoix, variante } = useSelection();
   const minimum = minimumVariante(variante);
@@ -180,7 +183,7 @@ export function VenteMonoproduit({
               </div>
             ) : null}
 
-            {variante && paliers.length ? (
+            {variante && paliers.length && !contact ? (
               <OffresQuantite forme="cartes" prixUnitaire={prixApplique} paliers={paliers} quantite={quantite} stock={stock} minimum={minimum}
                 onChoisir={(q) => setQuantite(q)} />
             ) : null}
@@ -200,7 +203,7 @@ export function VenteMonoproduit({
             )}
 
             {/* Sans prix par quantité, la quantité se règle à la main. */}
-            {!paliers.length && disponible ? (
+            {!paliers.length && disponible && !contact ? (
               <div className="qte pv-qte" role="group" aria-label={t.produit.quantite}>
                 <button type="button" aria-label={t.produit.retirerUnArticle} disabled={quantite <= minimum} onClick={() => setQuantite((q) => Math.max(minimum, q - 1))}>
                   −
@@ -212,6 +215,9 @@ export function VenteMonoproduit({
               </div>
             ) : null}
 
+            {contact ? (
+              <ContactProduit contact={contact} piece={libelle()} reference={variante?.sku ?? null} />
+            ) : (
             <div className="pv-action">
               {disponible ? (
                 <a ref={bouton} className="btn btn-primaire pv-commander" href="#commande" onClick={versCommande}>
@@ -228,11 +234,13 @@ export function VenteMonoproduit({
                 {ajoute ? t.vente.ajoute : t.vente.ouPanier}
               </button>
             </div>
+            )}
           </div>
           {assurances}
         </div>
       </div>
 
+      {contact ? null : (
       <section ref={commande} id="commande" className="pv-commande" aria-labelledby="pv-commande-titre" tabIndex={-1}>
         <div className="enveloppe">
           <header className="pv-commande-tete">
@@ -251,8 +259,9 @@ export function VenteMonoproduit({
           )}
         </div>
       </section>
+      )}
 
-      {boutonPasse && !commandeVisible && disponible ? (
+      {boutonPasse && !commandeVisible && disponible && !contact ? (
         <div className="achat-mobile pv-barre cache-desktop" role="region" aria-label={t.vente.barre}>
           <div className="min-w-0 flex-1">
             <p className="legende truncate">{offre ?? champ(produit, "nom")}</p>
