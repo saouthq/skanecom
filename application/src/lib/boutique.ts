@@ -166,6 +166,17 @@ function delai(zones: Zone[]): { min: number; max: number } | null {
   return { min: Math.min(...mins), max: Math.max(...maxs) };
 }
 
+/** La boutique publique, lue en base. Le client coupe une requête au bout de
+ *  deux secondes (lib/supabase.ts) : une base lente un instant (un pic de
+ *  charge) coupait la lecture, et la page ou la route tombait en erreur 500
+ *  (« AbortError », vu en CI). Une lecture coupée par ce délai a une seconde
+ *  chance, une seule ; une vraie erreur de la base, aucune. */
+async function lisBoutique(slug: string) {
+  const lu = await supabase.rpc("boutique_publique", { p_slug: slug });
+  if (lu.error && /abort/i.test(lu.error.message)) return supabase.rpc("boutique_publique", { p_slug: slug });
+  return lu;
+}
+
 /** Le cadre d'une boutique. `segment` est le premier segment de l'adresse
  *  interne : le slug, ou `<slug>~<jeton>.<version>` quand la façade sert
  *  l'aperçu d'un brouillon de la vitrine (src/proxy.ts) — le thème prend alors
@@ -176,7 +187,7 @@ export const chargeCadre = cache(async (segment: string): Promise<Cadre | null> 
   const [slug, apercu] = segment.split("~", 2);
   const jeton = apercu?.split(".")[0] ?? null;
   const [{ data, error }, , brouillon] = await Promise.all([
-    supabase.rpc("boutique_publique", { p_slug: slug }),
+    lisBoutique(slug),
     // Ses pages portent l'étiquette de la boutique : « Publier » les renouvelle toutes.
     etiqueterBoutique(slug).catch(() => false),
     jeton && /^[0-9a-f-]{36}$/.test(jeton)
