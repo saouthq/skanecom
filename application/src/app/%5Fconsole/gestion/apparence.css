@@ -78,6 +78,10 @@
    leur colonne, l'aperçu prend le reste. */
 @media (min-width: 1100px) {
   .app:has(.ap-editeur) .app-contenu { padding: 0 1rem; }
+  /* Tout tient dans l'écran : la page elle-même ne défile jamais (seules la
+     colonne des réglages et la vitrine du cadre défilent) — même quand un
+     geste amène un réglage sous les yeux. */
+  .app:has(.ap-editeur) .app-principal { block-size: 100dvh; overflow: clip; }
   .ap-editeur { block-size: 100dvh; gap: 0; }
   .ap-barre { margin-inline: -1rem; padding-inline: 1rem; }
   .ap-onglets { display: none; }
@@ -88,7 +92,10 @@
   .ap-scene { min-block-size: 0; }
 }
 
-.ap-reglages { display: flex; flex-direction: column; gap: .875rem; min-inline-size: 0; }
+/* `position: relative` : ce qui est posé en absolu dans les réglages (les
+   champs masqués, les annonces pour lecteur d'écran) reste dans la colonne,
+   au lieu d'allonger la page. */
+.ap-reglages { position: relative; display: flex; flex-direction: column; gap: .875rem; min-inline-size: 0; }
 .ap-groupe { display: flex; flex-direction: column; gap: 1.125rem; padding: 1.125rem 1.125rem 1.25rem; }
 .ap-groupe > h2 { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: .9375rem; font-weight: 600; letter-spacing: -.005em; }
 .ap-champ { display: flex; flex-direction: column; gap: .5rem; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
@@ -259,6 +266,14 @@
   box-shadow: 0 30px 60px -24px rgb(24 24 27 / .45), 0 0 0 1px rgb(24 24 27 / .2);
 }
 .ap-scene[data-appareil="ordinateur"] .ap-ecran { box-shadow: 0 1px 3px rgb(24 24 27 / .08); }
+/* Au téléphone : la vitrine à la largeur de l'écran, sans cadre dessiné (la
+   hauteur de la scène suit l'échelle, posée par l'éditeur). */
+.ap-scene[data-nu] { flex: none; min-block-size: 0; background: var(--ui-panneau); }
+.ap-scene[data-nu] .ap-ecran { inset-inline-start: 0; inset-block-start: 0; translate: none; transform-origin: 0 0; border: 0; border-radius: 0; box-shadow: none; }
+@media (max-width: 480px) {
+  .ap-comparer-texte { display: none; }
+  .ap-comparer { padding-inline: .625rem; }
+}
 .ap-sans-vitrine { display: grid; place-content: center; justify-items: center; gap: .5rem; block-size: 100%; min-block-size: 30rem; padding: 2rem; text-align: center; color: var(--ui-texte-2); }
 .ap-sans-vitrine p { margin: 0; max-inline-size: 30ch; }
 

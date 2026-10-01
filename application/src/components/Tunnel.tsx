@@ -786,7 +786,11 @@ export function Tunnel({
               </span>
             </label>
             <p id={`${id}-conditions-aide`} className="legende">{t.commande.retractation(retractationJours)}</p>
-            <p id={`${id}-conditions-erreur`} className="champ-erreur">{tentee && !accepte ? t.commande.conditionsManquantes : ""}</p>
+            {/* Une fois dit, le message garde sa place quand la case est cochée :
+                sinon le bouton remonterait sous le doigt qui va le toucher. */}
+            <p id={`${id}-conditions-erreur`} className="champ-erreur" data-masque={tentee && accepte ? "" : undefined}>
+              {tentee ? t.commande.conditionsManquantes : ""}
+            </p>
           </div>
           <button type="submit" className="btn btn-primaire btn-bloc tunnel-bouton" disabled={envoi || !cod} aria-busy={envoi || undefined}>
             <span>{envoi ? t.commande.envoi : t.commande.confirmer}</span>

@@ -55,13 +55,24 @@ function remise(produit: Produit): number | null {
   return meilleure > 0 ? meilleure : null;
 }
 
+/** Le pluriel d'un nom d'axe : « dimensions » (déjà au pluriel : tel quel),
+ *  « coloris », « tailles de lit » (le premier mot), « niveaux », « métaux ». */
+export function pluriel(nom: string): string {
+  const [premier, ...reste] = nom.split(" ");
+  const p = /[sxz]$/.test(premier) ? premier
+    : /(eau|au|eu)$/.test(premier) ? `${premier}x`
+      : /al$/.test(premier) ? premier.replace(/al$/, "aux")
+        : `${premier}s`;
+  return [p, ...reste].join(" ");
+}
+
 /** « 3 tailles · 2 versions » : les axes autres que la couleur, résumés. */
 function declinaisons(produit: Produit): string[] {
   return produit.options
     .filter((axe) => axe.cle !== "couleur")
     .map((axe) => {
       const n = valeursAxe(produit, axe.cle).length;
-      return n > 1 ? `${n} ${champ(axe, "label").toLowerCase()}s` : null;
+      return n > 1 ? `${n} ${pluriel(champ(axe, "label").toLowerCase())}` : null;
     })
     .filter((d): d is string => d !== null);
 }

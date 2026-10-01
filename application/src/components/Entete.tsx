@@ -109,7 +109,8 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
         <div className="enveloppe ed-entete-rang" data-zone="entete">
           <div className="ed-entete-debut">
             <MenuMobile entrees={entreesMenu(cadre)} faits={faits} className="cache-desktop" />
-            <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="ed-nav cache-mobile" />
+            <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="ed-nav cache-mobile"
+              replier={liens.some((l) => l.cle === "catalogue") ? undefined : { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue }} />
           </div>
           <Link href="/" className="ed-logo" aria-label={t.marque.accueilAria(cadre.boutique.nom)}>
             <Logo cadre={cadre} />

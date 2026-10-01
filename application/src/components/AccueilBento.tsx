@@ -33,8 +33,10 @@ export function AccueilBento({ cadre, donnees }: Props) {
   const { selections } = donnees;
   const garnis = racinesGarnies(cadre);
   const rayons = garnis.length > 1 && cadre.theme.sections.some((s) => s.type === "rayons");
-  // La pièce à la une : la première de la première sélection (les mises en avant d'abord).
-  const premiere = [...selections.values()].find((l) => l.length > 0)?.[0] ?? null;
+  // La pièce à la une : la première de la première sélection de l'accueil
+  // (les mises en avant d'abord) — dans l'ordre des sections, pas dans celui
+  // où leurs requêtes ont fini (sinon elle change d'un rendu à l'autre).
+  const premiere = [...selections.entries()].sort(([a], [b]) => a - b).map(([, l]) => l).find((l) => l.length > 0)?.[0] ?? null;
   return (
     <div className="bn-accueil">
       {cadre.theme.sections.map((s, i) => {

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { supabase } from "./supabase";
+import { etiqueterBoutique } from "./cache-boutique";
 import { themeDeLaBoutique, type Theme } from "./theme";
 import { formatePrix } from "./prix";
 import { reseauxDe, type Reseau } from "./reseaux";
@@ -168,8 +169,10 @@ function delai(zones: Zone[]): { min: number; max: number } | null {
 export const chargeCadre = cache(async (segment: string): Promise<Cadre | null> => {
   const [slug, apercu] = segment.split("~", 2);
   const jeton = apercu?.split(".")[0] ?? null;
-  const [{ data, error }, brouillon] = await Promise.all([
+  const [{ data, error }, , brouillon] = await Promise.all([
     supabase.rpc("boutique_publique", { p_slug: slug }),
+    // Ses pages portent l'étiquette de la boutique : « Publier » les renouvelle toutes.
+    etiqueterBoutique(slug).catch(() => false),
     jeton && /^[0-9a-f-]{36}$/.test(jeton)
       ? supabase.rpc("apercu_apparence", { p_slug: slug, p_jeton: jeton }).then((r) => (r.error ? null : (r.data as Record<string, unknown> | null)))
       : Promise.resolve(null),

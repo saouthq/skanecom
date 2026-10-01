@@ -78,16 +78,19 @@ export const LIBELLES_CANAL: Record<string, string> = {
 
 const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" });
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Africa/Tunis" });
+const JOUR_AN = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Tunis" });
 const JOUR_CLE = new Intl.DateTimeFormat("fr-CA", { timeZone: "Africa/Tunis" });
 
 /** « à 14:02 » aujourd'hui, « hier à 09:15 », « 27 sept. à 18:40 » ensuite
- *  — à l'heure de Tunis. */
+ *  — à l'heure de Tunis ; l'année se lit quand ce n'est pas celle en cours
+ *  (« 2 déc. 2025 » : sans elle, on croirait à une date à venir). */
 export function quand(iso: string, maintenant = new Date()): string {
   const d = new Date(iso);
   const jour = JOUR_CLE.format(d);
   if (jour === JOUR_CLE.format(maintenant)) return `aujourd'hui à ${HEURE.format(d)}`;
   if (jour === JOUR_CLE.format(new Date(maintenant.getTime() - 86_400_000))) return `hier à ${HEURE.format(d)}`;
-  return `${JOUR.format(d)} à ${HEURE.format(d)}`;
+  const autreAnnee = jour.slice(0, 4) !== JOUR_CLE.format(maintenant).slice(0, 4);
+  return `${(autreAnnee ? JOUR_AN : JOUR).format(d)} à ${HEURE.format(d)}`;
 }
 
 /** « il y a 12 min », « il y a 3 h », « il y a 2 j » : l'âge d'une commande

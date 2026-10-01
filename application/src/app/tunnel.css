@@ -216,6 +216,7 @@ html:has(.tunnel-page, .compte-page) { scroll-padding-block: calc(var(--entete-h
 .tunnel-conditions a:hover { text-decoration-thickness: 2px; }
 .tunnel-conditions .legende { margin: 0; padding-inline-start: 2rem; }
 .tunnel-conditions .champ-erreur { padding-inline-start: 2rem; }
+.tunnel-conditions .champ-erreur[data-masque] { visibility: hidden; }
 .tunnel-conditions[data-invalide] input { outline: 2px solid var(--theme-erreur); outline-offset: 2px; }
 .tunnel-bouton { justify-content: space-between; min-block-size: 58px; padding-inline: 1.5rem; font-size: .9375rem; }
 .tunnel-bouton .prix .dev { color: inherit; opacity: .75; }

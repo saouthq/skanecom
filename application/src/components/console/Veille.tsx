@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Icone } from "./Icone";
 
 /* ============================================================================
@@ -54,9 +54,9 @@ function titre(n: number) {
   document.title = n > 0 ? `(${n}) ${base}` : base;
 }
 
-async function interroger(slug: string) {
+async function interroger(slug: string, aussitot = false) {
   const m = magasinDe(slug);
-  if (Date.now() - m.dernier < INTERVALLE_MIN) return;
+  if (!aussitot && Date.now() - m.dernier < INTERVALLE_MIN) return;
   m.dernier = Date.now();
   try {
     const r = await fetch(`/gestion/${slug}/veille`, { cache: "no-store", credentials: "same-origin" });
@@ -120,6 +120,13 @@ export function CompteurCommandes({ slug }: { slug: string }) {
   const sAbonner = useCallback((f: () => void) => abonner(slug, f), [slug]);
   const lire = useCallback(() => magasinDe(slug).etat, [slug]);
   const etat = useSyncExternalStore(sAbonner, lire, () => null);
+  // Un geste vient d'aboutir (« ?fait=… » : confirmée, expédiée…) : le
+  // compteur se relit aussitôt, sans attendre le prochain tour.
+  const fait = useSearchParams()?.get("fait") ?? null;
+  const chemin = usePathname();
+  useEffect(() => {
+    if (fait) void interroger(slug, true);
+  }, [fait, chemin, slug]);
   const n = etat?.a_confirmer ?? 0;
   if (n === 0) return null;
   return <span className="app-nav-compte" aria-label={`${n} à confirmer`}>{n}</span>;

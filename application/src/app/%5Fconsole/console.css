@@ -98,7 +98,7 @@
   position: sticky; inset-block-start: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between; gap: .75rem;
   block-size: 56px; padding-inline: .75rem 1rem;
-  background: color-mix(in srgb, var(--ui-panneau) 88%, transparent);
+  background: color-mix(in srgb, var(--ui-panneau) 97%, transparent);
   backdrop-filter: saturate(1.6) blur(12px);
   border-block-end: 1px solid var(--ui-bord);
 }

@@ -82,6 +82,23 @@ function abonneEcran(signal: () => void) {
   return () => m.removeEventListener("change", signal);
 }
 
+/** Amène un réglage sous les yeux, sous la barre des panneaux (collée en
+ *  haut) : dans la colonne des réglages quand c'est elle qui défile (grand
+ *  écran), sinon dans la page (téléphone) — jamais la page autour de la
+ *  colonne, qui sortirait les onglets de l'écran. */
+function amener(el: Element | null, colonne: HTMLElement | null) {
+  if (!el) return;
+  const doux = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  const onglets = colonne?.querySelector<HTMLElement>(".ap-panneaux")?.offsetHeight ?? 0;
+  if (colonne && colonne.scrollHeight > colonne.clientHeight && getComputedStyle(colonne).overflowY !== "visible") {
+    const haut = el.getBoundingClientRect().top - colonne.getBoundingClientRect().top + colonne.scrollTop - onglets - 12;
+    colonne.scrollTo({ top: Math.max(0, haut), behavior: doux });
+    return;
+  }
+  const barre = document.querySelector<HTMLElement>(".ap-barre")?.offsetHeight ?? 0;
+  window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - barre - onglets - 12), behavior: doux });
+}
+
 type Panneau = "style" | "accueil" | "cadre";
 const PANNEAUX: { id: Panneau; nom: string; icone: "marque" | "boutique" | "menu" }[] = [
   { id: "style", nom: "Style", icone: "marque" },
@@ -163,6 +180,11 @@ export function EditeurApparence({
   const [gabaritCadre, setGabaritCadre] = useState<Structure | null>(null);
   const cadre = useRef<HTMLIFrameElement>(null);
   const scene = useRef<HTMLDivElement>(null);
+  const colonne = useRef<HTMLDivElement>(null);
+
+  // Ouvert depuis une page du backoffice défilée (le menu du téléphone) :
+  // l'éditeur commence en haut.
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const [taille, setTaille] = useState({ l: 900, h: 640 });
 
   useEffect(() => {
@@ -233,7 +255,7 @@ export function EditeurApparence({
       setAnnonce(m.zone === "entete" ? "En-tête ouvert pour le régler" : "Pied de page ouvert pour le régler");
       window.setTimeout(() => {
         const bloc = document.querySelector<HTMLElement>(`[data-zone-editeur="${m.zone}"]`);
-        bloc?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        amener(bloc, colonne.current);
         bloc?.querySelector<HTMLElement>("input:not(:disabled)")?.focus({ preventScroll: true });
       }, 60);
       return;
@@ -247,7 +269,7 @@ export function EditeurApparence({
     setAnnonce(`« ${BIBLIOTHEQUE[s.type].nom} » ouverte pour la régler`);
     window.setTimeout(() => {
       const li = document.querySelector<HTMLElement>(`.pa-liste [data-cle="${s.cle}"]`);
-      li?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      amener(li, colonne.current);
       li?.querySelector<HTMLElement>("[data-geste='ouvrir']")?.focus({ preventScroll: true });
     }, 60);
   });
@@ -374,8 +396,17 @@ export function EditeurApparence({
     if (parRechargement) rafraichir(vers || !brouillon ? "fin" : `${brouillon.jeton}.${brouillon.version}`);
   };
 
-  // Le panneau de l'accueil : l'aperçu se met sur l'accueil.
+  // Un autre panneau s'ouvre en haut (pas là où le précédent était défilé) ;
+  // celui de l'accueil met l'aperçu sur l'accueil.
   const ouvrirPanneau = (p: Panneau) => {
+    if (p !== panneau) {
+      const c = colonne.current;
+      if (c && c.scrollHeight > c.clientHeight && getComputedStyle(c).overflowY !== "visible") c.scrollTop = 0;
+      else {
+        const onglets = c?.querySelector(".ap-panneaux");
+        if (onglets && onglets.getBoundingClientRect().top < 0) amener(onglets, null);
+      }
+    }
     setPanneau(p);
     if (p === "accueil" && chemin !== "/" && !(comparer && parRechargement)) recharger(brouillon ? `${brouillon.jeton}.${brouillon.version}` : null, "/");
   };
@@ -553,9 +584,14 @@ export function EditeurApparence({
             : identique ? "C'est la version publiée" : "Essai non enregistré";
   const lienTelephone = vitrine && brouillon ? `${vitrine}/?apercu=${brouillon.jeton}.${brouillon.version}` : null;
 
+  // Au téléphone, l'aperçu « téléphone » est la vitrine elle-même, à la
+  // largeur de l'écran : pas un téléphone dessiné dans le téléphone, réduit
+  // de moitié pour tenir en hauteur.
+  const nu = petitEcran && appareil === "telephone";
   const echelle = appareil === "ordinateur"
     ? Math.min(1, taille.l / LARGEUR_ORDINATEUR)
-    : Math.min(1, (taille.h - 32) / (TELEPHONE.h + 28), (taille.l - 16) / (TELEPHONE.l + 28));
+    : nu ? Math.min(1, taille.l / TELEPHONE.l)
+      : Math.min(1, (taille.h - 32) / (TELEPHONE.h + 28), (taille.l - 16) / (TELEPHONE.l + 28));
   const dimensions = appareil === "ordinateur"
     ? { inlineSize: LARGEUR_ORDINATEUR, blockSize: Math.max(480, taille.h / Math.max(echelle, 0.1)) }
     : { inlineSize: TELEPHONE.l, blockSize: TELEPHONE.h };
@@ -628,7 +664,7 @@ export function EditeurApparence({
       </div>
 
       <div className="ap-corps">
-        <div className="ap-reglages">
+        <div className="ap-reglages" ref={colonne}>
           <div className="ap-panneaux" role="tablist" aria-label="Ce que vous réglez">
             {PANNEAUX.map((x, i) => (
               <button key={x.id} type="button" role="tab" id={`ap-onglet-${x.id}`} aria-selected={panneau === x.id} aria-controls={`ap-panneau-${x.id}`}
@@ -851,10 +887,10 @@ export function EditeurApparence({
               <button type="button" aria-pressed={appareil === "telephone"} onClick={() => setChoixAppareil("telephone")}><Icone nom="mobile" /> Téléphone</button>
             </div>
             {vitrine ? (
-              <button type="button" className="ap-comparer" aria-pressed={comparer && comparable} disabled={!comparable}
+              <button type="button" className="ap-comparer" aria-pressed={comparer && comparable} disabled={!comparable} aria-label={comparer && comparable ? "Version publiée" : "Avant / après"}
                 title={parRechargement ? "La structure ou l'accueil ont changé : la version publiée se recharge dans l'aperçu" : undefined}
                 onClick={basculerComparer}>
-                <Icone nom="apercu" /> {comparer && comparable ? "Version publiée" : "Avant / après"}
+                <Icone nom="apercu" /> <span className="ap-comparer-texte">{comparer && comparable ? "Version publiée" : "Avant / après"}</span>
               </button>
             ) : null}
             {vitrine ? (
@@ -867,7 +903,8 @@ export function EditeurApparence({
               </label>
             ) : null}
           </div>
-          <div className="ap-scene" ref={scene} data-appareil={appareil} data-compare={comparer && comparable ? "" : undefined}>
+          <div className="ap-scene" ref={scene} data-appareil={appareil} data-nu={nu ? "" : undefined} data-compare={comparer && comparable ? "" : undefined}
+            style={nu ? { blockSize: Math.round(TELEPHONE.h * echelle) } : undefined}>
             {comparer && comparable ? <span className="ap-badge-compare" aria-hidden="true">Version publiée</span> : null}
             {src ? (
               <div className="ap-ecran" data-appareil={appareil}

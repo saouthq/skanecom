@@ -83,7 +83,7 @@
 .bo-ligne-client-texte > span { font-size: .8125rem; color: var(--ui-texte-3); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bo-ligne-articles { grid-area: articles; font-size: .8125rem; color: var(--ui-texte-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bo-ligne-articles span { color: var(--ui-texte-3); }
-.bo-badges { grid-area: badges; }
+.bo-badges { grid-area: badges; flex-wrap: wrap; min-inline-size: 0; }
 .bo-badges:empty { display: none; }
 .bo-ligne-fin { grid-area: fin; display: flex; flex-direction: column; align-items: flex-end; gap: .25rem; }
 .bo-ligne-total { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -101,7 +101,8 @@
 
 @media (min-width: 1100px) {
   .bo-ligne-lien {
-    grid-template-columns: 11rem minmax(12rem, 1.1fr) minmax(8rem, 1fr) minmax(0, 1.2fr) 8.5rem;
+    /* La fin (montant, état) prend sa place : jamais sous les badges. */
+    grid-template-columns: 11rem minmax(11rem, 1.1fr) minmax(7rem, 1fr) minmax(0, 1.2fr) auto;
     grid-template-areas: "id client articles badges fin";
     align-items: center; padding-block: .75rem; padding-inline: 1.25rem 1rem;
   }
@@ -270,7 +271,7 @@
     position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 25;
     display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: .5rem;
     padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--ui-panneau) 92%, transparent); backdrop-filter: blur(12px) saturate(1.6);
+    background: color-mix(in srgb, var(--ui-panneau) 97%, transparent); backdrop-filter: blur(12px) saturate(1.6);
     border-block-start: 1px solid var(--ui-bord);
   }
 }
@@ -555,7 +556,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .rg-puces {
     position: sticky; inset-block-start: 56px; z-index: 20; display: flex; gap: .375rem; overflow-x: auto;
     margin-inline: -1rem; padding: .625rem 1rem; scrollbar-width: none; overscroll-behavior-x: contain;
-    background: color-mix(in srgb, var(--ui-fond, #F7F7F8) 90%, transparent);
+    background: color-mix(in srgb, var(--ui-fond, #F7F7F8) 97%, transparent);
     backdrop-filter: saturate(1.6) blur(12px); -webkit-backdrop-filter: saturate(1.6) blur(12px);
     border-block-end: 1px solid var(--ui-bord);
   }

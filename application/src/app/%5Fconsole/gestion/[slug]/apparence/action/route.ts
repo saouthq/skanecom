@@ -3,6 +3,7 @@ import { memeOrigine, vers } from "@/lib/console/http";
 import { contenuDe, contenuRecu, versBase } from "@/lib/apparence";
 import { CHEMIN_PHOTO_ACCUEIL } from "@/lib/gestion/accueil";
 import { retirerFichier } from "@/lib/gestion/fichiers";
+import { rafraichirVitrine } from "@/lib/console/vitrine-cache";
 import { CLES_STYLE, JETONS_COULEUR } from "@/lib/theme";
 
 /* ============================================================================
@@ -132,7 +133,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     if (error) return refus(message(error.hint, error.message, geste), error.hint ?? null);
     const rendu = data as { version: number; orphelins?: string[] };
     const retirees = await retirer(rendu.orphelins);
-    const texte = "Vitrine publiée : la boutique la montre d'ici cinq minutes.";
+    rafraichirVitrine(slug);
+    const texte = "Vitrine publiée : elle est en ligne.";
     if (enJson) return Response.json({ ok: true, message: texte, version: rendu.version, orphelins: retirees }, { headers: { "cache-control": "no-store" } });
     return vers(`${page}?${new URLSearchParams({ ok: texte })}`);
   }

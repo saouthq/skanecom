@@ -12,8 +12,7 @@ html[data-structure="bento"] .ed-entete {
   position: sticky; inset-block-start: .75rem; z-index: 40;
   margin: .75rem auto 0; inline-size: min(calc(100% - 1.5rem), 84rem);
   border: 1px solid color-mix(in srgb, var(--theme-filet) 85%, transparent); border-radius: calc(var(--theme-radius-bloc) + 6px);
-  background: color-mix(in srgb, var(--theme-surface) 86%, transparent);
-  backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  background: var(--theme-surface);
   box-shadow: var(--theme-shadow-carte);
 }
 html[data-structure="bento"] .ed-entete-rang { padding-inline: clamp(.75rem, 2vw, 1.5rem); }

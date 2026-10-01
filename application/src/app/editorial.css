@@ -90,15 +90,18 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
   .ed-logo { --logo-h: 1.375rem; }
   .ed-logo .marque-texte { font-size: 2rem; }
 }
-.ed-nav { display: flex; gap: 2rem; min-inline-size: 0; overflow: hidden; }
+/* Toute la colonne : c'est sa largeur que NavRayons mesure (`replier`). */
+.ed-nav { display: flex; flex: 1 1 auto; gap: 2rem; min-inline-size: 0; overflow: hidden; }
 .ed-nav a {
   position: relative; padding-block: .5rem; font-size: var(--ed-texte-ui); font-weight: 400; letter-spacing: 0; text-transform: none; white-space: nowrap;
   background: linear-gradient(currentColor, currentColor) 0 calc(100% - .25rem) / 0 1px no-repeat;
   transition: background-size .35s var(--theme-courbe), opacity .2s;
 }
 .ed-nav a:hover, .ed-nav a[aria-current="page"] { background-size: 100% 1px; }
-/* Sous 1 280 px, quatre entrées : au-delà, elles mordraient sur le logo. */
-@media (max-width: 1279px) { .ed-nav { gap: 1.5rem; } .ed-nav a:nth-child(n+5) { display: none; } }
+/* Sous 1 280 px, quatre entrées avant que le script ne mesure ce qui tient
+   (NavRayons, `replier`) : au-delà, elles mordraient sur le logo. */
+@media (max-width: 1279px) { .ed-nav { gap: 1.5rem; } .ed-nav:not([data-mesure]) a[data-rayon]:nth-child(n+5) { display: none; } }
+.ed-nav a[hidden] { display: none; }
 
 /* Le panier : « Panier 2 » en toutes lettres sur grand écran (le chiffre en
    pastille), une icône et une pastille sur téléphone. */
@@ -339,7 +342,7 @@ html[data-gabarit="editorial"] .attente-cartel .filigrane { inline-size: 14%; op
 
 .ed-listing .listing-outils {
   position: sticky; inset-block-start: var(--entete-h); z-index: 20; margin-block-end: 1.5rem; padding-block: .75rem;
-  background: color-mix(in srgb, var(--theme-fond) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  background: var(--theme-fond);
   border-block: 1px solid var(--theme-filet);
 }
 @media (min-width: 700px) {
