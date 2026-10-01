@@ -59,9 +59,9 @@ export function AccueilBento({ cadre, donnees }: Props) {
             return titre || corps ? (
               <section key={i} className="enveloppe bn-section" data-section={i}>
                 <div className="bn-tuile bn-texte">
-                  {texte(s.textes, "etiquette") ? <p className="etiquette">{texte(s.textes, "etiquette")}</p> : null}
-                  {titre ? <h2>{titre}</h2> : null}
-                  {corps ? <p className="chapo">{corps}</p> : null}
+                  {texte(s.textes, "etiquette") ? <p className="etiquette" key={texte(s.textes, "etiquette")} data-texte="etiquette">{texte(s.textes, "etiquette")}</p> : null}
+                  {titre ? <h2 key={titre} data-texte="titre">{titre}</h2> : null}
+                  {corps ? <p className="chapo" key={corps} data-texte="texte">{corps}</p> : null}
                 </div>
               </section>
             ) : null;
@@ -112,8 +112,8 @@ function Tete({ titre, etiquette, lien, libelleLien }: { titre: string; etiquett
   return (
     <div className="bn-tete">
       <div>
-        {etiquette ? <p className="etiquette">{etiquette}</p> : null}
-        <h2>{titre}</h2>
+        {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+        <h2 key={titre} data-texte="titre">{titre}</h2>
       </div>
       {lien ? (
         <Link className="bn-lien" href={lien}>
@@ -159,12 +159,12 @@ function Ouverture({ rang, section, cadre, piece, donnees, rayons }: {
           </>
         ) : null}
         <div className="bn-une-texte">
-          {etiquette ? <p className="etiquette">{etiquette}</p> : null}
-          <h1><Lignes texte={titre} /></h1>
-          {chapo ? <p className="chapo">{chapo}</p> : null}
+          {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+          <h1 key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h1>
+          {chapo ? <p className="chapo" key={chapo} data-texte="chapo">{chapo}</p> : null}
           <p className="bn-actions">
             <Link className="btn btn-clair" href={lien}>
-              {cta}
+              <span key={cta} data-texte="cta">{cta}</span>
               <Fleche taille={16} className="rtl:-scale-x-100" />
             </Link>
             {rayons ? <a className="bn-lien-clair" href="#rayons">{t.accueil.parcourirParRayon}</a> : null}
@@ -273,12 +273,12 @@ function Recit({ rang, section, cadre }: { rang: number; section: Extract<Sectio
         </div>
       ) : null}
       <div className="bn-tuile bn-recit-texte">
-        {texte(section.textes, "etiquette") ? <p className="etiquette">{texte(section.textes, "etiquette")}</p> : null}
-        {titre ? <h2><Lignes texte={titre} /></h2> : null}
-        {corps ? <p className="chapo">{corps}</p> : null}
+        {texte(section.textes, "etiquette") ? <p className="etiquette" key={texte(section.textes, "etiquette")} data-texte="etiquette">{texte(section.textes, "etiquette")}</p> : null}
+        {titre ? <h2 key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h2> : null}
+        {corps ? <p className="chapo" key={corps} data-texte="texte">{corps}</p> : null}
         {section.lien ? (
           <Link className="bn-lien" href={section.lien}>
-            {texte(section.textes, "cta", t.accueil.recitLien)}
+            <span key={texte(section.textes, "cta", t.accueil.recitLien)} data-texte="cta">{texte(section.textes, "cta", t.accueil.recitLien)}</span>
             <Fleche taille={14} className="rtl:-scale-x-100" />
           </Link>
         ) : null}

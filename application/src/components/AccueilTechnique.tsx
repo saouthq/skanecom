@@ -85,8 +85,8 @@ function Banniere({ rang, section, cadre }: { rang: number; section: Extract<Sec
         />
       ) : null}
       <div className="te-banniere-contenu">
-        {etiquette ? <p className="te-surtitre">{etiquette}</p> : null}
-        <h1>
+        {etiquette ? <p className="te-surtitre" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+        <h1 key={titre} data-texte="titre" data-lignes="">
           {titre.split("\n").map((l, i) => (
             <span key={i}>
               {i > 0 ? <br /> : null}
@@ -94,10 +94,10 @@ function Banniere({ rang, section, cadre }: { rang: number; section: Extract<Sec
             </span>
           ))}
         </h1>
-        {chapo ? <p className="te-banniere-chapo">{chapo}</p> : null}
+        {chapo ? <p className="te-banniere-chapo" key={chapo} data-texte="chapo">{chapo}</p> : null}
         <p className="te-banniere-actions">
           <Link className="btn btn-primaire" href={section.lien ?? "/catalogue"}>
-            {texte(section.textes, "cta", t.accueil.heroCta)}
+            <span key={texte(section.textes, "cta", t.accueil.heroCta)} data-texte="cta">{texte(section.textes, "cta", t.accueil.heroCta)}</span>
             <Fleche taille={18} className="rtl:-scale-x-100" />
           </Link>
           <span className="te-banniere-compte">{t.catalogue.references(cadre.boutique.nb_produits)}</span>
@@ -110,7 +110,7 @@ function Banniere({ rang, section, cadre }: { rang: number; section: Extract<Sec
 function Tete({ titre, lien, libelle }: { titre: string; lien?: string; libelle?: string }) {
   return (
     <div className="te-section-tete">
-      <h2>{titre}</h2>
+      <h2 key={titre} data-texte="titre">{titre}</h2>
       {lien ? (
         <Link className="te-lien-fleche" href={lien}>
           {libelle ?? t.commun.toutVoir}
@@ -187,11 +187,11 @@ function Bandeau({ rang, section, cadre }: { rang: number; section: Extract<Sect
         <Photo photo={{ src: urlFichier(section.image.chemin), alt: texte(section.textes, "image_alt", cadre.boutique.nom) }} ratio="4 / 3" tailles="(min-width: 900px) 45vw, 100vw" />
       ) : null}
       <div>
-        {titre ? <h2>{titre}</h2> : null}
-        {corps ? <p>{corps}</p> : null}
+        {titre ? <h2 key={titre} data-texte="titre">{titre}</h2> : null}
+        {corps ? <p key={corps} data-texte="texte">{corps}</p> : null}
         {section.lien ? (
           <Link className="btn btn-primaire" href={section.lien}>
-            {texte(section.textes, "cta", t.commun.decouvrir)}
+            <span key={texte(section.textes, "cta", t.commun.decouvrir)} data-texte="cta">{texte(section.textes, "cta", t.commun.decouvrir)}</span>
           </Link>
         ) : null}
       </div>
@@ -239,8 +239,8 @@ function Texte({ rang, section }: { rang: number; section: Extract<Section, { ty
   if (!titre && !corps) return null;
   return (
     <section className="te-section te-texte" data-section={rang}>
-      {titre ? <h2>{titre}</h2> : null}
-      {corps ? <p>{corps}</p> : null}
+      {titre ? <h2 key={titre} data-texte="titre">{titre}</h2> : null}
+      {corps ? <p key={corps} data-texte="texte">{corps}</p> : null}
     </section>
   );
 }

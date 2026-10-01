@@ -7,7 +7,7 @@ import { PanneauAccueil, type InfosAccueil } from "./PanneauAccueil";
 import { PanneauCadre } from "./PanneauCadre";
 import { PanneauPages, type ContenuPage, type ModelePage, type PageEditeur, type PageOffice, type Refus } from "./PanneauPages";
 import {
-  MESSAGE_ACCUEIL, MESSAGE_APPARENCE, MESSAGE_MONTRER, MESSAGE_PRET, MESSAGE_RECHARGER, MESSAGE_SECTION,
+  MESSAGE_ACCUEIL, MESSAGE_APPARENCE, MESSAGE_MONTRER, MESSAGE_PRET, MESSAGE_RECHARGER, MESSAGE_SECTION, MESSAGE_TEXTE,
 } from "@/components/ApercuApparence";
 import {
   ACCENTS, AMBIANCES, FONDS, avecAccent, encrePour, memeContenu, paletteDerivee, photosDe, problemesReglages, rapportLisible, sectionsDeStructure, verdicts, versBase,
@@ -308,11 +308,6 @@ export function EditeurApparence({
       li?.querySelector<HTMLElement>("[data-geste='ouvrir']")?.focus({ preventScroll: true });
     }, 60);
   });
-  useEffect(() => {
-    const ecoute = (e: MessageEvent) => { surMessage(e); surSection(e); };
-    window.addEventListener("message", ecoute);
-    return () => window.removeEventListener("message", ecoute);
-  }, []);
 
 
   // L'accueil a changé dans le brouillon : la vitrine du cadre se rend de nouveau, sur place.
@@ -584,6 +579,71 @@ export function EditeurApparence({
   const modifierAccueil = (suivantes: SectionBrute[] | null, cle: string, dit?: string) =>
     change({ ...contenu, sections: suivantes }, cle, dit ? `accueil — ${dit}` : undefined);
 
+  // On écrit sur place, dans l'aperçu : un texte d'une section, ou l'annonce.
+  // Chaque frappe est un geste comme une frappe dans le panneau (le même
+  // brouillon, un seul pas à défaire) ; le champ du panneau suit, sous les
+  // yeux, sans prendre le focus (on écrit dans l'aperçu). Échap : tout revient
+  // à l'avant (le contenu et les pas à défaire).
+  const ecritureDebut = useRef<{ contenu: ContenuApparence; historique: typeof historique; geste: string | null; tape: boolean } | null>(null);
+  const surTexte = useEffectEvent((e: MessageEvent) => {
+    if (!origine || e.origin !== origine || e.source !== cadre.current?.contentWindow) return;
+    const m = e.data as { type?: string; etat?: unknown; section?: unknown; champ?: unknown; reglage?: unknown; valeur?: unknown } | null;
+    if (m?.type !== MESSAGE_TEXTE || (comparer && comparable)) return;
+    const valeur = typeof m.valeur === "string" ? m.valeur.slice(0, 2000) : null;
+    let ecrire: ((v: string) => void) | null = null;
+    let champ: string | null = null;
+    if (m.reglage === "vitrine.annonce") {
+      ecrire = (v) => reglerReglage("vitrine.annonce", v);
+      champ = "#pc-annonce";
+    } else if (Number.isInteger(m.section) && typeof m.champ === "string") {
+      const s = sections[m.section as number];
+      const cle = m.champ;
+      if (!s?.cle || !BIBLIOTHEQUE[s.type].textes.some((c) => c.cle === cle)) return;
+      ecrire = (v) => modifierAccueil(sections.map((x) => (x.cle === s.cle ? { ...x, textes: { ...(x.textes ?? {}), [`${cle}_fr`]: v } } : x)), `texte.${s.cle}.${cle}`);
+      champ = `#ac-${s.cle}-${cle}`;
+      if (m.etat === "debut") { setPanneau("accueil"); setOuverte(s.cle); }
+    }
+    if (!ecrire || !champ) return;
+    if (m.etat === "debut") {
+      ecritureDebut.current = { contenu, historique, geste: dernierGeste.current, tape: false };
+      if (m.reglage) setPanneau("cadre");
+      setAnnonce("Écriture dans l'aperçu : Entrée pour finir, Échap pour annuler");
+      // Le champ du panneau, sous les yeux et marqué, le temps de l'écriture.
+      const cible = champ;
+      window.setTimeout(() => {
+        const el = document.querySelector<HTMLElement>(cible);
+        for (const x of document.querySelectorAll("[data-lie]")) x.removeAttribute("data-lie");
+        el?.closest(".champ")?.setAttribute("data-lie", "");
+        // Au téléphone, l'onglet Aperçu ouvert : le panneau est masqué, la page ne bouge pas.
+        if (el && el.getClientRects().length > 0) amener(el.closest(".champ") ?? el, colonne.current);
+      }, 80);
+      return;
+    }
+    if (m.etat === "annule") {
+      const avant = ecritureDebut.current;
+      ecritureDebut.current = null;
+      for (const x of document.querySelectorAll("[data-lie]")) x.removeAttribute("data-lie");
+      if (avant) { setContenu(avant.contenu); setHistorique(avant.historique); dernierGeste.current = avant.geste; }
+      return;
+    }
+    if (valeur === null) return;
+    // Un clic sans frappe n'écrit rien (pas même le titre par défaut affiché).
+    if (m.etat === "frappe" && ecritureDebut.current) ecritureDebut.current.tape = true;
+    if (m.etat === "frappe" || ecritureDebut.current?.tape) ecrire(valeur);
+    if (m.etat === "fin") {
+      ecritureDebut.current = null;
+      for (const x of document.querySelectorAll("[data-lie]")) x.removeAttribute("data-lie");
+      // La prochaine frappe, ici ou dans le panneau, est un autre pas.
+      dernierGeste.current = null;
+    }
+  });
+
+  useEffect(() => {
+    const ecoute = (e: MessageEvent) => { surMessage(e); surSection(e); surTexte(e); };
+    window.addEventListener("message", ecoute);
+    return () => window.removeEventListener("message", ecoute);
+  }, []);
+
   const defaire = () => {
     const precedent = historique.passe.at(-1);
     if (!precedent) return;
@@ -808,8 +868,9 @@ export function EditeurApparence({
             <Icone nom="refaire" />
           </button>
           {ecrit && (brouillon || !identique) ? (
-            <button type="submit" name="geste" value="abandonner" className="btn btn-second btn-petit ap-abandon" disabled={etat.genre === "envoi"}>
-              Revenir à la version publiée
+            <button type="submit" name="geste" value="abandonner" className="btn btn-second btn-petit ap-abandon" disabled={etat.genre === "envoi"}
+              aria-label="Revenir à la version publiée" title="Revenir à la version publiée">
+              <Icone nom="retour" /><span className="ap-abandon-texte">Revenir à la version publiée</span>
             </button>
           ) : null}
           {ecrit ? (

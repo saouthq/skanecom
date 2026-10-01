@@ -34,7 +34,13 @@ html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent);
 .te-utilitaire ul { display: flex; justify-content: center; gap: .5rem 2rem; margin: 0 auto; padding-block: .4rem; list-style: none; font-size: .75rem; font-weight: 500; }
 .te-utilitaire li { display: inline-flex; align-items: center; gap: .5rem; }
 .te-utilitaire li::before { content: ""; inline-size: .375rem; block-size: .375rem; border-radius: 50%; background: var(--theme-accent); }
-@media (min-width: 900px) { .te-utilitaire ul { justify-content: flex-start; } }
+@media (min-width: 900px) {
+  .te-utilitaire ul { justify-content: flex-start; }
+  /* Une seule ligne : ce qui n'y tient pas passe à la suivante, masquée
+     (jamais un fait coupé en deux sur deux lignes). */
+  .te-utilitaire ul { flex-wrap: wrap; row-gap: 2rem; line-height: 1.5; max-block-size: calc(1.5em + .8rem); overflow: hidden; }
+  .te-utilitaire li { white-space: nowrap; }
+}
 
 /* --- En-tête ---------------------------------------------------------------- */
 .te-entete { position: sticky; inset-block-start: 0; z-index: 40; background: var(--theme-encre); color: var(--theme-surface); }

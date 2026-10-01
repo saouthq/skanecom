@@ -42,6 +42,9 @@
 .ap-barre-gestes .btn-primaire { padding-inline: 1.125rem; }
 @media (max-width: 720px) {
   .ap-quitter-texte { display: none; }
+  /* Au téléphone, « Revenir à la version publiée » en icône : la barre reste sur une ligne. */
+  .ap-abandon-texte { display: none; }
+  .ap-abandon { min-inline-size: 40px; padding-inline: .5rem; justify-content: center; }
   .ap-quitter { padding-inline: .5rem; }
   .ap-barre-titre { border: 0; padding: 0; }
   .ap-statut { order: 5; flex-basis: 100%; font-size: .8125rem; }
@@ -406,3 +409,7 @@
 @media (pointer: coarse) and (max-width: 719px) {
   .pp-gestes .btn-icone, .pp-gestes .ac-geste-vide { inline-size: 36px; }
 }
+
+/* Le champ du panneau qu'on écrit en ce moment dans l'aperçu (S3). */
+.ap-editeur .champ[data-lie] :is(input, textarea) { border-color: #2F6FEB; box-shadow: 0 0 0 3px color-mix(in srgb, #2F6FEB 18%, transparent); }
+.ap-editeur .champ[data-lie] > label::after { content: " · dans l'aperçu"; font-weight: 500; color: #2F6FEB; }

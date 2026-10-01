@@ -2181,6 +2181,48 @@ if (section("6")) {
     await vitrine.close();
   });
 
+  await etape("écrire sur place, dans l'aperçu : le titre, puis un bouton annulé", async () => {
+    await clic(page, page.getByRole("tab", { name: "Accueil" }));
+    const titreCadre = cadre().locator("[data-section] h1[data-texte='titre']").first();
+    await titreCadre.scrollIntoViewIfNeeded();
+    const avant = (await titreCadre.innerText()).replace(/\s+/g, " ").trim();
+    await titreCadre.click();
+    verifie(await attend(async () => (await page.locator(".champ[data-lie] textarea, .champ[data-lie] input").count()) === 1, 4000),
+      "un clic sur le titre de l'aperçu : sa section s'ouvre, son champ marqué « dans l'aperçu »");
+    verifie(await cadre().evaluate(() => document.activeElement?.getAttribute("data-texte")) === "titre", "et l'on écrit dans l'aperçu (le focus y reste)");
+    await page.keyboard.press("Control+End");
+    await tape(page, " ici");
+    const champTitre = page.locator(".champ[data-lie] textarea");
+    verifie(await attend(async () => (await champTitre.inputValue()).endsWith(" ici"), 4000), "chaque frappe dans l'aperçu remplit le champ du panneau");
+    verifie(await attend(async () => (await statut()).includes("Brouillon enregistré"), 10000), "et le brouillon s'enregistre, la page du cadre pas rendue sous les doigts");
+    verifie((await titreCadre.innerText()).toLowerCase().replace(/\s+/g, " ").includes("ici"), "le texte tapé est toujours là, dans le titre");
+    await capture(page, "editeur-ecrire-sur-place");
+    await page.keyboard.press("Enter");
+    verifie(await attend(async () => (await page.locator(".champ[data-lie]").count()) === 0, 4000), "Entrée : c'est écrit (le champ n'est plus marqué)");
+    verifie(await attend(async () => {
+      const h = cadre().locator("[data-section] h1[data-texte='titre']").first();
+      return (await h.getAttribute("contenteditable").catch(() => "x")) === null && (await h.innerText().catch(() => "")).toLowerCase().includes("ici");
+    }, 12000), `le cadre se rend de nouveau : le titre est celui du brouillon (« ${avant} » → « … ici »)`);
+
+    // Cliqué là où on le voit : le centre du bouton affiché, rapporté à l'écran
+    // (le cadre est réduit, et le texte de l'ouverture glisse au défilement).
+    await cadre().evaluate(() => window.scrollTo(0, 0));
+    await pause(500);
+    const bouton = cadre().locator("[data-section] [data-texte='cta']").first();
+    const libelle = (await bouton.innerText()).trim();
+    const ici = await bouton.evaluate((el) => { const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, l: innerWidth }; });
+    const boite = await page.locator(".ap-scene iframe").boundingBox();
+    const echelle = boite.width / ici.l;
+    await page.mouse.click(boite.x + ici.x * echelle, boite.y + ici.y * echelle);
+    await page.keyboard.press("Control+End");
+    await tape(page, " vite");
+    const champBouton = page.locator(".champ[data-lie] input");
+    verifie(await attend(async () => (await champBouton.inputValue().catch(() => "")).endsWith(" vite"), 4000), "le bouton aussi s'écrit sur place");
+    await page.keyboard.press("Escape");
+    verifie(await attend(async () => (await bouton.innerText()).trim() === libelle, 4000), `Échap : le bouton redit « ${libelle} »`);
+    verifie(await attend(async () => !(await page.locator(`.pa-liste input[id$='-cta']`).first().inputValue().catch(() => "")).includes("vite"), 4000), "et le champ du panneau revient à l'avant");
+  });
+
   await etape("au téléphone : les réglages, puis l'aperçu", async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: "networkidle" });

@@ -115,14 +115,14 @@ function Ouverture({ rang, section, cadre, premiere, collections }: { rang: numb
       <section className="ed-ouverture-socle" data-section={rang}>
         <div className="enveloppe ed-ouverture-socle-grille">
           <div className="ed-ouverture-texte">
-            {etiquette ? <p className="etiquette">{etiquette}</p> : null}
-            <h1>
+            {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+            <h1 key={titre} data-texte="titre" data-lignes="">
               <Lignes texte={titre} />
             </h1>
-            {chapo ? <p className="chapo">{chapo}</p> : null}
+            {chapo ? <p className="chapo" key={chapo} data-texte="chapo">{chapo}</p> : null}
             <p className="ed-ouverture-actions">
               <Link className="btn btn-primaire" href={lien}>
-                {cta}
+                <span key={cta} data-texte="cta">{cta}</span>
               </Link>
               {cadre.livraison.cod ? <span className="legende">{t.accueil.promesse}</span> : null}
             </p>
@@ -139,13 +139,13 @@ function Ouverture({ rang, section, cadre, premiere, collections }: { rang: numb
   if (!section.image) {
     return (
       <section className="ed-ouverture-texte-seul enveloppe" data-section={rang}>
-        {etiquette ? <p className="etiquette">{etiquette}</p> : null}
-        <h1>
+        {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+        <h1 key={titre} data-texte="titre" data-lignes="">
           <Lignes texte={titre} />
         </h1>
-        {chapo ? <p className="chapo">{chapo}</p> : null}
+        {chapo ? <p className="chapo" key={chapo} data-texte="chapo">{chapo}</p> : null}
         <Link className="btn btn-primaire" href={lien}>
-          {cta}
+          <span key={cta} data-texte="cta">{cta}</span>
         </Link>
       </section>
     );
@@ -157,14 +157,14 @@ function Ouverture({ rang, section, cadre, premiere, collections }: { rang: numb
       <div className="ed-ouverture-voile" aria-hidden="true" />
       <div className="enveloppe ed-ouverture-contenu">
         <div className="ed-ouverture-bloc">
-          {etiquette ? <p className="etiquette">{etiquette}</p> : null}
-          <h1>
+          {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+          <h1 key={titre} data-texte="titre" data-lignes="">
             <Lignes texte={titre} />
           </h1>
-          {chapo ? <p className="chapo">{chapo}</p> : null}
+          {chapo ? <p className="chapo" key={chapo} data-texte="chapo">{chapo}</p> : null}
           <p className="ed-ouverture-actions">
             <Link className="btn btn-clair" href={lien}>
-              {cta}
+              <span key={cta} data-texte="cta">{cta}</span>
               <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />
             </Link>
             {collections ? (
@@ -183,8 +183,8 @@ function TeteSection({ titre, etiquette, lien, libelleLien }: { titre: string; e
   return (
     <div className="ed-section-tete">
       <div>
-        {etiquette ? <p className="etiquette">{etiquette}</p> : null}
-        <h2>{titre}</h2>
+        {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+        <h2 key={titre} data-texte="titre">{titre}</h2>
       </div>
       {lien ? (
         <Link className="lien-souligne ed-lien-fleche" href={lien}>
@@ -269,16 +269,16 @@ function Recit({ rang, section, cadre, inverse }: { rang: number; section: Extra
         </div>
       ) : null}
       <div className="ed-recit-texte">
-        {texte(section.textes, "etiquette") ? <p className="etiquette">{texte(section.textes, "etiquette")}</p> : null}
+        {texte(section.textes, "etiquette") ? <p className="etiquette" key={texte(section.textes, "etiquette")} data-texte="etiquette">{texte(section.textes, "etiquette")}</p> : null}
         {titre ? (
-          <h2>
+          <h2 key={titre} data-texte="titre" data-lignes="">
             <Lignes texte={titre} />
           </h2>
         ) : null}
-        {corps ? <p className="chapo">{corps}</p> : null}
+        {corps ? <p className="chapo" key={corps} data-texte="texte">{corps}</p> : null}
         {lien ? (
           <Link className="lien-souligne" href={lien}>
-            {texte(section.textes, "cta", t.accueil.recitLien)}
+            <span key={texte(section.textes, "cta", t.accueil.recitLien)} data-texte="cta">{texte(section.textes, "cta", t.accueil.recitLien)}</span>
           </Link>
         ) : null}
       </div>
@@ -327,9 +327,9 @@ function Texte({ rang, section }: { rang: number; section: Extract<Section, { ty
   if (!titre && !corps) return null;
   return (
     <section className="enveloppe ed-section ed-texte" data-section={rang}>
-      {texte(section.textes, "etiquette") ? <p className="etiquette">{texte(section.textes, "etiquette")}</p> : null}
-      {titre ? <h2>{titre}</h2> : null}
-      {corps ? <p className="chapo">{corps}</p> : null}
+      {texte(section.textes, "etiquette") ? <p className="etiquette" key={texte(section.textes, "etiquette")} data-texte="etiquette">{texte(section.textes, "etiquette")}</p> : null}
+      {titre ? <h2 key={titre} data-texte="titre">{titre}</h2> : null}
+      {corps ? <p className="chapo" key={corps} data-texte="texte">{corps}</p> : null}
     </section>
   );
 }

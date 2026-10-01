@@ -132,7 +132,11 @@ export function creeTesteur() {
     },
 
     async etape(nom, fn) {
-      try { await fn(); } catch (e) { note("DÉFAUT", `${nom} : ${String(e.message ?? e).split("\n")[0].slice(0, 200)}`); }
+      try { await fn(); } catch (e) {
+        note("DÉFAUT", `${nom} : ${String(e.message ?? e).split("\n")[0].slice(0, 200)}`);
+        // DETAIL=1 : le journal entier de Playwright (ce qu'il attendait, ce qui l'a empêché).
+        if (process.env.DETAIL) console.log(String(e.message ?? e).slice(0, 3000));
+      }
     },
 
     bilan() {

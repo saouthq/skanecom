@@ -98,7 +98,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
         <div className="ed-annonce" data-zone="entete">
           <p>
             {annonces.slice(0, 2).map((f, i) => (
-              <span key={f} className={i > 0 ? "cache-mobile" : undefined}>
+              <span key={f} className={i > 0 ? "cache-mobile" : undefined} data-reglage={i === 0 && cadre.annonce ? "vitrine.annonce" : undefined}>
                 {f}
               </span>
             ))}
@@ -147,7 +147,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
         <div className="te-utilitaire" data-zone="entete">
           <ul className="enveloppe">
             {annonces.map((f, i) => (
-              <li key={f} className={i > 0 ? "cache-mobile" : undefined}>
+              <li key={f} className={i > 0 ? "cache-mobile" : undefined} data-reglage={i === 0 && cadre.annonce ? "vitrine.annonce" : undefined}>
                 {f}
               </li>
             ))}
