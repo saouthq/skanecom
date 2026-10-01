@@ -183,6 +183,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       ? await sb.rpc("gestion_retirer_page", { p_boutique_id: boutique.boutique_id, p_id: id })
       : await sb.rpc("gestion_ordonner_pages", { p_boutique_id: boutique.boutique_id, p_ids: ids as string[] });
     if (r.error) return refusPage(r.error.hint, r.error.message);
+    // Aussitôt en ligne : la vitrine (son pied de page) suit dès la prochaine visite.
+    rafraichirVitrine(slug);
     // Le brouillon de la vitrine a avancé (l'aperçu suit) : sa version et son jeton.
     const b = r.data as { version: number | null; jeton: string | null } | null;
     return Response.json({
