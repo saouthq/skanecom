@@ -157,8 +157,14 @@ ENV
     printf 'COURRIELS_CROCHET_SECRET=v1,whsec_%s\n' "$(printf '%s' "$SECRET_DEV" | base64 -w0)"
   } > "$RACINE/application/.dev.vars"
 
-  for _ in $(seq 1 80); do
-    if curl -sf -o /dev/null "http://127.0.0.1:54321/rest/v1/gouvernorats?select=code&limit=1" -H "apikey: $(jeton anon)" &&
+  # Jusqu'à une minute : au premier démarrage, GoTrue passe ses propres
+  # migrations sur la base — sur une machine de CI froide, plus de vingt
+  # secondes (un parcours de la CI en est tombé, le 01/10).
+  local anon fin
+  anon="$(jeton anon)"
+  fin=$((SECONDS + 60))
+  while [ "$SECONDS" -lt "$fin" ]; do
+    if curl -sf -o /dev/null "http://127.0.0.1:54321/rest/v1/gouvernorats?select=code&limit=1" -H "apikey: $anon" &&
        curl -sf -o /dev/null "http://127.0.0.1:54321/auth/v1/health"; then
       admin_de_developpement
       equipe_de_developpement
@@ -168,7 +174,11 @@ ENV
     fi
     sleep 0.25
   done
-  echo "L'API ne répond pas : voir .outils/postgrest.log et .outils/gotrue.log" >&2
+  echo "L'API ne répond pas après 60 s : voir .outils/postgrest.log et .outils/gotrue.log" >&2
+  for j in postgrest gotrue relais; do
+    echo "---- .outils/$j.log (fin) ----" >&2
+    tail -15 "$OUTILS/$j.log" >&2 2> /dev/null || true
+  done
   exit 1
 }
 
