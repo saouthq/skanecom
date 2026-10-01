@@ -77,3 +77,28 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `yasmine-beaute/produits/huile-parfumee-jasmin` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5955920/free-public-domain-cc0-photo) |
 | `yasmine-beaute/produits/diffuseur-fleur-blanche` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5943580/free-public-domain-cc0-photo) |
 | `yasmine-beaute/produits/eau-florale-bleuet` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5955897/free-public-domain-cc0-photo) |
+| `dar-alia/accueil/hero` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3283189/free-photo-image-living-room-home-decorations) |
+| `dar-alia/accueil/hero-portrait` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3283189/free-photo-image-living-room-home-decorations) |
+| `dar-alia/accueil/recit` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3286812/free-photo-image-house-table-living-room) |
+| `dar-alia/rayons/cuisine-et-table` | [Matt Bango](https://mattbango.photo) | CC0 | [stocksnap](https://stocksnap.io/photo/table-setting-LKV4WGJE1F) |
+| `dar-alia/rayons/decoration` | [Studio 7042](https://twitter.com/studio7042) | CC0 | [stocksnap](https://stocksnap.io/photo/mirror-livingroom-JRHSFSKQZQ) |
+| `dar-alia/rayons/linge-de-maison` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5943478/free-public-domain-cc0-photo) |
+| `dar-alia/rayons/rangement` | [Suzy Hazelwood](https://twitter.com/SuzyHazelwood) | CC0 | [stocksnap](https://stocksnap.io/photo/herbs-parsley-XVIICAUSKR) |
+| `dar-alia/produits/cuilleres-olivier` | [Eneida Nieves](https://www.instagram.com/fari.photography) | CC0 | [stocksnap](https://stocksnap.io/photo/collection-wooden-JH2VUEOLAM) |
+| `dar-alia/produits/mug-gres` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3283727/free-photo-image-coffee-table-wooden) |
+| `dar-alia/produits/tasses-blanches` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5965017/white-ceramic-mug) |
+| `dar-alia/produits/service-faience` | [Matt Bango](https://mattbango.photo) | CC0 | [stocksnap](https://stocksnap.io/photo/kitchen-cabinet-CTKGR7O9UB) |
+| `dar-alia/produits/serviettes-lin` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5965372/photo-image-public-domain-leaf-table) |
+| `dar-alia/produits/bougie-fleur-oranger` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5918423/photo-image-public-domain-wooden-glass) |
+| `dar-alia/produits/bougie-meche-bois` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/11524423/photo-image-wooden-public-domain-table) |
+| `dar-alia/produits/bougie-ambree` | [Matt Moloney](https://mjmolo.com) | CC0 | [stocksnap](https://stocksnap.io/photo/candle-table-CGNTB37FCT) |
+| `dar-alia/produits/kilim` | [Manjil Aryal](https://manjil0809.github.io/Portfolio/) | CC0 | [wordpress](https://wordpress.org/photos/photo/21868c63c6/) |
+| `dar-alia/produits/housses-coussin` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5969673/bedroom-pillows) |
+| `dar-alia/produits/taies-rayees` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3284787/free-photo-image-hotel-room-linen-bed) |
+| `dar-alia/produits/jete-de-lit` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5947468/free-public-domain-cc0-photo) |
+| `dar-alia/produits/lampe-chevet` | [Kristin Hardwick](https://www.kristinhardwick.com) | CC0 | [stocksnap](https://stocksnap.io/photo/table-lamp-CGPGQOOQ4I) |
+| `dar-alia/produits/lampadaire-trepied` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5917348/image-frame-light-public-domain) |
+| `dar-alia/produits/photophores` | U.S. Air Force | CC0 | [rawpixel](https://www.rawpixel.com/image/4032059/photo-image-light-white-candle) |
+| `dar-alia/produits/panier-jonc` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3292416/free-photo-image-basket-blossom-cc0) |
+| `dar-alia/produits/corbeille-osier` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3301431/free-photo-image-flower-basket-herbs-acanthaceae) |
+| `dar-alia/produits/bocal-verre` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5910925/aniseed-jar-free-public-domain-cc0-image) |
