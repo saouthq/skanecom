@@ -73,4 +73,4 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `yasmine-beaute/accueil/rituel` | [Authentic Stock](https://www.authentic.co) | CC0 | [stocksnap](https://stocksnap.io/photo/woman-skin-QLAKLZ0LML) |
 | `yasmine-beaute/rayons/soins-du-visage` | [Authentic Stock](https://www.authentic.co) | CC0 | [stocksnap](https://stocksnap.io/photo/beauty-skincare-PBIACLTCLJ) |
 | `yasmine-beaute/rayons/corps-et-bain` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3286046/free-photo-image-soaps-paper-craft-soap-bar) |
-| `yasmine-beaute/rayons/maquillage` | [Beauty and Fashion](https://stocksnap.io) | CC0 | [stocksnap](https://stocksnap.io/photo/makeup-products-I8SLDUOMYC) |
+| `yasmine-beaute/rayons/maquillage` | [Freestocks.org](https://stocksnap.io/author/20064) | CC0 | [stocksnap](https://stocksnap.io/photo/makeup-people-G40JKFC5I5) |
