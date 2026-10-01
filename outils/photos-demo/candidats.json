@@ -64,15 +64,6 @@
     "q": "screws",
     "sources": "stocksnap,nappy,rawpixel"
   },
-  "beaute--soin": {
-    "q": "skincare bottle",
-    "sources": "stocksnap,nappy,rawpixel",
-    "rapport": "tall"
-  },
-  "beaute--creme": {
-    "q": "face cream jar",
-    "sources": "stocksnap,nappy,rawpixel"
-  },
   "beaute--maquillage": {
     "q": "lipstick makeup",
     "sources": "stocksnap,nappy,rawpixel"
@@ -81,18 +72,27 @@
     "q": "perfume bottle",
     "sources": "stocksnap,nappy,rawpixel"
   },
-  "beaute--cheveux": {
-    "q": "shampoo hair care bottle",
-    "sources": "stocksnap,nappy,rawpixel"
-  },
   "beaute--ouverture": {
     "q": "cosmetics flat lay",
     "sources": "stocksnap,nappy,rawpixel",
     "rapport": "wide"
   },
-  "beaute--rituel": {
-    "q": "woman skincare routine",
-    "sources": "stocksnap,nappy,rawpixel",
-    "rapport": "tall"
+  "beaute--serum": {
+    "q": "serum dropper bottle"
+  },
+  "beaute--savon": {
+    "q": "handmade soap bar"
+  },
+  "beaute--huile": {
+    "q": "essential oil bottle"
+  },
+  "beaute--vernis": {
+    "q": "nail polish bottles"
+  },
+  "beaute--pinceaux": {
+    "q": "makeup brushes"
+  },
+  "beaute--produits": {
+    "q": "skincare products"
   }
 }
