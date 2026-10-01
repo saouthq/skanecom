@@ -628,6 +628,35 @@
     600
    ],
    "rapport": 1.25
+  },
+  {
+   "id": "f519a570-4a00-4074-af73-4b7f8ab2939e",
+   "chemin": "yasmine-beaute/produits/huile-parfumee-jasmin",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "8a3068ac-159b-4006-ba88-c905a92c09c5",
+   "chemin": "yasmine-beaute/produits/diffuseur-fleur-blanche",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25,
+   "gravite": "West"
+  },
+  {
+   "id": "9e62aeaf-0fe8-4054-a2e6-16a6f267b685",
+   "chemin": "yasmine-beaute/produits/eau-florale-bleuet",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25,
+   "gravite": "East"
   }
  ]
 }
