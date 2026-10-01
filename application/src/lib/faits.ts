@@ -21,10 +21,22 @@ export function faitsDeService(cadre: Cadre): string[] {
   return faits;
 }
 
+const sansAccents = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
 /** Le bandeau en tête du site : l'annonce de la boutique d'abord (réglage
- *  vitrine.annonce), puis ses faits de service. */
+ *  vitrine.annonce), puis ses faits de service — moins ceux que l'annonce dit
+ *  déjà (« Livraison offerte dès 200 dinars… » puis « Livraison offerte dès
+ *  200,000 TND d'achat » : au téléphone, où elles défilent toutes, la redite
+ *  se voit). */
 export function bandeau(cadre: Cadre): string[] {
-  return cadre.annonce ? [cadre.annonce, ...faitsDeService(cadre)] : faitsDeService(cadre);
+  const faits = faitsDeService(cadre);
+  if (!cadre.annonce) return faits;
+  const annonce = sansAccents(cadre.annonce);
+  const offerte = cadre.seuilGratuiteMillimes ? t.annonce.livraisonOfferte(formatePrix(cadre.seuilGratuiteMillimes)) : null;
+  const redit = (f: string) =>
+    (f === t.annonce.cod && annonce.includes("paiement a la livraison")) ||
+    (f === offerte && /livraison (offerte|gratuite)/.test(annonce));
+  return [cadre.annonce, ...faits.filter((f) => !redit(f))];
 }
 
 export type Assurance = { icone: "billets" | "camion" | "bouclier" | "magasin"; texte: string };

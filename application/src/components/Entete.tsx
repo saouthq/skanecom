@@ -4,6 +4,7 @@ import { BoutonPanier } from "./BoutonPanier";
 import { LienFavoris } from "./LienFavoris";
 import { ChampRecherche } from "./ChampRecherche";
 import { NavRayons } from "./NavRayons";
+import { BandeauDefilant } from "./BandeauDefilant";
 import { EnteteDefilant, MenuMobile, type EntreeMenu } from "./EnteteClient";
 import { GrandMenu, type RayonMenu } from "./GrandMenu";
 import { champ, t } from "@/lib/i18n";
@@ -98,13 +99,14 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
     <>
       {annonces.length > 0 ? (
         <div className="ed-annonce" data-zone="entete">
-          <p>
-            {annonces.slice(0, 2).map((f, i) => (
-              <span key={f} className={i > 0 ? "cache-mobile" : undefined} data-reglage={i === 0 && cadre.annonce ? "vitrine.annonce" : undefined}>
+          {/* Au téléphone, une à une (BandeauDefilant) ; sur ordinateur, les deux premières côte à côte. */}
+          <BandeauDefilant>
+            {annonces.slice(0, 5).map((f, i) => (
+              <span key={f} data-reglage={i === 0 && cadre.annonce ? "vitrine.annonce" : undefined}>
                 {f}
               </span>
             ))}
-          </p>
+          </BandeauDefilant>
         </div>
       ) : null}
       <EnteteDefilant className="ed-entete" surImage={ouvertureSurPhoto(cadre)}>
@@ -169,13 +171,14 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
     <>
       {annonces.length > 0 ? (
         <div className="te-utilitaire" data-zone="entete">
-          <ul className="enveloppe">
+          {/* Au téléphone, un à un (BandeauDefilant) ; sur ordinateur, tous ceux qui tiennent sur la ligne. */}
+          <BandeauDefilant balise="ul" className="enveloppe">
             {annonces.map((f, i) => (
-              <li key={f} className={i > 0 ? "cache-mobile" : undefined} data-reglage={i === 0 && cadre.annonce ? "vitrine.annonce" : undefined}>
+              <li key={f} data-reglage={i === 0 && cadre.annonce ? "vitrine.annonce" : undefined}>
                 {f}
               </li>
             ))}
-          </ul>
+          </BandeauDefilant>
         </div>
       ) : null}
       <header className="te-entete" data-zone="entete">

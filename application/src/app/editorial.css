@@ -61,6 +61,10 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
   content: ""; display: inline-block; inline-size: 3px; block-size: 3px; border-radius: 50%; margin-inline-end: 2.5rem;
   vertical-align: middle; background: currentColor; opacity: .55;
 }
+/* Sur ordinateur, les deux premières côte à côte ; au téléphone, toutes,
+   une à une (socle.css, « Bandeau qui défile »). */
+@media (min-width: 900px) { .ed-annonce p > span:nth-child(n+3) { display: none; } }
+@media (max-width: 899px) { .ed-annonce .bandeau-defilant p > span + span::before { content: none; } }
 
 /* --- En-tête --------------------------------------------------------------- */
 .ed-entete {

@@ -54,6 +54,10 @@ export const fr = {
     retrait: "Retrait en magasin",
     conseil: "Conseil sur WhatsApp",
     garantie: (mois: number) => `Garantie ${mois} mois`,
+    /** Le bandeau qui défile au téléphone (components/BandeauDefilant.tsx). */
+    region: "Annonces de la boutique",
+    precedente: "Annonce précédente",
+    suivante: "Annonce suivante",
   },
 
   accueil: {

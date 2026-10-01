@@ -637,6 +637,27 @@ if (section("3")) {
     await capture(page, "mobile-selma-maille");
   });
 
+  await etape("Selma : le bandeau d'annonce défile, une annonce à la fois", async () => {
+    await page.goto(S + "/", { waitUntil: "networkidle" });
+    const bandeau = page.locator(".ed-annonce .bandeau-defilant");
+    const montree = () => bandeau.locator("[data-actif]").innerText();
+    const visibles = () => bandeau.locator("p > *").evaluateAll((l) => l.filter((e) => parseFloat(getComputedStyle(e).opacity) > .5).length);
+    const premiere = await montree();
+    verifie(premiere.includes("Le lin d'été est arrivé") && (await visibles()) === 1, `l'annonce de la boutique d'abord, seule visible (« ${premiere} »)`);
+    verifie(await attend(async () => (await montree()) !== premiere, 7000), "cinq secondes plus tard, l'annonce suivante");
+    await capture(page, "mobile-selma-bandeau");
+    const avant = await montree();
+    await bandeau.getByRole("button", { name: "Annonce suivante" }).tap();
+    await pause(600);
+    const choisie = await montree();
+    verifie(choisie !== avant, `la flèche passe à la suivante (« ${choisie} »)`);
+    await pause(6000);
+    verifie((await montree()) === choisie, "après un geste, le bandeau ne défile plus tout seul");
+    await bandeau.getByRole("button", { name: "Annonce précédente" }).tap();
+    await pause(600);
+    verifie((await montree()) === avant, "la flèche précédente revient en arrière");
+  });
+
   await etape("Selma : galerie au doigt", async () => {
     await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
     await page.locator(".ed-galerie-piste").evaluate((p) => p.scrollTo({ left: p.clientWidth, behavior: "instant" }));

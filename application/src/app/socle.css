@@ -234,6 +234,40 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
   font-size: clamp(3.25rem, 16vw, 17rem); line-height: .85; letter-spacing: -.02em; text-align: center; overflow: hidden;
 }
 
+/* --- Bandeau qui défile (components/BandeauDefilant.tsx) ------------------- */
+/* Au téléphone : les annonces l'une sur l'autre, seule la montrée se voit ;
+   elle monte en entrant, la précédente s'en va vers le haut. Une flèche de
+   chaque côté. Sur ordinateur, le bandeau est tel qu'avant (flèches masquées). */
+@media (max-width: 899px) {
+  .bandeau-defilant { display: flex; align-items: center; }
+  /* Préfixés par le bandeau qui les porte : plus précis que « .ed-annonce p »
+     et « .te-utilitaire ul » (en flex, sur une ligne, sur ordinateur). */
+  :is(.ed-annonce, .te-utilitaire) .bandeau-defilant > :is(p, ul) {
+    flex: 1; min-inline-size: 0; display: grid; grid-template-columns: minmax(0, 1fr); margin: 0; padding-inline: 0;
+  }
+  :is(.ed-annonce, .te-utilitaire) .bandeau-defilant > :is(p, ul) > * {
+    grid-area: 1 / 1; justify-self: center; max-inline-size: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    opacity: 0; transform: translateY(70%); pointer-events: none;
+    transition: opacity .45s var(--theme-courbe, ease), transform .45s var(--theme-courbe, ease);
+  }
+  :is(.ed-annonce, .te-utilitaire) .bandeau-defilant > :is(p, ul) > [data-actif] { opacity: 1; transform: none; pointer-events: auto; }
+  /* La précédente s'en va vers le haut, pas vers le bas. */
+  :is(.ed-annonce, .te-utilitaire) .bandeau-defilant > :is(p, ul) > :not([data-actif]):has(~ [data-actif]) { transform: translateY(-70%); }
+}
+@media (max-width: 899px) and (prefers-reduced-motion: reduce) {
+  :is(.ed-annonce, .te-utilitaire) .bandeau-defilant > :is(p, ul) > * { transition: none; }
+}
+.bandeau-fleche {
+  flex: none; display: inline-grid; place-items: center; inline-size: 2.5rem; block-size: 2rem; padding: 0;
+  border: 0; background: transparent; color: inherit; opacity: .7; cursor: pointer;
+}
+.bandeau-fleche:hover { opacity: 1; }
+.bandeau-fleche:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; border-radius: 6px; opacity: 1; }
+.bandeau-fleche-prec { transform: rotate(90deg); }
+.bandeau-fleche-suiv { transform: rotate(-90deg); }
+:dir(rtl) .bandeau-fleche-prec { transform: rotate(-90deg); }
+:dir(rtl) .bandeau-fleche-suiv { transform: rotate(90deg); }
+
 /* --- Fil d'Ariane --------------------------------------------------------- */
 .fil ol { display: flex; flex-wrap: wrap; gap: .25rem .5rem; list-style: none; margin: 0; padding: 0; font-size: .75rem; color: var(--theme-encre-doux); }
 .fil li + li::before { content: "/"; margin-inline-end: .5rem; color: var(--theme-filet-fort); }
