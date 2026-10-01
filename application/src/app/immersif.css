@@ -103,6 +103,28 @@ html[data-structure="immersif"] .etiquette { letter-spacing: .24em; }
 .im-recit-texte .etiquette { margin: 0; }
 .im-recit-texte h2 { margin: 0; font-size: calc(clamp(2.5rem, 5.4vw, 5rem) * var(--echelle-titres, 1)); line-height: .95; letter-spacing: -.02em; }
 .im-recit-texte .chapo { margin: 0; max-inline-size: 42ch; }
+/* Le récit se dévoile quand on y arrive (components/Apparitions.tsx pose
+   data-vu, une fois) : la photo s'ouvre comme un rideau et recule en place,
+   puis le surtitre, chaque ligne du titre, le texte et le lien montent l'un
+   après l'autre. Déjà à l'écran au chargement, sans script, en mouvement
+   réduit ou animations coupées : tout est posé d'emblée. */
+.im-recit-texte h2 > span { display: block; }
+.im-recit-texte h2 > span > br { display: none; }
+html.js-apparitions .im-recit:not([data-vu]) .im-recit-image { clip-path: inset(12% 9%); }
+html.js-apparitions .im-recit:not([data-vu]) :is(.im-recit-texte > :not(h2), .im-recit-texte h2 > span) { opacity: 0; }
+html.js-apparitions .im-recit[data-vu] .im-recit-image { animation: im-rideau 1.5s var(--theme-courbe) backwards; }
+html.js-apparitions .im-recit[data-vu] .im-recit-image img { animation: im-recule 2.4s var(--theme-courbe) backwards; }
+html.js-apparitions .im-recit[data-vu] :is(.im-recit-texte > :not(h2), .im-recit-texte h2 > span) {
+  animation: v-ligne 1s var(--theme-courbe) var(--im-delai, .3s) backwards;
+}
+html.js-apparitions .im-recit[data-vu] .im-recit-texte h2 > span:nth-child(1) { --im-delai: .45s; }
+html.js-apparitions .im-recit[data-vu] .im-recit-texte h2 > span:nth-child(2) { --im-delai: .57s; }
+html.js-apparitions .im-recit[data-vu] .im-recit-texte h2 > span:nth-child(3) { --im-delai: .69s; }
+html.js-apparitions .im-recit[data-vu] .im-recit-texte h2 > span:nth-child(n+4) { --im-delai: .8s; }
+html.js-apparitions .im-recit[data-vu] .im-recit-texte > .chapo { --im-delai: .85s; }
+html.js-apparitions .im-recit[data-vu] .im-recit-texte > a { --im-delai: 1s; }
+@keyframes im-rideau { from { clip-path: inset(12% 9%); } to { clip-path: inset(0); } }
+@keyframes im-recule { from { transform: scale(1.16); } }
 @media (min-width: 900px) {
   .im-recit { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); min-block-size: 85svh; }
   .im-recit[data-sans-image] { grid-template-columns: minmax(0, 1fr); min-block-size: 0; text-align: center; justify-items: center; }

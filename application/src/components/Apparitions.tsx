@@ -25,6 +25,8 @@ import { rafraichiALInstant } from "@/lib/apercu-cadre";
 export const CIBLES_APPARITION = [
   ".apparait", ".ed-section", ".ed-recit", ".ed-engagements", ".te-section", ".ed-carte", ".te-carte",
   ".te-pied-services li", ".ed-pied-grille > *", ".te-pied-grille > *", ".sav-grille > section",
+  // Le récit de l'Immersif : marqué seulement — il se dévoile par morceaux (app/immersif.css).
+  ".im-recit",
 ].join(", ");
 
 export function Apparitions() {
