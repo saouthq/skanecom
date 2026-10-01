@@ -1591,6 +1591,21 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
       `les sources, chacune une fois (${sources.join(", ")})`);
     verifie((await page.locator(".vi-pages .tb-produit-nom").allInnerTexts()).includes("Robe à bretelles en lin"), "les pages, sous le nom du produit qu'elles montrent");
     await capture(page, "gestion-visites", true);
+    // Jusqu'où vont les visiteurs, et les campagnes (supabase/seed-entonnoir.sql).
+    const etapes = await page.locator(".vi-entonnoir .vi-etape-nom").allInnerTexts();
+    verifie(etapes.join(" · ") === "Visiteurs · Ont vu une fiche · Ont ajouté au panier · Ont ouvert la commande · Ont commandé",
+      `le chemin vers la commande, en cinq étapes (${etapes.length})`);
+    const n = (await page.locator(".vi-entonnoir .vi-etape-n").allInnerTexts()).map((x) => Number(x.replace(/\D/g, "")));
+    verifie(n.length === 5 && n.every((x, i) => i === 0 || x <= n[i - 1]), `chaque étape, au plus l'étape d'avant (${n.join(" → ")})`);
+    verifie((await page.locator(".vi-perte").innerText().catch(() => "")).includes("qu'on perd le plus de monde"), "et où l'on perd le plus de monde");
+    const campagnes = await page.locator(".vi-campagnes .vi-campagne-nom").allInnerTexts();
+    verifie(campagnes.includes("lin-d-ete") && campagnes.includes("vente-privee"), `les campagnes de la période (${campagnes.join(", ")})`);
+    await clic(page, page.locator(".vi-composer > summary"));
+    await page.getByLabel("Où vous le publiez").selectOption("facebook");
+    await clic(page, page.getByLabel("Le nom de la campagne"));
+    await tape(page, "Soldes d'Été");
+    const lienCampagne = await page.locator(".vi-lien-adresse").innerText();
+    verifie(/\?utm_source=facebook&utm_campaign=soldes-d-ete$/.test(lienCampagne), `le lien de campagne s'écrit à mesure (${lienCampagne})`);
     await clic(page, page.getByRole("link", { name: "7 jours" }));
     await page.waitForURL(/jours=7/);
     await page.waitForLoadState("networkidle");

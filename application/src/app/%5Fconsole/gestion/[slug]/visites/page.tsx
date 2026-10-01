@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Compteur } from "@/components/console/Compteur";
 import { Icone } from "@/components/console/Icone";
+import { LienCampagne } from "@/components/console/LienCampagne";
 import { clientSession, exigeMembre } from "@/lib/console/session";
+import { cadreDeGestion } from "@/lib/gestion/pages";
+import { adresseVitrine } from "@/lib/console/libelles";
 import { DIRECTION, delta, pourcent } from "@/lib/gestion/tableau";
-import { nomPage, nomSource, type Visites } from "@/lib/gestion/visites";
+import { ETAPES, nomPage, nomSource, plusGrandePerte, type Parcours, type Visites } from "@/lib/gestion/visites";
 
 export const metadata: Metadata = { title: "Visites" };
 
@@ -14,8 +18,10 @@ export const metadata: Metadata = { title: "Visites" };
    LES VISITES DE LA VITRINE (réglage vitrine.statistiques) — « combien de
    gens passent, d'où ils viennent, et combien commandent ». Sur 7, 30 ou
    90 jours, comparés à la période d'avant : les visiteurs, les pages vues,
-   les commandes et la conversion ; le jour par jour ; les sources, les
-   appareils ; les produits et les pages les plus vus.
+   les commandes et la conversion ; le jour par jour ; jusqu'où vont les
+   visiteurs (une fiche, le panier, la commande) ; les sources, les
+   appareils ; les campagnes et le lien qui les porte ; les produits et les
+   pages les plus vus.
 
    Sans cookie ni donnée personnelle (…_visites_vitrine.sql) : un visiteur
    n'est reconnu que le temps d'une journée. Pour la direction ; la base
@@ -55,9 +61,19 @@ export default async function PageVisites({
   if (!DIRECTION.includes(boutique.role)) redirect(`/gestion/${slug}`);
   const jours = PERIODES.find((p) => String(p) === recherche.jours) ?? 30;
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_visites", { p_boutique_id: boutique.boutique_id, p_jours: jours });
-  if (error) throw new Error(`Visites illisibles : ${error.message}`);
+  const [{ data, error }, { data: dp, error: ep }, cadre, hoteConsole] = await Promise.all([
+    sb.rpc("gestion_visites", { p_boutique_id: boutique.boutique_id, p_jours: jours }),
+    sb.rpc("gestion_visites_parcours", { p_boutique_id: boutique.boutique_id, p_jours: jours }),
+    cadreDeGestion(sb, boutique.boutique_id),
+    headers().then((h) => h.get("host")),
+  ]);
+  if (error || ep) throw new Error(`Visites illisibles : ${(error ?? ep)?.message}`);
   const v = data as Visites;
+  const parcours = dp as Parcours;
+  const hote = cadre?.boutique.hote_principal ?? null;
+  const vitrine = hote ? adresseVitrine(hote, hoteConsole) : null;
+  const baseEntonnoir = Math.max(1, parcours.entonnoir.visiteurs);
+  const perte = plusGrandePerte(parcours.entonnoir);
   const c = v.courante;
   const p = v.precedente;
   if (!v.actif && c.visiteurs === 0 && p.visiteurs === 0) notFound();
@@ -155,6 +171,38 @@ export default async function PageVisites({
             </p>
           </section>
 
+          {/* ---------------- Le chemin vers la commande ---------------- */}
+          <section className="carte" aria-labelledby="vi-entonnoir">
+            <div className="carte-tete">
+              <div>
+                <h2 id="vi-entonnoir" className="carte-titre-icone"><Icone nom="panier" /> Le chemin vers la commande</h2>
+                <p>Jusqu&apos;où vont les visiteurs de la période : où l&apos;on perd le plus de monde, c&apos;est là qu&apos;il faut regarder.</p>
+              </div>
+            </div>
+            <ol className="vi-entonnoir" role="list">
+              {ETAPES.map((e, i) => {
+                const n = parcours.entonnoir[e.cle];
+                const avant = i > 0 ? parcours.entonnoir[ETAPES[i - 1].cle] : null;
+                return (
+                  <li key={e.cle} style={{ "--part": `${(n / baseEntonnoir) * 100}%` } as React.CSSProperties}>
+                    <span className="vi-etape-nom">{e.nom}</span>
+                    <span className="vi-etape-barre" aria-hidden="true"><span /></span>
+                    <span className="vi-etape-n">{NOMBRE.format(n)}</span>
+                    <span className="vi-etape-part">
+                      {i === 0 ? "" : avant ? `${pourcent(n / avant)} de l'étape d'avant` : "—"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+            {perte ? (
+              <p className="aide vi-perte">
+                <Icone nom="alerte" taille={14} />
+                <span>C&apos;est entre « {perte.de} » et « {perte.a} » qu&apos;on perd le plus de monde : {pourcent(perte.part)} s&apos;arrêtent là.</span>
+              </p>
+            ) : null}
+          </section>
+
           <div className="grille-2 tb-grille">
             {/* ---------------- Les sources ---------------- */}
             <section className="carte" aria-labelledby="vi-sources">
@@ -194,6 +242,47 @@ export default async function PageVisites({
               </ul>
             </section>
           </div>
+
+          {/* ---------------- Les campagnes ---------------- */}
+          <section className="carte" aria-labelledby="vi-campagnes">
+            <div className="carte-tete">
+              <div>
+                <h2 id="vi-campagnes" className="carte-titre-icone"><Icone nom="etiquette" /> Les campagnes</h2>
+                <p>Les visites venues d&apos;un lien de campagne, et ce qu&apos;elles ont vendu. Composez ce lien ci-dessous, pour chaque publication.</p>
+              </div>
+            </div>
+            {parcours.campagnes.length === 0 ? (
+              <p className="discret tb-rien">Aucune visite venue d&apos;un lien de campagne sur la période.</p>
+            ) : (
+              <div className="vi-campagnes-cadre">
+                <table className="vi-campagnes">
+                  <thead>
+                    <tr><th scope="col">Campagne</th><th scope="col">Visiteurs</th><th scope="col">Panier</th><th scope="col">Commandes</th><th scope="col">Conversion</th></tr>
+                  </thead>
+                  <tbody>
+                    {parcours.campagnes.map((x) => (
+                      <tr key={x.campagne}>
+                        <th scope="row">
+                          <span className="vi-campagne-nom">{x.campagne}</span>
+                          <span className="discret">{nomSource(x.source)} · {x.premier === x.dernier ? JOUR.format(new Date(x.premier)) : `${JOUR.format(new Date(x.premier))} – ${JOUR.format(new Date(x.dernier))}`}</span>
+                        </th>
+                        <td data-libelle="Visiteurs">{NOMBRE.format(x.visiteurs)}</td>
+                        <td data-libelle="Panier">{NOMBRE.format(x.panier)}</td>
+                        <td data-libelle="Commandes">{NOMBRE.format(x.commandes)}</td>
+                        <td data-libelle="Conversion">{CONVERSION.format(x.commandes / Math.max(1, x.visiteurs))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {vitrine ? (
+              <details className="vi-composer" open={parcours.campagnes.length === 0 || undefined}>
+                <summary className="btn btn-second btn-petit"><Icone nom="lien" taille={14} /> Composer un lien de campagne</summary>
+                <LienCampagne vitrine={vitrine} />
+              </details>
+            ) : null}
+          </section>
 
           <div className="grille-2 tb-grille">
             {/* ---------------- Les produits les plus vus ---------------- */}

@@ -482,8 +482,8 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
             d&apos;audience tiers.
             {cadre.statistiques ? (
               <>
-                {" "}La boutique compte ses visites elle-même, sans témoin : la page vue, le site d&apos;où vous venez et le genre
-                d&apos;appareil. Votre adresse IP n&apos;est jamais gardée ; elle ne sert qu&apos;à reconnaître une visite le temps
+                {" "}La boutique compte ses visites elle-même, sans témoin : la page vue, le site d&apos;où vous venez (ou la campagne
+                du lien suivi), le genre d&apos;appareil, et jusqu&apos;où va la visite (une fiche, le panier, la commande). Votre adresse IP n&apos;est jamais gardée ; elle ne sert qu&apos;à reconnaître une visite le temps
                 d&apos;une journée, par une empreinte qui devient illisible le surlendemain. Si votre navigateur demande à ne pas
                 être suivi, rien n&apos;est compté.
               </>

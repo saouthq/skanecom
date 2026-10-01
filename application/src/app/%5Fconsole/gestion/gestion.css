@@ -1527,3 +1527,64 @@ a.pg-titre:hover { color: var(--ui-accent); }
   .lt-retirer { grid-area: retirer; }
   .lt-retirer[open] { grid-area: auto; grid-column: 1 / -1; }
 }
+
+/* --- Visites : le chemin vers la commande, les campagnes -------------------- */
+.vi-entonnoir { display: grid; gap: .625rem; margin: 0; padding: 0; list-style: none; }
+.vi-entonnoir li {
+  display: grid; grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr) 4.5rem minmax(8rem, 12rem); align-items: center; gap: .25rem 1rem;
+}
+.vi-etape-nom { font-size: .875rem; font-weight: 500; }
+.vi-etape-barre { display: block; block-size: 1.75rem; border-radius: 6px; background: var(--ui-doux); overflow: hidden; }
+.vi-etape-barre span {
+  display: block; block-size: 100%; inline-size: var(--part); min-inline-size: 3px; border-radius: inherit;
+  background: color-mix(in srgb, var(--ui-accent) 75%, var(--ui-bord));
+  transform-origin: left; animation: vi-avance .8s cubic-bezier(.2, .8, .2, 1) backwards;
+}
+.vi-entonnoir li:last-child .vi-etape-barre span { background: var(--ui-succes, #1f7a4d); }
+@keyframes vi-avance { from { transform: scaleX(0); } }
+.vi-etape-n { font-variant-numeric: tabular-nums; font-weight: 600; text-align: end; }
+.vi-etape-part { font-size: .8125rem; color: var(--ui-texte-2); font-variant-numeric: tabular-nums; }
+.vi-perte { display: flex; align-items: flex-start; gap: .5rem; margin: 1rem 0 0; }
+@media (max-width: 699px) {
+  .vi-entonnoir li { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "nom n" "barre barre" "part part"; gap: .25rem .75rem; }
+  .vi-etape-nom { grid-area: nom; }
+  .vi-etape-n { grid-area: n; }
+  .vi-etape-barre { grid-area: barre; block-size: 1.25rem; }
+  .vi-etape-part { grid-area: part; }
+  .vi-etape-part:empty { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .vi-etape-barre span { animation: none; } }
+
+.vi-campagnes-cadre { overflow-x: auto; margin-inline: -.25rem; }
+.vi-campagnes { inline-size: 100%; border-collapse: collapse; font-size: .875rem; }
+.vi-campagnes th, .vi-campagnes td { padding: .625rem .5rem; border-block-end: 1px solid var(--ui-bord); text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vi-campagnes thead th { font-size: .75rem; font-weight: 500; color: var(--ui-texte-2); }
+.vi-campagnes th:first-child { text-align: start; }
+.vi-campagnes tbody th { display: grid; gap: .125rem; font-weight: 400; white-space: normal; }
+.vi-campagne-nom { font-family: var(--ui-mono, ui-monospace, monospace); font-size: .8125rem; font-weight: 600; }
+.vi-campagnes tbody tr:last-child :is(th, td) { border-block-end: 0; }
+/* Au téléphone : une campagne par carte, ses quatre chiffres nommés. */
+@media (max-width: 699px) {
+  .vi-campagnes, .vi-campagnes tbody { display: block; }
+  .vi-campagnes thead { display: none; }
+  .vi-campagnes tbody tr {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .375rem .5rem;
+    padding-block: .875rem; border-block-end: 1px solid var(--ui-bord);
+  }
+  .vi-campagnes tbody tr:last-child { border-block-end: 0; }
+  .vi-campagnes tbody th { grid-column: 1 / -1; padding: 0; border: 0; }
+  .vi-campagnes tbody td { display: grid; gap: .125rem; padding: 0; border: 0; text-align: start; font-weight: 600; }
+  .vi-campagnes tbody td::before { content: attr(data-libelle); font-size: .6875rem; font-weight: 500; color: var(--ui-texte-2); }
+}
+.vi-composer { margin-block-start: 1.25rem; }
+.vi-composer > summary { list-style: none; cursor: pointer; inline-size: max-content; }
+.vi-composer > summary::-webkit-details-marker { display: none; }
+.vi-composer[open] > summary { margin-block-end: 1rem; }
+.vi-lien { display: grid; gap: 1rem; padding: 1rem; border: 1px solid var(--ui-bord); border-radius: 10px; background: var(--ui-doux); }
+.vi-lien-champs { gap: 1rem; }
+.vi-lien-champs code { font-size: .8125rem; }
+.vi-lien-resultat { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; min-block-size: 2.5rem; }
+.vi-lien-adresse {
+  flex: 1 1 20rem; min-inline-size: 0; padding: .5rem .75rem; border: 1px solid var(--ui-bord); border-radius: 8px;
+  background: var(--ui-fond, #fff); font-size: .8125rem; overflow-wrap: anywhere;
+}

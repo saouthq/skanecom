@@ -3,9 +3,12 @@ import { supabase } from "@/lib/supabase";
 import { ipDe } from "@/lib/console/http";
 
 /* Une page vue de la vitrine (components/MesureAudience.tsx, réglage
-   vitrine.statistiques). L'adresse IP et le navigateur ne servent qu'à
-   calculer, ici, une clé — leur empreinte — que la base sale du sel du
-   jour (public.compter_vue) : ni l'une ni l'autre n'est gardée. Les robots
+   vitrine.statistiques), ou un article ajouté au panier (evenement :
+   « panier »). L'adresse IP et le navigateur ne servent qu'à calculer, ici,
+   une clé — leur empreinte — que la base sale du sel du jour
+   (public.compter_vue, compter_ajout_panier) : ni l'une ni l'autre n'est
+   gardée. La campagne du lien d'arrivée (utm_campaign) range la visite ;
+   sa source (utm_source) l'emporte sur le site d'où l'on vient. Les robots
    (moteurs, aperçus de liens) ne comptent pas. Réponse vide, toujours. */
 
 export const dynamic = "force-dynamic";
@@ -31,9 +34,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   const { boutique } = await params;
   const cadre = await chargeCadre(boutique);
   if (!cadre?.statistiques) return rien();
-  const corps = (await req.json().catch(() => null)) as { chemin?: unknown; source?: unknown } | null;
+  const corps = (await req.json().catch(() => null)) as
+    { chemin?: unknown; source?: unknown; campagne?: unknown; support?: unknown; evenement?: unknown } | null;
   const chemin = typeof corps?.chemin === "string" ? corps.chemin.slice(0, 300) : "";
   if (!chemin.startsWith("/")) return rien();
+  if (corps?.evenement === "panier") {
+    const cle = await empreinte(`${ipDe(req) ?? "?"}|${ua}`);
+    const { error } = await supabase.rpc("compter_ajout_panier", { p_boutique_id: cadre.boutique.id, p_cle: cle });
+    if (error) console.error(`compter_ajout_panier (${boutique}) : ${error.message}`);
+    return rien();
+  }
   // La source : le nom de domaine du site d'où l'on vient — jamais la boutique elle-même.
   let source: string | null = null;
   if (typeof corps?.source === "string" && corps.source) {
@@ -44,9 +54,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
       // une source illisible ne compte pas
     }
   }
+  // Le lien d'une campagne dit lui-même d'où il vient (une publicité ouverte
+  // dans l'application Instagram n'a souvent aucun référent).
+  const support = typeof corps?.support === "string" ? corps.support.toLowerCase().replace(/[^a-z0-9.-]+/g, "").slice(0, 60) : "";
+  if (support) source = support;
+  const campagne = typeof corps?.campagne === "string" && corps.campagne.trim() ? corps.campagne.slice(0, 120) : null;
   const cle = await empreinte(`${ipDe(req) ?? "?"}|${ua}`);
   const { error } = await supabase.rpc("compter_vue", {
-    p_boutique_id: cadre.boutique.id, p_cle: cle, p_chemin: chemin, p_source: source, p_appareil: appareilDe(ua),
+    p_boutique_id: cadre.boutique.id, p_cle: cle, p_chemin: chemin, p_source: source, p_appareil: appareilDe(ua), p_campagne: campagne,
   });
   if (error) console.error(`compter_vue (${boutique}) : ${error.message}`);
   return rien();
