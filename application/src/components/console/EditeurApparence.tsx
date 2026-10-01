@@ -5,6 +5,7 @@ import { Icone } from "./Icone";
 import { BoutonCopier } from "./BoutonCopier";
 import { PanneauAccueil, type InfosAccueil } from "./PanneauAccueil";
 import { PanneauCadre } from "./PanneauCadre";
+import { PanneauPages, type ContenuPage, type ModelePage, type PageEditeur, type PageOffice, type Refus } from "./PanneauPages";
 import {
   MESSAGE_ACCUEIL, MESSAGE_APPARENCE, MESSAGE_MONTRER, MESSAGE_PRET, MESSAGE_RECHARGER, MESSAGE_SECTION,
 } from "@/components/ApercuApparence";
@@ -99,12 +100,20 @@ function amener(el: Element | null, colonne: HTMLElement | null) {
   window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - barre - onglets - 12), behavior: doux });
 }
 
-type Panneau = "style" | "accueil" | "cadre";
-const PANNEAUX: { id: Panneau; nom: string; icone: "marque" | "boutique" | "menu" }[] = [
+type Panneau = "style" | "accueil" | "cadre" | "pages";
+const PANNEAUX: { id: Panneau; nom: string; icone: "marque" | "boutique" | "menu" | "note" }[] = [
   { id: "style", nom: "Style", icone: "marque" },
   { id: "accueil", nom: "Accueil", icone: "boutique" },
   { id: "cadre", nom: "En-tête et pied", icone: "menu" },
+  { id: "pages", nom: "Pages", icone: "note" },
 ];
+
+/** Ce que rend un geste sur une page (route apparence/action, migration 68). */
+type RepPage =
+  | { ok: true; id?: string; slug?: string; version?: number; jeton?: string | null; brouillon_version?: number | null; brouillon?: Brouillon | null; message?: string }
+  | { ok: false; message: string; champ?: "titre" | "slug" | "corps" | null };
+
+const heureTunis = () => new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" }).format(new Date());
 
 /** Ce qui ne se voit qu'une fois la page rendue de nouveau : l'accueil, les
  *  réglages de l'en-tête et du pied (dans la forme envoyée à la base). */
@@ -112,6 +121,7 @@ const empreinteRendu = (b: { sections?: unknown; reglages?: unknown }) => JSON.s
 
 export function EditeurApparence({
   action, photoAction, retour: lienRetour, vitrine, ecrit, nom, fiche, panneau: panneauInitial, infos, reglages: reglagesInitiaux, whatsapp,
+  pages: pagesInitiales, pageOuverte, modeles, office, affichee,
   version: versionInitiale, publie: publieInitial, brouillon: brouillonInitial, message,
 }: {
   action: string;
@@ -132,6 +142,16 @@ export function EditeurApparence({
   reglages: ReglagesVitrine;
   /** La boutique a un numéro WhatsApp (le bouton flottant peut s'allumer). */
   whatsapp: boolean;
+  /** Les pages de la boutique : ce qui est en ligne, et leur brouillon. */
+  pages: PageEditeur[];
+  /** La page ouverte d'abord dans le panneau Pages (son id, « nouvelle »). */
+  pageOuverte: string | null;
+  /** Les modèles de pages, composés des réglages de la boutique. */
+  modeles: ModelePage[];
+  /** Les pages que la boutique a d'office (conditions, contact…). */
+  office: PageOffice[];
+  /** Le domaine de la boutique, devant l'adresse d'une page (« dar-alia.tn »). */
+  affichee: string | null;
   version: number | null;
   publie: ContenuApparence;
   brouillon: { contenu: ContenuApparence; version: number; jeton: string; auteur: string | null; quand: string } | null;
@@ -158,6 +178,10 @@ export function EditeurApparence({
   const enVol = useRef(false);
   const [panneau, setPanneau] = useState<Panneau>(panneauInitial);
   const [ouverte, setOuverte] = useState<string | null>(null);
+  // Les pages de la boutique : ce qui est en ligne, et leur brouillon.
+  const [pagesEtat, setPagesEtat] = useState<PageEditeur[]>(pagesInitiales);
+  const [pageCourante, setPageCourante] = useState<string | null>(pageOuverte);
+  const pagesEnBrouillon = pagesEtat.some((p) => p.brouillon !== null);
   // Les réglages de l'en-tête et du pied : ceux en vigueur, sous ce que le brouillon change.
   const [reglagesPublies, setReglagesPublies] = useState<ReglagesVitrine>(reglagesInitiaux);
   const reglages: ReglagesVitrine = { ...reglagesPublies, ...contenu.reglages };
@@ -173,8 +197,10 @@ export function EditeurApparence({
 
   /* --- Le cadre d'aperçu. */
   const origine = useMemo(() => (vitrine ? new URL(vitrine).origin : null), [vitrine]);
+  // Une page ouverte d'emblée (l'ancienne adresse de l'écran « Pages ») : l'aperçu y va.
+  const pageDepart = pagesInitiales.find((p) => p.id === pageOuverte) ?? null;
   const [src, setSrc] = useState<string | null>(() =>
-    vitrine ? `${vitrine}/?apercu=${brouillonInitial ? `${brouillonInitial.jeton}.${brouillonInitial.version}` : "fin"}` : null);
+    vitrine ? `${vitrine}/${pageDepart?.slug ?? ""}?apercu=${brouillonInitial ? `${brouillonInitial.jeton}.${brouillonInitial.version}` : "fin"}` : null);
   const [recharge, setRecharge] = useState(0);
   const [chemin, setChemin] = useState("/");
   const [gabaritCadre, setGabaritCadre] = useState<Structure | null>(null);
@@ -204,8 +230,8 @@ export function EditeurApparence({
   // place quand seul le style diffère, en rechargeant la version publiée
   // quand la structure ou l'accueil ont changé.
   const [comparer, setComparer] = useState(false);
-  const comparable = !memeContenu(publie, contenu);
-  const parRechargement = publie.code !== contenu.code || empreinteRendu(versBase(publie)) !== empreinteRendu(versBase(contenu));
+  const comparable = !memeContenu(publie, contenu) || pagesEnBrouillon;
+  const parRechargement = pagesEnBrouillon || publie.code !== contenu.code || empreinteRendu(versBase(publie)) !== empreinteRendu(versBase(contenu));
   const montre = comparer && comparable ? publie : contenu;
 
   // L'accueil en cours de réglage : la vitrine du cadre signale ses sections.
@@ -236,7 +262,14 @@ export function EditeurApparence({
     if (!origine || e.origin !== origine || e.source !== cadre.current?.contentWindow) return;
     const m = e.data as { type?: string; chemin?: string; gabarit?: Structure } | null;
     if (m?.type !== MESSAGE_PRET) return;
-    if (typeof m.chemin === "string") setChemin(m.chemin.replace(/[?&]apercu=[^&]*/, "").replace(/\?$/, "") || "/");
+    if (typeof m.chemin === "string") {
+      const ch = m.chemin.replace(/[?&]apercu=[^&]*/, "").replace(/\?$/, "") || "/";
+      setChemin(ch);
+      // Le panneau Pages ouvert, une page de la vitrine du cadre (un lien du
+      // pied de page cliqué) : son écriture s'ouvre.
+      const p = panneau === "pages" ? pagesEtat.find((x) => `/${x.slug}` === ch.replace(/[?#].*$/, "")) : undefined;
+      if (p && pageCourante !== p.id && !/^(nouvelle|modele:)/.test(pageCourante ?? "")) setPageCourante(p.id);
+    }
     if (m.gabarit && (STRUCTURES as string[]).includes(m.gabarit)) setGabaritCadre(m.gabarit);
     envoieAuCadre(montre);
     envoieAccueil();
@@ -307,6 +340,125 @@ export function EditeurApparence({
     return rep;
   };
 
+  /* --- Les pages : chaque écriture attend son tour (le brouillon de la
+     vitrine avance d'une version à chacune : deux à la fois se marcheraient
+     dessus), puis la vitrine du cadre se rend de nouveau, sur place. */
+  const tour = async <T,>(f: () => Promise<T>): Promise<T> => {
+    for (let i = 0; enVol.current && i < 100; i++) await new Promise((r) => window.setTimeout(r, 100));
+    enVol.current = true;
+    try {
+      return await f();
+    } finally {
+      enVol.current = false;
+      setRelance((n) => n + 1);
+    }
+  };
+  const postePage = async (champs: Record<string, string>): Promise<RepPage> => {
+    const d = new FormData();
+    for (const [k, v] of Object.entries(champs)) d.set(k, v);
+    const r = await fetch(action, { method: "POST", body: d, headers: { accept: "application/json" }, credentials: "same-origin" });
+    return ((await r.json().catch(() => null)) as RepPage | null) ?? { ok: false, message: "Réponse illisible : rechargez la page." };
+  };
+  const coupure = "L'enregistrement n'a pas abouti (réseau coupé ?) : votre texte est toujours là, réessayez.";
+  const noterBrouillon = (b: Brouillon | null) => {
+    setBrouillon(b);
+    setSauveA(b ? `à ${heureTunis()}` : null);
+  };
+
+  const ecrirePage = (p: PageEditeur, c: ContenuPage | null): Promise<Refus> => tour(async () => {
+    try {
+      const rep = await postePage({ geste: "page", id: p.id, version: String(p.version), contenu: c ? JSON.stringify(c) : "" });
+      if (!rep.ok) return { champ: rep.champ ?? null, texte: rep.message };
+      setPagesEtat((v) => v.map((x) => (x.id === p.id ? { ...x, brouillon: c } : x)));
+      if (rep.jeton && rep.brouillon_version != null) {
+        noterBrouillon({ jeton: rep.jeton, version: rep.brouillon_version });
+        rafraichir(`${rep.jeton}.${rep.brouillon_version}`);
+      }
+      return null;
+    } catch {
+      return { champ: null, texte: coupure };
+    }
+  });
+
+  const creerPage = (slug: string, c: ContenuPage): Promise<{ id: string } | Refus> => tour(async () => {
+    try {
+      const rep = await postePage({ geste: "page", slug, contenu: JSON.stringify(c) });
+      if (!rep.ok) return { champ: rep.champ ?? null, texte: rep.message };
+      if (!rep.id || !rep.slug) return { champ: null, texte: "Réponse illisible : rechargez la page." };
+      const neuve: PageEditeur = { id: rep.id, slug: rep.slug, version: rep.version ?? 1, en_ligne: { ...c, corps_fr: "", publie: false }, brouillon: c };
+      setPagesEtat((v) => [...v, neuve]);
+      const b = rep.jeton && rep.brouillon_version != null ? { jeton: rep.jeton, version: rep.brouillon_version } : null;
+      if (b) noterBrouillon(b);
+      // La page neuve, encore hors ligne, à côté : l'aperçu du brouillon la sert.
+      recharger(b ? `${b.jeton}.${b.version}` : null, `/${rep.slug}`);
+      setAnnonce(`Page « ${c.titre_fr} » créée, hors ligne jusqu'à « Publier ».`);
+      return { id: rep.id };
+    } catch {
+      return { champ: null, texte: coupure };
+    }
+  });
+
+  const rangerPages = (ids: string[]): Promise<string | null> => tour(async () => {
+    try {
+      const rep = await postePage({ geste: "page-ordre", ids: JSON.stringify(ids) });
+      if (!rep.ok) return rep.message;
+      setPagesEtat((v) => ids.map((id) => v.find((x) => x.id === id)).filter((x): x is PageEditeur => Boolean(x)));
+      const b = rep.brouillon ?? null;
+      if (b) setBrouillon(b);
+      rafraichir(b ? `${b.jeton}.${b.version}` : "fin");
+      return null;
+    } catch {
+      return coupure;
+    }
+  });
+
+  const retirerPage = (p: PageEditeur): Promise<string | null> => tour(async () => {
+    try {
+      const rep = await postePage({ geste: "page-retirer", id: p.id });
+      if (!rep.ok) return rep.message;
+      setPagesEtat((v) => v.filter((x) => x.id !== p.id));
+      const b = rep.brouillon ?? null;
+      if (b) setBrouillon(b);
+      const j = b ? `${b.jeton}.${b.version}` : null;
+      // La vitrine du cadre était sur la page : elle revient à l'accueil.
+      if (chemin === `/${p.slug}`) recharger(j, "/");
+      else rafraichir(j ?? "fin");
+      return null;
+    } catch {
+      return coupure;
+    }
+  });
+
+  // Une page hors ligne ne se montre qu'à l'aperçu d'un brouillon : on en ouvre un (tel quel).
+  const ouvrirBrouillon = (): Promise<Brouillon | null> => tour(async () => {
+    try {
+      const corps = JSON.stringify(versBase(contenu));
+      const rep = await poste({ geste: "brouillon", contenu: corps, version_brouillon: brouillon ? String(brouillon.version) : "" });
+      if (!rep.ok || !("brouillon" in rep) || !rep.brouillon) return null;
+      noterBrouillon(rep.brouillon);
+      setEnvoye(corps);
+      return rep.brouillon;
+    } catch {
+      return null;
+    }
+  });
+
+  // Ouvrir une page (ou la liste, « nouvelle », un modèle) : l'aperçu va sur la page.
+  const ouvrirPage = async (id: string | null) => {
+    setPageCourante(id);
+    const p = id ? pagesEtat.find((x) => x.id === id) : undefined;
+    if (!p || !vitrine) return;
+    let b = brouillon;
+    if (!b && !p.en_ligne.publie) b = await ouvrirBrouillon();
+    if (chemin !== `/${p.slug}`) recharger(b ? `${b.jeton}.${b.version}` : null, `/${p.slug}`);
+  };
+  // Ouvert d'emblée sur une page hors ligne, sans brouillon : l'aperçu en ouvre un.
+  const ouvrirPageDepart = useEffectEvent(() => {
+    if (!pageDepart || brouillonInitial || pageDepart.en_ligne.publie || !vitrine) return;
+    void ouvrirBrouillon().then((b) => { if (b) recharger(`${b.jeton}.${b.version}`, `/${pageDepart.slug}`); });
+  });
+  useEffect(() => { ouvrirPageDepart(); }, []);
+
   const enregistre = useEffectEvent(async () => {
     if (enVol.current) return;
     // Une valeur que la base refuserait ne part pas : elle est dite sous son champ (et dans l'état).
@@ -320,7 +472,8 @@ export function EditeurApparence({
     const identique = memeContenu(c, publie);
     if (identique && !brouillon) { setEnvoye(json); return; }
     const seules = photosDe(JSON.parse(envoye) as ContenuApparence).filter((x) => !photosDe(publie).includes(x));
-    const abandon = identique && seules.length === 0;
+    // Des pages écrites dans le brouillon le gardent, même revenu à la version publiée.
+    const abandon = identique && seules.length === 0 && !pagesEnBrouillon;
     enVol.current = true;
     setEtat({ genre: "envoi" });
     try {
@@ -515,6 +668,8 @@ export function EditeurApparence({
       const rep = await poste({ geste: "publier", contenu: json, version: String(version ?? "") });
       if (!rep.ok) { setEtat({ genre: "erreur", texte: rep.message }); return; }
       setVersion(rep.version ?? version);
+      // Les pages écrites dans le brouillon sont en ligne.
+      setPagesEtat((v) => v.map((x) => (x.brouillon ? { ...x, version: x.version + 1, en_ligne: x.brouillon, brouillon: null } : x)));
       // Publiés, les réglages changés deviennent ceux en vigueur.
       const apres: ContenuApparence = { ...contenu, reglages: undefined };
       setReglagesPublies(reglages);
@@ -555,6 +710,8 @@ export function EditeurApparence({
       setBrouillon(null);
       setSauveA(null);
       setOuverte(null);
+      // Les brouillons des pages s'en vont avec (une page créée ici reste, hors ligne).
+      setPagesEtat((v) => v.map((x) => ({ ...x, brouillon: null })));
       setComparer(false);
       setEtat({ genre: "repos" });
       setRetour({ ok: true, texte: oublie ? "Retour à la version publiée." : "Retour à la version publiée (⌘Z pour reprendre l'essai)." });
@@ -704,6 +861,22 @@ export function EditeurApparence({
 
           <div className="ap-panneau" role="tabpanel" id="ap-panneau-cadre" aria-labelledby="ap-onglet-cadre" hidden={panneau !== "cadre"}>
             <PanneauCadre reglages={reglages} ecrit={ecrit} whatsapp={whatsapp} lienReglages={lienRetour + "/reglages"} regler={reglerReglage} />
+          </div>
+
+          <div className="ap-panneau" role="tabpanel" id="ap-panneau-pages" aria-labelledby="ap-onglet-pages" hidden={panneau !== "pages"}>
+            <PanneauPages
+              pages={pagesEtat}
+              modeles={modeles}
+              office={office}
+              ecrit={ecrit}
+              affichee={affichee}
+              courante={pageCourante}
+              ouvrir={(id) => void ouvrirPage(id)}
+              ecrire={ecrirePage}
+              creer={creerPage}
+              ranger={rangerPages}
+              retirer={retirerPage}
+            />
           </div>
 
           <div className="ap-panneau" role="tabpanel" id="ap-panneau-style" aria-labelledby="ap-onglet-style" hidden={panneau !== "style"}>
