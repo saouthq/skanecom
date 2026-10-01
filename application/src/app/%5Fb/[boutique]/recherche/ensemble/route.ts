@@ -7,8 +7,9 @@ import type { ProduitVu, ReponseVus } from "@/lib/suggestions";
 /* « Souvent achetés avec votre panier » (components/EnsembleDuPanier.tsx) :
    les pièces que les commandes de la boutique réunissent avec celles du
    panier (public.achetes_ensemble), relues en base — publiées, en stock,
-   avec leur prix « dès » et leur photo. Rien de personnel : la même réponse
-   pour le même panier, d'où le cache partagé. */
+   avec leur prix « dès » et leur photo, et leur déclinaison quand il n'y en
+   a qu'une (l'ajout en un geste). Rien de personnel : la même réponse pour
+   le même panier, d'où le cache partagé. */
 
 export const dynamic = "force-dynamic";
 
@@ -27,14 +28,25 @@ export async function GET(req: Request, { params }: { params: Promise<{ boutique
     .slice(0, 20);
   if (slugs.length === 0) return reponse({ produits: [] });
 
-  const produits = (await achetesEnsemble(cadre.boutique.id, slugs, 3)).map((p): ProduitVu => ({
-    id: p.id,
-    slug: p.slug,
-    nom: champ(p, "nom"),
-    marque: p.marque,
-    photo: urlPhoto(p)?.src ?? null,
-    etat: etatProduit(p),
-    variantes: p.variantes.map((v) => ({ id: v.id, prix_millimes: v.prix_millimes })),
-  }));
+  const produits = (await achetesEnsemble(cadre.boutique.id, slugs, 3)).map((p): ProduitVu => {
+    // Une seule déclinaison, assez de stock pour son minimum : l'ajout en un geste.
+    const v = p.variantes.length === 1 ? p.variantes[0] : null;
+    const minimum = Math.max(1, v?.quantite_min ?? 1);
+    const nom = champ(p, "nom");
+    // Le libellé du panier, comme la fiche l'écrit : « Sac de voyage en cuir · Cognac ».
+    const declinaison = v ? p.options.map((o) => (v.options as Record<string, string>)[o.cle]).filter(Boolean).join(", ") : "";
+    return {
+      id: p.id,
+      slug: p.slug,
+      nom,
+      marque: p.marque,
+      photo: urlPhoto(p)?.src ?? null,
+      etat: etatProduit(p),
+      variantes: p.variantes.map((x) => ({ id: x.id, prix_millimes: x.prix_millimes })),
+      ...(v && v.stock >= minimum
+        ? { unique: { id: v.id, sku: v.sku, stock: v.stock, prix_millimes: v.prix_millimes, quantite_min: minimum, image: v.image_chemin ?? p.images[0]?.chemin ?? null, libelle: declinaison ? `${nom} · ${declinaison}` : nom } }
+        : {}),
+    };
+  });
   return reponse({ produits });
 }

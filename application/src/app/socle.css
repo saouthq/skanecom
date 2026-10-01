@@ -506,6 +506,26 @@ html[data-gabarit=technique] .panier-ensemble-photo { aspect-ratio: 1; backgroun
   .panier-ensemble-piece:hover .panier-ensemble-fleche { transform: translateX(3px); color: var(--theme-encre); }
   [dir="rtl"] .panier-ensemble-piece:hover .panier-ensemble-fleche { transform: translateX(-3px); }
 }
+/* L'ajout en un geste : la pièce à gauche (vers sa fiche), « Ajouter » à droite. */
+.panier-ensemble-ligne { display: flex; align-items: center; gap: .75rem; }
+.panier-ensemble-ligne > .panier-ensemble-piece { flex: 1 1 auto; min-inline-size: 0; }
+.panier-ensemble-ajout {
+  display: inline-flex; align-items: center; gap: .375rem; flex: none; min-block-size: 36px; padding-inline: .875rem;
+  border: 1px solid var(--theme-encre); border-radius: 999px; background: transparent; color: var(--theme-encre);
+  font: 500 .8125rem/1 var(--theme-font-texte); white-space: nowrap; cursor: pointer;
+  transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe), border-color .2s var(--theme-courbe);
+}
+.panier-ensemble-ajout:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+@media (hover: hover) { .panier-ensemble-ajout:not([aria-disabled]):hover { background: var(--theme-encre); color: var(--theme-fond); } }
+.panier-ensemble-ajout[aria-disabled] { border-color: transparent; color: var(--theme-succes); cursor: default; padding-inline: .25rem; }
+@media (pointer: coarse) { .panier-ensemble-ajout { min-block-size: 44px; } }
+html[data-gabarit=editorial] .panier-ensemble-ajout { border-radius: 0; letter-spacing: .02em; }
+html[data-gabarit=technique] .panier-ensemble-ajout:not([aria-disabled]) {
+  border-color: var(--theme-accent); background: var(--theme-accent); color: var(--theme-encre);
+  border-radius: var(--theme-radius-doux); font-weight: 700;
+}
+@media (hover: hover) { html[data-gabarit=technique] .panier-ensemble-ajout:not([aria-disabled]):hover { background: var(--theme-accent-clair); color: var(--theme-encre); } }
+.panier-ensemble-ligne[data-ajoute] .panier-ensemble-photo { opacity: .55; transition: opacity .3s var(--theme-courbe); }
 @media (prefers-reduced-motion: reduce) { .panier-ensemble { animation: none; } }
 
 /* Un article arrive : la pastille du panier rebondit (BoutonPanier.tsx). */

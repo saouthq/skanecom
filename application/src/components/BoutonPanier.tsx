@@ -169,7 +169,7 @@ export function BoutonPanier({
                   <span>{t.panier.total}</span>
                   <Prix millimes={total} fort />
                 </div>
-                <p className="legende">{t.panier.horsLivraison}</p>
+                <p className="legende">{reste === 0 ? t.panier.livraisonComprise : t.panier.horsLivraison}</p>
                 <Link href="/commande" className="btn btn-primaire btn-bloc panier-commander" onClick={() => setOuvert(false)}>
                   {t.panier.commander}
                   <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />

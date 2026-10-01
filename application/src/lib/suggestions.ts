@@ -22,5 +22,9 @@ export type ProduitVu = {
   photo: string | null;
   etat: "en-stock" | "faible" | "rupture";
   variantes: { id: string; prix_millimes: number }[];
+  /** Sa seule déclinaison, en stock : elle s'ajoute au panier sans ouvrir la
+   *  fiche (rien à choisir). Absente s'il y a une taille ou une couleur à
+   *  choisir, ou plus assez de stock. */
+  unique?: { id: string; sku: string; stock: number; prix_millimes: number; quantite_min: number; image: string | null; libelle: string };
 };
 export type ReponseVus = { produits: ProduitVu[] };

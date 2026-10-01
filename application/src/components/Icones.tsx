@@ -50,6 +50,15 @@ export function Coche({ taille = 16, className }: Props) {
   );
 }
 
+/** « Ajouter » : une croix droite. */
+export function Plus({ taille = 16, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={2}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
 export function Loupe({ taille = 20, className }: Props) {
   return (
     <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>

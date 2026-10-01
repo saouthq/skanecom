@@ -193,6 +193,22 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     await capture(page, "selma-tiroir-panier");
     await clic(page, page.locator(".tiroir-panier").getByRole("button", { name: /ajouter un article/i }));
     verifie((await ligne.locator(".qte span").innerText()) === "2", "« + » dans le tiroir : 2");
+    // L'ajout en un geste : le sac n'a qu'une déclinaison ; la chemise a ses tailles.
+    const ajoutSac = ensemble.getByRole("button", { name: "Ajouter Sac de voyage en cuir au panier" });
+    verifie((await ajoutSac.count()) === 1, "le sac (une seule déclinaison) s'ajoute d'un geste, depuis le tiroir");
+    verifie((await ensemble.getByRole("link", { name: /^Choisir la taille ou la couleur de Chemise/ }).count()) === 1, "la chemise (des tailles) mène à sa fiche");
+    await ajoutSac.focus();
+    await page.keyboard.press("Enter");
+    await pause(400);
+    const lignes = page.locator(".tiroir-panier .panier-ligne");
+    verifie((await lignes.count()) === 2 && (await lignes.last().innerText()).includes("Sac de voyage en cuir"), "Entrée : le sac rejoint le panier, sans quitter le tiroir");
+    verifie((await page.evaluate(() => document.activeElement?.getAttribute("aria-label"))) === "Ajouté — Sac de voyage en cuir", "le focus reste sur la suggestion, « Ajouté »");
+    verifie((await page.locator(".tiroir-panier .panier-total + .legende").innerText()) === "Livraison offerte.",
+      "le seuil atteint, le pied dit « Livraison offerte. » comme la jauge (plus « Livraison en sus »)");
+    await capture(page, "selma-tiroir-ajout-geste");
+    await clic(page, lignes.last().getByRole("button", { name: "Retirer Sac de voyage en cuir" }));
+    await pause(300);
+    verifie((await lignes.count()) === 1 && (await ajoutSac.count()) === 1, "retiré du panier : la suggestion redevient « Ajouter »");
     await page.keyboard.press("Escape");
     await pause(300);
     verifie(!(await tiroirOuvert(page, "tiroir-panier")), "Échap ferme le tiroir");

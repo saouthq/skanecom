@@ -403,6 +403,11 @@ export const fr = {
     titre: "Souvent achetés ensemble",
     chapo: "D'après les commandes de la boutique : ce que les clients prennent avec cette pièce.",
     panierTitre: "Souvent achetés avec votre panier",
+    ajouter: "Ajouter",
+    ajouterNom: (nom: string, n: number) => (n > 1 ? `Ajouter ${nom} au panier, par ${n}` : `Ajouter ${nom} au panier`),
+    ajoute: "Ajouté",
+    ajouteAnnonce: (nom: string) => `${nom} : ajouté au panier.`,
+    choisir: (nom: string) => `Choisir la taille ou la couleur de ${nom}`,
   },
 
   vus: {
@@ -421,6 +426,8 @@ export const fr = {
     parMinimum: (n: number) => `Par ${n} au moins`,
     total: "Total des articles",
     horsLivraison: "Livraison en sus, réglée à la remise.",
+    /** Le seuil de la livraison offerte atteint : le pied le dit comme la jauge. */
+    livraisonComprise: "Livraison offerte.",
     continuer: "Continuer mes achats",
     fermer: "Fermer le panier",
     ajoute: "Ajouté au panier",
