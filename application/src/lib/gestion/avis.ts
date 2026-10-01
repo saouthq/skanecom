@@ -30,6 +30,8 @@ export type AvisGestion = {
   variante_libelle: string | null;
   commande: string;
   client: { id: string; nom: string | null; telephone: string };
+  /** Les photos jointes par le client (réglage avis.photos). */
+  photos: { id: string; chemin: string; largeur: number | null; hauteur: number | null }[];
 };
 
 export type ListeAvis = {

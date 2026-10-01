@@ -75,6 +75,76 @@ export function dimensionsImage(o: Uint8Array): { largeur: number; hauteur: numb
   return null;
 }
 
+/** La même image sans ses métadonnées (EXIF, XMP, textes) : le lieu de la
+ *  prise de vue, l'appareil, la date. Sans rien réencoder — on retire les
+ *  segments (JPEG) ou les blocs (PNG, WebP) qui les portent. Le navigateur
+ *  les a d'ordinaire déjà ôtées en réduisant la photo ; ceci vaut pour un
+ *  envoi qui ne serait pas passé par lui. Illisible : l'image telle quelle. */
+export function sansMetadonnees(o: Uint8Array): Uint8Array {
+  const genre = typeImage(o);
+  const lu = new DataView(o.buffer, o.byteOffset, o.byteLength);
+  const ascii = (debut: number, fin: number) => String.fromCharCode(...o.subarray(debut, fin));
+  try {
+    if (genre?.type === "image/jpeg") {
+      const morceaux: Uint8Array[] = [o.subarray(0, 2)];
+      let i = 2;
+      while (i + 4 <= o.byteLength && o[i] === 0xff) {
+        const marqueur = o[i + 1];
+        if (marqueur === 0xda) break; // le début de l'image : tout le reste est gardé tel quel
+        const longueur = lu.getUint16(i + 2);
+        // APP1 (EXIF, XMP), APP13 (IPTC), COM (commentaire) : retirés.
+        if (![0xe1, 0xed, 0xfe].includes(marqueur)) morceaux.push(o.subarray(i, i + 2 + longueur));
+        i += 2 + longueur;
+      }
+      morceaux.push(o.subarray(i));
+      return concatene(morceaux);
+    }
+    if (genre?.type === "image/png") {
+      const morceaux: Uint8Array[] = [o.subarray(0, 8)];
+      let i = 8;
+      while (i + 12 <= o.byteLength) {
+        const longueur = lu.getUint32(i);
+        const bloc = ascii(i + 4, i + 8);
+        if (!["eXIf", "tEXt", "iTXt", "zTXt", "tIME"].includes(bloc)) morceaux.push(o.subarray(i, i + 12 + longueur));
+        i += 12 + longueur;
+      }
+      return concatene(morceaux);
+    }
+    if (genre?.type === "image/webp") {
+      const morceaux: Uint8Array[] = [];
+      let i = 12;
+      while (i + 8 <= o.byteLength) {
+        const bloc = ascii(i, i + 4);
+        const longueur = lu.getUint32(i + 4, true);
+        const fin = Math.min(o.byteLength, i + 8 + longueur + (longueur & 1));
+        if (bloc === "VP8X") {
+          const copie = o.slice(i, fin);
+          copie[8] &= ~(0x08 | 0x04); // les drapeaux EXIF et XMP
+          morceaux.push(copie);
+        } else if (bloc !== "EXIF" && bloc !== "XMP ") {
+          morceaux.push(o.subarray(i, fin));
+        }
+        i = fin;
+      }
+      const corps = concatene(morceaux);
+      const tete = new Uint8Array(12);
+      tete.set(o.subarray(0, 12));
+      new DataView(tete.buffer).setUint32(4, corps.byteLength + 4, true);
+      return concatene([tete, corps]);
+    }
+  } catch {
+    return o;
+  }
+  return o;
+}
+
+function concatene(morceaux: Uint8Array[]): Uint8Array {
+  const tout = new Uint8Array(morceaux.reduce((n, m) => n + m.byteLength, 0));
+  let i = 0;
+  for (const m of morceaux) { tout.set(m, i); i += m.byteLength; }
+  return tout;
+}
+
 function depotLocal(): string | null {
   const base = process.env.NEXT_PUBLIC_FICHIERS_URL;
   if (!base) return null;

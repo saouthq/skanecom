@@ -67,7 +67,7 @@ export type CommandeMienne = {
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
-export function Compte({ boutiqueId, verification, sav = false, pro = false, devis = false, avis = false }: {
+export function Compte({ boutiqueId, verification, sav = false, pro = false, devis = false, avis = false, avisPhotos = false }: {
   boutiqueId: string;
   verification: Verification;
   sav?: boolean;
@@ -75,6 +75,8 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
   devis?: boolean;
   /** Module avis : sous une commande livrée, chaque article à noter. */
   avis?: boolean;
+  /** Réglage avis.photos : des photos jointes à l'avis. */
+  avisPhotos?: boolean;
 }) {
   // undefined : la session n'est pas encore lue.
   const [session, setSession] = useState<SessionAcheteur | null | undefined>(undefined);
@@ -204,6 +206,7 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
                 demandes={demandes}
                 surDemande={() => setRelecture((n) => n + 1)}
                 avis={avis}
+                avisPhotos={avisPhotos}
                 mesAvis={mesAvis}
                 surAvis={() => setRelectureAvis((n) => n + 1)}
               />
@@ -290,13 +293,14 @@ export function ResumeCommande({ c }: { c: CommandeMienne }) {
   );
 }
 
-function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, mesAvis, surAvis }: {
+function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mesAvis, surAvis }: {
   c: CommandeMienne;
   boutiqueId: string;
   sav: boolean;
   demandes: DemandeMienne[];
   surDemande: () => void;
   avis: boolean;
+  avisPhotos: boolean;
   mesAvis: MonAvis[];
   surAvis: () => void;
 }) {
@@ -336,6 +340,7 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, mesAvis, surAvi
           lignes={c.lignes}
           mesAvis={mesAvis.filter((a) => a.commande === c.numero)}
           surAvis={surAvis}
+          photos={avisPhotos}
         />
       ) : null}
     </li>

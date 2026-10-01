@@ -6,6 +6,9 @@ import { supabase } from "./supabase";
    `null` quand la boutique n'a pas le module : la fiche ne montre rien.
    ========================================================================== */
 
+/** Une photo jointe à un avis (réglage avis.photos, migration 52). */
+export type PhotoAvis = { id: string; chemin: string; largeur: number | null; hauteur: number | null };
+
 export type AvisPublie = {
   id: string;
   note: number;
@@ -16,6 +19,8 @@ export type AvisPublie = {
   cree_le: string;
   reponse: string | null;
   repondu_le: string | null;
+  /** Vide sans le réglage avis.photos. */
+  photos?: PhotoAvis[];
 };
 
 export type AvisProduit = {
@@ -23,6 +28,8 @@ export type AvisProduit = {
   moyenne: number | null;
   repartition: Record<"1" | "2" | "3" | "4" | "5", number>;
   avis: AvisPublie[];
+  /** « Les photos des clients » : celles des avis publiés, douze au plus, les plus récentes d'abord. */
+  photos?: (PhotoAvis & { avis_id: string })[];
 };
 
 /** Un avis du client connecté, par article commandé (« Mes commandes »). */
@@ -34,6 +41,7 @@ export type MonAvis = {
   statut: "en_attente" | "publie" | "ecarte";
   reponse: string | null;
   cree_le: string;
+  photos?: PhotoAvis[];
 };
 
 export async function chargeAvis(boutiqueId: string, produitId: string): Promise<AvisProduit | null> {

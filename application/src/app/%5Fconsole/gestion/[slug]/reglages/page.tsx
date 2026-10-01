@@ -550,6 +550,10 @@ export default async function Reglages({
                         { valeur: "automatique", titre: "Publié aussitôt", aide: "L'avis paraît tout de suite sur la fiche ; vous pouvez l'écarter ensuite." },
                       ]}
                     />
+                    <div className="choix">
+                      <Case cle="avis.photos" valeur={Boolean(v("avis.photos"))} titre="Photos dans les avis"
+                        aide="Avec son avis, le client joint jusqu'à trois photos de l'article reçu ; elles paraissent avec lui, et vous pouvez en retirer une." />
+                    </div>
                     <p className="aide rg-fixe">
                       <Icone nom="etoile" taille={14} /> <span><a href={`/gestion/${slug}/avis`}>Les avis des clients</a> : à relire, publiés, écartés.</span>
                     </p>

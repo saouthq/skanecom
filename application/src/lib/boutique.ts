@@ -92,6 +92,8 @@ export type Cadre = {
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
+  /** Réglage `avis.photos` (module avis) : des photos jointes aux avis. */
+  avisPhotos: boolean;
   /** Les codes promo (module promotions) : le champ « Vous avez un code ? »
    *  du tunnel. */
   promotions: boolean;
@@ -195,6 +197,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     favoris: reglage<boolean>(reglages, "catalogue.favoris", false) === true,
     achetesEnsemble: reglage<boolean>(reglages, "catalogue.achetes_ensemble", false) === true,
     avis: modules.includes("avis"),
+    avisPhotos: modules.includes("avis") && reglage<boolean>(reglages, "avis.photos", false) === true,
     promotions: modules.includes("promotions"),
     pages: brut.pages ?? [],
     reseaux: reseauxDe(reglages),

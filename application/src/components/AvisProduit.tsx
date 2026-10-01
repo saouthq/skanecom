@@ -1,5 +1,6 @@
 import { Coche } from "./Icones";
 import { Etoiles } from "./Etoiles";
+import { PhotosAvis } from "./PhotosAvis";
 import { t } from "@/lib/i18n";
 import { noteLisible, type AvisProduit as Avis } from "@/lib/avis";
 
@@ -9,6 +10,9 @@ import { noteLisible, type AvisProduit as Avis } from "@/lib/avis";
    « Achat vérifié » (seul un client livré note l'article reçu), avec la
    déclinaison achetée et la réponse de la boutique. Rien tant qu'aucun avis
    n'est publié. `section` et `tete` : les classes du gabarit.
+
+   Avec le réglage avis.photos : les photos jointes sous chaque avis, et en
+   tête de la liste « Les photos des clients », en rang.
 
    Sous le titre de la fiche, ResumeAvis : les étoiles et le nombre d'avis,
    un lien vers la section.
@@ -57,6 +61,19 @@ export function AvisProduit({ avis, section, tete }: { avis: Avis | null; sectio
           <p className="legende avis-explique">{t.avis.explication}</p>
         </div>
 
+        <div className="avis-colonne">
+        {/* Le rang, dès que les photos viennent de plusieurs avis (d'un seul, elles sont déjà sous lui). */}
+        {avis.photos && new Set(avis.photos.map((p) => p.avis_id)).size > 1 ? (
+          <div className="avis-rang">
+            <p className="avis-rang-titre" id="avis-rang-titre">{t.avis.photosClients(avis.photos.length)}</p>
+            <PhotosAvis
+              photos={avis.photos}
+              auteurs={avis.photos.map((p) => avis.avis.find((a) => a.id === p.avis_id)?.auteur ?? "")}
+              classe="avis-photos"
+              taille={104}
+            />
+          </div>
+        ) : null}
         <ul className="avis-liste" role="list">
           {avis.avis.map((a) => (
             <li key={a.id} className="avis-item">
@@ -70,6 +87,9 @@ export function AvisProduit({ avis, section, tete }: { avis: Avis | null; sectio
                 {a.variante_libelle ? ` · ${a.variante_libelle}` : null}
               </p>
               {a.texte ? <p className="avis-texte">{a.texte}</p> : null}
+              {a.photos && a.photos.length > 0 ? (
+                <PhotosAvis photos={a.photos} auteurs={a.photos.map(() => a.auteur)} classe="avis-photos" />
+              ) : null}
               {a.reponse ? (
                 <div className="avis-reponse">
                   <b>{t.avis.reponseBoutique}</b>
@@ -79,6 +99,7 @@ export function AvisProduit({ avis, section, tete }: { avis: Avis | null; sectio
             </li>
           ))}
         </ul>
+        </div>
       </div>
     </section>
   );

@@ -207,6 +207,29 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     verifie((await page.locator(".fiche-ensemble .ed-carte-nom").allInnerTexts()).includes("Robe à bretelles en lin"), "et le sac, en retour, propose la robe");
   });
 
+  await etape("les photos d'un avis : au clavier, la visionneuse, le focus revient", async () => {
+    // L'avis du sac a deux photos (supabase/seed-avis-photos.sql), sur la fiche où l'on est.
+    const vignettes = page.locator("#avis .avis-photo");
+    verifie((await vignettes.count()) === 2, "sous l'avis du sac, ses deux photos");
+    await vignettes.first().focus();
+    verifie((await vignettes.first().getAttribute("aria-label")).startsWith("Agrandir la photo 1 sur 2"), "la vignette dit ce qu'elle ouvre");
+    await page.keyboard.press("Enter");
+    const dlg = page.locator("dialog.visionneuse[open]");
+    await dlg.waitFor({ timeout: 3000 });
+    verifie((await dlg.getAttribute("aria-label")) === "Les photos des clients" && (await dlg.locator(".visionneuse-compteur").innerText()) === "Photo 1 sur 2",
+      "Entrée : la visionneuse des photos des clients, sur la première");
+    const fit = await dlg.locator(".visionneuse-vue img").first().evaluate((i) => getComputedStyle(i).objectFit);
+    verifie(fit === "contain", `la photo s'y voit entière, jamais recadrée (${fit})`);
+    await capture(page, "selma-avis-visionneuse");
+    await page.keyboard.press("ArrowRight");
+    await page.waitForFunction(() => document.querySelector("dialog.visionneuse[open] .visionneuse-compteur")?.textContent === "Photo 2 sur 2", null, { timeout: 3000 }).catch(() => {});
+    verifie((await dlg.locator(".visionneuse-compteur").innerText()) === "Photo 2 sur 2", "→ : la deuxième");
+    await page.keyboard.press("Escape");
+    await pause(300);
+    verifie((await page.locator("dialog.visionneuse[open]").count()) === 0 && (await vignettes.first().evaluate((e) => e === document.activeElement)),
+      "Échap la ferme, le focus revient sur la vignette");
+  });
+
   await etape("le panier survit au rechargement", async () => {
     await page.reload({ waitUntil: "networkidle" });
     await pause(300);
@@ -446,6 +469,7 @@ console.log("\n== 3. Sur téléphone (tactile) ==");
     await pause(500);
     verifie(await tiroirOuvert(page, "tiroir-panier"), "« Voir le panier » de la feuille ouvre le tiroir");
     verifie((await page.locator(".panier-ensemble, .fiche-ensemble").count()) === 0, "Maymar n'a pas le réglage : rien d'« acheté ensemble »");
+    verifie((await page.locator(".avis-photo, .avis-rang").count()) === 0, "ni photo sous ses avis (réglage coupé)");
     await capture(page, "mobile-tiroir-panier");
     await page.locator(".tiroir-panier [data-fermer]").tap();
     await pause(300);

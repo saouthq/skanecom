@@ -46,7 +46,7 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 - [x] **Favoris** (30/09, réglage) : un cœur sur les cartes et la fiche, « Mes favoris » relus en base ; gardés dans le navigateur et, pour un client connecté, dans son compte (d'un appareil à l'autre) ; l'équipe voit combien aiment chaque pièce, jamais qui. Reste : prévenir d'une baisse de prix ou d'un retour en stock d'une pièce aimée.
 - [x] **Paniers abandonnés** (30/09, réglage, avec le compte obligatoire) : le panier d'un client connecté, au backoffice une heure plus tard, message WhatsApp prêt avec le lien qui remet le panier dans le navigateur, une relance ; la commande qui a suivi. Reste : la relance automatique (SMS, e-mail), quand les fournisseurs seront branchés.
 - [x] **Souvent achetés ensemble** (30/09, réglage) : sous la fiche et dans le tiroir du panier, les pièces que les commandes de la boutique réunissent avec celle-ci (180 jours, ni annulées ni refusées), en vente et en stock ; « Vous aimerez aussi » ne les répète pas. Reste : les lots (un prix pour l'ensemble), l'ajout en un geste depuis le tiroir.
-- Avis clients avec photos.
+- [x] **Avis avec photos** (30/09, réglage du module avis) : avec son avis, le client livré joint jusqu'à trois photos de l'article reçu, réduites dans son navigateur ; elles suivent l'avis (relues avec lui, publiées avec lui), s'ouvrent en grand sur la fiche ; l'équipe en retire une sans écarter l'avis. Reste : « Les photos des clients » en tête de la fiche quand il y en a beaucoup (déjà dans la base : le rang, dès deux avis illustrés), un filtre « avec photos ».
 
 ### D. Tous les métiers
 

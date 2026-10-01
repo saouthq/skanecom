@@ -47,7 +47,9 @@ export function Photo({
       style={{ aspectRatio: ratio }}
     >
       {photo ? (
-        <Image src={photo.src} alt={photo.alt} fill sizes={tailles} priority={prioritaire} className="photo-principale" />
+        // Détourée : entière (le composant pose object-fit: cover en ligne, que .detoure ne peut défaire).
+        <Image src={photo.src} alt={photo.alt} fill sizes={tailles} priority={prioritaire} className="photo-principale"
+          style={photo.detoure ? { objectFit: "contain" } : undefined} />
       ) : (
         <span className={nom ? "attente-photo attente-cartel" : "attente-photo"} aria-hidden="true">
           <span className="filigrane" aria-hidden="true" />

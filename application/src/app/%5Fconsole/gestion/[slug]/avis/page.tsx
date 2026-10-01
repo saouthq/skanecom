@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Etoiles } from "@/components/Etoiles";
@@ -7,6 +8,7 @@ import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { quand, telephoneLisible } from "@/lib/gestion/libelles";
 import { noteLisible } from "@/lib/avis";
+import { urlFichier } from "@/lib/photos";
 import { CLASSES_STATUT_AVIS, FILTRES_AVIS, LIBELLES_STATUT_AVIS, PEUT_MODERER, type ListeAvis } from "@/lib/gestion/avis";
 
 export const metadata: Metadata = { title: "Avis" };
@@ -94,6 +96,26 @@ export default async function Avis({
                 <span className="discret av-quand">{quand(a.cree_le, maintenant)}</span>
               </div>
               {a.texte ? <blockquote className="av-texte">« {a.texte} »</blockquote> : <p className="discret av-texte-vide">La note seule, sans texte.</p>}
+              {a.photos.length > 0 ? (
+                <ul className="av-photos" role="list" aria-label={`Les photos du client (${a.photos.length})`}>
+                  {a.photos.map((ph, i) => (
+                    <li key={ph.id} className="av-photo">
+                      <a href={urlFichier(ph.chemin)} target="_blank" rel="noopener" className="av-photo-lien" aria-label={`Voir la photo ${i + 1} en grand`}>
+                        <Image src={urlFichier(ph.chemin)} alt="" fill sizes="112px" />
+                      </a>
+                      {modere ? (
+                        <form action={action} method="post">
+                          <input type="hidden" name="avis" value={a.id} />
+                          <input type="hidden" name="photo" value={ph.id} />
+                          <input type="hidden" name="geste" value="retirer_photo" />
+                          <input type="hidden" name="filtre" value={filtre.cle} />
+                          <button className="btn-lien av-photo-retirer" aria-label={`Retirer la photo ${i + 1} de cet avis`}>Retirer</button>
+                        </form>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               <p className="aide av-qui">
                 <b className="font-medium">{a.auteur}</b> sur la vitrine ·{" "}
                 <Link href={`/gestion/${slug}/clients/${a.client.id}`}>{a.client.nom ?? telephoneLisible(a.client.telephone)}</Link>

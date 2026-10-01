@@ -109,6 +109,13 @@ html[data-gabarit=technique] .etoiles { --etoile: #F2A900; }
 .av-reponse { padding: .625rem .875rem; border-inline-start: 2px solid var(--ui-accent); background: var(--ui-doux); border-radius: 0 var(--ui-r-s) var(--ui-r-s) 0; font-size: .875rem; }
 .av-reponse b { display: block; font-size: .75rem; font-weight: 600; color: var(--ui-texte-2); margin-block-end: .125rem; }
 .av-reponse p { margin: 0; }
+/* Les photos jointes par le client, et « Retirer ». */
+.av-photos { display: flex; flex-wrap: wrap; gap: .625rem; margin: 0; padding: 0; list-style: none; }
+.av-photo { display: grid; gap: .25rem; justify-items: center; }
+.av-photo-lien { position: relative; display: block; inline-size: 7rem; block-size: 7rem; overflow: hidden; border-radius: var(--ui-r-s); border: 1px solid var(--ui-bord); background: var(--ui-doux); }
+.av-photo-lien img { object-fit: cover; }
+.av-photo-retirer { font-size: .8125rem; color: var(--ui-rouge); }
+@media (max-width: 479px) { .av-photo-lien { inline-size: 5.5rem; block-size: 5.5rem; } }
 .av-gestes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; padding-block-start: .25rem; }
 /* Ouvert, un pli prend la ligne entière : son formulaire sous son bouton. */
 .av-pli > summary { list-style: none; }
@@ -125,3 +132,45 @@ html[data-gabarit=technique] .etoiles { --etoile: #F2A900; }
 .carte-note-total { font-variant-numeric: tabular-nums; }
 .ed-carte-note { margin-block-start: .375rem; }
 .te-carte-note { margin-block: .125rem .25rem; }
+
+/* ---- Les photos des clients (réglage avis.photos, PhotosAvis.tsx) :
+   des vignettes carrées, sous un avis ou en rang au-dessus de la liste ;
+   touchées, elles s'ouvrent dans la Visionneuse. ---- */
+.avis-colonne { display: grid; min-inline-size: 0; }
+.avis-photos { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+.avis-rang { display: grid; gap: .625rem; margin-block-end: 1.5rem; }
+.avis-rang-titre { margin: 0; font-size: .8125rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.avis-rang .avis-photos {
+  flex-wrap: nowrap; margin: 0 calc(-1 * var(--theme-marge)); padding: .125rem var(--theme-marge) .5rem;
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: var(--theme-filet) transparent;
+}
+.avis-rang .avis-photos li { flex: none; scroll-snap-align: start; }
+@media (min-width: 900px) { .avis-rang .avis-photos { margin-inline: 0; padding-inline: 0; } }
+.avis-photo {
+  position: relative; display: block; inline-size: 4.5rem; block-size: 4.5rem; padding: 0; overflow: hidden; cursor: zoom-in;
+  border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-net); background: var(--theme-surface-2);
+}
+.avis-rang .avis-photo { inline-size: 6.5rem; block-size: 6.5rem; }
+.avis-photo img { object-fit: cover; transition: transform .5s var(--theme-courbe); }
+@media (hover: hover) { .avis-photo:hover img { transform: scale(1.06); } }
+.avis-photo:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .avis-photo img { transition: none; } }
+
+/* Joindre ses photos, dans « Donner mon avis ». */
+.avis-depot { display: grid; gap: .5rem; }
+.avis-depot-titre { font-size: .875rem; font-weight: 500; }
+.avis-depot .avis-depot-liste { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.avis-depot-apercu { position: relative; inline-size: 4.5rem; block-size: 4.5rem; overflow: hidden; border-radius: var(--theme-radius-net); background: var(--theme-surface); border: 1px solid var(--theme-filet); }
+.avis-depot-apercu img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.avis-depot-retirer {
+  position: absolute; inset-block-start: .25rem; inset-inline-end: .25rem; display: grid; place-items: center;
+  inline-size: 1.75rem; block-size: 1.75rem; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  background: color-mix(in srgb, var(--theme-surface) 90%, transparent); color: var(--theme-encre); backdrop-filter: blur(6px);
+}
+.avis-depot-ajout {
+  display: grid; place-items: center; gap: .125rem; inline-size: 4.5rem; block-size: 4.5rem; cursor: pointer;
+  border: 1px dashed color-mix(in srgb, var(--theme-encre) 35%, transparent); border-radius: var(--theme-radius-net);
+  font-size: .6875rem; line-height: 1.2; text-align: center; color: var(--theme-encre-doux); background: var(--theme-surface);
+}
+.avis-depot-ajout:hover { color: var(--theme-encre); border-color: var(--theme-encre); }
+.avis-depot-ajout:focus-within { outline: 2px solid var(--theme-accent); outline-offset: 2px; }

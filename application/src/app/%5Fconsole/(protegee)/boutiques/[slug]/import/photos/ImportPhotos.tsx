@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { unzip } from "fflate";
 import { Icone } from "@/components/console/Icone";
-import { nomPour, reduire } from "@/components/console/DepotPhotos";
+import { nomPour, reduire } from "@/lib/reduire-photo";
 import { aIgnorer, rapprocher, type ProduitReference } from "@/lib/console/photos-import";
 
 /* ============================================================================

@@ -325,6 +325,19 @@ export const fr = {
     envoi: "Envoi…",
     publier: "Publier mon avis",
     annuler: "Annuler",
+    // Les photos des avis (réglage avis.photos).
+    photosClients: (n: number) => `Les photos des clients (${n})`,
+    photoDe: (auteur: string) => (auteur ? `Photo envoyée par ${auteur}` : "Photo d'un client"),
+    agrandirPhoto: (auteur: string, i: number, n: number) => `Agrandir la photo ${i} sur ${n}${auteur ? `, envoyée par ${auteur}` : ""}`,
+    visionneuse: "Les photos des clients",
+    photosTitre: "Vos photos",
+    photosAide: (n: number) => `facultatif, ${n} au plus : l'article reçu, porté ou utilisé`,
+    ajouterPhoto: "Ajouter une photo",
+    photoChoisie: (i: number) => `Photo ${i}, choisie`,
+    retirerPhoto: (i: number) => `Retirer la photo ${i}`,
+    merciPhotos: (n: number) => `Avec ${n} photo${n > 1 ? "s" : ""}.`,
+    photoRatee: (raison: string) => `Une photo n'a pas suivi : ${raison}`,
+    photosErreur: "l'envoi a échoué.",
   },
 
   /** « Souvent achetés ensemble » (réglage catalogue.achetes_ensemble). */

@@ -30,6 +30,7 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `maison-selma/produits/derbies-cuir-fauve` | [Markus Spiske](https://freeforcommercialuse.net) | CC0 | [stocksnap](https://stocksnap.io/photo/leather-shoes-DC246EC89C) |
 | `maison-selma/produits/chaussures-cuir-noir` | [Caio Resende](https://stocksnap.io/author/24500) | CC0 | [stocksnap](https://stocksnap.io/photo/leather-shoes-I1GV6WICCT) |
 | `maison-selma/produits/sac-cuir-cognac` | [Harsh Jadav](https://stocksnap.io/author/37782) | CC0 | [stocksnap](https://stocksnap.io/photo/handbag-leather-Z9ESJO45V5) |
+| `maison-selma/avis/sac-anse`, `maison-selma/avis/sac-poche` | recadrages de `maison-selma/produits/sac-cuir-cognac` (aucune personne dessus), pour les photos de l'avis de démonstration (`supabase/seed-avis-photos.sql`) | CC0 | voir `sac-cuir-cognac` |
 | `maymar/accueil/aeroport` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5924408/luggage-airport-free-public-domain-cc0-image) |
 | `maymar/accueil/depart` | [Erol Ahmed](https://stocksnap.io/author/26749) | CC0 | [stocksnap](https://stocksnap.io/photo/luggage-dufflebag-B3KGCPF50Y) |
 | `quincaillerie-demo/accueil/chantier` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5910507/image-light-public-domain-construction) |

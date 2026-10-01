@@ -179,6 +179,67 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
     const conf = await page.locator("main").innerText();
     verifie(conf.includes("2004-63") && conf.includes("Union européenne"), "la confidentialité : la loi, et où sont les données");
     verifie(!conf.includes("INPDP), sous la référence"), "aucune déclaration INPDP n'est annoncée tant qu'elle n'est pas renseignée");
+    verifie(conf.includes("le texte et les photos jointes"), "elle dit que les photos jointes à un avis sont gardées et publiées avec lui");
+  });
+
+  await etape("livrée : l'avis avec une photo, réduite par le navigateur", async () => {
+    // Une commande livrée pour Amel, connectée (numéro confirmé plus haut) :
+    // posée par la clé de service de l'API locale, comme la vivrait l'équipe.
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    const rest = async (chemin, methode = "GET", corps) => {
+      const r = await fetch(`${RELAIS}/rest/v1/${chemin}`, {
+        method: methode,
+        headers: { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json", prefer: "return=representation" },
+        body: corps ? JSON.stringify(corps) : undefined,
+      });
+      return r.ok ? r.json() : Promise.reject(new Error(`${methode} ${chemin} : ${r.status} ${await r.text()}`));
+    };
+    const SELMA = "00000000-0000-4000-8000-000000000003";
+    const [client] = await rest(`clients?boutique_id=eq.${SELMA}&telephone=eq.%2B21620555123&user_id=not.is.null&select=id`);
+    const [chemise] = await rest(`variantes?boutique_id=eq.${SELMA}&sku=eq.SEL13-BLA-M&select=id,prix_millimes`);
+    const [commande] = await rest("commandes", "POST", {
+      boutique_id: SELMA, numero: `SEL-${annee}-00991`, origine: "vitrine", client_id: client.id, contact_nom: "Amel Ben Salah",
+      contact_telephone: "+21620555123", livraison_ligne1: "12 rue de Marseille", livraison_ville: "Tunis", livraison_gouvernorat: "tunis",
+    });
+    await rest("commande_lignes", "POST", {
+      boutique_id: SELMA, commande_id: commande.id, variante_id: chemise.id, produit_nom: "Chemise ample en lin", variante_libelle: "Blanc, M",
+      sku: "SEL13-BLA-M", prix_unitaire_millimes: chemise.prix_millimes, quantite: 1, total_ligne_millimes: chemise.prix_millimes,
+    });
+    await rest("confirmations", "POST", { boutique_id: SELMA, commande_id: commande.id, canal: "appel", resultat: "confirmee" });
+    for (const etat of [{ statut: "confirmee" }, { statut: "expediee", transporteur: "Aramex", numero_suivi: "TN47999002" }, { statut: "livree", statut_paiement: "paye" }]) {
+      await rest(`commandes?id=eq.${commande.id}`, "PATCH", etat);
+    }
+    await page.goto(S + "/compte", { waitUntil: "networkidle" });
+    const bloc = page.locator(".compte-carte", { hasText: `SEL-${annee}-00991` }).locator(".avis-commande");
+    await bloc.waitFor({ timeout: 8000 });
+    await clic(page, bloc.getByRole("button", { name: "Donner mon avis" }));
+    const f = bloc.locator(".avis-formulaire");
+    await clic(page, f.locator(".avis-saisie-etoiles label").nth(4));
+    await clic(page, f.getByLabel(/Votre avis/));
+    await tape(page, "Le lin est doux, la coupe ample.");
+    // Une photo de téléphone : 2 400 × 1 800, lourde ; le navigateur la réduit avant l'envoi.
+    const lourde = await page.evaluate(async () => {
+      const c = document.createElement("canvas");
+      c.width = 2400; c.height = 1800;
+      const g = c.getContext("2d");
+      for (let i = 0; i < 2400; i += 3) { g.fillStyle = `hsl(${18 + (i % 23)}, 55%, ${45 + (i % 17)}%)`; g.fillRect(i, 0, 3, 1800); }
+      const b = await new Promise((r) => c.toBlob(r, "image/png"));
+      return [...new Uint8Array(await b.arrayBuffer())];
+    });
+    await f.locator("input[type=file]").setInputFiles({ name: "IMG_2041.png", mimeType: "image/png", buffer: Buffer.from(lourde) });
+    await f.locator(".avis-depot-apercu").waitFor({ timeout: 3000 });
+    verifie((await f.locator(".avis-depot-apercu").count()) === 1 && (await f.getByRole("button", { name: "Retirer la photo 1" }).count()) === 1,
+      "la photo choisie se voit avant l'envoi, et se retire");
+    await capture(page, "selma-avis-photo-choisie");
+    await clic(page, f.getByRole("button", { name: "Publier mon avis" }));
+    await bloc.locator(".avis-merci").waitFor({ timeout: 15000 });
+    verifie((await bloc.locator(".avis-merci").innerText()).includes("Avec 1 photo."), "« Merci ! … Avec 1 photo. »");
+    const photos = await rest(`avis_photos?boutique_id=eq.${SELMA}&select=chemin,largeur,hauteur,avis!inner(commande_id)&avis.commande_id=eq.${commande.id}`);
+    verifie(photos.length === 1 && /^maison-selma\/avis\/[0-9a-f-]{36}\/[a-z0-9]{12}\.(webp|jpg)$/.test(photos[0].chemin) && photos[0].largeur <= 1600,
+      `en base : rangée sous le dossier de l'avis, réduite (${photos[0]?.chemin} ${photos[0]?.largeur}×${photos[0]?.hauteur})`);
+    const fichier = await fetch(`${process.env.NEXT_PUBLIC_FICHIERS_URL ?? `${RELAIS}/fichiers`}/${photos[0]?.chemin}`);
+    const poids = (await fichier.arrayBuffer()).byteLength;
+    verifie(fichier.ok && poids < lourde.length / 3, `le fichier est déposé, bien plus léger que l'original (${poids} octets contre ${lourde.length})`);
   });
   await ctx.close();
 }

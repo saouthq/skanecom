@@ -92,6 +92,7 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
   ],
   avis: [
     { cle: "avis.moderation", genre: "choix" },
+    { cle: "avis.photos", genre: "booleen" },
   ],
   legal: [
     { cle: "legal.raison_sociale", genre: "texte" },
@@ -194,6 +195,7 @@ const LIBELLES_COURTS: Record<string, string> = {
   "catalogue.revendeur_officiel": "Revendeur officiel",
   "sav.garantie_mois": "Garantie annoncée",
   "avis.moderation": "Publication des avis",
+  "avis.photos": "Photos dans les avis",
   "contact.whatsapp": "WhatsApp",
   "contact.telephone": "Téléphone",
   "contact.horaires": "Horaires",

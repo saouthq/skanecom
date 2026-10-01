@@ -20,11 +20,14 @@ export function Visionneuse({
   photos,
   depart,
   onFermer,
+  etiquette,
 }: {
   photos: PhotoAffichable[];
   /** La photo par laquelle on entre ; `null` : fermée. */
   depart: number | null;
   onFermer: () => void;
+  /** Le nom du dialogue (par défaut : les photos du produit). */
+  etiquette?: string;
 }) {
   const dialogue = useRef<HTMLDialogElement>(null);
   const piste = useRef<HTMLDivElement>(null);
@@ -61,7 +64,7 @@ export function Visionneuse({
     <dialog
       ref={dialogue}
       className="visionneuse"
-      aria-label={t.produit.galerieAria}
+      aria-label={etiquette ?? t.produit.galerieAria}
       onClose={onFermer}
       onClick={(e) => {
         // Un clic sur le fond (hors d'une photo ou d'un bouton) referme.
@@ -89,7 +92,8 @@ export function Visionneuse({
       >
         {photos.map((p, i) => (
           <div key={p.src} className="visionneuse-vue" aria-hidden={i !== vue}>
-            {depart !== null ? <Image src={p.src} alt={p.alt} fill sizes="100vw" /> : null}
+            {/* Entière, jamais recadrée : le composant pose object-fit: cover en ligne, que la feuille de style ne peut défaire. */}
+            {depart !== null ? <Image src={p.src} alt={p.alt} fill sizes="100vw" style={{ objectFit: "contain" }} /> : null}
           </div>
         ))}
       </div>

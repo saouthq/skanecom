@@ -385,6 +385,13 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
                 l&apos;autre : la boutique n&apos;en voit que le nombre, pièce par pièce ;
               </li>
             ) : null}
+            {cadre.avis ? (
+              <li>
+                l&apos;avis donné sur un article reçu (la note{cadre.avisPhotos ? ", le texte et les photos jointes" : " et le texte"}) :
+                il paraît sous le prénom et l&apos;initiale du nom, jamais sous le numéro ; la boutique peut le retirer
+                {cadre.avisPhotos ? ", ou en retirer une photo" : ""} ;
+              </li>
+            ) : null}
             {cadre.prevenirRetour ? (
               <li>
                 le téléphone ou l&apos;adresse électronique laissé pour être prévenu du retour d&apos;une pièce épuisée : il ne sert

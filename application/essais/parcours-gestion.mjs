@@ -31,6 +31,7 @@ const t = creeTesteur();
 const { pause, note, verifie, capture, clic, tape, etape } = t;
 const C = t.adresse("console.localhost");
 const MDP = "equipe-locale-skanecom";
+const FICHIERS = process.env.NEXT_PUBLIC_FICHIERS_URL ?? `${process.env.RELAIS ?? "http://127.0.0.1:54321"}/fichiers`;
 const annee = new Date().getFullYear();
 const num = (n) => `MAY-${annee}-${String(n).padStart(5, "0")}`;
 const attendue = (url) => url.includes("/gestion/maison-selma");
@@ -1562,6 +1563,19 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     await tel.locator(".tunnel-ligne").first().waitFor({ state: "attached" });
     verifie((await tel.locator(".tunnel-ligne").count()) === 2, "« Reprendre ma commande » : le tunnel s'ouvre, le panier dedans");
     await autre.close();
+  });
+
+  await etape("les photos d'un avis : les voir, en retirer une, l'avis reste", async () => {
+    // Selma recueille des photos avec les avis (supabase/seed-avis-photos.sql) : l'avis du sac en a deux.
+    await page.goto(`${C}/gestion/maison-selma/avis?filtre=publies`, { waitUntil: "networkidle" });
+    const avis = page.locator(".av-carte", { hasText: "Le cuir est épais" });
+    verifie((await avis.locator(".av-photo").count()) === 2, "l'avis du sac montre ses deux photos");
+    await capture(page, "gestion-avis-photos");
+    await t.envoie(page, avis.getByRole("button", { name: "Retirer la photo 2 de cet avis" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("Photo retirée"), "« Photo retirée » : la page le dit");
+    verifie((await page.locator(".av-carte", { hasText: "Le cuir est épais" }).locator(".av-photo").count()) === 1, "l'avis reste, avec une photo");
+    const fichier = await fetch(`${FICHIERS}/maison-selma/avis/sac-poche.webp`);
+    verifie(fichier.status === 200, `une photo du jeu de démo n'est jamais effacée du dépôt (HTTP ${fichier.status})`);
   });
   await ctx.close();
 }
