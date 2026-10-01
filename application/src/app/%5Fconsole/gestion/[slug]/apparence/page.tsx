@@ -5,7 +5,8 @@ import { EditeurApparence } from "@/components/console/EditeurApparence";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { adresseVitrine } from "@/lib/console/libelles";
 import { quand } from "@/lib/gestion/libelles";
-import { cadreDeGestion, PEUT_ECRIRE } from "@/lib/gestion/pages";
+import { cadreDeGestion, modelesDePages, pagesAutomatiques, PEUT_ECRIRE } from "@/lib/gestion/pages";
+import type { ContenuPage, PageEditeur } from "@/components/console/PanneauPages";
 import { DIRECTION } from "@/lib/gestion/tableau";
 import type { AccueilGestion } from "@/lib/gestion/accueil";
 import { contenuDe, reglagesLus } from "@/lib/apparence";
@@ -18,7 +19,8 @@ export const metadata: Metadata = { title: "Éditeur de la vitrine" };
    endroit en voyant la vraie vitrine changer à côté (ordinateur ou
    téléphone) : le style (structure, couleurs, polices, formes, rythme),
    l'accueil (ses sections, leurs textes et leurs photos), l'en-tête et le
-   pied de page (l'annonce, les réseaux, le bouton WhatsApp, les horaires). Chaque geste
+   pied de page (l'annonce, les réseaux, le bouton WhatsApp, les horaires),
+   les pages de la boutique (À propos, questions…). Chaque geste
    s'enregistre dans un brouillon que les visiteurs ne voient pas ;
    « Publier » met le tout en ligne. Propriétaire et administrateur règlent ;
    la direction regarde.
@@ -29,6 +31,7 @@ type ApparenceGestion = {
   version: number | null;
   publie: Record<string, unknown> | null;
   reglages: Record<string, unknown> | null;
+  pages: { id: string; slug: string; genre: "texte" | "questions"; titre_fr: string; corps_fr: string; publie: boolean; dans_pied: boolean; version: number; brouillon: ContenuPage | null }[];
   modifie_le: string | null;
   modifie_par: string | null;
   brouillon: { contenu: Record<string, unknown>; version: number; jeton: string; modifie_le: string; modifie_par: string | null } | null;
@@ -39,7 +42,7 @@ export default async function Apparence({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ ok?: string; erreur?: string; panneau?: string }>;
+  searchParams: Promise<{ ok?: string; erreur?: string; panneau?: string; page?: string }>;
 }) {
   const [{ slug }, q] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
@@ -68,6 +71,12 @@ export default async function Apparence({
   // Un brouillon d'avant l'accueil dans l'éditeur : l'accueil publié le complète.
   const brouillon = a.brouillon ? contenuDe(a.brouillon.contenu) : null;
   if (brouillon && brouillon.sections === undefined) brouillon.sections = publie.sections ?? null;
+  const pages: PageEditeur[] = (a.pages ?? []).map((p) => ({
+    id: p.id, slug: p.slug, version: p.version, brouillon: p.brouillon,
+    en_ligne: { titre_fr: p.titre_fr, corps_fr: p.corps_fr, genre: p.genre, publie: p.publie, dans_pied: p.dans_pied },
+  }));
+  const panneaux = ["accueil", "cadre", "pages"] as const;
+  const panneau = (panneaux as readonly string[]).includes(q.panneau ?? "") ? (q.panneau as (typeof panneaux)[number]) : "style";
 
   return (
     <EditeurApparence
@@ -79,7 +88,12 @@ export default async function Apparence({
       ecrit={PEUT_ECRIRE.includes(boutique.role) && a.theme}
       nom={boutique.nom}
       fiche={piece ? { chemin: `/produit/${piece.slug}`, nom: piece.nom_fr ?? "Une fiche produit" } : null}
-      panneau={q.panneau === "accueil" ? "accueil" : "style"}
+      panneau={panneau}
+      pages={pages}
+      pageOuverte={q.page && (q.page === "nouvelle" || pages.some((p) => p.id === q.page)) ? q.page : null}
+      modeles={cadre ? modelesDePages(cadre) : []}
+      office={pagesAutomatiques(cadre, slug)}
+      affichee={hote}
       infos={{ rayons: infos.rayons, pages: infos.pages, avis: infos.avis, marques: infos.marques, produits: infos.produits }}
       reglages={reglagesLus(a.reglages, true)}
       whatsapp={String((numero as { valeur?: unknown } | null)?.valeur ?? "").replace(/\D/g, "").length >= 8}

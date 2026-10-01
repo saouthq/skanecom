@@ -29,7 +29,7 @@ async function laPage({ params }: Params) {
   const { boutique, inconnue } = await params;
   if (inconnue.length !== 1) return null;
   const cadre = await chargeCadre(boutique);
-  const page = await chargePage(cadre.boutique.id, inconnue[0]);
+  const page = await chargePage(cadre.boutique.id, inconnue[0], cadre.apercu ? boutique : undefined);
   return page ? { cadre, page } : null;
 }
 

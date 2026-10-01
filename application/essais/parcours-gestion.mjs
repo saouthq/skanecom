@@ -140,6 +140,8 @@ async function ouvre(page, n) {
 
 const message = (page) => page.locator(".bo-message").innerText().catch(() => "");
 const statut = (page) => page.locator(".bo-fiche-tete .bo-statut").innerText().catch(() => "");
+/* Ce qu'une personne attend de voir à l'écran, dans un délai. */
+const attend = async (fn, ms = 8000) => { const fin = Date.now() + ms; while (Date.now() < fin) { if (await fn().catch(() => false)) return true; await pause(150); } return false; };
 
 /* ------------------------------------------------------------------ */
 // SECTIONS=6, ou SECTIONS=4bis,6 : ces sections seules, pendant le
@@ -1279,25 +1281,41 @@ if (section("4")) {
     await capture(page, "gestion-devis-envoye");
   });
 
-  await etape("les pages de la boutique : les siennes, les modèles, celles d'office", async () => {
-    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Pages" }));
-    await page.waitForURL(/\/pages$/);
+  // Les pages s'écrivent dans l'éditeur de la vitrine (panneau Pages), à
+  // côté de la vraie vitrine, et partent en ligne avec le reste à « Publier ».
+  const VQ = t.adresse("quincaillerie.localhost");
+  const cadreQ = () => page.frames().find((f) => f.url().startsWith(VQ));
+  const etatPage = () => page.locator(".pp-etat-envoi").innerText().catch(() => "");
+
+  await etape("les pages de la boutique, dans l'éditeur : les siennes, les modèles, celles d'office", async () => {
+    verifie(await page.locator(".app-cote a[href$='/pages']").count() === 0, "plus d'écran « Pages » à part : elles sont dans l'éditeur");
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Éditeur de la vitrine" }));
+    await page.waitForURL(/\/apparence/);
     await page.waitForLoadState("networkidle");
-    const titres = await page.locator(".pg-ligne .pg-titre").allInnerTexts();
+    await clic(page, page.getByRole("tab", { name: "Pages" }));
+    const titres = await page.locator(".pp-ligne-texte b").allInnerTexts();
     verifie(titres.join(" · ") === "Questions fréquentes · Le magasin", `ses deux pages, dans l'ordre du pied de page (${titres.join(" · ")})`);
-    verifie(await page.locator(".pg-modele", { hasText: "Livraison et retours" }).count() === 1, "le modèle qu'elle n'a pas encore écrit lui est proposé");
-    verifie((await page.locator(".pg-auto").innerText()).includes("Garantie et SAV"), "les pages d'office, dont la garantie (module SAV), avec leurs réglages");
+    verifie(await page.locator(".pp-modeles .ac-modele", { hasText: "Livraison et retours" }).count() === 1, "le modèle qu'elle n'a pas encore écrit lui est proposé");
+    await clic(page, page.locator(".pp-office summary"));
+    verifie((await page.locator(".pp-office").innerText()).includes("Garantie et SAV"), "les pages d'office, dont la garantie (module SAV), avec leurs réglages");
     await capture(page, "gestion-pages", true);
   });
 
-  await etape("une page d'après un modèle : composée des réglages, écrite, publiée", async () => {
-    await clic(page, page.locator(".pg-modele", { hasText: "Livraison et retours" }));
-    await page.waitForURL(/\/pages\/nouvelle\?modele=livraison$/);
-    await page.waitForLoadState("networkidle");
-    const corps = page.locator("#pg-corps");
+  await etape("une page d'après un modèle : créée, écrite à côté de la vitrine, publiée", async () => {
+    await clic(page, page.locator(".pp-modeles .ac-modele", { hasText: "Livraison et retours" }));
+    verifie(await page.locator("#pp-nouveau-slug").inputValue() === "livraison-et-retours", "l'adresse est posée");
+    await page.locator("#pp-nouveau-slug").fill("contact");
+    await clic(page, page.getByRole("button", { name: "Créer la page" }));
+    verifie((await page.locator(".pp-ecriture .pg-erreur").first().innerText().catch(() => "")).includes("déjà une page"),
+      "« /contact » : refusée sous le champ, avant tout envoi");
+    await page.locator("#pp-nouveau-slug").fill("livraison-et-retours");
+    await clic(page, page.getByRole("button", { name: "Créer la page" }));
+    const corps = page.locator("#pp-corps");
+    await corps.waitFor({ timeout: 10000 });
     verifie((await corps.inputValue()).includes("au magasin de Sfax"), "le texte vient des réglages : le retrait au magasin de Sfax");
-    verifie(await page.locator("#pg-slug").inputValue() === "livraison-et-retours", "l'adresse est posée");
-    verifie((await page.locator(".pg-apercu h2").allInnerTexts()).includes("Retrait en magasin"), "l'aperçu montre la page mise en forme");
+    verifie(await attend(async () => (cadreQ()?.url() ?? "").includes("/livraison-et-retours"), 12000), "la vitrine du cadre ouvre la page neuve, encore hors ligne");
+    verifie(await attend(async () => ((await cadreQ()?.locator("h1").first().innerText().catch(() => "")) ?? "").includes("Livraison"), 12000),
+      "et la montre telle qu'elle sera");
     await clic(page, corps);
     await page.keyboard.press("Control+End");
     await tape(page, "\n\nUne question ? Appelez le magasin.");
@@ -1305,55 +1323,51 @@ if (section("4")) {
     await page.keyboard.press("Control+b");
     await pause(300);
     verifie((await corps.inputValue()).endsWith("**Une question ? Appelez le magasin.**"), "Ctrl+B met la ligne choisie en gras");
-    verifie(await page.locator(".pg-apercu strong", { hasText: "Appelez le magasin" }).count() === 1, "l'aperçu suit la frappe");
-    await page.locator("#pg-slug").fill("contact");
-    await clic(page, page.getByRole("button", { name: /^Enregistrer/ }));
-    verifie((await page.locator("#err-slug").innerText().catch(() => "")).includes("déjà une page"),
-      "« /contact » : refusée sous le champ, avant tout envoi, le texte gardé");
-    await page.locator("#pg-slug").fill("livraison-et-retours");
-    await clic(page, page.locator("input[name=publie]"));
-    await clic(page, page.getByRole("button", { name: /Enregistrer et publier/ }));
-    await page.waitForURL(/\/pages\/[0-9a-f-]{36}\?ok=/, { timeout: 15000 });
-    await page.waitForLoadState("networkidle");
-    verifie((await page.locator(".pg-retour").innerText()).includes("publiée"), "publiée : l'éditeur passe à l'adresse de la page, qui le dit");
-    await capture(page, "gestion-page-publiee", true);
+    verifie(await attend(async () => (await etatPage()).includes("Dans le brouillon"), 12000), "une seconde plus tard : dans le brouillon");
+    verifie(await attend(async () => ((await cadreQ()?.locator("main strong", { hasText: "Appelez le magasin" }).count().catch(() => 0)) ?? 0) === 1, 12000),
+      "la vitrine du cadre suit la frappe");
+    const enLigne = await fetch(`${VQ}/livraison-et-retours`).then((r) => r.status).catch(() => 0);
+    verifie(enLigne !== 200, `hors ligne tant que ce n'est pas publié (HTTP ${enLigne})`);
+    await capture(page, "gestion-page-brouillon", true);
+    await clic(page, page.getByRole("button", { name: "Publier" }));
+    verifie(await attend(async () => (await page.locator(".ap-retour").first().innerText().catch(() => "")).includes("publiée"), 10000), "« Publier » : la page part avec le reste");
     // Par le navigateur : lui seul résout les domaines *.localhost des boutiques.
     const vitrine = await ctx.newPage();
-    const r = await vitrine.goto(`${t.adresse("quincaillerie.localhost")}/livraison-et-retours`, { waitUntil: "domcontentloaded" });
-    verifie(r?.status() === 200 && (await vitrine.locator("main").innerText()).includes("Appelez le magasin"), `la vitrine la sert à son adresse (HTTP ${r?.status()})`);
+    const r = await vitrine.goto(`${VQ}/livraison-et-retours`, { waitUntil: "domcontentloaded" });
+    verifie(r?.status() === 200 && (await vitrine.locator("main").innerText()).includes("Appelez le magasin"), `la vitrine la sert à son adresse, aussitôt (HTTP ${r?.status()})`);
+    verifie((await vitrine.locator("footer").innerText()).includes("Livraison et retours"), "et son lien est au pied de page");
     await vitrine.close();
   });
 
   await etape("deux écrans sur la même page : pas d'écrasement", async () => {
     const autre = await ctx.newPage();
     t.espion(autre, "gerant-quincaillerie-2");
-    await autre.goto(page.url().split("?")[0], { waitUntil: "networkidle" });
-    await autre.locator("#pg-titre").fill("Livraison, retrait et retours");
-    await autre.getByRole("button", { name: /^Enregistrer/ }).click();
-    await autre.locator(".pg-retour.message-succes").waitFor({ timeout: 10000 });
+    await autre.goto(page.url().replace(/\?.*$/, "") + "?panneau=pages", { waitUntil: "networkidle" });
+    await autre.locator(".pp-ligne", { hasText: "Livraison et retours" }).click();
+    await autre.locator("#pp-titre").fill("Livraison, retrait et retours");
+    await autre.locator(".pp-etat-envoi", { hasText: "Dans le brouillon" }).waitFor({ timeout: 12000 });
+    await autre.getByRole("button", { name: "Publier" }).click();
+    await autre.locator(".ap-retour", { hasText: "publiée" }).waitFor({ timeout: 12000 });
     await autre.close();
-    await page.locator("#pg-titre").fill("Livraison et retours, en bref");
-    await clic(page, page.getByRole("button", { name: /^Enregistrer/ }));
-    await page.locator(".pg-retour.message-erreur").waitFor({ timeout: 10000 }).catch(() => {});
-    verifie((await page.locator(".pg-retour").innerText().catch(() => "")).includes("modifiée entre-temps"), "l'écran périmé est refusé, avec la marche à suivre");
-    verifie(await page.locator("#pg-titre").inputValue() === "Livraison et retours, en bref", "et rien de ce qui a été tapé n'est perdu");
+    await page.locator("#pp-titre").fill("Livraison et retours, en bref");
+    verifie(await attend(async () => (await etatPage()).includes("modifiée entre-temps"), 12000), "l'écran périmé est refusé, avec la marche à suivre");
+    verifie(await page.locator("#pp-titre").inputValue() === "Livraison et retours, en bref", "et rien de ce qui a été tapé n'est perdu");
   });
 
   await etape("ranger, puis retirer une page", async () => {
-    // Des changements non enregistrés : le navigateur demande avant de partir.
+    // Des changements non partis : le navigateur demande avant de partir.
     page.once("dialog", (d) => d.accept());
-    await page.goto(`${C}/gestion/quincaillerie-demo/pages`, { waitUntil: "networkidle" });
+    await page.goto(page.url().replace(/\?.*$/, "") + "?panneau=pages", { waitUntil: "networkidle" });
     await t.envoie(page, page.getByRole("button", { name: "Monter « Livraison, retrait et retours »" }));
-    const titres = await page.locator(".pg-ligne .pg-titre").allInnerTexts();
-    verifie(titres[1] === "Livraison, retrait et retours", `montée d'un cran (${titres.join(" · ")})`);
-    await clic(page, page.locator(".pg-ligne .pg-titre", { hasText: "Livraison, retrait et retours" }));
-    await page.waitForURL(/\/pages\/[0-9a-f-]{36}$/);
-    await page.waitForLoadState("networkidle");
-    await clic(page, page.locator(".pg-retrait summary"));
-    await t.envoie(page, page.getByRole("button", { name: "Oui, retirer la page" }));
-    await page.waitForURL(/\/pages\?ok=/, { timeout: 15000 });
-    verifie((await page.locator(".message-succes").innerText()).includes("Page retirée"), "retirée : elle quitte la boutique et son pied de page");
-    verifie(await page.locator(".pg-ligne").count() === 2, "la liste revient à deux pages");
+    verifie(await attend(async () => (await page.locator(".pp-ligne-texte b").allInnerTexts())[1] === "Livraison, retrait et retours", 8000),
+      `montée d'un cran (${(await page.locator(".pp-ligne-texte b").allInnerTexts()).join(" · ")})`);
+    verifie(await attend(async () => (await page.evaluate(() => document.activeElement?.getAttribute("data-geste"))) !== null, 3000), "le focus reste sur les flèches");
+    await clic(page, page.locator(".pp-ligne", { hasText: "Livraison, retrait et retours" }));
+    await clic(page, page.getByRole("button", { name: /^Retirer « Livraison, retrait et retours »/ }));
+    await clic(page, page.getByRole("button", { name: "Retirer la page" }));
+    verifie(await attend(async () => (await page.locator(".pp-ligne").count()) === 2, 10000), "retirée : la liste revient à deux pages");
+    const r = await fetch(`${VQ}/livraison-et-retours`).then((x) => x.status).catch(() => 0);
+    verifie(r === 404, `et la boutique ne la sert plus (HTTP ${r})`);
   });
   await ctx.close();
 }
@@ -1947,11 +1961,18 @@ if (section("5")) {
   });
 
   await etape("les pages de la boutique : ni le lien, ni l'écriture", async () => {
-    verifie(await page.locator(".app-cote a[href$='/pages']").count() === 0, "pas de lien « Pages » pour le préparateur");
+    verifie(await page.locator(".app-cote a[href$='/apparence']").count() === 0, "pas d'« Éditeur de la vitrine » pour le préparateur");
     verifie(await page.locator(".app-cote a[href$='/accueil']").count() === 0, "ni « Page d'accueil »");
-    const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/pages/action", { geste: "enregistrer", slug: "essai", titre: "Essai", corps: "Un essai" });
-    verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur écrivent"),
-      `écrire une page à la main : la base refuse (${r.status})`);
+    // Comme l'éditeur l'enverrait : la base refuse.
+    const r = await page.evaluate(async () => {
+      const d = new FormData();
+      d.set("geste", "page");
+      d.set("slug", "essai");
+      d.set("contenu", JSON.stringify({ titre_fr: "Essai", corps_fr: "Un essai", genre: "texte", publie: true, dans_pied: true }));
+      const x = await fetch("/gestion/quincaillerie-demo/apparence/action", { method: "POST", body: d, headers: { accept: "application/json" } });
+      return x.json();
+    });
+    verifie(r.ok === false && String(r.message).includes("Seuls le propriétaire et l'administrateur écrivent"), `écrire une page à la main : la base refuse (${r.message})`);
     const a = await posteBrut(ctx, "/gestion/quincaillerie-demo/apparence/action", {
       geste: "brouillon", version_brouillon: "",
       contenu: JSON.stringify({ code: "technique", couleurs: {}, polices: {}, style: {}, sections: [{ type: "hero" }] }),

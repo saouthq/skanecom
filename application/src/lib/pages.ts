@@ -18,10 +18,17 @@ export type Page = {
   modifiee_le: string;
 };
 
-/** `cache()` : les métadonnées et la page la lisent une seule fois par requête. */
-export const chargePage = cache(async (boutiqueId: string, slug: string): Promise<Page | null> => {
+/** `cache()` : les métadonnées et la page la lisent une seule fois par requête.
+ *  `segment` : le premier segment de l'adresse interne — dans l'aperçu de
+ *  l'éditeur (`<boutique>~<jeton>.<version>`, src/proxy.ts), la page se lit
+ *  avec son brouillon, même hors ligne (migration 68). */
+export const chargePage = cache(async (boutiqueId: string, slug: string, segment?: string): Promise<Page | null> => {
   if (!FORME_SLUG.test(slug) || slug.length > 60) return null;
-  const { data, error } = await supabase.rpc("page_publique", { p_boutique_id: boutiqueId, p_slug: slug });
+  const [boutique, apercu] = (segment ?? "").split("~", 2);
+  const jeton = apercu?.split(".")[0] ?? "";
+  const { data, error } = /^[0-9a-f-]{36}$/.test(jeton)
+    ? await supabase.rpc("apercu_page", { p_slug: boutique, p_jeton: jeton, p_page: slug })
+    : await supabase.rpc("page_publique", { p_boutique_id: boutiqueId, p_slug: slug });
   if (error) throw new Error(`Page illisible : ${error.message}`);
   return (data as Page | null) ?? null;
 });

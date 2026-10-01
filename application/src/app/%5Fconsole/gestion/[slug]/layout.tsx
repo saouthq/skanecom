@@ -134,12 +134,9 @@ export default async function BackofficeBoutique({
     ...(etatSav?.actif
       ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
       : []),
-    // L'éditeur de la vitrine (le style, l'accueil) et les pages de la boutique (À propos, questions…) : la direction.
+    // L'éditeur de la vitrine (le style, l'accueil, l'en-tête et le pied, les pages de la boutique) : la direction.
     ...(DIRECTION.includes(boutique.role)
-      ? [
-          { href: `/gestion/${slug}/apparence`, libelle: "Éditeur de la vitrine", icone: "marque" as const },
-          { href: `/gestion/${slug}/pages`, libelle: "Pages", icone: "note" as const },
-        ]
+      ? [{ href: `/gestion/${slug}/apparence`, libelle: "Éditeur de la vitrine", icone: "marque" as const }]
       : []),
     ...(boutique.role === "proprietaire" || boutique.role === "admin"
       ? [{ href: `/gestion/${slug}/equipe`, libelle: "Équipe", icone: "equipe" as const }]
@@ -159,7 +156,10 @@ export default async function BackofficeBoutique({
       ? [{ groupe: "Aller à", icone: "etoile" as const, href: `/gestion/${slug}/clients/pros`, titre: "Comptes professionnels" }]
       : []),
     ...(PEUT_ECRIRE.includes(boutique.role)
-      ? [{ groupe: "Aller à", icone: "note" as const, href: `/gestion/${slug}/pages/nouvelle`, titre: "Nouvelle page de la boutique" }]
+      ? [
+          { groupe: "Aller à", icone: "note" as const, href: `/gestion/${slug}/apparence?panneau=pages`, titre: "Les pages de la boutique" },
+          { groupe: "Aller à", icone: "note" as const, href: `/gestion/${slug}/apparence?panneau=pages&page=nouvelle`, titre: "Nouvelle page de la boutique" },
+        ]
       : []),
   ];
 

@@ -186,7 +186,9 @@ export const chargeCadre = cache(async (segment: string): Promise<Cadre | null> 
   // Les réglages de l'en-tête et du pied de page changés dans le brouillon.
   const changes = brouillon.reglages && typeof brouillon.reglages === "object" ? (brouillon.reglages as Record<string, unknown>) : {};
   const configuration = brut.configuration ? { ...brut.configuration, reglages: { ...brut.configuration.reglages, ...changes } } : brut.configuration;
-  return { ...cadreDe({ ...brut, configuration, theme: { ...brut.theme, code, couleurs, polices, style, ...accueil } }), apercu: true };
+  // Les pages telles que le brouillon les montre (le pied de page, le menu).
+  const pages = Array.isArray(brouillon.pages) ? { pages: brouillon.pages as CadreBrut["pages"] } : {};
+  return { ...cadreDe({ ...brut, ...pages, configuration, theme: { ...brut.theme, code, couleurs, polices, style, ...accueil } }), apercu: true };
 });
 
 /** Le cadre, composé de ce que la base a rendu. */

@@ -2,6 +2,7 @@ import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers } from "@/lib/console/http";
 import { contenuDe, contenuRecu, versBase } from "@/lib/apparence";
 import { CHEMIN_PHOTO_ACCUEIL } from "@/lib/gestion/accueil";
+import { messagePage } from "@/lib/gestion/pages";
 import { retirerFichier } from "@/lib/gestion/fichiers";
 import { rafraichirVitrine } from "@/lib/console/vitrine-cache";
 import { CLES_STYLE, JETONS_COULEUR } from "@/lib/theme";
@@ -14,6 +15,13 @@ import { CLES_STYLE, JETONS_COULEUR } from "@/lib/theme";
    · « publier » : le contenu passe dans le thème (`version` : celle du thème
      lue à l'ouverture), le brouillon s'efface ;
    · « abandonner » : le brouillon s'efface, la vitrine garde ce qui est publié.
+
+   Et pour les pages de la boutique (migration 68) :
+   · « page » : le brouillon d'une page (`id`, `version` : celle de la page
+     en ligne lue, `contenu` en JSON, vide pour l'abandonner), ou une page
+     neuve (`slug`, `contenu`), hors ligne jusqu'à « Publier » ;
+   · « page-ordre » : l'ordre des pages (`ids`, en JSON) — aussitôt en ligne,
+     comme « page-retirer » (`id`), qui retire une page de la boutique.
 
    Publier et abandonner rendent les photos que plus rien n'emploie
    (migration 66) : celles que le backoffice avait déposées quittent le dépôt
@@ -137,6 +145,51 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const texte = "Vitrine publiée : elle est en ligne.";
     if (enJson) return Response.json({ ok: true, message: texte, version: rendu.version, orphelins: retirees }, { headers: { "cache-control": "no-store" } });
     return vers(`${page}?${new URLSearchParams({ ok: texte })}`);
+  }
+
+  // Les pages de la boutique.
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  const champDe = (indice: string | undefined) => (indice === "titre" || indice === "slug" || indice === "corps" ? indice : null);
+  const refusPage = (indice: string | undefined, texte: string) =>
+    Response.json({ ok: false, message: messagePage(indice, texte), indice: indice ?? null, champ: champDe(indice) }, { headers: { "cache-control": "no-store" } });
+
+  if (geste === "page") {
+    if (!enJson) return refus("L'écriture d'une page demande JavaScript.");
+    const id = String(f.get("id") ?? "");
+    let contenu: unknown = null;
+    try {
+      const brut = String(f.get("contenu") ?? "");
+      contenu = brut ? JSON.parse(brut) : null;
+    } catch {
+      return refus("La page envoyée est illisible : rechargez.");
+    }
+    const { data, error } = await sb.rpc("gestion_brouillon_page", {
+      p_boutique_id: boutique.boutique_id,
+      p_page: id ? { id: UUID.test(id) ? id : null, version: entier("version"), contenu } : { slug: String(f.get("slug") ?? ""), contenu },
+    });
+    if (error) return refusPage(error.hint, error.message);
+    return Response.json({ ok: true, ...(data as Record<string, unknown>) }, { headers: { "cache-control": "no-store" } });
+  }
+
+  if (geste === "page-ordre" || geste === "page-retirer") {
+    if (!enJson) return refus("Ce geste demande JavaScript.");
+    let ids: unknown = null;
+    try { ids = JSON.parse(String(f.get("ids") ?? "[]")); } catch { /* refusé plus bas */ }
+    const id = String(f.get("id") ?? "");
+    if (geste === "page-retirer" ? !UUID.test(id) : !Array.isArray(ids) || !ids.every((x) => typeof x === "string" && UUID.test(x))) {
+      return refus("La liste des pages envoyée est illisible : rechargez.");
+    }
+    const r = geste === "page-retirer"
+      ? await sb.rpc("gestion_retirer_page", { p_boutique_id: boutique.boutique_id, p_id: id })
+      : await sb.rpc("gestion_ordonner_pages", { p_boutique_id: boutique.boutique_id, p_ids: ids as string[] });
+    if (r.error) return refusPage(r.error.hint, r.error.message);
+    // Le brouillon de la vitrine a avancé (l'aperçu suit) : sa version et son jeton.
+    const b = r.data as { version: number | null; jeton: string | null } | null;
+    return Response.json({
+      ok: true,
+      message: geste === "page-retirer" ? "Page retirée : la boutique ne la sert plus." : "Ordre des pages enregistré : il est en ligne.",
+      brouillon: b?.version != null && b.jeton ? { version: b.version, jeton: b.jeton } : null,
+    }, { headers: { "cache-control": "no-store" } });
   }
 
   return refus("Geste inconnu.");
