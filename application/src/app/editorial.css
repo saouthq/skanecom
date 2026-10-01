@@ -66,7 +66,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 .ed-entete {
   position: sticky; inset-block-start: 0; z-index: 40;
   background: color-mix(in srgb, var(--theme-fond) 96%, transparent); color: var(--theme-encre);
-  backdrop-filter: saturate(1.4) blur(18px); -webkit-backdrop-filter: saturate(1.4) blur(18px);
+  backdrop-filter: saturate(1.4) blur(18px);
   border-block-end: 1px solid color-mix(in srgb, var(--theme-filet) 80%, transparent);
   transition: background-color .35s var(--theme-courbe), color .35s var(--theme-courbe), border-color .35s var(--theme-courbe);
 }
@@ -74,7 +74,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
    défile pas, ne le survole pas, n'y entre pas au clavier. */
 .ed-entete[data-transparent]:not(:hover):not(:focus-within) {
   background: transparent; color: var(--theme-surface); border-color: transparent;
-  backdrop-filter: none; -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .ed-entete[data-transparent]:not(:hover):not(:focus-within) :focus-visible { outline-color: var(--theme-surface); }
 .ed-entete-rang {
@@ -305,7 +305,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
   position: absolute; z-index: 1; inset-block-start: .75rem; inset-inline-start: .75rem;
   padding: .3125rem .625rem; border-radius: 999px;
   background: color-mix(in srgb, var(--theme-fond) 90%, transparent); color: var(--theme-encre);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   font-size: .6875rem; font-weight: 500; letter-spacing: .01em; text-transform: none;
 }
 .ed-marqueur[data-etat="rupture"] { color: var(--theme-encre-doux); }

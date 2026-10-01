@@ -119,7 +119,7 @@ html[data-vt]::view-transition-new(root) { animation: vt-entre .4s cubic-bezier(
 .envol-pastille img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 
 /* ---- Le tiroir ---- */
-.tiroir-voile { backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.tiroir-voile { backdrop-filter: blur(3px); }
 .tiroir-panneau { animation-duration: .45s; animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
 .tiroir-panier .panier-ligne, .tiroir-panier li { animation: v-monte .5s var(--theme-courbe) .12s backwards; }
 

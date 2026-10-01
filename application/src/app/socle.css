@@ -418,9 +418,11 @@ input[type="search"]::-webkit-search-cancel-button:hover { background: var(--the
 .tiroir-panier .tiroir-pied { display: grid; gap: .5rem; }
 .tiroir-panier .tiroir-pied .btn { margin-block-start: .5rem; }
 /* La confirmation d'ajout (ConfirmationAjout.tsx) : sous l'en-tête sur grand
-   écran, une feuille en bas sur téléphone ; elle suit les rayons du thème. */
+   écran, une feuille en bas sur téléphone ; elle suit les rayons du thème.
+   Au-dessus du bandeau des publicités (58) : elle répond au geste qu'on
+   vient de faire, le bandeau peut attendre (au téléphone, il la cachait). */
 .confirmation-ajout {
-  position: fixed; z-index: 55; inset-block-start: var(--confirmation-haut, calc(var(--entete-h) + .75rem)); inset-inline-end: var(--theme-marge);
+  position: fixed; z-index: 59; inset-block-start: var(--confirmation-haut, calc(var(--entete-h) + .75rem)); inset-inline-end: var(--theme-marge);
   inline-size: min(23.5rem, calc(100vw - 2 * var(--theme-marge))); display: grid; gap: .875rem; padding: 1rem 1rem 1.125rem;
   background: var(--theme-surface); color: var(--theme-encre); border: 1px solid var(--theme-filet);
   border-radius: max(var(--theme-radius-carte), 4px); box-shadow: var(--theme-shadow-releve);

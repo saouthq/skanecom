@@ -308,6 +308,8 @@ export const fr = {
     placeholder: "Un produit, une marque, une référence…",
     lancer: "Rechercher",
     invite: "Tapez ce que vous cherchez : un type de produit, une marque, une référence.",
+    /** Une seule lettre : la recherche en attend deux. */
+    tropCourt: "Deux lettres au moins : tapez la suite du mot.",
     resultats: (n: number, q: string) =>
       n > 1
         ? `${n} pièces trouvées pour « ${q} »`

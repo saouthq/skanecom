@@ -48,7 +48,7 @@ export default async function Recherche({
           </button>
         </form>
         <p className="recherche-bilan" aria-live="polite">
-          {liste ? t.recherche.resultats(n, requete) : t.recherche.invite}
+          {liste ? t.recherche.resultats(n, requete) : requete ? t.recherche.tropCourt : t.recherche.invite}
         </p>
       </EnteteListe>
 

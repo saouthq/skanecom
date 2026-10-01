@@ -557,7 +557,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
     position: sticky; inset-block-start: 56px; z-index: 20; display: flex; gap: .375rem; overflow-x: auto;
     margin-inline: -1rem; padding: .625rem 1rem; scrollbar-width: none; overscroll-behavior-x: contain;
     background: color-mix(in srgb, var(--ui-fond, #F7F7F8) 97%, transparent);
-    backdrop-filter: saturate(1.6) blur(12px); -webkit-backdrop-filter: saturate(1.6) blur(12px);
+    backdrop-filter: saturate(1.6) blur(12px);
     border-block-end: 1px solid var(--ui-bord);
   }
   .rg-puces::-webkit-scrollbar { display: none; }
@@ -931,7 +931,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   position: sticky; inset-block-end: 1rem; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem;
   padding: .75rem .875rem .75rem 1.25rem; border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l);
   background: color-mix(in srgb, var(--ui-panneau) 92%, transparent); box-shadow: var(--ui-ombre-l, 0 12px 32px -12px rgb(0 0 0 / .18));
-  backdrop-filter: saturate(1.6) blur(12px); -webkit-backdrop-filter: saturate(1.6) blur(12px);
+  backdrop-filter: saturate(1.6) blur(12px);
 }
 .rc-total { margin: 0; font-size: .875rem; color: var(--ui-texte-2); }
 .rc-total b { color: var(--ui-texte); font-weight: 650; }
@@ -1326,7 +1326,7 @@ a.pg-titre:hover { color: var(--ui-accent); }
   .app-avec-onglets:has(.pg-editeur) .app-contenu { padding-block-end: 2rem; }
   .pg-pied {
     position: sticky; inset-block-end: 0; z-index: 3; padding-block-end: calc(.875rem + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--ui-survol) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--ui-survol) 92%, transparent); backdrop-filter: blur(12px);
   }
 }
 
@@ -1821,13 +1821,13 @@ a.pg-titre:hover { color: var(--ui-accent); }
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem;
   padding: .75rem .875rem .75rem 1.25rem; border-radius: var(--ui-r-l);
   background: color-mix(in srgb, var(--ui-panneau) 92%, transparent); box-shadow: var(--ui-ombre-l);
-  backdrop-filter: saturate(1.6) blur(12px); -webkit-backdrop-filter: saturate(1.6) blur(12px);
+  backdrop-filter: saturate(1.6) blur(12px);
 }
 .ac-pied-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
 .ac-lecture { margin: 0; }
 .ac-gabarit { justify-self: start; }
 .ac-pied[data-actif] { position: sticky; inset-block-end: 1rem; }
-.ac-pied:not([data-actif]) { box-shadow: none; background: transparent; border-color: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; padding-inline: .25rem; }
+.ac-pied:not([data-actif]) { box-shadow: none; background: transparent; border-color: transparent; backdrop-filter: none; padding-inline: .25rem; }
 @media screen and (max-width: 1023px) {
   /* Au-dessus de la barre d'onglets du téléphone. */
   .ac-pied[data-actif] { inset-block-end: calc(4.5rem + env(safe-area-inset-bottom)); }
