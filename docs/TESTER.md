@@ -1,12 +1,13 @@
 # Tester SkanEcom soi-même
 
-Trois boutiques de démonstration tournent avec la même application, chacune avec son gabarit :
+Quatre boutiques de démonstration tournent avec la même application, chacune avec son gabarit :
 
 | Adresse | Boutique | Gabarit |
 |---|---|---|
 | http://mode.localhost:4200 | Maison Selma — prêt-à-porter | éditorial |
 | http://maymar.localhost:4200 | Maymar — bagages | éditorial |
 | http://quincaillerie.localhost:4200 | Quincaillerie du Sud — outillage | technique |
+| http://beaute.localhost:4200 | Yasmine Beauté — soins et parfums | éditorial |
 | http://console.localhost:4200 | la console de mise en place | — |
 
 Tout tourne sur ta machine : une base Postgres, l'API (PostgREST et GoTrue, comme chez Supabase) et la vitrine compilée pour Cloudflare Workers. Rien n'est ouvert au réseau : la vitrine n'écoute que sur `127.0.0.1`.
@@ -68,6 +69,8 @@ outils/essayer.sh
 - Sur une carte à une seule déclinaison, **Ajouter** met directement au panier.
 - Fiche perceuse : choisir « Kit 2 batteries », la référence suit la version.
 - Ouvrir trois ou quatre fiches, puis une autre : en bas, **Vus récemment** reprend les pièces vues, la plus récente d'abord (prix et stock du moment ; « Effacer » vide la liste). La page introuvable le propose aussi.
+
+**Yasmine Beauté** : l'accueil (six rayons sur une rangée, et « Ce qu'en disent nos clientes » : dix avis vérifiés), puis l'huile de figue de Barbarie — 30 ml change le prix ; le vernis à ongles, ses teintes en pastilles (au clavier : Tab depuis le titre, Entrée ; « Corail » : plus que 2) ; le savon à l'huile d'olive, parfum « Fleur d'oranger » épuisé : « Prévenez-moi de son retour ».
 
 **Maymar** : l'accueil, puis la fiche « Valise rigide ABS 4 roues » : choisir Grande 75 cm et Bordeaux — cette combinaison est épuisée, la fiche le dit et le bouton se désactive. Une valeur épuisée dans toutes ses combinaisons reste visible mais barrée : la taille M du combishort (Maison Selma), les forets de 10 mm (quincaillerie).
 

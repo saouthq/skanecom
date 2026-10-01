@@ -4,6 +4,7 @@
 #   https://skanecom-apercu-maymar.<sous-domaine>.workers.dev       Maymar
 #   https://skanecom-apercu-selma.<sous-domaine>.workers.dev        Maison Selma
 #   https://skanecom-apercu-quincaillerie.<sous-domaine>.workers.dev Quincaillerie du Sud
+#   https://skanecom-apercu-beaute.<sous-domaine>.workers.dev       Yasmine Beauté
 #   https://skanecom-apercu-console.<sous-domaine>.workers.dev      console et backoffices
 #
 # Une seule application (skanecom-application) ; devant elle, un petit
@@ -48,6 +49,7 @@ on:
       - "supabase/seed-objectif.sql"
       - "supabase/seed-accueil.sql"
       - "supabase/seed-avis-filtres.sql"
+      - "supabase/seed-beaute.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -136,6 +138,7 @@ jobs:
           installe graines seed-objectif.sql supabase/seed-objectif.sql
           installe graines seed-accueil.sql supabase/seed-accueil.sql
           installe graines seed-avis-filtres.sql supabase/seed-avis-filtres.sql
+          installe graines seed-beaute.sql supabase/seed-beaute.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu
@@ -151,7 +154,7 @@ jobs:
           CROCHET="v1,whsec_$(printf '%s' "skanecom-crochet-courriel:$SUPABASE_SERVICE_ROLE_KEY" | sha256sum | cut -c1-64 | xxd -r -p | base64 -w0)"
           echo "::add-mask::$CROCHET"
           echo "COURRIELS_CROCHET_SECRET=$CROCHET" >> "$GITHUB_ENV"
-          echo "ANNUAIRE_EN_PLUS={\"skanecom-apercu-maymar.$SOUS.workers.dev\":\"maymar\",\"skanecom-apercu-selma.$SOUS.workers.dev\":\"maison-selma\",\"skanecom-apercu-quincaillerie.$SOUS.workers.dev\":\"quincaillerie-demo\"}" >> "$GITHUB_ENV"
+          echo "ANNUAIRE_EN_PLUS={\"skanecom-apercu-maymar.$SOUS.workers.dev\":\"maymar\",\"skanecom-apercu-selma.$SOUS.workers.dev\":\"maison-selma\",\"skanecom-apercu-quincaillerie.$SOUS.workers.dev\":\"quincaillerie-demo\",\"skanecom-apercu-beaute.$SOUS.workers.dev\":\"yasmine-beaute\"}" >> "$GITHUB_ENV"
 
       - name: L'authentification (crochets des codes, téléphone, adresses, administrateur)
         if: env.PRET == '1' && env.SUPABASE_ACCESS_TOKEN != ''
@@ -289,7 +292,7 @@ jobs:
       - name: Déployer les routeurs (une adresse par boutique, une pour la console)
         if: env.PRET == '1'
         run: |
-          for nom in maymar selma quincaillerie console; do
+          for nom in maymar selma quincaillerie beaute console; do
             d=$(mktemp -d)
             cp outils/apercu/routeur.js "$d/routeur.js"
             cat > "$d/wrangler.jsonc" <<JSON
@@ -315,12 +318,13 @@ jobs:
             echo "| Maymar | https://skanecom-apercu-maymar.$SOUS.workers.dev |"
             echo "| Maison Selma | https://skanecom-apercu-selma.$SOUS.workers.dev |"
             echo "| Quincaillerie du Sud | https://skanecom-apercu-quincaillerie.$SOUS.workers.dev |"
+            echo "| Yasmine Beauté | https://skanecom-apercu-beaute.$SOUS.workers.dev |"
             echo "| Console et backoffices | https://skanecom-apercu-console.$SOUS.workers.dev |"
           } >> "$GITHUB_STEP_SUMMARY"
           # Une adresse workers.dev toute neuve met quelques secondes à répondre :
           # chaque page a une minute pour le faire.
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          for cible in maymar/ selma/ quincaillerie/ console/connexion; do
+          for cible in maymar/ selma/ quincaillerie/ beaute/ console/connexion; do
             url="https://skanecom-apercu-${cible%%/*}.$SOUS.workers.dev/${cible#*/}"
             code=000
             for _ in $(seq 1 12); do
@@ -344,6 +348,7 @@ jobs:
           SITES="maymar=https://skanecom-apercu-maymar.$SOUS.workers.dev"
           SITES="$SITES,selma=https://skanecom-apercu-selma.$SOUS.workers.dev"
           SITES="$SITES,quincaillerie=https://skanecom-apercu-quincaillerie.$SOUS.workers.dev"
+          SITES="$SITES,beaute=https://skanecom-apercu-beaute.$SOUS.workers.dev"
           SITES="$SITES" node essais/controle-en-ligne.mjs
 
       - name: Captures de l'aperçu

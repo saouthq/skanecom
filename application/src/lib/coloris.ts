@@ -46,6 +46,9 @@ const COLORIS: Record<string, string> = {
   "noir fleuri": "#2A2A30",
   fauve: "#B07A45",
   "bleu ciel": "#A9C6E3",
+  grenat: "#7A1F2B",
+  nude: "#D9A88F",
+  corail: "#E2725B",
 };
 
 /** Pastille neutre quand le coloris n'est pas encore cartographié : jamais un

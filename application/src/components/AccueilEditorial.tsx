@@ -206,7 +206,7 @@ function Collections({ section, cadre, rayons }: { section: Extract<Section, { t
         lien="/catalogue"
         libelleLien={t.commun.toutLeCatalogue}
       />
-      <ul className="ed-collections" data-n={Math.min(rayons.length, 5)}>
+      <ul className="ed-collections" data-n={rayons.length}>
         {rayons.map((c) => (
           <li key={c.slug}>
             <Link href={`/categorie/${c.slug}`} className="ed-collection">

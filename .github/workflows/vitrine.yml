@@ -128,7 +128,7 @@ jobs:
           set -a; . ../.outils/api-locale.env; set +a
           bun run parcours:gestion
 
-      - name: Aperçu des trois boutiques
+      - name: Aperçu des quatre boutiques
         working-directory: application
         env:
           CAPTURES: ${{ github.workspace }}/.outils/captures/apercu

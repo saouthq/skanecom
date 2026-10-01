@@ -1010,5 +1010,84 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
   await ctx.close();
 }
 
+// ---------------------------------------------------------------------------
+// Yasmine Beauté (supabase/seed-beaute.sql) : la boutique de démonstration
+// du métier beauté — gabarit éditorial, six rayons, teintes en pastilles.
+// ---------------------------------------------------------------------------
+{
+  const B = t.adresse("beaute.localhost");
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "beaute");
+  const toutCharger = () => page.evaluate(async () => {
+    for (let y = 0; y < document.body.scrollHeight; y += 500) { scrollTo(0, y); await new Promise((r) => setTimeout(r, 100)); }
+    scrollTo(0, 0);
+  });
+
+  await etape("Yasmine Beauté : l'accueil d'une boutique de beauté", async () => {
+    await page.goto(B + "/", { waitUntil: "networkidle" });
+    verifie((await page.locator("main h1").innerText()).replace(/\s+/g, " ") === "La peau, au naturel.", "l'ouverture : « La peau, au naturel. »");
+    const titres = (await page.locator("main h2").allInnerTexts()).map((h) => h.replace(/\s+/g, " ").trim());
+    verifie(["Nouveautés", "Les collections", "Le jasmin, la fleur d'oranger", "Pour le rituel", "Ce qu'en disent nos clientes"].every((x) => titres.includes(x)),
+      `ses sections : ${titres.join(" · ")}`);
+    const grille = await page.locator(".ed-collections").evaluate((u) => [u.children.length, getComputedStyle(u).gridTemplateColumns.split(" ").length]);
+    verifie(grille[0] === 6 && grille[1] === 6, `six rayons sur une seule rangée, aucun seul sur sa ligne (${grille[0]} rayons, ${grille[1]} colonnes)`);
+    await toutCharger();
+    await page.waitForLoadState("networkidle");
+    const cassees = await page.evaluate(() => [...document.querySelectorAll("main img")].filter((i) => i.complete && i.naturalWidth === 0).length);
+    verifie(cassees === 0, "toutes ses photos s'affichent");
+    await capture(page, "beaute-accueil");
+  });
+
+  await etape("la contenance fait le prix : l'huile de figue de Barbarie en 30 ml", async () => {
+    await page.goto(B + "/produit/huile-figue-de-barbarie", { waitUntil: "networkidle" });
+    await clic(page, page.locator(".valeur", { hasText: "30 ml" }));
+    const panneau = (await page.locator(".ed-fiche-panneau").innerText()).replace(/\s+/g, " ");
+    verifie(panneau.includes("119,000") && panneau.includes("5 pièces"), "119,000 TND, et le stock de ce flacon-là (5 pièces)");
+  });
+
+  await etape("les teintes du vernis : des pastilles, choisies au clavier", async () => {
+    await page.goto(B + "/produit/vernis-a-ongles", { waitUntil: "networkidle" });
+    verifie((await page.locator(".valeur-couleur").count()) === 4, "quatre teintes, quatre pastilles");
+    // Depuis le titre : la note des avis d'abord (le vernis en a un), puis les teintes.
+    await clic(page, page.locator("main h1"));
+    const actif = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent?.trim().replace(/\s+/g, " ") || "");
+    const avant = [];
+    for (let i = 0; i < 6 && !avant.includes("Grenat"); i++) {
+      await page.keyboard.press("Tab");
+      avant.push(await actif());
+    }
+    const parcourues = ["Grenat"];
+    for (let i = 0; i < 3; i++) {
+      await page.keyboard.press("Tab");
+      parcourues.push(await actif());
+    }
+    verifie(avant.length <= 3 && parcourues.join(" → ") === "Grenat → Rose poudré → Nude → Corail",
+      `Tab depuis le titre : ${[...avant.slice(0, -1), ...parcourues].join(" → ")}`);
+    await page.keyboard.press("Enter");
+    verifie((await page.locator(".fiche-achat .axe legend .choisi").innerText()) === "Corail", "Entrée : « Corail » choisi");
+    verifie((await page.locator(".fiche-achat").innerText()).includes("Plus que 2"), "et son stock bas est dit : « Plus que 2 »");
+    await capture(page, "beaute-vernis-clavier");
+  });
+  await ctx.close();
+
+  const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
+  const p = await tel.newPage();
+  t.espion(p, "beaute-telephone");
+  await etape("Yasmine Beauté au téléphone : l'ouverture cadrée pour l'écran, le menu, les parfums", async () => {
+    await p.goto(B + "/", { waitUntil: "networkidle" });
+    const ouverture = await p.locator("main img").first().evaluate((i) => i.currentSrc.split("/").pop());
+    verifie(ouverture.startsWith("hero-portrait"), `l'ouverture prend sa photo en hauteur (${ouverture})`);
+    verifie(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "rien ne déborde en largeur");
+    await p.getByRole("button", { name: /menu/i }).first().tap();
+    await p.getByRole("dialog").getByRole("link", { name: "Parfums" }).tap();
+    await p.waitForURL(/\/categorie\/parfums/);
+    const fiches = await p.locator("main a[href^='/produit/']").evaluateAll((l) => new Set(l.map((a) => a.getAttribute("href"))).size);
+    verifie(fiches === 3, `le rayon Parfums : ${fiches} fiches`);
+    await capture(p, "beaute-telephone-parfums");
+  });
+  await tel.close();
+}
+
 await navigateur.close();
 process.exit(t.bilan());
