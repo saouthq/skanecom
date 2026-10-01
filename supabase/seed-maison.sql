@@ -24,8 +24,8 @@ begin
     return;
   end if;
 
-  insert into plateforme.boutiques (id, slug, nom, statut, langues_actives) values
-    (b, 'dar-alia', 'Dar Alia', 'active', '{fr}');
+  insert into plateforme.boutiques (id, slug, nom, statut, langues_actives, demonstration) values
+    (b, 'dar-alia', 'Dar Alia', 'active', '{fr}', true);
   insert into plateforme.domaines (hote, boutique_id, type, principal) values
     ('maison.localhost', b, 'sous_domaine', true);
 

@@ -268,6 +268,32 @@ await etape("bon code : la console s'ouvre", async () => {
   await capture(page, "console-tableau-liste");
 });
 
+await etape("les boutiques de démonstration à part : la synthèse ne compte que les clientes", async () => {
+  await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
+  const groupes = (await page.locator(".pl-groupe").allInnerTexts()).map((g) => g.replace(/\s+/g, " ").trim());
+  verifie(groupes.length === 2 && groupes[0].startsWith("Clientes") && groupes[1].startsWith("Démonstrations"),
+    `deux groupes de tuiles : ${groupes.join(" | ")}`);
+  const demos = await page.locator(".pl-tuile", { has: page.locator(".pl-demo") }).locator(".pl-nom").allInnerTexts();
+  verifie(["Maison Selma", "Dar Alia", "Yasmine Beauté", "Quincaillerie du Sud"].every((n) => demos.includes(n)) && !demos.includes("Maymar"),
+    `marquées « Démonstration » : ${demos.join(", ")} ; Maymar est une cliente`);
+  const synthese = (await page.locator(".pl-synthese").innerText()).replace(/\s+/g, " ");
+  verifie(/\d+ clientes?/.test(synthese) && synthese.includes("de démonstration") && synthese.includes("clientes seules"), `la synthèse : « ${synthese} »`);
+  // Dar Alia passe cliente depuis sa page, puis redevient une démonstration.
+  await page.goto(CONSOLE + "/boutiques/dar-alia", { waitUntil: "networkidle" });
+  verifie((await page.locator("h1").first().innerText()).includes("Démonstration"), "sa page le dit, à côté de son statut");
+  const carte = page.locator("section:has(#t-demonstration)");
+  await envoie(page, carte.getByRole("button", { name: "C'est une boutique cliente" }));
+  verifie((await page.getByRole("status").first().innerText()).includes("Boutique cliente"), "« C'est une boutique cliente » : dit, enregistré");
+  verifie(!(await page.locator("h1").first().innerText()).includes("Démonstration"), "l'étiquette quitte l'en-tête");
+  verifie((await page.locator("section:has(#t-journal)").innerText()).includes("Cliente ou démonstration"), "le journal de la boutique trace le geste");
+  await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
+  const clientes = await page.locator(".pl-grille").first().locator(".pl-nom").allInnerTexts();
+  verifie(clientes.includes("Dar Alia"), `elle rejoint les clientes : ${clientes.join(", ")}`);
+  await page.goto(CONSOLE + "/boutiques/dar-alia", { waitUntil: "networkidle" });
+  await envoie(page, page.locator("section:has(#t-demonstration)").getByRole("button", { name: "C'est une boutique de démonstration" }));
+  verifie((await page.locator("h1").first().innerText()).includes("Démonstration"), "et redevient une démonstration");
+});
+
 /* ------------------------------------------------------------------ */
 console.log("\n== 2. Mettre une boutique en place ==");
 

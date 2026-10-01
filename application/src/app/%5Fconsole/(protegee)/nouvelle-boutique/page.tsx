@@ -27,7 +27,7 @@ const STRUCTURES_A_LA_CREATION: { code: Structure; aide: string }[] = [
    palette et sa structure (…_metiers.sql) ; sans métier, on choisit la
    structure et l'on part de zéro. */
 export default async function NouvelleBoutique({ searchParams }: {
-  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string }>;
+  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string; demonstration?: string }>;
 }) {
   const { user } = await exigeAdmin();
   const v = await searchParams;
@@ -73,6 +73,13 @@ export default async function NouvelleBoutique({ searchParams }: {
             </label>
           ))}
         </fieldset>
+        <label className="choix-carte">
+          <input type="checkbox" name="demonstration" value="1" defaultChecked={v.demonstration === "1"} />
+          <span>
+            <b>Boutique de démonstration</b>
+            <span className="aide">Pour la montrer aux prospects, pas un client : ses commandes ne compteront pas dans la synthèse de la console. Cela se change ensuite sur sa page.</span>
+          </span>
+        </label>
         <div className="carte-pied">
           <span className="aide">Ensuite : la marque, le catalogue, l&apos;équipe.</span>
           <button type="submit" className="btn btn-primaire">Créer la boutique</button>

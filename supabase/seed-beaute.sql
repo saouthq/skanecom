@@ -26,8 +26,8 @@ begin
     return;
   end if;
 
-  insert into plateforme.boutiques (id, slug, nom, statut, langues_actives) values
-    (b, 'yasmine-beaute', 'Yasmine Beauté', 'active', '{fr}');
+  insert into plateforme.boutiques (id, slug, nom, statut, langues_actives, demonstration) values
+    (b, 'yasmine-beaute', 'Yasmine Beauté', 'active', '{fr}', true);
   insert into plateforme.domaines (hote, boutique_id, type, principal) values
     ('beaute.localhost', b, 'sous_domaine', true);
 

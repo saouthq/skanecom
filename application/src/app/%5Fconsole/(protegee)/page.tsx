@@ -39,11 +39,19 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
   const maintenant = new Date().getTime();
   const aSurveiller = vigilances(boutiques, maintenant);
 
-  const ouvertes = boutiques.filter((b) => b.statut === "active").length;
-  const enPreparation = boutiques.filter((b) => b.statut === "en_preparation").length;
-  const publies = boutiques.reduce((n, b) => n + b.publies, 0);
-  const semaine = boutiques.reduce((n, b) => n + b.commandes.semaine, 0);
-  const encaisse = boutiques.reduce((n, b) => n + b.commandes.encaisse_semaine, 0);
+  // La synthèse ne compte que les clientes : les boutiques de démonstration vendent pour de faux.
+  const clientes = boutiques.filter((b) => !b.demonstration);
+  const demos = boutiques.filter((b) => b.demonstration);
+  const ouvertes = clientes.filter((b) => b.statut === "active").length;
+  const enPreparation = clientes.filter((b) => b.statut === "en_preparation").length;
+  const publies = clientes.reduce((n, b) => n + b.publies, 0);
+  const semaine = clientes.reduce((n, b) => n + b.commandes.semaine, 0);
+  const encaisse = clientes.reduce((n, b) => n + b.commandes.encaisse_semaine, 0);
+  const tuiles = (liste: LignePilotage[]) => (
+    <div className="pl-grille">
+      {liste.map((b) => <TuileBoutique key={b.id} b={b} maintenant={maintenant} hoteConsole={hoteConsole} />)}
+    </div>
+  );
 
   return (
     <>
@@ -51,10 +59,10 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
         titre="Boutiques"
         description={
           <span className="pl-synthese ligne-points">
-            <span><b className="tabular-nums">{boutiques.length}</b> boutique{boutiques.length > 1 ? "s" : ""}, <b className="tabular-nums">{ouvertes}</b> ouverte{ouvertes > 1 ? "s" : ""}{enPreparation ? <>, <b className="tabular-nums">{enPreparation}</b> en préparation</> : null}</span>
+            <span><b className="tabular-nums">{clientes.length}</b> cliente{clientes.length > 1 ? "s" : ""}, <b className="tabular-nums">{ouvertes}</b> ouverte{ouvertes > 1 ? "s" : ""}{enPreparation ? <>, <b className="tabular-nums">{enPreparation}</b> en préparation</> : null}{demos.length ? <> · <b className="tabular-nums">{demos.length}</b> de démonstration</> : null}</span>
             <span><b className="tabular-nums">{publies}</b> produit{publies > 1 ? "s" : ""} en vitrine</span>
             <span><b className="tabular-nums">{semaine}</b> commande{semaine > 1 ? "s" : ""} en 7 jours</span>
-            <span><b className="tabular-nums">{formateMontant(encaisse)}</b> TND encaissés</span>
+            <span><b className="tabular-nums">{formateMontant(encaisse)}</b> TND encaissés{demos.length ? " (clientes seules)" : ""}</span>
           </span>
         }
         actions={
@@ -112,7 +120,7 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
                           <span className="initiale" style={{ background: couleursDe(b).accent, color: "#fff" }} aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
                           <span>
                             <Link href={`/boutiques/${b.slug}`} className="ligne-cible">{b.nom}</Link>
-                            <small>{b.slug}</small>
+                            <small>{b.slug}{b.demonstration ? " · démonstration" : ""}</small>
                           </span>
                         </span>
                       </td>
@@ -141,10 +149,16 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
                 </tbody>
               </table>
             </div>
+          ) : clientes.length && demos.length ? (
+            <>
+              <h2 className="pl-groupe">Clientes <span className="pl-compte tabular-nums">{clientes.length}</span></h2>
+              {tuiles(clientes)}
+              <h2 className="pl-groupe">Démonstrations <span className="pl-compte tabular-nums">{demos.length}</span></h2>
+              <p className="aide pl-groupe-aide">Montrées aux prospects : leurs commandes ne comptent pas dans la synthèse ni dans « À surveiller ».</p>
+              {tuiles(demos)}
+            </>
           ) : (
-            <div className="pl-grille">
-              {boutiques.map((b) => <TuileBoutique key={b.id} b={b} maintenant={maintenant} hoteConsole={hoteConsole} />)}
-            </div>
+            tuiles(boutiques)
           )}
         </>
       )}

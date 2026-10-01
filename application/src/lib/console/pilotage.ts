@@ -12,6 +12,8 @@ export type LignePilotage = {
   slug: string;
   nom: string;
   statut: "active" | "en_preparation" | "suspendue" | string;
+  /** Montrée aux prospects, pas une cliente (migration 78). */
+  demonstration: boolean;
   creee_le: string;
   hote: string | null;
   marque: {
@@ -61,14 +63,15 @@ export type Vigilance = {
 const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" });
 
 /** Ce qui demande un regard, toutes boutiques confondues, le plus pressant d'abord :
- *  des commandes qui attendent (plus de 2 h : à surveiller ; plus d'un jour : urgent),
+ *  des commandes qui attendent (plus de 2 h : à surveiller ; plus d'un jour : urgent ;
+ *  jamais celles d'une boutique de démonstration, que personne n'a à confirmer),
  *  une boutique en préparation et sa prochaine étape, un accès support ouvert,
  *  une boutique suspendue. */
 export function vigilances(lignes: LignePilotage[], maintenant: number): Vigilance[] {
   const out: Vigilance[] = [];
   for (const b of lignes) {
     const c = b.commandes;
-    if (c.a_confirmer > 0 && c.attente_depuis) {
+    if (c.a_confirmer > 0 && c.attente_depuis && !b.demonstration) {
       const heures = (maintenant - new Date(c.attente_depuis).getTime()) / 3_600_000;
       if (heures >= 2) {
         out.push({

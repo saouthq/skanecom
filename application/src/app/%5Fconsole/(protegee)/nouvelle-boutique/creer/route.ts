@@ -11,6 +11,7 @@ export async function POST(req: Request) {
       hote: String(formulaire.get("hote") ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
       theme: (STRUCTURES as string[]).includes(String(formulaire.get("theme"))) ? String(formulaire.get("theme")) : "editorial",
       metier: String(formulaire.get("metier") ?? "").trim(),
+      demonstration: formulaire.get("demonstration") === "1" ? "1" : "",
     };
     const service = clientService(ip);
     const { data: id, error } = await service.rpc("console_creer_boutique", {
@@ -21,6 +22,10 @@ export async function POST(req: Request) {
       p_theme: valeurs.theme,
     });
     if (error) return versAvecErreur("/nouvelle-boutique", messageBase(error), valeurs);
+    if (valeurs.demonstration) {
+      const { error: ed } = await service.rpc("console_marquer_demonstration", { p_acteur: user.id, p_boutique_id: id as string, p_demonstration: true });
+      if (ed) return versAvecErreur(`/boutiques/${valeurs.slug}`, messageBase(ed));
+    }
     // Le métier : ses rayons, ses caractéristiques, sa palette (le gabarit
     // aussi). La boutique, vide, l'accepte toujours ; un refus est dit sur sa fiche.
     if (valeurs.metier) {

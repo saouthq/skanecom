@@ -33,7 +33,8 @@ export function TuileBoutique({ b, maintenant, hoteConsole }: { b: LignePilotage
   const c = b.commandes;
   const mp = b.mise_en_place;
   const prochaine = titreEtape(mp.prochaine);
-  const attenteLongue = c.a_confirmer > 0 && c.attente_depuis && maintenant - new Date(c.attente_depuis).getTime() >= 2 * 3_600_000;
+  // Une boutique de démonstration ne s'inquiète pas de ses commandes : personne n'a à les confirmer.
+  const attenteLongue = !b.demonstration && c.a_confirmer > 0 && c.attente_depuis && maintenant - new Date(c.attente_depuis).getTime() >= 2 * 3_600_000;
   const monogramme = b.marque.monogramme_chemin;
   const style = { "--pl-accent": accent, "--pl-fond": fond, "--pl-encre": encre } as React.CSSProperties;
 
@@ -53,6 +54,7 @@ export function TuileBoutique({ b, maintenant, hoteConsole }: { b: LignePilotage
               <Icone nom="support" taille={12} /> Support
             </span>
           ) : null}
+          {b.demonstration ? <span className="pl-demo">Démonstration</span> : null}
           <span className={`statut statut-${b.statut}`}>{LIBELLES_STATUT[b.statut] ?? b.statut}</span>
         </span>
         <span className="pl-identite">

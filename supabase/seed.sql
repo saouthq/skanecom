@@ -26,10 +26,12 @@
 -- aucune n'est présentée comme la photo d'un produit de Maymar.
 -- =====================================================================
 
-insert into plateforme.boutiques (id, slug, nom, statut, langues_actives) values
-  ('00000000-0000-4000-8000-000000000001', 'maymar',             'Maymar',               'active', '{fr,ar}'),
-  ('00000000-0000-4000-8000-000000000002', 'quincaillerie-demo', 'Quincaillerie du Sud', 'active', '{fr}'),
-  ('00000000-0000-4000-8000-000000000003', 'maison-selma',       'Maison Selma',         'active', '{fr}');
+-- Maymar est un client ; la Quincaillerie du Sud et Maison Selma, des boutiques
+-- de démonstration (migration 78 : la console les distingue des clients).
+insert into plateforme.boutiques (id, slug, nom, statut, langues_actives, demonstration) values
+  ('00000000-0000-4000-8000-000000000001', 'maymar',             'Maymar',               'active', '{fr,ar}', false),
+  ('00000000-0000-4000-8000-000000000002', 'quincaillerie-demo', 'Quincaillerie du Sud', 'active', '{fr}',    true),
+  ('00000000-0000-4000-8000-000000000003', 'maison-selma',       'Maison Selma',         'active', '{fr}',    true);
 
 insert into plateforme.domaines (hote, boutique_id, type, principal) values
   ('maymar.localhost',        '00000000-0000-4000-8000-000000000001', 'sous_domaine', true),

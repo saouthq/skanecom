@@ -16,7 +16,7 @@ import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
 
 type Fiche = {
-  boutique: { id: string; slug: string; nom: string; statut: string; langue_defaut: string; created_at: string };
+  boutique: { id: string; slug: string; nom: string; statut: string; langue_defaut: string; created_at: string; demonstration: boolean };
   domaines: { hote: string; type: string; principal: boolean; statut_certificat: string }[];
   theme: { code: string; version: number; updated_at: string } | null;
   compteurs: { produits: number; publies: number; variantes: number; categories: number };
@@ -27,6 +27,7 @@ const ACTIONS: Record<string, string> = {
   "boutique.creer": "Boutique créée",
   "boutique.metier": "Préréglage du métier posé",
   "boutique.statut": "Statut changé",
+  "boutique.demonstration": "Cliente ou démonstration",
   "domaine.ajouter": "Domaine ajouté",
   "theme.modifier": "Marque modifiée",
   "theme.image": "Image de la marque",
@@ -243,6 +244,26 @@ export default async function FicheBoutique({ params, searchParams }: {
             <div className="carte-pied">
               <Link href={`/boutiques/${b.slug}/marque`} className="btn btn-second btn-bloc">Régler la marque</Link>
             </div>
+          </section>
+
+          <section className="carte" aria-labelledby="t-demonstration">
+            <div className="carte-tete">
+              <div>
+                <h2 id="t-demonstration" className="carte-titre-icone"><Icone nom="apercu" /> {b.demonstration ? "Boutique de démonstration" : "Boutique cliente"}</h2>
+                <p>
+                  {b.demonstration
+                    ? "Montrée aux prospects : ses commandes ne comptent pas dans la synthèse de la console ni dans « À surveiller », et elle n'a pas de client à facturer. Sa vitrine, elle, ne change pas."
+                    : "Un vrai client : ses commandes comptent dans la synthèse, celles qui attendent passent dans « À surveiller »."}
+                </p>
+              </div>
+            </div>
+            <form action={`/boutiques/${b.slug}/demonstration`} method="post" className="carte-pied">
+              <input type="hidden" name="boutique_id" value={b.id} />
+              <input type="hidden" name="demonstration" value={b.demonstration ? "false" : "true"} />
+              <button type="submit" className="btn btn-second btn-bloc">
+                {b.demonstration ? "C'est une boutique cliente" : "C'est une boutique de démonstration"}
+              </button>
+            </form>
           </section>
         </div>
       </div>

@@ -21,7 +21,7 @@ export default async function Boutique({ children, params }: {
   const { data } = await clientService().rpc("console_boutique", { p_slug: slug });
   if (!data) notFound();
   const { boutique: b, domaines } = data as {
-    boutique: { id: string; slug: string; nom: string; statut: string };
+    boutique: { id: string; slug: string; nom: string; statut: string; demonstration: boolean };
     domaines: { hote: string; principal: boolean }[];
   };
   const principal = domaines.find((d) => d.principal)?.hote;
@@ -47,6 +47,7 @@ export default async function Boutique({ children, params }: {
               <h1>
                 {b.nom}
                 <span className={`statut statut-${b.statut}`}>{LIBELLES_STATUT[b.statut] ?? b.statut}</span>
+                {b.demonstration ? <span className="pl-demo">Démonstration</span> : null}
               </h1>
               <span className="discret">
                 {b.slug}

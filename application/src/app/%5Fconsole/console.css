@@ -978,6 +978,11 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 
 .pl-pied { position: relative; display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-block-start: auto; padding: .625rem 1rem; border-block-start: 1px solid var(--ui-bord-leger); font-size: .8125rem; }
 .pl-support { display: inline-flex; align-items: center; gap: .25rem; padding: .125rem .5rem; border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--ui-violet); background: var(--ui-violet-fond); box-shadow: inset 0 0 0 1px var(--ui-violet-bord); }
+.pl-demo { display: inline-flex; align-items: center; padding: .125rem .5rem; border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--ui-texte-2); background: var(--ui-panneau); box-shadow: inset 0 0 0 1px var(--ui-bord-fort); }
+/* L'accueil, en deux groupes quand il y a des démonstrations. */
+.pl-groupe { display: flex; align-items: center; gap: .5rem; margin: 2rem 0 .75rem; font-size: 1rem; font-weight: 600; }
+.pl-groupe:first-of-type { margin-block-start: 1.5rem; }
+.pl-groupe-aide { margin: -.375rem 0 .875rem; }
 .pl-vitrine { display: inline-flex; align-items: center; gap: .3125rem; min-block-size: 32px; padding-inline: .5rem; margin-inline-end: -.5rem; border-radius: var(--ui-r-s); font-weight: 500; color: var(--ui-texte-2); }
 .pl-vitrine:hover { color: var(--ui-texte); background: var(--ui-doux); }
 .pl-vitrine:focus-visible { outline: none; box-shadow: var(--ui-anneau); }

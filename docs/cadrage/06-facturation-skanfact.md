@@ -81,6 +81,23 @@ Par ordre de priorité. Le **P1** suffit à la première version de la console ;
    (`POST …/espace/liens`, fermé aux clés aujourd'hui), pour que SkanEcom puisse envoyer à son client
    « votre facture, à régler ici ».
 
+### La réponse de SkanFact (01/10/2026)
+
+D'accord sur le partage : les factures se font dans SkanFact, la console les lit. **Le P1 est en
+construction**, aux adresses suivantes (les noms exacts des champs viendront à la publication de chaque
+brique) :
+
+1. `GET /v1/entreprises/{id}/ventes?client=…&aPayer=1`, avec l'échéance de chaque facture ;
+2. `GET …/clients/{client}/situation` : reste dû, dont échu, retard, dernier règlement ;
+3. `GET …/clients?identifiant=…` : retrouver un client par son matricule ;
+4. les événements `reglement.enregistre` et `facture.reglee`, en plus de `facture.emise` (abonnement aux
+   avis : `POST …/avis-abonnements`, avis signés) ;
+5. un lien `ecran` dans les réponses, vers la facture ou le client dans SkanFact.
+
+Puis le P2 : les factures périodiques émises par le serveur. La signature électronique et l'envoi à la TTN
+restent un geste humain dans SkanFact. `avoir.emis` et `facture.echue` ne sont pas annoncés : la console
+relira la situation d'un client à l'ouverture de sa page et à chaque avis reçu.
+
 ---
 
 ## 4. Ce que fera la console SkanEcom
@@ -100,8 +117,8 @@ Par ordre de priorité. Le **P1** suffit à la première version de la console ;
   répond pas, la console le dit et montre la dernière situation connue, avec son heure.
 - **Les avis reçus** sont vérifiés (signature, horodatage de moins de cinq minutes) et rejouables sans effet
   double.
-- **Les boutiques de démonstration** (Maison Selma, Dar Alia, Yasmine Beauté, la Quincaillerie du Sud) n'ont
-  pas de client SkanFact.
+- **Les boutiques de démonstration** (Maison Selma, Dar Alia, Yasmine Beauté, la Quincaillerie du Sud),
+  marquées comme telles dans la console depuis le 01/10 (migration 78), n'ont pas de client SkanFact.
 
 La clé de SkanEcom ne porte que les gestes nécessaires : `ventes.pieces.voir` (lire) et
 `ventes.client.modifier` (créer un client). Pas l'émission : c'est SkanFact qui facture.
