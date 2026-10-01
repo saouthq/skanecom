@@ -31,6 +31,10 @@ export type Marque = { nom: string; compte: number };
 
 export type DonneesAccueil = {
   selections: Map<number, Produit[]>;
+  /** La sélection qui dit « Le catalogue arrive » : la première, et
+   *  seulement si la boutique n'a encore aucun produit publié. Une autre
+   *  sélection vide (un rayon sans pièce, une deuxième rangée) ne s'affiche pas. */
+  selectionVide: number | null;
   avis: AvisAccueil | null;
   questions: Map<number, QuestionsAccueil>;
   marques: Marque[];
@@ -77,7 +81,14 @@ export async function donneesAccueil(cadre: Cadre): Promise<DonneesAccueil> {
     sections.some((s) => s.type === "marques") ? chargeMarques(cadre.boutique.id).then((m) => (marques = m)) : Promise.resolve(),
   ]);
 
-  return { selections, avis, questions, marques: marques.length >= MARQUES_MIN ? marques : [] };
+  const premiere = sections.findIndex((s) => s.type === "selection");
+  return {
+    selections,
+    selectionVide: cadre.boutique.nb_produits === 0 && premiere >= 0 ? premiere : null,
+    avis,
+    questions,
+    marques: marques.length >= MARQUES_MIN ? marques : [],
+  };
 }
 
 /** Les marques des produits publiés, la plus fournie d'abord ; l'écriture la

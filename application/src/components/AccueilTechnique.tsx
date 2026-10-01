@@ -32,9 +32,11 @@ export function AccueilTechnique({ cadre, donnees }: Props) {
           case "hero":
             return <Banniere key={i} section={s} cadre={cadre} />;
           case "rayons":
-            return cadre.racines.length > 0 ? <Rayons key={i} section={s} cadre={cadre} /> : null;
-          case "selection":
-            return <Selection key={i} section={s} cadre={cadre} produits={selections.get(i) ?? []} />;
+            return <Rayons key={i} section={s} cadre={cadre} />;
+          case "selection": {
+            const produits = selections.get(i) ?? [];
+            return produits.length || donnees.selectionVide === i ? <Selection key={i} section={s} cadre={cadre} produits={produits} /> : null;
+          }
           case "editorial":
             return <Bandeau key={i} section={s} cadre={cadre} />;
           case "engagements":
@@ -126,7 +128,8 @@ function Rayons({ section, cadre }: { section: Extract<Section, { type: "rayons"
     // Un rayon qui n'a que des sous-rayons se montre par ses sous-rayons :
     // « Perceuses », « Scies » disent plus que « Outillage ».
     return enfants.length > 0 ? enfants.map((e) => ({ c: e, parent: r })) : [{ c: r, parent: null }];
-  });
+  }).filter(({ c }) => compte(c.slug) > 0); // pas de vignette vide
+  if (cartes.length === 0) return null;
   return (
     <section className="te-section">
       <Tete titre={texte(section.textes, "titre", t.accueil.rayonsTitreTechnique)} lien="/catalogue" libelle={t.commun.toutLeCatalogue} />

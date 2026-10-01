@@ -32,7 +32,8 @@ export type AccueilGestion = {
   sections: SectionBrute[] | null;
   modifie_le: string | null;
   modifie_par: string | null;
-  rayons: { slug: string; nom: string; parent: string | null }[];
+  /** `produits` : ses pièces publiées, sous-rayons compris. */
+  rayons: { slug: string; nom: string; parent: string | null; produits: number }[];
   pages: { slug: string; titre: string; publie: boolean }[];
   avis: { actif: boolean; montrables: number };
   marques: number;
@@ -205,10 +206,12 @@ export function problemesAccueil(sections: SectionBrute[]): { general?: string; 
 
 /** Pourquoi la vitrine ne montrera PAS une section (rien à y mettre), ou null. */
 export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" | "rayons" | "pages" | "avis" | "marques" | "produits">): string | null {
-  const racines = a.rayons.filter((r) => !r.parent).length;
+  // La vitrine ne montre que les rayons qui ont des pièces.
+  const garnis = a.rayons.filter((r) => !r.parent && r.produits > 0).length;
   switch (s.type) {
     case "rayons":
-      return a.code === "editorial" && racines <= 1 ? "Masquée : il faut deux rayons au moins." : racines === 0 ? "Masquée : la boutique n'a pas encore de rayon." : null;
+      if (a.code === "editorial" && garnis <= 1) return `Masquée : il faut deux rayons qui ont des produits publiés (${garnis} aujourd'hui).`;
+      return a.rayons.some((r) => r.produits > 0) ? null : "Masquée : aucun rayon n'a encore de produit publié.";
     case "avis":
       if (!a.avis.actif) return "Masquée : le module des avis n'est pas actif.";
       return a.avis.montrables < 2 ? `Masquée : il faut deux avis publiés de 4 ou 5 étoiles avec un texte (${a.avis.montrables} aujourd'hui).` : null;
@@ -222,8 +225,11 @@ export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" |
     case "editorial":
     case "texte":
       return !Object.entries(s.textes ?? {}).some(([k, v]) => (k.startsWith("titre_") || k.startsWith("texte_")) && v.trim()) ? "Masquée tant qu'elle n'a ni titre ni texte." : null;
-    case "selection":
-      return a.produits === 0 ? "Aucun produit publié : la vitrine y dit « Le catalogue arrive »." : null;
+    case "selection": {
+      if (a.produits === 0) return "Aucun produit publié : la vitrine dit « Le catalogue arrive » (une fois).";
+      const rayon = s.rayon ? a.rayons.find((r) => r.slug === s.rayon) : null;
+      return rayon && rayon.produits === 0 ? `Masquée : le rayon « ${rayon.nom} » n'a pas encore de produit publié.` : null;
+    }
     default:
       return null;
   }

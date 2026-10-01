@@ -6,7 +6,7 @@ import { PhotoOuverture } from "./PhotoOuverture";
 import { TuileFin } from "./TuileFin";
 import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliotheque";
 import { Billets, Camion, Fleche, Retour, Telephone } from "./Icones";
-import { descendance, type Cadre } from "@/lib/boutique";
+import { descendance, racinesGarnies, type Cadre } from "@/lib/boutique";
 import type { Produit } from "@/lib/catalogue";
 import type { DonneesAccueil } from "@/lib/accueil";
 import { texte, type Section } from "@/lib/theme";
@@ -27,16 +27,22 @@ type Props = { cadre: Cadre; donnees: DonneesAccueil };
 
 export function AccueilEditorial({ cadre, donnees }: Props) {
   const { selections } = donnees;
+  // Les collections : deux rayons garnis au moins, sinon pas de section (ni
+  // de lien « Parcourir par rayon » vers elle).
+  const garnis = racinesGarnies(cadre);
+  const collections = garnis.length > 1 && cadre.theme.sections.some((s) => s.type === "rayons");
   return (
     <>
       {cadre.theme.sections.map((s, i) => {
         switch (s.type) {
           case "hero":
-            return <Ouverture key={i} section={s} cadre={cadre} premiere={i === 0} />;
+            return <Ouverture key={i} section={s} cadre={cadre} premiere={i === 0} collections={collections} />;
           case "rayons":
-            return cadre.racines.length > 1 ? <Collections key={i} section={s} cadre={cadre} /> : null;
-          case "selection":
-            return <Selection key={i} section={s} cadre={cadre} produits={selections.get(i) ?? []} />;
+            return collections ? <Collections key={i} section={s} cadre={cadre} rayons={garnis} /> : null;
+          case "selection": {
+            const produits = selections.get(i) ?? [];
+            return produits.length || donnees.selectionVide === i ? <Selection key={i} section={s} cadre={cadre} produits={produits} /> : null;
+          }
           case "editorial":
             return <Recit key={i} section={s} cadre={cadre} inverse={i % 2 === 1} />;
           case "engagements":
@@ -94,7 +100,7 @@ function Lignes({ texte: brut }: { texte: string }) {
   );
 }
 
-function Ouverture({ section, cadre, premiere }: { section: Extract<Section, { type: "hero" }>; cadre: Cadre; premiere: boolean }) {
+function Ouverture({ section, cadre, premiere, collections }: { section: Extract<Section, { type: "hero" }>; cadre: Cadre; premiere: boolean; collections: boolean }) {
   const titre = texte(section.textes, "titre", cadre.boutique.nom);
   const chapo = texte(section.textes, "chapo") || texte(cadre.theme.textes, "resume");
   const etiquette = texte(section.textes, "etiquette");
@@ -161,7 +167,7 @@ function Ouverture({ section, cadre, premiere }: { section: Extract<Section, { t
               {cta}
               <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />
             </Link>
-            {cadre.racines.length > 1 ? (
+            {collections ? (
               <a className="lien-souligne" href="#collections">
                 {t.accueil.parcourirParRayon}
               </a>
@@ -190,7 +196,7 @@ function TeteSection({ titre, etiquette, lien, libelleLien }: { titre: string; e
   );
 }
 
-function Collections({ section, cadre }: { section: Extract<Section, { type: "rayons" }>; cadre: Cadre }) {
+function Collections({ section, cadre, rayons }: { section: Extract<Section, { type: "rayons" }>; cadre: Cadre; rayons: Cadre["racines"] }) {
   const compte = (slug: string) => descendance(cadre.categories, slug).reduce((n, c) => n + (c.nb_produits ?? 0), 0);
   return (
     <section className="enveloppe ed-section" id="collections">
@@ -200,8 +206,8 @@ function Collections({ section, cadre }: { section: Extract<Section, { type: "ra
         lien="/catalogue"
         libelleLien={t.commun.toutLeCatalogue}
       />
-      <ul className="ed-collections" data-n={Math.min(cadre.racines.length, 5)}>
-        {cadre.racines.map((c) => (
+      <ul className="ed-collections" data-n={Math.min(rayons.length, 5)}>
+        {rayons.map((c) => (
           <li key={c.slug}>
             <Link href={`/categorie/${c.slug}`} className="ed-collection">
               <Photo

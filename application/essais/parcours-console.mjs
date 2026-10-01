@@ -297,7 +297,7 @@ await etape("un identifiant déjà pris est refusé, la saisie gardée", async (
   verifie((await page.locator("#nom").inputValue()) === "Doublon", "le formulaire garde ce qui a été saisi");
 });
 
-await etape("un métier pose rayons, caractéristiques et palette d'un geste", async () => {
+await etape("un métier pose rayons, caractéristiques, palette et accueil d'un geste", async () => {
   // Les préréglages (…_metiers.sql) : une boutique de bijoux.
   await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
   verifie((await page.locator(".mt-carte").count()) === 9, "neuf choix : aucun, et huit métiers");
@@ -310,7 +310,7 @@ await etape("un métier pose rayons, caractéristiques et palette d'un geste", a
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(new RegExp(`/boutiques/bijoux-${SUFFIXE}`));
   await page.waitForLoadState("networkidle");
-  verifie((await page.getByRole("status").first().innerText()).includes("les rayons, les caractéristiques et la palette de son métier"),
+  verifie((await page.getByRole("status").first().innerText()).includes("les rayons, les caractéristiques, la palette et l'accueil de son métier"),
     "créée avec son métier, la page le dit");
   const rayons = await page.locator("section[aria-labelledby='t-catalogue'] dt:text-is('Rayons') + dd").innerText();
   verifie(rayons === "5", `ses cinq rayons sont posés (${rayons})`);

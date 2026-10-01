@@ -44,7 +44,7 @@ insert into public.reglages (boutique_id, cle, valeur)
 select id, 'vitrine.partage', 'false' from plateforme.boutiques where slug = 'essai-beaute';
 select tests.service();
 select is(public.console_appliquer_metier(tests.id('admin_plateforme'), (select id from plateforme.boutiques where slug = 'essai-beaute'), 'beaute'),
-  '{"rayons": 6, "caracteristiques": 4, "reglages": 2, "gabarit": "editorial"}'::jsonb,
+  '{"rayons": 6, "caracteristiques": 4, "reglages": 2, "gabarit": "editorial", "accueil": true}'::jsonb,
   'la beauté : six rayons, quatre caractéristiques, deux réglages (le troisième était déjà réglé)');
 
 reset role;

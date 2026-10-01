@@ -83,7 +83,7 @@ export default async function FicheBoutique({ params, searchParams }: {
       {messages.cree ? (
         <p className="message message-succes" role="status">
           {messages.metier
-            ? "Boutique créée, en préparation, avec les rayons, les caractéristiques et la palette de son métier. Réglez sa marque, importez son catalogue, invitez son propriétaire, puis ouvrez-la."
+            ? "Boutique créée, en préparation, avec les rayons, les caractéristiques, la palette et l'accueil de son métier. Réglez sa marque, importez son catalogue, invitez son propriétaire, puis ouvrez-la."
             : "Boutique créée, en préparation. Réglez sa marque, importez son catalogue, invitez son propriétaire, puis ouvrez-la."}
         </p>
       ) : null}

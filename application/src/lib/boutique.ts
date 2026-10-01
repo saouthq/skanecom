@@ -229,6 +229,12 @@ export async function cadre(slug: string): Promise<Cadre> {
 }
 
 /** Les sous-rayons (tous niveaux) d'un rayon, lui compris. */
+/** Les rayons de premier niveau qui ont au moins une pièce publiée
+ *  (sous-rayons compris) : l'accueil ne montre pas une vignette vide. */
+export function racinesGarnies(cadre: Pick<Cadre, "racines" | "categories">): Categorie[] {
+  return cadre.racines.filter((r) => descendance(cadre.categories, r.slug).some((c) => (c.nb_produits ?? 0) > 0));
+}
+
 export function descendance(categories: Categorie[], slug: string): Categorie[] {
   const racine = categories.find((c) => c.slug === slug);
   if (!racine) return [];
