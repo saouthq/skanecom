@@ -94,5 +94,39 @@
   },
   "beaute--produits": {
     "q": "skincare products"
+  },
+  "maison--ouverture": {
+    "q": "living room interior",
+    "rapport": "wide"
+  },
+  "maison--recit": {
+    "q": "home interior plants"
+  },
+  "maison--ceramique": {
+    "q": "ceramic bowls pottery"
+  },
+  "maison--coussin": {
+    "q": "cushion pillow"
+  },
+  "maison--tapis": {
+    "q": "woven rug"
+  },
+  "maison--panier": {
+    "q": "wicker basket"
+  },
+  "maison--bougie": {
+    "q": "candle"
+  },
+  "maison--lampe": {
+    "q": "table lamp"
+  },
+  "maison--bois": {
+    "q": "wooden spoons kitchen"
+  },
+  "maison--verre": {
+    "q": "glass carafe"
+  },
+  "maison--linge": {
+    "q": "linen towels"
   }
 }
