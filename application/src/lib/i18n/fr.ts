@@ -365,6 +365,21 @@ export const fr = {
     reessayer: "Réessayer",
   },
 
+  /** Les pixels publicitaires et leur consentement (migration 63). */
+  pixels: {
+    titre: "Vos visites et nos publicités",
+    plateformes: (meta: boolean, tiktok: boolean) =>
+      meta && tiktok ? "Facebook, Instagram et TikTok" : meta ? "Facebook et Instagram" : "TikTok",
+    texte: (nom: string, plateformes: string) =>
+      `${nom} aimerait mesurer ses publicités sur ${plateformes}. Avec votre accord, ces plateformes reçoivent vos visites et commandes ici, et déposent leurs cookies. Sans lui, rien ne leur est envoyé.`,
+    enSavoirPlus: "En savoir plus",
+    refuser: "Refuser",
+    accepter: "Accepter",
+    actuelAccepte: "Aujourd'hui : accepté.",
+    actuelRefuse: "Aujourd'hui : refusé.",
+    lienPied: "Cookies publicitaires",
+  },
+
   /** « Partager » sur la fiche (réglage vitrine.partage). */
   partage: {
     bouton: "Partager",

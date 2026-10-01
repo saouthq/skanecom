@@ -1744,6 +1744,40 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     const fichier = await fetch(`${FICHIERS}/maison-selma/avis/sac-poche.webp`);
     verifie(fichier.status === 200, `une photo du jeu de démo n'est jamais effacée du dépôt (HTTP ${fichier.status})`);
   });
+
+  await etape("la publicité : ses pixels, un identifiant illisible refusé sur place, un autre collé avec ses espaces", async () => {
+    // Les pixels de Selma (supabase/seed-pixels.sql).
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const entetes = { apikey: cle, authorization: `Bearer ${cle}` };
+    const lu = async (c) => (await (await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/reglages?boutique_id=eq.00000000-0000-4000-8000-000000000003&cle=eq.${c}&select=valeur`, { headers: entetes })).json())[0]?.valeur;
+    await page.goto(`${C}/gestion/maison-selma/reglages#t-publicite`, { waitUntil: "networkidle" });
+    verifie((await page.locator("#pixel-meta").inputValue()) === "1000000000000003" && (await page.locator("#pixel-tiktok").inputValue()) === "CSELMA0000000000DEMO",
+      "la section Publicité montre les deux pixels");
+    const section = page.locator("section", { has: page.locator("#t-publicite") });
+    await page.locator("#pixel-meta").focus();
+    await page.keyboard.press("Control+a");
+    await tape(page, "12345abc");
+    await page.keyboard.press("Enter");
+    await section.locator(".message-erreur").waitFor({ timeout: 8000 });
+    const y = (await section.locator(".message-erreur").boundingBox())?.y ?? -1;
+    verifie((await section.locator(".message-erreur").innerText()).includes("pixel Meta illisible") && y > 0 && y < 860 && (await lu("pub.pixel_meta")) === "1000000000000003",
+      `Entrée : refusé, et le refus se lit dans la section, à l'écran (${Math.round(y)} px) ; le pixel d'avant reste`);
+    await capture(page, "gestion-publicite-refus");
+    await page.locator("#pixel-meta").focus();
+    await page.keyboard.press("Control+a");
+    await tape(page, "1234 5678 9012 3456");
+    await page.keyboard.press("Enter");
+    await section.locator(".message-succes").waitFor({ timeout: 8000 });
+    verifie((await lu("pub.pixel_meta")) === "1234567890123456", "collé avec ses espaces : enregistré en chiffres seuls");
+    // Le jeu de démo d'avant, pour la suite.
+    await page.locator("#pixel-meta").focus();
+    await page.keyboard.press("Control+a");
+    await tape(page, "1000000000000003");
+    await page.keyboard.press("Enter");
+    // Le message d'avant est encore là : c'est la base qui dit quand c'est fait.
+    for (let i = 0; i < 40 && (await lu("pub.pixel_meta")) !== "1000000000000003"; i++) await pause(250);
+    verifie((await lu("pub.pixel_meta")) === "1000000000000003", "et remis comme avant");
+  });
   await ctx.close();
 }
 

@@ -70,7 +70,13 @@ async function remplitAdresse(page, { nom, adresse, ville, gouvernorat }) {
 /* ------------------------------------------------------------------ */
 console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
 {
-  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  // Cette cliente a accepté les pixels de Selma (supabase/seed-pixels.sql) : le
+  // tunnel et la page de fin leur disent la commande (scripts : le bouchon du testeur).
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR", consentementPub: "accepte" });
+  const filesPub = (page) => page.evaluate(() => ({
+    meta: (window.fbq?.queue ?? []).filter((a) => a[0] === "track").map((a) => ({ nom: a[1], ids: a[2]?.content_ids ?? [], valeur: a[2]?.value, evenement: a[3]?.eventID })),
+    tiktok: (Array.isArray(window.ttq) ? window.ttq : []).filter((a) => a[0] === "track").map((a) => ({ nom: a[1], valeur: a[2]?.value, evenement: a[3]?.event_id })),
+  }));
   const page = await ctx.newPage();
   t.espion(page, "selma-commande");
 
@@ -88,6 +94,9 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
     await page.locator(".tunnel-totaux").waitFor();
     verifie(await page.evaluate(() => window.scrollY) === 0, "la page de commande s'ouvre en haut");
     verifie((await page.locator(".tunnel-choix").count()) === 0, "sans le module retrait en magasin : pas de choix, la livraison à domicile");
+    const debut = (await filesPub(page)).meta.find((e) => e.nom === "InitiateCheckout");
+    verifie(debut && debut.ids.join(",") === "SEL01-TER-M" && debut.valeur === 229 && (await page.locator(".pub-consentement").count()) === 0,
+      `pixels acceptés : la commande ouverte (InitiateCheckout, ${debut?.ids.join(",")}, ${debut?.valeur} TND), aucun bandeau dans le tunnel`);
   });
 
   await etape("la page de commande : récapitulatif relu en base", async () => {
@@ -146,6 +155,11 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
     verifie(texte.includes("Appel de confirmation") && texte.includes("+216 20 555 123"), "la suite annonce l'appel de confirmation, au bon numéro");
     verifie(texte.includes("236,000"), "le montant à régler au livreur est rappelé");
     verifie((await page.locator("header .bouton-panier-compte").innerText().catch(() => "")) === "0", "le panier s'est vidé");
+    const achat = await filesPub(page);
+    const meta = achat.meta.find((e) => e.nom === "Purchase");
+    const tiktok = achat.tiktok.find((e) => e.nom === "CompletePayment");
+    verifie(meta?.evenement === `SEL-${annee}-00001` && meta?.valeur === 229 && tiktok?.evenement === `SEL-${annee}-00001`,
+      `l'achat, une fois, chez Meta (Purchase) et TikTok (CompletePayment), le numéro pour identifiant (${meta?.evenement}, ${meta?.valeur} TND)`);
     await capture(page, "selma-merci");
     await capture(page, "selma-merci-pleine", true);
   });

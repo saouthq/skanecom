@@ -34,8 +34,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const texte = (cle: string) => String(f.get(cle) ?? "").trim();
   const section = texte("section");
   const ecran = `/gestion/${slug}/reglages`;
+  // Le message revient dans la section envoyée (`dans`), là où l'on regarde : en
+  // haut de la page, il était à des milliers de pixels au-dessus de l'écran.
   const retour = (ancre: string) => (m: string, ok = false) =>
-    vers(`${ecran}?${new URLSearchParams(ok ? { ok: m } : { erreur: m })}#${ancre}`);
+    vers(`${ecran}?${new URLSearchParams({ ...(ok ? { ok: m } : { erreur: m }), dans: ancre.replace(/^t-/, "") })}#${ancre}`);
   const b = boutique.boutique_id;
   const sb = await clientSession();
 

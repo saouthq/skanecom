@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { evenementPub, lignesPub } from "@/lib/pixels";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Billets, Camion, Coche, Etiquette, Magasin as IconeMagasin } from "./Icones";
@@ -209,6 +210,8 @@ export function Tunnel({
   const cleLignes = JSON.stringify(lignes);
   const cleDevis = devisNumero ? `devis:${devisNumero}` : cleLignes;
 
+  const debutSignale = useRef(false);
+
   // Le devis suit le panier, le mode de livraison et le gouvernorat.
   useEffect(() => {
     if (cleDevis === "[]") return;
@@ -229,6 +232,11 @@ export function Tunnel({
         if (rep.ok) {
           setDevis(rep.devis);
           setDevisEnPanne(false);
+          // Les pixels publicitaires, s'ils sont chargés : la commande ouverte, une fois, au premier chiffrage.
+          if (!debutSignale.current) {
+            debutSignale.current = true;
+            evenementPub("InitiateCheckout", lignesPub(rep.devis.lignes));
+          }
         } else {
           setDevisEnPanne(true);
           setMessagePanne({ raison: rep.raison, texte: rep.message });

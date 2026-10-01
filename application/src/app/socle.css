@@ -796,6 +796,7 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
    changer le dessin : la zone grandit, pas le trait. */
 @media (pointer: coarse) {
   html[data-gabarit] .pied-legal a,
+  html[data-gabarit] .pied-legal-bouton,
   html[data-gabarit] a.lien-souligne:not(p *),
   html[data-gabarit] .ed-lien-fleche,
   html[data-gabarit] .fiche-avis-resume,

@@ -332,6 +332,31 @@ export function conditionsDeVente(cadre: Cadre): { intro: React.ReactNode; secti
 
 /* ---------------------------------------------------------------------- */
 
+/** Les pixels publicitaires (réglages pub.*) : ce qu'ils reçoivent, et seulement avec l'accord du visiteur. */
+function Publicite({ pixels }: { pixels: NonNullable<Cadre["pixels"]> }) {
+  const qui = [pixels.meta ? "Meta Platforms (Facebook, Instagram)" : null, pixels.tiktok ? "TikTok" : null].filter(Boolean).join(" et ");
+  return (
+    <>
+      <p>
+        Pour mesurer ce que rapportent ses publicités, et les montrer à des personnes susceptibles d&apos;être
+        intéressées, la boutique utilise le pixel de {qui}. <b>Seulement si vous l&apos;acceptez</b>, dans le bandeau qui
+        vous le demande : sans votre accord, aucun script de ces plateformes n&apos;est chargé et rien ne leur est envoyé.
+      </p>
+      <p>
+        Avec votre accord, la plateforme reçoit les pages que vous visitez sur ce site, les articles regardés et ajoutés au
+        panier, l&apos;ouverture d&apos;une commande et la commande passée (son numéro, son montant, les références des
+        articles) — jamais votre nom, votre téléphone ni votre adresse. Elle dépose ses propres témoins sur votre appareil et
+        peut relier ces informations à votre compte chez elle, selon sa propre politique de confidentialité ; elle peut les
+        traiter hors de Tunisie.
+      </p>
+      <p>
+        Vous changez d&apos;avis à tout moment : « Cookies publicitaires », au pied de chaque page. Les témoins déjà déposés
+        s&apos;effacent depuis les réglages de votre navigateur.
+      </p>
+    </>
+  );
+}
+
 export function confidentialite(cadre: Cadre): { intro: React.ReactNode; sections: SectionLegale[] } {
   const id = identiteLegale(cadre);
   const responsable = id.raisonSociale ?? id.nom;
@@ -457,6 +482,13 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
             ),
           }]
         : []),
+      ...(cadre.pixels
+        ? [{
+            id: "publicite",
+            titre: "Publicité",
+            corps: <Publicite pixels={cadre.pixels} />,
+          }]
+        : []),
       {
         id: "droits",
         titre: "Vos droits",
@@ -478,8 +510,10 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
         corps: (
           <p>
             Le site n&apos;utilise que ce qui est nécessaire à son fonctionnement : le témoin de connexion de votre compte, et
-            le contenu de votre panier gardé dans votre navigateur. Aucun traceur publicitaire ni outil de mesure
-            d&apos;audience tiers.
+            le contenu de votre panier gardé dans votre navigateur.
+            {cadre.pixels
+              ? " Aucun traceur publicitaire sans votre accord (voir « Publicité » ci-dessus), ni outil de mesure d'audience tiers."
+              : " Aucun traceur publicitaire ni outil de mesure d'audience tiers."}
             {cadre.statistiques ? (
               <>
                 {" "}La boutique compte ses visites elle-même, sans témoin : la page vue, le site d&apos;où vous venez (ou la campagne

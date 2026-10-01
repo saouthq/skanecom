@@ -452,6 +452,8 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .depot-note { font-size: .8125rem; color: var(--ui-ambre); }
 
 /* ---- Réglages de la boutique ---- */
+/* Le message d'un enregistrement, dans la carte envoyée, sous son titre. */
+.rg-retour { margin-block: -.25rem 1rem; }
 .rg-corps { gap: 1.25rem; border: 0; padding: 0; margin: 0; min-inline-size: 0; }
 .rg-corps:disabled .choix-carte { cursor: default; }
 .rg-alternative > legend { font-size: .875rem; font-weight: 600; color: var(--ui-texte); margin-block-end: .625rem; }

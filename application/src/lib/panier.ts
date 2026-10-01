@@ -5,6 +5,7 @@ import {
   clePanier,
   PANIER_AJOUT,
   PANIER_EVENEMENT,
+  PANIER_LIGNE,
   PANIER_OUVRIR,
   PANIER_VIDE,
   ajouteLigne,
@@ -14,6 +15,7 @@ import {
   retireLigne,
   serialisePanier,
   type AjoutAnnonce,
+  type LigneAjoutee,
   type LignePanier,
   type Panier,
 } from "./panier-contrat";
@@ -51,6 +53,9 @@ function ecrit(panier: Panier): void {
 
 export function ajouteAuPanier(ligne: Omit<LignePanier, "ajouteLe">, stockMax: number): void {
   ecrit(ajouteLigne(lit(), ligne, stockMax));
+  window.dispatchEvent(new CustomEvent<LigneAjoutee>(PANIER_LIGNE, {
+    detail: { sku: ligne.sku, libelle: ligne.libelle, quantite: ligne.quantite, prixMillimes: ligne.prixMillimesAjout },
+  }));
 }
 
 /** Ouvre le tiroir du panier (posé dans l'en-tête). */

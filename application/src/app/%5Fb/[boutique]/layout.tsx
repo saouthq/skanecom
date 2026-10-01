@@ -1,5 +1,7 @@
 import { FavorisActifs } from "@/components/FavorisActifs";
 import { MesureAudience } from "@/components/MesureAudience";
+import { PixelsPub } from "@/components/PixelsPub";
+import { scriptPixels } from "@/lib/pixels";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import "../../globals.css";
@@ -74,11 +76,15 @@ export default async function RacineBoutique({ children, params }: Props) {
     >
       <head>
         <style dangerouslySetInnerHTML={{ __html: feuilleDuTheme(cadre.theme, urlFichier) }} />
+        {/* Les pixels publicitaires, d'emblée si ce navigateur les a acceptés (lib/pixels.ts). */}
+        {cadre.pixels ? <script dangerouslySetInnerHTML={{ __html: scriptPixels(cadre.boutique.slug, cadre.pixels) }} /> : null}
       </head>
       <body className="min-h-full flex flex-col bg-fond text-encre">
         <a className="saut-contenu" href="#principal">
           {t.commun.sauterAuContenu}
         </a>
+        {/* Le bandeau des pixels, fixé en bas de l'écran mais premier au clavier : on y répond sans traverser la page. */}
+        {cadre.pixels ? <PixelsPub boutique={cadre.boutique.slug} nom={cadre.boutique.nom} pixels={cadre.pixels} /> : null}
         <FavorisActifs actif={cadre.favoris}>
           <Entete cadre={cadre} />
           {children}

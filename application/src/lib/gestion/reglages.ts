@@ -43,7 +43,7 @@ export type EtatReglages = {
 };
 
 /** Comment un champ de formulaire devient une valeur de réglage. */
-type Genre = "booleen" | "choix" | "entier" | "montant" | "texte" | "numero";
+type Genre = "booleen" | "choix" | "entier" | "montant" | "texte" | "numero" | "pixel";
 
 /** Les champs de chaque section de l'écran, dans l'ordre. */
 export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
@@ -91,6 +91,10 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
     { cle: "contact.tiktok", genre: "texte" },
     { cle: "vitrine.annonce", genre: "texte" },
   ],
+  publicite: [
+    { cle: "pub.pixel_meta", genre: "pixel" },
+    { cle: "pub.pixel_tiktok", genre: "pixel" },
+  ],
   sav: [
     { cle: "sav.garantie_mois", genre: "entier" },
   ],
@@ -118,6 +122,7 @@ export const TITRES_SECTIONS: Record<string, string> = {
   sav: "Service après-vente",
   paiement: "Paiement",
   vitrine: "Vitrine et contact",
+  publicite: "Publicité",
   legal: "Informations légales",
 };
 
@@ -162,6 +167,10 @@ export function valeursDe(section: string, f: FormData, modulesActifs: (cle: str
       }
       case "numero":
         valeurs[cle] = numeroInternational(brut);
+        break;
+      case "pixel":
+        // Copié depuis le gestionnaire d'événements : sans espaces, en majuscules (TikTok).
+        valeurs[cle] = brut.replace(/\s+/g, "").toUpperCase();
         break;
       default:
         valeurs[cle] = brut;
@@ -212,6 +221,8 @@ const LIBELLES_COURTS: Record<string, string> = {
   "contact.tiktok": "TikTok",
   "vitrine.whatsapp_flottant": "Bouton WhatsApp",
   "vitrine.annonce": "Annonce",
+  "pub.pixel_meta": "Pixel Meta",
+  "pub.pixel_tiktok": "Pixel TikTok",
   "legal.raison_sociale": "Raison sociale",
   "legal.forme_juridique": "Forme juridique",
   "legal.adresse": "Adresse du siège",

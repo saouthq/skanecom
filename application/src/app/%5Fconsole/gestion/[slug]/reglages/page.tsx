@@ -21,7 +21,21 @@ export const metadata: Metadata = { title: "Réglages" };
    changement passe au journal (colonne de droite).
    ========================================================================== */
 
-function Section({ id, icone, titre, description, children }: { id: string; icone: NomIcone; titre: string; description: string; children: React.ReactNode }) {
+type Retour = { ok?: string; erreur?: string } | null;
+
+/** Le message de l'enregistrement d'une carte, sous son titre. */
+function MessageRetour({ retour }: { retour?: Retour }) {
+  if (retour?.ok) return <p className="message message-succes rg-retour" role="status">{retour.ok}</p>;
+  if (retour?.erreur) return <p className="message message-erreur rg-retour" role="alert">{retour.erreur}</p>;
+  return null;
+}
+
+function Section({ id, icone, titre, description, retour, children }: {
+  id: string; icone: NomIcone; titre: string; description: string;
+  /** Le message de l'enregistrement de cette section, sous son titre. */
+  retour?: Retour;
+  children: React.ReactNode;
+}) {
   return (
     <section className="carte" aria-labelledby={`t-${id}`}>
       <div className="carte-tete">
@@ -30,6 +44,7 @@ function Section({ id, icone, titre, description, children }: { id: string; icon
           <p>{description}</p>
         </div>
       </div>
+      <MessageRetour retour={retour} />
       {children}
     </section>
   );
@@ -81,7 +96,7 @@ export default async function Reglages({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ ok?: string; erreur?: string }>;
+  searchParams: Promise<{ ok?: string; erreur?: string; dans?: string }>;
 }) {
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
@@ -125,10 +140,15 @@ export default async function Reglages({
     ...(avisActif ? [["avis", "Avis clients", "etoile"] as [string, string, string]] : []),
     ["paiement", "Paiement", "billet"],
     ["vitrine", "Vitrine et contact", "boutique"],
+    ["publicite", "Publicité", "graphique"],
     ["legal", "Informations légales", "fichier"],
     ...(modifie ? [["donnees", "Vos données", "importer"] as [string, string, string]] : []),
     ["journal", "Journal", "journal"],
   ];
+
+  const ids = new Set(["zones", "gouvernorats", "poids", "commandes", "livraison", "retrait", "sav", "avis", "paiement", "vitrine", "publicite", "legal", "donnees"]);
+  const dansUneSection = Boolean(messages.dans && ids.has(messages.dans));
+  const retourDe = (id: string): Retour => (messages.dans === id ? messages : null);
 
   return (
     <>
@@ -138,8 +158,9 @@ export default async function Reglages({
       />
 
       <div className="pile">
-        {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
-        {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
+        {/* Un message d'une section paraît dans sa section ; les autres, ici. */}
+        {messages.ok && !dansUneSection ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
+        {messages.erreur && !dansUneSection ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
         {!modifie ? (
           <p className="message">Lecture seule : le propriétaire ou l&apos;administrateur de la boutique change les réglages.</p>
         ) : null}
@@ -154,7 +175,7 @@ export default async function Reglages({
         <div className="grille-2">
           <div className="pile">
             {/* ---------------- Commandes ---------------- */}
-            <Section id="commandes" icone="commandes" titre="Commandes" description="Qui peut commander, et ce qui se passe une fois la commande passée.">
+            <Section id="commandes" retour={retourDe("commandes")} icone="commandes" titre="Commandes" description="Qui peut commander, et ce qui se passe une fois la commande passée.">
               <form action={action} method="post">
                 <input type="hidden" name="section" value="commandes" />
                 <fieldset className="pile rg-corps" disabled={!modifie}>
@@ -208,7 +229,7 @@ export default async function Reglages({
             </Section>
 
             {/* ---------------- Livraison ---------------- */}
-            <Section id="livraison" icone="camion" titre="Livraison" description="Ce que paie l'acheteur pour être livré, et par qui.">
+            <Section id="livraison" retour={retourDe("livraison")} icone="camion" titre="Livraison" description="Ce que paie l'acheteur pour être livré, et par qui.">
               <form action={action} method="post">
                 <input type="hidden" name="section" value="livraison" />
                 <fieldset className="pile rg-corps" disabled={!modifie}>
@@ -258,6 +279,7 @@ export default async function Reglages({
                     : "Préparées ici, elles ne s'appliquent qu'avec « Tarif par zone » (ci-dessus)."}</p>
                 </div>
               </div>
+              <MessageRetour retour={retourDe("zones")} />
               <ul className="rg-zones" role="list">
                 {e.zones.map((z) => (
                   <li key={z.id} className="rg-zone">
@@ -340,6 +362,7 @@ export default async function Reglages({
                   <p>La zone de chacun des 24 gouvernorats. Sans zone, c&apos;est le tarif de livraison ci-dessus : jamais la gratuité par oubli.</p>
                 </div>
               </div>
+              <MessageRetour retour={retourDe("gouvernorats")} />
               <form action={action} method="post">
                 <input type="hidden" name="section" value="gouvernorats" />
                 <fieldset className="rg-gouvernorats" disabled={!modifie || e.zones.length === 0}>
@@ -376,6 +399,7 @@ export default async function Reglages({
                     : "Préparées ici, les tranches ne s'appliquent qu'avec « Supplément selon le poids du colis » (Livraison, ci-dessus)."}</p>
                 </div>
               </div>
+              <MessageRetour retour={retourDe("poids")} />
               {sansPoids ? (
                 <p className={`message ${auPoids ? "rg-manque" : ""} rg-poids-manque`} role="note">
                   {sansPoids} déclinaison{sansPoids > 1 ? "s actives" : " active"} sans poids : {sansPoids > 1 ? "elles comptent" : "elle compte"} pour 0 kg.{" "}
@@ -469,7 +493,7 @@ export default async function Reglages({
             </section>
             {/* ---------------- Retrait en magasin (module) ---------------- */}
             {retraitActif ? (
-              <Section id="retrait" icone="boutique" titre="Retrait en magasin"
+              <Section id="retrait" retour={retourDe("retrait")} icone="boutique" titre="Retrait en magasin"
                 description="L'acheteur commande en ligne et vient chercher sa commande au comptoir : gratuit, payé au retrait.">
                 <form action={action} method="post">
                   <input type="hidden" name="section" value="retrait" />
@@ -513,7 +537,7 @@ export default async function Reglages({
 
             {/* ---------------- Service après-vente (module) ---------------- */}
             {savActif ? (
-              <Section id="sav" icone="outil" titre="Service après-vente"
+              <Section id="sav" retour={retourDe("sav")} icone="outil" titre="Service après-vente"
                 description="Vos clients signalent un problème sur un article livré depuis « Mes commandes » ; vous traitez la demande dans SAV.">
                 <form action={action} method="post">
                   <input type="hidden" name="section" value="sav" />
@@ -538,7 +562,7 @@ export default async function Reglages({
 
             {/* ---------------- Avis clients (module) ---------------- */}
             {avisActif ? (
-              <Section id="avis" icone="etoile" titre="Avis clients"
+              <Section id="avis" retour={retourDe("avis")} icone="etoile" titre="Avis clients"
                 description="Seul un client livré note l'article reçu, depuis « Mes commandes » ; vous publiez, écartez ou répondez dans Avis.">
                 <form action={action} method="post">
                   <input type="hidden" name="section" value="avis" />
@@ -564,7 +588,7 @@ export default async function Reglages({
             ) : null}
 
             {/* ---------------- Paiement ---------------- */}
-            <Section id="paiement" icone="billet" titre="Paiement" description="Comment l'acheteur règle sa commande.">
+            <Section id="paiement" retour={retourDe("paiement")} icone="billet" titre="Paiement" description="Comment l'acheteur règle sa commande.">
               <form action={action} method="post">
                 <input type="hidden" name="section" value="paiement" />
                 <fieldset className="choix rg-corps" disabled={!modifie}>
@@ -589,7 +613,7 @@ export default async function Reglages({
             </Section>
 
             {/* ---------------- Vitrine et contact ---------------- */}
-            <Section id="vitrine" icone="boutique" titre="Vitrine et contact" description="Ce que la boutique affiche, et comment la joindre.">
+            <Section id="vitrine" retour={retourDe("vitrine")} icone="boutique" titre="Vitrine et contact" description="Ce que la boutique affiche, et comment la joindre.">
               <form action={action} method="post">
                 <input type="hidden" name="section" value="vitrine" />
                 <fieldset className="pile rg-corps" disabled={!modifie}>
@@ -669,8 +693,36 @@ export default async function Reglages({
               </form>
             </Section>
 
+            {/* ---------------- Publicité ---------------- */}
+            <Section id="publicite" retour={retourDe("publicite")} icone="graphique" titre="Publicité"
+              description="Pour savoir ce que rapportent vos publicités Facebook, Instagram et TikTok : la vitrine envoie à votre pixel les pages vues, les fiches regardées, les ajouts au panier et les commandes.">
+              <form action={action} method="post">
+                <input type="hidden" name="section" value="publicite" />
+                <fieldset className="pile rg-corps" disabled={!modifie}>
+                  <div className="grille-champs">
+                    <div className="champ">
+                      <label htmlFor="pixel-meta">Pixel Meta <span className="discret">(facultatif)</span></label>
+                      <input id="pixel-meta" name="pub.pixel_meta" inputMode="numeric" autoComplete="off" spellCheck={false}
+                        defaultValue={String(v("pub.pixel_meta") ?? "")} maxLength={40} placeholder="Ex. 1234567890123456" aria-describedby="pixel-meta-aide" />
+                      <span className="aide" id="pixel-meta-aide">Gestionnaire d&apos;événements de Meta → Sources de données : le numéro sous le nom du pixel. Pour Facebook et Instagram.</span>
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="pixel-tiktok">Pixel TikTok <span className="discret">(facultatif)</span></label>
+                      <input id="pixel-tiktok" name="pub.pixel_tiktok" autoComplete="off" spellCheck={false} autoCapitalize="characters"
+                        defaultValue={String(v("pub.pixel_tiktok") ?? "")} maxLength={40} placeholder="Ex. C4ABCDEFGHIJ12345678" aria-describedby="pixel-tiktok-aide" />
+                      <span className="aide" id="pixel-tiktok-aide">TikTok Ads Manager → Gestionnaire d&apos;événements : l&apos;identifiant du pixel (« ID »).</span>
+                    </div>
+                  </div>
+                  <p className="aide rg-pixels-accord">
+                    Rien n&apos;est envoyé sans l&apos;accord du visiteur : un bandeau le lui demande, « Refuser » aussi visible qu&apos;« Accepter », et il change d&apos;avis depuis le pied de page. La politique de confidentialité le dit. Vide : aucun pixel, aucun bandeau.
+                  </p>
+                </fieldset>
+                <Pied modifie={modifie} />
+              </form>
+            </Section>
+
             {/* ---------------- Informations légales ---------------- */}
-            <Section id="legal" icone="fichier" titre="Informations légales"
+            <Section id="legal" retour={retourDe("legal")} icone="fichier" titre="Informations légales"
               description="Elles composent les mentions légales, les conditions de vente et la politique de confidentialité de la boutique, que l'acheteur accepte en commandant.">
               <form action={action} method="post">
                 <input type="hidden" name="section" value="legal" />
@@ -740,7 +792,7 @@ export default async function Reglages({
 
             {/* ---------------- Vos données (B8) ---------------- */}
             {modifie ? (
-              <Section id="donnees" icone="importer" titre="Vos données"
+              <Section id="donnees" retour={retourDe("donnees")} icone="importer" titre="Vos données"
                 description="Tout ce que la boutique a enregistré, dans un tableur : ses données sont à elle, elle les emporte quand elle veut.">
                 <ul className="rg-exports" role="list">
                   {Object.entries(EXPORTS).filter(([, x]) => (!x.module || (x.module === "sav" && savActif)) && (!x.reglage || Boolean(v(x.reglage)))).map(([cle, x]) => (

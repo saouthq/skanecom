@@ -12,6 +12,7 @@ import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, annonceAjout } from "@/lib/panier";
 import { photoVisible } from "@/lib/envol";
+import { evenementPub } from "@/lib/pixels";
 import { prixApplique as prixDe, usePrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
@@ -120,6 +121,15 @@ export function FicheAchat({
     observateur.observe(cible);
     return () => observateur.disconnect();
   }, []);
+
+  // Les pixels publicitaires, s'ils sont chargés (lib/pixels.ts) : la fiche regardée, une fois par produit.
+  const vue = useRef<string | null>(null);
+  useEffect(() => {
+    const v = variante ?? produit.variantes[0];
+    if (!v || vue.current === produit.id) return;
+    vue.current = produit.id;
+    evenementPub("ViewContent", [{ sku: v.sku, nom: champ(produit, "nom"), quantite: 1, prixMillimes: v.prix_millimes }]);
+  }, [produit, variante]);
 
   /** La seule déclinaison — pour la barre collante, où le nom du produit est
    *  déjà connu : la taille et la couleur sont ce qu'on vérifie avant de

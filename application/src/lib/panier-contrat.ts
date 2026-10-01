@@ -49,6 +49,14 @@ export const PANIER_OUVRIR = "skanecom:panier-ouvrir";
  *  panier, puis montre la confirmation. Détail : `AjoutAnnonce`. */
 export const PANIER_AJOUT = "skanecom:panier-ajout";
 
+/** Une ligne vient d'entrer au panier, d'où que vienne l'ajout (fiche, carte,
+ *  tiroir) : les pixels publicitaires la comptent (components/PixelsPub.tsx).
+ *  Détail : `LigneAjoutee`. Émis par ajouteAuPanier, jamais par une reprise
+ *  de panier (le lien d'une relance n'est pas un ajout). */
+export const PANIER_LIGNE = "skanecom:panier-ligne";
+
+export type LigneAjoutee = { sku: string; libelle: string; quantite: number; prixMillimes: number };
+
 export type AjoutAnnonce = {
   libelle: string;
   quantite: number;

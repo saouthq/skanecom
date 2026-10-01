@@ -9,6 +9,7 @@ import { cadre as chargeCadre } from "@/lib/boutique";
 import { supabase } from "@/lib/supabase";
 import { COOKIE_COMMANDE, lieu, prenomDe, telephoneLisible, type CommandeSuivie } from "@/lib/commande";
 import { urlFichier } from "@/lib/photos";
+import { lignesPub } from "@/lib/pixels";
 import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
 
@@ -91,7 +92,8 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
   return (
     <Gabarit className="enveloppe flex-1 merci-page">
       {origine === "devis" ? null : (
-        <FinDeCommande boutique={cadre.boutique.slug} creeLe={commande.cree_le} videLePanier={origine !== "express"} />
+        <FinDeCommande boutique={cadre.boutique.slug} creeLe={commande.cree_le} videLePanier={origine !== "express"}
+          achat={cadre.pixels ? { numero: commande.numero, lignes: lignesPub(commande.lignes) } : undefined} />
       )}
       <section className="merci" aria-labelledby="merci-titre">
         <header className="merci-tete">

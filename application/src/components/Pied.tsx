@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "./Entete";
 import { Billets, Bouclier, Bulle, Camion, CarteBancaire, Facebook, Instagram, LogoWhatsApp, Magasin, Retour, TikTok } from "./Icones";
 import { LettreInscription } from "./LettreInscription";
+import { OuvrirConsentementPub } from "./PixelsPub";
 import { champ, t } from "@/lib/i18n";
 import { texte } from "@/lib/theme";
 import { lienConseil } from "@/lib/faits";
@@ -151,6 +152,8 @@ function Droits({ cadre }: { cadre: Cadre }) {
         {PAGES_LEGALES.map((p) => (
           <Link key={p.chemin} href={p.chemin}>{p.titre}</Link>
         ))}
+        {/* Changer d'avis sur les pixels publicitaires, à tout moment. */}
+        {cadre.pixels ? <OuvrirConsentementPub className="pied-legal-bouton" /> : null}
       </nav>
       <span>{t.pied.devise}</span>
     </>

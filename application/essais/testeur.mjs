@@ -73,10 +73,35 @@ export function creeTesteur() {
     adresse: (hote) => `http://${hote}:${port}`,
 
     // *.localhost → 127.0.0.1 : la vitrine n'écoute qu'en IPv4.
-    navigateur: () => chromium.launch({
-      executablePath: executable,
-      args: ["--no-sandbox", "--host-resolver-rules=MAP *.localhost 127.0.0.1"],
-    }),
+    // Les pixels publicitaires (supabase/seed-pixels.sql) demandent l'accord du
+    // visiteur : chaque contexte a déjà « refusé », pour que leur bandeau ne
+    // couvre pas ce que les parcours regardent. `consentementPub: null` le
+    // laisse paraître, `"accepte"` vaut accord donné ; les scripts de Meta et
+    // de TikTok sont alors servis par un bouchon, jamais par Internet.
+    navigateur: async () => {
+      const nav = await chromium.launch({
+        executablePath: executable,
+        args: ["--no-sandbox", "--host-resolver-rules=MAP *.localhost 127.0.0.1"],
+      });
+      const nouveau = nav.newContext.bind(nav);
+      nav.newContext = async ({ consentementPub = "refuse", ...options } = {}) => {
+        const ctx = await nouveau(options);
+        if (consentementPub) {
+          await ctx.addInitScript((choix) => {
+            try {
+              for (const b of ["maison-selma", "quincaillerie-demo", "maymar"]) {
+                const cle = `skanecom.consentement-pub.${b}.v1`;
+                if (localStorage.getItem(cle) === null) localStorage.setItem(cle, JSON.stringify({ choix, le: "essai" }));
+              }
+            } catch { /* une page sans stockage (about:blank) */ }
+          }, consentementPub);
+        }
+        await ctx.route(/^https:\/\/(connect\.facebook\.net|analytics\.tiktok\.com)\//, (r) =>
+          r.fulfill({ status: 200, contentType: "application/javascript", body: "/* bouchon du pixel */" }));
+        return ctx;
+      };
+      return nav;
+    },
 
     async capture(page, nom, pleine = false) {
       n += 1;

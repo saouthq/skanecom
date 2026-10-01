@@ -87,3 +87,33 @@ html[data-gabarit="technique"] .legal-num { color: var(--theme-encre-doux); }
 
 /* Le pied de toutes les pages : les trois liens légaux. */
 .pied-legal { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; }
+
+/* ---- Les pixels publicitaires : le bandeau de consentement
+   (components/PixelsPub.tsx). En bas de l'écran, sans voile ni piège à
+   focus : la page reste lisible et utilisable ; « Refuser » et « Accepter »
+   côte à côte, de même taille. Au-dessus de la barre d'achat collante et du
+   bouton WhatsApp, sous le tiroir du panier. ---- */
+.pub-consentement {
+  position: fixed; z-index: 58; inset-inline: .75rem; inset-block-end: max(.75rem, env(safe-area-inset-bottom));
+  display: grid; gap: .625rem; max-inline-size: 27rem; padding: 1.125rem 1.25rem 1.25rem;
+  background: var(--theme-surface); color: var(--theme-encre);
+  border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-bloc); box-shadow: var(--theme-shadow-feuille);
+  animation: pub-consentement-arrive .45s var(--theme-courbe) backwards;
+}
+@media (min-width: 700px) { .pub-consentement { inset-inline: var(--theme-marge) auto; inset-block-end: var(--theme-marge); } }
+.pub-consentement h2 { margin: 0; font-family: var(--theme-font-texte); font-size: 1rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.pub-consentement p { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--theme-encre-doux); }
+.pub-consentement p a { color: var(--theme-encre); text-decoration: underline; text-underline-offset: .2em; }
+.pub-consentement-gestes { display: grid; grid-template-columns: 1fr 1fr; gap: .625rem; margin-block-start: .25rem; }
+.pub-consentement-gestes .btn { inline-size: 100%; min-block-size: 2.75rem; justify-content: center; }
+.pub-consentement-actuel { font-size: .8125rem !important; }
+@keyframes pub-consentement-arrive { from { opacity: 0; transform: translateY(1rem); } }
+@media (prefers-reduced-motion: reduce) { .pub-consentement { animation: none; } }
+
+/* « Cookies publicitaires », au pied : un bouton qui a l'air des liens voisins. */
+.pied-legal-bouton {
+  padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; text-align: start;
+  text-decoration: inherit;
+}
+.pied-legal-bouton:hover { text-decoration: underline; text-underline-offset: .2em; }
+.pied-legal-bouton:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }

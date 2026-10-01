@@ -357,6 +357,65 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     verifie((await compte(page)) === "2", "après rechargement, 2 articles");
   });
 
+  await etape("les pixels publicitaires : rien sans l'accord, l'accord au clavier, les événements, le retrait", async () => {
+    // Selma a un pixel Meta et un pixel TikTok (supabase/seed-pixels.sql) ; un
+    // visiteur qui n'a pas encore choisi. Leurs scripts viennent du bouchon du testeur.
+    const pub = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR", consentementPub: null });
+    const p = await pub.newPage();
+    t.espion(p, "selma-pixels");
+    const demandes = [];
+    p.on("request", (r) => { if (/connect\.facebook\.net|analytics\.tiktok\.com/.test(r.url())) demandes.push(r.url()); });
+    const files = () => p.evaluate(() => ({
+      meta: (window.fbq?.queue ?? []).map((a) => `${a[0]} ${a[1]}${a[2]?.content_ids ? ` ${a[2].content_ids.join(",")}` : ""}`),
+      tiktok: (Array.isArray(window.ttq) ? window.ttq : []).map((a) => `${a[0]}${a[1] ? ` ${a[1]}` : ""}`),
+    }));
+    await p.goto(S + "/", { waitUntil: "networkidle" });
+    await pause(600);
+    const bandeau = p.locator(".pub-consentement");
+    verifie(await bandeau.isVisible() && (await bandeau.innerText()).includes("Facebook, Instagram et TikTok"), "un bandeau demande l'accord, en nommant les plateformes");
+    verifie(demandes.length === 0 && (await p.evaluate(() => typeof window.fbq + typeof window.ttq)) === "undefinedundefined",
+      "avant tout choix : aucun script de Meta ni de TikTok n'est demandé");
+    const [refuser, accepter] = await Promise.all(["Refuser", "Accepter"].map((n) => bandeau.getByRole("button", { name: n }).boundingBox()));
+    verifie(Math.abs(refuser.width - accepter.width) < 1 && Math.abs(refuser.height - accepter.height) < 1, "« Refuser » et « Accepter » de même taille");
+    await capture(p, "selma-pixels-bandeau");
+    const ordre = [];
+    for (let i = 0; i < 4; i++) {
+      await p.keyboard.press("Tab");
+      ordre.push(await p.evaluate(() => document.activeElement?.textContent?.trim()));
+    }
+    verifie(ordre.join(" → ") === "Aller au contenu → En savoir plus → Refuser → Accepter", `au clavier, le bandeau vient d'abord (${ordre.join(" → ")})`);
+    await p.keyboard.press("Enter");
+    await p.waitForFunction(() => Array.isArray(window.fbq?.queue), null, { timeout: 3000 });
+    await pause(300);
+    let f = await files();
+    verifie((await bandeau.count()) === 0 && f.meta.join("|") === "init 1000000000000003|track PageView" && f.tiktok.join("|") === "page"
+      && demandes.some((u) => u.includes("fbevents.js")) && demandes.some((u) => u.includes("sdkid=CSELMA0000000000DEMO")),
+      `Entrée sur « Accepter » : les deux pixels chargés, une page vue (${f.meta.join(", ")} ; ${f.tiktok.join(", ")})`);
+    await p.goto(S + "/produit/sac-voyage-cuir", { waitUntil: "networkidle" });
+    await pause(400);
+    await clic(p, p.locator(".achat .btn-ajout"));
+    await pause(500);
+    f = await files();
+    verifie(f.meta.includes("track ViewContent SEL19-COG") && f.meta.includes("track AddToCart SEL19-COG")
+      && f.tiktok.includes("track ViewContent") && f.tiktok.includes("track AddToCart"),
+      `la fiche regardée, l'ajout au panier : chez Meta et chez TikTok, par la référence (${f.meta.slice(1).join(", ")})`);
+    // Changer d'avis : « Cookies publicitaires », au pied de page.
+    await clic(p, p.getByRole("button", { name: "Cookies publicitaires" }));
+    await pause(300);
+    verifie((await bandeau.innerText()).includes("Aujourd'hui : accepté.") && (await p.evaluate(() => document.activeElement?.textContent?.trim())) === "Refuser",
+      "le pied rouvre le bandeau, qui dit le choix du moment ; le focus sur « Refuser »");
+    demandes.length = 0;
+    await Promise.all([p.waitForNavigation(), p.keyboard.press("Enter")]);
+    await p.waitForLoadState("networkidle");
+    verifie((await p.evaluate(() => typeof window.fbq + typeof window.ttq)) === "undefinedundefined" && demandes.length === 0 && (await bandeau.count()) === 0,
+      "refusé : la page repart sans les scripts, et le bandeau ne revient pas");
+    await p.goto(S + "/confidentialite#publicite", { waitUntil: "networkidle" });
+    const texte = await p.locator("#publicite").innerText();
+    verifie(texte.includes("Seulement si vous l'acceptez") && texte.includes("jamais votre nom, votre téléphone ni votre adresse"),
+      "la politique de confidentialité le dit : seulement avec l'accord, ni nom, ni téléphone, ni adresse");
+    await pub.close();
+  });
+
   await etape("page introuvable", async () => {
     await page.goto(S + "/produit/perceuse-visseuse-14v", { waitUntil: "networkidle" });
     await capture(page, "selma-404");

@@ -6,6 +6,7 @@ import { reseauxDe, type Reseau } from "./reseaux";
 import { t } from "./i18n";
 import type { Categorie } from "./catalogue";
 import type { Magasin } from "./commande";
+import type { Pixels } from "./pixels";
 
 /* ============================================================================
    LE CADRE DE LA BOUTIQUE — ce que TOUTE page doit savoir, en UN appel
@@ -93,6 +94,9 @@ export type Cadre = {
   statistiques: boolean;
   /** Réglage `vitrine.partage` : « Partager » sur la fiche. */
   partage: boolean;
+  /** Réglages `pub.pixel_meta`, `pub.pixel_tiktok` : les pixels publicitaires
+   *  (lib/pixels.ts), chargés avec l'accord du visiteur ; `null` sans aucun. */
+  pixels: Pixels | null;
   /** Réglage `vitrine.lettre` : l'inscription à la lettre au pied de page, et
    *  son accroche (`vitrine.lettre_accroche`) ; `null` sans lettre. */
   lettre: { accroche: string | null } | null;
@@ -129,6 +133,14 @@ export type CadreBrut = {
   tranches_poids: TranchePoids[] | null;
   pages?: PageDeBoutique[];
 };
+
+/** Les pixels, de la forme que la base exige (migration 63) — relue ici : ils
+ *  s'écrivent dans la page. Aucun : `null`. */
+function pixelsDe(meta: string, tiktok: string): Pixels | null {
+  const m = /^[0-9]{10,20}$/.test(meta) ? meta : null;
+  const k = /^[A-Z0-9]{16,24}$/.test(tiktok) ? tiktok : null;
+  return m || k ? { meta: m, tiktok: k } : null;
+}
 
 function reglage<T>(reglages: Record<string, unknown>, cle: string, defaut: T): T {
   const valeur = reglages[cle];
@@ -207,6 +219,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     achetesEnsemble: reglage<boolean>(reglages, "catalogue.achetes_ensemble", false) === true,
     statistiques: reglage<boolean>(reglages, "vitrine.statistiques", false) === true,
     partage: reglage<boolean>(reglages, "vitrine.partage", false) === true,
+    pixels: pixelsDe(texteDe("pub.pixel_meta"), texteDe("pub.pixel_tiktok")),
     lettre: reglage<boolean>(reglages, "vitrine.lettre", false) === true ? { accroche: texteDe("vitrine.lettre_accroche") || null } : null,
     transporteur: texteDe("livraison.transporteur") || null,
     avis: modules.includes("avis"),
