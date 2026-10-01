@@ -30,14 +30,14 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 - [x] **Cartes du gabarit technique alignées d'une carte à l'autre** (01/10) : chaque carte occupe quatre rangées de la grille (la fiche, le stock, le prix, le bouton) que la sous-grille CSS partage ; un prix barré ou un stock sur deux lignes ne décale plus ses voisines (19 à 20 px avant, 0 après ; vérifié par le parcours).
 - [ ] Déploiement en deux temps avec cache prérempli, nettoyage des anciennes versions du cache.
 
-### B. Une vitrine complète : contenus et confiance — en cours
+### B. Une vitrine complète : contenus et confiance — faite (01/10)
 
 - [x] **Les pages de la boutique**, écrites au backoffice (écran « Pages ») : un texte ou des questions-réponses (un accordéon dans la vitrine), servies à leur adresse (`/a-propos`), un lien au pied de page, dans l'ordre choisi. L'éditeur montre la page à mesure qu'on l'écrit ; la mise en forme tient en quelques signes (intertitres, gras, listes, liens), posée par une barre d'outils ou au clavier ; un refus s'affiche sous le champ, le texte ne se perd jamais (brouillon gardé sur l'appareil, version relue à l'enregistrement : un collègue n'est jamais écrasé). Trois modèles composés des réglages de la boutique (questions fréquentes, livraison et retours, à propos), et la liste des pages qu'elle a d'office (conditions de vente, contact…) avec les réglages qui les nourrissent.
 - [x] **Contact** (téléphone, WhatsApp, e-mail, magasin et son itinéraire, horaires, réseaux) — la page n'existe que si la boutique a un moyen d'être jointe.
 - [x] **Réseaux sociaux** (Instagram, Facebook, TikTok) au pied de page, **bouton WhatsApp flottant** (réglage ; jamais pendant la commande), **bandeau d'annonce** réglable.
 - [x] **« Suivre ma commande » sans compte** : le numéro et le téléphone qui l'a passée ; une réponse qui ne dit pas lequel des deux est faux ; cinq essais manqués par numéro et par heure.
 - [x] **Partager une fiche** (01/10, réglage) : au téléphone, la feuille de partage du système (WhatsApp, Messenger…) ; sur ordinateur, WhatsApp, Facebook ou le lien copié ; le lien de la fiche sans paramètre, son aperçu tiré des balises de la page.
-- [ ] Pied de page enrichi (moyens de paiement, transporteurs, lettre d'information avec consentement).
+- [x] **Pied de page enrichi** (01/10) : comment on paie et qui livre, en pastilles tirées des réglages ; **la lettre d'information** (réglage) — une case d'accord jamais cochée d'avance, gardée telle qu'écrite, puis la confirmation par le lien reçu (double opt-in) ; le même lien désinscrit, et l'adresse est effacée ; l'écran Lettre du backoffice (inscrits, semaines, recherche, retirer, export). Reste : écrire et envoyer la lettre, quand un expéditeur sera branché.
 
 ### C. Vendre plus
 

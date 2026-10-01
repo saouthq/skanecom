@@ -11,7 +11,9 @@ import { createClient } from "@supabase/supabase-js";
 
    La clé est un SECRET du Worker (jamais NEXT_PUBLIC_, jamais dans le
    paquet) : lue à l'exécution, et seulement par ce fichier, qui n'est
-   importé que par la console. La vitrine ne l'utilise jamais.
+   importé que par la console — et par la vitrine pour un seul appel :
+   l'inscription à la lettre (public.lettre_inscrire, ouverte au seul
+   serveur), dont le jeton ne doit jamais passer par le navigateur.
    ========================================================================== */
 
 export function clientService(ip?: string | null) {

@@ -1502,3 +1502,28 @@ a.pg-titre:hover { color: var(--ui-accent); }
   .vi-produits li { grid-template-columns: 1.75rem minmax(0, 1fr) auto; grid-template-areas: "rang nom q"; }
   .vi-produit-jauge { display: none; }
 }
+
+/* --- La lettre d'information (…/lettre) ------------------------------------- */
+.lt-barres { block-size: 8rem; gap: 6px; }
+.lt-barre { background: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-bord)); }
+.lt-outils { display: flex; flex-wrap: wrap; gap: .5rem; }
+.lt-liste { display: grid; margin: 0; padding: 0; list-style: none; }
+.lt-ligne {
+  display: grid; grid-template-columns: minmax(0, 1.6fr) auto minmax(0, 1fr) auto; align-items: center; gap: .25rem 1.25rem;
+  min-block-size: 3.25rem; padding-block: .5rem; border-block-start: 1px solid var(--ui-bord);
+}
+.lt-ligne:first-child { border-block-start: 0; }
+.lt-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.lt-quand { font-size: .8125rem; font-variant-numeric: tabular-nums; color: var(--ui-texte-2); white-space: nowrap; }
+.lt-depuis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8125rem; }
+.lt-retirer { justify-self: end; }
+.lt-retirer[open] { grid-column: 1 / -1; justify-self: stretch; }
+@media (max-width: 699px) {
+  .lt-ligne { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "email retirer" "quand retirer" "depuis depuis"; }
+  .lt-email { grid-area: email; }
+  .lt-quand { grid-area: quand; }
+  .lt-depuis { grid-area: depuis; }
+  .lt-depuis:empty { display: none; }
+  .lt-retirer { grid-area: retirer; }
+  .lt-retirer[open] { grid-area: auto; grid-column: 1 / -1; }
+}

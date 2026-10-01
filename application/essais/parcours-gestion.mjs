@@ -319,6 +319,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
     verifie(true, "le code de l'application ouvre le backoffice");
     verifie((await page.locator(".app-cote").getByRole("link", { name: "Visites" }).count()) === 0, "Maymar ne mesure pas son audience : pas d'écran Visites");
+    verifie((await page.locator(".app-cote").getByRole("link", { name: "Lettre", exact: true }).count()) === 0, "ni de lettre : pas d'écran Lettre");
   });
 
   await etape("« Aujourd'hui » : ce qui attend l'équipe, chaque carte vers sa liste", async () => {
@@ -1594,6 +1595,34 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     await page.waitForURL(/jours=7/);
     await page.waitForLoadState("networkidle");
     verifie((await page.locator(".tb-barres li").count()) === 7, "sept jours : sept barres");
+  });
+
+  await etape("la lettre : les inscrits, une recherche, une adresse retirée à la demande", async () => {
+    // Selma a une lettre (supabase/seed-lettre.sql) : 38 inscrits, plus ceux des parcours.
+    const lien = page.locator(".app-cote").getByRole("link", { name: "Lettre" });
+    verifie((await lien.count()) === 1, "Selma a une lettre : « Lettre » dans la navigation");
+    await clic(page, lien);
+    await page.waitForURL(/\/lettre$/);
+    await page.waitForLoadState("networkidle");
+    const libelles = (await page.locator(".tb-chiffre .tb-libelle").allInnerTexts()).join(" · ");
+    verifie(libelles === "Inscrits · Nouveaux · À confirmer · Désinscrits", `les quatre chiffres (${libelles})`);
+    verifie((await page.locator(".lt-barres li").count()) === 12, "douze semaines, semaine par semaine");
+    const lignes = await page.locator(".lt-ligne").count();
+    verifie(lignes >= 38, `les inscrits, les plus récents d'abord (${lignes})`);
+    verifie((await page.getByRole("link", { name: "Exporter (CSV)" }).count()) === 1, "l'export, pour la propriétaire");
+    await capture(page, "gestion-lettre", true);
+    await clic(page, page.locator("#q"));
+    await tape(page, "amira");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/q=amira/);
+    await page.waitForLoadState("networkidle");
+    const trouvee = page.locator(".lt-ligne");
+    verifie((await trouvee.count()) === 1 && (await trouvee.first().innerText()).includes("amira.117@exemple.tn"), "« amira » : une adresse, et elle seule");
+    await clic(page, trouvee.first().locator("summary"));
+    verifie((await trouvee.first().innerText()).includes("Son adresse sera effacée"), "« Retirer… » demande d'abord : l'adresse sera effacée");
+    await t.envoie(page, page.getByRole("button", { name: "Oui, retirer" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("Adresse retirée et effacée"), "retirée : la page le dit");
+    verifie((await page.locator(".lt-ligne").count()) === 0, "et elle n'est plus dans la liste");
   });
 
   await etape("les photos d'un avis : les voir, en retirer une, l'avis reste", async () => {

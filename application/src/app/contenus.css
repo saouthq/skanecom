@@ -156,3 +156,116 @@ html[data-gabarit="technique"] .te-pied-conseil { margin-block-start: 1.25rem; }
 @media (prefers-reduced-motion: reduce) {
   .whatsapp-flottant, .suivi-resultat { animation: none; }
 }
+
+/* --- La lettre, en tête du pied de page (réglage vitrine.lettre) ----------- */
+.lettre {
+  display: grid; gap: 1.5rem; padding-block: clamp(2.25rem, 5vw, 3.5rem);
+  border-block-end: 1px solid var(--theme-filet);
+}
+@media (min-width: 900px) {
+  .lettre { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: center; gap: 4rem; }
+}
+.lettre-titre { margin: 0; font-family: var(--theme-font-display); font-size: clamp(2rem, 4.2vw, 3rem); line-height: 1; letter-spacing: -.015em; }
+.lettre-accroche { margin: .75rem 0 0; max-inline-size: 36ch; color: var(--theme-encre-doux); font-size: 1rem; line-height: 1.5; }
+.lettre-form {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .875rem .5rem;
+  grid-template-areas: "champ bouton" "accord accord" "erreur erreur";
+}
+.lettre-champ {
+  grid-area: champ; min-inline-size: 0; min-block-size: 48px; padding: .625rem 1rem;
+  border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux);
+  background: var(--theme-surface); color: var(--theme-encre); font: inherit; font-size: 1rem;
+  transition: border-color .18s var(--theme-courbe), box-shadow .25s var(--theme-courbe);
+}
+.lettre-champ:hover { border-color: var(--theme-encre-doux); }
+.lettre-champ:focus-visible {
+  outline: none; border-color: var(--theme-encre);
+  box-shadow: 0 0 0 1px var(--theme-encre), 0 0 0 5px color-mix(in srgb, var(--theme-encre) 8%, transparent);
+}
+.lettre-champ[aria-invalid="true"] { border-color: var(--theme-erreur); }
+.lettre-bouton { grid-area: bouton; }
+.lettre-accord {
+  display: flex; gap: .625rem; align-items: flex-start; max-inline-size: 60ch;
+  font-size: .8125rem; line-height: 1.5; color: var(--theme-encre-doux); cursor: pointer;
+}
+.lettre-accord input { flex: none; inline-size: 1.125rem; block-size: 1.125rem; margin: .1rem 0 0; accent-color: var(--theme-encre); cursor: pointer; }
+@media (pointer: coarse) { .lettre-accord input { inline-size: 1.375rem; block-size: 1.375rem; margin-block-start: 0; } }
+.lettre-accord input[aria-invalid="true"] { outline: 2px solid var(--theme-erreur); outline-offset: 2px; }
+footer .lettre-donnees { color: inherit; text-decoration: underline; text-underline-offset: .2em; background: none; }
+.lettre-accord { grid-area: accord; }
+.lettre-erreur { grid-area: erreur; margin: 0; font-size: .8125rem; font-weight: 500; color: var(--theme-erreur); }
+.lettre-merci {
+  display: flex; gap: .75rem; align-items: flex-start; margin: 0; padding: 1rem 1.25rem;
+  border-radius: var(--theme-radius-carte); background: var(--theme-surface-2); color: var(--theme-encre);
+  font-size: .9375rem; line-height: 1.5; outline: none; animation: fiche-livraison-arrive .45s var(--theme-courbe);
+}
+.lettre-merci svg { flex: none; margin-block-start: .15rem; color: var(--theme-succes); }
+.lettre-merci:focus-visible { box-shadow: 0 0 0 2px var(--theme-encre); }
+@media (max-width: 479px) {
+  .lettre-form { grid-template-columns: minmax(0, 1fr); grid-template-areas: "champ" "accord" "erreur" "bouton"; }
+}
+
+/* Le gabarit technique : le pied est à l'encre, la lettre aussi. */
+html[data-gabarit="technique"] .te-lettre { border-block-end-color: color-mix(in srgb, var(--theme-surface) 14%, transparent); }
+html[data-gabarit="technique"] .te-lettre .lettre-titre {
+  font-family: var(--theme-font-texte); font-weight: 800; font-stretch: 72%; text-transform: uppercase;
+  font-size: clamp(1.5rem, 3vw, 2rem); letter-spacing: .01em; color: var(--theme-surface);
+}
+html[data-gabarit="technique"] .te-lettre :is(.lettre-accroche, .lettre-accord) { color: color-mix(in srgb, var(--theme-surface) 72%, transparent); }
+html[data-gabarit="technique"] .te-lettre .lettre-champ {
+  background: color-mix(in srgb, var(--theme-surface) 8%, transparent); color: var(--theme-surface);
+  border-color: color-mix(in srgb, var(--theme-surface) 28%, transparent);
+}
+html[data-gabarit="technique"] .te-lettre .lettre-champ::placeholder { color: color-mix(in srgb, var(--theme-surface) 55%, transparent); }
+html[data-gabarit="technique"] .te-lettre .lettre-champ:hover { border-color: color-mix(in srgb, var(--theme-surface) 55%, transparent); }
+html[data-gabarit="technique"] .te-lettre .lettre-champ:focus-visible {
+  border-color: var(--theme-accent); box-shadow: 0 0 0 1px var(--theme-accent), 0 0 0 5px color-mix(in srgb, var(--theme-accent) 22%, transparent);
+}
+html[data-gabarit="technique"] .te-lettre .lettre-accord input { accent-color: var(--theme-accent); }
+html[data-gabarit="technique"] .te-lettre .lettre-erreur { color: color-mix(in srgb, var(--theme-erreur) 55%, var(--theme-surface)); }
+html[data-gabarit="technique"] .te-lettre .lettre-merci { background: color-mix(in srgb, var(--theme-surface) 10%, transparent); color: var(--theme-surface); }
+html[data-gabarit="technique"] .te-lettre .lettre-merci svg { color: var(--theme-accent); }
+
+/* --- Comment on paie, comment on reçoit (pied de page) ---------------------- */
+.pied-moyens {
+  display: flex; flex-wrap: wrap; gap: 1rem 2.5rem; padding-block: 1.25rem;
+  border-block-start: 1px solid var(--theme-filet);
+}
+.pied-moyens-groupe { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+.pied-moyens-titre { margin: 0; font-size: .75rem; font-weight: 500; color: var(--theme-encre-doux); }
+footer ul[aria-labelledby^="pied-"] { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0; padding: 0; }
+.pied-moyen {
+  display: inline-flex; align-items: center; gap: .4375rem; padding: .3125rem .75rem .3125rem .625rem;
+  border: 1px solid var(--theme-filet); border-radius: 999px; background: var(--theme-surface);
+  font-size: .8125rem; line-height: 1.3; color: var(--theme-encre);
+}
+.pied-moyen svg { flex: none; color: var(--theme-encre-doux); }
+html[data-gabarit="technique"] .pied-moyens { border-block-start-color: color-mix(in srgb, var(--theme-surface) 14%, transparent); }
+html[data-gabarit="technique"] .pied-moyens-titre {
+  color: var(--theme-surface); font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+}
+html[data-gabarit="technique"] .pied-moyen {
+  background: color-mix(in srgb, var(--theme-surface) 7%, transparent); color: var(--theme-surface);
+  border-color: color-mix(in srgb, var(--theme-surface) 20%, transparent);
+}
+html[data-gabarit="technique"] .pied-moyen svg { color: var(--theme-accent); }
+
+/* --- La page du lien de la lettre ------------------------------------------- */
+.lettre-page { display: grid; place-items: center; padding-block: clamp(3rem, 8vw, 6rem); }
+.lettre-geste {
+  display: grid; justify-items: center; gap: .875rem; max-inline-size: 34rem; text-align: center;
+  padding: clamp(1.75rem, 5vw, 3rem); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+  background: var(--theme-surface);
+}
+.lettre-geste-icone {
+  display: grid; place-items: center; inline-size: 3.5rem; block-size: 3.5rem; margin-block-end: .25rem;
+  border-radius: 50%; background: var(--theme-surface-2); color: var(--theme-encre);
+}
+.lettre-geste[data-etat="inscrit"] .lettre-geste-icone,
+.lettre-geste[data-etat="deja"] .lettre-geste-icone,
+.lettre-geste[data-etat="desinscrit"] .lettre-geste-icone { background: color-mix(in srgb, var(--theme-succes) 14%, var(--theme-surface)); color: var(--theme-succes); }
+.lettre-geste h1 { margin: 0; font-size: clamp(2rem, 5vw, 2.75rem); line-height: 1.02; letter-spacing: -.02em; outline: none; }
+.lettre-geste .chapo { margin: 0 0 .5rem; max-inline-size: 40ch; }
+.lettre-geste .btn { min-inline-size: 16rem; }
+.lettre-geste-sortie { margin: .25rem 0 0; }
+html:has(.tunnel-page, .merci-page) :is(.lettre, .pied-moyens) { display: none; }

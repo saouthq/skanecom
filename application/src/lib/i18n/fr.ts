@@ -351,6 +351,46 @@ export const fr = {
     message: (nom: string, boutique: string) => `${nom}, chez ${boutique} :`,
   },
 
+  /** La lettre d'information, au pied de page (réglage vitrine.lettre). */
+  lettre: {
+    titre: "La lettre",
+    accroche: "Les nouveautés et les arrivages, dans votre boîte.",
+    champ: "Votre adresse e-mail",
+    /** Le nom du champ pour un lecteur d'écran (distinct de celui de la connexion). */
+    champNom: "Votre e-mail, pour recevoir la lettre",
+    bouton: "S'inscrire",
+    envoi: "Envoi…",
+    /** La phrase cochée : la base la garde telle quelle, preuve de l'accord. */
+    consentement: (boutique: string) =>
+      `J'accepte de recevoir la lettre de ${boutique} par e-mail. Je peux me désinscrire à tout moment, d'un clic.`,
+    donnees: "Vos données",
+    illisible: "Cette adresse e-mail est illisible : vérifiez-la.",
+    cochez: "Cochez la case pour accepter de recevoir la lettre.",
+    attente: (email: string) => `Presque fini : ouvrez l'e-mail envoyé à ${email} et confirmez. Rien ne vous sera envoyé avant.`,
+    erreur: "L'inscription n'a pas pu partir. Réessayez dans un instant.",
+    indisponible: "L'inscription est momentanément indisponible. Réessayez plus tard.",
+    page: {
+      confirmerTitre: "Confirmez votre inscription",
+      confirmerTexte: (boutique: string) => `Un geste encore : confirmez, et la lettre de ${boutique} vous arrivera.`,
+      confirmer: "Confirmer mon inscription",
+      desinscrireTitre: "Vous désinscrire",
+      desinscrireTexte: (boutique: string) => `Vous ne recevrez plus la lettre de ${boutique}, et votre adresse sera effacée.`,
+      desinscrire: "Me désinscrire",
+      inscritTitre: "C'est confirmé",
+      inscritTexte: (boutique: string) => `Bienvenue : la prochaine lettre de ${boutique} sera pour vous. Chaque lettre porte le lien pour vous désinscrire.`,
+      dejaTitre: "Vous êtes déjà inscrit",
+      dejaTexte: "Rien à faire : votre inscription est confirmée.",
+      desinscritTitre: "Vous êtes désinscrit",
+      desinscritTexte: "Votre adresse est effacée : vous ne recevrez plus rien.",
+      expireTitre: "Ce lien a expiré",
+      expireTexte: "Il valait sept jours. Inscrivez-vous de nouveau, au pied de n'importe quelle page.",
+      inconnuTitre: "Ce lien ne sert plus",
+      inconnuTexte: "Vous êtes peut-être déjà désinscrit, ou un lien plus récent l'a remplacé.",
+      retour: "Retour à la boutique",
+      sortie: "Je ne veux plus la recevoir",
+    },
+  },
+
   /** « Souvent achetés ensemble » (réglage catalogue.achetes_ensemble). */
   ensemble: {
     titre: "Souvent achetés ensemble",
@@ -826,6 +866,14 @@ export const fr = {
     reseaux: "Nos réseaux",
     suivreCommande: "Suivre ma commande",
     reseauAria: (reseau: string, compte: string) => `${reseau} — ${compte} (nouvel onglet)`,
+    paiement: "Paiement",
+    livraison: "Livraison",
+    especes: "Espèces à la livraison",
+    carte: "Carte bancaire",
+    edinar: "e-Dinar",
+    enLigne: "Paiement en ligne avec Konnect",
+    livrePar: (transporteur: string) => `Livré par ${transporteur}`,
+    retraitA: (ville: string) => `Retrait au magasin, à ${ville}`,
   },
 
   contact: {
@@ -961,6 +1009,21 @@ export const fr = {
       titre: "Confirmez votre nouvelle adresse",
       texte: "Tapez ce code sur la page où vous avez changé d'adresse e-mail.",
       legende: "À usage unique · ne le communiquez à personne",
+    },
+    lettre: {
+      sujet: (marque: string) => `Confirmez votre inscription à la lettre — ${marque}`,
+      apercu: "Un clic pour confirmer : rien ne vous sera envoyé avant.",
+      titre: "Confirmez votre inscription",
+      texte: (marque: string) => `Vous avez demandé à recevoir la lettre de ${marque}. Confirmez d'un clic, et elle vous arrivera.`,
+      bouton: "Confirmer mon inscription",
+      validite: "Ce lien vaut sept jours. Sans confirmation, votre adresse est effacée.",
+      desinscrire: "Vous changerez d'avis ? Ce même lien vous désinscrit, à tout moment.",
+      ignorer: "Vous n'avez rien demandé ? Ignorez ce message : sans votre clic, vous ne recevrez rien.",
+      dejaSujet: (marque: string) => `Vous êtes déjà inscrit à la lettre — ${marque}`,
+      dejaApercu: "Rien à faire : votre inscription est confirmée.",
+      dejaTitre: "Vous êtes déjà inscrit",
+      dejaTexte: (marque: string) => `Votre adresse reçoit déjà la lettre de ${marque} : il n'y a rien à faire. Chaque lettre porte le lien pour vous désinscrire.`,
+      raison: (marque: string) => `Vous recevez cet e-mail parce que votre adresse a été inscrite à la lettre de ${marque}.`,
     },
     lienSecours: "Le bouton ne s'ouvre pas ? Copiez cette adresse dans votre navigateur :",
     lienUnique: "Ce lien ne sert qu'une fois.",

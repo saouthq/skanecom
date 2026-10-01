@@ -12,7 +12,7 @@ import { formateMontant } from "@/lib/prix";
 type Format = "texte" | "montant" | "date" | "jour" | "oui_non" | "nombre";
 type Colonne = { cle: string; titre: string; format?: Format };
 
-export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Colonne[]; module?: string }> = {
+export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Colonne[]; module?: string; reglage?: string }> = {
   commandes: {
     titre: "Commandes",
     aide: "Une ligne par commande : client, adresse, montants, étapes.",
@@ -85,6 +85,16 @@ export const EXPORTS: Record<string, { titre: string; aide: string; colonnes: Co
       { cle: "telephone", titre: "Téléphone" }, { cle: "produit", titre: "Produit" }, { cle: "declinaison", titre: "Déclinaison" },
       { cle: "reference", titre: "Référence" }, { cle: "numero_serie", titre: "Numéro de série" },
       { cle: "description", titre: "Description" }, { cle: "cloturee_le", titre: "Close le", format: "date" },
+    ],
+  },
+  lettre: {
+    titre: "Lettre d'information",
+    aide: "Les inscrits confirmés, et la preuve de leur accord : la phrase cochée, la page, la date.",
+    reglage: "vitrine.lettre",
+    colonnes: [
+      { cle: "email", titre: "E-mail" }, { cle: "inscrit_le", titre: "Inscrit le", format: "date" },
+      { cle: "demande_le", titre: "Demandé le", format: "date" }, { cle: "page", titre: "Page" },
+      { cle: "consentement", titre: "Accord accepté" },
     ],
   },
   versements: {

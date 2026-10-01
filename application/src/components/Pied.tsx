@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Entete";
-import { Billets, Bouclier, Bulle, Camion, Facebook, Instagram, LogoWhatsApp, Magasin, Retour, TikTok } from "./Icones";
+import { Billets, Bouclier, Bulle, Camion, CarteBancaire, Facebook, Instagram, LogoWhatsApp, Magasin, Retour, TikTok } from "./Icones";
+import { LettreInscription } from "./LettreInscription";
 import { champ, t } from "@/lib/i18n";
 import { texte } from "@/lib/theme";
 import { lienConseil } from "@/lib/faits";
@@ -65,6 +66,51 @@ function Reseaux({ cadre, classe }: { cadre: Cadre; classe: string }) {
   );
 }
 
+/** Comment on paie, comment on reçoit : ce que les réglages disent, en
+ *  pastilles (jamais le logo d'une marque : son nom). */
+function Moyens({ cadre }: { cadre: Cadre }) {
+  const paiement = [
+    cadre.livraison.cod ? { cle: "especes", icone: <Billets taille={16} />, texte: t.pied.especes } : null,
+    cadre.konnectActif ? { cle: "carte", icone: <CarteBancaire taille={16} />, texte: t.pied.carte, note: t.pied.enLigne } : null,
+    cadre.konnectActif ? { cle: "edinar", icone: <CarteBancaire taille={16} />, texte: t.pied.edinar, note: t.pied.enLigne } : null,
+  ].filter((m) => m !== null);
+  const livraison = [
+    cadre.transporteur ? { cle: "transporteur", icone: <Camion taille={16} />, texte: t.pied.livrePar(cadre.transporteur) } : null,
+    cadre.retrait ? { cle: "retrait", icone: <Magasin taille={16} />, texte: t.pied.retraitA(cadre.retrait.ville) } : null,
+  ].filter((m) => m !== null);
+  if (paiement.length === 0 && livraison.length === 0) return null;
+  const liste = (titre: string, moyens: { cle: string; icone: React.ReactNode; texte: string; note?: string }[]) =>
+    moyens.length ? (
+      <div className="pied-moyens-groupe">
+        <p className="pied-moyens-titre" id={`pied-${titre}`}>{titre}</p>
+        <ul aria-labelledby={`pied-${titre}`}>
+          {moyens.map((m) => (
+            <li key={m.cle} className="pied-moyen" title={m.note}>
+              {m.icone}
+              <span>{m.texte}{m.note ? <span className="sr-only"> — {m.note}</span> : null}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+  return (
+    <div className="enveloppe pied-moyens">
+      {liste(t.pied.paiement, paiement)}
+      {liste(t.pied.livraison, livraison)}
+    </div>
+  );
+}
+
+/** La lettre, si la boutique en a une. */
+function Lettre({ cadre, classe }: { cadre: Cadre; classe: string }) {
+  if (!cadre.lettre) return null;
+  return (
+    <div className="enveloppe">
+      <LettreInscription boutique={cadre.boutique.nom} accroche={cadre.lettre.accroche} classe={classe} />
+    </div>
+  );
+}
+
 /* ============================================================================
    PIED DE PAGE — un par gabarit.
 
@@ -117,6 +163,7 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
   const retour = texte(theme.textes, "politique_retour");
   return (
     <footer className="ed-pied mt-auto">
+      <Lettre cadre={cadre} classe="ed-lettre" />
       <div className="enveloppe ed-pied-grille">
         <div className="ed-pied-intro">
           {resume ? <p>{resume}</p> : null}
@@ -143,6 +190,7 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
       <div className="enveloppe ed-pied-marque" aria-hidden="true">
         <Logo cadre={cadre} className="marque-geante" />
       </div>
+      <Moyens cadre={cadre} />
       <div className="enveloppe ed-pied-bas">
         <Droits cadre={cadre} />
       </div>
@@ -177,6 +225,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
           ))}
         </ul>
       </div>
+      <Lettre cadre={cadre} classe="te-lettre" />
       <div className="enveloppe te-pied-grille">
         <div>
           <Logo cadre={cadre} />
@@ -206,6 +255,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
           </ul>
         </div>
       </div>
+      <Moyens cadre={cadre} />
       <div className="enveloppe te-pied-bas">
         <Droits cadre={cadre} />
       </div>

@@ -443,6 +443,20 @@ export function confidentialite(cadre: Cadre): { intro: React.ReactNode; section
           </>
         ),
       },
+      ...(cadre.lettre
+        ? [{
+            id: "lettre",
+            titre: "La lettre d'information",
+            corps: (
+              <p>
+                Si vous vous inscrivez à la lettre, la boutique garde votre adresse e-mail, la date de votre accord et la phrase
+                que vous avez cochée. L&apos;inscription ne vaut qu&apos;une fois confirmée par le lien reçu par e-mail ; sans
+                confirmation, l&apos;adresse est effacée au bout de sept jours. Le même lien vous désinscrit, à tout moment :
+                votre adresse est alors effacée. Elle ne sert qu&apos;à la lettre de la boutique, jamais à un tiers.
+              </p>
+            ),
+          }]
+        : []),
       {
         id: "droits",
         titre: "Vos droits",

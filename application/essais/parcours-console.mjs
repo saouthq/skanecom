@@ -1075,14 +1075,15 @@ await etape("la galerie des e-mails, aux couleurs de la boutique choisie", async
   await page.waitForURL(/\/courriels/);
   // Pas « networkidle » : les cadres des aperçus (srcdoc, sans script) ne
   // signalent jamais leur chargement à Playwright, qui attendrait sans fin.
-  await page.locator(".crl-cadre").nth(3).waitFor({ timeout: 15_000 }).catch(() => {});
+  await page.locator(".crl-cadre").nth(5).waitFor({ timeout: 15_000 }).catch(() => {});
   await pause(600);
-  verifie(await page.locator(".crl-cadre").count() === 4, "quatre e-mails : le code, la nouvelle adresse, l'invitation, le mot de passe");
+  verifie(await page.locator(".crl-cadre").count() === 6,
+    "six e-mails : le code, la nouvelle adresse, la lettre (confirmer, déjà inscrit), l'invitation, le mot de passe");
   const sujet = await page.locator(".crl-sujet").first().innerText();
   verifie(/^Votre code de connexion — .+/.test(sujet), `le sujet dit qui écrit : « ${sujet} »`);
   await capture(page, "console-courriels", true);
   await page.goto(CONSOLE + "/courriels?boutique=quincaillerie-demo&vue=telephone", { waitUntil: "load" });
-  await page.locator(".crl-cadre").nth(3).waitFor({ timeout: 15_000 }).catch(() => {});
+  await page.locator(".crl-cadre").nth(5).waitFor({ timeout: 15_000 }).catch(() => {});
   await pause(600);
   verifie((await page.locator(".crl-sujet").first().innerText()).includes("Quincaillerie du Sud"), "une autre boutique : son nom dans le sujet");
   await capture(page, "console-courriels-quincaillerie-telephone", true);

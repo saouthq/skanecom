@@ -219,6 +219,16 @@ export function Partager({ taille = 18, className }: Props) {
 }
 
 /** Un maillon : « Copier le lien ». */
+/** Une carte bancaire (le paiement en ligne). */
+export function CarteBancaire({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={1.7}>
+      <rect x="3" y="5.5" width="18" height="13" rx="2" />
+      <path d="M3 10h18M7 15h4" />
+    </svg>
+  );
+}
+
 export function Lien({ taille = 18, className }: Props) {
   return (
     <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>

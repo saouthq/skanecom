@@ -5,7 +5,7 @@ import { Icone } from "@/components/console/Icone";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
-import { courrielChangementEmail, courrielCode, courrielInvitation, courrielMotDePasse, marqueDeBoutique, MARQUE_PLATEFORME } from "@/lib/courriels/messages";
+import { courrielChangementEmail, courrielCode, courrielInvitation, courrielLettre, courrielLettreDeja, courrielMotDePasse, marqueDeBoutique, MARQUE_PLATEFORME } from "@/lib/courriels/messages";
 import type { Courriel } from "@/lib/courriels/modele";
 
 export const metadata: Metadata = { title: "E-mails" };
@@ -35,6 +35,8 @@ export default async function Courriels({ searchParams }: { searchParams: Promis
     exemples.push(
       { cle: "code", pour: "L'acheteur, pour se connecter (au nom de la boutique)", courriel: courrielCode(marque, "482913") },
       { cle: "adresse", pour: "L'acheteur, qui change d'adresse", courriel: courrielChangementEmail(marque, "705362") },
+      { cle: "lettre", pour: "Qui s'inscrit à la lettre, pour confirmer", courriel: courrielLettre(marque, `${marque.site ?? "https://boutique.tn"}/lettre?j=exemple`) },
+      { cle: "lettre-deja", pour: "Qui s'inscrit à la lettre, déjà inscrit", courriel: courrielLettreDeja(marque) },
       { cle: "invitation", pour: "L'équipe, invitée depuis la console", courriel: courrielInvitation(MARQUE_PLATEFORME, `${console}/bienvenue?jeton=exemple&type=invite`) },
       { cle: "mot-de-passe", pour: "L'équipe, qui a oublié son mot de passe", courriel: courrielMotDePasse(MARQUE_PLATEFORME, `${console}/bienvenue?jeton=exemple&type=recovery`) },
     );
@@ -75,7 +77,7 @@ export default async function Courriels({ searchParams }: { searchParams: Promis
               <span className="crl-de">{x.cle === "invitation" || x.cle === "mot-de-passe" ? MARQUE_PLATEFORME.nom : choisie?.nom}</span>
               <span className="crl-sujet">{x.courriel.sujet}</span>
             </div>
-            {/* Pas de chargement différé : le contenu est déjà dans la page (quatre
+            {/* Pas de chargement différé : le contenu est déjà dans la page (six
                 e-mails), et un cadre différé hors de l'écran ne se charge jamais —
                 la capture pleine page le montrait vide. */}
             <iframe className="crl-cadre" title={x.courriel.sujet} srcDoc={x.courriel.html} sandbox="" />

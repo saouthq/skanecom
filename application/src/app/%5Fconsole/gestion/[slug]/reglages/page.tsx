@@ -602,6 +602,8 @@ export default async function Reglages({
                       aide="Un cœur sur les cartes et les fiches, et « Mes favoris » ; un client connecté les retrouve partout. Le catalogue dit combien aiment chaque pièce, jamais qui." />
                     <Case cle="vitrine.partage" valeur={Boolean(v("vitrine.partage"))} titre="Partager une fiche"
                       aide="Un bouton « Partager » sur la fiche : au téléphone, la feuille de partage (WhatsApp, Messenger…) ; sur ordinateur, WhatsApp, Facebook ou le lien à copier." />
+                    <Case cle="vitrine.lettre" valeur={Boolean(v("vitrine.lettre"))} titre="Lettre d'information"
+                      aide="Au pied de chaque page, l'inscription à votre lettre : la personne coche son accord, puis le confirme par le lien reçu par e-mail. L'écran Lettre liste les inscrits ; chacun se désinscrit d'un clic. Il faut un expéditeur d'e-mails branché." />
                     <Case cle="vitrine.statistiques" valeur={Boolean(v("vitrine.statistiques"))} titre="Mesure d'audience"
                       aide="Les visites de la vitrine dans l'écran Visites : combien de visiteurs, d'où ils viennent, sur quel appareil, et combien commandent. Sans cookie ni donnée personnelle : rien à faire accepter." />
                     <Case cle="catalogue.achetes_ensemble" valeur={Boolean(v("catalogue.achetes_ensemble"))} titre="Souvent achetés ensemble"
@@ -622,6 +624,12 @@ export default async function Reglages({
                   <div className="choix">
                     <Case cle="vitrine.whatsapp_flottant" valeur={Boolean(v("vitrine.whatsapp_flottant"))} titre="Bouton WhatsApp sur toutes les pages"
                       aide="Un rond vert en bas de l'écran ouvre la conversation avec votre numéro WhatsApp (jamais pendant la commande)." />
+                  </div>
+                  <div className="champ">
+                    <label htmlFor="lettre-accroche">Accroche de la lettre <span className="discret">(facultatif)</span></label>
+                    <input id="lettre-accroche" name="vitrine.lettre_accroche" defaultValue={String(v("vitrine.lettre_accroche") ?? "")} maxLength={140}
+                      placeholder="Les nouveautés et les arrivages, dans votre boîte." />
+                    <span className="aide">Sous « La lettre », au pied de page : ce qu&apos;elle apporte, et à quel rythme.</span>
                   </div>
                   <div className="champ">
                     <label htmlFor="horaires">Horaires du service client <span className="discret">(facultatif)</span></label>
@@ -735,7 +743,7 @@ export default async function Reglages({
               <Section id="donnees" icone="importer" titre="Vos données"
                 description="Tout ce que la boutique a enregistré, dans un tableur : ses données sont à elle, elle les emporte quand elle veut.">
                 <ul className="rg-exports" role="list">
-                  {Object.entries(EXPORTS).filter(([, x]) => !x.module || (x.module === "sav" && savActif)).map(([cle, x]) => (
+                  {Object.entries(EXPORTS).filter(([, x]) => (!x.module || (x.module === "sav" && savActif)) && (!x.reglage || Boolean(v(x.reglage)))).map(([cle, x]) => (
                     <li key={cle} className="rg-export">
                       <span className="rg-export-texte">
                         <b>{x.titre}</b>

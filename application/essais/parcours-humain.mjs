@@ -780,6 +780,55 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
     await capture(page, "selma-alerte-retour");
   });
 
+  await etape("la lettre, au pied : l'accord coché à la main, puis confirmé par le lien reçu", async () => {
+    // Selma a une lettre (supabase/seed-lettre.sql) ; au clavier, du champ à « S'inscrire ».
+    const RELAIS = process.env.RELAIS ?? "http://127.0.0.1:54321";
+    const adresse = `lettre-${Date.now().toString(36)}@exemple.tn`;
+    await page.goto(S + "/", { waitUntil: "networkidle" });
+    const lettre = page.locator("footer .lettre");
+    verifie((await lettre.locator(".lettre-accroche").innerText()).includes("une lettre par mois"), "la lettre et son accroche, au pied de page");
+    verifie(!(await lettre.locator(".lettre-accord input").isChecked()), "l'accord n'est jamais coché d'avance");
+    await lettre.locator(".lettre-champ").focus();
+    await tape(page, adresse);
+    await page.keyboard.press("Enter");
+    await pause(300);
+    verifie((await lettre.locator(".lettre-erreur").innerText().catch(() => "")).includes("Cochez la case")
+      && await page.evaluate(() => document.activeElement?.getAttribute("type") === "checkbox"),
+      "Entrée sans l'accord : refusé, le focus sur la case");
+    await page.keyboard.press("Space");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    verifie(await page.evaluate(() => document.activeElement?.textContent?.trim() === "S'inscrire"), "Espace coche ; Tab, Tab : « S'inscrire »");
+    await page.keyboard.press("Enter");
+    const merci = lettre.locator(".lettre-merci");
+    await merci.waitFor({ timeout: 10000 }).catch(() => {});
+    verifie((await merci.innerText().catch(() => "")).includes(adresse) && await page.evaluate(() => document.activeElement?.classList.contains("lettre-merci")),
+      "« Presque fini » : l'adresse redite, le focus sur la réponse");
+    await capture(page, "selma-lettre-envoyee");
+    const rendu = await (await fetch(`${RELAIS}/email-dev/rendu/dernier?email=${encodeURIComponent(adresse)}`)).json().catch(() => ({}));
+    const lien = /href="([^"]*\/lettre\?j=[0-9a-f]{64})"/.exec(rendu.html ?? "")?.[1]?.replace(/&amp;/g, "&");
+    verifie(rendu.nom === "Maison Selma" && Boolean(lien), `l'e-mail de confirmation, au nom de la boutique : « ${rendu.sujet} »`);
+    if (!lien) return;
+    await page.goto(lien, { waitUntil: "networkidle" });
+    verifie(await page.locator("h1").innerText() === "Confirmez votre inscription", "le lien ouvre la page, rien n'est fait avant le clic");
+    await clic(page, page.getByRole("button", { name: "Confirmer mon inscription" }));
+    await page.locator('.lettre-geste[data-etat="inscrit"]').waitFor({ timeout: 10000 }).catch(() => {});
+    verifie(await page.locator("h1").innerText() === "C'est confirmé" && await page.evaluate(() => document.activeElement?.tagName === "H1"),
+      "« C'est confirmé », le titre prend le focus");
+    await capture(page, "selma-lettre-confirmee");
+  });
+
+  await etape("au pied de page : comment on paie, qui livre", async () => {
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
+    const moyens = (await page.locator(".pied-moyens").innerText()).replace(/\s+/g, " ");
+    verifie(/Espèces à la livraison/i.test(moyens) && /Livré par Aramex/i.test(moyens) && /Retrait au magasin, à Sfax/i.test(moyens),
+      `la quincaillerie : ${moyens}`);
+    verifie(await page.locator(".lettre").count() === 0, "sans lettre (réglage coupé) : pas d'inscription");
+    await page.goto(M + "/", { waitUntil: "networkidle" });
+    verifie(await page.locator(".lettre").count() === 0 && (await page.locator(".pied-moyens").innerText()).includes("Espèces à la livraison"),
+      "Maymar : le paiement à la livraison, pas de lettre");
+  });
+
   await etape("pendant la commande, pas de bouton WhatsApp", async () => {
     await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
     await clic(page, page.locator(".valeur", { hasText: /^M$/ }));
@@ -787,7 +836,8 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
     await pause(600);
     await page.goto(S + "/commande", { waitUntil: "networkidle" });
     verifie(await page.locator(".tunnel-page").count() === 1, "le tunnel de commande est ouvert");
-    verifie(!(await page.locator("a.whatsapp-flottant").isVisible().catch(() => false)), "le tunnel ne montre rien qui détourne de « Confirmer »");
+    verifie(!(await page.locator("a.whatsapp-flottant").isVisible().catch(() => false)) && !(await page.locator(".lettre").isVisible().catch(() => false)),
+      "le tunnel ne montre rien qui détourne de « Confirmer » (ni WhatsApp, ni la lettre)");
   });
   await ctx.close();
 }

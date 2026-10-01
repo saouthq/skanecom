@@ -105,6 +105,37 @@ export function courrielMotDePasse(m: Marque, lien: string): Courriel {
   });
 }
 
+/** La lettre d'information : confirmer l'inscription (le lien, qui désinscrit aussi). */
+export function courrielLettre(m: Marque, lien: string): Courriel {
+  const c = t.courriels.lettre;
+  return rendre(m, {
+    sujet: c.sujet(m.nom),
+    apercu: c.apercu,
+    titre: c.titre,
+    paragraphes: [c.texte(m.nom)],
+    bouton: { libelle: c.bouton, url: lien },
+    lienSecours: t.courriels.lienSecours,
+    notes: [c.validite, c.desinscrire, c.ignorer],
+    raison: c.raison(m.nom),
+    propulse: t.courriels.propulse,
+  });
+}
+
+/** Déjà inscrit : l'e-mail le dit, sans lien (la vitrine, elle, répond comme
+ *  à une première inscription : on n'y apprend pas qui est inscrit). */
+export function courrielLettreDeja(m: Marque): Courriel {
+  const c = t.courriels.lettre;
+  return rendre(m, {
+    sujet: c.dejaSujet(m.nom),
+    apercu: c.dejaApercu,
+    titre: c.dejaTitre,
+    paragraphes: [c.dejaTexte(m.nom)],
+    notes: [c.ignorer],
+    raison: c.raison(m.nom),
+    propulse: t.courriels.propulse,
+  });
+}
+
 export function courrielChangementEmail(m: Marque, code: string, pourEquipe = false): Courriel {
   const c = t.courriels;
   return rendre(m, {

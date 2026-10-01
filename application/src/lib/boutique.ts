@@ -93,6 +93,11 @@ export type Cadre = {
   statistiques: boolean;
   /** Réglage `vitrine.partage` : « Partager » sur la fiche. */
   partage: boolean;
+  /** Réglage `vitrine.lettre` : l'inscription à la lettre au pied de page, et
+   *  son accroche (`vitrine.lettre_accroche`) ; `null` sans lettre. */
+  lettre: { accroche: string | null } | null;
+  /** Réglage `livraison.transporteur` : le nom de la société qui livre. */
+  transporteur: string | null;
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
@@ -202,6 +207,8 @@ export function cadreDe(brut: CadreBrut): Cadre {
     achetesEnsemble: reglage<boolean>(reglages, "catalogue.achetes_ensemble", false) === true,
     statistiques: reglage<boolean>(reglages, "vitrine.statistiques", false) === true,
     partage: reglage<boolean>(reglages, "vitrine.partage", false) === true,
+    lettre: reglage<boolean>(reglages, "vitrine.lettre", false) === true ? { accroche: texteDe("vitrine.lettre_accroche") || null } : null,
+    transporteur: texteDe("livraison.transporteur") || null,
     avis: modules.includes("avis"),
     avisPhotos: modules.includes("avis") && reglage<boolean>(reglages, "avis.photos", false) === true,
     promotions: modules.includes("promotions"),
