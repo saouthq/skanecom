@@ -33,7 +33,7 @@ export default async function BackofficeBoutique({
   // pas l'un après l'autre : chaque page du backoffice les attend.
   const sb = await clientSession();
   const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }] = await Promise.all([
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }] = await Promise.all([
     sb.rpc("gestion_sav_etat", etat),
     sb.rpc("gestion_pro_etat", etat),
     sb.rpc("gestion_devis_etat", etat),
@@ -41,6 +41,7 @@ export default async function BackofficeBoutique({
     sb.rpc("gestion_promotions_etat", etat),
     sb.rpc("gestion_alertes_etat", etat),
     sb.rpc("gestion_paniers_etat", etat),
+    sb.rpc("gestion_visites_etat", etat),
   ]);
   // Le service après-vente, si la boutique a le module : ses demandes à rappeler.
   const etatSav = sav as { actif: boolean; nouvelles: number } | null;
@@ -111,6 +112,10 @@ export default async function BackofficeBoutique({
     ...(DIRECTION.includes(boutique.role)
       ? [
           { href: `/gestion/${slug}/tableau`, libelle: "Tableau de bord", icone: "graphique" as const },
+          // Les visites de la vitrine, si la boutique les mesure (ou les a mesurées).
+          ...((vi as { actif: boolean; compte: boolean } | null)?.actif || (vi as { compte: boolean } | null)?.compte
+            ? [{ href: `/gestion/${slug}/visites`, libelle: "Visites", icone: "oeil" as const }]
+            : []),
           { href: `/gestion/${slug}/encaissements`, libelle: "Encaissements", icone: "billet" as const },
         ]
       : []),

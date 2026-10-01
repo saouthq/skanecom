@@ -1,4 +1,5 @@
 import { FavorisActifs } from "@/components/FavorisActifs";
+import { MesureAudience } from "@/components/MesureAudience";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import "../../globals.css";
@@ -84,6 +85,7 @@ export default async function RacineBoutique({ children, params }: Props) {
           <Pied cadre={cadre} />
         </FavorisActifs>
         {cadre.whatsappFlottant && cadre.whatsapp ? <BoutonWhatsApp numero={cadre.whatsapp} nom={cadre.boutique.nom} /> : null}
+        {cadre.statistiques ? <MesureAudience /> : null}
         <Apparitions />
         <TransitionsVue />
         <AncresDouces />

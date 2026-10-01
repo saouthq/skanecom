@@ -1482,3 +1482,23 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .pn-issue { margin: 0; font-size: .875rem; color: var(--ui-texte-2); }
 .pn-issue-ok { color: var(--ui-vert); font-weight: 500; }
 .pn-issue a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- Les visites de la vitrine (gestion/[slug]/visites) : les jauges du
+   tableau de bord, à la couleur de l'action plutôt que du refus. ---- */
+.vi-jauge span { background: var(--ui-accent); }
+.vi-barre { position: relative; overflow: visible; background: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-bord)); }
+.vi-commande {
+  position: absolute; inset-block-start: -.5rem; inset-inline-start: 50%; translate: -50% 0;
+  inline-size: .375rem; block-size: .375rem; border-radius: 50%; background: var(--ui-texte);
+}
+.vi-part { inline-size: auto; min-inline-size: 2.5rem; text-align: end; }
+.vi-produits li { grid-template-columns: 1.75rem minmax(0, 1fr) minmax(3rem, 6rem) auto; grid-template-areas: "rang nom jauge q"; }
+.vi-produit-jauge { grid-area: jauge; display: block; block-size: .375rem; border-radius: 999px; background: var(--ui-doux); overflow: hidden; }
+.vi-produit-jauge span { display: block; block-size: 100%; border-radius: inherit; background: var(--ui-accent); }
+.vi-entree, .vi-methode { display: flex; align-items: flex-start; gap: .5rem; margin: 0; }
+.vi-entree { margin-block-start: 1rem; }
+.vi-methode { max-inline-size: 72ch; }
+@media (max-width: 479px) {
+  .vi-produits li { grid-template-columns: 1.75rem minmax(0, 1fr) auto; grid-template-areas: "rang nom q"; }
+  .vi-produit-jauge { display: none; }
+}

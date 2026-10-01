@@ -600,6 +600,8 @@ export default async function Reglages({
                       aide="Sur une déclinaison épuisée, la fiche propose « Prévenez-moi de son retour » ; quand le stock revient, l'écran Réassort dit qui prévenir, message prêt." />
                     <Case cle="catalogue.favoris" valeur={Boolean(v("catalogue.favoris"))} titre="Les favoris"
                       aide="Un cœur sur les cartes et les fiches, et « Mes favoris » ; un client connecté les retrouve partout. Le catalogue dit combien aiment chaque pièce, jamais qui." />
+                    <Case cle="vitrine.statistiques" valeur={Boolean(v("vitrine.statistiques"))} titre="Mesure d'audience"
+                      aide="Les visites de la vitrine dans l'écran Visites : combien de visiteurs, d'où ils viennent, sur quel appareil, et combien commandent. Sans cookie ni donnée personnelle : rien à faire accepter." />
                     <Case cle="catalogue.achetes_ensemble" valeur={Boolean(v("catalogue.achetes_ensemble"))} titre="Souvent achetés ensemble"
                       aide="Sous la fiche et dans le tiroir du panier, les pièces que vos clients prennent avec celle-ci, d'après les commandes des six derniers mois (ni annulées ni refusées). Aucune donnée personnelle n'en sort." />
                   </div>

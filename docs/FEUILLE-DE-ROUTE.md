@@ -69,7 +69,7 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 
 - Surveillance automatique, chaque heure, des boutiques en ligne (pages clés, temps de réponse, polices, images) ; alerte à Skander au premier défaut.
 - Les erreurs de l'application, boutique par boutique, lisibles dans la console.
-- Statistiques de chaque vitrine (visites, pages vues, paniers, conversion), sans cookie ni donnée personnelle.
+- [x] **Les visites de chaque vitrine** (01/10, réglage « Mesure d'audience ») : visiteurs, pages vues, commandes et conversion sur 7, 30 ou 90 jours comparés à la période d'avant, le jour par jour, d'où l'on vient (Instagram, Google, Facebook, direct…), sur quel appareil, les fiches et les pages les plus vues — sans cookie ni donnée personnelle (une empreinte salée du jour, illisible le surlendemain ; l'adresse IP jamais gardée ; robots et « ne pas me suivre » écartés). Reste : les paniers commencés (entonnoir fiche → panier → commande), les campagnes (paramètres utm).
 - [x] **Le poste de pilotage de la console** (30/09) : chaque boutique en tuile à sa marque — sa semaine jour par jour, l'encaissé, ce qui attend et depuis quand, la mise en place et la prochaine étape, un accès support ouvert —, la synthèse de la plateforme et « À surveiller » (le plus pressant d'abord). Reste la santé de chaque vitrine (temps de réponse, erreurs), avec la surveillance ci-dessus.
 
 ### H. La mise en production (avec Skander)

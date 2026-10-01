@@ -35,6 +35,9 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "selma-souris");
+  // Selma mesure son audience (supabase/seed-visites.sql) : un signal par page vue.
+  const signaux = [];
+  page.on("request", (r) => { if (new URL(r.url()).pathname === "/stats") signaux.push(r.method()); });
 
   await etape("accueil : l'en-tête posé sur la photo", async () => {
     await page.goto(S + "/", { waitUntil: "networkidle" });
@@ -51,7 +54,15 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     verifie(!deborde, "pas de défilement horizontal");
   });
 
+  await etape("la mesure d'audience : un signal par page, sans cookie", async () => {
+    await page.goto(S + "/catalogue", { waitUntil: "networkidle" });
+    await pause(300);
+    verifie(signaux.length >= 2 && signaux.every((m) => m === "POST"), `l'accueil puis le catalogue : un signal chacun (${signaux.length})`);
+    verifie((await ctx.cookies()).every((c) => !/stat|visit|audience|_ga|_fbp/i.test(c.name)), "aucun témoin de mesure posé dans le navigateur");
+  });
+
   await etape("collection « Robes » depuis l'accueil", async () => {
+    await page.goto(S + "/", { waitUntil: "networkidle" });
     await page.evaluate(() => window.scrollTo(0, 0)); await pause(300);
     const tuile = page.locator(".ed-collections a", { hasText: "Robes" });
     await clic(page, tuile);
@@ -254,6 +265,8 @@ console.log("\n== 2. Maymar, au clavier seul ==");
   const ctx = await navigateur.newContext({ viewport: { width: 1366, height: 850 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "maymar-clavier");
+  let signauxMaymar = 0;
+  page.on("request", (r) => { if (new URL(r.url()).pathname === "/stats") signauxMaymar += 1; });
   const focus = () => page.evaluate(() => {
     const e = document.activeElement;
     if (!e || e === document.body) return { nom: "(rien)", visible: false, dansTiroir: false };
@@ -288,6 +301,7 @@ console.log("\n== 2. Maymar, au clavier seul ==");
   await etape("catalogue, tiroir de filtres au clavier", async () => {
     await page.goto(M + "/catalogue", { waitUntil: "networkidle" });
     verifie((await page.locator(".carte-favori, .lien-favoris").count()) === 0, "Maymar n'a pas de favoris (réglage coupé) : ni cœur, ni lien");
+    verifie(signauxMaymar === 0, "ni mesure d'audience : aucun signal envoyé (réglage coupé)");
     verifie(await tabJusqua((f) => f.nom.includes("Filtrer")), "Tab atteint « Filtrer »");
     await page.keyboard.press("Enter");
     await pause(400);

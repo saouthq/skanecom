@@ -318,6 +318,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
     await page.keyboard.press("Enter");
     await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
     verifie(true, "le code de l'application ouvre le backoffice");
+    verifie((await page.locator(".app-cote").getByRole("link", { name: "Visites" }).count()) === 0, "Maymar ne mesure pas son audience : pas d'écran Visites");
   });
 
   await etape("« Aujourd'hui » : ce qui attend l'équipe, chaque carte vers sa liste", async () => {
@@ -1563,6 +1564,36 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     await tel.locator(".tunnel-ligne").first().waitFor({ state: "attached" });
     verifie((await tel.locator(".tunnel-ligne").count()) === 2, "« Reprendre ma commande » : le tunnel s'ouvre, le panier dedans");
     await autre.close();
+  });
+
+  await etape("les visites de la vitrine : combien, d'où, sur quoi, et la conversion", async () => {
+    const lien = page.locator(".app-cote").getByRole("link", { name: "Visites" });
+    verifie((await lien.count()) === 1, "Selma mesure son audience : « Visites » dans la navigation");
+    await clic(page, lien);
+    await page.waitForURL(/\/visites$/);
+    await page.waitForLoadState("networkidle");
+    const chiffres = (await page.locator(".tb-chiffre .tb-libelle").allInnerTexts()).join(" · ");
+    verifie(chiffres === "Visiteurs · Pages vues · Commandes · Conversion", `les quatre chiffres (${chiffres})`);
+    // Le compteur monte de zéro : on le lit une fois arrêté.
+    const valeur = page.locator(".tb-chiffre").first().locator(".tb-valeur");
+    let visiteurs = -1;
+    for (let i = 0; i < 20; i++) {
+      const lu = Number((await valeur.innerText()).replace(/\D/g, ""));
+      if (lu === visiteurs) break;
+      visiteurs = lu;
+      await pause(250);
+    }
+    verifie(visiteurs > 500, `les visiteurs des trente derniers jours (${visiteurs})`);
+    verifie((await page.locator(".tb-barres li").count()) === 30, "trente jours, jour par jour");
+    const sources = await page.locator(".vi-sources .tb-origine-nom").allInnerTexts();
+    verifie(sources.includes("Instagram") && sources.includes("Direct ou lien partagé") && new Set(sources).size === sources.length,
+      `les sources, chacune une fois (${sources.join(", ")})`);
+    verifie((await page.locator(".vi-pages .tb-produit-nom").allInnerTexts()).includes("Robe à bretelles en lin"), "les pages, sous le nom du produit qu'elles montrent");
+    await capture(page, "gestion-visites", true);
+    await clic(page, page.getByRole("link", { name: "7 jours" }));
+    await page.waitForURL(/jours=7/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".tb-barres li").count()) === 7, "sept jours : sept barres");
   });
 
   await etape("les photos d'un avis : les voir, en retirer une, l'avis reste", async () => {

@@ -10,10 +10,13 @@ import { pourcent } from "@/lib/gestion/tableau";
 
 type Format = "entier" | "montant" | "pourcent";
 
+/** 2401 → « 2 401 » : les milliers séparés, à la française. */
+const ENTIER = new Intl.NumberFormat("fr-FR");
+
 function texte(v: number, format: Format): string {
   if (format === "montant") return formateMontant(Math.round(v / 1000) * 1000);
   if (format === "pourcent") return pourcent(v);
-  return String(Math.round(v));
+  return ENTIER.format(Math.round(v));
 }
 
 export function Compteur({ valeur, format = "entier" }: { valeur: number; format?: Format }) {
