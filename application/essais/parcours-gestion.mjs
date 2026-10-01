@@ -1769,10 +1769,13 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     await page.keyboard.press("Enter");
     await section.locator(".message-succes").waitFor({ timeout: 8000 });
     verifie((await lu("pub.pixel_meta")) === "1234567890123456", "collé avec ses espaces : enregistré en chiffres seuls");
-    // Le jeu de démo d'avant, pour la suite.
+    // Le jeu de démo d'avant, pour la suite — tapé dès que le message paraît,
+    // pendant l'animation : la saisie n'est ni effacée ni tenue pour un double envoi.
     await page.locator("#pixel-meta").focus();
     await page.keyboard.press("Control+a");
     await tape(page, "1000000000000003");
+    await page.waitForFunction(() => !document.querySelector("form[data-envoi]") && !document.documentElement.hasAttribute("data-vt-geste"), null, { timeout: 5000 });
+    verifie((await page.locator("#pixel-meta").inputValue()) === "1000000000000003", "la nouvelle saisie reste dans le champ, l'animation finie");
     await page.keyboard.press("Enter");
     // Le message d'avant est encore là : c'est la base qui dit quand c'est fait.
     for (let i = 0; i < 40 && (await lu("pub.pixel_meta")) !== "1000000000000003"; i++) await pause(250);

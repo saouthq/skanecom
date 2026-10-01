@@ -149,11 +149,23 @@ export function EnvoiFormulaires() {
 
   useEffect(() => {
     const reduit = matchMedia("(prefers-reduced-motion: reduce)");
+    // Pendant un envoi en place : a-t-on recommencé à écrire dans le formulaire
+    // (un événement « input », que seule une personne déclenche) ? Et, s'il a
+    // été renvoyé ainsi changé, le bouton de ce second envoi.
+    const enVol = new WeakMap<HTMLFormElement, { ecrit: boolean }>();
+    const aRenvoyer = new WeakMap<HTMLFormElement, HTMLElement | null>();
     const libere = (form: HTMLFormElement, bouton: HTMLElement | null) => {
       delete form.dataset.envoi;
       if (bouton) {
         delete bouton.dataset.envoi;
         bouton.removeAttribute("aria-busy");
+      }
+      // La version changée pendant le premier envoi part maintenant.
+      if (aRenvoyer.has(form)) {
+        const second = aRenvoyer.get(form);
+        aRenvoyer.delete(form);
+        const par = (second instanceof HTMLButtonElement || second instanceof HTMLInputElement) && second.isConnected && second.form === form ? second : undefined;
+        window.setTimeout(() => form.isConnected && form.requestSubmit(par), 0);
       }
     };
     const annonce = (fini: boolean) => window.dispatchEvent(new CustomEvent(GESTE_EN_COURS, { detail: { fini } }));
@@ -162,6 +174,7 @@ export function EnvoiFormulaires() {
      *  avant toute écriture, une erreur) : la page affichera sa réponse telle
      *  quelle. */
     const ordinaire = (form: HTMLFormElement, submitter: HTMLElement | null) => {
+      aRenvoyer.delete(form); // la page entière se recharge, avec ce que le serveur dit
       form.dataset.rechargement = "";
       delete form.dataset.envoi;
       form.requestSubmit(submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement ? submitter : undefined);
@@ -178,7 +191,7 @@ export function EnvoiFormulaires() {
       form.after(avis);
     };
 
-    const envoieEnPlace = async (form: HTMLFormElement, submitter: HTMLElement | null, bouton: HTMLElement | null) => {
+    const envoieEnPlace = async (form: HTMLFormElement, submitter: HTMLElement | null, bouton: HTMLElement | null, suivi: { ecrit: boolean }) => {
       annonce(false);
       if (form.nextElementSibling?.classList.contains("geste-coupure")) form.nextElementSibling.remove();
       document.querySelectorAll(".geste-refus").forEach((n) => n.remove());
@@ -193,6 +206,7 @@ export function EnvoiFormulaires() {
         reponse = await fetch(adresseDe(form), { method: "POST", body: donnees, credentials: "same-origin", headers: { [EN_TETE_GESTE]: "1" } });
       } catch {
         coupure(form);
+        aRenvoyer.delete(form); // rien n'est renvoyé à l'aveugle
         libere(form, bouton);
         annonce(true);
         return;
@@ -223,6 +237,10 @@ export function EnvoiFormulaires() {
         }
         router.refresh();
         await rendu(avant, 3000);
+        // La page dit déjà le résultat : le formulaire se libère tout de suite,
+        // pas à la fin de l'animation — une saisie faite aussitôt part (au
+        // lieu d'être tenue pour un double clic).
+        libere(form, bouton);
       };
 
       const doc = document as AvecTransitions;
@@ -239,15 +257,16 @@ export function EnvoiFormulaires() {
       } else {
         await miseAJour();
       }
-      libere(form, bouton);
       annonce(true);
 
       // Réussi, le geste laisse le formulaire comme un rechargement l'aurait
       // laissé : ses champs aux valeurs que le serveur vient de rendre, le pli
       // qui le contenait refermé (le focus revient à son titre). Refusé
       // (?erreur=), tout reste en place pour corriger.
+      // Sauf si l'on a déjà recommencé à écrire pendant l'animation : la
+      // remise à zéro effacerait la nouvelle saisie.
       let focus: HTMLElement | null = null;
-      if (!retourUrl.searchParams.has("erreur") && form.isConnected) {
+      if (!retourUrl.searchParams.has("erreur") && form.isConnected && !suivi.ecrit) {
         form.reset();
         const pli = form.parentElement?.closest("details");
         if (pli?.open) {
@@ -304,7 +323,11 @@ export function EnvoiFormulaires() {
       const form = e.target as HTMLFormElement;
       if (e.defaultPrevented) return;
       if (form.dataset.envoi) {
-        e.preventDefault(); // déjà parti : un second clic n'envoie rien
+        e.preventDefault(); // déjà parti : un second clic n'envoie rien…
+        // …sauf si l'on a écrit dans le formulaire depuis : cette version part
+        // dès que la première a fini (sinon le champ montrerait ce qui n'est
+        // pas enregistré).
+        if (enVol.get(form)?.ecrit) aRenvoyer.set(form, e.submitter as HTMLElement | null);
         return;
       }
       form.dataset.envoi = "1";
@@ -319,7 +342,15 @@ export function EnvoiFormulaires() {
       // Le temps du geste, <html data-geste> : la page le sait (et les essais aussi).
       const racine = document.documentElement;
       racine.dataset.geste = "";
-      void envoieEnPlace(form, e.submitter as HTMLElement | null, marque).finally(() => delete racine.dataset.geste);
+      const suivi = { ecrit: false };
+      const ecrit = () => { suivi.ecrit = true; };
+      form.addEventListener("input", ecrit);
+      enVol.set(form, suivi);
+      void envoieEnPlace(form, e.submitter as HTMLElement | null, marque, suivi).finally(() => {
+        delete racine.dataset.geste;
+        form.removeEventListener("input", ecrit);
+        if (enVol.get(form) === suivi) enVol.delete(form);
+      });
     };
     // Retour arrière (cache du navigateur) : les formulaires redeviennent libres.
     const retour = (e: PageTransitionEvent) => {
