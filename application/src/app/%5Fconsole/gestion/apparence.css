@@ -264,12 +264,13 @@
 
 /* ---- Les panneaux de l'éditeur : le style, l'accueil ---------------------- */
 .ap-panneaux {
-  position: sticky; inset-block-start: 0; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; padding: .25rem;
+  position: sticky; inset-block-start: 0; z-index: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; padding: .25rem;
   border-radius: calc(var(--ui-r) + 4px); background: var(--ui-doux); box-shadow: 0 0 0 4px var(--ui-fond);
 }
 .ap-panneaux [role="tab"] {
-  display: inline-flex; align-items: center; justify-content: center; gap: .4375rem; min-block-size: 36px; padding: .375rem .75rem;
-  border: 0; border-radius: var(--ui-r); font: inherit; font-size: .875rem; font-weight: 500; color: var(--ui-texte-2); background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: .375rem; min-block-size: 36px; padding: .375rem .5rem;
+  border: 0; border-radius: var(--ui-r); font: inherit; font-size: .8125rem; font-weight: 500; line-height: 1.2; text-align: center;
+  color: var(--ui-texte-2); background: transparent; cursor: pointer;
 }
 .ap-panneaux [role="tab"]:hover { color: var(--ui-texte); }
 .ap-panneaux [role="tab"][aria-selected="true"] { color: var(--ui-texte); background: var(--ui-panneau); box-shadow: var(--ui-ombre-1, 0 1px 2px rgb(0 0 0 / .08)); }
@@ -322,3 +323,19 @@
 @media (pointer: coarse) and (max-width: 719px) {
   .pa-gestes .btn-icone, .pa-gestes .ac-geste-vide { inline-size: 36px; }
 }
+
+/* ---- L'en-tête et le pied de page ------------------------------------------ */
+.pc-cadre { display: flex; flex-direction: column; gap: .875rem; }
+.pc-cadre .ac-champs { gap: .875rem; }
+.pc-cadre .champ input { inline-size: 100%; }
+.pc-cadre .aide { margin: .25rem 0 0; }
+.pc-erreur { color: var(--ui-rouge); font-weight: 500; }
+#pc-annonce-aide { display: flex; justify-content: space-between; gap: .75rem; }
+.pc-compte { flex: none; font-variant-numeric: tabular-nums; color: var(--ui-texte-3); }
+.pc-bascule { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .625rem; align-items: start; cursor: pointer; }
+.pc-bascule input { margin-block-start: .1875rem; inline-size: 18px; block-size: 18px; accent-color: var(--ui-accent); }
+.pc-bascule:has(input:disabled) { cursor: not-allowed; }
+.pc-bascule:has(input:disabled) b { color: var(--ui-texte-3); }
+.pc-bascule > span { display: grid; gap: .125rem; }
+.pc-bascule b { font-size: .875rem; font-weight: 500; }
+.pc-note { margin: 0; color: var(--ui-texte-3); }

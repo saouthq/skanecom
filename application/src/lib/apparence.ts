@@ -31,7 +31,52 @@ export type ContenuApparence = {
    *  l'accueil publié reste tel quel (un brouillon d'avant la migration 66,
    *  le formulaire sans script). */
   sections?: SectionBrute[] | null;
+  /** Les réglages de l'en-tête et du pied de page que l'éditeur a changés
+   *  (et eux seuls : les autres restent ceux publiés). Migration 67. */
+  reglages?: Partial<ReglagesVitrine>;
 };
+
+/* ---- L'en-tête et le pied de page ------------------------------------------ */
+
+/** Les réglages de la vitrine que l'éditeur règle (private.reglages_editeur). */
+export const REGLAGES_EDITEUR = ["vitrine.annonce", "contact.instagram", "contact.facebook", "contact.tiktok", "contact.horaires", "vitrine.whatsapp_flottant"] as const;
+export type CleReglageEditeur = (typeof REGLAGES_EDITEUR)[number];
+export type ReglagesVitrine = { [K in CleReglageEditeur]: K extends "vitrine.whatsapp_flottant" ? boolean : string };
+
+const DEFAUTS_REGLAGES: ReglagesVitrine = {
+  "vitrine.annonce": "", "contact.instagram": "", "contact.facebook": "", "contact.tiktok": "", "contact.horaires": "", "vitrine.whatsapp_flottant": false,
+};
+
+/** Les réglages lus (en vigueur, ou changés dans un brouillon) : les clés de
+ *  l'éditeur seules, chacune de son type. `complets` : les défauts sous ce
+ *  qui manque. */
+export function reglagesLus(brut: unknown, complets: true): ReglagesVitrine;
+export function reglagesLus(brut: unknown, complets?: false): Partial<ReglagesVitrine>;
+export function reglagesLus(brut: unknown, complets = false): Partial<ReglagesVitrine> {
+  const b = (brut && typeof brut === "object" ? brut : {}) as Record<string, unknown>;
+  const sortie: Record<string, string | boolean> = complets ? { ...DEFAUTS_REGLAGES } : {};
+  for (const cle of REGLAGES_EDITEUR) {
+    const v = b[cle];
+    if (cle === "vitrine.whatsapp_flottant" ? typeof v === "boolean" : typeof v === "string") sortie[cle] = v as string | boolean;
+  }
+  return sortie as Partial<ReglagesVitrine>;
+}
+
+/** Ce qui empêche un réglage de partir : les règles de la base
+ *  (private.valide_reglages_vitrine), dites sous le champ avant l'envoi. */
+export function problemesReglages(r: Partial<ReglagesVitrine> | undefined): Partial<Record<CleReglageEditeur, string>> {
+  const p: Partial<Record<CleReglageEditeur, string>> = {};
+  const v = (cle: CleReglageEditeur) => String(r?.[cle] ?? "").trim();
+  if (v("vitrine.annonce").length > 140) p["vitrine.annonce"] = "140 caractères au plus.";
+  if (v("contact.horaires").length > 160) p["contact.horaires"] = "160 caractères au plus.";
+  const ig = v("contact.instagram");
+  if (ig && !/^@?[A-Za-z0-9._]{1,30}$/.test(ig) && !/^https:\/\/(www\.)?instagram\.com\/[A-Za-z0-9._]{1,30}\/?$/i.test(ig)) p["contact.instagram"] = "Le compte (« @maison.selma ») ou l'adresse du profil (https://instagram.com/…).";
+  const tk = v("contact.tiktok");
+  if (tk && !/^@?[A-Za-z0-9._]{1,30}$/.test(tk) && !/^https:\/\/(www\.)?tiktok\.com\/@[A-Za-z0-9._]{1,30}\/?$/i.test(tk)) p["contact.tiktok"] = "Le compte (« @maison.selma ») ou l'adresse du profil (https://tiktok.com/@…).";
+  const fb = v("contact.facebook");
+  if (fb && !/^[A-Za-z0-9.-]{1,80}$/.test(fb) && !/^https:\/\/([a-z]+\.)?facebook\.com\/[^\s<>"]{1,200}$/i.test(fb)) p["contact.facebook"] = "Le nom de la page (facebook.com/…) ou son adresse.";
+  return p;
+}
 
 /** Le contenu effectif d'un thème lu en base (les défauts du gabarit sous ce
  *  qui manque), ou d'un brouillon. */
@@ -47,7 +92,12 @@ export function contenuDe(brut: unknown): ContenuApparence {
     titres: (POLICES_TITRES as string[]).includes(String(p.titres)) ? (p.titres as Police) : def.polices.titres,
     texte: (POLICES_TEXTE as string[]).includes(String(p.texte)) ? (p.texte as Police) : def.polices.texte,
   };
-  return { code, couleurs, polices, style: styleSur(b.style, def.style), ...("sections" in b ? { sections: sectionsLues(b.sections) } : {}) };
+  const reglages = reglagesLus(b.reglages);
+  return {
+    code, couleurs, polices, style: styleSur(b.style, def.style),
+    ...("sections" in b ? { sections: sectionsLues(b.sections) } : {}),
+    ...(Object.keys(reglages).length ? { reglages } : {}),
+  };
 }
 
 /** Ce que la base reçoit : le contenu tel quel (les 13 couleurs, les deux
@@ -57,6 +107,7 @@ export function versBase(c: ContenuApparence): Record<string, unknown> {
   return {
     code: c.code, couleurs: { ...c.couleurs }, polices: { ...c.polices }, style: { ...c.style },
     ...(c.sections === undefined ? {} : { sections: c.sections === null ? null : (accueilVersBase(c.sections) ?? []) }),
+    ...(c.reglages && Object.keys(c.reglages).length ? { reglages: { ...c.reglages } } : {}),
   };
 }
 

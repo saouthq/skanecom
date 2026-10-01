@@ -142,8 +142,13 @@ const message = (page) => page.locator(".bo-message").innerText().catch(() => ""
 const statut = (page) => page.locator(".bo-fiche-tete .bo-statut").innerText().catch(() => "");
 
 /* ------------------------------------------------------------------ */
+// SECTIONS=6, ou SECTIONS=4bis,6 : ces sections seules, pendant le
+// développement (la séquence de la CI les passe toutes).
+const SECTIONS = (process.env.SECTIONS ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+function section(n) { return SECTIONS.length === 0 || SECTIONS.includes(n); }
+
 console.log("\n== 1. L'employé des appels, grand écran ==");
-{
+if (section("1")) {
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   t.espion(page, "appels", attendue);
@@ -306,7 +311,7 @@ console.log("\n== 1. L'employé des appels, grand écran ==");
 
 /* ------------------------------------------------------------------ */
 console.log("\n== 2. Le gérant, double authentification ==");
-{
+if (section("2")) {
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   t.espion(page, "gerant", attendue);
@@ -1195,7 +1200,7 @@ console.log("\n== 2. Le gérant, double authentification ==");
 
 /* ------------------------------------------------------------------ */
 console.log("\n== 3. L'employé des appels, sur téléphone ==");
-{
+if (section("3")) {
   const ctx = await navigateur.newContext({
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR",
   });
@@ -1228,7 +1233,7 @@ console.log("\n== 3. L'employé des appels, sur téléphone ==");
 
 /* ------------------------------------------------------------------ */
 console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoyé ==");
-{
+if (section("4")) {
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   t.espion(page, "gerant-quincaillerie");
@@ -1354,7 +1359,7 @@ console.log("\n== 4. Le gérant de la quincaillerie : un devis chiffré et envoy
 }
 
 console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés, réassort ==");
-{
+if (section("4bis")) {
   // Selma a le module promotions (supabase/seed-promotions.sql). En CI, le
   // parcours de commande a pu se servir de BIENVENUE10 avant : rien ici ne
   // compte sur ses chiffres, seulement sur ceux des soldes de l'été (finis).
@@ -1842,7 +1847,7 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
 
 /* ------------------------------------------------------------------ */
 console.log("\n== 5. Le préparateur d'une autre boutique ==");
-{
+if (section("5")) {
   const ctx = await navigateur.newContext({ viewport: { width: 1280, height: 860 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   t.espion(page, "prepa", attendue);
@@ -1986,7 +1991,7 @@ console.log("\n== 5. Le préparateur d'une autre boutique ==");
 
 /* ------------------------------------------------------------------ */
 console.log("\n== 6. L'apparence de la vitrine (Dar Alia) ==");
-{
+if (section("6")) {
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   t.espion(page, "apparence");
@@ -2101,6 +2106,48 @@ console.log("\n== 6. L'apparence de la vitrine (Dar Alia) ==");
     await vitrine.goto(`${V}/recherche?q=lin`, { waitUntil: "networkidle" });
     const a = await vitrine.evaluate(() => ({ ...document.documentElement.dataset }));
     verifie(a.mode === "sombre" && a.boutons === "pilule" && a.coins === "arrondis", `la recherche de la vitrine, aussitôt : sombre, pilules, coins arrondis (${a.mode}, ${a.boutons}, ${a.coins})`);
+    await vitrine.close();
+  });
+
+  await etape("l'en-tête et le pied de page : l'annonce tapée, un compte refusé puis corrigé, publiés", async () => {
+    const entete = async () => (await cadre()?.evaluate(() => [...document.querySelectorAll("[data-zone='entete']")].map((e) => e.textContent).join(" ")).catch(() => "")) ?? "";
+    await clic(page, page.getByRole("tab", { name: "En-tête et pied" }));
+    // Dar Alia a déjà son annonce et son compte (seed-maison.sql) : tout sélectionner, puis taper.
+    await clic(page, page.getByLabel("Annonce en tête du site"));
+    await page.keyboard.press("Control+a");
+    await tape(page, "Les soldes d'hiver commencent");
+    verifie((await page.locator(".pc-compte").innerText()).startsWith("29/"), "le compteur suit la frappe (29/140)");
+    verifie(await attend(async () => (await entete()).includes("Les soldes d'hiver commencent"), 12000), "l'annonce paraît en tête de la vitrine du cadre, une seconde plus tard");
+    await capture(page, "editeur-annonce");
+    await clic(page, page.getByLabel("Instagram"));
+    await page.keyboard.press("Control+a");
+    await tape(page, "pas un compte");
+    verifie((await page.locator("#pc-contact-instagram-aide").innerText()).startsWith("Le compte"), "un compte illisible : dit sous le champ");
+    verifie(await attend(async () => (await statut()).includes("à revoir"), 4000), "et il ne part pas (l'état le dit)");
+    await page.keyboard.press("Control+a");
+    await tape(page, "@atelier.alia");
+    verifie(await attend(async () => (await statut()).includes("Brouillon enregistré"), 10000), "corrigé : le brouillon s'enregistre");
+    // Le pied de page de l'aperçu, cliqué depuis l'accueil : son panneau s'ouvre.
+    await clic(page, page.getByRole("tab", { name: "Accueil" }));
+    const pied = cadre().locator("[data-zone='pied']").first();
+    await pied.scrollIntoViewIfNeeded();
+    await pied.click({ position: { x: 40, y: 40 } });
+    verifie(await attend(async () => (await page.getByRole("tab", { name: "En-tête et pied" }).getAttribute("aria-selected")) === "true", 4000),
+      "un clic sur le pied de page de l'aperçu : le panneau de l'en-tête et du pied s'ouvre");
+    verifie(await attend(async () => (await cadre().locator("footer a[href*='instagram.com/atelier.alia']").count()) === 1, 12000), "le nouveau compte Instagram est au pied de la vitrine du cadre");
+    await clic(page, page.getByRole("button", { name: "Publier" }));
+    verifie(await attend(async () => (await page.locator(".ap-retour").first().innerText().catch(() => "")).includes("publiée"), 10000), "publiés avec le reste de la vitrine");
+    const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/boutique_publique`, {
+      method: "POST",
+      headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", "content-type": "application/json" },
+      body: JSON.stringify({ p_slug: "dar-alia" }),
+    });
+    const reglages = (await r.json())?.configuration?.reglages ?? {};
+    verifie(reglages["vitrine.annonce"] === "Les soldes d'hiver commencent" && reglages["contact.instagram"] === "@atelier.alia",
+      `la vitrine reçoit l'annonce et Instagram (${reglages["vitrine.annonce"]}, ${reglages["contact.instagram"]})`);
+    const vitrine = await ctx.newPage();
+    await vitrine.goto(`${V}/recherche?q=lin`, { waitUntil: "networkidle" });
+    verifie((await vitrine.locator(".ed-annonce").innerText()).includes("Les soldes d'hiver commencent"), "la recherche de la vitrine, aussitôt : l'annonce en tête");
     await vitrine.close();
   });
 

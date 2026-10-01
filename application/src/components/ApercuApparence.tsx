@@ -22,10 +22,11 @@ import { rafraichiALInstant, rafraichissementAnnonce } from "@/lib/apercu-cadre"
      l'éditeur donne le jeton de sa nouvelle version (« skanecom:recharger »)
      et la page se rafraîchit sur place, sans clignement ni perte du
      défilement ;
-   · sur l'accueil, quand l'éditeur règle les sections (« skanecom:accueil »),
-     chaque section se signale au survol, et un clic la désigne à l'éditeur
-     (« skanecom:section ») au lieu de suivre ses liens ; l'éditeur peut en
-     montrer une (« skanecom:montrer »).
+   · quand l'éditeur règle l'accueil ou l'en-tête et le pied de page
+     (« skanecom:accueil »), chaque section de l'accueil, l'en-tête et le pied
+     se signalent au survol, et un clic les désigne à l'éditeur
+     (« skanecom:section ») au lieu de suivre leurs liens ; l'éditeur peut
+     montrer une section (« skanecom:montrer »).
 
    Seule la console peut parler (l'origine est vérifiée) ; les noms des
    sections ne s'écrivent qu'en texte. La structure change les composants :
@@ -53,9 +54,9 @@ function deLaConsole(origine: string): boolean {
 
 /* La marque des sections : un contour, et le nom posé en haut. */
 const FEUILLE_SECTIONS = `
-html[data-ap-accueil] [data-section] { cursor: pointer; }
-html[data-ap-accueil] [data-section]:hover, [data-section][data-ap-vise] { outline: 2px solid #2F6FEB; outline-offset: -2px; }
-html[data-ap-accueil] [data-section] a, html[data-ap-accueil] [data-section] button { cursor: pointer; }
+html[data-ap-accueil] [data-section], html[data-ap-zones] [data-zone] { cursor: pointer; }
+html[data-ap-accueil] [data-section]:hover, [data-section][data-ap-vise], html[data-ap-zones] [data-zone]:hover { outline: 2px solid #2F6FEB; outline-offset: -2px; }
+html[data-ap-accueil] [data-section] :is(a, button), html[data-ap-zones] [data-zone] :is(a, button) { cursor: pointer; }
 .ap-nom-section { position: absolute; z-index: 2147483000; pointer-events: none; margin: 0; padding: 5px 9px; border-radius: 0 0 6px 0;
   font: 600 12px/1.2 system-ui, sans-serif; letter-spacing: .01em; color: #FFFFFF; background: #2F6FEB; box-shadow: 0 2px 8px rgb(0 0 0 / .18); }
 .ap-nom-section[hidden] { display: none; }
@@ -75,16 +76,24 @@ function etiquette(): HTMLElement {
   return el;
 }
 
+const NOMS_ZONES: Record<string, string> = { entete: "En-tête", pied: "Pied de page" };
+
 function poser(section: Element | null, noms: string[]) {
   const el = etiquette();
-  const n = section ? Number(section.getAttribute("data-section")) : NaN;
-  const nom = Number.isInteger(n) ? noms[n] : undefined;
+  const zone = section?.getAttribute("data-zone");
+  const n = section && !zone ? Number(section.getAttribute("data-section")) : NaN;
+  const nom = zone ? NOMS_ZONES[zone] : Number.isInteger(n) ? noms[n] : undefined;
   if (!section || !nom) { el.hidden = true; return; }
   const r = section.getBoundingClientRect();
   el.textContent = nom;
-  el.style.insetInlineStart = `${Math.max(0, r.left + scrollX)}px`;
-  el.style.insetBlockStart = `${Math.max(0, r.top + scrollY)}px`;
   el.hidden = false;
+  // Posée au-dessus de la section (sans couvrir son surtitre), ou dans son
+  // coin quand la place manque (le haut de la page, l'en-tête collé).
+  const entete = document.querySelector(".ed-entete, .te-entete")?.getBoundingClientRect().bottom ?? 0;
+  const dessus = r.top - el.offsetHeight >= Math.max(0, entete);
+  el.style.borderRadius = dessus ? "6px 6px 0 0" : "0 0 6px 0";
+  el.style.insetInlineStart = `${Math.max(0, r.left + scrollX)}px`;
+  el.style.insetBlockStart = `${Math.max(0, (dessus ? r.top - el.offsetHeight : r.top) + scrollY)}px`;
 }
 
 /** Marquer une section (par son rang), la faire venir sous les yeux. */
@@ -107,11 +116,11 @@ function viser(n: number | null, defiler: boolean, noms: string[]) {
 export function ApercuApparence({ code, structure }: { code: CodeTheme; structure: Structure }) {
   const chemin = usePathname();
   const routeur = useRouter();
-  const accueil = useRef<{ actif: boolean; noms: string[]; choisie: number | null }>({ actif: false, noms: [], choisie: null });
+  const accueil = useRef<{ actif: boolean; zones: boolean; noms: string[]; choisie: number | null }>({ actif: false, zones: false, noms: [], choisie: null });
 
   const surMessage = useEffectEvent((e: MessageEvent) => {
     if (e.source !== window.parent || !deLaConsole(e.origin)) return;
-    const m = e.data as { type?: unknown; contenu?: unknown; apercu?: unknown; actif?: unknown; noms?: unknown; choisie?: unknown; section?: unknown; defiler?: unknown } | null;
+    const m = e.data as { type?: unknown; contenu?: unknown; apercu?: unknown; actif?: unknown; zones?: unknown; noms?: unknown; choisie?: unknown; section?: unknown; defiler?: unknown } | null;
     if (!m || typeof m !== "object") return;
 
     if (m.type === MESSAGE_APPARENCE && m.contenu && typeof m.contenu === "object") {
@@ -121,9 +130,11 @@ export function ApercuApparence({ code, structure }: { code: CodeTheme; structur
       if (!feuille) {
         feuille = document.createElement("style");
         feuille.id = "apercu-apparence";
-        document.head.appendChild(feuille);
       }
       feuille.textContent = feuilleDuTheme(theme, () => "");
+      // Toujours la dernière feuille : rendue de nouveau, la page réinsère
+      // celle du thème, qui l'emporterait sinon sur l'essai en cours.
+      document.head.appendChild(feuille);
       for (const [nom, valeur] of Object.entries(attributsDuStyle(theme.style))) document.documentElement.setAttribute(nom, valeur);
       return;
     }
@@ -131,7 +142,8 @@ export function ApercuApparence({ code, structure }: { code: CodeTheme; structur
     // Le brouillon a changé l'accueil : la page se rend à nouveau, sur place.
     // La nouvelle page remplace l'ancienne d'un coup : ni fondu des photos
     // ni montée des sections le temps du rafraîchissement (app/vitrine-mouvement.css).
-    if (m.type === MESSAGE_RECHARGER && typeof m.apercu === "string" && JETON.test(m.apercu)) {
+    // « fin » : la version publiée (le brouillon publié ou abandonné).
+    if (m.type === MESSAGE_RECHARGER && typeof m.apercu === "string" && (JETON.test(m.apercu) || m.apercu === "fin")) {
       const recherche = new URLSearchParams(location.search);
       recherche.set("apercu", m.apercu);
       rafraichissementAnnonce();
@@ -143,8 +155,9 @@ export function ApercuApparence({ code, structure }: { code: CodeTheme; structur
     if (m.type === MESSAGE_ACCUEIL) {
       const noms = Array.isArray(m.noms) ? m.noms.map((x) => (typeof x === "string" ? x.slice(0, 80) : "")) : [];
       const choisie = Number.isInteger(m.choisie) ? (m.choisie as number) : null;
-      accueil.current = { actif: m.actif === true, noms, choisie };
+      accueil.current = { actif: m.actif === true, zones: m.zones === true, noms, choisie };
       document.documentElement.toggleAttribute("data-ap-accueil", accueil.current.actif && location.pathname === "/");
+      document.documentElement.toggleAttribute("data-ap-zones", accueil.current.zones);
       viser(accueil.current.actif ? choisie : null, false, noms);
       return;
     }
@@ -181,20 +194,28 @@ export function ApercuApparence({ code, structure }: { code: CodeTheme; structur
     document.head.appendChild(feuille);
 
     const ecoute = (e: MessageEvent) => surMessage(e);
-    // Sur l'accueil en cours de réglage : un clic désigne la section, il ne suit pas ses liens.
+    // En cours de réglage : un clic désigne la section de l'accueil, l'en-tête
+    // ou le pied de page, il ne suit pas leurs liens.
+    const visee = (cible: EventTarget | null) => {
+      const el = cible as Element | null;
+      const racine = document.documentElement;
+      const section = racine.hasAttribute("data-ap-accueil") ? el?.closest?.("[data-section]") : null;
+      return section ?? (racine.hasAttribute("data-ap-zones") ? el?.closest?.("[data-zone]") ?? null : null);
+    };
     const clic = (e: MouseEvent) => {
-      if (!document.documentElement.hasAttribute("data-ap-accueil")) return;
-      const section = (e.target as Element | null)?.closest?.("[data-section]");
-      if (!section) return;
+      const cible = visee(e.target);
+      if (!cible) return;
       e.preventDefault();
       e.stopPropagation();
-      const n = Number(section.getAttribute("data-section"));
-      if (Number.isInteger(n)) window.parent.postMessage({ type: MESSAGE_SECTION, section: n }, "*");
+      const zone = cible.getAttribute("data-zone");
+      const n = Number(cible.getAttribute("data-section"));
+      if (zone) window.parent.postMessage({ type: MESSAGE_SECTION, zone }, "*");
+      else if (Number.isInteger(n)) window.parent.postMessage({ type: MESSAGE_SECTION, section: n }, "*");
     };
     const survol = (e: MouseEvent) => {
-      if (!document.documentElement.hasAttribute("data-ap-accueil")) return;
-      const section = (e.target as Element | null)?.closest?.("[data-section]") ?? document.querySelector("[data-ap-vise]");
-      poser(section, accueil.current.noms);
+      const racine = document.documentElement;
+      if (!racine.hasAttribute("data-ap-accueil") && !racine.hasAttribute("data-ap-zones")) return;
+      poser(visee(e.target) ?? document.querySelector("[data-ap-vise]"), accueil.current.noms);
     };
     window.addEventListener("message", ecoute);
     window.addEventListener("click", clic, true);
@@ -213,6 +234,7 @@ export function ApercuApparence({ code, structure }: { code: CodeTheme; structur
   useEffect(() => {
     if (window.self === window.top) return;
     document.documentElement.toggleAttribute("data-ap-accueil", accueil.current.actif && location.pathname === "/");
+    document.documentElement.toggleAttribute("data-ap-zones", accueil.current.zones);
     const recherche = new URLSearchParams(location.search);
     recherche.delete("apercu");
     const reste = recherche.toString();

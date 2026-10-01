@@ -4,12 +4,13 @@ import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalSt
 import { Icone } from "./Icone";
 import { BoutonCopier } from "./BoutonCopier";
 import { PanneauAccueil, type InfosAccueil } from "./PanneauAccueil";
+import { PanneauCadre } from "./PanneauCadre";
 import {
   MESSAGE_ACCUEIL, MESSAGE_APPARENCE, MESSAGE_MONTRER, MESSAGE_PRET, MESSAGE_RECHARGER, MESSAGE_SECTION,
 } from "@/components/ApercuApparence";
 import {
-  ACCENTS, AMBIANCES, FONDS, avecAccent, encrePour, memeContenu, paletteDerivee, photosDe, rapportLisible, sectionsDeStructure, verdicts, versBase,
-  type Ambiance, type ContenuApparence, type Mode,
+  ACCENTS, AMBIANCES, FONDS, avecAccent, encrePour, memeContenu, paletteDerivee, photosDe, problemesReglages, rapportLisible, sectionsDeStructure, verdicts, versBase,
+  type Ambiance, type CleReglageEditeur, type ContenuApparence, type Mode, type ReglagesVitrine,
 } from "@/lib/apparence";
 import { BIBLIOTHEQUE, type SectionBrute } from "@/lib/gestion/accueil";
 import { estHex } from "@/lib/couleur";
@@ -81,16 +82,19 @@ function abonneEcran(signal: () => void) {
   return () => m.removeEventListener("change", signal);
 }
 
-type Panneau = "style" | "accueil";
-const PANNEAUX: { id: Panneau; nom: string; icone: "marque" | "boutique" }[] = [
+type Panneau = "style" | "accueil" | "cadre";
+const PANNEAUX: { id: Panneau; nom: string; icone: "marque" | "boutique" | "menu" }[] = [
   { id: "style", nom: "Style", icone: "marque" },
   { id: "accueil", nom: "Accueil", icone: "boutique" },
+  { id: "cadre", nom: "En-tête et pied", icone: "menu" },
 ];
 
-const empreinteSections = (c: ContenuApparence) => JSON.stringify(versBase(c).sections ?? null);
+/** Ce qui ne se voit qu'une fois la page rendue de nouveau : l'accueil, les
+ *  réglages de l'en-tête et du pied (dans la forme envoyée à la base). */
+const empreinteRendu = (b: { sections?: unknown; reglages?: unknown }) => JSON.stringify({ sections: b.sections ?? null, reglages: b.reglages ?? null });
 
 export function EditeurApparence({
-  action, photoAction, retour: lienRetour, vitrine, ecrit, nom, fiche, panneau: panneauInitial, infos,
+  action, photoAction, retour: lienRetour, vitrine, ecrit, nom, fiche, panneau: panneauInitial, infos, reglages: reglagesInitiaux, whatsapp,
   version: versionInitiale, publie: publieInitial, brouillon: brouillonInitial, message,
 }: {
   action: string;
@@ -107,6 +111,10 @@ export function EditeurApparence({
   panneau: Panneau;
   /** Ce que l'accueil peut montrer : rayons, pages, avis, marques, produits. */
   infos: InfosAccueil;
+  /** Les réglages de l'en-tête et du pied de page en vigueur. */
+  reglages: ReglagesVitrine;
+  /** La boutique a un numéro WhatsApp (le bouton flottant peut s'allumer). */
+  whatsapp: boolean;
   version: number | null;
   publie: ContenuApparence;
   brouillon: { contenu: ContenuApparence; version: number; jeton: string; auteur: string | null; quand: string } | null;
@@ -133,6 +141,11 @@ export function EditeurApparence({
   const enVol = useRef(false);
   const [panneau, setPanneau] = useState<Panneau>(panneauInitial);
   const [ouverte, setOuverte] = useState<string | null>(null);
+  // Les réglages de l'en-tête et du pied : ceux en vigueur, sous ce que le brouillon change.
+  const [reglagesPublies, setReglagesPublies] = useState<ReglagesVitrine>(reglagesInitiaux);
+  const reglages: ReglagesVitrine = { ...reglagesPublies, ...contenu.reglages };
+  const problemesCadre = problemesReglages(reglages);
+  const cadreARevoir = Object.keys(problemesCadre).length > 0;
   const PAGES_APERCU = fiche ? [PAGES_FIXES[0], PAGES_FIXES[1], { chemin: fiche.chemin, nom: `Fiche : ${fiche.nom}` }, PAGES_FIXES[2]] : PAGES_FIXES;
 
   /* --- L'accueil : celui du brouillon, ou celui de la structure. */
@@ -170,15 +183,17 @@ export function EditeurApparence({
   // quand la structure ou l'accueil ont changé.
   const [comparer, setComparer] = useState(false);
   const comparable = !memeContenu(publie, contenu);
-  const parRechargement = publie.code !== contenu.code || empreinteSections(publie) !== empreinteSections(contenu);
+  const parRechargement = publie.code !== contenu.code || empreinteRendu(versBase(publie)) !== empreinteRendu(versBase(contenu));
   const montre = comparer && comparable ? publie : contenu;
 
   // L'accueil en cours de réglage : la vitrine du cadre signale ses sections.
   const envoieAccueil = useEffectEvent(() => {
     if (!origine) return;
     const i = indexDe(ouverte);
+    const reglage = !(comparer && comparable);
     cadre.current?.contentWindow?.postMessage({
-      type: MESSAGE_ACCUEIL, actif: panneau === "accueil" && !(comparer && comparable), noms: nomsSections, choisie: i !== null && i >= 0 ? i : null,
+      type: MESSAGE_ACCUEIL, actif: panneau === "accueil" && reglage, zones: (panneau === "accueil" || panneau === "cadre") && reglage,
+      noms: nomsSections, choisie: i !== null && i >= 0 ? i : null,
     }, origine);
   });
   useEffect(() => { envoieAccueil(); }, [panneau, nomsSections, ouverte, comparer]);
@@ -209,8 +224,21 @@ export function EditeurApparence({
   // Une section cliquée sur l'aperçu : ses réglages s'ouvrent.
   const surSection = useEffectEvent((e: MessageEvent) => {
     if (!origine || e.origin !== origine || e.source !== cadre.current?.contentWindow) return;
-    const m = e.data as { type?: string; section?: unknown } | null;
-    if (m?.type !== MESSAGE_SECTION || !Number.isInteger(m.section)) return;
+    const m = e.data as { type?: string; section?: unknown; zone?: unknown } | null;
+    if (m?.type !== MESSAGE_SECTION) return;
+    // L'en-tête ou le pied de page cliqué : leur panneau.
+    if (m.zone === "entete" || m.zone === "pied") {
+      setPanneau("cadre");
+      setOnglet("reglages");
+      setAnnonce(m.zone === "entete" ? "En-tête ouvert pour le régler" : "Pied de page ouvert pour le régler");
+      window.setTimeout(() => {
+        const bloc = document.querySelector<HTMLElement>(`[data-zone-editeur="${m.zone}"]`);
+        bloc?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        bloc?.querySelector<HTMLElement>("input:not(:disabled)")?.focus({ preventScroll: true });
+      }, 60);
+      return;
+    }
+    if (!Number.isInteger(m.section)) return;
     const s = sections[m.section as number];
     if (!s?.cle) return;
     setPanneau("accueil");
@@ -259,6 +287,8 @@ export function EditeurApparence({
 
   const enregistre = useEffectEvent(async () => {
     if (enVol.current) return;
+    // Une valeur que la base refuserait ne part pas : elle est dite sous son champ (et dans l'état).
+    if (cadreARevoir) return;
     const c = contenu;
     const json = JSON.stringify(versBase(c));
     if (json === envoye) return;
@@ -281,16 +311,13 @@ export function EditeurApparence({
       const nouveau = "brouillon" in rep ? (rep.brouillon ?? null) : null;
       setBrouillon(nouveau);
       setSauveA(nouveau ? `à ${new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" }).format(new Date())}` : null);
-      const accueilChange = JSON.stringify(JSON.parse(envoye).sections ?? null) !== JSON.stringify(JSON.parse(json).sections ?? null);
+      const accueilChange = empreinteRendu(JSON.parse(envoye)) !== empreinteRendu(JSON.parse(json));
       setEnvoye(json);
       setEtat({ genre: "repos" });
-      // Une autre structure : la vitrine du cadre doit rendre d'autres
-      // composants ; un autre accueil, se rendre de nouveau, sur place.
-      if (gabaritCadre !== null && gabaritCadre !== c.code) recharger(nouveau ? `${nouveau.jeton}.${nouveau.version}` : null);
-      else if (accueilChange && !(comparer && parRechargement)) {
-        if (nouveau) rafraichir(`${nouveau.jeton}.${nouveau.version}`);
-        else recharger(null);
-      }
+      // Une autre structure (d'autres composants), un autre accueil : la
+      // vitrine du cadre se rend de nouveau, sur place.
+      const structureChange = gabaritCadre !== null && gabaritCadre !== c.code;
+      if ((structureChange || accueilChange) && !(comparer && parRechargement)) rafraichir(nouveau ? `${nouveau.jeton}.${nouveau.version}` : "fin");
     } catch {
       setEtat({ genre: "erreur", texte: "L'enregistrement n'a pas abouti (réseau coupé ?). Vos réglages sont toujours là." });
     } finally {
@@ -337,14 +364,14 @@ export function EditeurApparence({
   const sortirDeComparer = () => {
     if (!comparer) return;
     setComparer(false);
-    if (parRechargement) recharger(brouillon ? `${brouillon.jeton}.${brouillon.version}` : null);
+    if (parRechargement) rafraichir(brouillon ? `${brouillon.jeton}.${brouillon.version}` : "fin");
   };
 
   const basculerComparer = () => {
     const vers = !comparer;
     setComparer(vers);
     setAnnonce(vers ? "Aperçu : la version publiée" : "Aperçu : votre essai");
-    if (parRechargement) recharger(vers ? null : brouillon ? `${brouillon.jeton}.${brouillon.version}` : null);
+    if (parRechargement) rafraichir(vers || !brouillon ? "fin" : `${brouillon.jeton}.${brouillon.version}`);
   };
 
   // Le panneau de l'accueil : l'aperçu se met sur l'accueil.
@@ -359,6 +386,13 @@ export function EditeurApparence({
     const mene = (c: ContenuApparence) => photosDe(c).some((x) => orphelins.includes(x));
     setHistorique((h) => ({ passe: h.passe.filter((c) => !mene(c)), futur: h.futur.filter((c) => !mene(c)) }));
     return true;
+  };
+
+  // Un réglage de l'en-tête ou du pied : le brouillon ne garde que ce qui diffère de la vitrine en ligne.
+  const reglerReglage = <K extends CleReglageEditeur>(cle: K, valeur: ReglagesVitrine[K]) => {
+    const suivants: Partial<ReglagesVitrine> = { ...contenu.reglages, [cle]: valeur };
+    if (valeur === reglagesPublies[cle]) delete suivants[cle];
+    change({ ...contenu, reglages: Object.keys(suivants).length ? suivants : undefined }, typeof valeur === "string" ? `texte.reglage.${cle}` : `reglage.${cle}`);
   };
 
   const modifierAccueil = (suivantes: SectionBrute[] | null, cle: string, dit?: string) =>
@@ -439,21 +473,31 @@ export function EditeurApparence({
   /* --- Publier, abandonner. */
   const publier = async () => {
     if (!ecrit || enVol.current) return;
+    if (cadreARevoir) {
+      setPanneau("cadre");
+      setRetour({ ok: false, texte: "Un réglage de l'en-tête ou du pied de page est à revoir (dit sous son champ) avant de publier." });
+      return;
+    }
     enVol.current = true;
     setEtat({ genre: "envoi" });
     try {
       const rep = await poste({ geste: "publier", contenu: json, version: String(version ?? "") });
       if (!rep.ok) { setEtat({ genre: "erreur", texte: rep.message }); return; }
       setVersion(rep.version ?? version);
-      setPublie(contenu);
+      // Publiés, les réglages changés deviennent ceux en vigueur.
+      const apres: ContenuApparence = { ...contenu, reglages: undefined };
+      setReglagesPublies(reglages);
+      setContenu(apres);
+      setPublie(apres);
       setBrouillon(null);
       setSauveA(null);
-      setEnvoye(json);
+      setEnvoye(JSON.stringify(versBase(apres)));
       setEtat({ genre: "repos" });
       setComparer(false);
       if ("orphelins" in rep) oublier(rep.orphelins);
       setRetour({ ok: true, texte: rep.message });
-      recharger(null);
+      // Ce que montre le cadre est ce qui est publié : il quitte l'aperçu, sur place.
+      rafraichir("fin");
     } catch {
       setEtat({ genre: "erreur", texte: "La publication n'a pas abouti (réseau coupé ?). Vos réglages sont toujours là : réessayez." });
     } finally {
@@ -483,7 +527,7 @@ export function EditeurApparence({
       setComparer(false);
       setEtat({ genre: "repos" });
       setRetour({ ok: true, texte: oublie ? "Retour à la version publiée." : "Retour à la version publiée (⌘Z pour reprendre l'essai)." });
-      recharger(null);
+      rafraichir("fin");
     } catch {
       setEtat({ genre: "erreur", texte: "L'abandon du brouillon n'a pas abouti (réseau coupé ?) : réessayez." });
     } finally {
@@ -501,7 +545,8 @@ export function EditeurApparence({
   /* --- Ce que l'écran dit. */
   const identique = memeContenu(contenu, publie);
   const statut =
-    etat.genre === "envoi" ? "Enregistrement…"
+    cadreARevoir ? "Un réglage de l'en-tête ou du pied de page est à revoir (dit sous son champ) : il n'est pas encore enregistré."
+    : etat.genre === "envoi" ? "Enregistrement…"
       : etat.genre === "erreur" ? etat.texte ?? "Erreur"
         : enAttente ? "Modifications…"
           : brouillon ? `Brouillon enregistré ${sauveA ?? ""}`.trim()
@@ -544,10 +589,10 @@ export function EditeurApparence({
           <h1>Éditeur de la vitrine</h1>
           <span className="ap-barre-boutique">{nom}</span>
         </div>
-        <p className="ap-statut" data-etat={etat.genre === "repos" && enAttente ? "attente" : etat.genre} role={etat.genre === "erreur" ? "alert" : "status"}>
+        <p className="ap-statut" data-etat={cadreARevoir ? "erreur" : etat.genre === "repos" && enAttente ? "attente" : etat.genre} role={cadreARevoir || etat.genre === "erreur" ? "alert" : "status"}>
           <span className="ap-pastille" aria-hidden="true" />
           {statut}
-          {etat.genre === "erreur" ? <button type="button" className="btn-lien" onClick={() => { setEtat({ genre: "repos" }); setRelance((n) => n + 1); }}>Réessayer</button> : null}
+          {etat.genre === "erreur" && !cadreARevoir ? <button type="button" className="btn-lien" onClick={() => { setEtat({ genre: "repos" }); setRelance((n) => n + 1); }}>Réessayer</button> : null}
         </p>
         <div className="ap-barre-gestes">
           <button type="button" className="btn-icone" onClick={defaire} disabled={!historique.passe.length} aria-label="Défaire" title="Défaire (⌘Z)">
@@ -619,6 +664,10 @@ export function EditeurApparence({
               modifier={modifierAccueil}
               montrer={montrer}
             />
+          </div>
+
+          <div className="ap-panneau" role="tabpanel" id="ap-panneau-cadre" aria-labelledby="ap-onglet-cadre" hidden={panneau !== "cadre"}>
+            <PanneauCadre reglages={reglages} ecrit={ecrit} whatsapp={whatsapp} lienReglages={lienRetour + "/reglages"} regler={reglerReglage} />
           </div>
 
           <div className="ap-panneau" role="tabpanel" id="ap-panneau-style" aria-labelledby="ap-onglet-style" hidden={panneau !== "style"}>

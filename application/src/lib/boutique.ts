@@ -163,7 +163,8 @@ function delai(zones: Zone[]): { min: number; max: number } | null {
  *  interne : le slug, ou `<slug>~<jeton>.<version>` quand la façade sert
  *  l'aperçu d'un brouillon de la vitrine (src/proxy.ts) — le thème prend alors
  *  le brouillon (structure, couleurs, polices, style, et l'accueil s'il en
- *  porte un), si le jeton est bon. */
+ *  porte un), les réglages de l'en-tête et du pied de page ceux qu'il a
+ *  changés, si le jeton est bon. */
 export const chargeCadre = cache(async (segment: string): Promise<Cadre | null> => {
   const [slug, apercu] = segment.split("~", 2);
   const jeton = apercu?.split(".")[0] ?? null;
@@ -179,7 +180,10 @@ export const chargeCadre = cache(async (segment: string): Promise<Cadre | null> 
   if (!brouillon || !brut.theme) return { ...cadreDe(brut), apercu: false };
   const { code, couleurs, polices, style } = brouillon;
   const accueil = "sections" in brouillon ? { sections: brouillon.sections } : {};
-  return { ...cadreDe({ ...brut, theme: { ...brut.theme, code, couleurs, polices, style, ...accueil } }), apercu: true };
+  // Les réglages de l'en-tête et du pied de page changés dans le brouillon.
+  const changes = brouillon.reglages && typeof brouillon.reglages === "object" ? (brouillon.reglages as Record<string, unknown>) : {};
+  const configuration = brut.configuration ? { ...brut.configuration, reglages: { ...brut.configuration.reglages, ...changes } } : brut.configuration;
+  return { ...cadreDe({ ...brut, configuration, theme: { ...brut.theme, code, couleurs, polices, style, ...accueil } }), apercu: true };
 });
 
 /** Le cadre, composé de ce que la base a rendu. */

@@ -165,7 +165,7 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
   const resume = texte(theme.textes, "resume");
   const retour = texte(theme.textes, "politique_retour");
   return (
-    <footer className="ed-pied mt-auto">
+    <footer className="ed-pied mt-auto" data-zone="pied">
       <Lettre cadre={cadre} classe="ed-lettre" />
       <div className="enveloppe ed-pied-grille">
         <div className="ed-pied-intro">
@@ -214,7 +214,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
   ].filter((s) => s !== null);
 
   return (
-    <footer className="te-pied mt-auto">
+    <footer className="te-pied mt-auto" data-zone="pied">
       <div className="te-pied-services">
         <ul className="enveloppe">
           {services.map((s) => (

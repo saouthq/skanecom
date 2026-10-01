@@ -95,7 +95,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
   return (
     <>
       {annonces.length > 0 ? (
-        <div className="ed-annonce">
+        <div className="ed-annonce" data-zone="entete">
           <p>
             {annonces.slice(0, 2).map((f, i) => (
               <span key={f} className={i > 0 ? "cache-mobile" : undefined}>
@@ -106,7 +106,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
         </div>
       ) : null}
       <EnteteDefilant className="ed-entete" surImage={ouvertureSurPhoto(cadre)}>
-        <div className="enveloppe ed-entete-rang">
+        <div className="enveloppe ed-entete-rang" data-zone="entete">
           <div className="ed-entete-debut">
             <MenuMobile entrees={entreesMenu(cadre)} faits={faits} className="cache-desktop" />
             <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="ed-nav cache-mobile" />
@@ -143,7 +143,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
   return (
     <>
       {annonces.length > 0 ? (
-        <div className="te-utilitaire">
+        <div className="te-utilitaire" data-zone="entete">
           <ul className="enveloppe">
             {annonces.map((f, i) => (
               <li key={f} className={i > 0 ? "cache-mobile" : undefined}>
@@ -153,7 +153,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
           </ul>
         </div>
       ) : null}
-      <header className="te-entete">
+      <header className="te-entete" data-zone="entete">
         <div className="enveloppe te-entete-rang">
           <MenuMobile entrees={entreesMenu(cadre)} faits={faits} className="te-menu cache-desktop" />
           <Link href="/" className="te-logo" aria-label={t.marque.accueilAria(cadre.boutique.nom)}>
