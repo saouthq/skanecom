@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { t } from "@/lib/i18n";
-import { noteLisible } from "@/lib/avis";
+import { noteLisible } from "@/lib/avis-communs";
 
 /* Cinq étoiles, remplies jusqu'à la note (4,6 : la cinquième aux trois
    cinquièmes). Deux rangs superposés : le fond pâle, le plein coupé à la

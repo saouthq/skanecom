@@ -799,6 +799,7 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
   html[data-gabarit] a.lien-souligne:not(p *),
   html[data-gabarit] .ed-lien-fleche,
   html[data-gabarit] .fiche-avis-resume,
+  html[data-gabarit] .fiche-avis-photos,
   html[data-gabarit] .ed-entete-liste .sous-rayons a,
   html[data-gabarit] .ed-ouverture-actions .lien-souligne,
   html[data-gabarit] .te-lien-fleche,

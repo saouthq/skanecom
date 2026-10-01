@@ -47,6 +47,7 @@ on:
       - "supabase/seed-entonnoir.sql"
       - "supabase/seed-objectif.sql"
       - "supabase/seed-accueil.sql"
+      - "supabase/seed-avis-filtres.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -134,6 +135,7 @@ jobs:
           installe graines seed-entonnoir.sql supabase/seed-entonnoir.sql
           installe graines seed-objectif.sql supabase/seed-objectif.sql
           installe graines seed-accueil.sql supabase/seed-accueil.sql
+          installe graines seed-avis-filtres.sql supabase/seed-avis-filtres.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu

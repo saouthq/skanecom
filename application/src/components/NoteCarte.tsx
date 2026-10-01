@@ -1,6 +1,6 @@
 import { Etoiles } from "./Etoiles";
 import { t } from "@/lib/i18n";
-import { noteLisible } from "@/lib/avis";
+import { noteLisible } from "@/lib/avis-communs";
 
 /* La note d'un produit sur sa carte (module avis) : les étoiles, la
    moyenne, le nombre d'avis. Lue avec le produit (public.vitrine_produits),

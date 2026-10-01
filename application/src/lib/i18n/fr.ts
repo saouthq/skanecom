@@ -348,6 +348,21 @@ export const fr = {
     merciPhotos: (n: number) => `Avec ${n} photo${n > 1 ? "s" : ""}.`,
     photoRatee: (raison: string) => `Une photo n'a pas suivi : ${raison}`,
     photosErreur: "l'envoi a échoué.",
+    // La liste de la fiche : ses filtres, sa suite (migration 62).
+    photosClientsCourt: (n: number) => `${n} photo${n > 1 ? "s" : ""} de clients`,
+    filtres: "Filtrer les avis",
+    filtreTous: "Tous",
+    filtrePhotos: "Avec photos",
+    filtreNote: (n: number) => `${n} étoile${n > 1 ? "s" : ""}`,
+    filtrerNote: (n: number, c: number) => `Afficher ${c > 1 ? `les ${c} avis` : "l'avis"} à ${n} étoile${n > 1 ? "s" : ""}`,
+    resultat: (filtre: string, n: number) =>
+      filtre === "tous" ? `${n} avis` : filtre === "photos" ? `${n} avis avec photos` : `${n} avis à ${filtre} étoile${Number(filtre) > 1 ? "s" : ""}`,
+    lus: (n: number, total: number) => `${n} sur ${total}`,
+    voirPlus: (k: number) => `Voir ${k} avis de plus`,
+    ajoutes: (k: number) => `${k} avis de plus.`,
+    chargement: "Chargement des avis…",
+    erreurListe: "Les avis n'ont pas pu être chargés.",
+    reessayer: "Réessayer",
   },
 
   /** « Partager » sur la fiche (réglage vitrine.partage). */

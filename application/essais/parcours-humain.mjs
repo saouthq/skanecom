@@ -229,6 +229,8 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     verifie((await section.locator(".avis-item").count()) === 3 && texte.includes("Achat vérifié") && texte.includes("Réponse de la boutique"),
       "trois avis publiés, « Achat vérifié », la réponse de la boutique");
     verifie(!texte.includes("Yosra"), "l'avis encore en relecture n'y est pas");
+    verifie((await section.locator(".avis-filtres, .avis-repartition-bouton, .avis-suite").count()) === 0,
+      "trois avis se lisent d'un coup d'œil : ni filtre, ni note à toucher, ni suite");
     const ld = await page.evaluate(() => JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent));
     verifie(ld.aggregateRating?.ratingValue === 4.7 && ld.aggregateRating?.reviewCount === 3, "la note est dans les données structurées (résultats Google)");
     await capture(page, "selma-fiche-avis");
@@ -255,10 +257,61 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     verifie((await page.locator(".fiche-ensemble .ed-carte-nom").allInnerTexts()).includes("Robe à bretelles en lin"), "et le sac, en retour, propose la robe");
   });
 
+  await etape("les avis du sac : ses photos sous le titre, les filtres, la suite", async () => {
+    // Treize avis publiés, dont quatre avec photos (supabase/seed-avis-photos.sql, seed-avis-filtres.sql).
+    const tete = page.locator(".fiche-avis-tete");
+    verifie((await tete.innerText()).replace(/\s+/g, " ").includes("4,4 13 avis 6 photos de clients") && (await tete.locator(".fiche-avis-vignettes > span").count()) === 3,
+      `sous le titre : la note, puis trois vignettes et « 6 photos de clients » (${(await tete.innerText()).replace(/\s+/g, " ")})`);
+    await clic(page, tete.locator(".fiche-avis-photos"));
+    await pause(900);
+    const rang = await page.locator("#avis-rang").boundingBox();
+    verifie(rang && rang.y > 60 && rang.y < 400, `le lien mène au rang des photos, sous l'en-tête (${Math.round(rang?.y ?? -1)} px)`);
+    const plein = await page.locator(".avis-synthese .etoiles").evaluate((e) => [e.getBoundingClientRect().width, e.querySelector(".etoiles-plein").getBoundingClientRect().width]);
+    verifie(Math.abs(plein[1] / plein[0] - 0.88) < 0.02, `la synthèse : 4,4 remplit 88 % des étoiles (${Math.round((plein[1] / plein[0]) * 100)} %)`);
+    const liste = page.locator("#avis .avis-liste");
+    const items = liste.locator(".avis-item");
+    verifie((await items.count()) === 10 && (await page.locator(".avis-suite").innerText()).replace(/\s+/g, " ") === "Voir 3 avis de plus 10 sur 13",
+      "dix avis d'abord, « Voir 3 avis de plus · 10 sur 13 »");
+    const pastilles = (await page.locator(".avis-filtre").allInnerTexts()).map((x) => x.replace(/\s+/g, " "));
+    verifie(pastilles.join(" | ") === "Tous 13 | Avec photos 4 | 5 étoiles 8 | 4 étoiles 3 | 3 étoiles 1 | 2 étoiles 1",
+      `les pastilles : tous, avec photos, chaque note qui a des avis (${pastilles.join(" | ")})`);
+    await capture(page, "selma-avis-filtres");
+
+    // Au clavier : « Avec photos », Entrée.
+    const avecPhotos = page.getByRole("button", { name: /^Avec photos/ });
+    await avecPhotos.focus();
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => { const l = document.querySelector("#avis .avis-liste"); return l?.dataset.filtre === "photos" && !l.hasAttribute("aria-busy"); }, null, { timeout: 8000 });
+    const sansPhoto = await items.evaluateAll((l) => l.filter((x) => !x.querySelector(".avis-photo")).length);
+    verifie((await items.count()) === 4 && sansPhoto === 0 && (await avecPhotos.getAttribute("aria-pressed")) === "true",
+      "Entrée sur « Avec photos » : les quatre avis illustrés, la pastille enfoncée");
+    verifie((await page.locator("#avis .avis-annonce").innerText()) === "4 avis avec photos", "le résultat est annoncé aux lecteurs d'écran");
+
+    // À la souris : la ligne « 2 étoiles » de la répartition.
+    await clic(page, page.getByRole("button", { name: "Afficher l'avis à 2 étoiles" }));
+    await page.waitForFunction(() => { const l = document.querySelector("#avis .avis-liste"); return l?.dataset.filtre === "2" && !l.hasAttribute("aria-busy"); }, null, { timeout: 8000 });
+    verifie((await items.count()) === 1 && (await items.first().innerText()).includes("Une sangle s'est décousue")
+      && (await page.locator(".avis-filtre", { hasText: "2 étoiles" }).getAttribute("aria-pressed")) === "true",
+      "un clic sur « 2 étoiles » de la répartition : l'avis à deux étoiles, sa pastille enfoncée aussi");
+    await capture(page, "selma-avis-deux-etoiles");
+
+    // Retour à tous, puis la suite au clavier : le focus va au premier avis ajouté.
+    await clic(page, page.locator(".avis-filtre", { hasText: "Tous" }));
+    await page.waitForFunction(() => document.querySelector("#avis .avis-liste")?.dataset.filtre === "tous");
+    verifie((await items.count()) === 10, "« Tous » : les dix lus d'abord, sans recharger");
+    await page.locator(".avis-plus").focus();
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.querySelectorAll("#avis .avis-item").length === 13, null, { timeout: 8000 });
+    await pause(200);
+    const focus = await page.evaluate(() => [...document.querySelectorAll("#avis .avis-item")].indexOf(document.activeElement));
+    verifie(focus === 10 && (await page.locator(".avis-suite").count()) === 0,
+      `Entrée sur « Voir 3 avis de plus » : les treize, le focus sur le onzième, plus de suite (focus ${focus + 1})`);
+  });
+
   await etape("les photos d'un avis : au clavier, la visionneuse, le focus revient", async () => {
-    // L'avis du sac a deux photos (supabase/seed-avis-photos.sql), sur la fiche où l'on est.
-    const vignettes = page.locator("#avis .avis-photo");
-    verifie((await vignettes.count()) === 2, "sous l'avis du sac, ses deux photos");
+    // Le premier avis du sac a deux photos (supabase/seed-avis-photos.sql), sur la fiche où l'on est.
+    const vignettes = page.locator("#avis .avis-item").first().locator(".avis-photo");
+    verifie((await vignettes.count()) === 2, "sous le premier avis du sac, ses deux photos");
     await vignettes.first().focus();
     verifie((await vignettes.first().getAttribute("aria-label")).startsWith("Agrandir la photo 1 sur 2"), "la vignette dit ce qu'elle ouvre");
     await page.keyboard.press("Enter");

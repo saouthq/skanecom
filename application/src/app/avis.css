@@ -5,7 +5,9 @@
    ========================================================================== */
 
 /* ---- Les étoiles : deux rangs superposés, le plein coupé à la note ---- */
-.etoiles { position: relative; display: inline-flex; flex: none; line-height: 0; vertical-align: -.125em; }
+/* Sa largeur est celle de ses cinq étoiles, même étirée par une grille (la
+   synthèse des avis) : le plein se coupe en pourcentage de cette largeur. */
+.etoiles { position: relative; display: inline-flex; flex: none; inline-size: max-content; line-height: 0; vertical-align: -.125em; }
 .etoiles-fond, .etoiles-plein { display: inline-flex; gap: .0625rem; }
 .etoiles svg { inline-size: var(--etoile-taille, 16px); block-size: var(--etoile-taille, 16px); flex: none; }
 .etoiles-fond { color: color-mix(in srgb, currentColor 16%, transparent); }
@@ -13,11 +15,22 @@
 html[data-gabarit=editorial] .etoiles { --etoile: var(--theme-encre); }
 html[data-gabarit=technique] .etoiles { --etoile: #F2A900; }
 
-/* ---- Sous le titre de la fiche : la note, un lien vers les avis ---- */
+/* ---- Sous le titre de la fiche : la note, un lien vers les avis ; les
+   photos des clients, un lien vers leur rang ---- */
+.fiche-avis-tete { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem 1.25rem; margin-block: .25rem .75rem; }
 .fiche-avis-resume {
-  display: inline-flex; align-items: center; gap: .375rem; margin-block: .25rem .75rem;
+  display: inline-flex; align-items: center; gap: .375rem;
   font-size: .875rem; color: inherit; text-decoration: none;
 }
+.fiche-avis-photos { display: inline-flex; align-items: center; gap: .5rem; font-size: .875rem; color: inherit; text-decoration: none; }
+@media (hover: hover) { .fiche-avis-photos:hover .fiche-avis-total { text-decoration-color: currentColor; } }
+.fiche-avis-vignettes { display: inline-flex; }
+.fiche-avis-vignettes > span {
+  position: relative; inline-size: 1.75rem; block-size: 1.75rem; overflow: hidden; flex: none;
+  border: 2px solid var(--theme-fond); border-radius: var(--theme-radius-net); background: var(--theme-surface-2);
+}
+.fiche-avis-vignettes > span + span { margin-inline-start: -.625rem; }
+.fiche-avis-vignettes img { object-fit: cover; }
 .fiche-avis-note { font-weight: 600; font-variant-numeric: tabular-nums; }
 .fiche-avis-total { color: var(--theme-encre-doux); text-decoration: underline; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); }
 @media (hover: hover) { .fiche-avis-resume:hover .fiche-avis-total { text-decoration-color: currentColor; } }
@@ -36,6 +49,19 @@ html[data-gabarit=technique] .etoiles { --etoile: #F2A900; }
 .avis-repartition li { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr) 1.75rem; align-items: center; gap: .625rem; font-size: .8125rem; }
 .avis-repartition-note { color: var(--theme-encre-doux); white-space: nowrap; }
 .avis-repartition-compte { text-align: end; font-variant-numeric: tabular-nums; color: var(--theme-encre-doux); }
+/* Une note qui a des avis, sur une liste filtrable : la ligne est un bouton (n'afficher qu'eux). */
+.avis-repartition li:has(> .avis-repartition-bouton) { display: block; }
+.avis-repartition-bouton {
+  display: grid; grid-template-columns: 2.75rem minmax(0, 1fr) 1.75rem; align-items: center; gap: .625rem;
+  inline-size: calc(100% + .75rem); margin: -.25rem -.375rem; padding: .25rem .375rem;
+  border: 0; border-radius: var(--theme-radius-doux); background: none; font: inherit; color: inherit; text-align: start; cursor: pointer;
+  transition: background-color .15s;
+}
+@media (hover: hover) { .avis-repartition-bouton:hover { background: var(--theme-surface-2); } }
+.avis-repartition-bouton:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 0; }
+.avis-repartition-bouton[aria-pressed=true] { background: color-mix(in srgb, var(--theme-encre) 8%, transparent); }
+.avis-repartition-bouton[aria-pressed=true] .avis-repartition-note,
+.avis-repartition-bouton[aria-pressed=true] .avis-repartition-compte { color: var(--theme-encre); font-weight: 600; }
 .avis-barre { position: relative; block-size: .375rem; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--theme-encre) 9%, transparent); }
 .avis-barre i { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; background: var(--etoile, var(--theme-encre)); transform-origin: left; animation: avis-barre .9s var(--theme-courbe) backwards; }
 [dir=rtl] .avis-barre i { transform-origin: right; }
@@ -62,6 +88,42 @@ html[data-gabarit=technique] .etoiles { --etoile: #F2A900; }
 [dir=rtl] .avis-reponse { border-radius: var(--theme-radius-doux) 0 0 var(--theme-radius-doux); }
 .avis-reponse b { display: block; margin-block-end: .25rem; font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--theme-encre-doux); }
 .avis-reponse p { margin: 0; }
+
+/* ---- La liste se filtre (dès quatre avis) et se lit par pages ---- */
+.avis-filtres { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-end: 1.5rem; }
+@media (max-width: 899px) {
+  /* Au téléphone, une rangée qui glisse sous le doigt plutôt que trois lignes de pastilles. */
+  .avis-filtres {
+    flex-wrap: nowrap; margin-inline: calc(-1 * var(--theme-marge)); padding: .125rem var(--theme-marge) .25rem;
+    overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  }
+  .avis-filtres::-webkit-scrollbar { display: none; }
+}
+.avis-filtre {
+  display: inline-flex; flex: none; align-items: center; gap: .4375rem; min-block-size: 2.5rem; padding: 0 .9375rem;
+  border: 1px solid var(--theme-filet-fort); border-radius: 999px; background: var(--theme-surface);
+  font: inherit; font-size: .8125rem; font-weight: 500; color: var(--theme-encre); cursor: pointer; white-space: nowrap;
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+html[data-gabarit=editorial] .avis-filtre { border-radius: var(--theme-radius-net); letter-spacing: .01em; }
+@media (pointer: coarse) { .avis-filtre { min-block-size: 2.75rem; } }
+@media (hover: hover) { .avis-filtre:hover { border-color: var(--theme-encre); } }
+.avis-filtre:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+.avis-filtre-compte { font-variant-numeric: tabular-nums; color: var(--theme-encre-doux); }
+.avis-filtre[aria-pressed=true] { background: var(--theme-encre); border-color: var(--theme-encre); color: var(--theme-fond); }
+.avis-filtre[aria-pressed=true] .avis-filtre-compte { color: inherit; opacity: .72; }
+.avis-liste { transition: opacity .2s; }
+.avis-liste[aria-busy=true] { opacity: .5; }
+.avis-item { scroll-margin-block-start: 7rem; }
+.avis-item:focus { outline: none; }
+.avis-item:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 6px; }
+.avis-attente { margin: 0; padding-block: 1rem; }
+.avis-erreur { margin: 1rem 0 0; font-size: .875rem; color: var(--theme-erreur); }
+.avis-erreur .lien-souligne { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.avis-suite { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; padding-block-start: 1.5rem; border-block-start: 1px solid var(--theme-filet); }
+.avis-suite .legende { margin: 0; font-variant-numeric: tabular-nums; }
+#avis-rang { scroll-margin-block-start: 7rem; }
+@media (prefers-reduced-motion: reduce) { .avis-filtre, .avis-repartition-bouton, .avis-liste { transition: none; } }
 
 /* ---- « Donner mon avis », dans « Mes commandes » ---- */
 .avis-commande { display: grid; gap: .5rem; margin-block-start: .75rem; padding-block-start: .75rem; border-block-start: 1px dashed var(--theme-filet); }
@@ -143,9 +205,11 @@ html[data-gabarit=technique] .etoiles { --etoile: #F2A900; }
 .avis-rang .avis-photos {
   flex-wrap: nowrap; margin: 0 calc(-1 * var(--theme-marge)); padding: .125rem var(--theme-marge) .5rem;
   overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: var(--theme-filet) transparent;
+  /* L'aimantation respecte la gouttière : la première photo ne colle pas au bord. */
+  scroll-padding-inline: var(--theme-marge);
 }
 .avis-rang .avis-photos li { flex: none; scroll-snap-align: start; }
-@media (min-width: 900px) { .avis-rang .avis-photos { margin-inline: 0; padding-inline: 0; } }
+@media (min-width: 900px) { .avis-rang .avis-photos { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; } }
 .avis-photo {
   position: relative; display: block; inline-size: 4.5rem; block-size: 4.5rem; padding: 0; overflow: hidden; cursor: zoom-in;
   border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-net); background: var(--theme-surface-2);

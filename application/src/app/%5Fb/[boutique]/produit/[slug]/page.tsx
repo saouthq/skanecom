@@ -156,6 +156,7 @@ export default async function FicheProduit({ params }: Params) {
 
       <AvisProduit
         avis={avis}
+        produitId={produit.id}
         section={gabarit === "technique" ? "te-section" : "enveloppe ed-section"}
         tete={gabarit === "technique" ? "te-section-tete" : "ed-section-tete"}
       />
