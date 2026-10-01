@@ -53,7 +53,7 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 
 - **Troisième gabarit « commerce »** (high-tech, électroménager, téléphonie, grande distribution) : grand menu des rayons, bannières, comparaison, prix mis en avant, fiches techniques.
 - **Bibliothèque de sections d'accueil**, communes aux gabarits : bannières défilantes, marques, témoignages, questions fréquentes, vidéo, Instagram, « acheter la silhouette ».
-- **Préréglages par métier** dans la console (mode, beauté, bijoux, high-tech, maison, alimentation, outillage) : gabarit, polices, couleurs, sections, caractéristiques et réglages de livraison posés d'un geste — une boutique prête à habiller en dix minutes.
+- [x] **Préréglages par métier** (01/10) dans la console — mode, beauté, bijoux, high-tech, maison, épicerie fine, outillage, bagages : le gabarit, la palette, les polices, les rayons et sous-rayons, les caractéristiques de chaque rayon, quelques réglages et la politique de retour, posés d'un geste à la création ou sur une boutique vide ; tout se change ensuite. Reste : des sections d'accueil par métier (avec la bibliothèque de sections).
 - **Boutiques de démonstration par métier** (beauté, high-tech, maison), pour la prospection.
 
 ### E. Arabe et paiement en ligne

@@ -297,6 +297,27 @@ await etape("un identifiant déjà pris est refusé, la saisie gardée", async (
   verifie((await page.locator("#nom").inputValue()) === "Doublon", "le formulaire garde ce qui a été saisi");
 });
 
+await etape("un métier pose rayons, caractéristiques et palette d'un geste", async () => {
+  // Les préréglages (…_metiers.sql) : une boutique de bijoux.
+  await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
+  verifie((await page.locator(".mt-carte").count()) === 9, "neuf choix : aucun, et huit métiers");
+  verifie(await page.locator(".mt-gabarit").isVisible(), "sans métier, le gabarit se choisit");
+  await clic(page, page.locator("#nom")); await tape(page, "Bijoux Démo");
+  await clic(page, page.locator("#slug")); await tape(page, `bijoux-${SUFFIXE}`);
+  await clic(page, page.locator("#hote")); await tape(page, `bijoux-${SUFFIXE}.localhost`);
+  await clic(page, page.getByLabel(/^Bijoux et montres/));
+  verifie(!(await page.locator(".mt-gabarit").isVisible()), "un métier choisi règle le gabarit : son choix s'efface");
+  await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
+  await page.waitForURL(new RegExp(`/boutiques/bijoux-${SUFFIXE}`));
+  await page.waitForLoadState("networkidle");
+  verifie((await page.getByRole("status").first().innerText()).includes("les rayons, les caractéristiques et la palette de son métier"),
+    "créée avec son métier, la page le dit");
+  const rayons = await page.locator("section[aria-labelledby='t-catalogue'] dt:text-is('Rayons') + dd").innerText();
+  verifie(rayons === "5", `ses cinq rayons sont posés (${rayons})`);
+  verifie((await page.getByText("Partir du préréglage d'un métier").count()) === 0, "une boutique qui a des rayons ne reçoit plus de préréglage");
+  await capture(page, "console-boutique-metier");
+});
+
 await etape("la vitrine de la boutique en préparation est fermée", async () => {
   const vitrine = await ctx.newPage();
   const r = await vitrine.goto(VITRINE + "/", { waitUntil: "networkidle" });

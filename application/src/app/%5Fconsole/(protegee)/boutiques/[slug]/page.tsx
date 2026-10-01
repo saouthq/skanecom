@@ -12,6 +12,8 @@ import { equipeDe } from "@/lib/console/equipe-serveur";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { MiseEnPlace } from "@/components/console/MiseEnPlace";
+import { ChoixMetier } from "@/components/console/ChoixMetier";
+import type { Metier } from "@/lib/console/metiers";
 
 type Fiche = {
   boutique: { id: string; slug: string; nom: string; statut: string; langue_defaut: string; created_at: string };
@@ -23,6 +25,7 @@ type Fiche = {
 
 const ACTIONS: Record<string, string> = {
   "boutique.creer": "Boutique créée",
+  "boutique.metier": "Préréglage du métier posé",
   "boutique.statut": "Statut changé",
   "domaine.ajouter": "Domaine ajouté",
   "theme.modifier": "Marque modifiée",
@@ -54,9 +57,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
    son catalogue et le journal de tout ce que la console y a fait. */
 export default async function FicheBoutique({ params, searchParams }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ erreur?: string; cree?: string; ok?: string }>;
+  searchParams: Promise<{ erreur?: string; cree?: string; ok?: string; metier?: string }>;
 }) {
-  await exigeAdmin();
+  const { user } = await exigeAdmin();
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const { data, error } = await clientService().rpc("console_boutique", { p_slug: slug });
   if (error) throw new Error(`Boutique illisible : ${error.message}`);
@@ -64,10 +67,14 @@ export default async function FicheBoutique({ params, searchParams }: {
   const f = data as Fiche;
   const b = f.boutique;
   const hoteConsole = (await headers()).get("host");
-  const [equipe, { data: miseEnPlace }] = await Promise.all([
+  // Une boutique vide peut recevoir le préréglage d'un métier.
+  const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
+  const [equipe, { data: miseEnPlace }, { data: dm }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
+    vide ? clientService().rpc("console_metiers", { p_acteur: user.id }) : Promise.resolve({ data: null }),
   ]);
+  const metiers = (dm ?? []) as Metier[];
   const actifs = equipe.filter((m) => m.actif);
   const enAttente = actifs.filter((m) => m.en_attente).length;
 
@@ -75,7 +82,9 @@ export default async function FicheBoutique({ params, searchParams }: {
     <div className="pile">
       {messages.cree ? (
         <p className="message message-succes" role="status">
-          Boutique créée, en préparation. Réglez sa marque, importez son catalogue, invitez son propriétaire, puis ouvrez-la.
+          {messages.metier
+            ? "Boutique créée, en préparation, avec les rayons, les caractéristiques et la palette de son métier. Réglez sa marque, importez son catalogue, invitez son propriétaire, puis ouvrez-la."
+            : "Boutique créée, en préparation. Réglez sa marque, importez son catalogue, invitez son propriétaire, puis ouvrez-la."}
         </p>
       ) : null}
       {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
@@ -211,6 +220,17 @@ export default async function FicheBoutique({ params, searchParams }: {
                 <Icone nom="importer" /> Importer un catalogue
               </Link>
             </div>
+            {vide && metiers.length ? (
+              <details className="mt-appliquer">
+                <summary className="btn btn-second btn-bloc"><Icone nom="modules" /> Partir du préréglage d&apos;un métier</summary>
+                <form action={`/boutiques/${b.slug}/metier`} method="post" className="pile mt-4">
+                  <input type="hidden" name="boutique_id" value={b.id} />
+                  <p className="aide">Ses rayons, ses caractéristiques, sa palette et son gabarit, posés d&apos;un geste ; tout se change ensuite. Seulement sur une boutique vide.</p>
+                  <ChoixMetier metiers={metiers} aucun={false} />
+                  <button type="submit" className="btn btn-primaire">Poser le préréglage</button>
+                </form>
+              </details>
+            ) : null}
           </section>
 
           <section className="carte" aria-labelledby="t-marque">

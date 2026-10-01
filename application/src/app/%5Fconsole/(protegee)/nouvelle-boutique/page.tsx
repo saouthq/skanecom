@@ -1,20 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { exigeAdmin } from "@/lib/console/session";
+import { clientService } from "@/lib/console/service";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
+import { ChoixMetier } from "@/components/console/ChoixMetier";
+import type { Metier } from "@/lib/console/metiers";
 
 export const metadata: Metadata = { title: "Nouvelle boutique" };
 
 /* C1 · Créer une boutique et lui attribuer son domaine. Elle naît « en
-   préparation » : rien n'est visible tant qu'on ne l'ouvre pas. */
+   préparation » : rien n'est visible tant qu'on ne l'ouvre pas. Son métier,
+   s'il est choisi, pose d'un geste ses rayons, ses caractéristiques, sa
+   palette et son gabarit (…_metiers.sql) ; sans métier, on choisit le
+   gabarit et l'on part de zéro. */
 export default async function NouvelleBoutique({ searchParams }: {
-  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string }>;
+  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string }>;
 }) {
-  await exigeAdmin();
+  const { user } = await exigeAdmin();
   const v = await searchParams;
+  const { data } = await clientService().rpc("console_metiers", { p_acteur: user.id });
+  const metiers = (data ?? []) as Metier[];
   return (
-    <div className="max-w-[42rem]">
+    <div className="max-w-[48rem]">
       <EnTetePage
         avant={<Link href="/"><Icone nom="retour" taille={14} /> Boutiques</Link>}
         titre="Nouvelle boutique"
@@ -40,7 +48,8 @@ export default async function NouvelleBoutique({ searchParams }: {
             <p id="aide-hote" className="aide">Sans « https:// ». Les autres s&apos;ajoutent ensuite.</p>
           </div>
         </div>
-        <fieldset className="choix choix-2">
+        <ChoixMetier metiers={metiers} choisi={v.metier} />
+        <fieldset className="choix choix-2 mt-gabarit">
           <legend>Gabarit</legend>
           <label className="choix-carte">
             <input type="radio" name="theme" value="editorial" defaultChecked={(v.theme ?? "editorial") !== "technique"} />

@@ -994,3 +994,16 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
   .pl-tuile:hover { transform: none; }
   .pl-tuile:hover .pl-photo { transform: none; }
 }
+
+/* Le métier d'une boutique (préréglages) : des cartes sur deux colonnes ;
+   un métier choisi règle le gabarit, dont le choix s'efface. */
+@media (min-width: 720px) { .mt-choix { grid-template-columns: 1fr 1fr; } }
+.mt-choix > legend { grid-column: 1 / -1; }
+.mt-carte b { display: inline-flex; align-items: center; gap: .5rem; }
+.mt-pastille { inline-size: .75rem; block-size: .75rem; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); flex: none; }
+.mt-pose { color: var(--ui-texte-3); }
+form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .mt-gabarit { display: none; }
+.mt-appliquer { margin-block-start: .75rem; }
+.mt-appliquer > summary { list-style: none; cursor: pointer; }
+.mt-appliquer > summary::-webkit-details-marker { display: none; }
+.mt-appliquer[open] > summary { display: none; }
