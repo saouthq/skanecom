@@ -36,7 +36,8 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 - [x] **Contact** (téléphone, WhatsApp, e-mail, magasin et son itinéraire, horaires, réseaux) — la page n'existe que si la boutique a un moyen d'être jointe.
 - [x] **Réseaux sociaux** (Instagram, Facebook, TikTok) au pied de page, **bouton WhatsApp flottant** (réglage ; jamais pendant la commande), **bandeau d'annonce** réglable.
 - [x] **« Suivre ma commande » sans compte** : le numéro et le téléphone qui l'a passée ; une réponse qui ne dit pas lequel des deux est faux ; cinq essais manqués par numéro et par heure.
-- [ ] Partage d'une fiche ; pied de page enrichi (moyens de paiement, transporteurs, lettre d'information avec consentement).
+- [x] **Partager une fiche** (01/10, réglage) : au téléphone, la feuille de partage du système (WhatsApp, Messenger…) ; sur ordinateur, WhatsApp, Facebook ou le lien copié ; le lien de la fiche sans paramètre, son aperçu tiré des balises de la page.
+- [ ] Pied de page enrichi (moyens de paiement, transporteurs, lettre d'information avec consentement).
 
 ### C. Vendre plus
 

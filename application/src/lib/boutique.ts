@@ -91,6 +91,8 @@ export type Cadre = {
   achetesEnsemble: boolean;
   /** Réglage `vitrine.statistiques` : la mesure d'audience, sans cookie. */
   statistiques: boolean;
+  /** Réglage `vitrine.partage` : « Partager » sur la fiche. */
+  partage: boolean;
   /** Les avis clients vérifiés (module avis) : sur la fiche, et à donner
    *  depuis « Mes commandes ». */
   avis: boolean;
@@ -199,6 +201,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     favoris: reglage<boolean>(reglages, "catalogue.favoris", false) === true,
     achetesEnsemble: reglage<boolean>(reglages, "catalogue.achetes_ensemble", false) === true,
     statistiques: reglage<boolean>(reglages, "vitrine.statistiques", false) === true,
+    partage: reglage<boolean>(reglages, "vitrine.partage", false) === true,
     avis: modules.includes("avis"),
     avisPhotos: modules.includes("avis") && reglage<boolean>(reglages, "avis.photos", false) === true,
     promotions: modules.includes("promotions"),

@@ -845,3 +845,22 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
   .fiche-favori-photo { display: inline-grid; }
   .achat .fiche-favori { display: none; }
 }
+
+/* ---- « Partager » sur la fiche (PartagerFiche.tsx) : un lien discret
+   sous le bloc d'achat ; ouvert, trois choix en pastilles, sans calque
+   (rien à rogner, rien à recouvrir). ---- */
+.partage { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; margin-block-start: .25rem; }
+.partage-bouton { display: inline-flex; align-items: center; gap: .5rem; min-block-size: 44px; font-size: .875rem; }
+.partage-bouton svg { flex: none; }
+.partage-menu { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; animation: partage-ouvre .25s var(--theme-courbe) backwards; }
+@keyframes partage-ouvre { from { opacity: 0; transform: translateY(-4px); } }
+.partage-choix {
+  display: inline-flex; align-items: center; gap: .5rem; min-block-size: 44px; padding: .5rem 1rem;
+  border: 1px solid var(--theme-filet); border-radius: 999px; background: var(--theme-surface); color: var(--theme-encre);
+  font: inherit; font-size: .8125rem; text-decoration: none; cursor: pointer; transition: border-color .15s, color .15s;
+}
+.partage-choix:hover { border-color: var(--theme-encre); }
+.partage-choix:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+.partage-choix[data-copie] { color: var(--theme-succes); border-color: currentColor; }
+html[data-gabarit=technique] .partage-choix { border-radius: var(--theme-radius-doux); }
+@media (prefers-reduced-motion: reduce) { .partage-menu { animation: none; } }

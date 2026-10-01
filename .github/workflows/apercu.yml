@@ -42,6 +42,7 @@ on:
       - "supabase/seed-ensemble.sql"
       - "supabase/seed-avis-photos.sql"
       - "supabase/seed-visites.sql"
+      - "supabase/seed-partage.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -124,6 +125,7 @@ jobs:
           installe graines seed-ensemble.sql supabase/seed-ensemble.sql
           installe graines seed-avis-photos.sql supabase/seed-avis-photos.sql
           installe graines seed-visites.sql supabase/seed-visites.sql
+          installe graines seed-partage.sql supabase/seed-partage.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu

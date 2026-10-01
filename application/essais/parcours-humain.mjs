@@ -241,6 +241,26 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
       "Échap la ferme, le focus revient sur la vignette");
   });
 
+  await etape("partager la fiche : WhatsApp, Facebook, le lien, au clavier", async () => {
+    // Selma propose « Partager » (supabase/seed-partage.sql) ; on est sur la fiche du sac.
+    const bouton = page.locator(".partage-bouton");
+    await bouton.focus();
+    await page.keyboard.press("Enter");
+    await page.locator(".partage-menu").waitFor({ timeout: 3000 });
+    verifie((await bouton.getAttribute("aria-expanded")) === "true" && (await page.locator(".partage-choix").allInnerTexts()).join(" | ") === "WhatsApp | Facebook | Copier le lien",
+      "Entrée : le menu s'ouvre, trois choix");
+    const wa = decodeURIComponent((await page.locator(".partage-choix").first().getAttribute("href")) ?? "");
+    verifie(wa.startsWith("https://wa.me/?text=") && wa.includes("Sac de voyage en cuir, chez Maison Selma") && wa.endsWith("/produit/sac-voyage-cuir"),
+      "WhatsApp : le nom de la pièce, la boutique, le lien de la fiche sans paramètre");
+    await page.keyboard.press("Tab");
+    verifie(await page.evaluate(() => document.activeElement?.textContent?.trim() === "WhatsApp"), "Tab : le premier choix");
+    await capture(page, "selma-partage");
+    await page.keyboard.press("Escape");
+    await pause(200);
+    verifie((await page.locator(".partage-menu").count()) === 0 && (await bouton.evaluate((e) => e === document.activeElement)),
+      "Échap le referme, le focus revient au bouton");
+  });
+
   await etape("le panier survit au rechargement", async () => {
     await page.reload({ waitUntil: "networkidle" });
     await pause(300);
@@ -461,6 +481,7 @@ console.log("\n== 3. Sur téléphone (tactile) ==");
   await etape("Maymar : fiche et barre collante", async () => {
     await page.goto(M + "/produit/valise-rigide-abs-4-roues", { waitUntil: "networkidle" });
     await capture(page, "mobile-fiche");
+    verifie((await page.locator(".partage").count()) === 0, "Maymar n'a pas le réglage : pas de bouton « Partager »");
     // Un saut, pas un défilement : le bloc d'achat passe de sous l'écran à
     // au-dessus sans jamais le croiser (la touche Fin, une ancre).
     await page.evaluate(() => window.scrollBy(0, 1800)); await pause(700);

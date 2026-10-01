@@ -340,6 +340,17 @@ export const fr = {
     photosErreur: "l'envoi a échoué.",
   },
 
+  /** « Partager » sur la fiche (réglage vitrine.partage). */
+  partage: {
+    bouton: "Partager",
+    boutonAria: (nom: string) => `Partager : ${nom}`,
+    whatsapp: "WhatsApp",
+    facebook: "Facebook",
+    copier: "Copier le lien",
+    copie: "Lien copié",
+    message: (nom: string, boutique: string) => `${nom}, chez ${boutique} :`,
+  },
+
   /** « Souvent achetés ensemble » (réglage catalogue.achetes_ensemble). */
   ensemble: {
     titre: "Souvent achetés ensemble",

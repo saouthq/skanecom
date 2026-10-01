@@ -1,6 +1,7 @@
 "use client";
 
 import { BoutonFavori } from "./BoutonFavori";
+import { PartagerFiche } from "./PartagerFiche";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Prix } from "./Prix";
@@ -48,6 +49,7 @@ export function FicheAchat({
   delaiJours = null,
   achatExpress = false,
   prevenirRetour = false,
+  partage = null,
 }: {
   produit: Produit;
   gabarit: CodeTheme;
@@ -56,6 +58,8 @@ export function FicheAchat({
   /** Réglage `catalogue.prevenir_retour` : sur une déclinaison indisponible,
    *  « Prévenez-moi de son retour » ; une valeur épuisée reste alors choisissable. */
   prevenirRetour?: boolean;
+  /** Réglage `vitrine.partage` : « Partager », avec le nom de la boutique pour le message. */
+  partage?: { boutique: string } | null;
   /** L'enveloppe du délai de livraison (jours ouvrés) : la fenêtre estimée. */
   delaiJours?: { min: number; max: number } | null;
   /** Réglage `catalogue.afficher_prix_barres` : l'ancien prix barré à côté du
@@ -308,6 +312,7 @@ export function FicheAchat({
       ) : null}
       <p className="legende fiche-note">{t.produit.stockReel}</p>
       {disponible && delaiJours ? <LivraisonEstimee min={delaiJours.min} max={delaiJours.max} /> : null}
+      {partage ? <PartagerFiche nom={champ(produit, "nom")} boutique={partage.boutique} /> : null}
 
       {/* Barre collante mobile : prix, déclinaison choisie, action. Rien d'autre. */}
       {barreVisible ? (

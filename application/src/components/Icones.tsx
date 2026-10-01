@@ -206,6 +206,28 @@ export function Lot({ taille = 18, className }: Props) {
   );
 }
 
+/** Partager : trois points reliés. */
+export function Partager({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <circle cx="18" cy="5" r="2.6" />
+      <circle cx="6" cy="12" r="2.6" />
+      <circle cx="18" cy="19" r="2.6" />
+      <path d="m8.3 13.3 7.4 4.4M15.7 6.3l-7.4 4.4" />
+    </svg>
+  );
+}
+
+/** Un maillon : « Copier le lien ». */
+export function Lien({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <path d="M10 13.5a4.5 4.5 0 0 0 6.4.4l2.6-2.6a4.5 4.5 0 0 0-6.4-6.4L11.3 6.2" />
+      <path d="M14 10.5a4.5 4.5 0 0 0-6.4-.4L5 12.7a4.5 4.5 0 0 0 6.4 6.4l1.3-1.3" />
+    </svg>
+  );
+}
+
 /** Une cloche : « Prévenez-moi de son retour ». */
 export function Cloche({ taille = 18, className }: Props) {
   return (
