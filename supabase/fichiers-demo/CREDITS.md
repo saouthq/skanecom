@@ -83,7 +83,6 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `dar-alia/rayons/cuisine-et-table` | [Matt Bango](https://mattbango.photo) | CC0 | [stocksnap](https://stocksnap.io/photo/table-setting-LKV4WGJE1F) |
 | `dar-alia/rayons/decoration` | [Studio 7042](https://twitter.com/studio7042) | CC0 | [stocksnap](https://stocksnap.io/photo/mirror-livingroom-JRHSFSKQZQ) |
 | `dar-alia/rayons/linge-de-maison` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5943478/free-public-domain-cc0-photo) |
-| `dar-alia/rayons/rangement` | [Suzy Hazelwood](https://twitter.com/SuzyHazelwood) | CC0 | [stocksnap](https://stocksnap.io/photo/herbs-parsley-XVIICAUSKR) |
 | `dar-alia/produits/cuilleres-olivier` | [Eneida Nieves](https://www.instagram.com/fari.photography) | CC0 | [stocksnap](https://stocksnap.io/photo/collection-wooden-JH2VUEOLAM) |
 | `dar-alia/produits/mug-gres` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3283727/free-photo-image-coffee-table-wooden) |
 | `dar-alia/produits/tasses-blanches` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5965017/white-ceramic-mug) |
@@ -98,7 +97,7 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `dar-alia/produits/jete-de-lit` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5947468/free-public-domain-cc0-photo) |
 | `dar-alia/produits/lampe-chevet` | [Kristin Hardwick](https://www.kristinhardwick.com) | CC0 | [stocksnap](https://stocksnap.io/photo/table-lamp-CGPGQOOQ4I) |
 | `dar-alia/produits/lampadaire-trepied` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5917348/image-frame-light-public-domain) |
-| `dar-alia/produits/photophores` | U.S. Air Force | CC0 | [rawpixel](https://www.rawpixel.com/image/4032059/photo-image-light-white-candle) |
+| `dar-alia/produits/photophores` | [Matt Bango](https://mattbango.photo) | CC0 | [stocksnap](https://stocksnap.io/photo/candle-room-H9O0VTTYGQ) |
 | `dar-alia/produits/panier-jonc` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3292416/free-photo-image-basket-blossom-cc0) |
 | `dar-alia/produits/corbeille-osier` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3301431/free-photo-image-flower-basket-herbs-acanthaceae) |
 | `dar-alia/produits/bocal-verre` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5910925/aniseed-jar-free-public-domain-cc0-image) |
