@@ -45,6 +45,7 @@ on:
       - "supabase/seed-partage.sql"
       - "supabase/seed-lettre.sql"
       - "supabase/seed-entonnoir.sql"
+      - "supabase/seed-objectif.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -130,6 +131,7 @@ jobs:
           installe graines seed-partage.sql supabase/seed-partage.sql
           installe graines seed-lettre.sql supabase/seed-lettre.sql
           installe graines seed-entonnoir.sql supabase/seed-entonnoir.sql
+          installe graines seed-objectif.sql supabase/seed-objectif.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu

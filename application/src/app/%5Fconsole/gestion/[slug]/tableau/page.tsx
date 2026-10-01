@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Compteur } from "@/components/console/Compteur";
 import { Icone } from "@/components/console/Icone";
+import { ObjectifMois } from "@/components/console/ObjectifMois";
 import { clientSession, exigeMembre } from "@/lib/console/session";
+import { PEUT_FIXER, type Objectif } from "@/lib/gestion/objectif";
 import { formateMontant } from "@/lib/prix";
 import { DIRECTION, delta, duree, pourcent, type Synthese, type Tableau } from "@/lib/gestion/tableau";
 
@@ -13,7 +15,8 @@ export const metadata: Metadata = { title: "Tableau de bord" };
 /* ============================================================================
    LE TABLEAU DE BORD (B12) — « combien on a vendu, combien de colis sont
    revenus » : sur 7, 30 ou 90 jours, comparés à la période précédente.
-   En tête, quatre chiffres (encaissé, commandes, confirmation, refus) ; puis
+   En tête, l'objectif du mois (…_objectif_mois.sql) ; puis quatre chiffres
+   (encaissé, commandes, confirmation, refus) ; puis
    le jour par jour, les refus (d'où ils viennent, où ils se concentrent),
    et ce qui se vend. Chaque chiffre renvoie aux commandes qu'il compte.
 
@@ -44,16 +47,20 @@ export default async function TableauDeBord({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ jours?: string }>;
+  searchParams: Promise<{ jours?: string; ok?: string; erreur?: string }>;
 }) {
   const [{ slug }, recherche] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
   if (!DIRECTION.includes(boutique.role)) redirect(`/gestion/${slug}`);
   const jours = PERIODES.find((p) => String(p) === recherche.jours) ?? 30;
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_tableau_de_bord", { p_boutique_id: boutique.boutique_id, p_jours: jours });
-  if (error) throw new Error(`Tableau de bord illisible : ${error.message}`);
+  const [{ data, error }, { data: dob, error: eob }] = await Promise.all([
+    sb.rpc("gestion_tableau_de_bord", { p_boutique_id: boutique.boutique_id, p_jours: jours }),
+    sb.rpc("gestion_objectif", { p_boutique_id: boutique.boutique_id }),
+  ]);
+  if (error || eob) throw new Error(`Tableau de bord illisible : ${(error ?? eob)?.message}`);
   const t = data as Tableau;
+  const objectif = dob as Objectif;
   const c: Partial<Synthese> = t.courante;
   const p: Partial<Synthese> = t.precedente;
   const max = Math.max(1, ...t.par_jour.map((j) => j.recues));
@@ -76,6 +83,13 @@ export default async function TableauDeBord({
           </nav>
         }
       />
+
+      {recherche.ok ? <p className="message message-succes mb-4" role="status">{recherche.ok}</p> : null}
+      {recherche.erreur ? <p className="message message-erreur mb-4" role="alert">{recherche.erreur}</p> : null}
+      {/* L'objectif du mois : il ne dépend pas de la période choisie. */}
+      <div className="mb-6">
+        <ObjectifMois o={objectif} slug={slug} peutFixer={PEUT_FIXER.includes(boutique.role)} />
+      </div>
 
       {vide ? (
         <div className="vide bo-vide">

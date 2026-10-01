@@ -1612,6 +1612,25 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     verifie((await page.locator(".tb-barres li").count()) === 7, "sept jours : sept barres");
   });
 
+  await etape("l'objectif du mois : la jauge, le rythme, le changer au clavier", async () => {
+    // Selma vise un chiffre chaque mois (supabase/seed-objectif.sql).
+    const lisible = (x) => x.replace(/\s+/g, " ");
+    await page.goto(`${C}/gestion/maison-selma/tableau`, { waitUntil: "networkidle" });
+    const carte = page.locator("#objectif");
+    verifie(/^Objectif d/.test(await carte.locator("#ob-titre").innerText()) && (await carte.locator(".ob-jauge").count()) === 1,
+      "en tête du tableau de bord, l'objectif du mois et sa jauge");
+    verifie((await carte.locator(".ob-histoire li").count()) === 6, "les six mois d'avant, visés et livrés");
+    await clic(page, carte.getByText("Changer…"));
+    const champ = carte.locator('input[name="montant"]').first();
+    await champ.fill("");
+    await clic(page, champ);
+    await tape(page, "4800");
+    await t.envoie(page, () => page.keyboard.press("Enter"));
+    verifie(lisible(await page.locator(".message-succes").first().innerText()).includes("4 800 TND"), "Entrée : l'objectif est changé, la page le dit");
+    verifie(lisible(await page.locator(".ob-chiffres").innerText()).includes("sur 4 800 TND"), "la jauge se mesure au nouveau chiffre");
+    await capture(page, "gestion-objectif");
+  });
+
   await etape("la lettre : les inscrits, une recherche, une adresse retirée à la demande", async () => {
     // Selma a une lettre (supabase/seed-lettre.sql) : 38 inscrits, plus ceux des parcours.
     const lien = page.locator(".app-cote").getByRole("link", { name: "Lettre" });

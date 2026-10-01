@@ -64,7 +64,8 @@ Le périmètre v1 du PRD est construit : console C1 à C7, backoffice B1 à B12,
 ### F. Console et backoffice : le mouvement
 
 - Une couche de mouvement avec **Motion** (ex-Framer Motion), chargée à la demande (`LazyMotion`) : onglets, listes qui se réordonnent, tiroirs, notifications, compteurs du tableau de bord, gestes au doigt (glisser pour confirmer une commande) ; « réduire les animations » respecté partout.
-- Graphiques du tableau de bord, objectifs du mois.
+- Graphiques du tableau de bord.
+- [x] **L'objectif du mois** (01/10) : la direction vise un chiffre — le livré, donc l'encaissé, du mois —, le tableau de bord en suit la jauge (le livré, ce qui est en route), le rythme (la fin du mois au train actuel, dès le 5), ce qu'il faut livrer par jour, et les six mois d'avant ; le mois suivant se prépare d'avance ; « Aujourd'hui » le rappelle.
 
 ### G. Tout contrôler
 

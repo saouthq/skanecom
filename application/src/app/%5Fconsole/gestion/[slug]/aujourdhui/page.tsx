@@ -6,6 +6,8 @@ import { Icone, type NomIcone } from "@/components/console/Icone";
 import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
 import { lieu } from "@/lib/commande";
 import { LIBELLES_RESULTAT, lienAppel, lienWhatsApp, messageConfirmation, telephoneLisible } from "@/lib/gestion/libelles";
+import { DIRECTION } from "@/lib/gestion/tableau";
+import { duMois, enTnd, type Objectif } from "@/lib/gestion/objectif";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
 
@@ -79,7 +81,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
   const confirme = CONFIRMER.includes(boutique.role);
-  const [{ data, error }, { data: file }, { data: alertes }, { data: paniers }] = await Promise.all([
+  const [{ data, error }, { data: file }, { data: alertes }, { data: paniers }, { data: dob }] = await Promise.all([
     sb.rpc("gestion_aujourdhui", { p_boutique_id: boutique.boutique_id }),
     // La première de la file « à confirmer » : la plus ancienne (gestion_liste_commandes).
     confirme
@@ -89,7 +91,12 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
     sb.rpc("gestion_alertes_etat", { p_boutique_id: boutique.boutique_id }),
     // Les paniers laissés sans commande (réglage commande.relance_paniers).
     sb.rpc("gestion_paniers_etat", { p_boutique_id: boutique.boutique_id }),
+    // L'objectif du mois, pour la direction.
+    DIRECTION.includes(boutique.role)
+      ? sb.rpc("gestion_objectif", { p_boutique_id: boutique.boutique_id })
+      : Promise.resolve({ data: null }),
   ]);
+  const objectif = dob as Objectif | null;
   const relances = paniers as { actif: boolean; a_relancer: number } | null;
   const reassort = alertes as { actif: boolean; a_prevenir: number; ouvertes: number } | null;
   if (error) throw new Error(`Aujourd'hui illisible : ${error.message}`);
@@ -240,6 +247,24 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
               <dd>{e.journee.refusees}</dd>
             </div>
           </dl>
+          {objectif ? (
+            objectif.objectif ? (
+              <Link className="jd-objectif" href={`${base}/tableau#objectif`}>
+                <span className="jd-objectif-texte">
+                  <b>Objectif {duMois(objectif.mois)} : {Math.round((objectif.livre / objectif.objectif) * 100)} %</b>
+                  <span className="aide">
+                    {enTnd(objectif.livre)} livrés sur {enTnd(objectif.objectif)}
+                    {objectif.par_jour ? ` · ${enTnd(objectif.par_jour)} par jour pour l'atteindre` : " · atteint"}
+                  </span>
+                </span>
+                <span className="jd-objectif-jauge" aria-hidden="true">
+                  <span style={{ inlineSize: `${Math.min(100, (objectif.livre / objectif.objectif) * 100)}%` }} />
+                </span>
+              </Link>
+            ) : (
+              <Link className="btn-lien aide jd-objectif-fixer" href={`${base}/tableau#objectif`}>Fixer l&apos;objectif {duMois(objectif.mois)} →</Link>
+            )
+          ) : null}
           <Link className="btn-lien aide" href={`${base}/tableau`}>Le tableau de bord, sur 30 jours →</Link>
         </section>
       ) : null}

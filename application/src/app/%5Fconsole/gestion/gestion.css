@@ -1540,7 +1540,7 @@ a.pg-titre:hover { color: var(--ui-accent); }
   background: color-mix(in srgb, var(--ui-accent) 75%, var(--ui-bord));
   transform-origin: left; animation: vi-avance .8s cubic-bezier(.2, .8, .2, 1) backwards;
 }
-.vi-entonnoir li:last-child .vi-etape-barre span { background: var(--ui-succes, #1f7a4d); }
+.vi-entonnoir li:last-child .vi-etape-barre span { background: var(--ui-vert); }
 @keyframes vi-avance { from { transform: scaleX(0); } }
 .vi-etape-n { font-variant-numeric: tabular-nums; font-weight: 600; text-align: end; }
 .vi-etape-part { font-size: .8125rem; color: var(--ui-texte-2); font-variant-numeric: tabular-nums; }
@@ -1588,3 +1588,55 @@ a.pg-titre:hover { color: var(--ui-accent); }
   flex: 1 1 20rem; min-inline-size: 0; padding: .5rem .75rem; border: 1px solid var(--ui-bord); border-radius: 8px;
   background: var(--ui-fond, #fff); font-size: .8125rem; overflow-wrap: anywhere;
 }
+
+/* --- L'objectif du mois (tableau de bord) ----------------------------------- */
+.ob-carte .carte-tete { align-items: flex-start; }
+.ob-chiffres { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .5rem; margin: 0 0 .75rem; }
+.ob-livre { font-size: clamp(1.625rem, 3vw, 2.125rem); font-weight: 650; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.ob-sur { color: var(--ui-texte-2); font-variant-numeric: tabular-nums; }
+.ob-part { margin-inline-start: auto; font-size: 1.25rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.ob-jauge { display: flex; block-size: .875rem; border-radius: 999px; background: var(--ui-doux); overflow: hidden; }
+.ob-jauge-livre { background: var(--ui-accent); transform-origin: left; animation: vi-avance .9s cubic-bezier(.2, .8, .2, 1) backwards; }
+.ob-carte[data-atteint] .ob-jauge-livre { background: var(--ui-vert); }
+.ob-jauge-route, .ob-pastille-route {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ui-accent) 38%, transparent) 0 5px, color-mix(in srgb, var(--ui-accent) 16%, transparent) 5px 10px);
+}
+.ob-faits { display: grid; gap: .375rem; margin: .875rem 0 0; padding: 0; list-style: none; font-size: .875rem; }
+/* Du texte qui coule (un <b> au milieu ne fait pas une colonne) ; la pastille
+   et l'icône posées en ligne. */
+.ob-faits li { line-height: 1.5; }
+.ob-faits li > :is(svg, .ob-pastille) { vertical-align: -2px; margin-inline-end: .375rem; }
+.ob-pastille { display: inline-block; inline-size: .875rem; block-size: .875rem; border-radius: 3px; flex: none; }
+.ob-bon b, .ob-bravo { color: var(--ui-vert); }
+.ob-juste b { color: var(--ui-ambre); }
+.ob-bas { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin-block-start: 1.25rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord); }
+.ob-histoire { display: grid; grid-auto-flow: column; grid-auto-columns: 2.75rem; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.ob-histoire li { display: grid; justify-items: center; gap: .25rem; }
+.ob-histoire-barre { position: relative; display: flex; align-items: flex-end; inline-size: 1.25rem; block-size: 3.5rem; }
+.ob-histoire-livre { display: block; inline-size: 100%; min-block-size: 2px; border-radius: 3px 3px 0 0; background: var(--ui-bord-fort); }
+.ob-histoire-livre[data-atteint] { background: var(--ui-vert); }
+.ob-histoire-vise { position: absolute; inset-inline: -.25rem; block-size: 2px; border-radius: 1px; background: var(--ui-texte); }
+.ob-histoire-mois { font-size: .6875rem; color: var(--ui-texte-2); }
+.ob-liens { display: grid; justify-items: end; gap: .5rem; }
+.ob-suivant { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; }
+.ob-fixer > summary { list-style: none; cursor: pointer; }
+.ob-fixer > summary::-webkit-details-marker { display: none; }
+.ob-fixer[open] > summary { display: none; }
+.ob-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem; }
+.ob-form .champ { flex: 1 1 16rem; }
+.ob-vide .ob-fixer { margin-block-start: .25rem; }
+@media (max-width: 699px) {
+  .ob-part { margin-inline-start: 0; }
+  .ob-liens { justify-items: start; }
+  .ob-suivant { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) { .ob-jauge-livre { animation: none; } }
+.jd-objectif {
+  display: grid; gap: .5rem; margin-block: .25rem .75rem; padding: .75rem .875rem; border: 1px solid var(--ui-bord);
+  border-radius: var(--ui-r); color: inherit; text-decoration: none; transition: border-color .15s, background-color .15s;
+}
+.jd-objectif:hover { border-color: var(--ui-bord-fort); background: var(--ui-survol); }
+.jd-objectif-texte { display: grid; gap: .125rem; font-size: .875rem; }
+.jd-objectif-jauge { display: block; block-size: .375rem; border-radius: 999px; background: var(--ui-doux); overflow: hidden; }
+.jd-objectif-jauge span { display: block; block-size: 100%; border-radius: inherit; background: var(--ui-accent); }
+.jd-objectif-fixer { display: inline-block; margin-block-end: .5rem; }
