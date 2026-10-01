@@ -657,6 +657,231 @@
    ],
    "rapport": 1.25,
    "gravite": "East"
+  },
+  {
+   "id": "b675ced4-2836-4559-9d46-09b536274e8e",
+   "chemin": "dar-alia/accueil/hero",
+   "largeurs": [
+    2000,
+    1000
+   ]
+  },
+  {
+   "id": "b675ced4-2836-4559-9d46-09b536274e8e",
+   "chemin": "dar-alia/accueil/hero-portrait",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25,
+   "gravite": "Center"
+  },
+  {
+   "id": "8cbfded1-a2b9-481c-abba-b17f483f1d5c",
+   "chemin": "dar-alia/accueil/recit",
+   "largeurs": [
+    1200,
+    600
+   ]
+  },
+  {
+   "id": "56e54c35-ff23-4cec-9c85-78333bd5048c",
+   "chemin": "dar-alia/rayons/cuisine-et-table",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "119ba4ed-e701-4607-a8a3-7294d31b3d32",
+   "chemin": "dar-alia/rayons/decoration",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "b5799480-2b01-41f7-b324-ac2c391f7d63",
+   "chemin": "dar-alia/rayons/linge-de-maison",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "f043f739-f131-4f02-a7c0-5d18c85f81b7",
+   "chemin": "dar-alia/rayons/rangement",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "bd3c7d81-e3bb-4d43-8f19-553233768375",
+   "chemin": "dar-alia/produits/cuilleres-olivier",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "3b759cd0-2a2a-4281-b90d-09e35d7c1a0c",
+   "chemin": "dar-alia/produits/mug-gres",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "66296729-2105-4e37-99c0-426bf389d6a9",
+   "chemin": "dar-alia/produits/tasses-blanches",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "cc4eceef-3714-4a90-83a1-60073cefb4c4",
+   "chemin": "dar-alia/produits/service-faience",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "20dc3190-297c-4be7-93f7-5da4175e6341",
+   "chemin": "dar-alia/produits/serviettes-lin",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "6c41a36d-e464-4b12-9bb1-648bd9118ca4",
+   "chemin": "dar-alia/produits/bougie-fleur-oranger",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "d62e316d-f0ec-4a51-8135-6eb23f49bc85",
+   "chemin": "dar-alia/produits/bougie-meche-bois",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "c806c031-88fc-4cf3-b577-bee322d9dddb",
+   "chemin": "dar-alia/produits/bougie-ambree",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "c18677de-fff2-42dd-8dbd-ee5728ba6746",
+   "chemin": "dar-alia/produits/kilim",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "15a1e1ab-1b0f-48f0-926a-7abce33ef829",
+   "chemin": "dar-alia/produits/housses-coussin",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "5057baf1-19dd-4d74-9640-c97b335d1bed",
+   "chemin": "dar-alia/produits/taies-rayees",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "9f5d49a8-1b0e-4e9d-9cc4-98e2e86f5373",
+   "chemin": "dar-alia/produits/jete-de-lit",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "2c27b368-b279-4ecb-8d45-a7cf4d998beb",
+   "chemin": "dar-alia/produits/lampe-chevet",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "5c1b8889-c9d8-42f3-8993-e950932f93a4",
+   "chemin": "dar-alia/produits/lampadaire-trepied",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25,
+   "gravite": "West"
+  },
+  {
+   "id": "3ff492eb-42c0-45c8-82e2-6b3c6c2031e1",
+   "chemin": "dar-alia/produits/photophores",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "484c1d54-39c1-4e36-94b4-adca349107ad",
+   "chemin": "dar-alia/produits/panier-jonc",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "cf6e3749-b841-4b7a-a5dc-a0e0215ba6d5",
+   "chemin": "dar-alia/produits/corbeille-osier",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "0e27affc-1db8-485e-87b3-40772c9b1609",
+   "chemin": "dar-alia/produits/bocal-verre",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
   }
  ]
 }
