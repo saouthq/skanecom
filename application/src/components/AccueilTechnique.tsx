@@ -3,9 +3,11 @@ import { CarteProduit } from "./CarteProduit";
 import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
 import { TuileFin } from "./TuileFin";
+import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliotheque";
 import { Billets, Bulle, Camion, Fleche, Magasin, Retour } from "./Icones";
 import { descendance, type Cadre } from "@/lib/boutique";
 import type { Categorie, Produit } from "@/lib/catalogue";
+import type { DonneesAccueil } from "@/lib/accueil";
 import { texte, type Section } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 import { lienConseil } from "@/lib/faits";
@@ -19,9 +21,10 @@ import { champ, t } from "@/lib/i18n";
    en grille dense, les services en clair (retrait, paiement, conseil).
    ========================================================================== */
 
-type Props = { cadre: Cadre; selections: Map<number, Produit[]> };
+type Props = { cadre: Cadre; donnees: DonneesAccueil };
 
-export function AccueilTechnique({ cadre, selections }: Props) {
+export function AccueilTechnique({ cadre, donnees }: Props) {
+  const { selections } = donnees;
   return (
     <>
       {cadre.theme.sections.map((s, i) => {
@@ -38,6 +41,26 @@ export function AccueilTechnique({ cadre, selections }: Props) {
             return <Services key={i} cadre={cadre} />;
           case "texte":
             return <Texte key={i} section={s} />;
+          case "avis":
+            return donnees.avis ? (
+              <div key={i} className="te-section">
+                <AvisClients avis={donnees.avis} gabarit="technique" tete={<Tete titre={texte(s.textes, "titre", t.accueil.avisTitre)} />} />
+              </div>
+            ) : null;
+          case "questions": {
+            const q = donnees.questions.get(i);
+            return q ? (
+              <div key={i} className="te-section">
+                <QuestionsFrequentes questions={q} gabarit="technique" tete={(l) => <Tete titre={texte(s.textes, "titre", t.accueil.questionsTitre)} lien={l.href} libelle={l.libelle} />} />
+              </div>
+            ) : null;
+          }
+          case "marques":
+            return donnees.marques.length ? (
+              <div key={i} className="te-section">
+                <Marques marques={donnees.marques} gabarit="technique" tete={<Tete titre={texte(s.textes, "titre", t.accueil.marquesTitre)} />} />
+              </div>
+            ) : null;
         }
       })}
     </>
@@ -127,7 +150,7 @@ function Rayons({ section, cadre }: { section: Extract<Section, { type: "rayons"
 
 function Selection({ section, cadre, produits }: { section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
   const lien = section.lien ?? (section.rayon ? `/categorie/${section.rayon}` : "/catalogue");
-  const titre = texte(section.textes, "titre", t.accueil.selectionTitreTechnique);
+  const titre = texte(section.textes, "titre", section.tri === "nouveautes" ? t.accueil.selectionNouveautes : t.accueil.selectionTitreTechnique);
   const total = section.rayon
     ? descendance(cadre.categories, section.rayon).reduce((n, c) => n + (c.nb_produits ?? 0), 0)
     : cadre.boutique.nb_produits;

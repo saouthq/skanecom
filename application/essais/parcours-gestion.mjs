@@ -1631,6 +1631,39 @@ console.log("\n== 4 bis. La gérante de Maison Selma : codes promo, prix barrés
     await capture(page, "gestion-objectif");
   });
 
+  await etape("la page d'accueil : la composer, au clavier", async () => {
+    // Selma montre ses avis et ses questions (supabase/seed-accueil.sql).
+    const enregistre = () => page.waitForFunction(() => /Accueil enregistré/.test(document.querySelector(".ac-pied .ac-retour")?.textContent ?? ""), null, { timeout: 15000 });
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Page d'accueil" }));
+    await page.waitForURL(/\/accueil$/);
+    await page.waitForLoadState("networkidle");
+    const plan = () => page.locator(".ac-section-texte > b").allInnerTexts();
+    const avant = await plan();
+    verifie(avant.includes("Avis clients") && avant.includes("Questions fréquentes"), `l'accueil de haut en bas (${avant.join(" > ")})`);
+    verifie((await page.locator(".ac-modele").count()) === 9, "la bibliothèque : neuf sections");
+    verifie(await page.locator(".ac-modele", { hasText: "Avis clients" }).isDisabled(), "une section déjà posée ne s'ajoute pas deux fois");
+    await page.getByRole("button", { name: "Monter « Avis clients »" }).focus();
+    await page.keyboard.press("Enter");
+    const apres = await plan();
+    verifie(apres.indexOf("Avis clients") === avant.indexOf("Avis clients") - 1, "Entrée : la section monte d'un cran");
+    verifie(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")) === "Monter « Avis clients »", "le focus la suit");
+    verifie((await page.locator(".ac-pied").innerText()).includes("pas enregistrés"), "la barre dit qu'il reste à enregistrer");
+    await page.keyboard.press("Control+s");
+    await enregistre();
+    await page.reload({ waitUntil: "networkidle" });
+    verifie(JSON.stringify(await plan()) === JSON.stringify(apres), "Ctrl+S, puis la page rechargée : la composition est gardée");
+    await capture(page, "gestion-accueil", true);
+    // Retirer, rétablir ; puis l'ordre d'avant, pour la suite.
+    await clic(page, page.getByRole("button", { name: "Retirer « Questions fréquentes »" }));
+    verifie(!(await plan()).includes("Questions fréquentes"), "retirée de l'accueil");
+    await clic(page, page.locator(".ac-pied").getByRole("button", { name: "Rétablir" }));
+    verifie(JSON.stringify(await plan()) === JSON.stringify(apres), "rétablie à sa place, depuis la barre");
+    await clic(page, page.getByRole("button", { name: "Descendre « Avis clients »" }));
+    await clic(page, page.getByRole("button", { name: /Enregistrer l'accueil/ }));
+    await enregistre();
+    verifie(JSON.stringify(await plan()) === JSON.stringify(avant), "l'ordre d'avant, enregistré");
+  });
+
   await etape("la lettre : les inscrits, une recherche, une adresse retirée à la demande", async () => {
     // Selma a une lettre (supabase/seed-lettre.sql) : 38 inscrits, plus ceux des parcours.
     const lien = page.locator(".app-cote").getByRole("link", { name: "Lettre" });
@@ -1777,9 +1810,13 @@ console.log("\n== 5. Le préparateur d'une autre boutique ==");
 
   await etape("les pages de la boutique : ni le lien, ni l'écriture", async () => {
     verifie(await page.locator(".app-cote a[href$='/pages']").count() === 0, "pas de lien « Pages » pour le préparateur");
+    verifie(await page.locator(".app-cote a[href$='/accueil']").count() === 0, "ni « Page d'accueil »");
     const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/pages/action", { geste: "enregistrer", slug: "essai", titre: "Essai", corps: "Un essai" });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur écrivent"),
       `écrire une page à la main : la base refuse (${r.status})`);
+    const a = await posteBrut(ctx, "/gestion/quincaillerie-demo/accueil/action", { geste: "enregistrer", version: "1", sections: JSON.stringify([{ type: "hero" }]) });
+    verifie(a.status === 303 && decodeURIComponent(a.location.replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur composent l'accueil"),
+      `composer l'accueil à la main : la base refuse (${a.status})`);
   });
 
   await etape("les devis : il lit, il ne chiffre pas", async () => {

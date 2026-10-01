@@ -112,6 +112,13 @@ export const fr = {
     selectionTitreTechnique: "Les références du moment",
     heroCta: "Voir le catalogue",
     engagementsTitre: "Commander, simplement",
+    /* La bibliothèque de sections (migration 59) */
+    avisEtiquette: "Avis vérifiés",
+    avisTitre: "Ce qu'en disent nos clients",
+    questionsTitre: "Vos questions",
+    toutesLesQuestions: (n: number) => `Les ${n} questions`,
+    marquesTitre: "Les marques",
+    selectionNouveautes: "Les nouveautés",
   },
 
   catalogue: {

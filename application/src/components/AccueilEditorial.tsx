@@ -4,9 +4,11 @@ import { CarteProduit } from "./CarteProduit";
 import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
 import { TuileFin } from "./TuileFin";
+import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliotheque";
 import { Billets, Camion, Fleche, Retour, Telephone } from "./Icones";
 import { descendance, type Cadre } from "@/lib/boutique";
 import type { Produit } from "@/lib/catalogue";
+import type { DonneesAccueil } from "@/lib/accueil";
 import { texte, type Section } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 import { champ, t } from "@/lib/i18n";
@@ -21,9 +23,10 @@ import { formatePrix } from "@/lib/prix";
    textes viennent des sections du thème ; à défaut, des libellés sobres.
    ========================================================================== */
 
-type Props = { cadre: Cadre; selections: Map<number, Produit[]> };
+type Props = { cadre: Cadre; donnees: DonneesAccueil };
 
-export function AccueilEditorial({ cadre, selections }: Props) {
+export function AccueilEditorial({ cadre, donnees }: Props) {
+  const { selections } = donnees;
   return (
     <>
       {cadre.theme.sections.map((s, i) => {
@@ -40,6 +43,38 @@ export function AccueilEditorial({ cadre, selections }: Props) {
             return <Engagements key={i} section={s} cadre={cadre} />;
           case "texte":
             return <Texte key={i} section={s} />;
+          case "avis":
+            return donnees.avis ? (
+              <div key={i} className="enveloppe ed-section">
+                <AvisClients
+                  avis={donnees.avis}
+                  gabarit="editorial"
+                  tete={<TeteSection titre={texte(s.textes, "titre", t.accueil.avisTitre)} etiquette={texte(s.textes, "etiquette", t.accueil.avisEtiquette)} />}
+                />
+              </div>
+            ) : null;
+          case "questions": {
+            const q = donnees.questions.get(i);
+            return q ? (
+              <div key={i} className="enveloppe ed-section">
+                <QuestionsFrequentes
+                  questions={q}
+                  gabarit="editorial"
+                  tete={() => <TeteSection titre={texte(s.textes, "titre", t.accueil.questionsTitre)} etiquette={texte(s.textes, "etiquette") || undefined} />}
+                />
+              </div>
+            ) : null;
+          }
+          case "marques":
+            return donnees.marques.length ? (
+              <div key={i} className="enveloppe ed-section">
+                <Marques
+                  marques={donnees.marques}
+                  gabarit="editorial"
+                  tete={<TeteSection titre={texte(s.textes, "titre", t.accueil.marquesTitre)} etiquette={texte(s.textes, "etiquette") || undefined} />}
+                />
+              </div>
+            ) : null;
         }
       })}
     </>
@@ -187,7 +222,7 @@ function Collections({ section, cadre }: { section: Extract<Section, { type: "ra
 function Selection({ section, cadre, produits }: { section: Extract<Section, { type: "selection" }>; cadre: Cadre; produits: Produit[] }) {
   const lien = section.lien ?? (section.rayon ? `/categorie/${section.rayon}` : "/catalogue");
   const unSeulRayon = new Set(produits.map((p) => p.categorie?.slug)).size <= 1;
-  const titre = texte(section.textes, "titre", t.accueil.selectionTitreEditorial);
+  const titre = texte(section.textes, "titre", section.tri === "nouveautes" ? t.accueil.selectionNouveautes : t.accueil.selectionTitreEditorial);
   const total = section.rayon
     ? descendance(cadre.categories, section.rayon).reduce((n, c) => n + (c.nb_produits ?? 0), 0)
     : cadre.boutique.nb_produits;

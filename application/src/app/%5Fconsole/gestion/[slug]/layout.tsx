@@ -134,9 +134,12 @@ export default async function BackofficeBoutique({
     ...(etatSav?.actif
       ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }]
       : []),
-    // Les pages de la boutique (À propos, questions…) : la direction.
+    // La page d'accueil et les pages de la boutique (À propos, questions…) : la direction.
     ...(DIRECTION.includes(boutique.role)
-      ? [{ href: `/gestion/${slug}/pages`, libelle: "Pages", icone: "note" as const }]
+      ? [
+          { href: `/gestion/${slug}/accueil`, libelle: "Page d'accueil", icone: "boutique" as const },
+          { href: `/gestion/${slug}/pages`, libelle: "Pages", icone: "note" as const },
+        ]
       : []),
     ...(boutique.role === "proprietaire" || boutique.role === "admin"
       ? [{ href: `/gestion/${slug}/equipe`, libelle: "Équipe", icone: "equipe" as const }]

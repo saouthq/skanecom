@@ -1640,3 +1640,162 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .jd-objectif-jauge { display: block; block-size: .375rem; border-radius: 999px; background: var(--ui-doux); overflow: hidden; }
 .jd-objectif-jauge span { display: block; block-size: 100%; border-radius: inherit; background: var(--ui-accent); }
 .jd-objectif-fixer { display: inline-block; margin-block-end: .5rem; }
+
+/* ==========================================================================
+   LA PAGE D'ACCUEIL DE LA BOUTIQUE (.ac-*) — le plan de l'accueil à gauche,
+   la bibliothèque à droite (sous le plan sur téléphone), « Enregistrer »
+   sous le pouce.
+   ========================================================================== */
+.ac-composeur { display: grid; gap: 1rem; }
+.ac-retour { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .625rem; margin: 0; font-size: .8125rem; color: var(--ui-vert); }
+.ac-retour > span { color: var(--ui-texte); }
+.ac-retour-erreur { color: var(--ui-rouge); }
+.ac-retour-erreur > span { color: var(--ui-rouge); font-weight: 500; }
+.ac-grille { display: grid; gap: 1rem; align-items: start; }
+@media (min-width: 1100px) {
+  .ac-grille { grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem); }
+  .ac-bibliotheque { position: sticky; inset-block-start: 1rem; max-block-size: calc(100dvh - 2rem); overflow: auto; overscroll-behavior: contain; }
+}
+
+/* ---- Le plan : une ligne par section ---- */
+/* La liste va d'un bord à l'autre de la carte : la section ouverte s'y détache. */
+.ac-liste { display: grid; margin: 0 -1.25rem -1.25rem; padding: 0; list-style: none; }
+@media (min-width: 700px) { .ac-liste { margin: 0 -1.5rem -1.25rem; } }
+.ac-section:last-child { border-end-start-radius: var(--ui-r-l); border-end-end-radius: var(--ui-r-l); }
+.ac-section { border-block-start: 1px solid var(--ui-bord-leger); transition: background-color .2s; }
+.ac-section:first-child { border-block-start: 0; }
+.ac-section[data-ouverte] { background: var(--ui-survol); }
+.ac-section-ligne {
+  display: grid; grid-template-columns: 1.25rem 4rem minmax(0, 1fr) auto; align-items: center; gap: .875rem;
+  padding: .875rem 1.25rem;
+}
+.ac-rang { font-size: .75rem; font-weight: 600; color: var(--ui-texte-3); text-align: center; font-variant-numeric: tabular-nums; }
+.ac-section-texte { display: grid; gap: .125rem; min-inline-size: 0; }
+.ac-section-texte > b { font-size: .875rem; font-weight: 600; }
+.ac-section-titre { font-size: .8125rem; color: var(--ui-texte-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-section-texte .aide { font-size: .75rem; }
+.ac-masquee {
+  display: inline-flex; align-items: center; gap: .3125rem; inline-size: fit-content; max-inline-size: 100%; margin-block-start: .25rem;
+  padding: .125rem .5rem; border-radius: 999px; font-size: .75rem; line-height: 1.4;
+  color: var(--ui-ambre); background: var(--ui-ambre-fond); box-shadow: inset 0 0 0 1px var(--ui-ambre-bord);
+}
+.ac-section[data-masquee] .ac-mini { opacity: .5; }
+.ac-gestes { display: flex; align-items: center; gap: .25rem; }
+.ac-geste-vide { inline-size: 32px; flex: none; }
+@media (pointer: coarse) { .ac-geste-vide { inline-size: 40px; } }
+.ac-retirer:hover:not(:disabled) { color: var(--ui-rouge); background: var(--ui-rouge-fond); }
+.ac-retirer:disabled { opacity: .35; cursor: not-allowed; }
+.ac-erreur { margin: 0 1.25rem .75rem calc(1.25rem + 1.25rem + 4rem + 1.75rem); font-size: .8125rem; color: var(--ui-rouge); }
+.ac-erreur:focus { outline: none; }
+
+/* ---- Les réglages d'une section, ouverts sous sa ligne ---- */
+.ac-reglages { padding: .25rem 1.25rem 1.25rem calc(1.25rem + 1.25rem + 4rem + 1.75rem); }
+.ac-champs { display: grid; gap: 1rem; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.ac-champs .champ { margin: 0; }
+.ac-champs textarea { resize: vertical; min-block-size: 3.25rem; }
+.ac-deux { display: grid; gap: 1rem; }
+@media (min-width: 640px) { .ac-deux { grid-template-columns: 1fr 1fr; } }
+.ac-photo {
+  display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 1rem; align-items: start;
+  padding: .875rem; border-radius: var(--ui-r); background: var(--ui-panneau); box-shadow: inset 0 0 0 1px var(--ui-bord-leger);
+}
+.ac-photo img { inline-size: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--ui-r-s); background: var(--ui-doux); }
+.ac-photo > div { display: grid; gap: .5rem; justify-items: start; }
+.ac-photo b { font-size: .8125rem; }
+.ac-photo .aide { margin: 0; }
+.ac-alignement { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin: 0; padding: 0; border: 0; font-size: .8125rem; }
+.ac-alignement legend { padding: 0; margin-block-end: .25rem; font-weight: 500; }
+.ac-alignement label { display: inline-flex; align-items: center; gap: .375rem; min-block-size: 32px; }
+
+@media (max-width: 719px) {
+  .ac-section-ligne { grid-template-columns: 3.25rem minmax(0, 1fr); padding: .875rem 1rem; row-gap: .625rem; }
+  .ac-rang { display: none; }
+  .ac-gestes { grid-column: 1 / -1; justify-content: flex-end; }
+  .ac-reglages, .ac-erreur { padding-inline: 1rem; margin-inline: 0; }
+  .ac-erreur { padding-inline: 1rem; }
+  .ac-photo { grid-template-columns: 5rem minmax(0, 1fr); }
+}
+
+/* ---- Les miniatures : la section dessinée en blocs ---- */
+.ac-mini {
+  position: relative; display: grid; gap: 3px; inline-size: 4rem; aspect-ratio: 16 / 11; padding: 5px; flex: none;
+  border-radius: var(--ui-r-s); background: var(--ui-panneau); box-shadow: inset 0 0 0 1px var(--ui-bord);
+}
+.ac-mini i { display: block; border-radius: 2px; background: var(--ui-bord); }
+@media (max-width: 719px) { .ac-mini { inline-size: 3.25rem; } }
+/* Ouverture : l'image pleine, un titre et un bouton posés dessus. */
+.ac-mini[data-type=hero] { background: color-mix(in srgb, var(--ui-accent) 16%, var(--ui-panneau)); grid-template-rows: 1fr 4px 6px; align-content: end; justify-items: start; }
+.ac-mini[data-type=hero] i:nth-child(1) { background: transparent; }
+.ac-mini[data-type=hero] i:nth-child(2) { inline-size: 70%; block-size: 4px; background: var(--ui-texte-2); }
+.ac-mini[data-type=hero] i:nth-child(3) { inline-size: 32%; block-size: 6px; background: var(--ui-accent); }
+/* Rayons : trois grandes vignettes. */
+.ac-mini[data-type=rayons] { grid-template-columns: repeat(3, 1fr); }
+/* Sélection : quatre cartes, leur prix en dessous. */
+.ac-mini[data-type=selection] { grid-template-columns: repeat(4, 1fr); align-content: center; }
+.ac-mini[data-type=selection] i { aspect-ratio: 3 / 4; box-shadow: 0 4px 0 -1px var(--ui-bord-fort); }
+/* Récit : l'image à gauche, trois lignes à droite. */
+.ac-mini[data-type=editorial] { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); column-gap: 5px; }
+.ac-mini[data-type=editorial] i:nth-child(1) { grid-row: 1 / -1; background: color-mix(in srgb, var(--ui-accent) 22%, var(--ui-bord)); }
+.ac-mini[data-type=editorial] i:not(:first-child) { block-size: 3px; align-self: center; }
+.ac-mini[data-type=editorial] i:nth-child(4) { inline-size: 60%; }
+/* Engagements : quatre pictogrammes en rang. */
+.ac-mini[data-type=engagements] { grid-template-columns: repeat(4, 1fr); align-items: center; justify-items: center; }
+.ac-mini[data-type=engagements] i { inline-size: 9px; block-size: 9px; border-radius: 50%; background: var(--ui-texte-3); }
+/* Texte : trois lignes centrées. */
+.ac-mini[data-type=texte] { align-content: center; justify-items: center; gap: 4px; }
+.ac-mini[data-type=texte] i { block-size: 3px; inline-size: 80%; }
+.ac-mini[data-type=texte] i:first-child { block-size: 5px; inline-size: 55%; background: var(--ui-texte-2); }
+.ac-mini[data-type=texte] i:last-child { inline-size: 65%; }
+/* Avis : trois citations, une rangée d'étoiles sur chacune. */
+.ac-mini[data-type=avis] { grid-template-columns: repeat(3, 1fr); }
+.ac-mini[data-type=avis] i { background: var(--ui-doux); box-shadow: inset 0 0 0 1px var(--ui-bord); position: relative; }
+.ac-mini[data-type=avis] i::before { content: ""; position: absolute; inset: 3px 3px auto; block-size: 3px; border-radius: 2px; background: #D9A21B; }
+.ac-mini[data-type=avis] i::after { content: ""; position: absolute; inset: 9px 3px auto; block-size: 2px; border-radius: 2px; background: var(--ui-bord-fort); box-shadow: 0 4px 0 var(--ui-bord-fort); }
+/* Questions : des lignes, chacune avec son « + ». */
+.ac-mini[data-type=questions] { align-content: space-evenly; }
+.ac-mini[data-type=questions] i { block-size: 4px; position: relative; background: var(--ui-bord); margin-inline-end: 8px; }
+.ac-mini[data-type=questions] i::after { content: "+"; position: absolute; inset-inline-end: -8px; inset-block-start: 50%; transform: translateY(-52%); font: 700 8px/1 var(--ui-police, system-ui); color: var(--ui-texte-3); }
+/* Marques : des noms en damier. */
+.ac-mini[data-type=marques] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.ac-mini[data-type=marques] i { background: transparent; box-shadow: inset 0 0 0 1px var(--ui-bord); position: relative; }
+.ac-mini[data-type=marques] i::after { content: ""; position: absolute; inset: 40% 22%; border-radius: 1px; background: var(--ui-texte-3); }
+
+/* ---- La bibliothèque ---- */
+.ac-modeles { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.ac-modele {
+  display: grid; grid-template-columns: 4rem minmax(0, 1fr) auto; align-items: center; gap: .875rem; inline-size: 100%;
+  padding: .75rem; border: 0; border-radius: var(--ui-r); text-align: start; color: inherit; font: inherit; cursor: pointer;
+  background: var(--ui-panneau); box-shadow: inset 0 0 0 1px var(--ui-bord);
+  transition: box-shadow .15s, background-color .15s, transform .15s var(--ui-courbe, ease);
+}
+.ac-modele:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--ui-bord-fort), var(--ui-ombre-s); }
+.ac-modele:active:not(:disabled) { transform: scale(.99); }
+.ac-modele:disabled { cursor: not-allowed; background: var(--ui-survol); }
+.ac-modele:disabled .ac-mini, .ac-modele:disabled .ac-modele-plus { opacity: .45; }
+.ac-modele-texte { display: grid; gap: .1875rem; min-inline-size: 0; }
+.ac-modele-texte b { font-size: .875rem; font-weight: 600; }
+.ac-modele-texte .aide { font-size: .75rem; line-height: 1.45; }
+.ac-modele-plus {
+  display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%;
+  color: var(--ui-texte-2); box-shadow: inset 0 0 0 1px var(--ui-bord);
+}
+.ac-modele:hover:not(:disabled) .ac-modele-plus { color: #fff; background: var(--ui-action); box-shadow: none; }
+
+/* ---- Le pied : enregistrer ---- */
+.ac-pied {
+  position: relative; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem;
+  padding: .75rem .875rem .75rem 1.25rem; border-radius: var(--ui-r-l);
+  background: color-mix(in srgb, var(--ui-panneau) 92%, transparent); box-shadow: var(--ui-ombre-l);
+  backdrop-filter: saturate(1.6) blur(12px); -webkit-backdrop-filter: saturate(1.6) blur(12px);
+}
+.ac-pied-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ac-lecture { margin: 0; }
+.ac-gabarit { justify-self: start; }
+.ac-pied[data-actif] { position: sticky; inset-block-end: 1rem; }
+.ac-pied:not([data-actif]) { box-shadow: none; background: transparent; border-color: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; padding-inline: .25rem; }
+@media screen and (max-width: 1023px) {
+  /* Au-dessus de la barre d'onglets du téléphone. */
+  .ac-pied[data-actif] { inset-block-end: calc(4.5rem + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) { .ac-modele, .ac-section { transition: none; } }

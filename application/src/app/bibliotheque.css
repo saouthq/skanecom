@@ -1,0 +1,133 @@
+/* ==========================================================================
+   LA BIBLIOTHÈQUE DE SECTIONS DE L'ACCUEIL (migration 59) — avis, questions,
+   marques. Une structure commune (.bi-*), que chaque gabarit habille : le
+   magazine (éditorial) en grandes citations et noms de marque en capitales
+   d'imprimerie ; l'atelier (technique) en cartes nettes et serrées.
+   ========================================================================== */
+
+/* ---- Avis : la note de la boutique, puis les citations ---- */
+.bi-avis-tete {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: 1.25rem 2rem; margin-block-end: 2rem;
+}
+.bi-avis-tete > .ed-section-tete,
+.bi-avis-tete > .te-section-tete { margin-block-end: 0; flex: 1 1 18rem; }
+.bi-avis-note { display: flex; align-items: center; gap: .875rem; margin: 0; }
+.bi-avis-note > b {
+  font-family: var(--theme-font-display); font-weight: 400; font-size: clamp(2.5rem, 5vw, 3.5rem);
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.bi-avis-note > span { display: grid; gap: .3125rem; }
+.bi-avis-compte { font-size: .875rem; color: var(--theme-encre-doux); }
+
+.bi-avis-liste { display: grid; gap: 1.25rem; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 700px) { .bi-avis-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) {
+  .bi-avis-liste[data-colonnes="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .bi-avis-liste[data-colonnes="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+/* Entre les deux, trois citations : la troisième sur toute la largeur. */
+@media (min-width: 700px) and (max-width: 1099px) {
+  .bi-avis-liste > li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+.bi-citation {
+  display: flex; flex-direction: column; gap: 1rem; min-inline-size: 0;
+  padding: 1.75rem; background: var(--theme-surface);
+  border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+.bi-citation blockquote { margin: 0; }
+.bi-citation blockquote p {
+  margin: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; overflow: hidden;
+  font-size: 1rem; line-height: 1.6; overflow-wrap: anywhere;
+}
+.bi-citation-auteur { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .625rem; margin: auto 0 0; font-size: .875rem; }
+.bi-citation-auteur > span { font-size: .8125rem; color: var(--theme-succes); }
+.bi-citation-produit {
+  display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); align-items: center; gap: .875rem;
+  padding-block-start: 1rem; border-block-start: 1px solid var(--theme-filet);
+  color: inherit; text-decoration: none;
+}
+.bi-citation-produit > span { display: grid; gap: .125rem; min-inline-size: 0; }
+.bi-citation-nom { font-size: .875rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bi-citation-produit .legende { font-size: .75rem; }
+@media (hover: hover) { .bi-citation-produit:hover .bi-citation-nom { text-decoration: underline; text-underline-offset: .2em; } }
+
+/* Le magazine : la citation en caractères de titre, sans cadre, sur l'aplat. */
+html[data-gabarit=editorial] .bi-citation { background: var(--theme-surface-2); border-color: transparent; padding: 2rem 1.75rem 1.5rem; }
+html[data-gabarit=editorial] .bi-citation blockquote p {
+  font-family: var(--theme-font-display); font-size: clamp(1.1875rem, 1.6vw, 1.375rem); line-height: 1.4; letter-spacing: -.005em;
+}
+html[data-gabarit=editorial] .bi-citation blockquote p::before { content: "« "; }
+html[data-gabarit=editorial] .bi-citation blockquote p::after { content: " »"; }
+html[data-gabarit=editorial] .bi-citation-auteur > span { color: var(--theme-encre-doux); }
+html[data-gabarit=editorial] .bi-citation-produit { border-block-start-color: var(--theme-filet-fort); }
+
+/* L'atelier : le trait de la tête passe sous le titre ET la note ; la carte
+   du gabarit, le texte courant, les étoiles en jaune. */
+html[data-gabarit=technique] .bi-avis-tete {
+  align-items: center; margin-block-end: 1.25rem; padding-block-end: .75rem;
+  border-block-end: 1px solid color-mix(in srgb, var(--theme-encre) 70%, transparent);
+}
+html[data-gabarit=technique] .bi-avis-tete > .te-section-tete { border-block-end: 0; padding-block-end: 0; }
+html[data-gabarit=technique] .bi-avis-note > b { font-size: clamp(2rem, 4vw, 2.75rem); }
+html[data-gabarit=technique] .bi-citation { padding: 1.25rem; gap: .75rem; }
+html[data-gabarit=technique] .bi-avis-note > b { font-weight: 800; font-stretch: 78%; }
+
+@media (max-width: 699px) {
+  html[data-gabarit] .bi-avis-liste.rail-mobile { grid-auto-columns: 86%; align-items: stretch; }
+  .bi-avis-tete { margin-block-end: 1.5rem; }
+  .bi-citation { padding: 1.5rem 1.25rem 1.25rem; }
+}
+
+/* ---- Questions : la tête et le lien à côté, l'accordéon à droite ---- */
+.bi-questions { display: grid; gap: 1.5rem; }
+.bi-questions-tete { display: grid; gap: 1rem; align-content: start; justify-items: start; }
+.bi-questions-tete > .ed-section-tete { margin-block-end: 0; inline-size: 100%; }
+.bi-questions-tete > .te-section-tete { inline-size: 100%; margin-block-end: .25rem; }
+.bi-lien { display: inline-flex; align-items: center; gap: .375rem; }
+/* Le magazine : la tête et son lien à gauche, l'accordéon à droite. */
+@media (min-width: 900px) {
+  html[data-gabarit=editorial] .bi-questions { grid-template-columns: minmax(15rem, 1fr) minmax(0, 1.7fr); gap: 4rem; align-items: start; }
+  html[data-gabarit=editorial] .bi-questions-tete { position: sticky; inset-block-start: 7rem; }
+}
+.bi-questions-plis .pli > summary { font-size: 1rem; }
+/* L'atelier : la tête sur toute la largeur (son trait, son « Les 7
+   questions » à droite), l'accordéon dessous, sans second trait. */
+html[data-gabarit=technique] .bi-questions { gap: 0; }
+html[data-gabarit=technique] .bi-questions-plis { border-block-start: 0; }
+html[data-gabarit=technique] .bi-questions-plis .pli > summary { font-weight: 600; }
+
+/* ---- Marques : chaque nom vers ses pièces ---- */
+.bi-marques-liste { display: grid; margin: 0; padding: 0; list-style: none; }
+.bi-marque {
+  display: grid; justify-items: center; align-content: center; gap: .375rem; block-size: 100%;
+  padding: 1.75rem 1rem; text-align: center; color: inherit; text-decoration: none;
+  transition: background-color .2s var(--theme-courbe);
+}
+.bi-marque-nom { font-family: var(--theme-font-display); line-height: 1.05; overflow-wrap: anywhere; }
+.bi-marque-compte { font-size: .8125rem; color: var(--theme-encre-doux); }
+
+html[data-gabarit=editorial] .bi-marques-liste {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  border-block-start: 1px solid var(--theme-filet); border-inline-start: 1px solid var(--theme-filet);
+}
+html[data-gabarit=editorial] .bi-marques-liste > li { border-block-end: 1px solid var(--theme-filet); border-inline-end: 1px solid var(--theme-filet); }
+html[data-gabarit=editorial] .bi-marque { padding-block: 2.25rem; }
+html[data-gabarit=editorial] .bi-marque-nom { font-size: clamp(1.5rem, 2.4vw, 2rem); letter-spacing: -.01em; }
+@media (hover: hover) { html[data-gabarit=editorial] .bi-marque:hover { background: var(--theme-surface-2); } }
+
+html[data-gabarit=technique] .bi-marques-liste { grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: .75rem; }
+html[data-gabarit=technique] .bi-marque {
+  padding: 1.25rem 1rem; background: var(--theme-surface);
+  border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+html[data-gabarit=technique] .bi-marque-nom { font-size: 1.375rem; font-weight: 800; font-stretch: 78%; text-transform: uppercase; letter-spacing: .01em; }
+@media (hover: hover) { html[data-gabarit=technique] .bi-marque:hover { border-color: var(--theme-encre); } }
+
+@media (max-width: 699px) {
+  html[data-gabarit=editorial] .bi-marques-liste,
+  html[data-gabarit=technique] .bi-marques-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Un nombre impair : la dernière marque tient la rangée. */
+  .bi-marques-liste > li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  html[data-gabarit=editorial] .bi-marque { padding-block: 1.5rem; }
+}

@@ -3,7 +3,7 @@ import { Gabarit } from "@/components/Gabarit";
 import { AccueilEditorial } from "@/components/AccueilEditorial";
 import { AccueilTechnique } from "@/components/AccueilTechnique";
 import { cadre as chargeCadre } from "@/lib/boutique";
-import { listeProduits, type Produit } from "@/lib/catalogue";
+import { donneesAccueil } from "@/lib/accueil";
 import { texte } from "@/lib/theme";
 
 /* ============================================================================
@@ -13,7 +13,8 @@ import { texte } from "@/lib/theme";
    marque n'est écrit ici : il vient du thème.
 
    Chaque section « sélection » a sa propre liste (un rayon, ou tout le
-   catalogue), lue en base en parallèle.
+   catalogue, dans l'ordre choisi) ; les avis, les questions et les marques
+   (la bibliothèque, migration 59) sont lus avec elles, en parallèle.
    ========================================================================== */
 
 export const revalidate = 300;
@@ -35,23 +36,16 @@ export default async function Accueil({ params }: Params) {
   const { boutique } = await params;
   const cadre = await chargeCadre(boutique);
 
-  const selections = new Map<number, Produit[]>();
-  await Promise.all(
-    cadre.theme.sections.map(async (s, i) => {
-      if (s.type !== "selection") return;
-      const liste = await listeProduits(cadre.boutique.id, s.rayon ? { rayon: s.rayon } : {}, "selection", 1, s.nombre ?? 8);
-      selections.set(i, liste.produits);
-    }),
-  );
+  const donnees = await donneesAccueil(cadre);
 
   return (
     <Gabarit className="flex-1">
       {cadre.theme.code === "technique" ? (
         <div className="enveloppe">
-          <AccueilTechnique cadre={cadre} selections={selections} />
+          <AccueilTechnique cadre={cadre} donnees={donnees} />
         </div>
       ) : (
-        <AccueilEditorial cadre={cadre} selections={selections} />
+        <AccueilEditorial cadre={cadre} donnees={donnees} />
       )}
     </Gabarit>
   );

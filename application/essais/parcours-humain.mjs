@@ -61,6 +61,27 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     verifie((await ctx.cookies()).every((c) => !/stat|visit|audience|_ga|_fbp/i.test(c.name)), "aucun témoin de mesure posé dans le navigateur");
   });
 
+  await etape("l'accueil : ce que disent les clientes, et leurs questions", async () => {
+    // Selma montre ses avis et ses questions fréquentes (supabase/seed-accueil.sql).
+    await page.goto(S + "/", { waitUntil: "networkidle" });
+    const avis = page.locator(".bi-avis");
+    await avis.scrollIntoViewIfNeeded();
+    await pause(500);
+    const citations = await avis.locator(".bi-citation").count();
+    verifie(citations >= 3 && citations % 3 === 0, `des citations d'acheteuses vérifiées, en rangées pleines (${citations})`);
+    verifie(/^\d,\d$/.test((await avis.locator(".bi-avis-note > b").innerText()).trim()), "avec la note de la boutique");
+    await capture(page, "selma-accueil-avis");
+    const pli = page.locator(".bi-questions .pli").first();
+    await pli.locator("summary").focus();
+    await page.keyboard.press("Enter");
+    await pause(200);
+    verifie(await pli.evaluate((d) => d.open), "au clavier, Entrée ouvre une question de l'accueil");
+    verifie(await page.locator(".bi-questions a[href='/questions-frequentes']").count() === 1, "et un lien mène à toutes les questions");
+    await clic(page, avis.locator(".bi-citation-produit").first());
+    await page.waitForURL(/\/produit\//);
+    verifie(/\/produit\//.test(page.url()), "la pièce citée mène à sa fiche");
+  });
+
   await etape("collection « Robes » depuis l'accueil", async () => {
     await page.goto(S + "/", { waitUntil: "networkidle" });
     await page.evaluate(() => window.scrollTo(0, 0)); await pause(300);
@@ -538,6 +559,18 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
     await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 100)); } });
     await page.waitForLoadState("networkidle");
     await capture(page, "quinca-accueil-complete", true);
+  });
+
+  await etape("les marques du catalogue, chacune vers ses pièces", async () => {
+    // La quincaillerie montre ses marques (supabase/seed-accueil.sql).
+    const marques = page.locator(".bi-marque");
+    verifie(await marques.count() >= 2, `les marques de l'accueil (${(await page.locator(".bi-marque-nom").allInnerTexts()).join(", ")})`);
+    const nom = (await page.locator(".bi-marque-nom").first().innerText()).trim();
+    await clic(page, marques.first());
+    await page.waitForURL(/\/recherche\?q=/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator("main").innerText()).toLowerCase().includes(nom.toLowerCase()), `un clic : les pièces de la marque (${nom})`);
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
   });
 
   await etape("recherche d'une référence", async () => {

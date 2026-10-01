@@ -60,10 +60,17 @@ export type ImageSection = { chemin: string; portrait?: string; detouree?: boole
 export type Section =
   | { type: "hero"; textes: TextesSection; image?: ImageSection; lien?: string; alignement?: "debut" | "fin" }
   | { type: "rayons"; textes: TextesSection }
-  | { type: "selection"; textes: TextesSection; nombre?: number; rayon?: string; lien?: string }
+  | { type: "selection"; textes: TextesSection; nombre?: number; rayon?: string; lien?: string; tri?: "selection" | "nouveautes" }
   | { type: "editorial"; textes: TextesSection; image?: ImageSection; lien?: string }
   | { type: "engagements"; textes: TextesSection }
-  | { type: "texte"; textes: TextesSection };
+  | { type: "texte"; textes: TextesSection }
+  // La bibliothèque commune aux gabarits (migration 59) : chacune tirée de ce
+  // que la boutique a déjà — ses avis, une page de questions, ses marques.
+  | { type: "avis"; textes: TextesSection; nombre?: number }
+  | { type: "questions"; textes: TextesSection; page?: string; nombre?: number }
+  | { type: "marques"; textes: TextesSection };
+
+export type TypeSection = Section["type"];
 
 type Angles = { net: string; doux: string; carte: string; bloc: string; arc: string };
 
@@ -179,7 +186,22 @@ function sectionsSures(valeur: unknown, defaut: Section[]): Section[] {
           nombre: typeof s.nombre === "number" ? Math.min(24, Math.max(1, Math.round(s.nombre))) : 8,
           ...(typeof s.rayon === "string" && SLUG.test(s.rayon) ? { rayon: s.rayon } : {}),
           ...(lien ? { lien } : {}),
+          ...(s.tri === "nouveautes" ? { tri: "nouveautes" as const } : {}),
         });
+        break;
+      case "avis":
+        sections.push({ type: "avis", textes, nombre: typeof s.nombre === "number" ? Math.min(12, Math.max(1, Math.round(s.nombre))) : 6 });
+        break;
+      case "questions":
+        sections.push({
+          type: "questions",
+          textes,
+          nombre: typeof s.nombre === "number" ? Math.min(12, Math.max(1, Math.round(s.nombre))) : 5,
+          ...(typeof s.page === "string" && SLUG.test(s.page) && s.page.length <= 60 ? { page: s.page } : {}),
+        });
+        break;
+      case "marques":
+        sections.push({ type: "marques", textes });
         break;
       // « comment_ca_marche » : l'ancien nom des engagements (paiement à la
       // livraison, livraison, retours).
