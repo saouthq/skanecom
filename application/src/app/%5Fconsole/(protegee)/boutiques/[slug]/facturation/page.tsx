@@ -7,17 +7,18 @@ import { exigeAdmin } from "@/lib/console/session";
 import { boutiqueDe } from "@/lib/console/equipe-serveur";
 import { dateJournal, deNom } from "@/lib/console/libelles";
 import {
-  accueilSkanFact, chercherClients, configSkanFact, jourLisible, joursDepuis, lienEcran, montant, relire,
+  accueilSkanFact, chercherClients, configSkanFact, contratsDuClient, jourLisible, joursDepuis, lienEcran, montant, relire,
   type ClientSkanFact, type FactureAPayer, type Lecture, type SituationSkanFact,
 } from "@/lib/console/skanfact";
 import { Icone, type NomIcone } from "@/components/console/Icone";
+import { AbonnementSkanFact, type ValeursAbonnement } from "@/components/console/AbonnementSkanFact";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   return { title: `Facturation · ${(await params).slug}` };
 }
 
 type Facturation = {
-  lien: { client: string; raison_sociale: string; identifiant: string | null; lie_le: string; lie_par: string | null } | null;
+  lien: { client: string; raison_sociale: string; identifiant: string | null; lie_le: string; lie_par: string | null; contrat: string | null } | null;
   situation: SituationSkanFact | null;
   factures: FactureAPayer[] | null;
   lue_le: string | null;
@@ -32,7 +33,7 @@ const EVENEMENTS: Record<string, string> = {
 };
 
 const REGLES: { icone: NomIcone; texte: string }[] = [
-  { icone: "oeil", texte: "La console lit, elle n'écrit rien : émettre, signer, envoyer à la TTN et encaisser se font dans SkanFact." },
+  { icone: "oeil", texte: "La console lit les factures et tient l'abonnement ; émettre à la main, signer, envoyer à la TTN et encaisser se font dans SkanFact." },
   { icone: "cloche", texte: "Un règlement ou une facture saisis dans SkanFact arrivent ici par son avis, sans attendre." },
   { icone: "bouclier", texte: "Un lien vers SkanFact ne donne aucun droit : chacun s'y connecte avec son propre compte." },
 ];
@@ -44,7 +45,7 @@ const REGLES: { icone: NomIcone; texte: string }[] = [
    lecture, avec son heure. */
 export default async function PageFacturation({ params, searchParams }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ erreur?: string; ok?: string; identifiant?: string }>;
+  searchParams: Promise<{ erreur?: string; ok?: string; identifiant?: string } & ValeursAbonnement>;
 }) {
   await exigeAdmin();
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
@@ -175,7 +176,7 @@ export default async function PageFacturation({ params, searchParams }: {
 
   /* ------------------------------------------------ reliée : la lecture */
   const lien = f.lien;
-  const lecture = await relire(config, boutique.id, lien.client);
+  const [lecture, contrats] = await Promise.all([relire(config, boutique.id, lien.client), contratsDuClient(config, lien.client)]);
   const situation = lecture.ok ? lecture.donnees.situation : f.situation;
   const factures = lecture.ok ? lecture.donnees.factures : (f.factures ?? []);
   const instant = new Date();
@@ -296,6 +297,9 @@ export default async function PageFacturation({ params, searchParams }: {
               </details>
             </div>
           </section>
+          <AbonnementSkanFact base={base} config={config} nom={boutique.nom} suivi={lien.contrat} contrats={contrats} maintenant={instant}
+            valeurs={{ objet: messages.objet, designation: messages.designation, prix: messages.prix, tva: messages.tva, periode: messages.periode,
+              prochaine: messages.prochaine, emettre_seul: messages.emettre_seul }} />
           <Regles config={config} hote={hote} avis={f.dernier_avis} />
         </div>
       </div>

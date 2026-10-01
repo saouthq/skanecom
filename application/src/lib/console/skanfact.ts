@@ -60,9 +60,36 @@ export type SituationSkanFact = {
   dernierReglement: { date: string; montant: string; devise: string; facture: string | null } | null;
 };
 
+/** S8 — un contrat d'abonnement (« Facturation récurrente »), les prix HT en texte. */
+export type ContratSkanFact = {
+  id: string;
+  client: string | null;
+  objet: string;
+  periode: "mois" | "trimestre" | "annee";
+  jour: number;
+  prochaine: string;
+  derniere: string | null;
+  actif: boolean;
+  emettreSeul: boolean;
+  refus: { le: string; echeance: string; motif: string } | null;
+  lignes: { designation: string; quantite: string; prixUnitaire: string; tauxTva: string }[];
+  ecran: string | null;
+};
+
+export type CorpsContrat = {
+  client: string;
+  objet: string;
+  periode: ContratSkanFact["periode"];
+  prochaine: string;
+  lignes: { designation: string; quantite: string; prixUnitaire: string; tauxTva: string }[];
+  emettreSeul: boolean;
+};
+
 export type Lecture<T> = { ok: true; donnees: T } | { ok: false; statut: number; raison: string };
 
 const DELAI_MS = 6000;
+// Une écriture attend plus longtemps : un contrat créé sans réponse se retrouve dans la liste du client.
+const DELAI_ECRITURE_MS = 12000;
 const RAISONS: Record<number, string> = {
   0: "SkanFact ne répond pas",
   401: "SkanFact refuse la clé de la console (révoquée, ou mal posée dans SKANFACT_CLE)",
@@ -71,19 +98,34 @@ const RAISONS: Record<number, string> = {
   429: "Trop d'appels à SkanFact : réessayez dans une minute",
 };
 
-async function appel<T>(c: ConfigSkanFact, chemin: string): Promise<Lecture<T>> {
+type Ecriture = { methode: "POST" | "PUT"; corps?: unknown; refus: string };
+
+async function appel<T>(c: ConfigSkanFact, chemin: string, ecriture?: Ecriture): Promise<Lecture<T>> {
   let r: Response;
   try {
     r = await fetch(`${c.url}/v1/entreprises/${encodeURIComponent(c.entreprise)}${chemin}`, {
-      headers: { authorization: `Bearer ${c.cle}`, accept: "application/json" },
-      signal: AbortSignal.timeout(DELAI_MS),
+      method: ecriture?.methode ?? "GET",
+      headers: {
+        authorization: `Bearer ${c.cle}`, accept: "application/json",
+        ...(ecriture?.corps !== undefined ? { "content-type": "application/json" } : {}),
+      },
+      body: ecriture?.corps !== undefined ? JSON.stringify(ecriture.corps) : undefined,
+      signal: AbortSignal.timeout(ecriture ? DELAI_ECRITURE_MS : DELAI_MS),
       cache: "no-store",
     });
   } catch {
     return { ok: false, statut: 0, raison: RAISONS[0] };
   }
   if (!r.ok) {
-    const raison = RAISONS[r.status] ?? (r.status >= 500 ? `SkanFact ne répond pas pour l'instant (erreur ${r.status})` : `SkanFact a refusé la lecture (erreur ${r.status})`);
+    let champ: string | null = null;
+    try {
+      champ = ((await r.json()) as { champ?: string }).champ ?? null;
+    } catch {
+      // pas de corps lisible
+    }
+    const raison = r.status === 403 && ecriture ? ecriture.refus
+      : r.status === 400 && champ ? `SkanFact refuse le champ « ${champ} »`
+      : RAISONS[r.status] ?? (r.status >= 500 ? `SkanFact ne répond pas pour l'instant (erreur ${r.status})` : `SkanFact a refusé (erreur ${r.status})`);
     return { ok: false, statut: r.status, raison };
   }
   try {
@@ -121,6 +163,39 @@ export async function facturesAPayer(c: ConfigSkanFact, client: string): Promise
   }
   return { ok: true, donnees: toutes };
 }
+
+const REFUS_CONTRAT = "La clé de la console n'a pas le droit de créer ou de changer un contrat dans SkanFact "
+  + "(geste ventes.contrat.modifier ; « Émise seule » demande une clé créée par le propriétaire ou un administrateur)";
+
+/** S8 — les contrats d'abonnement d'un client. */
+export async function contratsDuClient(c: ConfigSkanFact, client: string): Promise<Lecture<ContratSkanFact[]>> {
+  const r = await appel<{ contrats: ContratSkanFact[] }>(c, `/contrats?client=${encodeURIComponent(client)}`);
+  return r.ok ? { ok: true, donnees: r.donnees.contrats ?? [] } : r;
+}
+
+/** S8 — créer le contrat d'abonnement d'un client. */
+export function creerContrat(c: ConfigSkanFact, corps: CorpsContrat): Promise<Lecture<ContratSkanFact>> {
+  return appel<ContratSkanFact>(c, "/contrats", { methode: "POST", corps, refus: REFUS_CONTRAT });
+}
+
+/** S8 — suspendre ou reprendre un contrat (repris, il ne facture pas les échéances passées). */
+export function changerContrat(c: ConfigSkanFact, contrat: string, geste: "suspendre" | "reprendre"): Promise<Lecture<ContratSkanFact>> {
+  return appel<ContratSkanFact>(c, `/contrats/${encodeURIComponent(contrat)}/${geste}`, { methode: "POST", refus: REFUS_CONTRAT });
+}
+
+export const PERIODES: Record<ContratSkanFact["periode"], string> = { mois: "chaque mois", trimestre: "chaque trimestre", annee: "chaque année" };
+
+/** Un prix HT de SkanFact (jusqu'à six décimales) au millime : « 75.5 » → « 75.500 » ; au-delà du
+ *  millime, seuls des zéros s'ôtent (« 210.084034 » reste exact). */
+export function prixHT(texte: string): string {
+  const m = /^(\d+)(?:\.(\d*))?$/.exec(texte.trim());
+  if (!m) return texte;
+  const decimales = (m[2] ?? "").replace(/0+$/, "");
+  return `${m[1]}.${decimales.length > 3 ? decimales : decimales.padEnd(3, "0")}`;
+}
+
+/** L'objet d'un contrat, ses marques lisibles : « {mois} » → « ‹mois› ». */
+export const objetLisible = (objet: string) => objet.replaceAll("{mois}", "‹mois›").replaceAll("{annee}", "‹année›");
 
 /** Ce que la console garde d'une facture : de quoi la montrer, rien de plus. */
 const gardee = (f: FactureAPayer): FactureAPayer => ({

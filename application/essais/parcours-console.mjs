@@ -1176,8 +1176,40 @@ await etape("facturation : une facture émise dans SkanFact arrive par son avis 
   verifie(texte.includes(emise.numero) && /89,000\s*DT/.test(texte) && /dans 15 j/.test(texte), `la page montre ${emise.numero} : 89,000 DT, échéance dans 15 j`);
 });
 
+await etape("facturation : l'abonnement — le contrat déjà fait à l'écran, puis un contrat « Émise seule »", async () => {
+  const abonnement = page.locator("section:has(#t-fa-abonnement)");
+  verifie((await abonnement.innerText()).includes("Ce client a déjà un contrat dans SkanFact"), "le contrat fait à l'écran de SkanFact est proposé");
+  await clic(page, abonnement.getByRole("button", { name: "C'est son abonnement" }));
+  await page.getByText("La console suit maintenant le contrat", { exact: false }).waitFor();
+  verifie(/Brouillon : à chaque échéance/.test(await abonnement.innerText()), "un contrat sans « Émise seule » : la console dit qu'une personne émet ses factures");
+  await abonnement.locator(".fa-delier > summary").click();
+  await clic(page, abonnement.getByRole("button", { name: "Ne plus suivre ce contrat" }));
+  await page.getByText("La console ne suit plus ce contrat", { exact: false }).waitFor();
+  await clic(page, abonnement.locator(".fa-creer > summary"));
+  await clic(page, page.locator("#fa-prix"));
+  await tape(page, "89");
+  verifie(await page.locator("input[name=emettre_seul]").isChecked(), "« Émise seule » est proposé");
+  await clic(page, page.getByRole("button", { name: "Créer l'abonnement dans SkanFact" }));
+  await page.getByText("Abonnement créé dans SkanFact", { exact: false }).waitFor();
+  verifie(/89,000\s*DT HT · TVA 19 %/.test(await abonnement.innerText()), "le contrat créé : 89,000 DT HT, TVA 19 %");
+  const boutiqueId = await page.locator("form[action$='/statut'] input[name=boutique_id]").inputValue();
+  const lien = (await (await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/console_facturation`, {
+    method: "POST",
+    headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({ p_boutique_id: boutiqueId }),
+  })).json()).lien;
+  const e = await gesteSkanFact("echoir", { contrat: lien.contrat });
+  verifie(e.emise && e.netAPayer === "105.910" && e.avis?.[0]?.statut === 200, `l'échéance passe : SkanFact émet ${e.numero} (${e.netAPayer} DT TTC), l'avis est reçu`);
+  await page.reload({ waitUntil: "networkidle" });
+  verifie((await page.locator("body").innerText()).includes(e.numero), `la facture ${e.numero} se lit dans l'onglet`);
+  await capture(page, "console-facturation-abonnement");
+  await clic(page, abonnement.getByRole("button", { name: "Suspendre l'abonnement" }));
+  await page.getByText("Abonnement suspendu", { exact: false }).waitFor();
+  verifie((await gesteSkanFact("echoir", { contrat: lien.contrat })).emise === false, "suspendu : SkanFact n'émet plus rien");
+});
+
 await etape("facturation : délier, et le journal le garde", async () => {
-  await clic(page, page.locator(".fa-delier > summary"));
+  await clic(page, page.locator("section:has(#t-fa-client) .fa-delier > summary"));
   await page.getByRole("button", { name: "Délier ce client" }).waitFor();
   await clic(page, page.getByRole("button", { name: "Délier ce client" }));
   await page.getByText("n'est plus reliée à SkanFact.", { exact: false }).waitFor();

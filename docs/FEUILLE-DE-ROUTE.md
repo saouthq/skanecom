@@ -107,7 +107,7 @@ Ce qui ne se décide pas sans lui, rappelé à chaque point d'étape :
 | SMS | Le fournisseur (prix par SMS, envoi vers les numéros tunisiens) |
 | E-mails | Resend ou Brevo, et un domaine d'envoi vérifié (`COURRIELS_ENVOI`) |
 | Transporteurs | Lesquels brancher en premier (API) |
-| Facturation des clients | Par SkanFact (D20), **branché le 01/10** (`cadrage/06-facturation-skanfact.md` § 4 bis) : poser les secrets `SKANFACT_URL`, `SKANFACT_ENTREPRISE`, `SKANFACT_CLE` (geste `ventes.pieces.voir`), `SKANFACT_AVIS_SECRET` ; s'abonner aux avis dans SkanFact ; un contrat « Émise seule » par boutique ; trancher le seuil du retard (15 jours) et Maymar |
+| Facturation des clients | Par SkanFact (D20), **branché le 01/10** (`cadrage/06-facturation-skanfact.md` § 4 bis) : poser les secrets `SKANFACT_URL`, `SKANFACT_ENTREPRISE`, `SKANFACT_CLE` (gestes `ventes.pieces.voir` et `ventes.contrat.modifier`, clé créée par le propriétaire), `SKANFACT_AVIS_SECRET` ; s'abonner aux avis dans SkanFact ; le prix de l'abonnement de chaque boutique (le contrat se crée depuis la console) ; trancher le seuil du retard (15 jours) et Maymar |
 | Konnect | Le compte marchand de chaque client qui le veut |
 | Anti-robots | Les clés Turnstile |
 | Maymar | Le domaine `maymar.tn`, les photos selon le protocole (celles reçues ne sont pas montrables), les informations légales |

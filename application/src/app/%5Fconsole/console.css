@@ -1120,3 +1120,18 @@ a.fa-numero .icone { color: var(--ui-texte-3); }
 .fa-avis { margin-block-start: 1rem; }
 .fa-adresse { display: block; margin-block-start: .375rem; }
 .vide code { font-size: .8125em; padding: .0625rem .3125rem; border-radius: 4px; background: var(--ui-doux); }
+
+.fa-contrat { display: grid; gap: .625rem; padding: .875rem 1rem; border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l); background: var(--ui-panneau); }
+.fa-contrat-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.fa-contrat-objet { font-weight: 600; overflow-wrap: anywhere; }
+.fa-contrat-ecran { justify-self: start; }
+.fa-gestes { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.fa-gestes .fa-delier { flex: 0 1 auto; }
+.fa-gestes .fa-delier[open] { flex: 1 1 100%; }
+.fa-existants { margin-block-end: 1rem; }
+.fa-creer > summary { list-style: none; inline-size: max-content; }
+.fa-creer > summary::-webkit-details-marker { display: none; }
+.fa-creer[open] > summary { display: none; }
+.fa-formulaire { margin-block-start: .25rem; }
+@media (min-width: 720px) { .console .fa-formulaire .deux-colonnes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.fa-formulaire input, .fa-formulaire select { min-inline-size: 0; max-inline-size: 100%; }

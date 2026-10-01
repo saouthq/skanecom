@@ -45,6 +45,10 @@ const ACTIONS: Record<string, string> = {
   "support.ferme": "Accès support fermé",
   "facturation.lier": "Reliée à son client SkanFact",
   "facturation.delier": "Déliée de son client SkanFact",
+  "facturation.abonnement": "Abonnement suivi",
+  "facturation.abonnement_oublie": "Abonnement plus suivi",
+  "facturation.abonnement_suspendu": "Abonnement suspendu",
+  "facturation.abonnement_repris": "Abonnement repris",
 };
 
 const CERTIFICAT: Record<string, { texte: string; classe: string }> = {

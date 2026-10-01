@@ -1,7 +1,8 @@
 // SkanFact simulé, pour le développement et les parcours : les lectures que la
 // console fait par l'API de SkanFact (docs/api-situation.md de la plateforme,
 // brique 127 : S1 le client par son matricule, S2 ses factures à payer, S3 sa
-// situation, S5 le lien vers l'écran) et les avis signés qu'elle reçoit
+// situation, S5 le lien vers l'écran ; brique 130 : les contrats d'abonnement,
+// S8) et les avis signés qu'elle reçoit
 // (serveur/avis.ts : `skanfact-signature: t=<s>,v1=<hex>`, HMAC-SHA256 de
 // « <t>.<corps> » avec le secret de l'abonnement). Servi par le relais :
 //   http://127.0.0.1:54321/skanfact-dev/v1/entreprises/<e>/clients?identifiant=…
@@ -10,8 +11,10 @@
 // client (POST /skanfact-dev/emettre { client, montant, objet? }) ; chacun
 // envoie à la console l'avis que SkanFact enverrait. POST /skanfact-dev/panne
 // { active } fait répondre 503 à l'API, comme un SkanFact en panne ;
-// POST /skanfact-dev/reinitialiser remet les fiches du départ. Les écrans (/skanfact-dev/v10/…) disent ce
-// qu'ils montreraient.
+// POST /skanfact-dev/echoir { contrat } fait passer l'échéance d'un contrat
+// (le tour du serveur, brique 129 : « Émise seule », la facture est émise et
+// annoncée) ; POST /skanfact-dev/reinitialiser remet les fiches du départ.
+// Les écrans (/skanfact-dev/v10/…) disent ce qu'ils montreraient.
 //
 // Clients et montants fictifs ; les jours sont comptés depuis aujourd'hui, à
 // Tunis. Jamais en production.
@@ -56,6 +59,12 @@ function reinitialiser() {
       { facture: "00000000-0000-4000-8888-0000000000f2", date: jour(-6), montant: 250_000 },
       { facture: "00000000-0000-4000-8888-0000000000f1", date: jour(-10), montant: 300_000 },
     ],
+    // Un contrat créé à l'écran, pour l'atelier ; aucun pour la menuiserie.
+    contrats: [{
+      id: "00000000-0000-4000-8888-0000000000c2", client: c2.id, objet: "Abonnement — {mois} {annee}", periode: "mois", jour: Number(jour(4).slice(8, 10)),
+      prochaine: jour(4), derniere: jour(-26), actif: true, emettreSeul: false, refus: null,
+      lignes: [{ designation: "Abonnement mensuel", quantite: "1", prixUnitaire: "210.084034", tauxTva: "19" }],
+    }],
   };
 }
 reinitialiser();
@@ -93,15 +102,17 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const json = (res, statut, corps) =>
   res.writeHead(statut, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }).end(JSON.stringify(corps));
 
-/* L'API : une clé, son entreprise, les trois lectures. */
-function api(req, res, url) {
+/* L'API : une clé, son entreprise, les lectures et les contrats. */
+async function api(req, res, url) {
   if (enPanne) return json(res, 503, { motif: "Service indisponible" });
   const jeton = /^Bearer (.+)$/.exec(req.headers.authorization ?? "")?.[1];
   if (jeton !== CLE) return json(res, 401, { motif: "Connexion requise" });
   const m = /^\/v1\/entreprises\/([^/]+)(\/.*)$/.exec(url.pathname.slice(PREFIXE.length));
-  if (!m || req.method !== "GET") return json(res, 404, { motif: "Introuvable" });
+  if (!m) return json(res, 404, { motif: "Introuvable" });
   if (m[1] !== ENTREPRISE) return json(res, 404, { motif: "Introuvable" });
   const q = url.searchParams;
+  if (m[2] === "/contrats" || m[2].startsWith("/contrats/")) return contrats(req, res, m[2], q);
+  if (req.method !== "GET") return json(res, 404, { motif: "Introuvable" });
 
   // S1. Les clients, par leur matricule (espaces et casse ignorés).
   if (m[2] === "/clients") {
@@ -133,6 +144,65 @@ function api(req, res, url) {
   }
   return json(res, 404, { motif: "Introuvable" });
 }
+
+/* S8 — les contrats d'abonnement (serveur/v10/api-contrats.ts) : le corps
+   validé comme la plateforme le valide, les prix HT en texte. */
+const DECIMAL = (d) => new RegExp(`^\\d{1,12}(\\.\\d{1,${d}})?$`);
+const contratApi = (k) => ({ ...k, ecran: `/v10/?e=${ENTREPRISE}#/contrat/${k.id}` });
+function corpsContrat(d) {
+  if (!d || !UUID.test(String(d.client ?? "")) || !clientDe(d.client)) return { champ: "client" };
+  if (!String(d.objet ?? "").trim() || String(d.objet).length > 300) return { champ: "objet" };
+  if (!["mois", "trimestre", "annee"].includes(d.periode)) return { champ: "periode" };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(d.prochaine ?? ""))) return { champ: "prochaine" };
+  if (d.jour !== undefined && !(Number.isInteger(d.jour) && d.jour >= 1 && d.jour <= 31)) return { champ: "jour" };
+  const lignes = Array.isArray(d.lignes) ? d.lignes : [];
+  if (!lignes.length || lignes.some((l) => !String(l.designation ?? "").trim() || !DECIMAL(3).test(String(l.quantite))
+    || !DECIMAL(6).test(String(l.prixUnitaire)) || !DECIMAL(4).test(String(l.tauxTva)))) return { champ: "lignes" };
+  return {
+    contrat: {
+      client: d.client, objet: String(d.objet).trim(), periode: d.periode, jour: d.jour ?? Number(d.prochaine.slice(8, 10)), prochaine: d.prochaine,
+      emettreSeul: d.emettreSeul === true,
+      lignes: lignes.map((l) => ({ designation: String(l.designation).trim(), quantite: String(l.quantite), prixUnitaire: String(l.prixUnitaire), tauxTva: String(l.tauxTva) })),
+    },
+  };
+}
+async function contrats(req, res, chemin, q) {
+  if (chemin === "/contrats" && req.method === "GET") {
+    const client = q.get("client");
+    return json(res, 200, { contrats: etat.contrats.filter((k) => client === null || k.client === client).map(contratApi) });
+  }
+  if (chemin === "/contrats" && req.method === "POST") {
+    const v = corpsContrat(await lire(req));
+    if (!v.contrat) return json(res, 400, { motif: "Champ invalide", champ: v.champ });
+    const k = { id: randomUUID(), ...v.contrat, derniere: null, actif: true, refus: null };
+    etat.contrats.push(k);
+    return json(res, 201, contratApi(k));
+  }
+  const g = /^\/contrats\/([^/]+)(?:\/(suspendre|reprendre))?$/.exec(chemin);
+  const k = g ? etat.contrats.find((x) => x.id === g[1]) : null;
+  if (!k) return json(res, 404, { motif: "Introuvable" });
+  if (!g[2] && req.method === "PUT") {
+    const v = corpsContrat(await lire(req));
+    if (!v.contrat) return json(res, 400, { motif: "Champ invalide", champ: v.champ });
+    Object.assign(k, v.contrat, { refus: null });
+    return json(res, 200, contratApi(k));
+  }
+  if (g[2] && req.method === "POST") {
+    k.actif = g[2] === "reprendre";
+    if (k.actif) while (k.prochaine < aujourdhui()) k.prochaine = suivante(k);
+    return json(res, 200, contratApi(k));
+  }
+  return json(res, 404, { motif: "Introuvable" });
+}
+/** L'échéance d'après : un mois, un trimestre ou un an plus tard, au jour du contrat (le 31 → le dernier jour). */
+function suivante(k) {
+  const [a, m] = k.prochaine.split("-").map(Number);
+  const pas = { mois: 1, trimestre: 3, annee: 12 }[k.periode];
+  const mois = m - 1 + pas;
+  const dernier = new Date(Date.UTC(a, mois + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(a, mois, Math.min(k.jour, dernier))).toISOString().slice(0, 10);
+}
+const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
 /* L'avis, signé comme SkanFact le signe, envoyé à la console. */
 function aviser(evenement, donnees) {
@@ -199,6 +269,31 @@ async function geste(req, res, nom) {
     if (reste(f) === 0) avis.push(await aviser("facture.reglee", { id: f.id, numero: f.numero, client: { id: c.id, raisonSociale: c.raison_sociale }, devise: "TND", par: "reglement" }));
     return json(res, 200, { reste: texte(reste(f)), avis });
   }
+  if (nom === "echoir") {
+    // Le tour du serveur (brique 129) : un contrat actif et « Émise seule » émet sa facture et l'annonce.
+    const k = etat.contrats.find((x) => x.id === d.contrat);
+    if (!k) return json(res, 404, { motif: "Contrat introuvable" });
+    if (!k.actif) return json(res, 200, { emise: false, raison: "suspendu" });
+    if (!k.emettreSeul) return json(res, 200, { emise: false, raison: "brouillon" });
+    const c = clientDe(k.client);
+    const [a, m] = k.prochaine.split("-").map(Number);
+    const net = k.lignes.reduce((t, l) => {
+      const ht = Math.round(Number(l.quantite) * Number(l.prixUnitaire) * 1000);
+      return t + ht + Math.round((ht * Number(l.tauxTva)) / 100);
+    }, 0);
+    const n = ++etat.numero;
+    // Émise aujourd'hui (le temps a passé jusqu'à l'échéance), pour la période de l'échéance.
+    const f = { id: randomUUID(), ref: `f${n}`, numero: `FAC-2026-${String(n).padStart(3, "0")}`, client: c.id, datePiece: aujourdhui(), echeance: jour(15), net,
+      objet: k.objet.replaceAll("{mois}", MOIS[m - 1]).replaceAll("{annee}", String(a)) };
+    etat.factures.push(f);
+    k.derniere = k.prochaine;
+    k.prochaine = suivante(k);
+    const avis = [await aviser("facture.emise", {
+      id: f.id, numero: f.numero, datePiece: f.datePiece, client: { id: c.id, raisonSociale: c.raison_sociale }, devise: "TND",
+      totalHT: texte(Math.round(net / 1.19)), totalTVA: texte(net - Math.round(net / 1.19)), totalTTC: texte(net), retenue: "0.000", netAPayer: texte(net),
+    })];
+    return json(res, 200, { emise: true, numero: f.numero, netAPayer: texte(net), avis });
+  }
   if (nom === "emettre") {
     const c = clientDe(d.client) ?? etat.clients.find((x) => normal(x.identifiant) === normal(d.identifiant));
     if (!c) return json(res, 404, { motif: "Client introuvable" });
@@ -225,8 +320,9 @@ function ecranSimule(res) {
 <h1 id="t" style="font-size:1.4rem">Écran de SkanFact</h1>
 <p>En production, ce lien ouvre cet écran dans SkanFact, après connexion avec votre compte.</p>
 <script>
-  const [, vue, ref] = (location.hash.match(/^#\\/(doc|client)\\/(.+)$/) || []);
-  document.getElementById("t").textContent = vue === "doc" ? "La facture " + ref : vue === "client" ? "La fiche du client " + ref : "L'accueil de l'entreprise";
+  const [, vue, ref] = (location.hash.match(/^#\\/(doc|client|contrat)\\/(.+)$/) || []);
+  document.getElementById("t").textContent = vue === "doc" ? "La facture " + ref : vue === "client" ? "La fiche du client " + ref
+    : vue === "contrat" ? "Le contrat " + ref : "L'accueil de l'entreprise";
 </script>`;
   res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }).end(html);
 }
@@ -235,9 +331,9 @@ function ecranSimule(res) {
 export function skanfactDev(req, res) {
   const url = new URL(req.url, "http://relais");
   const chemin = url.pathname.slice(PREFIXE.length);
-  if (chemin.startsWith("/v1/")) return api(req, res, url);
+  if (chemin.startsWith("/v1/")) return void api(req, res, url).catch((e) => json(res, 500, { motif: String(e?.message ?? e) }));
   if (chemin.startsWith("/v10/") && req.method === "GET") return ecranSimule(res);
-  const g = /^\/(regler|emettre|panne|reinitialiser)$/.exec(chemin);
+  const g = /^\/(regler|emettre|echoir|panne|reinitialiser)$/.exec(chemin);
   if (g && req.method === "POST") return geste(req, res, g[1]);
   return json(res, 404, { motif: "Introuvable" });
 }

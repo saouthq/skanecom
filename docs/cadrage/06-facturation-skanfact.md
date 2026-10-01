@@ -138,7 +138,8 @@ Lu dans `docs/api-situation.md` de la plateforme (S1 à S5) et `serveur/avis.ts`
 | L'onglet **Facturation** de chaque boutique : chercher le client (le matricule déclaré dans ses mentions légales pré-rempli), le relier (son nom et son matricule relus dans SkanFact), la situation par devise, le retard, le dernier règlement, les factures à payer, les liens vers SkanFact, délier ; SkanFact injoignable : la dernière lecture, avec son heure | `app/_console/(protegee)/boutiques/[slug]/facturation/` |
 | Les avis : `POST https://<console>/crochets/skanfact`, signature `t=…,v1=…` vérifiée (cinq minutes au plus), puis la situation du client relue et gardée ; rejoué : sans effet double ; SkanFact injoignable : 502, SkanFact renverra l'avis. Les trois événements (`facture.emise`, `reglement.enregistre`, `facture.reglee`, quel que soit son `par`) font la même chose : relire | `app/_console/crochets/skanfact/route.ts`, `lib/console/avis-skanfact.ts` |
 | « À surveiller » (accueil) : une facture échue depuis plus de **15 jours** (comptés depuis son échéance, sans relire SkanFact), une boutique ouverte sans client SkanFact (quand SkanFact est branché) | `lib/console/pilotage.ts` |
-| SkanFact simulé en local et en CI (entreprise, clé, secret de développement ; deux clients fictifs ; régler, émettre, panne) | `outils/skanfact-dev.mjs`, `outils/api-locale.sh` |
+| L'abonnement : le contrat créé, repris, suivi, suspendu, repris (brique 130) | `facturation/abonnement/route.ts`, `components/console/AbonnementSkanFact.tsx`, migration 80 |
+| SkanFact simulé en local et en CI (entreprise, clé, secret de développement ; deux clients fictifs, un contrat fait « à l'écran » ; régler, émettre, faire échoir un contrat, panne) | `outils/skanfact-dev.mjs`, `outils/api-locale.sh` |
 
 **Les secrets du Worker** (posés par Skander) : `SKANFACT_URL` (l'adresse de SkanFact), `SKANFACT_ENTREPRISE`
 (l'identifiant de l'entreprise SkanEcom), `SKANFACT_CLE` (une clé de cette entreprise, geste
@@ -150,12 +151,17 @@ branché) quand ils manquent, sans écraser une valeur posée à la main.
 `POST /v1/entreprises/:e/avis-abonnements` avec `{"url":"https://<console>/crochets/skanfact","evenements":["facture.emise","reglement.enregistre","facture.reglee"]}` ;
 son secret va dans `SKANFACT_AVIS_SECRET`.
 
-**L'abonnement mensuel** de chaque boutique : un contrat « Émise seule » par boutique, dans l'entreprise
-SkanEcom, créé **à l'écran de SkanFact** (pas encore par l'API) ; ses factures arrivent ensuite dans la console
-par l'avis `facture.emise`.
+**L'abonnement** de chaque boutique (briques 129 et 130, branché le 02/10) : un contrat de Facturation
+récurrente au nom de son client, dans l'entreprise SkanEcom, **créé depuis l'onglet Facturation** (objet avec
+`{mois}` `{annee}`, désignation, prix HT, TVA, période, première facture, « Émise seule ») ou repris parmi ceux
+déjà faits à l'écran de SkanFact ; suivi (prix, rythme, prochaine et dernière facture, refus de SkanFact),
+suspendu ou repris depuis la console, chaque geste au journal (migration 80). « Émise seule » : SkanFact émet
+la facture à sa date et la console la reçoit par l'avis `facture.emise`. Pour créer ou changer un contrat, la
+clé `SKANFACT_CLE` porte aussi le geste `ventes.contrat.modifier`, et, pour « Émise seule », elle est créée par
+le propriétaire ou un administrateur de l'entreprise SkanEcom.
 
 **Pas encore** : la synthèse « reste à encaisser » de l'accueil, l'expiration de la clé, la création du client
-depuis la console (la clé ne crée rien), le lien d'espace client (§ 3.7).
+depuis la console, le lien d'espace client (§ 3.7).
 
 ---
 
