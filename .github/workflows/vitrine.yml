@@ -1,12 +1,13 @@
-# Vitrine SkanEcom : vérification des types, compilation pour Cloudflare
-# Workers, puis essai de bout en bout — les deux boutiques du jeu de démo,
-# servies par la même application, ne se mélangent jamais
-# (outils/essai-vitrine.sh).
-#
-# La chaîne est la même que sur le poste d'un développeur : base locale
-# simulée, API locale (PostgREST), application compilée et lancée dans workerd.
 name: Vitrine
 
+# Deux niveaux, pour ne pas attendre 25 minutes à chaque envoi :
+# · « Vérification rapide », à chaque envoi : types, relecture, compilation,
+#   et l'essai de bout en bout (26 essais HTTP sur la vraie vitrine) ;
+# · « Parcours » (souris, clavier, téléphone ; console ; commande ;
+#   backoffice ; aperçu), les cinq en parallèle, chacun sur sa base fraîche,
+#   seulement quand on les demande : « [complet] » dans le message du
+#   dernier commit envoyé, le bouton « Run workflow », une pull request, ou
+#   un envoi sur main. Un nouvel envoi annule la vérification du précédent.
 on:
   push:
     paths:
@@ -25,11 +26,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: vitrine-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  vitrine:
-    name: Types, compilation, essais et parcours
+  rapide:
+    name: Vérification rapide (types, relecture, compilation, essai)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
 
@@ -87,58 +92,93 @@ jobs:
           if [ "$pret" != oui ]; then echo "::error::La vitrine ne répond pas sur 127.0.0.1:4200 après 60 s"; exit 1; fi
           ../outils/essai-vitrine.sh http://127.0.0.1:4200
 
-      # Un testeur à la souris, au clavier et au doigt (essais/parcours-humain.mjs) :
-      # focus, défilement, feuille de filtres, tiroir du panier, en-tête partout.
-      - name: Parcours humain (souris, clavier, téléphone)
-        working-directory: application
-        env:
-          CAPTURES: ${{ github.workspace }}/.outils/captures
+      - name: Journal de la vitrine en cas d'échec
+        if: failure()
         run: |
+          grep -v "Workers Response Store" .outils/vitrine.log | grep -n -i -B3 -A15 -E "error|exception| 500 " | tail -200 || true
+          echo "---- fin du journal ----"
+          tail -60 .outils/vitrine.log || true
+
+  parcours:
+    name: Parcours — ${{ matrix.nom }}
+    if: >-
+      github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' ||
+      github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[complet]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Un testeur à la souris, au clavier et au doigt : focus, défilement,
+          # feuille de filtres, tiroir du panier, en-tête partout.
+          - { nom: "humain (souris, clavier, téléphone)", script: parcours, dossier: humain }
+          # La console : connexion, double authentification, création et
+          # ouverture d'une boutique, marque avec aperçu, journal, portes fermées.
+          - { nom: console, script: "parcours:console", dossier: console }
+          # Une vraie commande dans chaque gabarit : panier, numéro confirmé par
+          # code SMS (le relais de l'API locale tient lieu de fournisseur),
+          # adresse, frais du gouvernorat, page de fin ; puis sur téléphone.
+          - { nom: commande, script: "parcours:commande", dossier: commande }
+          # Le backoffice : l'équipe confirme, expédie, livre, refuse, annule ;
+          # rôles, double authentification du gérant, éditeur de la vitrine.
+          - { nom: backoffice, script: "parcours:gestion", dossier: gestion }
+          - { nom: "aperçu des cinq boutiques", script: apercu, dossier: apercu }
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Installer Postgres 16 et pgTAP
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-16 postgresql-16-pgtap
+          sudo systemctl stop postgresql || true
+
+      - name: Base locale et API locale (fraîches, pour ce parcours seul)
+        env:
+          PG_BIN: /usr/lib/postgresql/16/bin
+        run: |
+          outils/base-locale.sh reinit
+          outils/api-locale.sh demarrer
+
+      - name: Dépendances et navigateur
+        working-directory: application
+        run: |
+          bun install --frozen-lockfile
           bunx playwright-core install chromium
-          bun run parcours
 
-      # La console : connexion, double authentification, création et ouverture
-      # d'une boutique, marque avec aperçu, journal, portes fermées.
-      - name: Parcours de la console
+      - name: Compilation et lancement de la vitrine
         working-directory: application
-        env:
-          CAPTURES: ${{ github.workspace }}/.outils/captures/console
         run: |
           set -a; . ../.outils/api-locale.env; set +a
-          bun run parcours:console
+          bun run build
+          setsid bun run start --port 4200 --host 127.0.0.1 > ../.outils/vitrine.log 2>&1 < /dev/null &
+          for _ in $(seq 1 60); do
+            curl -s -o /dev/null -H "Host: maymar.localhost" http://127.0.0.1:4200/ && exit 0
+            sleep 1
+          done
+          echo "::error::La vitrine ne répond pas sur 127.0.0.1:4200 après 60 s"; exit 1
 
-      # Une vraie commande dans chaque gabarit : panier, numéro confirmé par
-      # code SMS (le relais de l'API locale tient lieu de fournisseur),
-      # adresse, frais du gouvernorat, page de fin ; puis sur téléphone.
-      - name: Parcours de commande
+      - name: Parcours ${{ matrix.nom }}
         working-directory: application
         env:
-          CAPTURES: ${{ github.workspace }}/.outils/captures/commande
+          CAPTURES: ${{ github.workspace }}/.outils/captures/${{ matrix.dossier }}
         run: |
           set -a; . ../.outils/api-locale.env; set +a
-          bun run parcours:commande
-
-      # Le backoffice : l'équipe de Maymar confirme, expédie, livre, refuse,
-      # annule ; rôles, double authentification du gérant, geste périmé.
-      - name: Parcours du backoffice
-        working-directory: application
-        env:
-          CAPTURES: ${{ github.workspace }}/.outils/captures/gestion
-        run: |
-          set -a; . ../.outils/api-locale.env; set +a
-          bun run parcours:gestion
-
-      - name: Aperçu des cinq boutiques
-        working-directory: application
-        env:
-          CAPTURES: ${{ github.workspace }}/.outils/captures/apercu
-        run: bun run apercu
+          bun run ${{ matrix.script }}
 
       - name: Captures du parcours
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: captures-vitrine
+          name: captures-${{ matrix.dossier }}
           path: .outils/captures/
           if-no-files-found: ignore
           retention-days: 14

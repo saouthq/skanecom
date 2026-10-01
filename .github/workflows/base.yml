@@ -25,6 +25,11 @@ on:
 permissions:
   contents: read
 
+# Un nouvel envoi annule la vérification du précédent.
+concurrency:
+  group: base-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   supabase:
     name: Tests sur l'image Supabase

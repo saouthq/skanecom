@@ -102,17 +102,34 @@ outils/essayer.sh
 
 ## 4. Les vérifications automatiques
 
-Ce que la CI rejoue à chaque modification, lançable aussi à la main. Les tests de la base se suffisent à eux-mêmes ; les trois autres demandent la vitrine lancée par `outils/essayer.sh` dans un autre terminal :
+La CI a deux niveaux, pour ne pas attendre vingt minutes à chaque envoi :
+
+- **À chaque envoi** (quelques minutes) : les tests de la base, puis la vérification rapide de la vitrine — types, relecture (eslint), compilation, essais de cache et d'isolation.
+- **La vérification complète** (les parcours « humains » avec leurs captures) : les cinq parcours tournent **en parallèle**, chacun sur une base neuve. Elle part sur une demande de fusion, sur `main`, à la main (Actions → Vitrine → **Run workflow**), ou quand le dernier message d'envoi contient **`[complet]`** — à mettre après un très gros lot. Les captures sont à télécharger dans les artefacts du passage (`captures-humain`, `captures-gestion`…).
+
+Un nouvel envoi sur la même branche annule la vérification encore en cours du précédent.
+
+Pendant le développement d'un lot, on vise juste — la section touchée, pas tout :
 
 ```bash
-outils/base-locale.sh tester                   # 1053 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, images de la marque, modules, retrait en magasin, mes commandes, mise en place, accès support, photos à l'import, fiches techniques, supplément au poids, service après-vente, tableau de bord, encaissements, réception, quantité minimale, comptes professionnels, devis, achat express, avis clients, vérification par e-mail)
-outils/essai-vitrine.sh                        # 26 essais : les boutiques ne se mélangent jamais, le tunnel et le compte ne sont jamais en cache
+outils/base-locale.sh tester 75 43             # ces fichiers de supabase/tests seuls
+cd application && bun run typecheck && bun run lint
+SECTIONS=4 bun run parcours                    # une section du parcours « humain » (ou SECTIONS=1,maison)
+SECTIONS=4bis,6 bun run parcours:gestion       # idem au backoffice
+```
+
+Tout, à la main (avant un `[complet]`, ou pour reproduire la CI). Les tests de la base se suffisent à eux-mêmes ; le reste demande la vitrine lancée par `outils/essayer.sh` dans un autre terminal, et une base neuve entre deux parcours (certains publient des modifications) :
+
+```bash
+outils/base-locale.sh tester                   # 1598 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, modules, accès support, devis, avis clients, sections de l'accueil…)
+outils/essai-vitrine.sh                        # les boutiques ne se mélangent jamais, le tunnel et le compte ne sont jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)
 bun run parcours                               # le testeur « humain » : souris, clavier, téléphone
+bun run parcours:console                       # la console SkanEcom : créer, régler, importer une boutique
 bun run parcours:commande                      # une vraie commande dans chaque gabarit (base fraîche : outils/essayer.sh)
 bun run parcours:gestion                       # l'équipe de Maymar traite ses commandes au backoffice
-bun run apercu                                 # captures des pages clés des trois boutiques
+bun run apercu                                 # captures des pages clés des boutiques
 ```
 
 Les captures arrivent dans `.outils/captures/` (à la racine du dépôt).
