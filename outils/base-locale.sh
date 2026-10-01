@@ -104,8 +104,18 @@ reinit() {
   echo "Base $BASE prête."
 }
 
+# Sans argument : tous les tests. Avec des numéros ou des fichiers, ceux-là
+# seuls (« tester 68 43 ») — pendant le développement d'un lot.
 tester() {
-  pg_prove -h 127.0.0.1 -p "$PORT" -U postgres -d "$BASE" --ext .sql -r "$RACINE/supabase/tests"
+  if [ $# -eq 0 ]; then
+    pg_prove -h 127.0.0.1 -p "$PORT" -U postgres -d "$BASE" --ext .sql -r "$RACINE/supabase/tests"
+    return
+  fi
+  local fichiers=() f
+  for f in "$@"; do
+    if [ -f "$f" ]; then fichiers+=("$f"); else fichiers+=("$RACINE"/supabase/tests/"$f"_*.sql); fi
+  done
+  pg_prove -h 127.0.0.1 -p "$PORT" -U postgres -d "$BASE" "${fichiers[@]}"
 }
 
 arreter() {
@@ -115,7 +125,7 @@ arreter() {
 case "${1:-}" in
   demarrer) demarrer ;;
   reinit)   shift; reinit "$@" ;;
-  tester)   tester ;;
+  tester)   shift; tester "$@" ;;
   psql)     psql -X -h 127.0.0.1 -p "$PORT" -U postgres -d "$BASE" ;;
   arreter)  arreter ;;
   detruire) arreter; rm -rf "$DONNEES"; echo "Cluster effacé : $DONNEES" ;;

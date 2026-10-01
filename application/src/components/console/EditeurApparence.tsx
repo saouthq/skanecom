@@ -770,6 +770,11 @@ export function EditeurApparence({
       data-onglet={onglet}
       action={action}
       method="post"
+      // Entrée dans un champ ne publie jamais la vitrine (l'envoi implicite
+      // d'un formulaire) : seul le bouton « Publier » le fait.
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && e.target instanceof HTMLInputElement) e.preventDefault();
+      }}
       onSubmit={(e) => {
         e.preventDefault();
         const geste = ((e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null)?.value;

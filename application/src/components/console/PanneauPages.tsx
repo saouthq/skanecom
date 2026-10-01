@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { Icone } from "@/components/console/Icone";
 import { ZoneTexte } from "@/components/console/ZoneTexte";
 import { LIMITES, problemesPage, slugDe } from "@/lib/pages-forme";
@@ -331,10 +331,16 @@ function NouvellePage({ modele, affichee, ecrit, retour, creer, ouvrir }: {
     else setRefus(r);
   }
 
+  // Pas de <form> ici : l'éditeur entier en est un (« Publier »), et un
+  // formulaire dans un autre envoyait les deux. Entrée crée la page.
+  const entree = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") { e.preventDefault(); void valider(); }
+  };
+
   return (
     <div className="pp-ecriture">
       <button type="button" className="btn btn-fantome btn-petit pp-retour" onClick={retour}><Icone nom="gauche" /> Toutes les pages</button>
-      <form className="carte ap-groupe" aria-labelledby="pp-t-nouvelle-page" onSubmit={(e) => { e.preventDefault(); void valider(); }}>
+      <section className="carte ap-groupe" aria-labelledby="pp-t-nouvelle-page">
         <h2 id="pp-t-nouvelle-page">{modele ? `Page « ${modele.titre} »` : "Une page neuve"}</h2>
         {modele ? <p className="aide">Son texte est composé de vos réglages : relisez-le, ajustez-le, puis publiez.</p> : null}
         <fieldset className="ac-champs" disabled={!ecrit || envoi}>
@@ -342,16 +348,16 @@ function NouvellePage({ modele, affichee, ecrit, retour, creer, ouvrir }: {
           <div className="champ">
             <label htmlFor="pp-nouveau-titre">Titre</label>
             <input ref={champTitre} id="pp-nouveau-titre" type="text" value={titre} maxLength={LIMITES.titre.max + 20}
-              placeholder="Guide des tailles, Entretien, Nos boutiques…" aria-invalid={erreur("titre") ? true : undefined}
+              placeholder="Guide des tailles, Entretien, Nos boutiques…" aria-invalid={erreur("titre") ? true : undefined} onKeyDown={entree}
               onChange={(e) => { const v = e.currentTarget.value; setTitre(v); if (libre) setSlug(slugDe(v)); setRefus(null); }} />
             {erreur("titre") ? <p className="pg-erreur">{erreur("titre")}</p> : null}
           </div>
           <div className="champ">
             <label htmlFor="pp-nouveau-slug">Adresse de la page</label>
             <div className="pg-adresse-champ">
-              <span className="pg-adresse-prefixe" aria-hidden="true">{affichee ? `${affichee}/` : "/"}</span>
+              <span className="pg-adresse-prefixe" aria-hidden="true"><span className="pp-domaine"><bdi dir="ltr">{affichee ? `${affichee}/` : "/"}</bdi></span></span>
               <input id="pp-nouveau-slug" type="text" value={slug} maxLength={LIMITES.slug.max} spellCheck={false} autoCapitalize="none" autoCorrect="off"
-                aria-invalid={erreur("slug") ? true : undefined}
+                aria-invalid={erreur("slug") ? true : undefined} onKeyDown={entree}
                 onChange={(e) => { setLibre(false); setSlug(e.currentTarget.value.toLowerCase().replace(/\s+/g, "-")); setRefus(null); }} />
             </div>
             {erreur("slug") ? <p className="pg-erreur">{erreur("slug")}</p> : <p className="aide">Elle suit le titre tant que vous ne la changez pas ; elle ne change plus une fois la page créée.</p>}
@@ -371,9 +377,9 @@ function NouvellePage({ modele, affichee, ecrit, retour, creer, ouvrir }: {
           ) : null}
         </fieldset>
         {refus && !refus.champ ? <p className="pg-erreur" role="alert">{refus.texte}</p> : null}
-        <button className="btn btn-primaire" disabled={!ecrit || envoi} aria-busy={envoi || undefined}><Icone nom="plus" /> Créer la page</button>
+        <button type="button" className="btn btn-primaire" disabled={!ecrit || envoi} aria-busy={envoi || undefined} onClick={() => void valider()}><Icone nom="plus" /> Créer la page</button>
         <p className="aide">Elle s&apos;ouvre aussitôt à côté, dans l&apos;aperçu ; elle reste hors ligne jusqu&apos;à « Publier ».</p>
-      </form>
+      </section>
     </div>
   );
 }

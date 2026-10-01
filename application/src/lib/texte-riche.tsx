@@ -16,6 +16,12 @@ export type Bloc =
   | { genre: "h2" | "h3" | "p"; texte: string }
   | { genre: "ul" | "ol"; items: string[] };
 
+/** La typographie française : une espace fine insécable avant « ? ! ; : » »
+ *  et après « « » — le signe ne passe plus seul à la ligne. */
+export function typographie(texte: string): string {
+  return texte.replace(/[ \u00a0]+([?!;:»])/g, "\u202f$1").replace(/«[ \u00a0]+/g, "«\u202f");
+}
+
 export function blocs(source: string): Bloc[] {
   const sortie: Bloc[] = [];
   let paragraphe: string[] = [];
@@ -27,7 +33,7 @@ export function blocs(source: string): Bloc[] {
     liste = null;
   };
   for (const brute of source.replace(/\r\n?/g, "\n").split("\n")) {
-    const ligne = brute.trim();
+    const ligne = typographie(brute.trim());
     if (!ligne) { fermer(); continue; }
     const titre = /^(#{2,3})\s+(.+)$/.exec(ligne);
     if (titre) { fermer(); sortie.push({ genre: titre[1].length === 2 ? "h2" : "h3", texte: titre[2] }); continue; }

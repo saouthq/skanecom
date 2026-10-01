@@ -48,7 +48,8 @@ export function modelesDePages(cadre: Cadre): Modele[] {
   const id = identiteLegale(cadre);
   const retour = texte(cadre.theme.textes, "politique_retour");
   const resume = texte(cadre.theme.textes, "resume");
-  const seuil = cadre.seuilGratuiteMillimes ? t.annonce.livraisonOfferte(formatePrix(cadre.seuilGratuiteMillimes)) : null;
+  // Le texte des frais dit déjà le seuil de la livraison offerte : ne le redire que sans lui.
+  const seuil = cadre.seuilGratuiteMillimes && !livraison.frais ? t.annonce.livraisonOfferte(formatePrix(cadre.seuilGratuiteMillimes)) : null;
   const retractation = `Vous pouvez vous rétracter dans les ${id.retractationJours} jours ouvrables qui suivent la réception (loi n° 2000-83), article non utilisé, dans son emballage ; les frais de retour sont ${id.retourOffert ? "offerts par la boutique" : "à votre charge"}.`;
 
   const questions = [

@@ -361,10 +361,15 @@
 .pp-liste { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--ui-bord); border-radius: var(--ui-r); overflow: hidden; }
 .pp-item { display: flex; align-items: stretch; border-block-start: 1px solid var(--ui-bord-leger, var(--ui-bord)); background: var(--ui-panneau); }
 .pp-item:first-child { border-block-start: 0; }
+/* Le titre a toute la largeur ; l'état passe dessous, la flèche à droite. */
 .pp-ligne {
-  flex: 1; min-inline-size: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: .5rem .75rem;
+  flex: 1; min-inline-size: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "texte fleche" "etats fleche";
+  align-items: center; gap: .375rem .75rem;
   padding: .75rem .875rem; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer;
 }
+.pp-ligne > .pp-ligne-texte { grid-area: texte; }
+.pp-ligne > .pp-etats { grid-area: etats; justify-content: flex-start; }
+.pp-ligne > svg { grid-area: fleche; color: var(--ui-texte-3); }
 .pp-ligne:hover { background: var(--ui-survol); }
 .pp-ligne:focus-visible { outline: none; box-shadow: inset var(--ui-anneau); }
 .pp-ligne-texte { display: grid; gap: .125rem; min-inline-size: 0; }
@@ -374,9 +379,17 @@
 .pp-etat { padding: .0625rem .5rem; border-radius: 999px; font-size: .6875rem; font-weight: 600; white-space: nowrap; background: var(--ui-doux); color: var(--ui-texte-2); }
 .pp-etat[data-etat="en-ligne"] { background: var(--ui-vert-fond); color: var(--ui-vert); box-shadow: inset 0 0 0 1px var(--ui-vert-bord); }
 .pp-etat[data-etat="change"] { background: var(--ui-ambre-fond); color: var(--ui-ambre); box-shadow: inset 0 0 0 1px var(--ui-ambre-bord); }
-.pp-gestes { display: flex; align-items: center; gap: .125rem; padding-inline: .25rem .5rem; border-inline-start: 1px solid var(--ui-bord-leger, var(--ui-bord)); }
+/* Monter et descendre l'un sur l'autre : une colonne étroite, le titre garde la place. */
+.pp-gestes { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: .125rem; padding: .25rem; border-inline-start: 1px solid var(--ui-bord-leger, var(--ui-bord)); }
+.pp-gestes .ac-geste-vide { block-size: 32px; }
+@media (pointer: coarse) { .pp-gestes .ac-geste-vide { block-size: 40px; } }
 .pp-astuce { margin: 0; }
 .pp-modeles { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+/* Sans vignette (celles des sections d'accueil) : le texte prend la largeur. */
+.pp-modeles .ac-modele { grid-template-columns: minmax(0, 1fr) auto; }
+/* L'adresse de la page : le domaine se coupe avant elle, c'est elle qu'on écrit. */
+.pp-ecriture .pg-adresse-prefixe { max-inline-size: 50%; }
+.pp-domaine { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
 .pp-office ul { display: grid; gap: .625rem; margin: .75rem 0 0; padding: 0; list-style: none; }
 .pp-office li { display: grid; gap: .125rem; font-size: .8125rem; }
 .pp-office summary { cursor: pointer; font-size: .875rem; font-weight: 600; }

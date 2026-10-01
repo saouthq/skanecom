@@ -1313,6 +1313,11 @@ if (section("4")) {
     const corps = page.locator("#pp-corps");
     await corps.waitFor({ timeout: 10000 });
     verifie((await corps.inputValue()).includes("au magasin de Sfax"), "le texte vient des réglages : le retrait au magasin de Sfax");
+    verifie(((await corps.inputValue()).split("## Retrait")[0].match(/dès \S+\sTND/g) ?? []).length === 1, "le seuil de la livraison offerte n'y est dit qu'une fois");
+    await page.locator("#pp-titre").press("Enter");
+    await pause(600);
+    verifie(!(await page.locator(".ap-retour").first().innerText().catch(() => "")).includes("publiée") && await page.locator("#pp-titre").count() === 1,
+      "Entrée dans le titre : rien n'est publié, l'écriture reste ouverte");
     verifie(await attend(async () => (cadreQ()?.url() ?? "").includes("/livraison-et-retours"), 12000), "la vitrine du cadre ouvre la page neuve, encore hors ligne");
     verifie(await attend(async () => ((await cadreQ()?.locator("h1").first().innerText().catch(() => "")) ?? "").includes("Livraison"), 12000),
       "et la montre telle qu'elle sera");
@@ -1337,7 +1342,7 @@ if (section("4")) {
     const vitrine = await ctx.newPage();
     const r = await vitrine.goto(`${VQ}/livraison-et-retours?apercu=fin`, { waitUntil: "domcontentloaded" });
     verifie(r?.status() === 200 && (await vitrine.locator("main").innerText()).includes("Appelez le magasin"), `la vitrine la sert à son adresse, aussitôt (HTTP ${r?.status()})`);
-    verifie((await vitrine.locator("footer").innerText()).includes("Livraison et retours"), "et son lien est au pied de page");
+    verifie((await vitrine.locator("footer[data-zone=pied]").innerText()).includes("Livraison et retours"), "et son lien est au pied de page");
     await vitrine.close();
   });
 
