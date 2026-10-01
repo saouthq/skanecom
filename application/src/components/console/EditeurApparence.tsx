@@ -13,7 +13,7 @@ import {
   ACCENTS, AMBIANCES, FONDS, avecAccent, encrePour, memeContenu, paletteDerivee, photosDe, problemesReglages, rapportLisible, sectionsDeStructure, verdicts, versBase,
   type Ambiance, type CleReglageEditeur, type ContenuApparence, type Mode, type ReglagesVitrine,
 } from "@/lib/apparence";
-import { BIBLIOTHEQUE, type SectionBrute } from "@/lib/gestion/accueil";
+import { MAX_SECTIONS, entreeDe, nouvelleSection, type SectionBrute } from "@/lib/gestion/accueil";
 import { estHex } from "@/lib/couleur";
 import {
   JETONS_COULEUR, POLICES_INFO, pilePolice, REGLAGES_STYLE, STRUCTURES, styleConseille,
@@ -49,6 +49,7 @@ const NOMS_STRUCTURES: Record<Structure, { nom: string; aide: string }> = {
   immersif: { nom: "Immersif", aide: "La photo plein écran, l'en-tête posé dessus, les pièces qui glissent, le lookbook. Mode, luxe, maison haut de gamme." },
   technique: { nom: "Technique", aide: "Grille dense, fiches techniques, recherche par référence. Outillage, matériel pro." },
   commerce: { nom: "Commerce", aide: "La recherche d'abord, le grand menu des rayons, la comparaison, une barre d'onglets au téléphone. High-tech, électroménager, outillage." },
+  monoproduit: { nom: "Monoproduit", aide: "Une page de vente pour un produit : ses photos, ses offres par quantité, la commande sur la page. Les boutiques qui vendent par la publicité." },
 };
 
 const LIBELLES: { [K in CleStyle]: { titre: string; choix: Record<Style[K], string> } } = {
@@ -196,7 +197,7 @@ export function EditeurApparence({
   /* --- L'accueil : celui du brouillon, ou celui de la structure. */
   const parStructure = contenu.sections == null;
   const sections = useMemo(() => contenu.sections ?? sectionsDeStructure(contenu.code), [contenu.sections, contenu.code]);
-  const nomsSections = useMemo(() => sections.map((s) => BIBLIOTHEQUE[s.type].nom), [sections]);
+  const nomsSections = useMemo(() => sections.map((s) => entreeDe(s.type, contenu.code).nom), [sections, contenu.code]);
   const indexDe = (cle: string | null) => (cle === null ? null : sections.findIndex((s) => s.cle === cle));
 
   /* --- Le cadre d'aperçu. */
@@ -303,7 +304,7 @@ export function EditeurApparence({
     setPanneau("accueil");
     setOnglet("reglages");
     setOuverte(s.cle);
-    setAnnonce(`« ${BIBLIOTHEQUE[s.type].nom} » ouverte pour la régler`);
+    setAnnonce(`« ${entreeDe(s.type, contenu.code).nom} » ouverte pour la régler`);
     window.setTimeout(() => {
       const li = document.querySelector<HTMLElement>(`.pa-liste [data-cle="${s.cle}"]`);
       amener(li, colonne.current);
@@ -600,7 +601,7 @@ export function EditeurApparence({
     } else if (Number.isInteger(m.section) && typeof m.champ === "string") {
       const s = sections[m.section as number];
       const cle = m.champ;
-      if (!s?.cle || !BIBLIOTHEQUE[s.type].textes.some((c) => c.cle === cle)) return;
+      if (!s?.cle || !entreeDe(s.type, contenu.code).textes.some((c) => c.cle === cle)) return;
       ecrire = (v) => modifierAccueil(sections.map((x) => (x.cle === s.cle ? { ...x, textes: { ...(x.textes ?? {}), [`${cle}_fr`]: v } } : x)), `texte.${s.cle}.${cle}`);
       champ = `#ac-${s.cle}-${cle}`;
       if (m.etat === "debut") { setPanneau("accueil"); setOuverte(s.cle); }
@@ -714,7 +715,14 @@ export function EditeurApparence({
   // Une autre structure : ses coins et ses boutons conseillés viennent avec (Ctrl+Z pour garder les vôtres).
   const reglerStructure = (code: Structure) => {
     const conseil = styleConseille(code);
-    change({ ...contenu, code, style: { ...contenu.style, coins: conseil.coins, boutons: conseil.boutons, cartes: conseil.cartes, photos: conseil.photos, casse: conseil.casse } },
+    // Le Monoproduit vend la pièce d'une section « produit en vente » : un accueil
+    // qui n'en a pas la reçoit en tête (à régler ensuite dans le panneau Accueil).
+    const propres = contenu.sections;
+    const sansVente = code === "monoproduit" && propres && propres.length < MAX_SECTIONS && !propres.some((x) => x.type === "piece");
+    const sectionsApres = sansVente
+      ? [nouvelleSection("piece", `n${1 + Math.max(0, ...propres.map((x) => Number(/^n(\d+)$/.exec(x.cle ?? "")?.[1] ?? 0)))}`), ...propres]
+      : propres;
+    change({ ...contenu, code, sections: sectionsApres, style: { ...contenu.style, coins: conseil.coins, boutons: conseil.boutons, cartes: conseil.cartes, photos: conseil.photos, casse: conseil.casse } },
       "code", `structure ${NOMS_STRUCTURES[code].nom.toLowerCase()}, avec ses coins et ses boutons`);
   };
 

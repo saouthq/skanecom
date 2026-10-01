@@ -143,6 +143,10 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      # Les erreurs d'abord (une réponse 500 ne laisse sa trace que là), puis la fin.
       - name: Journal de la vitrine en cas d'échec
         if: failure()
-        run: tail -60 .outils/vitrine.log || true
+        run: |
+          grep -v "Workers Response Store" .outils/vitrine.log | grep -n -i -B3 -A15 -E "error|exception| 500 " | tail -200 || true
+          echo "---- fin du journal ----"
+          tail -60 .outils/vitrine.log || true

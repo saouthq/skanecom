@@ -1040,6 +1040,23 @@ export const fr = {
     favoris: "Favoris",
   },
 
+  /** La structure Monoproduit : la page de vente et sa commande sur la page. */
+  vente: {
+    commander: "Commander",
+    commanderTotal: (total: string) => `Commander · ${total}`,
+    commanderAide: "Payé à la livraison, rien à régler en ligne",
+    ouPanier: "Ou l'ajouter au panier",
+    ajoute: "Ajouté au panier",
+    commandeTitre: "Votre commande",
+    commandeChapo: "Remplissez ce formulaire : vous payez à la livraison.",
+    commandeChapoRappel: "Remplissez ce formulaire : nous vous appelons pour confirmer, vous payez à la livraison.",
+    offreChoisie: (offre: string) => `Votre offre : ${offre}`,
+    barre: "Commander ce produit",
+    indisponible: "Ce produit n'est plus disponible pour l'instant.",
+    autresProduits: "Voir nos autres produits",
+    rappel: (prix: string, cod: boolean) => (cod ? `Dès ${prix}, payé à la livraison.` : `Dès ${prix}.`),
+  },
+
   /** « Prévenez-moi de son retour » (components/AlerteRetour.tsx). */
   alerte: {
     ouvrir: "Prévenez-moi de son retour",

@@ -21,12 +21,12 @@ html:has(.tunnel-page, .merci-page) .ed-pied { margin-block-start: 0; }
 html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-content: center; }
 
 /* Les listes déroulantes du tunnel : une flèche dessinée, pas celle du système. */
-.tunnel-page .champ select {
+:is(.tunnel-page, .pv-commande) .champ select {
   appearance: none; -webkit-appearance: none; padding-inline-end: 2.75rem; cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 1rem center;
 }
-[dir="rtl"] .tunnel-page .champ select { padding-inline: .875rem 2.75rem; background-position: left 1rem center; }
+[dir="rtl"] :is(.tunnel-page, .pv-commande) .champ select { padding-inline: .875rem 2.75rem; background-position: left 1rem center; }
 .tunnel-tete { display: grid; gap: .5rem; margin-block-end: clamp(1.25rem, 3vw, 2.5rem); }
 .tunnel-tete p { color: var(--theme-encre-doux); }
 .tunnel-tete h1 { font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; }
@@ -43,7 +43,7 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 /* Les pages à formulaire : ce que le navigateur fait défiler de lui-même (le
    champ où l'on tape, quand le clavier du téléphone s'ouvre) s'arrête sous
    l'en-tête collant, pas dessous. */
-html:has(.tunnel-page, .compte-page) { scroll-padding-block: calc(var(--entete-h, 4rem) + 1rem) 1rem; }
+html:has(.tunnel-page, .compte-page, .pv-commande) { scroll-padding-block: calc(var(--entete-h, 4rem) + 1rem) 1rem; }
 
 /* --- Formulaire ------------------------------------------------------------ */
 .tunnel-formulaire { display: grid; gap: .5rem; min-inline-size: 0; }
@@ -329,10 +329,10 @@ html[data-gabarit="editorial"] .merci-suite h2,
 html[data-gabarit="editorial"] .merci-recap h2 { font-size: 1.625rem; }
 html[data-gabarit="editorial"] .tunnel-bouton { letter-spacing: 0; }
 html[data-gabarit="editorial"] .tunnel-etape > legend { letter-spacing: -.01em; }
-html[data-gabarit="editorial"] .tunnel-page .champ input:not([type="checkbox"]):not([type="radio"]),
-html[data-gabarit="editorial"] .tunnel-page .champ select,
+html[data-gabarit="editorial"] :is(.tunnel-page, .pv-commande) .champ input:not([type="checkbox"]):not([type="radio"]),
+html[data-gabarit="editorial"] :is(.tunnel-page, .pv-commande) .champ select,
 html[data-gabarit="editorial"] .tunnel-tel { min-block-size: 52px; }
-html[data-gabarit="editorial"] .tunnel-page .champ > label { font-size: .8125rem; }
+html[data-gabarit="editorial"] :is(.tunnel-page, .pv-commande) .champ > label { font-size: .8125rem; }
 html[data-gabarit="editorial"] .tunnel-recap-corps { padding: 1.75rem; }
 
 /* --- Gabarit technique ------------------------------------------------------ */

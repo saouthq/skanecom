@@ -29,9 +29,10 @@ export const GABARITS: CodeTheme[] = ["editorial", "technique"];
    une structure bâtie sur l'un d'eux. Le Bento (l'accueil en mosaïque,
    l'en-tête flottant) reprend les composants éditoriaux : `code` reste la
    famille de composants, `structure` dit le choix. L'Immersif repose aussi
-   sur les composants éditoriaux ; le Commerce, sur les techniques. */
-export type Structure = CodeTheme | "bento" | "immersif" | "commerce";
-export const STRUCTURES: Structure[] = ["editorial", "bento", "immersif", "technique", "commerce"];
+   sur les composants éditoriaux, comme le Monoproduit (la page de vente
+   d'une pièce) ; le Commerce, sur les techniques. */
+export type Structure = CodeTheme | "bento" | "immersif" | "commerce" | "monoproduit";
+export const STRUCTURES: Structure[] = ["editorial", "bento", "immersif", "technique", "commerce", "monoproduit"];
 
 export const JETONS_COULEUR = [
   "fond", "surface", "surface_2", "filet", "filet_fort", "contour_champ",
@@ -343,7 +344,7 @@ export function gabaritDe(code: unknown): CodeTheme {
 
 /** La structure d'un code lu en base. */
 export function structureDe(code: unknown): Structure {
-  if (code === "bento" || code === "immersif" || code === "commerce") return code;
+  if (code === "bento" || code === "immersif" || code === "commerce" || code === "monoproduit") return code;
   return gabaritDe(code);
 }
 
@@ -390,6 +391,19 @@ const PROPRE_A: Partial<Record<Structure, { style: Partial<Style>; sections?: Se
       { type: "marques", textes: {} },
       { type: "avis", textes: {}, nombre: 3 },
       { type: "questions", textes: {}, nombre: 4 },
+    ],
+  },
+  // Le monoproduit : la page de vente d'une pièce — ses photos, ses offres
+  // par quantité, la commande sur la page —, puis ce qui achève de
+  // convaincre : le récit, les avis, les questions. Sans produit choisi, le
+  // premier produit mis en avant (lib/accueil.ts).
+  monoproduit: {
+    style: { coins: "arrondis", boutons: "pilule", titres: "ample" },
+    sections: [
+      { type: "piece", textes: {} },
+      { type: "editorial", textes: {} },
+      { type: "avis", textes: {}, nombre: 6 },
+      { type: "questions", textes: {}, nombre: 5 },
     ],
   },
 };

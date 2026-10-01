@@ -1,0 +1,87 @@
+/* ============================================================================
+   LA STRUCTURE MONOPRODUIT (components/AccueilMonoproduit.tsx,
+   VenteMonoproduit.tsx) — la page de vente d'une pièce : ses photos à
+   gauche, collantes ; à droite le titre, la note, la promesse, les offres en
+   grandes cartes, « Commander » ; sous le tout, le formulaire de commande
+   sur une bande teintée. Au téléphone : les photos en bande, puis le reste
+   en colonne, et la barre « Commander » du bas. Préfixe pv- (page de vente).
+   ========================================================================== */
+
+.pv-vente { padding-block: clamp(1rem, 3vw, 2.5rem) 0; }
+.pv-grille { display: grid; gap: 1.75rem; align-items: start; }
+.pv-galerie { min-inline-size: 0; }
+.pv-galerie .ed-galerie { border-radius: var(--theme-radius-carte); overflow: hidden; }
+.pv-achat { display: flex; flex-direction: column; gap: 1.5rem; min-inline-size: 0; }
+@media (max-width: 899px) {
+  /* Les photos d'un bord à l'autre, comme sur la fiche ; moins hautes, pour
+     que le titre et le prix tiennent dans le premier écran. */
+  .pv-vente { padding-block-start: 0; }
+  .pv-grille { padding-inline: 0; gap: 1.25rem; }
+  .pv-galerie .ed-galerie { border-radius: 0; }
+  .pv-galerie .cadre-image { max-block-size: 52svh; inline-size: 100%; }
+  .pv-achat { padding-inline: var(--theme-marge); gap: 1.25rem; }
+}
+@media (min-width: 900px) {
+  .pv-grille { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(2.5rem, 5vw, 5.5rem); }
+  .pv-galerie { position: sticky; inset-block-start: calc(var(--entete-h, 4rem) + 1.5rem); }
+  .pv-achat { max-inline-size: 34rem; padding-block-start: .5rem; }
+}
+
+.pv-tete { display: grid; gap: .875rem; }
+.pv-tete .etiquette { margin: 0; }
+.pv-tete :is(h1, h2) {
+  margin: 0; font-size: calc(clamp(2.125rem, 3.8vw, 3.375rem) * var(--echelle-titres, 1)); line-height: 1.02; letter-spacing: -.02em;
+  text-wrap: balance;
+}
+.pv-tete .fiche-avis-tete { margin: 0; }
+.pv-promesse { display: grid; gap: .875rem; margin: 0; }
+.pv-promesse .chapo, p.pv-promesse { margin: 0; color: var(--theme-encre-doux); line-height: 1.65; text-wrap: pretty; }
+.pv-points { list-style: none; margin: 0; padding: 0; display: grid; gap: .625rem; }
+.pv-points li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .625rem; align-items: start; line-height: 1.5; }
+.pv-points svg { margin-block-start: .1875rem; color: var(--theme-succes); }
+
+/* Les offres : la meilleure ressort. */
+.pv-achat .offres-titre { font-size: .8125rem; }
+.pv-achat .offre[data-choisie] { background: color-mix(in srgb, var(--theme-accent, var(--theme-encre)) 7%, var(--theme-surface)); }
+
+.pv-qte { align-self: flex-start; }
+.pv-action { display: grid; gap: .625rem; }
+.pv-commander {
+  min-block-size: 60px; justify-content: center; font-size: 1.0625rem; font-weight: 600; letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.pv-commander[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.pv-action > .legende { margin: 0; text-align: center; }
+.pv-panier { justify-self: center; display: inline-flex; align-items: center; gap: .375rem; font-size: .875rem; }
+.pv-panier[data-ajoute] { color: var(--theme-succes); text-decoration: none; }
+.pv-panier:disabled { opacity: .45; cursor: not-allowed; }
+.pv-rassure { margin: 0; }
+
+/* La commande, sur la page : une bande teintée, le tunnel dedans. */
+.pv-commande {
+  margin-block-start: clamp(3rem, 7vw, 6rem); padding-block: clamp(2.5rem, 6vw, 5rem);
+  background: var(--theme-surface-2); scroll-margin-block-start: var(--entete-h, 4rem);
+}
+.pv-commande:focus { outline: none; }
+.pv-commande-tete { display: grid; gap: .5rem; max-inline-size: 44rem; margin-block-end: clamp(1.25rem, 3vw, 2.25rem); }
+.pv-commande-tete h2 { margin: 0; font-size: calc(clamp(1.875rem, 3.4vw, 2.75rem) * var(--echelle-titres, 1)); line-height: 1.05; }
+.pv-commande-tete p { margin: 0; color: var(--theme-encre-doux); }
+.pv-commande-tete b { color: var(--theme-encre); font-weight: 600; }
+.pv-commande .tunnel-attente { min-block-size: 16rem; }
+.pv-commande .tunnel-recap-corps, .pv-commande .tunnel-recap { background: var(--theme-surface); }
+
+/* Les avis du produit, après la commande : la même mise en page que sa fiche. */
+.pv-avis { scroll-margin-block-start: var(--entete-h, 4rem); }
+
+/* La barre du téléphone : au-dessus d'elle, rien ne se cache. */
+.pv-barre .btn { padding-inline: 1.5rem; }
+
+/* Le dernier rappel, au bas de la page : le produit, son prix, « Commander ». */
+.pv-rappel { margin-block: clamp(3rem, 7vw, 6rem); }
+.pv-rappel-corps {
+  display: grid; justify-items: center; gap: 1rem; padding: clamp(2rem, 5vw, 3.5rem) var(--theme-marge);
+  border-radius: var(--theme-radius-carte); background: var(--theme-surface-2); text-align: center;
+}
+.pv-rappel h2 { margin: 0; font-size: calc(clamp(1.75rem, 3.2vw, 2.5rem) * var(--echelle-titres, 1)); line-height: 1.08; text-wrap: balance; }
+.pv-rappel p { margin: 0; color: var(--theme-encre-doux); }
+.pv-rappel .btn { min-block-size: 56px; padding-inline: 2rem; }

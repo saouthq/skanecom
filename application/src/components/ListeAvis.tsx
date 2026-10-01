@@ -85,7 +85,13 @@ export function ListeAvis({ avis, produitId }: { avis: Avis; produitId: string }
     setCharge(true);
     setErreur(null);
     try {
-      const r = await fetch(`/recherche/avis?produit=${produitId}&filtre=${f}&decalage=${deja.length}`, { signal: arret.signal });
+      const adresse = `/recherche/avis?produit=${produitId}&filtre=${f}&decalage=${deja.length}`;
+      let r = await fetch(adresse, { signal: arret.signal });
+      // Une panne passagère du serveur : une seconde tentative, sans rien dire, avant l'erreur.
+      if (r.status >= 500) {
+        await new Promise((fin) => setTimeout(fin, 400));
+        r = await fetch(adresse, { signal: arret.signal });
+      }
       if (!r.ok) throw new Error(String(r.status));
       const page = (await r.json()) as PageAvis;
       const fusion = fusionne(deja, page.avis);

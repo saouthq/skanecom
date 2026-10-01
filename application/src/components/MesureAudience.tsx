@@ -3,13 +3,15 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { PANIER_AJOUT } from "@/lib/panier-contrat";
+import { ETAPE_VISITE, type EtapeVisite } from "@/lib/etapes-visite";
 
 /* ============================================================================
    LA MESURE D'AUDIENCE (réglage vitrine.statistiques) — à chaque page vue,
    un signal au serveur (/stats) : le chemin, et pour la première, le site
    d'où l'on vient et la campagne du lien d'arrivée (utm_campaign,
    utm_source). Un article ajouté au panier envoie aussi le sien (l'étape
-   « panier » de l'entonnoir). Ni cookie, ni stockage dans le navigateur : le
+   « panier » de l'entonnoir) ; la page de vente, le produit regardé et la
+   commande commencée (lib/etapes-visite.ts). Ni cookie, ni stockage dans le navigateur : le
    serveur reconnaît le visiteur le temps d'une journée seulement, par une
    empreinte salée du jour (…_visites_vitrine.sql). Un navigateur qui
    demande à ne pas être suivi (Do Not Track, Global Privacy Control)
@@ -47,8 +49,13 @@ export function MesureAudience() {
   useEffect(() => {
     if (!suivi()) return;
     const ajout = () => signale({ chemin: location.pathname, evenement: "panier" });
+    const etape = (e: Event) => signale({ chemin: location.pathname, evenement: (e as CustomEvent<EtapeVisite>).detail });
     window.addEventListener(PANIER_AJOUT, ajout);
-    return () => window.removeEventListener(PANIER_AJOUT, ajout);
+    window.addEventListener(ETAPE_VISITE, etape);
+    return () => {
+      window.removeEventListener(PANIER_AJOUT, ajout);
+      window.removeEventListener(ETAPE_VISITE, etape);
+    };
   }, []);
 
   return null;

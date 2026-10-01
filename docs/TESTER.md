@@ -7,7 +7,7 @@ Cinq boutiques de démonstration tournent avec la même application, chacune ave
 | http://mode.localhost:4200 | Maison Selma — prêt-à-porter | Immersif |
 | http://maymar.localhost:4200 | Maymar — bagages | éditorial |
 | http://quincaillerie.localhost:4200 | Quincaillerie du Sud — outillage | Commerce |
-| http://beaute.localhost:4200 | Yasmine Beauté — soins et parfums | éditorial |
+| http://beaute.localhost:4200 | Yasmine Beauté — soins et parfums | Monoproduit |
 | http://maison.localhost:4200 | Dar Alia — maison et décoration | Bento |
 | http://console.localhost:4200 | la console de mise en place | — |
 
@@ -78,7 +78,7 @@ outils/essayer.sh
 - Fiche perceuse : choisir « Kit 2 batteries », la référence suit la version.
 - Ouvrir trois ou quatre fiches, puis une autre : en bas, **Vus récemment** reprend les pièces vues, la plus récente d'abord (prix et stock du moment ; « Effacer » vide la liste). La page introuvable le propose aussi.
 
-**Yasmine Beauté** : l'accueil (six rayons sur une rangée, et « Ce qu'en disent nos clientes » : dix avis vérifiés), puis l'huile de figue de Barbarie — 30 ml change le prix ; le vernis à ongles, ses teintes en pastilles (au clavier : Tab depuis le titre, Entrée ; « Corail » : plus que 2) ; le savon à l'huile d'olive, parfum « Fleur d'oranger » épuisé : « Prévenez-moi de son retour » ; ses prix par quantité (3 pour 30,000, 6 pour 54,000) : choisir « 3 pièces », ajouter, le tiroir et la commande disent « 3 pour 30,000 ».
+**Yasmine Beauté** (Monoproduit) : l'accueil est la page de vente de son sérum éclat — choisir « 3 pièces » (à la souris, ou aux flèches) : « Commander · 147,000 TND », le formulaire dessous dit « Votre offre : 3 pièces » et son récapitulatif « Prix par 3 », 177,000 barré ; « Commander » y mène, le curseur dans le téléphone ; la commande se passe là, sans toucher au panier. Au téléphone, les offres en lignes, et après le formulaire la barre « Commander » en bas. Puis l'huile de figue de Barbarie — 30 ml change le prix ; le vernis à ongles, ses teintes en pastilles (au clavier : Tab depuis le titre, Entrée ; « Corail » : plus que 2) ; le savon à l'huile d'olive, parfum « Fleur d'oranger » épuisé : « Prévenez-moi de son retour » ; ses prix par quantité (3 pour 30,000, 6 pour 54,000) : choisir « 3 pièces », ajouter, le tiroir et la commande disent « 3 pour 30,000 ».
 
 **Dar Alia** : l'accueil en Bento — une mosaïque de tuiles, l'en-tête flottant en pilule ; à côté de l'ouverture, la pièce à la une, le paiement à la livraison et la note de ses huit avis ; cinq rayons (le premier sur deux rangées), « Nos essentiels », les avis, puis le kilim tissé main — 120 × 180 cm : 349 dinars, plus que 2 ; 160 × 230 cm, épuisé, barré ; les serviettes de table en lin, leurs couleurs en pastilles (Sable, Écru), au clavier ; au téléphone, le menu → Luminaires.
 

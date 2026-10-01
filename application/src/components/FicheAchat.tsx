@@ -8,16 +8,16 @@ import { Prix } from "./Prix";
 import { EtatStock } from "./EtatStock";
 import { Coche, Lot, Panier } from "./Icones";
 import { LivraisonEstimee } from "./LivraisonEstimee";
-import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, annonceAjout } from "@/lib/panier";
 import { photoVisible } from "@/lib/envol";
 import { evenementPub } from "@/lib/pixels";
-import { prixApplique as prixDe, usePrixPro } from "@/lib/prix-pro";
+import { usePrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
-import { etatVariante, minimumVariante, stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
+import { etatVariante, minimumVariante, type Produit } from "@/lib/catalogue";
 import { AlerteRetour } from "./AlerteRetour";
+import { AxesDeclinaison } from "./AxesDeclinaison";
 import { OffresQuantite } from "./OffresQuantite";
 import { paliersDe, totalAvecPaliers } from "@/lib/paliers";
 import type { CodeTheme } from "@/lib/theme";
@@ -184,9 +184,6 @@ export function FicheAchat({
   // L'achat express : cette déclinaison, cette quantité, rien d'autre.
   const lienExpress = variante && disponible ? `/commande?article=${variante.id}&quantite=${quantite}` : null;
 
-  /* Les valeurs entièrement épuisées d'un axe : barrées, jamais cachées. */
-  const epuisees = (cle: string) => valeursAxe(produit, cle).filter((v) => stockPourValeur(produit, cle, v) === 0);
-
   const prixBarre = variante && prixBarres && variante.prix_barre_millimes ? variante.prix_barre_millimes : null;
 
   return (
@@ -216,62 +213,7 @@ export function FicheAchat({
           onChoisir={(q) => setQuantite(q)} />
       ) : null}
 
-      {produit.options.map((axe) => {
-        const valeurs = valeursAxe(produit, axe.cle);
-        const horsStock = epuisees(axe.cle);
-        const estCouleur = axe.cle === "couleur";
-
-        /* Le prix par valeur, quand c'est CET axe qui le fait varier (une
-           valise de 75 cm ne coûte pas celui d'une 55). Sur un axe qui ne
-           change rien au prix (la couleur), on n'affiche rien. */
-        const prixParValeur = new Map<string, number>();
-        for (const valeur of valeurs) {
-          const prix = produit.variantes.filter((v) => v.options?.[axe.cle] === valeur).map((v) => prixDe(prixPros, v));
-          if (prix.length > 0) prixParValeur.set(valeur, Math.min(...prix));
-        }
-        const axeFaitVarierLePrix = new Set(prixParValeur.values()).size > 1;
-
-        return (
-          <fieldset className="axe" key={axe.cle}>
-            <legend>
-              <span>{champ(axe, "label")}</span>
-              <span className="choisi">{choix[axe.cle]}</span>
-            </legend>
-            <div className={estCouleur ? "valeurs valeurs-couleur" : "valeurs"}>
-              {valeurs.map((valeur) => {
-                const epuise = horsStock.includes(valeur);
-                return (
-                  <button
-                    key={valeur}
-                    type="button"
-                    className={estCouleur ? "valeur valeur-couleur" : "valeur"}
-                    aria-pressed={choix[axe.cle] === valeur}
-                    aria-label={estCouleur ? valeur : undefined}
-                    title={estCouleur ? valeur : undefined}
-                    disabled={epuise && !prevenirRetour}
-                    data-epuise={epuise && prevenirRetour ? "" : undefined}
-                    onClick={() => setChoix((c) => ({ ...c, [axe.cle]: valeur }))}
-                  >
-                    {estCouleur ? (
-                      <i style={{ background: couleurDeColoris(valeur) }} aria-hidden="true" />
-                    ) : (
-                      <>
-                        <span>{valeur}</span>
-                        {axeFaitVarierLePrix ? <span className="prix-option">{formatePrix(prixParValeur.get(valeur) ?? 0)}</span> : null}
-                      </>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {horsStock.length > 0 ? (
-              <p className="legende axe-note">
-                {prevenirRetour ? t.alerte.ruptureExpliquee(horsStock.join(", ")) : t.produit.ruptureExpliquee(horsStock.join(", "))}
-              </p>
-            ) : null}
-          </fieldset>
-        );
-      })}
+      <AxesDeclinaison produit={produit} choix={choix} setChoix={setChoix} prixPros={prixPros} prevenirRetour={prevenirRetour} />
 
       {variante && sousMinimum ? (
         <div className="fiche-indisponible">

@@ -4,7 +4,8 @@ import { ipDe } from "@/lib/console/http";
 
 /* Une page vue de la vitrine (components/MesureAudience.tsx, réglage
    vitrine.statistiques), ou un article ajouté au panier (evenement :
-   « panier »). L'adresse IP et le navigateur ne servent qu'à calculer, ici,
+   « panier »), ou sur la page de vente le produit regardé et la commande
+   commencée (« fiche », « commande » : public.compter_etape). L'adresse IP et le navigateur ne servent qu'à calculer, ici,
    une clé — leur empreinte — que la base sale du sel du jour
    (public.compter_vue, compter_ajout_panier) : ni l'une ni l'autre n'est
    gardée. La campagne du lien d'arrivée (utm_campaign) range la visite ;
@@ -42,6 +43,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
     const cle = await empreinte(`${ipDe(req) ?? "?"}|${ua}`);
     const { error } = await supabase.rpc("compter_ajout_panier", { p_boutique_id: cadre.boutique.id, p_cle: cle });
     if (error) console.error(`compter_ajout_panier (${boutique}) : ${error.message}`);
+    return rien();
+  }
+  if (corps?.evenement === "fiche" || corps?.evenement === "commande") {
+    const cle = await empreinte(`${ipDe(req) ?? "?"}|${ua}`);
+    const { error } = await supabase.rpc("compter_etape", { p_boutique_id: cadre.boutique.id, p_cle: cle, p_etape: corps.evenement === "fiche" ? 1 : 3 });
+    if (error) console.error(`compter_etape (${boutique}) : ${error.message}`);
     return rien();
   }
   // La source : le nom de domaine du site d'où l'on vient — jamais la boutique elle-même.

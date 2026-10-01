@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { chargeProduit, listeProduits, type Produit } from "./catalogue";
 import { chargePage } from "./pages";
 import { questions as questionsDe } from "./texte-riche";
+import { chargeAvis, type AvisProduit } from "./avis";
 import type { Cadre } from "./boutique";
 
 /* ============================================================================
@@ -40,8 +41,12 @@ export type DonneesAccueil = {
   marques: Marque[];
   /** Les points de chaque lookbook, avec leur pièce (un produit retiré : son point se tait). */
   lookbooks: Map<number, PointLook[]>;
-  /** La pièce de la saison de chaque section « piece » (publiée). */
+  /** La pièce de la saison de chaque section « piece » (publiée) ; en
+   *  Monoproduit sans section « piece », le produit vendu sous le rang -1. */
   pieces: Map<number, Produit>;
+  /** La page de vente (structure Monoproduit) : les avis du produit vendu,
+   *  et les gouvernorats du formulaire de commande posé sur la page. */
+  vente: { avis: AvisProduit | null; gouvernorats: { code: string; nom: string }[] } | null;
 };
 
 export type PointLook = { x: number; y: number; produit: Produit };
@@ -66,6 +71,7 @@ export async function donneesAccueil(cadre: Cadre): Promise<DonneesAccueil> {
     return lues.get(slug)!;
   };
 
+  const monoproduit = cadre.theme.structure === "monoproduit";
   const nombreAvis = Math.max(0, ...sections.map((s) => (s.type === "avis" ? (s.nombre ?? 6) : 0)));
 
   await Promise.all([
@@ -92,8 +98,11 @@ export async function donneesAccueil(cadre: Cadre): Promise<DonneesAccueil> {
         const vivants = points.filter((p) => p !== null);
         if (vivants.length) lookbooks.set(i, vivants);
       }
-      if (s.type === "piece" && s.produit) {
-        const produit = await piece(s.produit);
+      if (s.type === "piece") {
+        // En Monoproduit, une page de vente sans produit choisi vend le
+        // premier de la sélection (le premier mis en avant).
+        const slug = s.produit ?? (monoproduit ? (await listeProduits(cadre.boutique.id, {}, "selection", 1, 1)).produits[0]?.slug : undefined);
+        const produit = slug ? await piece(slug) : null;
         if (produit && produit.variantes.length) pieces.set(i, produit);
       }
     }),
@@ -107,6 +116,27 @@ export async function donneesAccueil(cadre: Cadre): Promise<DonneesAccueil> {
     sections.some((s) => s.type === "marques") ? chargeMarques(cadre.boutique.id).then((m) => (marques = m)) : Promise.resolve(),
   ]);
 
+  // Un accueil Monoproduit sans section « piece » (une structure choisie
+  // sur un accueil d'une autre) vend quand même : le premier produit mis en
+  // avant, en tête de page (rang -1).
+  if (monoproduit && !sections.some((s) => s.type === "piece")) {
+    const slug = (await listeProduits(cadre.boutique.id, {}, "selection", 1, 1)).produits[0]?.slug;
+    const produit = slug ? await piece(slug) : null;
+    if (produit && produit.variantes.length) pieces.set(-1, produit);
+  }
+
+  // La page de vente : les avis de son produit (comme sa fiche), les
+  // gouvernorats de la commande.
+  let vente: DonneesAccueil["vente"] = null;
+  const vendu = monoproduit ? [...pieces.values()][0] : undefined;
+  if (vendu) {
+    const [avisVendu, { data: gouvernorats }] = await Promise.all([
+      cadre.avis ? chargeAvis(cadre.boutique.id, vendu.id) : Promise.resolve(null),
+      supabase.from("gouvernorats").select("code, nom_fr").order("position"),
+    ]);
+    vente = { avis: avisVendu, gouvernorats: (gouvernorats ?? []).map((g) => ({ code: g.code as string, nom: g.nom_fr as string })) };
+  }
+
   const premiere = sections.findIndex((s) => s.type === "selection");
   return {
     selections,
@@ -116,6 +146,7 @@ export async function donneesAccueil(cadre: Cadre): Promise<DonneesAccueil> {
     marques: marques.length >= MARQUES_MIN ? marques : [],
     lookbooks,
     pieces,
+    vente,
   };
 }
 

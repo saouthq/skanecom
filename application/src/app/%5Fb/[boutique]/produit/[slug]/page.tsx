@@ -11,7 +11,8 @@ import { FournisseurSelection } from "@/components/SelectionVariante";
 import { SpecsVariante } from "@/components/SpecsVariante";
 import { VusRecemment } from "@/components/VusRecemment";
 import { AvisProduit, ResumeAvis } from "@/components/AvisProduit";
-import { Billets, Bouclier, Bulle, Camion, Magasin, Retour, Telephone } from "@/components/Icones";
+import { Bulle } from "@/components/Icones";
+import { rassurances } from "@/components/Rassurances";
 import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
 import { achetesEnsemble, chargeProduit, listeProduits, prixDepuis, type Produit } from "@/lib/catalogue";
 import { photosProduit } from "@/lib/photos";
@@ -66,26 +67,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     alternates: { canonical: `/produit/${slug}` },
     openGraph: { type: "website", title: nom, description, ...(image ? { images: [{ url: image.src, alt: image.alt }] } : {}) },
   };
-}
-
-/** Ce qui rassure, ligne à ligne — chaque ligne vient d'un réglage réel. */
-function rassurances(cadre: Cadre) {
-  return [
-    cadre.retrait
-      ? { cle: "retrait", icone: <Magasin />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) }
-      : null,
-    cadre.livraison.delai ? { cle: "livraison", icone: <Camion />, titre: cadre.livraison.delai, texte: cadre.livraison.frais ?? "" } : null,
-    cadre.livraison.cod
-      ? { cle: "cod", icone: <Billets />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte }
-      : null,
-    cadre.livraison.cod && cadre.livraison.rappel
-      ? { cle: "rappel", icone: <Telephone />, titre: t.produit.confirmationTelephonique, texte: t.produit.confirmationTelephoniqueTexte }
-      : null,
-    cadre.sav?.garantieMois
-      ? { cle: "garantie", icone: <Bouclier />, titre: t.annonce.garantie(cadre.sav.garantieMois), texte: t.sav.garantieTexte }
-      : null,
-    { cle: "refus", icone: <Retour />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
-  ].filter((r) => r !== null);
 }
 
 export default async function FicheProduit({ params }: Params) {

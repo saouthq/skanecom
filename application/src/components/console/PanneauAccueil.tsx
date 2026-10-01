@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icone } from "@/components/console/Icone";
 import {
-  BIBLIOTHEQUE, LONGUEUR_TEXTE, MAX_POINTS, MAX_SECTIONS, TYPES,
+  entreeDe, LONGUEUR_TEXTE, MAX_POINTS, MAX_SECTIONS, TYPES,
   nouvelleSection, problemesAccueil, sectionMasquee, titreParDefaut,
   type AccueilGestion, type EmplacementAccueil, type PieceCatalogue, type SectionBrute,
 } from "@/lib/gestion/accueil";
@@ -62,7 +62,7 @@ export function PanneauAccueil({
 
   const problemes = useMemo(() => problemesAccueil(sections), [sections]);
   const presents = new Set(sections.map((s) => s.type));
-  const masquees = sections.filter((s) => sectionMasquee(s, accueil)).length;
+  const masquees = sections.filter((s) => sectionMasquee(s, accueil, structure)).length;
 
   /* --- Le focus suit la section déplacée : après le rendu, on vise le
      bouton (ou le champ) demandé. */
@@ -84,7 +84,7 @@ export function PanneauAccueil({
     return () => window.clearTimeout(minuterie);
   }, [retour]);
 
-  const nom = (s: SectionBrute) => BIBLIOTHEQUE[s.type].nom;
+  const nom = (s: SectionBrute) => entreeDe(s.type, structure).nom;
   const changer = (cle: string, x: Partial<SectionBrute>, champ = "reglage") =>
     modifier(sections.map((s) => (s.cle === cle ? { ...s, ...x } : s)), `accueil.${cle}.${champ}`);
   const texte = (cle: string, champ: string, valeur: string) =>
@@ -129,12 +129,12 @@ export function PanneauAccueil({
     if (sections.length >= MAX_SECTIONS) return;
     // Une clé que la liste n'a pas encore (n1, n2…).
     const cle = `n${1 + Math.max(0, ...sections.map((s) => Number(/^n(\d+)$/.exec(s.cle ?? "")?.[1] ?? 0)))}`;
-    modifier([...sections, nouvelleSection(type, cle)], `ajouter.${cle}`, `« ${BIBLIOTHEQUE[type].nom} » ajoutée`);
+    modifier([...sections, nouvelleSection(type, cle)], `ajouter.${cle}`, `« ${entreeDe(type, structure).nom} » ajoutée`);
     ouvrir(cle);
     setBibliotheque(false);
     setRetour(null);
     viser.current = [`[data-cle="${cle}"] .ac-reglages :is(input, select, textarea)`, `[data-cle="${cle}"] [data-geste="ouvrir"]`];
-    setAnnonce(`« ${BIBLIOTHEQUE[type].nom} » ajoutée en bas de l'accueil, ouverte pour la régler.`);
+    setAnnonce(`« ${entreeDe(type, structure).nom} » ajoutée en bas de l'accueil, ouverte pour la régler.`);
   }
 
   const destinations = useMemo(() => [
@@ -159,9 +159,9 @@ export function PanneauAccueil({
 
         <ol className="ac-liste pa-liste" role="list">
           {sections.map((s, i) => {
-            const entree = BIBLIOTHEQUE[s.type];
+            const entree = entreeDe(s.type, structure);
             const titre = (s.textes?.titre_fr ?? "").trim() || s.textes?.titre_ar || titreParDefaut(s.type, structure, s.tri);
-            const masquee = sectionMasquee(s, accueil);
+            const masquee = sectionMasquee(s, accueil, structure);
             const ouvert = ouverte === s.cle;
             const erreur = s.cle ? problemes.parSection[s.cle] : undefined;
             const idReglages = `ac-reglages-${s.cle}`;
@@ -176,7 +176,7 @@ export function PanneauAccueil({
                     <span className="ac-section-texte">
                       <b>{entree.nom}<span className="sr-only"> — {ouvert ? "fermer ses réglages" : "régler"}</span></b>
                       <span className="ac-section-titre">{titre.replace(/\n/g, " ")}</span>
-                      {resumeReglage(s, accueil) ? <span className="aide">{resumeReglage(s, accueil)}</span> : null}
+                      {resumeReglage(s, accueil, structure) ? <span className="aide">{resumeReglage(s, accueil, structure)}</span> : null}
                       {masquee ? <span className="ac-masquee"><Icone nom="oeil" taille={12} /> {masquee}</span> : null}
                     </span>
                     <span className="pa-regler" aria-hidden="true"><Icone nom={ouvert ? "croix" : "crayon"} taille={14} /></span>
@@ -236,10 +236,10 @@ export function PanneauAccueil({
               <p className="aide">Elle se place en bas de l&apos;accueil ; montez-la ensuite où vous voulez.</p>
               <ul id="pa-modeles" className="ac-modeles pa-modeles" role="list">
                 {/* Ce qu'on peut ajouter d'abord ; ce qui est déjà sur l'accueil, à la fin. */}
-                {[...TYPES].sort((a, b) => Number(Boolean(BIBLIOTHEQUE[a].unique && presents.has(a))) - Number(Boolean(BIBLIOTHEQUE[b].unique && presents.has(b)))).map((type) => {
-                  const e = BIBLIOTHEQUE[type];
+                {[...TYPES].sort((a, b) => Number(Boolean(entreeDe(a, structure).unique && presents.has(a))) - Number(Boolean(entreeDe(b, structure).unique && presents.has(b)))).map((type) => {
+                  const e = entreeDe(type, structure);
                   const deja = e.unique && presents.has(type);
-                  const masquee = sectionMasquee(nouvelleSection(type, "x"), accueil);
+                  const masquee = sectionMasquee(nouvelleSection(type, "x"), accueil, structure);
                   const montrable = type === "editorial" || type === "texte" ? null : masquee;
                   return (
                     <li key={type}>
@@ -279,7 +279,7 @@ export function PanneauAccueil({
 }
 
 /** Le réglage d'une section en quelques mots (« Les nouveautés · Robes · 8 »). */
-function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "pages" | "catalogue">): string {
+function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "pages" | "catalogue">, structure: Structure): string {
   const rayon = (slug?: string) => a.rayons.find((r) => r.slug === slug)?.nom ?? slug;
   switch (s.type) {
     case "selection":
@@ -298,6 +298,7 @@ function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "page
       return !s.image ? "Sans photo" : n ? `${n} point${n > 1 ? "s" : ""} sur la photo` : "Aucun point encore";
     }
     case "piece":
+      if (!s.produit && structure === "monoproduit") return "Le premier produit mis en avant, tant qu'aucun n'est choisi";
       return a.catalogue.find((c) => c.slug === s.produit)?.nom ?? "";
     default:
       return "";
@@ -318,7 +319,7 @@ function Reglages({
 }) {
   const cle = s.cle ?? "";
   const id = (champ: string) => `ac-${cle}-${champ}`;
-  const entree = BIBLIOTHEQUE[s.type];
+  const entree = entreeDe(s.type, structure);
   const lienActuel = s.lien ?? "";
   const lienConnu = !lienActuel || destinations.some((d) => d.valeur === lienActuel);
 

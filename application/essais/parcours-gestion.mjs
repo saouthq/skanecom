@@ -2122,6 +2122,23 @@ if (section("6")) {
     await clic(page, page.locator(".ap-appareils button", { hasText: "Ordinateur" }));
   });
 
+  await etape("le Monoproduit : la page de vente se pose en tête de l'accueil, puis « Défaire »", async () => {
+    await clic(page, page.locator(".ap-option-large", { hasText: "Monoproduit" }));
+    verifie(await attend(async () => (await html("data-structure")) === "monoproduit", 15000), "« Monoproduit » : le cadre rend le brouillon");
+    verifie(await attend(async () => Boolean(await cadre()?.evaluate(() => Boolean(document.querySelector(".pv-vente .offres, .pv-vente .pv-commander") && document.getElementById("commande"))).catch(() => false)), 10000),
+      "la page de vente en tête (le premier produit mis en avant), le formulaire de commande dessous");
+    await clic(page, page.getByRole("tab", { name: /Accueil/ }));
+    const premiere = await page.locator(".pa-liste .ac-section-texte > b").first().innerText().catch(() => "");
+    verifie(premiere.startsWith("Le produit en vente"), `l'accueil reçoit sa section « Le produit en vente » en tête (${premiere})`);
+    const ligne = (await page.locator(".pa-liste .ac-section").first().innerText()).replace(/\s+/g, " ");
+    verifie(!ligne.includes("Masquée") && ligne.includes("premier produit mis en avant"), "sans produit choisi, elle n'est pas « masquée » : le premier mis en avant");
+    await capture(page, "apparence-monoproduit");
+    await clic(page, page.getByRole("button", { name: "Défaire" }));
+    verifie(await attend(async () => (await html("data-structure")) === "bento", 15000), "« Défaire » : le Bento et ses sections reviennent");
+    verifie(!(await page.locator(".pa-liste .ac-section-texte > b").first().innerText().catch(() => "")).startsWith("Le produit en vente"), "sans la section ajoutée");
+    await clic(page, page.getByRole("tab", { name: /Style/ }));
+  });
+
   await etape("les coins à la souris, les boutons au clavier", async () => {
     const angle = () => cadre().evaluate(() => getComputedStyle(document.querySelector(".ed-carte .cadre-image")).borderTopLeftRadius);
     const avant = await angle();

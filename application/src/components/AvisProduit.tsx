@@ -49,12 +49,19 @@ export function ResumeAvis({ avis }: { avis: Avis | null }) {
   );
 }
 
-export function AvisProduit({ avis, produitId, section, tete }: { avis: Avis | null; produitId: string; section: string; tete: string }) {
+export function AvisProduit({ avis, produitId, section, tete, titre }: {
+  avis: Avis | null;
+  produitId: string;
+  section: string;
+  tete: string;
+  /** Le titre d'une section de l'accueil (la page de vente), qui s'écrit dans l'éditeur. */
+  titre?: string;
+}) {
   if (!avis || avis.total === 0 || avis.moyenne === null) return null;
   return (
     <section id="avis" className={`avis ${section}`} aria-labelledby="avis-titre">
       <div className={tete}>
-        <h2 id="avis-titre">{t.avis.titre}</h2>
+        <h2 id="avis-titre" key={titre} data-texte={titre ? "titre" : undefined}>{titre ?? t.avis.titre}</h2>
       </div>
       <ListeAvis avis={avis} produitId={produitId} />
     </section>

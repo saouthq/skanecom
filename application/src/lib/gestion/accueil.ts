@@ -142,6 +142,19 @@ export const BIBLIOTHEQUE: Record<TypeSection, Entree> = {
   },
 };
 
+/** L'entrée de la bibliothèque, telle que la structure la montre : en
+ *  Monoproduit, la pièce de la saison est la page de vente elle-même. */
+export function entreeDe(type: TypeSection, structure: Structure): Entree {
+  if (type === "piece" && structure === "monoproduit") {
+    return {
+      ...BIBLIOTHEQUE.piece,
+      nom: "Le produit en vente",
+      resume: "La page de vente : ses photos, votre promesse, ses offres par quantité et le formulaire de commande sur la page.",
+    };
+  }
+  return BIBLIOTHEQUE[type];
+}
+
 /** L'ordre de la bibliothèque. */
 export const TYPES: TypeSection[] = ["hero", "piece", "selection", "rayons", "editorial", "lookbook", "avis", "questions", "marques", "engagements", "texte"];
 
@@ -256,7 +269,7 @@ export function problemesAccueil(sections: SectionBrute[]): { general?: string; 
 }
 
 /** Pourquoi la vitrine ne montrera PAS une section (rien à y mettre), ou null. */
-export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" | "rayons" | "pages" | "avis" | "marques" | "produits" | "catalogue">): string | null {
+export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" | "rayons" | "pages" | "avis" | "marques" | "produits" | "catalogue">, structure?: Structure): string | null {
   // La vitrine ne montre que les rayons qui ont des pièces.
   const garnis = a.rayons.filter((r) => !r.parent && r.produits > 0).length;
   switch (s.type) {
@@ -280,7 +293,8 @@ export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" |
       if (!s.image) return "Masquée tant qu'elle n'a pas de photo.";
       return (s.points ?? []).some((p) => a.catalogue.some((c) => c.slug === p.produit)) ? null : "La photo paraît seule : posez un point sur une pièce portée.";
     case "piece":
-      if (!s.produit) return "Masquée tant qu'aucune pièce n'est choisie.";
+      // En Monoproduit, sans produit choisi, la page de vente vend le premier mis en avant.
+      if (!s.produit) return structure === "monoproduit" ? null : "Masquée tant qu'aucune pièce n'est choisie.";
       return a.catalogue.some((c) => c.slug === s.produit) ? null : "Masquée : cette pièce n'est plus publiée.";
     case "selection": {
       if (a.produits === 0) return "Aucun produit publié : la vitrine dit « Le catalogue arrive » (une fois).";

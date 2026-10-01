@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { CarteProduit } from "./CarteProduit";
 import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
@@ -24,9 +25,16 @@ import { formatePrix } from "@/lib/prix";
    textes viennent des sections du thème ; à défaut, des libellés sobres.
    ========================================================================== */
 
-type Props = { cadre: Cadre; donnees: DonneesAccueil };
+type Props = {
+  cadre: Cadre;
+  donnees: DonneesAccueil;
+  /** Une structure bâtie sur l'éditorial (le Monoproduit) rend elle-même
+   *  certaines sections : ce qu'elle rend (null : rien) remplace la section
+   *  éditoriale ; `undefined` la laisse. */
+  propre?: (section: Section, rang: number) => ReactNode | undefined;
+};
 
-export function AccueilEditorial({ cadre, donnees }: Props) {
+export function AccueilEditorial({ cadre, donnees, propre }: Props) {
   const { selections } = donnees;
   // Les collections : deux rayons garnis au moins, sinon pas de section (ni
   // de lien « Parcourir par rayon » vers elle).
@@ -35,6 +43,8 @@ export function AccueilEditorial({ cadre, donnees }: Props) {
   return (
     <>
       {cadre.theme.sections.map((s, i) => {
+        const sienne = propre?.(s, i);
+        if (sienne !== undefined) return sienne;
         switch (s.type) {
           case "hero":
             return <Ouverture key={i} rang={i} section={s} cadre={cadre} premiere={i === 0} collections={collections} />;

@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { evenementPub, lignesPub } from "@/lib/pixels";
+import { signaleEtape } from "@/lib/etapes-visite";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Billets, Camion, Coche, Etiquette, Magasin as IconeMagasin } from "./Icones";
@@ -57,6 +58,8 @@ import type { CodeTheme } from "@/lib/theme";
      saisir, le magasin, ses horaires et son temps de préparation à la place ;
    · l'achat express (réglage commande.achat_express) : un article venu de sa
      fiche, commandé seul — le panier du navigateur n'est ni lu ni vidé ;
+     sur la page de vente (structure Monoproduit), le même formulaire posé
+     sous les offres, qui suit l'offre choisie (`integre`) ;
    · un code promo (module promotions), derrière « Vous avez un code
      promo ? » pour ne pas envoyer chercher un code ailleurs : la base dit
      s'il s'applique (la remise, le total) ou pourquoi pas ; il est gardé le
@@ -115,6 +118,7 @@ export function Tunnel({
   express = null,
   codesPromo = false,
   relancePaniers = false,
+  integre = false,
 }: {
   gabarit: CodeTheme;
   boutiqueId: string;
@@ -137,6 +141,10 @@ export function Tunnel({
   codesPromo?: boolean;
   /** Réglage `commande.relance_paniers` : le tunnel prévient qu'un panier laissé peut être rappelé, une fois. */
   relancePaniers?: boolean;
+  /** Posé sur la page de vente : « la commande ouverte » (le pixel, l'étape
+   *  de l'entonnoir) part au premier geste dans le formulaire, pas à chaque
+   *  visite de la page. */
+  integre?: boolean;
 }) {
   const compteObligatoire = compteReglage || Boolean(devisNumero);
   const id = useId();
@@ -233,7 +241,7 @@ export function Tunnel({
           setDevis(rep.devis);
           setDevisEnPanne(false);
           // Les pixels publicitaires, s'ils sont chargés : la commande ouverte, une fois, au premier chiffrage.
-          if (!debutSignale.current) {
+          if (!debutSignale.current && !integre) {
             debutSignale.current = true;
             evenementPub("InitiateCheckout", lignesPub(rep.devis.lignes));
           }
@@ -248,7 +256,15 @@ export function Tunnel({
     return () => arret.abort();
     // Relu aussi à la connexion : le devis d'un client, le prix d'un pro ;
     // et au code promo tapé.
-  }, [cleDevis, champs.gouvernorat, enRetrait, rafraichir, connecte, avecCodes, code]);
+  }, [cleDevis, champs.gouvernorat, enRetrait, rafraichir, connecte, avecCodes, code, integre]);
+
+  // Sur la page de vente, la commande s'ouvre au premier champ touché.
+  const commence = () => {
+    if (!integre || debutSignale.current) return;
+    debutSignale.current = true;
+    if (devis) evenementPub("InitiateCheckout", lignesPub(devis.lignes));
+    signaleEtape("commande");
+  };
 
   // La session : lue au montage, puis suivie (connexion, déconnexion).
   useEffect(() => {
@@ -548,7 +564,7 @@ export function Tunnel({
         fige={fige}
       />
 
-      <form className="tunnel-formulaire" noValidate onSubmit={confirmer}>
+      <form className="tunnel-formulaire" noValidate onSubmit={confirmer} onFocus={integre ? commence : undefined}>
         {alerte ? (
           <div className="tunnel-alerte" role="alert" tabIndex={-1} ref={refAlerte}>
             {alerte}

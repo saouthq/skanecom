@@ -1155,10 +1155,13 @@ if (section("5")) {
 
 // ---------------------------------------------------------------------------
 // Yasmine Beauté (supabase/seed-beaute.sql) : la boutique de démonstration
-// du métier beauté — gabarit éditorial, six rayons, teintes en pastilles.
+// du métier beauté — six rayons, teintes en pastilles ; en structure
+// Monoproduit (seed-monoproduit.sql), son accueil est la page de vente de son
+// sérum : les offres par quantité, la commande passée sur la page même.
 // ---------------------------------------------------------------------------
 if (section("beaute")) {
   const B = t.adresse("beaute.localhost");
+  const RELAIS = process.env.RELAIS ?? "http://127.0.0.1:54321";
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   t.espion(page, "beaute");
@@ -1166,20 +1169,78 @@ if (section("beaute")) {
     for (let y = 0; y < document.body.scrollHeight; y += 500) { scrollTo(0, y); await new Promise((r) => setTimeout(r, 100)); }
     scrollTo(0, 0);
   });
+  const commander = page.locator(".pv-commander");
 
-  await etape("Yasmine Beauté : l'accueil d'une boutique de beauté", async () => {
+  await etape("Yasmine Beauté : l'accueil est la page de vente du sérum", async () => {
     await page.goto(B + "/", { waitUntil: "networkidle" });
-    verifie((await page.locator("main h1").innerText()).replace(/\s+/g, " ") === "La peau, au naturel.", "l'ouverture : « La peau, au naturel. »");
+    verifie(await page.evaluate(() => document.documentElement.dataset.structure) === "monoproduit", "la boutique est en structure Monoproduit");
+    verifie((await page.locator("main h1").innerText()).replace(/\s+/g, " ") === "Le teint lumineux, en quelques gouttes.", "le titre de la page de vente");
+    verifie((await page.locator(".pv-tete .fiche-avis-resume").innerText()).replace(/\s+/g, " ").includes("6 avis"), "sa note sous le titre (6 avis)");
+    verifie((await page.locator(".pv-points li").count()) === 3, "les lignes « - … » de la promesse deviennent trois points cochés");
+    const offres = (await page.locator(".offres[data-forme=cartes] .offre").allInnerTexts()).map((o) => o.replace(/\s+/g, " ").trim());
+    verifie(offres.length === 3 && offres[1].includes("106,000") && offres[2].includes("147,000") && offres[2].includes("Le meilleur prix"),
+      `trois offres en cartes, la dernière « Le meilleur prix » (${offres.join(" | ")})`);
+    verifie((await commander.innerText()).replace(/\s+/g, " ") === "Commander · 59,000 TND", "« Commander · 59,000 TND » : une pièce d'abord");
     const titres = (await page.locator("main h2").allInnerTexts()).map((h) => h.replace(/\s+/g, " ").trim());
-    verifie(["Nouveautés", "Les collections", "Le jasmin, la fleur d'oranger", "Pour le rituel", "Ce qu'en disent nos clientes"].every((x) => titres.includes(x)),
-      `ses sections : ${titres.join(" · ")}`);
-    const grille = await page.locator(".ed-collections").evaluate((u) => [u.children.length, getComputedStyle(u).gridTemplateColumns.split(" ").length]);
-    verifie(grille[0] === 6 && grille[1] === 6, `six rayons sur une seule rangée, aucun seul sur sa ligne (${grille[0]} rayons, ${grille[1]} colonnes)`);
+    verifie(["Votre commande", "Ce qu'en disent nos clientes", "Vos questions", "Sérum éclat à la vitamine C"].every((x) => titres.includes(x)),
+      `la commande sur la page, puis les avis du sérum, ses questions et le dernier rappel : ${titres.join(" · ")}`);
+    const avis = (await page.locator("#avis").innerText()).replace(/\s+/g, " ");
+    verifie(avis.includes("6 avis vérifiés") && (await page.locator("#avis .avis-filtres button, #avis [role=group] button").count()) > 1, "les six avis du sérum, avec leurs filtres");
     await toutCharger();
     await page.waitForLoadState("networkidle");
     const cassees = await page.evaluate(() => [...document.querySelectorAll("main img")].filter((i) => i.complete && i.naturalWidth === 0).length);
     verifie(cassees === 0, "toutes ses photos s'affichent");
-    await capture(page, "beaute-accueil");
+    await capture(page, "beaute-vente");
+  });
+
+  await etape("une offre à la souris, une autre au clavier : le bouton et le formulaire suivent", async () => {
+    await clic(page, page.locator(".offre", { hasText: "3 pièces" }));
+    verifie(await attend(async () => (await commander.innerText()).includes("147,000"), 3000), "3 pièces : « Commander · 147,000 TND »");
+    verifie((await page.locator(".pv-commande-tete").innerText()).includes("Votre offre : 3 pièces"), "le formulaire dit l'offre choisie");
+    verifie(await attend(async () => /177,000[\s\S]*Prix par 3/.test(await page.locator(".tunnel-recap").innerText()), 5000),
+      "le récapitulatif, relu en base : 147,000, le prix sans l'offre barré (177,000), « Prix par 3 »");
+    await page.locator(".offre input").nth(2).focus();
+    await page.keyboard.press("ArrowLeft");
+    verifie(await attend(async () => (await commander.innerText()).includes("106,000"), 3000), "← au clavier : 2 pièces, « Commander · 106,000 TND »");
+    await capture(page, "beaute-vente-offre");
+  });
+
+  await etape("« Commander » mène au formulaire, le focus sur le numéro", async () => {
+    await clic(page, commander);
+    verifie(await attend(() => page.evaluate(() => document.activeElement?.getAttribute("type") === "tel"), 3000), "le focus est sur le téléphone");
+    verifie(await attend(() => page.evaluate(() => { const r = document.getElementById("commande").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight / 2; }), 3000),
+      "le formulaire est à l'écran, son titre sous l'en-tête");
+  });
+
+  await etape("la commande passée sur la page : deux flacons, le panier intact", async () => {
+    await tape(page, "20 666 777");
+    await clic(page, page.getByRole("button", { name: "Recevoir le code" }));
+    await page.getByLabel("Code reçu par SMS").waitFor();
+    let code = null;
+    for (let i = 0; i < 40 && !code; i++) {
+      const r = await fetch(`${RELAIS}/sms-dev/dernier?telephone=21620666777`).catch(() => null);
+      if (r?.ok) code = (await r.json()).code;
+      else await pause(250);
+    }
+    await tape(page, code ?? "");
+    await page.locator(".tunnel-identite").waitFor({ timeout: 8000 });
+    await clic(page, page.getByLabel("Nom et prénom"));
+    await tape(page, "Salma Haddad");
+    await clic(page, page.getByLabel(/^Adresse/));
+    await tape(page, "4 rue du Lac, Les Berges");
+    await clic(page, page.getByLabel("Ville ou délégation"));
+    await tape(page, "Tunis");
+    await page.getByLabel("Gouvernorat", { exact: true }).selectOption({ label: "Tunis" });
+    await page.locator(".tunnel-livraison").waitFor({ timeout: 8000 });
+    verifie(await attend(async () => (await page.locator(".tunnel-total").innerText()).includes("113,000"), 5000), "le total : 106,000 + 7,000 de livraison");
+    await clic(page, page.locator(".tunnel-conditions input[type=checkbox]"));
+    await capture(page, "beaute-vente-formulaire");
+    await clic(page, page.locator(".tunnel-bouton"));
+    await page.waitForURL(/\/commande\/merci/, { timeout: 15000 });
+    const fin = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+    verifie(/Merci, Salma/.test(fin) && /113,000/.test(fin), "la page de fin : la commande reçue, 113,000 TND à régler au livreur");
+    verifie(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.includes("panier")).every((k) => !(localStorage.getItem(k) ?? "").includes("serum"))),
+      "le panier du navigateur n'a pas été touché");
   });
 
   await etape("la contenance fait le prix : l'huile de figue de Barbarie en 30 ml", async () => {
@@ -1217,11 +1278,24 @@ if (section("beaute")) {
   const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
   const p = await tel.newPage();
   t.espion(p, "beaute-telephone");
-  await etape("Yasmine Beauté au téléphone : l'ouverture cadrée pour l'écran, le menu, les parfums", async () => {
+  await etape("Yasmine Beauté au téléphone : la page de vente, sa barre « Commander », le menu, les parfums", async () => {
     await p.goto(B + "/", { waitUntil: "networkidle" });
-    const ouverture = await p.locator("main img").first().evaluate((i) => i.currentSrc.split("/").pop());
-    verifie(ouverture.startsWith("hero-portrait"), `l'ouverture prend sa photo en hauteur (${ouverture})`);
+    const premier = await p.evaluate(() => { const h = document.querySelector("main h1").getBoundingClientRect(); return h.bottom <= innerHeight; });
+    verifie(premier, "la photo du sérum et le titre tiennent dans le premier écran");
     verifie(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "rien ne déborde en largeur");
+    const cartes = await p.locator(".offres[data-forme=cartes] .offre").evaluateAll((l) => l.map((o) => Math.round(o.getBoundingClientRect().width)));
+    verifie(cartes.length === 3 && new Set(cartes).size === 1 && cartes[0] > 300, `les offres en lignes pleine largeur (${cartes.join(", ")} px)`);
+    const barre = p.locator(".pv-barre");
+    verifie((await barre.count()) === 0, "tant que « Commander » est à l'écran, pas de barre en bas");
+    await p.locator(".pv-commander").evaluate((e) => window.scrollTo(0, e.getBoundingClientRect().bottom + scrollY + 120));
+    await pause(400);
+    verifie((await barre.count()) === 0, "le bouton passé, le formulaire suit : pas encore de barre");
+    await p.locator("#avis").evaluate((e) => e.scrollIntoView({ block: "start" }));
+    verifie(await attend(() => barre.isVisible(), 3000), "le formulaire passé (les avis à l'écran) : la barre « Commander » vient en bas");
+    await capture(p, "beaute-telephone-barre");
+    await barre.getByRole("button", { name: "Commander" }).tap();
+    verifie(await attend(async () => (await barre.count()) === 0, 4000), "un toucher : le formulaire à l'écran, la barre se retire");
+    verifie(await attend(() => p.evaluate(() => document.activeElement?.getAttribute("type") === "tel"), 3000), "le focus sur le téléphone");
     await p.getByRole("button", { name: /menu/i }).first().tap();
     await p.getByRole("dialog").getByRole("link", { name: "Parfums" }).tap();
     await p.waitForURL(/\/categorie\/parfums/);
