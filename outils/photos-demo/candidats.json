@@ -128,5 +128,37 @@
   },
   "maison--linge": {
     "q": "linen towels"
+  },
+  "maison--assiettes": {
+    "q": "ceramic plates",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "maison--vase": {
+    "q": "ceramic vase",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "maison--bougie-pot": {
+    "q": "candle jar",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "maison--plaid": {
+    "q": "throw blanket",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "maison--table": {
+    "q": "table setting",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "maison--bocal": {
+    "q": "glass jars kitchen",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "maison--tasse": {
+    "q": "ceramic mug",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "maison--lit": {
+    "q": "bed linen bedroom",
+    "sources": "stocksnap,nappy,rawpixel"
   }
 }
