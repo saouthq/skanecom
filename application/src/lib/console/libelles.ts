@@ -20,6 +20,10 @@ export const LIBELLES_MODULES: Record<string, string> = {
 export const LIBELLES_THEME: Record<string, string> = {
   editorial: "Éditorial",
   technique: "Technique",
+  bento: "Bento",
+  immersif: "Immersif",
+  commerce: "Commerce",
+  monoproduit: "Monoproduit",
 };
 
 /** L'adresse publique d'un domaine. En local, les boutiques sont servies sur

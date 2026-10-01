@@ -6,14 +6,26 @@ import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
+import { LIBELLES_THEME } from "@/lib/console/libelles";
+import type { Structure } from "@/lib/theme";
 
 export const metadata: Metadata = { title: "Nouvelle boutique" };
+
+/** Les structures qu'une boutique peut prendre en naissant (l'éditeur en change ensuite). */
+const STRUCTURES_A_LA_CREATION: { code: Structure; aide: string }[] = [
+  { code: "editorial", aide: "Mode, bagages, maroquinerie : grandes images, typographie de magazine." },
+  { code: "bento", aide: "Maison, beauté, marques jeunes : une mosaïque de tuiles, coins ronds." },
+  { code: "immersif", aide: "Mode, luxe : la photo plein écran, les pièces qui glissent, le lookbook." },
+  { code: "technique", aide: "Outillage, quincaillerie, grands catalogues : recherche, références, stock chiffré." },
+  { code: "commerce", aide: "High-tech, électroménager : la recherche d'abord, le grand menu, la comparaison." },
+  { code: "monoproduit", aide: "Une pièce vendue par la publicité : sa page de vente, la commande sur la page." },
+];
 
 /* C1 · Créer une boutique et lui attribuer son domaine. Elle naît « en
    préparation » : rien n'est visible tant qu'on ne l'ouvre pas. Son métier,
    s'il est choisi, pose d'un geste ses rayons, ses caractéristiques, sa
-   palette et son gabarit (…_metiers.sql) ; sans métier, on choisit le
-   gabarit et l'on part de zéro. */
+   palette et sa structure (…_metiers.sql) ; sans métier, on choisit la
+   structure et l'on part de zéro. */
 export default async function NouvelleBoutique({ searchParams }: {
   searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string }>;
 }) {
@@ -49,22 +61,17 @@ export default async function NouvelleBoutique({ searchParams }: {
           </div>
         </div>
         <ChoixMetier metiers={metiers} choisi={v.metier} />
-        <fieldset className="choix choix-2 mt-gabarit">
-          <legend>Gabarit</legend>
-          <label className="choix-carte">
-            <input type="radio" name="theme" value="editorial" defaultChecked={(v.theme ?? "editorial") !== "technique"} />
-            <span>
-              <b>Éditorial</b>
-              <span className="aide">Mode, bagages, maroquinerie : grandes images, typographie de magazine.</span>
-            </span>
-          </label>
-          <label className="choix-carte">
-            <input type="radio" name="theme" value="technique" defaultChecked={v.theme === "technique"} />
-            <span>
-              <b>Technique</b>
-              <span className="aide">Outillage, quincaillerie, grands catalogues : recherche, références, stock chiffré.</span>
-            </span>
-          </label>
+        <fieldset className="choix mt-gabarit">
+          <legend>Structure</legend>
+          {STRUCTURES_A_LA_CREATION.map((x) => (
+            <label key={x.code} className="choix-carte">
+              <input type="radio" name="theme" value={x.code} defaultChecked={(v.theme ?? "editorial") === x.code} />
+              <span>
+                <b>{LIBELLES_THEME[x.code]}</b>
+                <span className="aide">{x.aide}</span>
+              </span>
+            </label>
+          ))}
         </fieldset>
         <div className="carte-pied">
           <span className="aide">Ensuite : la marque, le catalogue, l&apos;équipe.</span>

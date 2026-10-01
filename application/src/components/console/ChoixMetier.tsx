@@ -3,8 +3,8 @@ import { cePose, type Metier } from "@/lib/console/metiers";
 
 /* ============================================================================
    LE MÉTIER D'UNE BOUTIQUE — des cartes à choisir (une seule) : le nom, ce
-   qu'on y vend, le gabarit et ce que le préréglage pose ; la pastille dit sa
-   couleur. « Aucun » laisse la boutique vide (le gabarit se choisit à part).
+   qu'on y vend, la structure et ce que le préréglage pose ; la pastille dit sa
+   couleur. « Aucun » laisse la boutique vide (la structure se choisit à part).
    ========================================================================== */
 
 export function ChoixMetier({ metiers, choisi, aucun = true }: { metiers: Metier[]; choisi?: string; aucun?: boolean }) {
@@ -16,7 +16,7 @@ export function ChoixMetier({ metiers, choisi, aucun = true }: { metiers: Metier
           <input type="radio" name="metier" value="" defaultChecked={!choisi} />
           <span>
             <b>Aucun : partir de zéro</b>
-            <span className="aide">Ni rayons ni caractéristiques ; le gabarit se choisit ci-dessous.</span>
+            <span className="aide">Ni rayons ni caractéristiques ; la structure se choisit ci-dessous.</span>
           </span>
         </label>
       ) : null}
@@ -29,7 +29,7 @@ export function ChoixMetier({ metiers, choisi, aucun = true }: { metiers: Metier
               {m.nom}
             </b>
             <span className="aide">{m.description}</span>
-            <span className="aide mt-pose">Gabarit {(LIBELLES_THEME[m.gabarit] ?? m.gabarit).toLowerCase()} · {cePose(m)}</span>
+            <span className="aide mt-pose">Structure {LIBELLES_THEME[m.gabarit] ?? m.gabarit} · {cePose(m)}</span>
           </span>
         </label>
       ))}

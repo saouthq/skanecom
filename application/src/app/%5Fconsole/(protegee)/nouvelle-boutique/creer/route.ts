@@ -1,3 +1,4 @@
+import { STRUCTURES } from "@/lib/theme";
 import { clientService } from "@/lib/console/service";
 import { ecriture, messageBase, vers, versAvecErreur } from "@/lib/console/http";
 import { messageMetier } from "@/lib/console/metiers";
@@ -8,7 +9,7 @@ export async function POST(req: Request) {
       nom: String(formulaire.get("nom") ?? "").trim(),
       slug: String(formulaire.get("slug") ?? "").trim().toLowerCase(),
       hote: String(formulaire.get("hote") ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
-      theme: formulaire.get("theme") === "technique" ? "technique" : "editorial",
+      theme: (STRUCTURES as string[]).includes(String(formulaire.get("theme"))) ? String(formulaire.get("theme")) : "editorial",
       metier: String(formulaire.get("metier") ?? "").trim(),
     };
     const service = clientService(ip);

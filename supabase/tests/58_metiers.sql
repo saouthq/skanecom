@@ -29,7 +29,7 @@ select tests.service();
 select is(jsonb_array_length(public.console_metiers(tests.id('admin_plateforme'))), 8, 'huit métiers');
 select results_eq($$ select x ->> 'code', x ->> 'gabarit' from jsonb_array_elements(public.console_metiers(tests.id('admin_plateforme'))) x
                      where x ->> 'code' in ('beaute', 'high_tech') order by 1 $$,
-  $$ values ('beaute'::text, 'editorial'::text), ('high_tech', 'technique') $$, 'chacun avec son gabarit');
+  $$ values ('beaute'::text, 'editorial'::text), ('high_tech', 'commerce') $$, 'chacun avec sa structure (migration 74)');
 select throws_ok(format($$ select public.console_metiers(%L) $$, tests.id('proprio_a')), '42501', null, 'un membre d''une boutique n''est pas administrateur');
 
 -- Une boutique neuve, vide.

@@ -1,3 +1,5 @@
+import type { Structure } from "@/lib/theme";
+
 /* ============================================================================
    LES PRÉRÉGLAGES PAR MÉTIER (…_metiers.sql) — ce que rend
    public.console_metiers : de quoi les présenter avant de choisir.
@@ -7,7 +9,8 @@ export type Metier = {
   code: string;
   nom: string;
   description: string;
-  gabarit: "editorial" | "technique";
+  /** La structure que le métier pose (migration 74). */
+  gabarit: Structure;
   accent: string | null;
   rayons: number;
   sous_rayons: number;
