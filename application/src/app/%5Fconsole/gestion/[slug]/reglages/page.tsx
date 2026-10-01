@@ -639,6 +639,8 @@ export default async function Reglages({
                       aide="Les visites de la vitrine dans l'écran Visites : combien de visiteurs, d'où ils viennent, sur quel appareil, et combien commandent. Sans cookie ni donnée personnelle : rien à faire accepter." />
                     <Case cle="catalogue.achetes_ensemble" valeur={Boolean(v("catalogue.achetes_ensemble"))} titre="Souvent achetés ensemble"
                       aide="Sous la fiche et dans le tiroir du panier, les pièces que vos clients prennent avec celle-ci, d'après les commandes des six derniers mois (ni annulées ni refusées). Aucune donnée personnelle n'en sort." />
+                    <Case cle="catalogue.ajout_carte" valeur={Boolean(v("catalogue.ajout_carte"))} titre="Ajouter au panier depuis la carte"
+                      aide="Un « + » sur la photo de chaque carte met la pièce au panier sans ouvrir sa fiche ; s'il y a un choix (taille, couleur, format : huit au plus), il se fait sur la photo. Dans les grilles de photos (gabarit éditorial) ; les cartes du gabarit technique ont déjà leur bouton." />
                   </div>
                   <div className="grille-champs">
                     <div className="champ">

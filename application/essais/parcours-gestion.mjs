@@ -2385,6 +2385,29 @@ if (section("6")) {
     verifie((await w.locator(".btn-ajout").count()) === 1 && (await w.locator(".fiche-contact").count()) === 0, "« Ajouter au panier » revient aussitôt");
     await w.close();
   });
+
+  await etape("le « + » des cartes : coupé puis rallumé au backoffice, la vitrine suit aussitôt", async () => {
+    await page.goto(`${C}/gestion/dar-alia/reglages`, { waitUntil: "networkidle" });
+    const vitrine = page.locator("section:has(#t-vitrine)");
+    const statut = () => page.getByRole("status").first().innerText().catch(() => "");
+    const caseAjout = vitrine.getByRole("checkbox", { name: /Ajouter au panier depuis la carte/ });
+    verifie(await caseAjout.isChecked(), "« Ajouter au panier depuis la carte » : allumé chez Dar Alia");
+    const plusDeLaVitrine = async () => {
+      const v = await ctx.newPage();
+      await v.goto(V + "/catalogue", { waitUntil: "networkidle" });
+      const n = await v.locator(".ajc-plus").count();
+      await v.close();
+      return n;
+    };
+    verifie((await plusDeLaVitrine()) === 18, "sur la vitrine, un « + » sur chacune des 18 cartes");
+    await clic(page, vitrine.getByText("Ajouter au panier depuis la carte"));
+    await t.envoie(page, vitrine.getByRole("button", { name: "Enregistrer" }));
+    verifie((await statut()).includes("Réglages enregistrés"), `coupé : « ${await statut()} »`);
+    verifie((await plusDeLaVitrine()) === 0, "aussitôt, plus aucun « + » : les cartes mènent à leur fiche");
+    await clic(page, page.locator("section:has(#t-vitrine)").getByText("Ajouter au panier depuis la carte"));
+    await t.envoie(page, page.locator("section:has(#t-vitrine)").getByRole("button", { name: "Enregistrer" }));
+    verifie((await plusDeLaVitrine()) === 18, "rallumé : les « + » reviennent");
+  });
   await ctx.close();
 }
 

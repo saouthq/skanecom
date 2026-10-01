@@ -94,6 +94,8 @@ export type Cadre = {
   relancePaniers: boolean;
   /** Réglage `catalogue.favoris` : le cœur des cartes et des fiches, « Mes favoris ». */
   favoris: boolean;
+  /** Réglage `catalogue.ajout_carte` : le « + » sur la photo des cartes éditoriales. */
+  ajoutCarte: boolean;
   /** Réglage `catalogue.achetes_ensemble` : les pièces que les commandes réunissent,
    *  sur la fiche et dans le tiroir du panier. */
   achetesEnsemble: boolean;
@@ -265,6 +267,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     relancePaniers: reglage<boolean>(reglages, "commande.relance_paniers", false) === true
       && reglage<boolean>(reglages, "compte.obligatoire", true) !== false,
     favoris: reglage<boolean>(reglages, "catalogue.favoris", false) === true,
+    ajoutCarte: reglage<boolean>(reglages, "catalogue.ajout_carte", false) === true,
     achetesEnsemble: reglage<boolean>(reglages, "catalogue.achetes_ensemble", false) === true,
     statistiques: reglage<boolean>(reglages, "vitrine.statistiques", false) === true,
     partage: reglage<boolean>(reglages, "vitrine.partage", false) === true,

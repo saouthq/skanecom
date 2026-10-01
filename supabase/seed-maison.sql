@@ -42,7 +42,10 @@ begin
     (b, 'contact.horaires',                  '"Du lundi au samedi, de 9 h à 19 h"'),
     (b, 'legal.email',                       '"bonjour@dar-alia.exemple.tn"'),
     (b, 'vitrine.whatsapp_flottant',         'true'),
-    (b, 'vitrine.annonce',                   '"Livraison offerte dès 200 dinars, partout en Tunisie"');
+    (b, 'vitrine.annonce',                   '"Livraison offerte dès 200 dinars, partout en Tunisie"'),
+    -- Hors préréglage (migration 76) : le « + » sur la photo des cartes ;
+    -- ses pièces ont une déclinaison, ou un seul choix (format, couleur, parfum).
+    (b, 'catalogue.ajout_carte',             'true');
 
   insert into public.zones_livraison (id, boutique_id, nom_fr, frais_millimes, delai_jours_min, delai_jours_max, position) values
     ('00000000-0000-4000-8001-000000000051', b, 'Grand Sfax',          8000, 1, 2, 1),

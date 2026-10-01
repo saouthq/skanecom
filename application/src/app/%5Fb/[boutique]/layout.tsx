@@ -1,4 +1,5 @@
 import { FavorisActifs } from "@/components/FavorisActifs";
+import { AjoutCarteActif } from "@/components/AjoutCarte";
 import { MesureAudience } from "@/components/MesureAudience";
 import { PixelsPub } from "@/components/PixelsPub";
 import { scriptPixels } from "@/lib/pixels";
@@ -104,6 +105,7 @@ export default async function RacineBoutique({ children, params }: Props) {
         ) : null}
         <FournisseurCommande ouverte={!cadre.siteVitrine}>
         <FavorisActifs actif={cadre.favoris}>
+        <AjoutCarteActif actif={cadre.ajoutCarte}>
           <ComparaisonActive actif={commerce}>
             <Entete cadre={cadre} />
             {children}
@@ -113,6 +115,7 @@ export default async function RacineBoutique({ children, params }: Props) {
           {commerce ? (
             <BarreOnglets favoris={cadre.favoris} compte={cadre.reglages["compte.obligatoire"] !== false && !cadre.siteVitrine} panier={!cadre.siteVitrine} />
           ) : null}
+        </AjoutCarteActif>
         </FavorisActifs>
         </FournisseurCommande>
         {cadre.whatsappFlottant && cadre.whatsapp ? <BoutonWhatsApp numero={cadre.whatsapp} nom={cadre.boutique.nom} /> : null}

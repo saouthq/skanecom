@@ -898,6 +898,78 @@ html[data-gabarit=technique] .vus-photo { aspect-ratio: 1; background: var(--the
   .carte-favori[aria-pressed="false"] { opacity: 0; transition: opacity .2s var(--theme-courbe), transform .2s var(--theme-courbe); }
   :is(.ed-carte, .te-carte):hover .carte-favori, .carte-favori:focus-visible { opacity: 1; }
 }
+/* --- L'ajout depuis la photo d'une carte (components/AjoutCarte.tsx) -------- */
+/* Un calque de la taille de la photo (même rapport, mêmes marges que la
+   carte) : le « + » dans son coin bas, le choix posé sur son bas. Le calque
+   laisse passer les gestes ; ses boutons seuls les prennent. */
+.ajc {
+  position: absolute; z-index: 3; inset-block-start: 0; inset-inline: 0; aspect-ratio: var(--theme-ratio-carte, 4 / 5);
+  pointer-events: none;
+}
+html:is([data-cartes="cadre"], [data-cartes="ombre"]) .ed-carte .ajc { inset-block-start: .625rem; inset-inline: .625rem; }
+.ajc :is(.ajc-plus, .ajc-choix) { pointer-events: auto; }
+.ajc-plus {
+  position: absolute; inset-block-end: .625rem; inset-inline-end: .625rem;
+  display: inline-grid; place-items: center; inline-size: 2.5rem; block-size: 2.5rem; padding: 0;
+  border: 0; border-radius: 999px; cursor: pointer; color: var(--theme-encre);
+  background: color-mix(in srgb, var(--theme-surface) 88%, transparent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 4px 14px -6px rgb(0 0 0 / .22);
+  backdrop-filter: blur(6px);
+  transition: transform .2s var(--theme-courbe), background-color .2s, color .2s, opacity .2s var(--theme-courbe);
+}
+.ajc-plus:hover { transform: scale(1.06); }
+.ajc-plus:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 2px; }
+.ajc-plus[data-ajoute] { background: var(--theme-encre); color: var(--theme-fond); }
+/* À la souris, comme le cœur : au survol de la carte, au clavier, ou ouvert. */
+@media (hover: hover) and (pointer: fine) {
+  .ajc-plus:not([data-ajoute]) { opacity: 0; }
+  .ed-carte:hover .ajc-plus, .ajc-plus:focus-visible { opacity: 1; }
+}
+/* Ouvert, le choix prend sa place (il a sa croix ; le focus y est). */
+.ajc[data-ouvert] .ajc-plus { visibility: hidden; }
+
+.ajc-choix {
+  position: absolute; inset-inline: .5rem; inset-block-end: .5rem; max-block-size: calc(100% - 1rem); overflow-y: auto;
+  display: grid; gap: .5rem; padding: .625rem .625rem .75rem;
+  border-radius: calc(var(--theme-radius-carte, .75rem) * .7 + .125rem);
+  background: color-mix(in srgb, var(--theme-surface) 94%, transparent); color: var(--theme-encre);
+  box-shadow: 0 2px 4px rgb(0 0 0 / .06), 0 12px 32px -12px rgb(0 0 0 / .32);
+  backdrop-filter: blur(10px);
+  animation: ajc-monte .28s var(--theme-courbe);
+  overscroll-behavior: contain;
+}
+.ajc-choix[hidden] { display: none; }
+@keyframes ajc-monte { from { opacity: 0; transform: translateY(.5rem); } }
+/* La tête : ce qu'on choisit, et la croix. */
+.ajc-tete { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-block-size: 1.5rem; }
+.ajc-axe { font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.ajc-fermer {
+  display: inline-grid; place-items: center; inline-size: 1.75rem; block-size: 1.75rem; padding: 0; margin: -.25rem -.25rem -.25rem 0;
+  border: 0; border-radius: 999px; background: transparent; color: var(--theme-encre-doux); cursor: pointer;
+}
+.ajc-fermer:hover { color: var(--theme-encre); background: color-mix(in srgb, var(--theme-encre) 8%, transparent); }
+.ajc-fermer:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 1px; }
+.ajc-valeurs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.25rem), 1fr)); gap: .375rem; }
+.ajc-valeur {
+  min-inline-size: 0; min-block-size: 2.75rem; padding: .375rem .5rem; overflow-wrap: anywhere;
+  display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: .375rem; row-gap: 0;
+  border: 1px solid var(--theme-filet-fort); border-radius: var(--theme-radius-doux); background: var(--theme-surface);
+  color: var(--theme-encre); font: inherit; font-size: .8125rem; line-height: 1.25; cursor: pointer; text-align: center;
+  transition: border-color .15s, background-color .15s, color .15s;
+}
+@media (hover: hover) { .ajc-valeur:not(:disabled):hover { border-color: var(--theme-encre); } }
+.ajc-valeur:not(:disabled):active { background: var(--theme-encre); color: var(--theme-fond); border-color: var(--theme-encre); }
+.ajc-valeur:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 1px; }
+.ajc-valeur:disabled { cursor: not-allowed; color: var(--theme-encre-doux); border-style: dashed; background: transparent; }
+.ajc-valeur:disabled .ajc-libelle { text-decoration: line-through; }
+.ajc-pastille { inline-size: .875rem; block-size: .875rem; border-radius: 999px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .15); }
+.ajc-prix, .ajc-lot { flex-basis: 100%; font-size: .75rem; color: var(--theme-encre-doux); }
+.ajc-valeur:not(:disabled):active :is(.ajc-prix, .ajc-lot) { color: inherit; }
+@media (prefers-reduced-motion: reduce) {
+  .ajc-choix { animation: none; }
+  .ajc-plus { transition: none; }
+}
+
 /* Sur la fiche : un bouton carré, de la hauteur de « Ajouter au panier ». */
 .fiche-favori {
   flex: none; inline-size: 3.25rem; block-size: auto; align-self: stretch; border-radius: var(--theme-radius-doux);

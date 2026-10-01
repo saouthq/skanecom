@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Photo } from "./Photo";
 import { EtatStock } from "./EtatStock";
 import { AjoutRapide } from "./AjoutRapide";
+import { AjoutCarte, MAX_CHOIX_CARTE, type ChoixCarte } from "./AjoutCarte";
 import { BoutonFavori } from "./BoutonFavori";
 import { BoutonComparer } from "./Comparaison";
 import { PrixCarte } from "./PrixCarte";
@@ -11,6 +12,7 @@ import { champ, t } from "@/lib/i18n";
 import { photoSurvol, urlPhoto } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { valeurAvecUnite } from "@/lib/caracteristiques";
+import { paliersDe } from "@/lib/paliers";
 import {
   coloris as colorisDe,
   etatProduit,
@@ -78,6 +80,32 @@ function declinaisons(produit: Produit): string[] {
     .filter((d): d is string => d !== null);
 }
 
+/** Ce que le « + » de la photo propose (réglage catalogue.ajout_carte) :
+ *  chaque déclinaison, nommée par ses valeurs dans l'ordre des axes, avec
+ *  sa photo. Rien au-delà de huit — la fiche s'en charge. */
+function choixCarte(produit: Produit): { axe: string | null; choix: ChoixCarte[] } | null {
+  if (produit.variantes.length === 0 || produit.variantes.length > MAX_CHOIX_CARTE) return null;
+  const axes = produit.options.filter((o) => produit.variantes.some((v) => v.options?.[o.cle]));
+  const commune = produit.images.find((i) => i.variante_id === null)?.chemin ?? produit.images[0]?.chemin;
+  const seuleCouleur = axes.length === 1 && axes[0].cle === "couleur";
+  return {
+    axe: axes.length ? axes.map((o) => champ(o, "label")).join(" · ") : null,
+    choix: produit.variantes.map((v) => {
+      const image = v.image_chemin ?? produit.images.find((i) => i.variante_id === v.id)?.chemin ?? commune;
+      return {
+        varianteId: v.id,
+        sku: v.sku,
+        libelle: axes.map((o) => v.options?.[o.cle]).filter(Boolean).join(" · "),
+        ...(seuleCouleur && v.options?.couleur ? { pastille: v.options.couleur } : {}),
+        prixMillimes: v.prix_millimes,
+        stock: v.stock,
+        minimum: minimumVariante(v),
+        ...(image ? { image } : {}),
+      };
+    }),
+  };
+}
+
 export function CarteProduit(props: Props) {
   return props.gabarit === "technique" ? <CarteTechnique {...props} /> : <CarteEditoriale {...props} />;
 }
@@ -90,6 +118,8 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
   const marqueur =
     etat === "rupture" ? t.stock.epuise : etat === "faible" ? t.stock.faible(stockTotal(produit)) : reduction ? `−${reduction} %` : null;
   const autres = declinaisons(produit);
+  const ajout = choixCarte(produit);
+  const paliers = paliersDe(produit.paliers);
 
   return (
     <div className="ed-carte">
@@ -123,6 +153,10 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
       </span>
     </Link>
     <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="carte-favori" />
+    {ajout ? (
+      <AjoutCarte produitId={produit.id} slug={produit.slug} nom={champ(produit, "nom")} axe={ajout.axe} choix={ajout.choix}
+        {...(paliers.length ? { paliers } : {})} />
+    ) : null}
     </div>
   );
 }

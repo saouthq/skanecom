@@ -1420,6 +1420,75 @@ if (section("maison")) {
     await page.locator(".confirmation-ajout").waitFor({ timeout: 4000 });
     verifie((await page.locator(".confirmation-ajout").innerText()).includes("Écru"), "au clavier jusqu'à « Ajouter au panier » : ajoutées, en Écru");
   });
+
+  // Le « + » sur la photo des cartes (réglage catalogue.ajout_carte, allumé chez Dar Alia).
+  const lignesPanier = () => page.evaluate(() => {
+    const k = Object.keys(localStorage).find((x) => x.includes(".panier."));
+    return k ? JSON.parse(localStorage.getItem(k)).lignes.map((l) => `${l.libelle} ×${l.quantite}`) : [];
+  });
+  const carte = (pg, slug) => pg.locator(".ed-carte", { has: pg.locator(`a.ed-carte-lien[href="/produit/${slug}"]`) });
+  await etape("le « + » d'une carte : la taille choisie sur la photo, à la souris puis au clavier", async () => {
+    await page.goto(A + "/catalogue", { waitUntil: "networkidle" });
+    const avant = (await lignesPanier()).length;
+    const jonc = carte(page, "panier-jonc-de-mer");
+    await jonc.scrollIntoViewIfNeeded();
+    const plus = jonc.locator(".ajc-plus");
+    verifie(await plus.evaluate((e) => getComputedStyle(e).opacity) === "0", "à la souris, le « + » attend le survol de la carte, comme le cœur");
+    await jonc.hover();
+    await page.waitForTimeout(300);
+    verifie(await plus.evaluate((e) => getComputedStyle(e).opacity) === "1", "au survol, il paraît dans le coin de la photo");
+    await clic(page, plus);
+    const choix = (await jonc.locator(".ajc-valeur").allInnerTexts()).map((x) => x.replace(/\s+/g, " ").trim());
+    verifie(await plus.getAttribute("aria-expanded") === "true" && choix.length === 3 && choix[1].includes("M — 32 cm") && choix[1].includes("49,000"),
+      `trois tailles, chacune son prix : ${choix.join(" | ")}`);
+    await capture(page, "maison-carte-choix");
+    await clic(page, jonc.locator(".ajc-valeur", { hasText: "M — 32 cm" }));
+    await page.locator(".confirmation-ajout").waitFor({ timeout: 4000 });
+    const apres = await lignesPanier();
+    verifie(apres.length === avant + 1 && apres.includes("Panier en jonc de mer · M — 32 cm ×1"), `au panier : « ${apres.at(-1)} »`);
+    verifie(await jonc.locator(".ajc-choix").isHidden(), "le choix se referme");
+    await page.keyboard.press("Escape");
+    // Le kilim : le grand format épuisé ne se prend pas ; un geste ailleurs referme.
+    const kilim = carte(page, "kilim-tisse-main");
+    await kilim.scrollIntoViewIfNeeded();
+    await kilim.hover();
+    await clic(page, kilim.locator(".ajc-plus"));
+    verifie(await kilim.locator(".ajc-valeur", { hasText: "160 × 230" }).isDisabled(), "le kilim : 160 × 230 cm, épuisé, barré et désactivé");
+    await page.mouse.click(8, 300);
+    verifie(await kilim.locator(".ajc-choix").isHidden(), "un clic hors de la carte referme le choix");
+    // Au clavier : du lien de la carte, Tab → le cœur → le « + » ; Entrée ouvre, Échap referme, le focus revient.
+    const bougie = carte(page, "bougie-parfumee-pot");
+    await bougie.locator("a.ed-carte-lien").focus();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    const nom = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent?.trim() || "");
+    verifie((await nom()) === "Ajouter au panier — Bougie parfumée en pot", `Tab, Tab depuis la carte : « ${await nom()} »`);
+    await page.keyboard.press("Enter");
+    verifie((await nom()) === "Fleur d'oranger", `Entrée : le focus sur le premier parfum (« ${await nom()} »)`);
+    await page.keyboard.press("Escape");
+    verifie(await bougie.locator(".ajc-choix").isHidden() && (await nom()).startsWith("Ajouter au panier — Bougie"), "Échap : refermé, le focus revient au « + »");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await page.locator(".confirmation-ajout").waitFor({ timeout: 4000 });
+    verifie((await lignesPanier()).includes("Bougie parfumée en pot · Jasmin ×1"), "Entrée, Tab, Entrée : la bougie au jasmin, au panier");
+    verifie(await page.evaluate(() => !!document.activeElement?.closest(".confirmation-ajout")), "au clavier, la confirmation prend le focus");
+    await page.keyboard.press("Escape");
+    verifie((await nom()) === "Ajouté au panier — Bougie parfumée en pot", `Échap : le focus revient au « + », qui dit l'ajout (« ${await nom()} »)`);
+    // Une pièce sans déclinaison part d'un geste ; la photo mène toujours à la fiche.
+    const cuilleres = carte(page, "cuilleres-bois-olivier");
+    await cuilleres.scrollIntoViewIfNeeded();
+    await cuilleres.hover();
+    verifie(await cuilleres.locator(".ajc-plus").getAttribute("aria-expanded") === null, "les cuillères (une déclinaison) : rien à choisir");
+    await clic(page, cuilleres.locator(".ajc-plus"));
+    await page.locator(".confirmation-ajout").waitFor({ timeout: 4000 });
+    verifie((await lignesPanier()).includes("Cuillères en bois d'olivier, lot de trois ×1"), "un geste : au panier");
+    await page.keyboard.press("Escape");
+    const photo = await carte(page, "mug-gres-emaille").locator(".cadre-image").boundingBox();
+    await page.mouse.click(photo.x + photo.width / 2, photo.y + photo.height / 2);
+    await page.waitForURL(/\/produit\/mug-gres-emaille/);
+    verifie(true, "un clic au milieu d'une photo ouvre toujours la fiche");
+  });
   await ctx.close();
 
   const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
@@ -1436,6 +1505,24 @@ if (section("maison")) {
     const fiches = await p.locator("main a[href^='/produit/']").evaluateAll((l) => new Set(l.map((a) => a.getAttribute("href"))).size);
     verifie(fiches === 3, `le rayon Luminaires : ${fiches} fiches`);
     await capture(p, "maison-telephone-luminaires");
+  });
+  await etape("Dar Alia au téléphone : le « + » des cartes, au doigt", async () => {
+    await p.goto(A + "/catalogue", { waitUntil: "networkidle" });
+    const jonc = p.locator(".ed-carte", { has: p.locator('a.ed-carte-lien[href="/produit/panier-jonc-de-mer"]') });
+    await jonc.scrollIntoViewIfNeeded();
+    verifie(await jonc.locator(".ajc-plus").evaluate((e) => getComputedStyle(e).opacity) === "1", "au doigt, le « + » est là sans survol");
+    await jonc.locator(".ajc-plus").tap();
+    await jonc.locator(".ajc-choix").waitFor();
+    const [r, ph] = [await jonc.locator(".ajc-choix").boundingBox(), await jonc.locator(".cadre-image").boundingBox()];
+    verifie(r.y >= ph.y - 1 && r.y + r.height <= ph.y + ph.height + 1 && r.x >= ph.x - 1 && r.x + r.width <= ph.x + ph.width + 1,
+      "le choix tient sur la photo");
+    const tailles = await jonc.locator(".ajc-valeur").evaluateAll((l) => l.map((b) => Math.round(b.getBoundingClientRect().height)));
+    verifie(tailles.every((h) => h >= 44), `chaque taille se prend au doigt (${tailles.join(", ")} px de haut)`);
+    await capture(p, "maison-telephone-carte-choix");
+    await jonc.locator(".ajc-valeur", { hasText: "L — 40 cm" }).tap();
+    await p.locator(".confirmation-ajout").waitFor({ timeout: 4000 });
+    verifie((await p.locator(".confirmation-ajout").innerText()).includes("L — 40 cm"), "touché « L — 40 cm » : au panier, la confirmation le dit");
+    verifie(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "rien ne déborde en largeur");
   });
   await tel.close();
 }

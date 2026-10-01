@@ -121,7 +121,7 @@ SECTIONS=4bis,6 bun run parcours:gestion       # idem au backoffice
 Tout, à la main (avant un `[complet]`, ou pour reproduire la CI). Les tests de la base se suffisent à eux-mêmes ; le reste demande la vitrine lancée par `outils/essayer.sh` dans un autre terminal, et une base neuve entre deux parcours (certains publient des modifications) :
 
 ```bash
-outils/base-locale.sh tester                   # 1598 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, modules, accès support, devis, avis clients, sections de l'accueil…)
+outils/base-locale.sh tester                   # 1602 tests de la base (isolation des boutiques, vitrine, console, import, commande, backoffice, équipes, catalogue, photos, réglages, clients, pages légales, modules, accès support, devis, avis clients, sections de l'accueil…)
 outils/essai-vitrine.sh                        # les boutiques ne se mélangent jamais, le tunnel et le compte ne sont jamais en cache
 cd application
 bunx playwright-core install --with-deps chromium   # une fois (demande sudo)
