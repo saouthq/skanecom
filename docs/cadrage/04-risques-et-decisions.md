@@ -24,6 +24,7 @@
 | 29/09/2026 | ↳ **D17** : modules de la v1 selon `05-etude-outillage-quincaillerie.md` | |
 | 29/09/2026 | ↳ **D18** : nous gérons le DNS des domaines des clients | |
 | 29/09/2026 | ↳ **D19** : thème n°2 « catalogue technique » dès le représentant DeWalt | |
+| 01/10/2026 | **D20 — La facturation des clients SkanEcom vit dans SkanFact** (mise en place, abonnement, options, encaissements, TVA, retenue, El Fatoora, comptabilité) : la console la lit par l'API de SkanFact et n'en refait rien (`06-facturation-skanfact.md`) | Skander |
 
 **Décisions du 28/09 devenues sans objet avec D15** (gardées pour l'historique) :
 - **D2**, domaine des vitrines gratuites sur la Public Suffix List : plus de sous-domaines gratuits, chaque client a son domaine.

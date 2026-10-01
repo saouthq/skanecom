@@ -106,6 +106,7 @@ Ce qui ne se décide pas sans lui, rappelé à chaque point d'étape :
 | SMS | Le fournisseur (prix par SMS, envoi vers les numéros tunisiens) |
 | E-mails | Resend ou Brevo, et un domaine d'envoi vérifié (`COURRIELS_ENVOI`) |
 | Transporteurs | Lesquels brancher en premier (API) |
+| Facturation des clients | Par SkanFact (D20) : l'API de SkanFact selon `cadrage/06-facturation-skanfact.md` § 3 (P1 d'abord), l'entreprise SkanEcom dans SkanFact, la clé de l'API en secret |
 | Konnect | Le compte marchand de chaque client qui le veut |
 | Anti-robots | Les clés Turnstile |
 | Maymar | Le domaine `maymar.tn`, les photos selon le protocole (celles reçues ne sont pas montrables), les informations légales |
