@@ -10,6 +10,7 @@ n'importe quel ordinateur ou téléphone, mises à jour à chaque envoi de code
 | Maison Selma | `https://skanecom-apercu-selma.<sous-domaine>.workers.dev` |
 | Quincaillerie du Sud | `https://skanecom-apercu-quincaillerie.<sous-domaine>.workers.dev` |
 | Yasmine Beauté | `https://skanecom-apercu-beaute.<sous-domaine>.workers.dev` |
+| Dar Alia | `https://skanecom-apercu-maison.<sous-domaine>.workers.dev` |
 | Console et backoffices | `https://skanecom-apercu-console.<sous-domaine>.workers.dev` |
 
 Le résumé de chaque exécution du workflow donne les adresses exactes.

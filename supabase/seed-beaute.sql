@@ -4,7 +4,7 @@
 -- Une boutique de démonstration pour la prospection (feuille de route D,
 -- « Boutiques de démonstration par métier ») : la beauté et la cosmétique,
 -- l'un des premiers métiers du commerce en ligne tunisien. Elle suit le
--- préréglage « Beauté et cosmétique » de la console (migration 59) — le
+-- préréglage « Beauté et cosmétique » de la console (migration 58) — le
 -- gabarit éditorial, sa palette et ses polices, ses rayons, la contenance et
 -- le type de peau — sans passer par lui : l'aperçu en ligne installe ses
 -- jeux de démo avant qu'un administrateur n'existe.

@@ -1,4 +1,4 @@
-/* Aperçu rapide : captures des pages clés des quatre boutiques, sur grand
+/* Aperçu rapide : captures des pages clés des cinq boutiques, sur grand
    écran et sur téléphone. Sert à relire le rendu ; les parcours
    (parcours-humain.mjs) vérifient le comportement.
 
@@ -18,6 +18,7 @@ const PAGES = {
   maymar: ["/", "/catalogue", "/produit/valise-rigide-abs-4-roues"],
   quincaillerie: ["/", "/catalogue", "/categorie/outillage", "/produit/perceuse-visseuse-18v", "/produit/scie-circulaire-1400w"],
   beaute: ["/", "/categorie/soins-du-visage", "/produit/huile-figue-de-barbarie", "/produit/vernis-a-ongles"],
+  maison: ["/", "/categorie/decoration", "/produit/kilim-tisse-main", "/produit/serviettes-table-lin"],
 };
 const choix = process.argv.slice(2);
 const navigateur = await chromium.launch({ args: ["--host-resolver-rules=MAP *.localhost 127.0.0.1"] });

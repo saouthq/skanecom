@@ -1089,5 +1089,80 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
   await tel.close();
 }
 
+// ---------------------------------------------------------------------------
+// Dar Alia (supabase/seed-maison.sql) : la boutique de démonstration du
+// métier maison et décoration — cinq rayons, des formats qui font le prix,
+// un format épuisé, des couleurs en pastilles.
+// ---------------------------------------------------------------------------
+{
+  const A = t.adresse("maison.localhost");
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "maison");
+
+  await etape("Dar Alia : l'accueil d'une boutique maison et décoration", async () => {
+    await page.goto(A + "/", { waitUntil: "networkidle" });
+    verifie((await page.locator("main h1").innerText()).replace(/\s+/g, " ") === "Des objets qui durent.", "l'ouverture : « Des objets qui durent. »");
+    const titres = (await page.locator("main h2").allInnerTexts()).map((h) => h.replace(/\s+/g, " ").trim());
+    verifie(["Les collections", "Nos essentiels", "Le temps de bien faire.", "Lumière et laine", "Ce qu'en disent nos clients"].every((x) => titres.includes(x)),
+      `ses sections : ${titres.join(" · ")}`);
+    const grille = await page.locator(".ed-collections").evaluate((u) => [u.children.length, getComputedStyle(u).gridTemplateColumns.split(" ").length]);
+    verifie(grille[0] === 5 && grille[1] === 5, `cinq rayons, cinq colonnes (${grille[0]} rayons, ${grille[1]} colonnes)`);
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.body.scrollHeight; y += 500) { scrollTo(0, y); await new Promise((r) => setTimeout(r, 100)); }
+      scrollTo(0, 0);
+    });
+    await page.waitForLoadState("networkidle");
+    const cassees = await page.evaluate(() => [...document.querySelectorAll("main img")].filter((i) => i.complete && i.naturalWidth === 0).length);
+    verifie(cassees === 0, "toutes ses photos s'affichent");
+    await capture(page, "maison-accueil");
+  });
+
+  await etape("le kilim : le format fait le prix, le grand est épuisé", async () => {
+    await page.goto(A + "/produit/kilim-tisse-main", { waitUntil: "networkidle" });
+    const grand = page.locator(".fiche-achat button.valeur", { hasText: "160 × 230" });
+    verifie(await grand.isDisabled(), "160 × 230 cm : épuisé, le bouton est désactivé (la boutique n'a pas « Prévenez-moi »)");
+    await clic(page, page.locator(".fiche-achat button.valeur", { hasText: "120 × 180" }));
+    const panneau = (await page.locator(".ed-fiche-panneau").innerText()).replace(/\s+/g, " ");
+    verifie(panneau.includes("349,000") && panneau.includes("Plus que 2"), "120 × 180 cm : 349,000 TND, « Plus que 2 »");
+    await capture(page, "maison-kilim");
+  });
+
+  await etape("les serviettes en lin : la couleur au clavier, puis l'ajout", async () => {
+    await page.goto(A + "/produit/serviettes-table-lin", { waitUntil: "networkidle" });
+    await clic(page, page.locator("main h1"));
+    const vus = [];
+    for (let i = 0; i < 5 && !vus.includes("Écru"); i++) {
+      await page.keyboard.press("Tab");
+      vus.push(await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent?.trim().replace(/\s+/g, " ") || ""));
+    }
+    verifie(vus.at(-1) === "Écru" && vus.at(-2) === "Sable", `Tab depuis le titre : ${vus.join(" → ")}`);
+    await page.keyboard.press("Enter");
+    verifie((await page.locator(".fiche-achat .axe legend .choisi").innerText()) === "Écru", "Entrée : « Écru » choisi");
+    for (let i = 0; i < 8 && !(await page.evaluate(() => document.activeElement?.classList.contains("btn-ajout"))); i++) await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await page.locator(".confirmation-ajout").waitFor({ timeout: 4000 });
+    verifie((await page.locator(".confirmation-ajout").innerText()).includes("Écru"), "au clavier jusqu'à « Ajouter au panier » : ajoutées, en Écru");
+  });
+  await ctx.close();
+
+  const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
+  const p = await tel.newPage();
+  t.espion(p, "maison-telephone");
+  await etape("Dar Alia au téléphone : l'ouverture en hauteur, le menu, les luminaires", async () => {
+    await p.goto(A + "/", { waitUntil: "networkidle" });
+    const ouverture = await p.locator("main img").first().evaluate((i) => i.currentSrc.split("/").pop());
+    verifie(ouverture.startsWith("hero-portrait"), `l'ouverture prend sa photo en hauteur (${ouverture})`);
+    verifie(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "rien ne déborde en largeur");
+    await p.getByRole("button", { name: /menu/i }).first().tap();
+    await p.getByRole("dialog").getByRole("link", { name: "Luminaires" }).tap();
+    await p.waitForURL(/\/categorie\/luminaires/);
+    const fiches = await p.locator("main a[href^='/produit/']").evaluateAll((l) => new Set(l.map((a) => a.getAttribute("href"))).size);
+    verifie(fiches === 3, `le rayon Luminaires : ${fiches} fiches`);
+    await capture(p, "maison-telephone-luminaires");
+  });
+  await tel.close();
+}
+
 await navigateur.close();
 process.exit(t.bilan());
