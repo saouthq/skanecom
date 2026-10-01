@@ -124,7 +124,8 @@ begin
       ('00000000-0000-4000-8003-000000000407', 'contenance', 'Contenance'),
       -- La clé « couleur » : la fiche montre des pastilles (application/src/lib/coloris.ts).
       ('00000000-0000-4000-8003-000000000408', 'couleur',    'Teinte'),
-      ('00000000-0000-4000-8003-000000000409', 'teinte',     'Teinte'),
+      -- « Reflet », pas « Teinte » : la teinte du vernis est déjà son axe couleur (un seul filtre « Teinte »).
+      ('00000000-0000-4000-8003-000000000409', 'reflet',     'Reflet'),
       ('00000000-0000-4000-8003-000000000412', 'contenance', 'Contenance'),
       ('00000000-0000-4000-8003-000000000416', 'contenance', 'Contenance')
     ) as o(produit_id, cle, label);
@@ -148,8 +149,8 @@ begin
       ('00000000-0000-4000-8003-000000000408', 'YAS-VER-ROS',  '{"couleur": "Rose poudré"}',    15000::bigint, 22,  40, 2::smallint),
       ('00000000-0000-4000-8003-000000000408', 'YAS-VER-NUD',  '{"couleur": "Nude"}',           15000::bigint, 16,  40, 3::smallint),
       ('00000000-0000-4000-8003-000000000408', 'YAS-VER-COR',  '{"couleur": "Corail"}',         15000::bigint,  2,  40, 4::smallint),
-      ('00000000-0000-4000-8003-000000000409', 'YAS-IRI-AUR',  '{"teinte": "Aurore"}',         19000::bigint, 10,  40, 1::smallint),
-      ('00000000-0000-4000-8003-000000000409', 'YAS-IRI-NEB',  '{"teinte": "Nébuleuse"}',      19000::bigint,  7,  40, 2::smallint),
+      ('00000000-0000-4000-8003-000000000409', 'YAS-IRI-AUR',  '{"reflet": "Aurore"}',         19000::bigint, 10,  40, 1::smallint),
+      ('00000000-0000-4000-8003-000000000409', 'YAS-IRI-NEB',  '{"reflet": "Nébuleuse"}',      19000::bigint,  7,  40, 2::smallint),
       ('00000000-0000-4000-8003-000000000410', 'YAS-PAL-18',   '{}',                           79000::bigint,  9, 220, 1::smallint),
       ('00000000-0000-4000-8003-000000000411', 'YAS-PIN-12',   '{}',                           95000::bigint,  6, 300, 1::smallint),
       ('00000000-0000-4000-8003-000000000412', 'YAS-PAR-50',   '{"contenance": "50 ml"}',     129000::bigint,  8, 260, 1::smallint),

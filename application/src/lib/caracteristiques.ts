@@ -16,5 +16,7 @@ export function valeurAvecUnite(valeur: string, a: { unite?: string | null; type
   if (!a) return valeur;
   const n = a.type === "nombre" && /^-?\d+(\.\d+)?$/.test(valeur) ? Number(valeur) : null;
   const v = n !== null ? NOMBRE.format(n) : valeur;
-  return a.unite ? `${v} ${a.unite}` : v;
+  // Une valeur qui dit déjà son unité (« Environ 15 ml ») ne la reçoit pas une seconde fois.
+  const dejaDite = !!a.unite && n === null && v.trim().toLowerCase().endsWith(a.unite.toLowerCase());
+  return a.unite && !dejaDite ? `${v} ${a.unite}` : v;
 }
