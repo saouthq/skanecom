@@ -5,6 +5,7 @@ import { PhotoOuverture } from "./PhotoOuverture";
 import { TuileFin } from "./TuileFin";
 import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliotheque";
 import { SectionLookbook, SectionPiece } from "./SectionsCommunes";
+import { OuvertureCommerce, RayonsCommerce, ServicesCommerce } from "./AccueilCommerce";
 import { Billets, Bulle, Camion, Fleche, Magasin, Retour } from "./Icones";
 import { descendance, type Cadre } from "@/lib/boutique";
 import type { Categorie, Produit } from "@/lib/catalogue";
@@ -26,14 +27,17 @@ type Props = { cadre: Cadre; donnees: DonneesAccueil };
 
 export function AccueilTechnique({ cadre, donnees }: Props) {
   const { selections } = donnees;
+  // La structure Commerce (AccueilCommerce.tsx) : la recherche d'abord, les
+  // services en bande, les rayons et leurs sous-rayons ; le reste à l'identique.
+  const commerce = cadre.theme.structure === "commerce";
   return (
     <>
       {cadre.theme.sections.map((s, i) => {
         switch (s.type) {
           case "hero":
-            return <Banniere key={i} rang={i} section={s} cadre={cadre} />;
+            return commerce ? <OuvertureCommerce key={i} rang={i} section={s} cadre={cadre} /> : <Banniere key={i} rang={i} section={s} cadre={cadre} />;
           case "rayons":
-            return <Rayons key={i} rang={i} section={s} cadre={cadre} />;
+            return commerce ? <RayonsCommerce key={i} rang={i} section={s} cadre={cadre} /> : <Rayons key={i} rang={i} section={s} cadre={cadre} />;
           case "selection": {
             const produits = selections.get(i) ?? [];
             return produits.length || donnees.selectionVide === i ? <Selection key={i} rang={i} section={s} cadre={cadre} produits={produits} /> : null;
@@ -41,7 +45,7 @@ export function AccueilTechnique({ cadre, donnees }: Props) {
           case "editorial":
             return <Bandeau key={i} rang={i} section={s} cadre={cadre} />;
           case "engagements":
-            return <Services key={i} rang={i} cadre={cadre} />;
+            return commerce ? <ServicesCommerce key={i} rang={i} services={servicesDe(cadre, 24)} /> : <Services key={i} rang={i} cadre={cadre} />;
           case "texte":
             return <Texte key={i} rang={i} section={s} />;
           case "lookbook":
@@ -204,17 +208,24 @@ function Bandeau({ rang, section, cadre }: { rang: number; section: Extract<Sect
   );
 }
 
-function Services({ rang, cadre }: { rang: number; cadre: Cadre }) {
+export type Service = { icone: React.ReactNode; titre: string; texte: string; lien?: string };
+
+/** Ce que la boutique assure, tiré de ses réglages (rien d'écrit d'avance). */
+export function servicesDe(cadre: Cadre, taille = 28): Service[] {
   const { livraison } = cadre;
   const conseil = lienConseil(cadre);
-  const services = [
-    cadre.retrait ? { icone: <Magasin taille={28} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) } : null,
-    livraison.cod ? { icone: <Billets taille={28} />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
-    livraison.delai ? { icone: <Camion taille={28} />, titre: livraison.delai, texte: livraison.frais ?? "" } : null,
+  return [
+    cadre.retrait ? { icone: <Magasin taille={taille} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) } : null,
+    livraison.cod ? { icone: <Billets taille={taille} />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
+    livraison.delai ? { icone: <Camion taille={taille} />, titre: livraison.delai, texte: livraison.frais ?? "" } : null,
     conseil
-      ? { icone: <Bulle taille={28} />, titre: t.produit.conseil, texte: t.produit.conseilTexte, lien: conseil }
-      : { icone: <Retour taille={28} />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
+      ? { icone: <Bulle taille={taille} />, titre: t.produit.conseil, texte: t.produit.conseilTexte, lien: conseil }
+      : { icone: <Retour taille={taille} />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
   ].filter((s) => s !== null);
+}
+
+function Services({ rang, cadre }: { rang: number; cadre: Cadre }) {
+  const services = servicesDe(cadre);
 
   return (
     <section className="te-section" data-section={rang}>
@@ -225,7 +236,7 @@ function Services({ rang, cadre }: { rang: number; cadre: Cadre }) {
             {s.icone}
             <b>{s.titre}</b>
             <span>{s.texte}</span>
-            {"lien" in s && s.lien ? (
+            {s.lien ? (
               <a className="te-lien-fleche" href={s.lien} target="_blank" rel="noopener noreferrer">
                 {t.produit.conseilLien}
                 <Fleche taille={16} className="rtl:-scale-x-100" />

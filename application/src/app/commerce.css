@@ -1,0 +1,255 @@
+/* ============================================================================
+   LA STRUCTURE COMMERCE — sur le gabarit technique (technique.css). La
+   recherche d'abord, le grand menu des rayons, les services en bande, la
+   comparaison, la barre d'onglets du téléphone. Préfixes co- (accueil),
+   gm- (grand menu), bc- (barre de comparaison), cp- (page /comparer),
+   bo- (barre d'onglets).
+   ========================================================================== */
+
+/* --- La barre des rayons : « Tous les rayons », puis les liens directs ----- */
+.co-barre { position: static; display: flex; align-items: stretch; gap: .5rem; }
+.co-barre .te-nav { flex: 1; min-inline-size: 0; }
+.co-barre .te-nav a:first-child { margin-inline-start: 0; }
+.te-barre-rayons:has(.co-barre) { position: relative; }
+
+/* --- Le grand menu ---------------------------------------------------------- */
+.gm-bouton {
+  display: inline-flex; align-items: center; gap: .5rem; flex: none; margin-block: .375rem; padding: .5rem .875rem;
+  border: 0; border-radius: var(--theme-radius-doux); background: var(--theme-encre); color: var(--theme-surface);
+  font: inherit; font-size: .875rem; font-weight: 700; cursor: pointer;
+}
+.gm-bouton:hover { background: color-mix(in srgb, var(--theme-encre) 86%, var(--theme-accent)); }
+.gm-bouton:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+.gm-chevron { transition: rotate .2s var(--theme-courbe); }
+.gm-bouton[aria-expanded="true"] .gm-chevron { rotate: 180deg; }
+.gm-panneau {
+  position: absolute; inset-inline: 0; inset-block-start: 100%; z-index: 5;
+  background: var(--theme-surface); color: var(--theme-encre);
+  border-block: 1px solid var(--theme-filet); box-shadow: 0 24px 48px -16px rgb(0 0 0 / .28);
+}
+.gm-panneau[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .gm-panneau:not([hidden]) { animation: gm-arrive .22s var(--theme-courbe) both; }
+}
+@keyframes gm-arrive { from { opacity: 0; translate: 0 -6px; } }
+.gm-grille { position: relative; min-block-size: 20rem; padding-block: 1rem 1.25rem; }
+.gm-rayons { display: grid; align-content: start; inline-size: 18rem; margin: 0; padding: 0; padding-inline-end: 1rem; list-style: none; border-inline-end: 1px solid var(--theme-filet); }
+.gm-rayon > a {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: .5rem;
+  padding: .625rem .75rem; border-radius: var(--theme-radius-doux); font-size: .9375rem; font-weight: 600;
+}
+.gm-rayon[data-actif] > a { background: var(--theme-surface-2); }
+.gm-rayon > a:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: -2px; }
+.gm-compte { color: var(--theme-encre-doux); font-size: .8125rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.gm-fleche { opacity: 0; transition: opacity .15s; }
+.gm-rayon[data-actif] .gm-fleche { opacity: 1; }
+/* Le détail du rayon désigné : à droite de la liste (il la suit dans le DOM, donc au clavier). */
+.gm-detail {
+  position: absolute; inset-block: 1rem 1.25rem; inset-inline-start: calc(var(--theme-marge) + 18rem + 2.5rem); inset-inline-end: var(--theme-marge);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: 2rem; align-items: start;
+}
+.gm-detail-texte { display: grid; gap: 1rem; align-content: start; }
+.gm-detail-titre { margin: 0; font-family: var(--theme-font-display); font-size: 1.375rem; font-weight: 800; }
+.gm-enfants { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .25rem 1.5rem; margin: 0; padding: 0; list-style: none; }
+.gm-enfants a { display: flex; justify-content: space-between; gap: .5rem; padding: .5rem 0; border-block-end: 1px solid var(--theme-filet); font-size: .9375rem; }
+.gm-enfants a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.gm-tout { justify-self: start; display: inline-flex; align-items: center; gap: .375rem; font-weight: 700; font-size: .9375rem; }
+.gm-photo { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--theme-radius-carte); background: var(--theme-surface-2); }
+.gm-photo img { object-fit: cover; }
+
+/* --- L'ouverture : la recherche d'abord ------------------------------------- */
+/* Au-dessus de la suite de l'accueil (z-index 2) : les suggestions de la recherche débordent dessous. */
+.co-ouverture {
+  position: relative; z-index: 2; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr); margin-block-start: 1rem; color: var(--theme-surface);
+  min-block-size: 22rem; align-items: center;
+}
+.co-ouverture-fond { position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: var(--theme-radius-bloc); background: var(--theme-encre); }
+.co-ouverture-image, .co-ouverture-image img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.co-ouverture[data-image] .co-ouverture-fond::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--theme-encre) 94%, transparent) 15%, color-mix(in srgb, var(--theme-encre) 60%, transparent) 70%, color-mix(in srgb, var(--theme-encre) 40%, transparent));
+}
+.co-ouverture-contenu { display: grid; justify-items: start; gap: 1rem; padding: 2rem 1.25rem; max-inline-size: 48rem; }
+.co-ouverture h1 { margin: 0; font-size: calc(clamp(2rem, 4.6vw, 3.5rem) * var(--echelle-titres, 1)); line-height: 1; letter-spacing: -.01em; }
+.co-ouverture-chapo { margin: 0; max-inline-size: 52ch; color: color-mix(in srgb, var(--theme-surface) 84%, transparent); font-size: 1rem; }
+.co-recherche { grid-area: auto; inline-size: 100%; block-size: 56px; margin-block-start: .25rem; box-shadow: 0 12px 32px -12px rgb(0 0 0 / .5); }
+.co-recherche input { font-size: 1.0625rem; }
+.co-recherche button { inline-size: 60px; }
+/* La liste des suggestions passe au-dessus de la suite de l'accueil. */
+.co-recherche .recherche-suggestions { color: var(--theme-encre); }
+.co-raccourcis { display: flex; flex-wrap: wrap; gap: .5rem; }
+.co-raccourcis a {
+  padding: .375rem .875rem; border-radius: 999px; font-size: .875rem; font-weight: 600;
+  background: color-mix(in srgb, var(--theme-surface) 14%, transparent); color: var(--theme-surface);
+  border: 1px solid color-mix(in srgb, var(--theme-surface) 30%, transparent);
+}
+.co-raccourcis a:hover { background: var(--theme-surface); color: var(--theme-encre); }
+.co-raccourcis a:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+.co-ouverture-pied { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.5rem; margin: .25rem 0 0; font-size: .875rem; font-weight: 600; color: color-mix(in srgb, var(--theme-surface) 80%, transparent); }
+/* Au téléphone, la recherche de l'en-tête est déjà là, collée en haut : l'ouverture n'en répète pas une seconde. */
+@media (max-width: 899px) {
+  .co-recherche { display: none; }
+  .co-ouverture { min-block-size: 0; }
+  .co-ouverture-chapo { font-size: .9375rem; }
+}
+.co-lien { display: inline-flex; align-items: center; gap: .375rem; color: var(--theme-surface); text-decoration: underline; text-underline-offset: .25em; }
+@media (min-width: 900px) {
+  .co-ouverture { min-block-size: 26rem; }
+  .co-ouverture-contenu { padding: 3.5rem; }
+  .co-ouverture[data-image] .co-ouverture-fond::after {
+    background: linear-gradient(to right, color-mix(in srgb, var(--theme-encre) 95%, transparent) 25%, color-mix(in srgb, var(--theme-encre) 62%, transparent) 60%, color-mix(in srgb, var(--theme-encre) 25%, transparent));
+  }
+}
+
+/* --- Les services, en bande -------------------------------------------------- */
+.co-services { margin-block: 1rem; }
+.co-services ul {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .5rem;
+  margin: 0; padding: 0; list-style: none;
+}
+.co-services li {
+  display: flex; align-items: center; gap: .875rem; padding: .875rem 1rem;
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+.co-services li > svg { flex: none; color: var(--theme-encre); }
+.co-services li > span { display: grid; gap: .125rem; min-inline-size: 0; font-size: .8125rem; color: var(--theme-encre-doux); line-height: 1.35; }
+.co-services b { color: var(--theme-encre); font-size: .9375rem; }
+
+/* --- Les rayons et leurs sous-rayons ------------------------------------------ */
+.co-rayons { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .875rem; margin: 0; padding: 0; list-style: none; }
+.co-rayon {
+  display: grid; align-content: start; gap: .5rem; padding: .625rem .625rem .875rem;
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+  transition: border-color .15s, box-shadow .15s;
+}
+.co-rayon:hover { border-color: var(--theme-filet-fort); box-shadow: var(--theme-shadow-carte); }
+.co-rayon-tete { display: grid; gap: .25rem; }
+.co-rayon-tete .cadre-image { margin-block-end: .5rem; border-radius: var(--theme-radius-net); }
+.co-rayon-nom { font-size: 1.0625rem; font-weight: 750; line-height: 1.25; }
+.co-rayon-tete:hover .co-rayon-nom { text-decoration: underline; text-underline-offset: .15em; }
+.co-rayon-compte { font-size: .8125rem; color: var(--theme-encre-doux); }
+.co-rayon-enfants { display: flex; flex-wrap: wrap; gap: .375rem; margin: .25rem 0 0; padding: 0; list-style: none; }
+.co-rayon-enfants a {
+  display: inline-flex; align-items: center; gap: .375rem; padding: .3125rem .625rem; border-radius: 999px;
+  background: var(--theme-surface-2); font-size: .8125rem; font-weight: 600;
+}
+.co-rayon-enfants a span { color: var(--theme-encre-doux); font-weight: 500; font-variant-numeric: tabular-nums; }
+.co-rayon-enfants a:hover { background: var(--theme-encre); color: var(--theme-surface); }
+.co-rayon-enfants a:hover span { color: inherit; }
+
+/* --- « Comparer », sur la carte ------------------------------------------------ */
+.comparer {
+  display: inline-flex; align-items: center; gap: .375rem; padding: .3125rem .5625rem .3125rem .4375rem;
+  border: 1px solid var(--theme-filet); border-radius: 999px; background: var(--theme-surface); color: var(--theme-encre);
+  font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgb(0 0 0 / .08);
+}
+.comparer-case {
+  display: grid; place-items: center; inline-size: .875rem; block-size: .875rem; border: 1.5px solid currentColor; border-radius: 3px;
+}
+.comparer[aria-pressed="true"] { background: var(--theme-encre); color: var(--theme-surface); border-color: var(--theme-encre); }
+.comparer[aria-pressed="true"] .comparer-case::after { content: ""; inline-size: .25rem; block-size: .5rem; margin-block-start: -.125rem; border: solid currentColor; border-width: 0 2px 2px 0; rotate: 45deg; }
+.comparer:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 2px; }
+.te-carte-comparer { position: absolute; z-index: 2; inset-block-start: 1.125rem; inset-inline-start: 1.125rem; }
+/* Une remise est déjà posée dans ce coin : la case se range dessous. */
+.te-carte:has(.te-remise) .te-carte-comparer { inset-block-start: 2.875rem; }
+@media (hover: hover) and (pointer: fine) {
+  .te-carte-comparer[aria-pressed="false"] { opacity: 0; transition: opacity .2s var(--theme-courbe); }
+  .te-carte:hover .te-carte-comparer, .te-carte-comparer:focus-visible { opacity: 1; }
+}
+
+/* --- La barre de comparaison, en bas de l'écran -------------------------------- */
+.barre-comparaison {
+  position: fixed; z-index: 46; inset-inline: 0; inset-block-end: var(--bas-onglets, 0px);
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .625rem var(--theme-marge) calc(.625rem + (env(safe-area-inset-bottom) * var(--sans-onglets, 1)));
+  background: var(--theme-surface); border-block-start: 1px solid var(--theme-filet); box-shadow: 0 -12px 32px -16px rgb(0 0 0 / .25);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .barre-comparaison { animation: bc-arrive .3s var(--theme-courbe) both; }
+}
+@keyframes bc-arrive { from { translate: 0 100%; } }
+.bc-pieces { display: flex; gap: .5rem; min-inline-size: 0; margin: 0; padding: 0; list-style: none; }
+.bc-pieces > li { position: relative; display: flex; align-items: center; gap: .5rem; min-inline-size: 0; padding: .25rem 2rem .25rem .25rem; border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-doux); max-inline-size: 14rem; }
+.bc-vignette { position: relative; flex: none; inline-size: 2.75rem; block-size: 2.75rem; overflow: hidden; border-radius: var(--theme-radius-net); background: var(--theme-surface-2); }
+.bc-vignette img { object-fit: cover; }
+.bc-nom { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: .8125rem; font-weight: 600; line-height: 1.25; }
+.bc-retirer { position: absolute; inset-block-start: .125rem; inset-inline-end: .125rem; inline-size: 1.75rem; block-size: 1.75rem; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--theme-encre-doux); font-size: 1.125rem; cursor: pointer; }
+.bc-retirer:hover { background: var(--theme-surface-2); color: var(--theme-encre); }
+.bc-vide { inline-size: 9rem; border: 1px dashed var(--theme-filet-fort); border-radius: var(--theme-radius-doux); }
+.bc-actions { display: flex; align-items: center; gap: 1rem; flex: none; }
+.bc-effacer { padding: 0; border: 0; background: none; font: inherit; font-size: .875rem; cursor: pointer; }
+.bc-aide { font-size: .875rem; color: var(--theme-encre-doux); }
+/* Au téléphone : les vignettes seules, les noms se taisent ; une place vide n'en prend pas. */
+@media (max-width: 899px) {
+  .bc-pieces { gap: .75rem; }
+  .bc-pieces > li { padding: .1875rem; max-inline-size: none; }
+  .bc-pieces > .bc-vide, .bc-nom, .bc-effacer, .bc-aide { display: none; }
+  .bc-retirer { inset: -.5rem -.5rem auto auto; inline-size: 1.5rem; block-size: 1.5rem; background: var(--theme-encre); color: var(--theme-surface); font-size: .875rem; line-height: 1; }
+  .bc-vignette { inline-size: 2.5rem; block-size: 2.5rem; }
+}
+
+/* --- La barre d'onglets du téléphone ------------------------------------------- */
+.barre-onglets {
+  position: fixed; z-index: 47; inset-inline: 0; inset-block-end: 0;
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+  padding-block-end: env(safe-area-inset-bottom);
+  background: var(--theme-surface); border-block-start: 1px solid var(--theme-filet); box-shadow: 0 -6px 20px -12px rgb(0 0 0 / .25);
+}
+.bo-onglet {
+  position: relative; display: grid; justify-items: center; align-content: center; gap: .1875rem; min-block-size: 3.5rem; padding: .375rem .25rem;
+  border: 0; background: none; color: var(--theme-encre-doux); font: inherit; font-size: .6875rem; font-weight: 600; text-decoration: none; cursor: pointer;
+}
+.bo-onglet[aria-current="page"] { color: var(--theme-encre); }
+.bo-onglet[aria-current="page"]::before { content: ""; position: absolute; inset-block-start: 0; inset-inline: 30%; block-size: 3px; border-radius: 0 0 3px 3px; background: var(--theme-accent); }
+.bo-onglet:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: -4px; border-radius: var(--theme-radius-doux); }
+.bo-pastille {
+  position: absolute; inset-block-start: .25rem; inset-inline-start: calc(50% + .375rem);
+  min-inline-size: 1.125rem; block-size: 1.125rem; padding-inline: .25rem; border-radius: 999px;
+  background: var(--theme-accent); color: var(--theme-encre); font-size: .6875rem; font-weight: 800; line-height: 1.125rem; text-align: center;
+}
+/* La barre prend le bas de l'écran : la page garde de quoi finir au-dessus, et ce qui
+   flotte en bas (WhatsApp, le bandeau des pixels, la barre de comparaison) se range dessus. */
+@media (max-width: 899px) {
+  html:has(.barre-onglets) { --bas-onglets: calc(3.5rem + 1px + env(safe-area-inset-bottom)); --sans-onglets: 0; }
+  html:has(.barre-onglets) body { padding-block-end: var(--bas-onglets); }
+  html:has(.barre-onglets) .whatsapp-flottant { inset-block-end: calc(var(--bas-onglets) + .75rem); }
+  html:has(.barre-onglets) .pub-consentement { inset-block-end: calc(var(--bas-onglets) + .5rem); }
+  html:has(.barre-onglets):has(.barre-comparaison) .whatsapp-flottant { inset-block-end: calc(var(--bas-onglets) + 4.75rem); }
+  /* La barre d'achat d'une pièce de la saison posée sur l'accueil : au-dessus des onglets. */
+  html:has(.barre-onglets) .achat-mobile { inset-block-end: var(--bas-onglets); padding-block-end: .75rem; }
+}
+
+/* --- La page /comparer ------------------------------------------------------------ */
+.cp { display: grid; gap: 1rem; padding-block-end: 3rem; }
+.cp-options { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: .9375rem; font-weight: 600; }
+.cp-options input { inline-size: 1.125rem; block-size: 1.125rem; accent-color: var(--theme-encre); }
+.cp-defile { overflow-x: auto; border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); background: var(--theme-surface); }
+.cp-defile:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 2px; }
+.cp-tableau { inline-size: 100%; min-inline-size: calc(9rem + var(--cp-n, 2) * 11rem); border-collapse: collapse; font-size: .9375rem; table-layout: fixed; }
+.cp-tableau th, .cp-tableau td { padding: .75rem 1rem; border-block-end: 1px solid var(--theme-filet); text-align: start; vertical-align: top; }
+/* La colonne des libellés : sa largeur se lit sur la première rangée (table-layout: fixed). */
+.cp-tableau thead td:first-child { inline-size: 11rem; }
+.cp-tableau tbody th { color: var(--theme-encre-doux); font-size: .8125rem; font-weight: 600; }
+@media (max-width: 899px) {
+  .cp-tableau { min-inline-size: calc(7.5rem + var(--cp-n, 2) * 10rem); font-size: .875rem; }
+  .cp-tableau thead td:first-child { inline-size: 7.5rem; }
+  .cp-tableau th, .cp-tableau td { padding: .625rem .75rem; }
+}
+/* La première colonne reste quand le tableau glisse (au téléphone). */
+.cp-tableau :is(thead td:first-child, tbody th) { position: sticky; inset-inline-start: 0; z-index: 1; background: var(--theme-surface); }
+.cp-piece { font-weight: 400; }
+.cp-piece-lien { display: grid; gap: .5rem; }
+.cp-piece-lien .cadre-image { max-inline-size: 13rem; border-radius: var(--theme-radius-net); }
+.cp-piece-nom { font-weight: 700; line-height: 1.3; }
+.cp-piece-lien:hover .cp-piece-nom { text-decoration: underline; text-underline-offset: .15em; }
+.cp-retirer { display: inline-block; margin-block-start: .375rem; color: var(--theme-encre-doux); font-size: .8125rem; text-decoration: underline; text-underline-offset: .2em; }
+.cp-prix .prix-fort { font-size: 1.25rem; font-weight: 800; }
+.cp-prix .ttc { margin-inline-start: .375rem; }
+.cp-note { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
+.cp-rien { color: var(--theme-encre-doux); }
+.cp-actions td { border-block-end: 0; }
+.cp-actions .btn { min-block-size: 44px; }
+/* Ce qui diffère d'une pièce à l'autre se voit ; « Seulement les différences » cache le reste. */
+.cp-tableau tbody tr:not([data-pareil]):not(.cp-actions) td { font-weight: 600; }
+.cp[data-differences] tr[data-pareil] { display: none; }
+.cp-vide { padding-block: 3rem; }

@@ -5,10 +5,11 @@ import { LienFavoris } from "./LienFavoris";
 import { ChampRecherche } from "./ChampRecherche";
 import { NavRayons } from "./NavRayons";
 import { EnteteDefilant, MenuMobile, type EntreeMenu } from "./EnteteClient";
+import { GrandMenu, type RayonMenu } from "./GrandMenu";
 import { champ, t } from "@/lib/i18n";
 import { urlFichier } from "@/lib/photos";
 import { assurancesPanier, bandeau, faitsDeService, lienConseil } from "@/lib/faits";
-import type { Cadre } from "@/lib/boutique";
+import { descendance, type Cadre } from "@/lib/boutique";
 
 /* ============================================================================
    L'EN-TÊTE — un par gabarit, parce que les deux métiers ne cherchent pas de
@@ -133,12 +134,33 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
   );
 }
 
+/** Les rayons du grand menu (structure Commerce) : ceux qui ont des pièces,
+ *  avec leurs sous-rayons garnis, leurs comptes et leur photo. */
+function rayonsDuMenu(cadre: Cadre): RayonMenu[] {
+  const compte = (slug: string) => descendance(cadre.categories, slug).reduce((n, c) => n + (c.nb_produits ?? 0), 0);
+  return cadre.racines
+    .map((r) => ({
+      cle: r.slug,
+      href: `/categorie/${r.slug}`,
+      nom: champ(r, "nom"),
+      compte: compte(r.slug),
+      image: r.image_chemin ?? cadre.categories.find((c) => c.parent_id === r.id && c.image_chemin)?.image_chemin ?? null,
+      enfants: cadre.categories
+        .filter((c) => c.parent_id === r.id)
+        .map((c) => ({ cle: c.slug, href: `/categorie/${c.slug}`, nom: champ(c, "nom"), compte: compte(c.slug) }))
+        .filter((c) => c.compte > 0),
+    }))
+    .filter((r) => r.compte > 0);
+}
+
 function EnteteTechnique({ cadre }: { cadre: Cadre }) {
   const faits = faitsDeService(cadre);
   const annonces = bandeau(cadre);
   const conseil = lienConseil(cadre);
+  // Le Commerce ouvre ses rayons par le grand menu : la barre garde les liens directs.
+  const commerce = cadre.theme.structure === "commerce";
   const liens = [
-    { cle: "catalogue", href: "/catalogue", nom: t.commun.tousLesRayons },
+    ...(commerce ? [] : [{ cle: "catalogue", href: "/catalogue", nom: t.commun.tousLesRayons }]),
     ...cadre.racines.slice(0, 7).map((c) => ({ cle: c.slug, href: `/categorie/${c.slug}`, nom: champ(c, "nom") })),
   ];
   return (
@@ -187,7 +209,14 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
           </div>
         </div>
         <div className="te-barre-rayons cache-mobile">
-          <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="enveloppe te-nav" />
+          {commerce ? (
+            <div className="enveloppe co-barre">
+              <GrandMenu rayons={rayonsDuMenu(cadre)} />
+              <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="te-nav" />
+            </div>
+          ) : (
+            <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="enveloppe te-nav" />
+          )}
         </div>
       </header>
     </>

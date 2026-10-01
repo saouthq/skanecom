@@ -27,6 +27,11 @@ const S = t.adresse("mode.localhost");
 const espion = (page, nom) => t.espion(page, nom, (url) => /\/produit\/(perceuse|robe-)|\/une\/adresse\/inconnue/.test(url));
 const navigateur = await t.navigateur();
 const compte = (page) => page.locator("header .bouton-panier-compte").innerText().catch(() => "");
+// SECTIONS=4, ou SECTIONS=1,maison : ces sections seules, pendant le
+// développement (la séquence de la CI les passe toutes). Les sections :
+// 1 2 3 4 5 beaute maison.
+const SECTIONS = (process.env.SECTIONS ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+function section(n) { return SECTIONS.length === 0 || SECTIONS.includes(n); }
 const tiroirOuvert = (page, classe) => page.locator(`.tiroir.${classe}[role=dialog]`).isVisible().catch(() => false);
 // Attend qu'une condition se vérifie (l'écran répond après un geste).
 const attend = async (condition, ms) => {
@@ -35,8 +40,8 @@ const attend = async (condition, ms) => {
 };
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 1. Maison Selma (structure immersive), à la souris ==");
-{
+if (section("1")) {
+  console.log("\n== 1. Maison Selma (structure immersive), à la souris ==");
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "selma-souris");
@@ -478,8 +483,8 @@ console.log("\n== 1. Maison Selma (structure immersive), à la souris ==");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 2. Maymar, au clavier seul ==");
-{
+if (section("2")) {
+  console.log("\n== 2. Maymar, au clavier seul ==");
   const ctx = await navigateur.newContext({ viewport: { width: 1366, height: 850 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "maymar-clavier");
@@ -589,8 +594,8 @@ console.log("\n== 2. Maymar, au clavier seul ==");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 3. Sur téléphone (tactile) ==");
-{
+if (section("3")) {
+  console.log("\n== 3. Sur téléphone (tactile) ==");
   const ctx = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "mobile");
@@ -724,8 +729,8 @@ console.log("\n== 3. Sur téléphone (tactile) ==");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
-{
+if (section("4")) {
+  console.log("\n== 4. Quincaillerie (structure Commerce, sur le gabarit technique), à la souris ==");
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "quinca");
@@ -738,8 +743,97 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
     await capture(page, "quinca-accueil-complete", true);
   });
 
+  await etape("Commerce : la recherche d'abord, les rayons en raccourcis", async () => {
+    // La quincaillerie est en Commerce (supabase/seed-commerce.sql).
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
+    verifie(await page.evaluate(() => document.documentElement.dataset.structure) === "commerce", "la quincaillerie est en structure Commerce");
+    verifie(await page.locator(".co-ouverture #q-accueil").isVisible(), "l'ouverture est une grande barre de recherche");
+    const services = page.locator(".co-services li");
+    verifie(await services.count() >= 3 && (await services.first().boundingBox()).y < (await page.locator(".co-rayons").boundingBox()).y,
+      `les services en bande, sous l'ouverture (${await services.count()})`);
+    await clic(page, page.locator(".co-raccourcis").getByRole("link", { name: "Visserie" }));
+    await page.waitForURL(/\/categorie\/visserie$/);
+    verifie(true, "un raccourci de l'ouverture mène au rayon");
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
+  });
+
+  await etape("le grand menu des rayons, à la souris puis au clavier", async () => {
+    const bouton = page.getByRole("button", { name: "Tous les rayons" });
+    await clic(page, bouton);
+    verifie(await bouton.getAttribute("aria-expanded") === "true", "« Tous les rayons » ouvre le grand menu");
+    await page.locator(".gm-rayon > a", { hasText: "Quincaillerie" }).hover();
+    verifie(await attend(() => page.locator(".gm-detail").getByRole("link", { name: /^Visserie/ }).isVisible(), 2000), "au survol d'un rayon, ses sous-rayons");
+    await pause(300);
+    await capture(page, "quinca-grand-menu");
+    await page.keyboard.press("Escape");
+    verifie(await bouton.getAttribute("aria-expanded") === "false", "Échap le referme");
+    await bouton.focus();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Tab");
+    const lien = await page.evaluate(() => document.activeElement?.closest(".gm-detail") ? document.activeElement.textContent.trim() : null);
+    verifie(Boolean(lien?.startsWith("Visserie")), `au clavier : Tab, ↓ (le rayon suivant), Tab entre dans ses sous-rayons (« ${lien} »)`);
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/categorie\/visserie$/);
+    verifie(await attend(async () => (await bouton.getAttribute("aria-expanded")) === "false", 2000), "Entrée suit le lien, le menu se referme");
+  });
+
+  await etape("comparer deux perceuses, côte à côte", async () => {
+    await page.goto(Q + "/categorie/perceuses", { waitUntil: "networkidle" });
+    const cartes = page.locator(".te-carte");
+    for (const i of [0, 1]) {
+      await cartes.nth(i).hover();
+      await clic(page, cartes.nth(i).getByRole("button", { name: /^Comparer :/ }));
+    }
+    const barre = page.locator(".barre-comparaison");
+    verifie(await attend(async () => (await barre.locator(".bc-pieces > li:not(.bc-vide)").count()) === 2, 3000), "deux pièces cochées : la barre du bas les montre");
+    verifie(await cartes.nth(0).getByRole("button", { name: /^Retirer de la comparaison/ }).getAttribute("aria-pressed") === "true", "la case le dit (aria-pressed)");
+    await capture(page, "quinca-comparaison-barre");
+    await clic(page, barre.getByRole("link", { name: "Comparer (2)" }));
+    await page.waitForURL(/\/comparer\?p=/);
+    await page.waitForLoadState("networkidle");
+    const tableau = page.locator(".cp-tableau");
+    verifie((await tableau.locator("thead th").count()) === 2, "la page met les deux pièces côte à côte");
+    verifie(/710[\s\u00a0\u202f]W/.test(await tableau.locator("tbody").innerText()), "avec leurs caractéristiques (la puissance de la perceuse)");
+    await capture(page, "quinca-comparer", true);
+    const avant = await tableau.locator("tbody tr:visible").count();
+    await clic(page, page.getByLabel("Seulement les différences"));
+    note("INFO  ", `lignes : ${avant} → ${await tableau.locator("tbody tr:visible").count()} avec « Seulement les différences »`);
+    await clic(page, tableau.getByRole("link", { name: /^Retirer de la comparaison/ }).first());
+    await page.waitForLoadState("networkidle");
+    verifie(await attend(async () => (await page.locator(".cp-vide").count()) === 1, 4000), "une pièce retirée : il n'en reste qu'une, la page dit d'en cocher une autre");
+    const gardees = await page.evaluate(() => JSON.parse(localStorage.getItem(`skanecom.comparaison.${document.documentElement.dataset.boutique}.v1`) ?? "[]").length);
+    verifie(gardees === 1, `et la liste du navigateur suit la page (${gardees})`);
+  });
+
+  await etape("Commerce au téléphone : la barre d'onglets", async () => {
+    const ct = await navigateur.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, locale: "fr-FR" });
+    const p = await ct.newPage();
+    espion(p, "quinca-telephone");
+    await p.goto(Q + "/", { waitUntil: "networkidle" });
+    const onglets = p.getByRole("navigation", { name: "Navigation rapide" });
+    const boite = await onglets.boundingBox();
+    verifie(Boolean(boite) && Math.round(boite.y + boite.height) >= 840 && await p.evaluate(() => document.documentElement.scrollWidth) === 390,
+      "la barre d'onglets tient en bas de l'écran, sans débordement");
+    verifie(await onglets.getByRole("link", { name: "Accueil" }).getAttribute("aria-current") === "page", "l'onglet de la page est marqué");
+    verifie(!(await p.locator(".co-recherche").isVisible()), "une seule barre de recherche (celle de l'en-tête)");
+    await capture(p, "quinca-telephone-onglets");
+    await onglets.getByRole("button", { name: "Rayons" }).tap();
+    verifie(await attend(() => p.locator(".tiroir-menu[role=dialog]").isVisible(), 3000), "« Rayons » ouvre le menu des rayons");
+    await p.keyboard.press("Escape");
+    await pause(400);
+    await onglets.getByRole("button", { name: /^Panier/ }).tap();
+    verifie(await attend(() => p.locator(".tiroir-panier[role=dialog]").isVisible(), 3000), "« Panier » ouvre le panier");
+    await p.keyboard.press("Escape");
+    await p.goto(Q + "/produit/perceuse-percussion-710w", { waitUntil: "networkidle" });
+    verifie((await p.locator(".barre-onglets").count()) === 0, "sur une fiche, la barre se retire (la barre d'achat prend le bas)");
+    await ct.close();
+  });
+
   await etape("les marques du catalogue, chacune vers ses pièces", async () => {
     // La quincaillerie montre ses marques (supabase/seed-accueil.sql).
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
     const marques = page.locator(".bi-marque");
     verifie(await marques.count() >= 2, `les marques de l'accueil (${(await page.locator(".bi-marque-nom").allInnerTexts()).join(", ")})`);
     const nom = (await page.locator(".bi-marque-nom").first().innerText()).trim();
@@ -891,8 +985,8 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suivi ==");
-{
+if (section("5")) {
+  console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suivi ==");
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
   espion(page, "contenus");
@@ -1063,7 +1157,7 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
 // Yasmine Beauté (supabase/seed-beaute.sql) : la boutique de démonstration
 // du métier beauté — gabarit éditorial, six rayons, teintes en pastilles.
 // ---------------------------------------------------------------------------
-{
+if (section("beaute")) {
   const B = t.adresse("beaute.localhost");
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
@@ -1143,7 +1237,7 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
 // métier maison et décoration — cinq rayons, des formats qui font le prix,
 // un format épuisé, des couleurs en pastilles.
 // ---------------------------------------------------------------------------
-{
+if (section("maison")) {
   const A = t.adresse("maison.localhost");
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();

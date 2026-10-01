@@ -12,6 +12,8 @@ import { directionDe, localeOgDe, t } from "@/lib/i18n";
 import { Entete } from "@/components/Entete";
 import { Pied } from "@/components/Pied";
 import { BoutonWhatsApp } from "@/components/BoutonWhatsApp";
+import { BarreComparaison, ComparaisonActive } from "@/components/Comparaison";
+import { BarreOnglets } from "@/components/BarreOnglets";
 import { Apparitions } from "@/components/Apparitions";
 import { TransitionsVue } from "@/components/TransitionsVue";
 import { AncresDouces } from "@/components/AncresDouces";
@@ -67,6 +69,8 @@ export default async function RacineBoutique({ children, params }: Props) {
   if (!cadre) notFound();
 
   const langue = cadre.boutique.langue_defaut;
+  // La structure Commerce : la comparaison, la barre d'onglets du téléphone.
+  const commerce = cadre.theme.structure === "commerce";
   return (
     <html
       lang={langue}
@@ -98,9 +102,13 @@ export default async function RacineBoutique({ children, params }: Props) {
           </p>
         ) : null}
         <FavorisActifs actif={cadre.favoris}>
-          <Entete cadre={cadre} />
-          {children}
-          <Pied cadre={cadre} />
+          <ComparaisonActive actif={commerce}>
+            <Entete cadre={cadre} />
+            {children}
+            <Pied cadre={cadre} />
+            {commerce ? <BarreComparaison /> : null}
+          </ComparaisonActive>
+          {commerce ? <BarreOnglets favoris={cadre.favoris} compte={cadre.reglages["compte.obligatoire"] !== false} /> : null}
         </FavorisActifs>
         {cadre.whatsappFlottant && cadre.whatsapp ? <BoutonWhatsApp numero={cadre.whatsapp} nom={cadre.boutique.nom} /> : null}
         {cadre.statistiques && !cadre.apercu ? <MesureAudience /> : null}

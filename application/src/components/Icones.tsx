@@ -306,3 +306,22 @@ export function LogoWhatsApp({ taille = 26, className }: Props) {
     </svg>
   );
 }
+
+export function Maison({ taille = 20, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4Z" />
+    </svg>
+  );
+}
+
+/** Deux colonnes côte à côte : la comparaison. */
+export function Colonnes({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait} strokeWidth={1.7}>
+      <rect x="4" y="4" width="6.5" height="16" rx="1.2" />
+      <rect x="13.5" y="4" width="6.5" height="16" rx="1.2" />
+      <path d="M6.5 8.5h1.5M16 8.5h1.5M6.5 12h1.5M16 12h1.5" />
+    </svg>
+  );
+}

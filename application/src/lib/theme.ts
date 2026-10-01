@@ -27,9 +27,10 @@ export const GABARITS: CodeTheme[] = ["editorial", "technique"];
 /* LA STRUCTURE — ce que la boutique choisit (themes.code) : un gabarit, ou
    une structure bâtie sur l'un d'eux. Le Bento (l'accueil en mosaïque,
    l'en-tête flottant) reprend les composants éditoriaux : `code` reste la
-   famille de composants, `structure` dit le choix. */
-export type Structure = CodeTheme | "bento" | "immersif";
-export const STRUCTURES: Structure[] = ["editorial", "bento", "immersif", "technique"];
+   famille de composants, `structure` dit le choix. L'Immersif repose aussi
+   sur les composants éditoriaux ; le Commerce, sur les techniques. */
+export type Structure = CodeTheme | "bento" | "immersif" | "commerce";
+export const STRUCTURES: Structure[] = ["editorial", "bento", "immersif", "technique", "commerce"];
 
 export const JETONS_COULEUR = [
   "fond", "surface", "surface_2", "filet", "filet_fort", "contour_champ",
@@ -335,13 +336,13 @@ export function attributsDuStyle(style: Style): Record<string, string> {
  *  structures mènent au gabarit sur lequel elles reposent, les anciens noms
  *  au gabarit qui les remplace. */
 export function gabaritDe(code: unknown): CodeTheme {
-  if (code === "technique" || code === "catalogue_technique") return "technique";
+  if (code === "technique" || code === "catalogue_technique" || code === "commerce") return "technique";
   return "editorial";
 }
 
 /** La structure d'un code lu en base. */
 export function structureDe(code: unknown): Structure {
-  if (code === "bento" || code === "immersif") return code;
+  if (code === "bento" || code === "immersif" || code === "commerce") return code;
   return gabaritDe(code);
 }
 
@@ -373,6 +374,21 @@ const PROPRE_A: Partial<Record<Structure, { style: Partial<Style>; sections?: Se
       { type: "editorial", textes: {} },
       { type: "avis", textes: {}, nombre: 3 },
       { type: "engagements", textes: {} },
+    ],
+  },
+  // Le commerce : la recherche d'abord, les services en bande juste dessous,
+  // les rayons, des références en grille serrée ; des coins arrondis, des
+  // titres en casse normale.
+  commerce: {
+    style: { coins: "arrondis", casse: "normale", titres: "sobre", densite: "serree" },
+    sections: [
+      { type: "hero", textes: {} },
+      { type: "engagements", textes: {} },
+      { type: "rayons", textes: {} },
+      { type: "selection", textes: {}, nombre: 10 },
+      { type: "marques", textes: {} },
+      { type: "avis", textes: {}, nombre: 3 },
+      { type: "questions", textes: {}, nombre: 4 },
     ],
   },
 };

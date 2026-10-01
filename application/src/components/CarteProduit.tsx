@@ -3,6 +3,7 @@ import { Photo } from "./Photo";
 import { EtatStock } from "./EtatStock";
 import { AjoutRapide } from "./AjoutRapide";
 import { BoutonFavori } from "./BoutonFavori";
+import { BoutonComparer } from "./Comparaison";
 import { PrixCarte } from "./PrixCarte";
 import { NoteCarte } from "./NoteCarte";
 import { couleurDeColoris } from "@/lib/coloris";
@@ -166,6 +167,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
         ) : null}
       </Link>
       <BoutonFavori slug={produit.slug} nom={nom} className="carte-favori" />
+      <BoutonComparer slug={produit.slug} nom={nom} photo={produit.images[0]?.chemin ?? null} className="te-carte-comparer" />
       <div className="te-carte-bas">
         <EtatStock etat={etat} restant={restant} />
         {prix !== null ? (

@@ -6,7 +6,7 @@ Cinq boutiques de démonstration tournent avec la même application, chacune ave
 |---|---|---|
 | http://mode.localhost:4200 | Maison Selma — prêt-à-porter | Immersif |
 | http://maymar.localhost:4200 | Maymar — bagages | éditorial |
-| http://quincaillerie.localhost:4200 | Quincaillerie du Sud — outillage | technique |
+| http://quincaillerie.localhost:4200 | Quincaillerie du Sud — outillage | Commerce |
 | http://beaute.localhost:4200 | Yasmine Beauté — soins et parfums | éditorial |
 | http://maison.localhost:4200 | Dar Alia — maison et décoration | Bento |
 | http://console.localhost:4200 | la console de mise en place | — |
@@ -67,7 +67,11 @@ outils/essayer.sh
 - **Avis clients** (les trois boutiques ont le module) : la « Robe à bretelles en lin » montre sa note sur sa carte du rayon Robes et sous le titre de sa fiche (4,7 · 3 avis) et, plus bas, les avis vérifiés, la répartition des notes et la réponse de la boutique. Au backoffice de Selma (`gerant@selma.test`), **Avis** : l'avis de Yosra attend la relecture ; répondre, publier, ou écarter avec un motif. Une commande livrée propose, dans « Mes commandes », « Donner mon avis » sur chaque article (cinq étoiles, un mot facultatif) ; Réglages → Avis clients : relu avant publication, ou publié aussitôt.
 - **Achat express** (Selma a le réglage) : sur une fiche, **Commander maintenant** mène droit à la commande avec cet article seul ; le panier reste tel quel. Sur téléphone, la barre collante propose les deux (l'icône du panier, « Commander maintenant »). Au backoffice, Réglages → Commandes → « Depuis la fiche d'un produit » : par le panier, ou achat express en plus.
 
-**Quincaillerie du Sud** (technique)
+**Quincaillerie du Sud** (Commerce, sur les composants techniques)
+- L'accueil s'ouvre sur la recherche : taper `perc` dans la grande barre, les pièces s'affichent pendant la frappe ; les rayons en raccourcis dessous, les services en bande.
+- **Tous les rayons** : le grand menu ; survoler « Quincaillerie », ses sous-rayons paraissent. Au clavier : Tab jusqu'au bouton, Entrée, Tab, ↓, Tab entre dans les sous-rayons ; Échap referme.
+- **Comparer** : dans Perceuses et visseuses, survoler une carte, cocher « Comparer » sur deux pièces ; la barre du bas les montre ; « Comparer (2) » les met côte à côte (« Seulement les différences », « Retirer »).
+- Au téléphone : la barre d'onglets en bas (Accueil, Rayons, Chercher, Compte, Panier) ; elle se retire sur une fiche.
 - Chercher dans la grande barre, par référence ou par nom : `PV14`, `casque`, `forets`.
 - Rayon Outillage électroportatif : colonne de filtres à gauche (diamètre, version, prix, stock).
 - Sur une carte à une seule déclinaison, **Ajouter** met directement au panier.

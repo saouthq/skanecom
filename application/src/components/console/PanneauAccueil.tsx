@@ -327,7 +327,7 @@ function Reglages({
       <legend className="sr-only">Réglages de « {entree.nom} »</legend>
       {s.type === "engagements" ? (
         <p className="aide">
-          Ses lignes viennent de vos réglages : paiement à la livraison, délais et frais, rappel avant expédition, refus possible{structure === "technique" ? ", retrait en magasin et conseil" : ""}. Changez-les dans les Réglages de la boutique.
+          Ses lignes viennent de vos réglages : paiement à la livraison, délais et frais, rappel avant expédition, refus possible{gabaritDe(structure) === "technique" ? ", retrait en magasin et conseil" : ""}. Changez-les dans les Réglages de la boutique.
         </p>
       ) : null}
 

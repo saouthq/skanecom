@@ -52,6 +52,9 @@ export function EnteteDefilant({
 
 export type EntreeMenu = { cle: string; href: string; nom: string; enfants?: { cle: string; href: string; nom: string }[] };
 
+/** Demande d'ouverture du menu (l'onglet « Rayons » du téléphone, structure Commerce). */
+export const MENU_OUVRIR = "skanecom:menu-ouvrir";
+
 export function MenuMobile({
   entrees,
   faits,
@@ -66,6 +69,12 @@ export function MenuMobile({
   const bouton = useRef<HTMLButtonElement>(null);
   const chemin = cheminVisible(usePathname());
   const ferme = () => setOuvert(false);
+
+  useEffect(() => {
+    const ouvre = () => setOuvert(true);
+    window.addEventListener(MENU_OUVRIR, ouvre);
+    return () => window.removeEventListener(MENU_OUVRIR, ouvre);
+  }, []);
 
   return (
     <>

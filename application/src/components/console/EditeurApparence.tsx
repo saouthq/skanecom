@@ -47,7 +47,8 @@ const NOMS_STRUCTURES: Record<Structure, { nom: string; aide: string }> = {
   editorial: { nom: "Éditoriale", aide: "Grandes photos, peu de mots, typographie de magazine. Mode, beauté, maison." },
   bento: { nom: "Bento", aide: "Une mosaïque de tuiles, coins ronds, en-tête flottant. Maison, beauté, marques jeunes." },
   immersif: { nom: "Immersif", aide: "La photo plein écran, l'en-tête posé dessus, les pièces qui glissent, le lookbook. Mode, luxe, maison haut de gamme." },
-  technique: { nom: "Technique", aide: "Grille dense, fiches techniques, recherche par référence. Outillage, high-tech." },
+  technique: { nom: "Technique", aide: "Grille dense, fiches techniques, recherche par référence. Outillage, matériel pro." },
+  commerce: { nom: "Commerce", aide: "La recherche d'abord, le grand menu des rayons, la comparaison, une barre d'onglets au téléphone. High-tech, électroménager, outillage." },
 };
 
 const LIBELLES: { [K in CleStyle]: { titre: string; choix: Record<Style[K], string> } } = {

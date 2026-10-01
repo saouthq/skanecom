@@ -989,6 +989,50 @@ export const fr = {
     catalogue: "Voir le catalogue",
   },
 
+  /** La comparaison, côte à côte (structure Commerce : components/Comparaison.tsx, /comparer). */
+  comparaison: {
+    case: "Comparer",
+    ajouter: (nom: string) => `Comparer : ${nom}`,
+    retirer: (nom: string) => `Retirer de la comparaison : ${nom}`,
+    barre: "Pièces à comparer",
+    comparer: (n: number) => `Comparer (${n})`,
+    encoreUne: "Cochez une autre pièce pour comparer.",
+    effacer: "Tout retirer",
+    ajoutee: (n: number, max: number) => (n >= max ? `${n} pièces à comparer : c'est le maximum, la prochaine remplacera la plus ancienne.` : `${n} pièce${n > 1 ? "s" : ""} à comparer.`),
+    retiree: (n: number) => (n ? `Retirée : ${n} pièce${n > 1 ? "s" : ""} à comparer.` : "Plus rien à comparer."),
+    titre: "Comparer",
+    chapo: "Les pièces choisies, côte à côte : leur prix, leur stock et leurs caractéristiques d'aujourd'hui.",
+    videTitre: "Rien à comparer pour l'instant",
+    videTexte: "Cochez « Comparer » sur deux pièces ou plus, dans le catalogue : elles se mettent ici côte à côte.",
+    differences: "Seulement les différences",
+    prix: "Prix",
+    stock: "Disponibilité",
+    note: "Avis",
+    marque: "Marque",
+    reference: "Référence",
+    declinaisons: "Déclinaisons",
+    sansNote: "Pas encore d'avis",
+    retirerPiece: "Retirer",
+    tableau: "Tableau de comparaison",
+  },
+
+  /** La structure Commerce : le grand menu, la barre d'onglets du téléphone. */
+  commerce: {
+    tousLesRayons: "Tous les rayons",
+    grandMenu: "Les rayons de la boutique",
+    toutLeRayon: (nom: string) => `Tout le rayon ${nom}`,
+    rechercheTitre: "Que cherchez-vous ?",
+    rayonsFrequents: "Les rayons",
+    onglets: "Navigation rapide",
+    accueil: "Accueil",
+    rayons: "Rayons",
+    rechercher: "Chercher",
+    panier: "Panier",
+    panierAria: (n: number) => (n ? `Panier, ${n} article${n > 1 ? "s" : ""}` : "Panier, vide"),
+    compte: "Compte",
+    favoris: "Favoris",
+  },
+
   /** « Prévenez-moi de son retour » (components/AlerteRetour.tsx). */
   alerte: {
     ouvrir: "Prévenez-moi de son retour",

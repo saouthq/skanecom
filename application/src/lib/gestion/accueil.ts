@@ -1,4 +1,4 @@
-import type { CodeTheme, Structure, TypeSection } from "@/lib/theme";
+import { gabaritDe, type CodeTheme, type Structure, type TypeSection } from "@/lib/theme";
 
 /* ============================================================================
    COMPOSER L'ACCUEIL (backoffice, migration 59) — ce qui se partage entre
@@ -148,15 +148,16 @@ export const TYPES: TypeSection[] = ["hero", "piece", "selection", "rayons", "ed
 /** Les titres que la vitrine montre quand la section n'a pas le sien
  *  (selon la structure : le Bento a ses rayons, sur les textes éditoriaux). */
 export function titreParDefaut(type: TypeSection, code: Structure, tri?: string): string {
+  const technique = gabaritDe(code) === "technique";
   switch (type) {
     case "hero": return "Le nom de la boutique";
-    case "rayons": return code === "technique" ? "Nos rayons" : code === "bento" ? "Les rayons" : "Les collections";
-    case "selection": return tri === "nouveautes" ? "Les nouveautés" : code === "technique" ? "Les références du moment" : "La sélection";
+    case "rayons": return technique ? "Nos rayons" : code === "bento" ? "Les rayons" : "Les collections";
+    case "selection": return tri === "nouveautes" ? "Les nouveautés" : technique ? "Les références du moment" : "La sélection";
     case "avis": return "Ce qu'en disent nos clients";
     case "questions": return "Vos questions";
     case "marques": return "Les marques";
     case "lookbook": return "Le lookbook";
-    case "engagements": return code === "technique" ? "Commander, simplement" : "Nos engagements";
+    case "engagements": return technique ? "Commander, simplement" : "Nos engagements";
     default: return "";
   }
 }

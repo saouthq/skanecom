@@ -53,6 +53,7 @@ on:
       - "supabase/seed-beaute.sql"
       - "supabase/seed-maison.sql"
       - "supabase/seed-immersif.sql"
+      - "supabase/seed-commerce.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -144,6 +145,7 @@ jobs:
           installe graines seed-beaute.sql supabase/seed-beaute.sql
           installe graines seed-maison.sql supabase/seed-maison.sql
           installe graines seed-immersif.sql supabase/seed-immersif.sql
+          installe graines seed-commerce.sql supabase/seed-commerce.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu
