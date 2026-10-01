@@ -30,7 +30,6 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `maison-selma/produits/derbies-cuir-fauve` | [Markus Spiske](https://freeforcommercialuse.net) | CC0 | [stocksnap](https://stocksnap.io/photo/leather-shoes-DC246EC89C) |
 | `maison-selma/produits/chaussures-cuir-noir` | [Caio Resende](https://stocksnap.io/author/24500) | CC0 | [stocksnap](https://stocksnap.io/photo/leather-shoes-I1GV6WICCT) |
 | `maison-selma/produits/sac-cuir-cognac` | [Harsh Jadav](https://stocksnap.io/author/37782) | CC0 | [stocksnap](https://stocksnap.io/photo/handbag-leather-Z9ESJO45V5) |
-| `maison-selma/avis/sac-anse`, `maison-selma/avis/sac-poche` | recadrages de `maison-selma/produits/sac-cuir-cognac` (aucune personne dessus), pour les photos de l'avis de démonstration (`supabase/seed-avis-photos.sql`) | CC0 | voir `sac-cuir-cognac` |
 | `maymar/accueil/aeroport` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5924408/luggage-airport-free-public-domain-cc0-image) |
 | `maymar/accueil/depart` | [Erol Ahmed](https://stocksnap.io/author/26749) | CC0 | [stocksnap](https://stocksnap.io/photo/luggage-dufflebag-B3KGCPF50Y) |
 | `quincaillerie-demo/accueil/chantier` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5910507/image-light-public-domain-construction) |
@@ -55,3 +54,23 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `quincaillerie-demo/produits/casque-chantier` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5914234/image-white-background-public-domain-blue) |
 | `maymar/accueil/aeroport-large` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5924408/luggage-airport-free-public-domain-cc0-image) |
 | `maymar/accueil/depart-portrait` | [Erol Ahmed](https://stocksnap.io/author/26749) | CC0 | [stocksnap](https://stocksnap.io/photo/luggage-dufflebag-B3KGCPF50Y) |
+| `yasmine-beaute/produits/serum-eclat` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/11515770/dropper-bottle-blank-retro-label) |
+| `yasmine-beaute/produits/huile-figue-barbarie` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5910591/photo-image-flower-public-domain-free) |
+| `yasmine-beaute/produits/huile-calendula` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5956132/free-public-domain-cc0-photo) |
+| `yasmine-beaute/produits/savons-huile-olive` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5947458/free-public-domain-cc0-photo) |
+| `yasmine-beaute/produits/huile-lavande` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5911014/image-flower-public-domain-glass) |
+| `yasmine-beaute/produits/huile-massage-neroli` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5921912/photo-image-flower-public-domain-white) |
+| `yasmine-beaute/produits/huile-capillaire-romarin` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5921893/photo-image-flower-public-domain-white) |
+| `yasmine-beaute/produits/vernis-ongles` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5906601/photo-image-public-domain-art-pink) |
+| `yasmine-beaute/produits/vernis-irise` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5947077/free-public-domain-cc0-photo) |
+| `yasmine-beaute/produits/palette-fards` | [Beauty and Fashion](https://stocksnap.io) | CC0 | [stocksnap](https://stocksnap.io/photo/beauty-makeup-MKGGIJ360Q) |
+| `yasmine-beaute/produits/pinceaux-trousse` | [Makarand Mane](https://www.makarandmane.com/) | CC0 | [wordpress](https://wordpress.org/photos/photo/3865bfd4dd/) |
+| `yasmine-beaute/produits/eau-parfum-fleur-blanche` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6020133/photo-image-public-domain-white-flower-free) |
+| `yasmine-beaute/produits/coffret-parfums` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6033727/photo-image-flower-public-domain-plant) |
+| `yasmine-beaute/produits/coffret-savons` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3290012/free-photo-image-birthday-cake-brie) |
+| `yasmine-beaute/accueil/hero` | [Authentic Stock](https://www.authentic.co) | CC0 | [stocksnap](https://stocksnap.io/photo/cosmetics-care-GZAJOCOQCW) |
+| `yasmine-beaute/accueil/hero-portrait` | [Authentic Stock](https://www.authentic.co) | CC0 | [stocksnap](https://stocksnap.io/photo/cosmetics-care-GZAJOCOQCW) |
+| `yasmine-beaute/accueil/rituel` | [Authentic Stock](https://www.authentic.co) | CC0 | [stocksnap](https://stocksnap.io/photo/woman-skin-QLAKLZ0LML) |
+| `yasmine-beaute/rayons/soins-du-visage` | [Authentic Stock](https://www.authentic.co) | CC0 | [stocksnap](https://stocksnap.io/photo/beauty-skincare-PBIACLTCLJ) |
+| `yasmine-beaute/rayons/corps-et-bain` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3286046/free-photo-image-soaps-paper-craft-soap-bar) |
+| `yasmine-beaute/rayons/maquillage` | [Beauty and Fashion](https://stocksnap.io) | CC0 | [stocksnap](https://stocksnap.io/photo/makeup-products-I8SLDUOMYC) |
