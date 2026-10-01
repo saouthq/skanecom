@@ -297,6 +297,13 @@ jobs:
           # Les e-mails : rédigés par l'application, gardés pour la console (rien ne part de l'aperçu).
           printf '%s' "$COURRIELS_CROCHET_SECRET" | $WRANGLER secret put COURRIELS_CROCHET_SECRET --name skanecom-application
           printf '%s' "apercu" | $WRANGLER secret put COURRIELS_ENVOI --name skanecom-application
+          # La facturation SkanFact (cadrage 06) n'est pas branchée sur l'aperçu :
+          # « aucune », seulement quand le secret manque (une valeur posée à la
+          # main reste). Le Worker exige ces secrets déclarés pour se déployer.
+          deja="$($WRANGLER secret list --name skanecom-application --format json 2>/dev/null || true)"
+          for s in SKANFACT_URL SKANFACT_ENTREPRISE SKANFACT_CLE SKANFACT_AVIS_SECRET; do
+            printf '%s' "$deja" | grep -q "\"$s\"" || printf '%s' "aucune" | $WRANGLER secret put "$s" --name skanecom-application
+          done
           bun run deploy:response-store
           bun run deploy -- --skip-build
 

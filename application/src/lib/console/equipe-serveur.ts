@@ -5,7 +5,7 @@ import { COOKIE_LIEN, DUREE_COOKIE_LIEN, cheminEquipe, lienBienvenue, type LienR
 /* Côté serveur de la console : fabriquer un lien d'accès, et le faire
    arriver jusqu'à la page de l'équipe. */
 
-type Boutique = { id: string; slug: string; nom: string };
+type Boutique = { id: string; slug: string; nom: string; demonstration?: boolean };
 
 /** La boutique par son identifiant d'adresse (jamais par un champ du
  *  formulaire : la page d'une boutique n'agit que sur elle). */

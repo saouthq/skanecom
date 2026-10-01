@@ -1116,6 +1116,78 @@ await etape("le propriétaire ferme lui-même l'accès du support", async () => 
   "le journal garde les deux ouvertures et les deux fermetures, dont celle du propriétaire");
 });
 
+/* ------------------------------------------------------------------
+   La facturation de la boutique, lue dans SkanFact (cadrage 06) — SkanFact
+   simulé par le relais (outils/skanfact-dev.mjs) : le client retrouvé par
+   son matricule, relié, sa situation lue ; une facture émise dans SkanFact
+   arrive par son avis signé ; un avis mal signé ne passe pas. */
+const SKANFACT = `${RELAIS}/skanfact-dev`;
+const gesteSkanFact = async (nom, corps = {}) =>
+  (await fetch(`${SKANFACT}/${nom}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(corps) })).json();
+async function avisSkanFact(corps, signature) {
+  return new Promise((ok, ko) => {
+    const req = http.request({
+      host: "127.0.0.1", port: Number(t.port), method: "POST", path: "/crochets/skanfact",
+      headers: { host: new URL(CONSOLE).host, "content-type": "application/json", "skanfact-signature": signature },
+    }, (r) => { r.resume(); r.on("end", () => ok(r.statusCode)); });
+    req.on("error", ko);
+    req.end(corps);
+  });
+}
+
+await etape("facturation : retrouver le client SkanFact par son matricule, et le relier", async () => {
+  await gesteSkanFact("reinitialiser");
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await clic(page, page.getByRole("link", { name: "Facturation" }));
+  await page.waitForURL(new RegExp(`/boutiques/${SLUG}/facturation$`));
+  await page.locator("#fa-identifiant").waitFor();
+  await clic(page, page.locator("#fa-identifiant"));
+  await tape(page, "7654321 b/a/000");
+  await page.keyboard.press("Enter");
+  await page.waitForURL(/identifiant=/);
+  await page.locator(".fa-client").first().waitFor();
+  const trouves = await page.locator(".fa-client").allInnerTexts();
+  verifie(trouves.length === 1 && trouves[0].includes("Atelier d'essai SARL"), "le matricule tapé en minuscules, avec des espaces, retrouve le client");
+  await clic(page, page.getByRole("button", { name: "Relier à ce client" }));
+  await page.getByText("est reliée à « Atelier d'essai SARL » dans SkanFact.", { exact: false }).waitFor();
+  const texte = await page.locator("body").innerText();
+  verifie(/À jour/.test(texte) && /Rien à payer/.test(texte), "sa situation est lue : à jour, rien à payer");
+  verifie(/Dernier règlement : 250,000\s*DT/.test(texte), "avec son dernier règlement (250,000 DT)");
+  await capture(page, "console-facturation-reliee");
+});
+
+await etape("facturation : une facture émise dans SkanFact arrive par son avis signé", async () => {
+  const emise = await gesteSkanFact("emettre", { identifiant: "7654321B/A/000", montant: "89.000", echeance: 15, objet: "Abonnement mensuel" });
+  verifie(emise.avis?.[0]?.statut === 200, `l'avis « facture émise » est reçu par la console (HTTP ${emise.avis?.[0]?.statut})`);
+  const d = await (await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/console_facturation`, {
+    method: "POST",
+    headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({ p_boutique_id: await page.locator("form[action$='/statut'] input[name=boutique_id]").inputValue() }),
+  })).json();
+  verifie(d.factures?.some((f) => f.numero === emise.numero && f.reste === "89.000"), `la console a relu et gardé la facture ${emise.numero}, sans qu'on ouvre la page`);
+  const corps = JSON.stringify({ id: `faux-${SUFFIXE}`, evenement: "facture.reglee", entreprise: "00000000-0000-4000-8888-00000000e000", donnees: {} });
+  const t0 = Math.floor(Date.now() / 1000);
+  verifie(await avisSkanFact(corps, `t=${t0},v1=${"0".repeat(64)}`) === 401, "un avis mal signé est refusé (401)");
+  const vieux = t0 - 3600;
+  verifie(await avisSkanFact(corps, `t=${vieux},v1=${createHmac("sha256", "whsec_dev_local_skanecom").update(`${vieux}.${corps}`).digest("hex")}`) === 401,
+    "un avis signé il y a une heure est refusé (401)");
+  await page.reload({ waitUntil: "networkidle" });
+  const texte = await page.locator("body").innerText();
+  verifie(texte.includes(emise.numero) && /89,000\s*DT/.test(texte) && /dans 15 j/.test(texte), `la page montre ${emise.numero} : 89,000 DT, échéance dans 15 j`);
+});
+
+await etape("facturation : délier, et le journal le garde", async () => {
+  await clic(page, page.locator(".fa-delier > summary"));
+  await page.getByRole("button", { name: "Délier ce client" }).waitFor();
+  await clic(page, page.getByRole("button", { name: "Délier ce client" }));
+  await page.getByText("n'est plus reliée à SkanFact.", { exact: false }).waitFor();
+  verifie(await page.locator("#fa-identifiant").isVisible(), "déliée : la recherche du client revient");
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  verifie(journal.some((l) => l.includes("Reliée à son client SkanFact") && l.includes("Atelier d'essai SARL"))
+    && journal.some((l) => l.includes("Déliée de son client SkanFact")), "le journal garde le lien et la fin du lien, avec le client");
+});
+
 /* ------------------------------------------------------------------ */
 console.log("\n== 4. Les portes ==");
 

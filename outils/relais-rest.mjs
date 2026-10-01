@@ -21,11 +21,15 @@
 // Et les e-mails que l'application a rédigés (COURRIELS_ENVOI=relais,
 // src/lib/courriels/envoi.ts), gardés entiers, relus par adresse :
 //   http://127.0.0.1:54321/email-dev/rendu/dernier?email=leila@exemple.tn
+// Et il tient lieu de SkanFact (la facturation des clients, cadrage 06) :
+// l'API que la console lit et les avis qu'elle reçoit (outils/skanfact-dev.mjs) :
+//   http://127.0.0.1:54321/skanfact-dev/v1/entreprises/<e>/clients?identifiant=…
 // Lancé par outils/api-locale.sh. Jamais en production.
 import http from "node:http";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PREFIXE as SKANFACT, skanfactDev } from "./skanfact-dev.mjs";
 
 const PORT = Number(process.env.RELAIS_PORT ?? 54321);
 const AMONTS = [
@@ -186,6 +190,7 @@ http
     if (req.url === "/email-dev/rendu" && req.method === "POST") return recoitRendu(req, res);
     if (req.url.startsWith("/email-dev/rendu/dernier") && req.method === "GET") return dernierRendu(req.url, res);
     if (req.url.startsWith("/email-dev/dernier") && req.method === "GET") return dernierEmail(req.url, res);
+    if (req.url.startsWith(SKANFACT + "/")) return skanfactDev(req, res);
 
     const cible = AMONTS.find((a) => req.url === a.prefixe || req.url.startsWith(a.prefixe + "/") || req.url.startsWith(a.prefixe + "?"));
     if (!cible) {

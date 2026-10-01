@@ -1,5 +1,6 @@
 import { themeDeLaBoutique } from "@/lib/theme";
 import { ETAPES_MISE_EN_PLACE, type CleEtape } from "./mise-en-place";
+import { SEUIL_RETARD_JOURS, joursDepuis, type SituationSkanFact } from "./skanfact";
 
 /* ============================================================================
    LE POSTE DE PILOTAGE (accueil de la console) — ce que rend
@@ -33,6 +34,16 @@ export type LignePilotage = {
   publies: number;
   equipe: number;
   support: { jusqua: string; role: "lecture" | "admin" } | null;
+  /** Son client SkanFact et la dernière situation lue (cadrage 06, migration 79) ;
+   *  `echeance` : la plus ancienne des factures qui restaient à payer, et sa facture. */
+  facturation: {
+    client: string;
+    raison_sociale: string;
+    situation: SituationSkanFact | null;
+    lue_le: string | null;
+    echeance: string | null;
+    numero: string | null;
+  } | null;
 };
 
 /** Les couleurs de la vitrine : l'accent, le fond, l'encre (gabarit compris). */
@@ -66,10 +77,28 @@ const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-dig
  *  des commandes qui attendent (plus de 2 h : à surveiller ; plus d'un jour : urgent ;
  *  jamais celles d'une boutique de démonstration, que personne n'a à confirmer),
  *  une boutique en préparation et sa prochaine étape, un accès support ouvert,
- *  une boutique suspendue. */
-export function vigilances(lignes: LignePilotage[], maintenant: number): Vigilance[] {
+ *  une boutique suspendue ; et, quand SkanFact est branché, une facture échue
+ *  depuis plus de SEUIL_RETARD_JOURS jours (lue dans SkanFact, comptée depuis
+ *  son échéance : le retard grandit sans relecture) ou une boutique ouverte
+ *  sans client SkanFact. Jamais pour une démonstration. */
+export function vigilances(lignes: LignePilotage[], maintenant: number, options: { skanfact?: boolean } = {}): Vigilance[] {
   const out: Vigilance[] = [];
   for (const b of lignes) {
+    const fa = b.facturation;
+    if (fa?.echeance && !b.demonstration) {
+      const jours = joursDepuis(fa.echeance, maintenant);
+      if (jours > SEUIL_RETARD_JOURS) {
+        out.push({
+          cle: `${b.id}:facturation`, niveau: "attention", boutique: b, href: `/boutiques/${b.slug}/facturation`,
+          texte: `facture${fa.numero ? ` ${fa.numero}` : ""} échue depuis ${jours} jours, non réglée dans SkanFact`,
+        });
+      }
+    } else if (options.skanfact && !fa && !b.demonstration && b.statut === "active") {
+      out.push({
+        cle: `${b.id}:sans-client`, niveau: "info", boutique: b, href: `/boutiques/${b.slug}/facturation`,
+        texte: "ouverte sans client SkanFact : ses factures ne se suivent pas ici",
+      });
+    }
     const c = b.commandes;
     if (c.a_confirmer > 0 && c.attente_depuis && !b.demonstration) {
       const heures = (maintenant - new Date(c.attente_depuis).getTime()) / 3_600_000;

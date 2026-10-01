@@ -1060,3 +1060,63 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .mt-gabarit { d
 .mo-clientes a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .mo-gestes { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .25rem; }
 @media (prefers-reduced-motion: reduce) { .mo-cadre iframe, .mo-ouvrir span { transition: none; } }
+
+/* --------------------------------------------------------------------------
+   FACTURATION (cadrage 06) — le client SkanFact d'une boutique, sa situation,
+   ses factures à payer : lues dans SkanFact, montrées telles quelles.
+   -------------------------------------------------------------------------- */
+.fa-recherche { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .75rem; }
+.fa-recherche .champ { flex: 1 1 16rem; }
+.fa-recherche > .btn { margin-block-start: 1.6875rem; }
+@media (max-width: 559px) { .fa-recherche > .btn { margin-block-start: 0; inline-size: 100%; } }
+.fa-aucun { display: grid; justify-items: start; gap: .5rem; margin-block-start: 1.25rem; padding: 1rem 1.125rem; border-radius: var(--ui-r-l); background: var(--ui-survol); border: 1px solid var(--ui-bord-leger); }
+.fa-clients { display: grid; margin: 1.25rem 0 0; padding: 0; list-style: none; border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l); overflow: hidden; }
+.fa-client { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: .875rem 1rem; }
+.fa-client + .fa-client { border-block-start: 1px solid var(--ui-bord-leger); }
+.fa-client-nom { display: grid; gap: .125rem; flex: 1 1 12rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.fa-client-nom .discret { font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.fa-client-gestes { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-inline-start: auto; }
+@media (max-width: 559px) { .fa-client-gestes { inline-size: 100%; } .fa-client-gestes form { flex: 1; } .fa-client-gestes form .btn { inline-size: 100%; } }
+
+.fa-relire { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.fa-chiffres { margin-block-end: 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); }
+.fa-chiffres dd { white-space: nowrap; font-size: 1.375rem; }
+.fa-chiffres .aide { margin-block-start: .125rem; }
+.fa-echu { border-color: var(--ui-rouge-bord); background: color-mix(in srgb, var(--ui-rouge-fond) 70%, var(--ui-panneau)); }
+.fa-echu dd { color: var(--ui-rouge); }
+.fa-ajour { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-weight: 500; }
+.fa-retard {
+  display: flex; align-items: flex-start; gap: .625rem; padding: .75rem .875rem; border-radius: var(--ui-r);
+  color: #7F1D1D; background: var(--ui-rouge-fond); box-shadow: inset 0 0 0 1px var(--ui-rouge-bord); font-size: .875rem; line-height: 1.5;
+}
+.fa-retard .icone { flex: none; margin-block-start: .125rem; color: var(--ui-rouge); }
+.fa-retard a { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+.fa-factures td { vertical-align: top; }
+@media (max-width: 559px) {
+  .console .fa-factures th, .console .fa-factures td { padding-inline: .5rem; }
+  .console .fa-factures th:first-child, .console .fa-factures td:first-child { padding-inline-start: 1.25rem; }
+  .console .fa-factures th:last-child, .console .fa-factures td:last-child { padding-inline-end: 1.25rem; }
+  .fa-factures th.fa-num { white-space: normal; }
+}
+.fa-detail { display: block; margin-block-start: .25rem; font-size: .75rem; }
+.fa-num { text-align: end; }
+.fa-numero { display: inline-flex; align-items: center; gap: .3125rem; font-weight: 600; white-space: nowrap; }
+a.fa-numero { text-decoration: underline; text-decoration-color: var(--ui-bord-fort); text-underline-offset: 3px; }
+a.fa-numero:hover { text-decoration-color: currentColor; }
+a.fa-numero .icone { color: var(--ui-texte-3); }
+
+.fa-pied { flex-wrap: wrap; justify-content: space-between; }
+.fa-delier { flex: 1 1 100%; min-inline-size: 0; }
+.fa-delier[open] { flex-basis: 100% !important; }
+.fa-delier form .btn { max-inline-size: 100%; white-space: normal; text-align: start; }
+.fa-delier > summary { list-style: none; inline-size: max-content; }
+.fa-delier > summary::-webkit-details-marker { display: none; }
+.fa-delier[open] > summary { color: var(--ui-texte); }
+.fa-delier form { margin-block-start: .75rem; padding: .875rem 1rem; border-radius: var(--ui-r); background: var(--ui-survol); border: 1px solid var(--ui-bord-leger); }
+.fa-pied > a.btn + .fa-delier { flex: 0 1 auto; }
+.fa-fiche dt { white-space: nowrap; }
+.fa-fiche dd { overflow-wrap: anywhere; }
+.fa-avis { margin-block-start: 1rem; }
+.fa-adresse { display: block; margin-block-start: .375rem; }
+.vide code { font-size: .8125em; padding: .0625rem .3125rem; border-radius: 4px; background: var(--ui-doux); }

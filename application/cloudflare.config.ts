@@ -40,6 +40,15 @@ export default defineConfig({
       // Un secret déclaré est exigé partout — en local, seuls ceux-ci passent.
       COURRIELS_CROCHET_SECRET: bindings.secret(),
       COURRIELS_ENVOI: bindings.secret(),
+      // La facturation des clients, lue dans SkanFact (src/lib/console/skanfact.ts,
+      // cadrage 06) : son adresse, l'entreprise SkanEcom, une clé qui n'a que le
+      // geste ventes.pieces.voir, et le secret de l'abonnement aux avis.
+      // « aucune » : SkanFact n'est pas branché (l'aperçu en ligne). En local :
+      // SkanFact simulé par le relais (outils/skanfact-dev.mjs).
+      SKANFACT_URL: bindings.secret(),
+      SKANFACT_ENTREPRISE: bindings.secret(),
+      SKANFACT_CLE: bindings.secret(),
+      SKANFACT_AVIS_SECRET: bindings.secret(),
     },
   }),
 });

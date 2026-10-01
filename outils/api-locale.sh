@@ -37,6 +37,11 @@ EMPREINTE=9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c
 PORT_BASE=${BASE_LOCALE_PORT:-54322}
 BASE=${BASE_LOCALE_NOM:-skanecom}
 SECRET_DEV="secret-de-developpement-skanecom-local-uniquement"
+# SkanFact simulé (outils/skanfact-dev.mjs) : une entreprise, une clé de
+# l'API et le secret des avis, tous de développement.
+SKANFACT_ENTREPRISE_DEV="00000000-0000-4000-8888-00000000e000"
+SKANFACT_CLE_DEV="skf_dev_local_skanecom"
+SKANFACT_AVIS_DEV="whsec_dev_local_skanecom"
 ADMIN_EMAIL=admin@skanecom.test
 ADMIN_MDP=console-locale-skanecom
 EQUIPE_MDP=equipe-locale-skanecom
@@ -137,7 +142,12 @@ CONF
   )
   # La clé de dépôt des fichiers (le relais tient lieu de R2) : l'application
   # la présente, c'est sa clé de service (src/lib/gestion/fichiers.ts).
-  FICHIERS_DEPOT_CLE="$(jeton service_role)" setsid node "$RACINE/outils/relais-rest.mjs" > "$OUTILS/relais.log" 2>&1 < /dev/null &
+  # Il tient aussi lieu de SkanFact (outils/skanfact-dev.mjs) : l'entreprise,
+  # la clé et le secret des avis sont de développement, les mêmes que ceux
+  # que l'application reçoit plus bas.
+  FICHIERS_DEPOT_CLE="$(jeton service_role)" \
+  SKANFACT_ENTREPRISE="$SKANFACT_ENTREPRISE_DEV" SKANFACT_CLE="$SKANFACT_CLE_DEV" SKANFACT_AVIS_SECRET="$SKANFACT_AVIS_DEV" \
+    setsid node "$RACINE/outils/relais-rest.mjs" > "$OUTILS/relais.log" 2>&1 < /dev/null &
   echo $! > "$OUTILS/relais.pid"
 
   cat > "$OUTILS/api-locale.env" <<ENV
@@ -155,6 +165,11 @@ ENV
     printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$(jeton service_role)"
     printf 'COURRIELS_ENVOI=relais\n'
     printf 'COURRIELS_CROCHET_SECRET=v1,whsec_%s\n' "$(printf '%s' "$SECRET_DEV" | base64 -w0)"
+    # SkanFact simulé par le relais (la facturation des clients, cadrage 06).
+    printf 'SKANFACT_URL=http://127.0.0.1:54321/skanfact-dev\n'
+    printf 'SKANFACT_ENTREPRISE=%s\n' "$SKANFACT_ENTREPRISE_DEV"
+    printf 'SKANFACT_CLE=%s\n' "$SKANFACT_CLE_DEV"
+    printf 'SKANFACT_AVIS_SECRET=%s\n' "$SKANFACT_AVIS_DEV"
   } > "$RACINE/application/.dev.vars"
 
   # Jusqu'à une minute : au premier démarrage, GoTrue passe ses propres

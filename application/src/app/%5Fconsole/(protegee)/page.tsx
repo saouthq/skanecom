@@ -5,6 +5,7 @@ import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_STATUT } from "@/lib/console/libelles";
 import { couleursDe, depuis, vigilances, type LignePilotage } from "@/lib/console/pilotage";
+import { configSkanFact } from "@/lib/console/skanfact";
 import { formateMontant } from "@/lib/prix";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
@@ -37,7 +38,7 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
   const boutiques = (data ?? []) as LignePilotage[];
   const hoteConsole = (await headers()).get("host");
   const maintenant = new Date().getTime();
-  const aSurveiller = vigilances(boutiques, maintenant);
+  const aSurveiller = vigilances(boutiques, maintenant, { skanfact: configSkanFact() !== null });
 
   // La synthèse ne compte que les clientes : les boutiques de démonstration vendent pour de faux.
   const clientes = boutiques.filter((b) => !b.demonstration);
