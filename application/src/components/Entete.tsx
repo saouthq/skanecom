@@ -73,6 +73,8 @@ function entreesMenu(cadre: Cadre): EntreeMenu[] {
 
 /** L'accueil s'ouvre-t-il par une photo pleine page (et pas détourée) ? */
 function ouvertureSurPhoto(cadre: Cadre): boolean {
+  // Le Bento ouvre sur une tuile, pas sur une photo pleine page.
+  if (cadre.theme.structure === "bento") return false;
   const premiere = cadre.theme.sections[0];
   return premiere?.type === "hero" && Boolean(premiere.image) && !premiere.image?.detouree;
 }

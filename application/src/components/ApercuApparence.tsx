@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { attributsDuStyle, feuilleDuTheme, themeDeLaBoutique, type CodeTheme } from "@/lib/theme";
+import { attributsDuStyle, feuilleDuTheme, themeDeLaBoutique, type CodeTheme, type Structure } from "@/lib/theme";
 
 /* ============================================================================
    L'APERÇU EN DIRECT — dans le cadre de l'écran « Apparence » du backoffice,
@@ -36,7 +36,7 @@ function deLaConsole(origine: string): boolean {
   }
 }
 
-export function ApercuApparence({ code }: { code: CodeTheme }) {
+export function ApercuApparence({ code, structure }: { code: CodeTheme; structure: Structure }) {
   const chemin = usePathname();
 
   useEffect(() => {
@@ -72,8 +72,8 @@ export function ApercuApparence({ code }: { code: CodeTheme }) {
     const recherche = new URLSearchParams(location.search);
     recherche.delete("apercu");
     const reste = recherche.toString();
-    window.parent.postMessage({ type: MESSAGE_PRET, chemin: location.pathname + (reste ? `?${reste}` : ""), gabarit: code }, "*");
-  }, [chemin, code]);
+    window.parent.postMessage({ type: MESSAGE_PRET, chemin: location.pathname + (reste ? `?${reste}` : ""), gabarit: structure }, "*");
+  }, [chemin, structure]);
 
   return null;
 }

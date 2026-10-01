@@ -74,6 +74,7 @@ export default async function RacineBoutique({ children, params }: Props) {
       data-boutique={cadre.boutique.slug}
       data-pro={cadre.comptesPro ? cadre.boutique.id : undefined}
       data-gabarit={cadre.theme.code}
+      data-structure={cadre.theme.structure}
       data-monogramme={cadre.theme.monogramme ? "" : undefined}
       {...attributsDuStyle(cadre.theme.style)}
       className="h-full"
@@ -106,7 +107,7 @@ export default async function RacineBoutique({ children, params }: Props) {
         <Apparitions />
         <TransitionsVue />
         <AncresDouces />
-        <ApercuApparence code={cadre.theme.code} />
+        <ApercuApparence code={cadre.theme.code} structure={cadre.theme.structure} />
         <Suspense fallback={null}>
           <ProgressionNavigation />
         </Suspense>

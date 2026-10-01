@@ -10,8 +10,8 @@ import {
 } from "@/lib/apparence";
 import { estHex } from "@/lib/couleur";
 import {
-  GABARITS, JETONS_COULEUR, POLICES_INFO, pilePolice, REGLAGES_STYLE,
-  type CleStyle, type CodeTheme, type JetonCouleur, type Police, type Style,
+  JETONS_COULEUR, POLICES_INFO, pilePolice, REGLAGES_STYLE, STRUCTURES, styleConseille,
+  type CleStyle, type JetonCouleur, type Police, type Structure, type Style,
 } from "@/lib/theme";
 
 /* ============================================================================
@@ -34,8 +34,9 @@ import {
 type Brouillon = { version: number; jeton: string };
 type Message = { ok: boolean; texte: string };
 
-const STRUCTURES: Record<CodeTheme, { nom: string; aide: string }> = {
+const NOMS_STRUCTURES: Record<Structure, { nom: string; aide: string }> = {
   editorial: { nom: "Éditoriale", aide: "Grandes photos, peu de mots, typographie de magazine. Mode, beauté, maison." },
+  bento: { nom: "Bento", aide: "Une mosaïque de tuiles, coins ronds, en-tête flottant. Maison, beauté, marques jeunes." },
   technique: { nom: "Technique", aide: "Grille dense, fiches techniques, recherche par référence. Outillage, high-tech." },
 };
 
@@ -116,7 +117,7 @@ export function EditeurApparence({
     vitrine ? `${vitrine}/?apercu=${brouillonInitial ? `${brouillonInitial.jeton}.${brouillonInitial.version}` : "fin"}` : null);
   const [recharge, setRecharge] = useState(0);
   const [chemin, setChemin] = useState("/");
-  const [gabaritCadre, setGabaritCadre] = useState<CodeTheme | null>(null);
+  const [gabaritCadre, setGabaritCadre] = useState<Structure | null>(null);
   const cadre = useRef<HTMLIFrameElement>(null);
   const scene = useRef<HTMLDivElement>(null);
   const [taille, setTaille] = useState({ l: 900, h: 640 });
@@ -145,10 +146,10 @@ export function EditeurApparence({
   // La vitrine du cadre dit qu'elle est prête (à chaque page) : on lui renvoie l'apparence.
   const surMessage = useEffectEvent((e: MessageEvent) => {
     if (!origine || e.origin !== origine || e.source !== cadre.current?.contentWindow) return;
-    const m = e.data as { type?: string; chemin?: string; gabarit?: CodeTheme } | null;
+    const m = e.data as { type?: string; chemin?: string; gabarit?: Structure } | null;
     if (m?.type !== MESSAGE_PRET) return;
     if (typeof m.chemin === "string") setChemin(m.chemin.replace(/[?&]apercu=[^&]*/, "").replace(/\?$/, "") || "/");
-    if (m.gabarit === "editorial" || m.gabarit === "technique") setGabaritCadre(m.gabarit);
+    if (m.gabarit && (STRUCTURES as string[]).includes(m.gabarit)) setGabaritCadre(m.gabarit);
     envoieAuCadre(montre);
   });
   useEffect(() => {
@@ -305,7 +306,12 @@ export function EditeurApparence({
   const reglerPolice = (role: "titres" | "texte", p: Police) =>
     change({ ...contenu, polices: { ...contenu.polices, [role]: p } }, `police.${role}`, `police des ${role === "titres" ? "titres" : "textes"}`);
 
-  const reglerStructure = (code: CodeTheme) => change({ ...contenu, code }, "code", `structure ${STRUCTURES[code].nom.toLowerCase()}`);
+  // Une autre structure : ses coins et ses boutons conseillés viennent avec (Ctrl+Z pour garder les vôtres).
+  const reglerStructure = (code: Structure) => {
+    const conseil = styleConseille(code);
+    change({ ...contenu, code, style: { ...contenu.style, coins: conseil.coins, boutons: conseil.boutons, cartes: conseil.cartes, photos: conseil.photos, casse: conseil.casse } },
+      "code", `structure ${NOMS_STRUCTURES[code].nom.toLowerCase()}, avec ses coins et ses boutons`);
+  };
 
   /* --- Publier, abandonner. */
   const publier = async () => {
@@ -457,11 +463,11 @@ export function EditeurApparence({
             <h2 id="ap-t-structure">Structure</h2>
             <fieldset className="ap-choix ap-choix-1">
               <legend className="sr-only">La structure de la vitrine</legend>
-              {GABARITS.map((g) => (
+              {STRUCTURES.map((g) => (
                 <label key={g} className="ap-option ap-option-large">
                   <input type="radio" name="code" value={g} checked={contenu.code === g} onChange={() => reglerStructure(g)} />
                   <span className="ap-vignette ap-v-structure" data-structure={g} aria-hidden="true"><i /><i /><i /><i /></span>
-                  <span className="ap-option-texte"><b>{STRUCTURES[g].nom}</b><span className="aide">{STRUCTURES[g].aide}</span></span>
+                  <span className="ap-option-texte"><b>{NOMS_STRUCTURES[g].nom}</b><span className="aide">{NOMS_STRUCTURES[g].aide}</span></span>
                 </label>
               ))}
             </fieldset>

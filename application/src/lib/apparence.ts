@@ -13,14 +13,15 @@
 
 import { contraste, estFoncee, estHex, melange, versContraste } from "./couleur";
 import {
-  definitionDe, gabaritDe, JETONS_COULEUR, POLICES_TEXTE, POLICES_TITRES, styleSur,
-  type CodeTheme, type JetonCouleur, type Police, type Style,
+  definitionDe, JETONS_COULEUR, POLICES_TEXTE, POLICES_TITRES, structureDe, styleSur,
+  type JetonCouleur, type Police, type Structure, type Style,
 } from "./theme";
 
 export type Palette = Record<JetonCouleur, string>;
 
 export type ContenuApparence = {
-  code: CodeTheme;
+  /** La structure (themes.code) : éditoriale, bento, technique. */
+  code: Structure;
   couleurs: Palette;
   polices: { titres: Police; texte: Police };
   style: Style;
@@ -30,7 +31,7 @@ export type ContenuApparence = {
  *  qui manque), ou d'un brouillon. */
 export function contenuDe(brut: unknown): ContenuApparence {
   const b = (brut && typeof brut === "object" ? brut : {}) as Record<string, unknown>;
-  const code = gabaritDe(b.code);
+  const code = structureDe(b.code);
   const def = definitionDe(code);
   const couleurs = { ...def.couleurs };
   const propres = (b.couleurs ?? {}) as Record<string, unknown>;

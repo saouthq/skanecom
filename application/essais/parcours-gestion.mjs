@@ -1959,19 +1959,36 @@ console.log("\n== 6. L'apparence de la vitrine (Dar Alia) ==");
     await page.waitForURL(/\/apparence$/);
     await page.waitForLoadState("networkidle");
     verifie(await attend(async () => (await html("data-gabarit")) === "editorial", 10000), "le cadre montre la vitrine de Dar Alia, telle que publiée");
+    verifie(await page.locator(".app-cote").isHidden() && await page.locator(".ap-quitter").isVisible(), "plein écran : le menu du backoffice se retire, « Backoffice » pour revenir");
     verifie((await statut()).includes("version publiée"), "rien à publier encore : « C'est la version publiée »");
     await capture(page, "apparence-ouverture");
   });
 
+  await etape("une autre structure : le cadre rend le brouillon", async () => {
+    verifie((await html("data-structure")) === "bento", "Dar Alia est en Bento");
+    await clic(page, page.locator(".ap-option-large", { hasText: "Technique" }));
+    verifie(await attend(async () => (await html("data-gabarit")) === "technique", 15000), "« Technique » : le cadre se recharge sur l'aperçu du brouillon, d'autres composants");
+    await clic(page, page.locator(".ap-appareils button", { hasText: "Téléphone" }));
+    await pause(1500);
+    await capture(page, "apparence-technique-telephone");
+    await clic(page, page.locator(".ap-option-large", { hasText: "Bento" }));
+    verifie(await attend(async () => (await html("data-structure")) === "bento", 15000), "et revient au Bento");
+    verifie((await html("data-coins")) === "ronds" && (await html("data-boutons")) === "pilule", "avec les coins ronds et les boutons en pilule qu'il conseille");
+    await clic(page, page.locator(".ap-appareils button", { hasText: "Ordinateur" }));
+  });
+
   await etape("les coins à la souris, les boutons au clavier", async () => {
+    const angle = () => cadre().evaluate(() => getComputedStyle(document.querySelector(".ed-carte .cadre-image")).borderTopLeftRadius);
+    const avant = await angle();
     await clic(page, page.locator(".ap-option", { hasText: "Arrondis" }));
-    verifie(await attend(async () => (await html("data-coins")) === "arrondis"), "« Arrondis » : la vitrine du cadre s'arrondit aussitôt, sans recharger");
-    const angle = await cadre().evaluate(() => getComputedStyle(document.querySelector(".ed-carte .cadre-image")).borderTopLeftRadius);
-    verifie(angle === "16px", `les photos des cartes aussi (${angle})`);
-    await page.locator("input[name='style.boutons'][value='pleins']").focus();
+    verifie(await attend(async () => (await html("data-coins")) === "arrondis"), "« Arrondis » : la vitrine du cadre change aussitôt, sans recharger");
+    const apres = await angle();
+    verifie(apres !== avant && apres === "16px", `les photos des cartes suivent (${avant} → ${apres})`);
+    await clic(page, page.locator(".ap-option", { hasText: "Contour" }));
+    verifie(await attend(async () => (await html("data-boutons")) === "contour"), "« Contour » à la souris");
+    await page.locator("input[name='style.boutons'][value='contour']").focus();
     await page.keyboard.press("ArrowRight");
-    await page.keyboard.press("ArrowRight");
-    verifie(await attend(async () => (await html("data-boutons")) === "pilule"), "les flèches du clavier parcourent les formes : « Pilule »");
+    verifie(await attend(async () => (await html("data-boutons")) === "pilule"), "la flèche du clavier passe à la forme suivante : « Pilule »");
   });
 
   await etape("une ambiance sombre, le brouillon s'enregistre seul", async () => {
@@ -1979,7 +1996,7 @@ console.log("\n== 6. L'apparence de la vitrine (Dar Alia) ==");
     verifie(await attend(async () => (await html("data-mode")) === "sombre"), "« Nuit » : la vitrine passe en mode sombre");
     const fond = await cadre().evaluate(() => getComputedStyle(document.body).backgroundColor);
     verifie(fond === "rgb(18, 18, 18)", `son fond (${fond})`);
-    const surPhoto = await cadre().evaluate(() => getComputedStyle(document.querySelector(".ed-ouverture h1")).color);
+    const surPhoto = await cadre().evaluate(() => getComputedStyle(document.querySelector(".bn-une h1")).color);
     verifie(surPhoto === "rgb(255, 255, 255)", `le titre posé sur la photo d'ouverture reste blanc (${surPhoto})`);
     verifie((await page.locator(".ap-contrastes li[data-ok]").count()) === 3, "les trois contrastes se lisent (texte, texte secondaire, accent)");
     verifie(await attend(async () => (await statut()).includes("Brouillon enregistré"), 8000), "le brouillon s'enregistre de lui-même, une seconde plus tard");
@@ -1995,17 +2012,6 @@ console.log("\n== 6. L'apparence de la vitrine (Dar Alia) ==");
     verifie(await attend(async () => (await titre()).includes("Bodoni")), "Ctrl+Maj+Z : Bodoni revient");
     await pause(1200);
     await capture(page, "apparence-bodoni");
-  });
-
-  await etape("une autre structure : le cadre rend le brouillon", async () => {
-    await clic(page, page.locator(".ap-option-large", { hasText: "Technique" }));
-    verifie(await attend(async () => (await html("data-gabarit")) === "technique", 15000), "« Technique » : le cadre se recharge sur l'aperçu du brouillon, d'autres composants");
-    await clic(page, page.locator(".ap-appareils button", { hasText: "Téléphone" }));
-    await pause(1500);
-    await capture(page, "apparence-technique-telephone");
-    await clic(page, page.locator(".ap-option-large", { hasText: "Éditoriale" }));
-    verifie(await attend(async () => (await html("data-gabarit")) === "editorial", 15000), "et revient à l'éditoriale");
-    await clic(page, page.locator(".ap-appareils button", { hasText: "Ordinateur" }));
   });
 
   await etape("le lien d'aperçu, hors du backoffice", async () => {
@@ -2048,7 +2054,7 @@ console.log("\n== 6. L'apparence de la vitrine (Dar Alia) ==");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: "networkidle" });
     verifie(await page.locator(".ap-onglets").isVisible() && !(await page.locator(".ap-apercu").isVisible()), "au téléphone : deux onglets, les réglages d'abord");
-    await clic(page, page.locator(".ap-option", { hasText: "Ronds" }));
+    await clic(page, page.locator(".ap-option:has(input[name='style.coins'][value='ronds'])"));
     await capture(page, "apparence-tel-reglages");
     await clic(page, page.locator(".ap-onglets button", { hasText: "Aperçu" }));
     verifie(await attend(async () => (await html("data-coins")) === "ronds", 8000), "l'onglet Aperçu : la vitrine, en téléphone, coins ronds");

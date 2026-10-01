@@ -1100,14 +1100,24 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
   const page = await ctx.newPage();
   t.espion(page, "maison");
 
-  await etape("Dar Alia : l'accueil d'une boutique maison et décoration", async () => {
+  await etape("Dar Alia : l'accueil en Bento, une mosaïque de tuiles", async () => {
     await page.goto(A + "/", { waitUntil: "networkidle" });
+    verifie((await page.evaluate(() => document.documentElement.dataset.structure)) === "bento", "la structure Bento, sur les composants éditoriaux");
     verifie((await page.locator("main h1").innerText()).replace(/\s+/g, " ") === "Des objets qui durent.", "l'ouverture : « Des objets qui durent. »");
     const titres = (await page.locator("main h2").allInnerTexts()).map((h) => h.replace(/\s+/g, " ").trim());
-    verifie(["Les collections", "Nos essentiels", "Le temps de bien faire.", "Lumière et laine", "Ce qu'en disent nos clients"].every((x) => titres.includes(x)),
+    verifie(["Les rayons", "Nos essentiels", "Le temps de bien faire.", "Lumière et laine", "Ce qu'en disent nos clients"].every((x) => titres.includes(x)),
       `ses sections : ${titres.join(" · ")}`);
-    const grille = await page.locator(".ed-collections").evaluate((u) => [u.children.length, getComputedStyle(u).gridTemplateColumns.split(" ").length]);
-    verifie(grille[0] === 5 && grille[1] === 5, `cinq rayons, cinq colonnes (${grille[0]} rayons, ${grille[1]} colonnes)`);
+    // La première rangée : l'ouverture, et à côté la pièce à la une, le paiement à la livraison, la note réelle des clients.
+    const cotes = await page.locator(".bn-cotes > *").evaluateAll((l) => l.map((e) => e.className.replace(/bn-tuile\s*/, "").trim()));
+    verifie(JSON.stringify(cotes) === JSON.stringify(["bn-piece", "bn-fait", "bn-note"]), `à côté de l'ouverture : ${cotes.join(", ")}`);
+    verifie((await page.locator(".bn-note").innerText()).includes("4,8") && (await page.locator(".bn-note").innerText()).includes("8 avis vérifiés"),
+      "la note : celle des huit avis publiés (4,8), pas un chiffre écrit à la main");
+    const pilule = await page.locator(".ed-entete").evaluate((e) => [getComputedStyle(e).position, parseFloat(getComputedStyle(e).borderTopLeftRadius)]);
+    verifie(pilule[0] === "sticky" && pilule[1] > 20, `l'en-tête flotte, en pilule (${pilule.join(", ")})`);
+    // Mesuré à l'écran : la première tuile a la hauteur de deux autres (et de l'écart entre elles).
+    const grille = await page.locator(".bn-rayons").evaluate((u) => [u.children.length,
+      Math.round(u.children[0].getBoundingClientRect().height), Math.round(u.children[1].getBoundingClientRect().height)]);
+    verifie(grille[0] === 5 && grille[1] > grille[2] * 1.9, `cinq rayons, le premier sur deux rangées (${grille[0]} tuiles, ${grille[1]} px contre ${grille[2]} px)`);
     await page.evaluate(async () => {
       for (let y = 0; y < document.body.scrollHeight; y += 500) { scrollTo(0, y); await new Promise((r) => setTimeout(r, 100)); }
       scrollTo(0, 0);
@@ -1151,7 +1161,7 @@ console.log("\n== 5. Ce que la boutique raconte : ses pages, le contact, le suiv
   t.espion(p, "maison-telephone");
   await etape("Dar Alia au téléphone : l'ouverture en hauteur, le menu, les luminaires", async () => {
     await p.goto(A + "/", { waitUntil: "networkidle" });
-    const ouverture = await p.locator("main img").first().evaluate((i) => i.currentSrc.split("/").pop());
+    const ouverture = await p.locator(".bn-une img").first().evaluate((i) => i.currentSrc.split("/").pop());
     verifie(ouverture.startsWith("hero-portrait"), `l'ouverture prend sa photo en hauteur (${ouverture})`);
     verifie(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "rien ne déborde en largeur");
     await p.getByRole("button", { name: /menu/i }).first().tap();

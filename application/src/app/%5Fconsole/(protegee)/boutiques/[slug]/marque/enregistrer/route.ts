@@ -1,6 +1,6 @@
 import { clientService } from "@/lib/console/service";
 import { ecriture, messageBase, vers, versAvecErreur } from "@/lib/console/http";
-import { gabaritDe, JETONS_COULEUR, POLICES_TEXTE, themeDeLaBoutique, type CodeTheme } from "@/lib/theme";
+import { gabaritDe, JETONS_COULEUR, POLICES_TEXTE, structureDe, themeDeLaBoutique, type CodeTheme, type Structure } from "@/lib/theme";
 import { TEXTES_MARQUE } from "../champs";
 
 /* Construit le thème à partir du formulaire : seules les couleurs qui
@@ -15,7 +15,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const { data: fiche, error: lecture } = await service.rpc("console_boutique", { p_slug: slug });
     if (lecture || !fiche?.theme) return versAvecErreur(retour, messageBase(lecture));
 
-    const code: CodeTheme = gabaritDe(formulaire.get("code") ?? fiche.theme.code);
+    // Le formulaire choisit un gabarit ; une boutique dont la structure repose
+    // sur ce gabarit (le Bento, sur l'éditorial) la garde.
+    const choisi: CodeTheme = gabaritDe(formulaire.get("code") ?? fiche.theme.code);
+    const code: Structure = gabaritDe(fiche.theme.code) === choisi ? structureDe(fiche.theme.code) : choisi;
     const defauts = themeDeLaBoutique({ code });
 
     const couleurs: Record<string, string> = {};

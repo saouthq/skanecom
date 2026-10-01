@@ -197,8 +197,9 @@ begin
     ) as c(produit_id, valeurs)
    where p.boutique_id = b and p.id = c.produit_id::uuid;
 
-  insert into public.themes (boutique_id, code, couleurs, polices, textes, sections) values
-    (b, 'editorial', '{"accent": "#5E6B4E", "fond": "#F6F4EE"}', '{"titres": "instrument-serif", "texte": "instrument-sans"}',
+  insert into public.themes (boutique_id, code, couleurs, polices, style, textes, sections) values
+    (b, 'bento', '{"accent": "#5E6B4E", "fond": "#F6F4EE"}', '{"titres": "instrument-serif", "texte": "instrument-sans"}',
+     '{"coins": "ronds", "boutons": "pilule"}',
      '{"resume_fr": "Bois d''olivier, grès, lin et kilims, faits à la main en Tunisie. Paiement à la livraison, partout en Tunisie.",
        "seo_titre_fr": "Dar Alia — maison et décoration faites main, paiement à la livraison",
        "origine_fr": "Sfax",

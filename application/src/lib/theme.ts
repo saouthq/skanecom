@@ -24,6 +24,13 @@ import { contraste, plusLisible } from "./couleur";
 export type CodeTheme = "editorial" | "technique";
 export const GABARITS: CodeTheme[] = ["editorial", "technique"];
 
+/* LA STRUCTURE — ce que la boutique choisit (themes.code) : un gabarit, ou
+   une structure bâtie sur l'un d'eux. Le Bento (l'accueil en mosaïque,
+   l'en-tête flottant) reprend les composants éditoriaux : `code` reste la
+   famille de composants, `structure` dit le choix. */
+export type Structure = CodeTheme | "bento";
+export const STRUCTURES: Structure[] = ["editorial", "bento", "technique"];
+
 export const JETONS_COULEUR = [
   "fond", "surface", "surface_2", "filet", "filet_fort", "contour_champ",
   "encre", "encre_doux", "accent", "accent_clair", "succes", "erreur", "alerte",
@@ -185,6 +192,7 @@ const DEFINITIONS: Record<CodeTheme, Definition> = {
 
 export type Theme = Definition & {
   code: CodeTheme;
+  structure: Structure;
   logo: { chemin: string; mode: "masque" | "image"; ratio: number } | null;
   monogramme: string | null;
   favicon: string | null;
@@ -301,16 +309,47 @@ export function attributsDuStyle(style: Style): Record<string, string> {
   return attributs;
 }
 
-/** Le gabarit d'un code lu en base (les anciens noms mènent au gabarit qui
- *  les remplace). */
+/** Le gabarit (la famille de composants) d'un code lu en base : les
+ *  structures mènent au gabarit sur lequel elles reposent, les anciens noms
+ *  au gabarit qui les remplace. */
 export function gabaritDe(code: unknown): CodeTheme {
   if (code === "technique" || code === "catalogue_technique") return "technique";
   return "editorial";
 }
 
-/** Les défauts d'un gabarit (couleurs, polices…), pour la console. */
-export function definitionDe(code: CodeTheme): Definition {
-  return DEFINITIONS[code];
+/** La structure d'un code lu en base. */
+export function structureDe(code: unknown): Structure {
+  if (code === "bento") return "bento";
+  return gabaritDe(code);
+}
+
+/* Ce que chaque structure conseille par-dessus son gabarit : ses coins, ses
+   boutons, son accueil par défaut. */
+const PROPRE_A: Partial<Record<Structure, { style: Partial<Style>; sections?: Section[] }>> = {
+  bento: {
+    style: { coins: "ronds", boutons: "pilule" },
+    sections: [
+      { type: "hero", textes: {} },
+      { type: "rayons", textes: {} },
+      { type: "selection", textes: {}, nombre: 8 },
+      { type: "editorial", textes: {} },
+      { type: "avis", textes: {}, nombre: 3 },
+      { type: "engagements", textes: {} },
+    ],
+  },
+};
+
+/** Le style que conseille une structure (l'écran « Apparence » le pose quand on la choisit). */
+export function styleConseille(structure: Structure): Style {
+  return { ...DEFINITIONS[gabaritDe(structure)].style, ...(PROPRE_A[structure]?.style ?? {}) };
+}
+
+/** Les défauts d'un gabarit ou d'une structure (couleurs, polices, style,
+ *  sections), pour la console et le backoffice. */
+export function definitionDe(code: Structure): Definition {
+  const def = DEFINITIONS[gabaritDe(code)];
+  const propre = PROPRE_A[code];
+  return propre ? { ...def, style: { ...def.style, ...propre.style }, sections: propre.sections ?? def.sections } : def;
 }
 
 /** Le thème effectif d'une boutique : son gabarit, les défauts du gabarit, et
@@ -318,7 +357,8 @@ export function definitionDe(code: CodeTheme): Definition {
  *  vérification. `brut` est la colonne `theme` de public.boutique_publique. */
 export function themeDeLaBoutique(brut: Record<string, unknown> | null | undefined): Theme {
   const code = gabaritDe(brut?.code);
-  const def = DEFINITIONS[code];
+  const structure = structureDe(brut?.code);
+  const def = definitionDe(structure);
 
   const couleurs = { ...def.couleurs };
   const propres = (brut?.couleurs ?? {}) as Record<string, unknown>;
@@ -340,6 +380,7 @@ export function themeDeLaBoutique(brut: Record<string, unknown> | null | undefin
   return {
     ...def,
     code,
+    structure,
     couleurs,
     polices,
     style,

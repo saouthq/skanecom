@@ -119,6 +119,11 @@ export const fr = {
     toutesLesQuestions: (n: number) => `Les ${n} questions`,
     marquesTitre: "Les marques",
     selectionNouveautes: "Les nouveautés",
+    /* Structure Bento */
+    bentoUne: "À la une",
+    bentoCodTexte: "partout en Tunisie",
+    bentoAvisTotal: (n: number) => (n > 1 ? `${n} avis vérifiés` : "1 avis vérifié"),
+    bentoRayonsTitre: "Les rayons",
   },
 
   catalogue: {
