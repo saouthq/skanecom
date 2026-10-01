@@ -368,3 +368,24 @@ html[data-gabarit="technique"] .te-fiche-details h2 { border-block-end-width: 1p
 @media (min-width: 700px) {
   .te-services { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
 }
+
+/* ---- L'essentiel de la fiche, sous le titre : ce qui décide l'achat (la
+   puissance, le mandrin, la tension) avant le prix, en petites cases ; le
+   lien mène au tableau complet. ---- */
+.specs-cles { margin-block: .875rem 1.25rem; }
+.specs-cles ul {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 1px; margin: 0; padding: 0; list-style: none;
+  background: var(--theme-filet); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte); overflow: hidden;
+}
+.specs-cles li { display: grid; gap: .1875rem; padding: .625rem .75rem; background: var(--theme-surface); min-inline-size: 0; }
+.specs-cles li span { font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.specs-cles li b { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.specs-cles-tout {
+  display: inline-flex; align-items: center; margin-block-start: .5rem; font-size: .8125rem; font-weight: 600; color: var(--theme-encre);
+  text-decoration: underline; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+@media (hover: hover) { .specs-cles-tout:hover { text-decoration-color: currentColor; } }
+@media (pointer: coarse) { .specs-cles-tout { min-block-size: 44px; } }
+#caracteristiques { scroll-margin-block-start: 10rem; }
+@media (max-width: 699px) { .specs-cles ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ref-variante + .specs-cles { margin-block-start: -.375rem; }

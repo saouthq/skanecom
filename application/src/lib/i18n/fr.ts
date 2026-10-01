@@ -176,6 +176,9 @@ export const fr = {
   },
 
   produit: {
+    /** L'essentiel de la fiche technique, sous le titre (gabarit technique). */
+    essentiel: "L'essentiel",
+    toutesCaracteristiques: "Toutes les caractéristiques",
     marque: "Marque",
     reference: "Référence",
     caracteristiques: "Caractéristiques",

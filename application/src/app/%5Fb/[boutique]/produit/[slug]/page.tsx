@@ -293,6 +293,7 @@ function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: 
           <h1>{champ(produit, "nom")}</h1>
           <ResumeAvis avis={avis} />
           <SpecsVariante mode="ref" />
+          <SpecsVariante mode="cles" />
           <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour}
             partage={cadre.partage ? { boutique: cadre.boutique.nom } : null} />
 
@@ -327,7 +328,7 @@ function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: 
             <p>{description}</p>
           </section>
         ) : null}
-        <section>
+        <section id="caracteristiques">
           <h2>{t.produit.caracteristiques}</h2>
           <SpecsVariante marque={produit.marque} rayon={rayon} />
         </section>

@@ -13,6 +13,10 @@ import { valeurAvecUnite } from "@/lib/caracteristiques";
    rien plutôt qu'une valeur d'à-côté.
 
    · `ref`     — la ligne « Réf. … » sous le titre (gabarit technique) ;
+   · `cles`    — l'essentiel, sous le titre (gabarit technique) : quatre
+                 caractéristiques au plus, celles « sur la carte » d'abord —
+                 ce qui décide l'achat d'un artisan (puissance, mandrin,
+                 tension) avant le prix, plutôt qu'à la fin de la page ;
    · `tableau` — le tableau complet : la fiche technique du produit
                  (puissance, tension… — B9, dans l'ordre de la boutique),
                  la déclinaison, la référence, le poids, la marque, le rayon.
@@ -30,7 +34,7 @@ export function SpecsVariante({
   marque,
   rayon,
 }: {
-  mode?: "ref" | "tableau";
+  mode?: "ref" | "cles" | "tableau";
   marque?: string | null;
   rayon?: string | null;
 }) {
@@ -42,6 +46,25 @@ export function SpecsVariante({
       <p className="ref-variante">
         {t.produit.refCourte} <bdi>{variante.sku}</bdi>
       </p>
+    );
+  }
+
+  if (mode === "cles") {
+    const propres = (produit.caracteristiques ?? []).filter((c) => !variante.options?.[c.cle] && c.valeur);
+    const cles = [...propres.filter((c) => c.en_carte), ...propres.filter((c) => !c.en_carte)].slice(0, 4);
+    if (cles.length < 2) return null;
+    return (
+      <div className="specs-cles">
+        <ul aria-label={t.produit.essentiel}>
+          {cles.map((c) => (
+            <li key={c.cle}>
+              <span>{champ(c, "label") || c.cle}</span>
+              <b><bdi>{valeurAvecUnite(c.valeur, c)}</bdi></b>
+            </li>
+          ))}
+        </ul>
+        <a className="specs-cles-tout" href="#caracteristiques">{t.produit.toutesCaracteristiques}</a>
+      </div>
     );
   }
 

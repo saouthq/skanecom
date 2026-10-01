@@ -679,6 +679,13 @@ console.log("\n== 4. Quincaillerie (gabarit technique), à la souris ==");
     await page.goto(Q + "/produit/perceuse-visseuse-14v", { waitUntil: "networkidle" });
     await clic(page, page.getByRole("button", { name: /^Kit 2 batteries/ }));
     verifie((await page.locator(".ref-variante").innerText()).includes("PV14-KIT2"), "la référence suit la version choisie");
+    // L'essentiel sous le titre, avant le prix ; le lien mène au tableau complet.
+    const cles = await page.locator(".specs-cles li").count();
+    const yCles = (await page.locator(".specs-cles").boundingBox())?.y ?? 9999;
+    const yAjout = (await page.locator(".achat .btn-ajout").first().boundingBox())?.y ?? 0;
+    verifie(cles >= 2 && cles <= 4 && yCles < yAjout, `l'essentiel de la fiche technique sous le titre, avant l'achat (${cles} caractéristiques)`);
+    verifie((await page.locator(".specs-cles-tout").getAttribute("href")) === "#caracteristiques" && (await page.locator("#caracteristiques dl").count()) === 1,
+      "« Toutes les caractéristiques » mène au tableau complet");
     await capture(page, "quinca-fiche-kit");
     await clic(page, page.locator(".achat .btn-ajout"));
     await page.locator(".confirmation-ajout").waitFor({ timeout: 3000 });
