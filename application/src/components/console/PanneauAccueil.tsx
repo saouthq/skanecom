@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icone } from "@/components/console/Icone";
 import {
-  entreeDe, LONGUEUR_TEXTE, MAX_POINTS, MAX_SECTIONS, TYPES,
+  entreeDe, LONGUEUR_TEXTE, MAX_DIAPOS, MAX_POINTS, MAX_SECTIONS, TYPES,
   nouvelleSection, problemesAccueil, sectionMasquee, titreParDefaut,
-  type AccueilGestion, type EmplacementAccueil, type PieceCatalogue, type SectionBrute,
+  type AccueilGestion, type DiapoBrute, type EmplacementAccueil, type PieceCatalogue, type SectionBrute,
 } from "@/lib/gestion/accueil";
 import { REGLES } from "@/lib/console/images-marque";
 import { preparerPhoto } from "@/lib/console/photo-navigateur";
@@ -172,7 +172,7 @@ export function PanneauAccueil({
                   <button type="button" className="pa-ouvrir" data-geste="ouvrir" aria-expanded={ouvert} aria-controls={idReglages}
                     onClick={() => { ouvrir(ouvert ? null : (s.cle ?? null)); if (!ouvert) montrer(s.cle ?? null, true); }}
                     onFocus={() => montrer(s.cle ?? null)}>
-                    <Miniature type={s.type} photo={s.image ? urlFichier(s.image.chemin) : null} />
+                    <Miniature type={s.type} photo={s.image ? urlFichier(s.image.chemin) : s.diapos?.find((d) => d.image)?.image ? urlFichier(s.diapos.find((d) => d.image)!.image!.chemin) : null} />
                     <span className="ac-section-texte">
                       <b>{entree.nom}<span className="sr-only"> — {ouvert ? "fermer ses réglages" : "régler"}</span></b>
                       <span className="ac-section-titre">{titre.replace(/\n/g, " ")}</span>
@@ -296,6 +296,11 @@ function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "page
     case "lookbook": {
       const n = (s.points ?? []).length;
       return !s.image ? "Sans photo" : n ? `${n} point${n > 1 ? "s" : ""} sur la photo` : "Aucun point encore";
+    }
+    case "bannieres": {
+      const n = (s.diapos ?? []).length;
+      const photos = (s.diapos ?? []).filter((d) => d.image).length;
+      return `${n} bannière${n > 1 ? "s" : ""}${photos ? ` · ${photos} avec photo` : ""}`;
     }
     case "piece":
       if (!s.produit && structure === "monoproduit") return "Le premier produit mis en avant, tant qu'aucun n'est choisi";
@@ -440,6 +445,10 @@ function Reglages({
         <Photos s={s} action={photoAction} ecrit={ecrit} changer={changer} texte={texte} id={id} />
       ) : null}
 
+      {s.type === "bannieres" ? (
+        <Diapos s={s} destinations={destinations} action={photoAction} ecrit={ecrit} changer={changer} id={id} />
+      ) : null}
+
       {s.type === "lookbook" && s.image ? (
         <PointsLookbook s={s} catalogue={accueil.catalogue} ecrit={ecrit} changer={changer} id={id} />
       ) : null}
@@ -449,12 +458,12 @@ function Reglages({
 
 /** Le dessin de la section, en blocs : on la reconnaît d'un coup d'œil. */
 export function Miniature({ type, photo = null }: { type: TypeSection; photo?: string | null }) {
-  const n = { hero: 3, rayons: 3, selection: 4, editorial: 4, engagements: 4, texte: 3, avis: 3, questions: 4, marques: 6, lookbook: 3, piece: 3 }[type];
+  const n = { hero: 3, rayons: 3, selection: 4, editorial: 4, engagements: 4, texte: 3, avis: 3, questions: 4, marques: 6, lookbook: 3, piece: 3, bannieres: 4 }[type];
   // Sa photo, s'il en a une : en fond de l'ouverture, à la place de l'image du récit.
   const fond = photo ? { backgroundImage: `url("${photo}")` } : undefined;
   return (
     <span className="ac-mini" data-type={type} data-photo={photo ? "" : undefined} aria-hidden="true" style={type === "hero" ? fond : undefined}>
-      {Array.from({ length: n }, (_, i) => <i key={i} style={type === "editorial" && i === 0 ? fond : undefined} />)}
+      {Array.from({ length: n }, (_, i) => <i key={i} style={(type === "editorial" || type === "bannieres") && i === 0 ? fond : undefined} />)}
     </span>
   );
 }
@@ -704,6 +713,184 @@ function PointsLookbook({ s, catalogue, ecrit, changer, id }: {
             </li>
           ))}
         </ol>
+      ) : null}
+    </div>
+  );
+}
+
+/** Déposer une photo de l'accueil (réduite dans le navigateur, revérifiée
+ *  par le serveur) : son chemin dans le dépôt, ou ce qui n'a pas marché. */
+async function deposerPhoto(action: string, e: EmplacementAccueil, fichier: File): Promise<{ chemin: string } | { erreur: string }> {
+  const p = await preparerPhoto(fichier, e);
+  if ("erreur" in p) return { erreur: p.erreur };
+  try {
+    const d = new FormData();
+    d.set("emplacement", e);
+    d.set("fichier", p.blob, p.nom);
+    const r = await fetch(action, { method: "POST", body: d, headers: { accept: "application/json" }, credentials: "same-origin" });
+    const rep = (await r.json().catch(() => null)) as { ok: true; chemin: string } | { ok: false; message: string } | null;
+    if (!rep) return { erreur: "L'envoi n'a pas abouti : réessayez." };
+    return rep.ok ? { chemin: rep.chemin } : { erreur: rep.message };
+  } catch {
+    return { erreur: "L'envoi n'a pas abouti (réseau coupé ?) : réessayez." };
+  }
+}
+
+/** Les bannières : une carte chacune — sa photo (et son cadrage pour
+ *  téléphone, sa description), son titre, son texte, son bouton et où il
+ *  mène ; on les monte, les descend, les retire ; cinq au plus. */
+function Diapos({ s, destinations, action, ecrit, changer, id }: {
+  s: SectionBrute;
+  destinations: { valeur: string; libelle: string }[];
+  action: string;
+  ecrit: boolean;
+  changer: (cle: string, x: Partial<SectionBrute>, champ?: string) => void;
+  id: (champ: string) => string;
+}) {
+  const cle = s.cle ?? "";
+  const diapos = s.diapos?.length ? s.diapos : [{ textes: {} }];
+  const [etat, setEtat] = useState<{ i: number; e: EmplacementAccueil; texte: string; erreur?: boolean; enCours?: boolean } | null>(null);
+  const [annonce, setAnnonce] = useState("");
+  const viser = useRef<string | null>(null);
+  useEffect(() => {
+    if (!viser.current) return;
+    document.querySelector<HTMLElement>(viser.current)?.focus();
+    viser.current = null;
+  });
+
+  const poser = (suivantes: DiapoBrute[], champ: string, dit?: string) => {
+    changer(cle, { diapos: suivantes }, champ);
+    if (dit) setAnnonce(dit);
+  };
+  const regler = (i: number, x: Partial<DiapoBrute>, champ: string) => poser(diapos.map((d, k) => (k === i ? { ...d, ...x } : d)), `diapos.${i}.${champ}`);
+  const ecrire = (i: number, champ: string, valeur: string) => regler(i, { textes: { ...(diapos[i].textes ?? {}), [`${champ}_fr`]: valeur } }, champ);
+
+  async function choisir(i: number, e: EmplacementAccueil, fichier: File | undefined) {
+    if (!fichier) return;
+    setEtat({ i, e, texte: "Envoi de la photo…", enCours: true });
+    const r = await deposerPhoto(action, e, fichier);
+    if ("erreur" in r) { setEtat({ i, e, texte: r.erreur, erreur: true }); return; }
+    const d = diapos[i];
+    if (e === "ouverture_portrait" && d.image) regler(i, { image: { ...d.image, chemin_portrait: r.chemin } }, "photo");
+    else {
+      // Une autre photo est un autre sujet : ni son cadrage ni sa description ne la suivent.
+      const { image_alt_fr: _ancienne, ...textes } = d.textes ?? {};
+      void _ancienne;
+      regler(i, { image: { chemin: r.chemin }, textes }, "photo");
+    }
+    setEtat({ i, e, texte: "Photo posée dans le brouillon : « Publier » la met en ligne." });
+  }
+
+  const fichier = (i: number, e: EmplacementAccueil, libelle: string) => (
+    <label className="btn btn-second btn-petit ac-fichier" data-occupe={etat?.enCours ? "" : undefined}>
+      <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={!ecrit || etat?.enCours}
+        aria-describedby={etat?.i === i && etat.e === e ? id(`b${i}-etat`) : undefined}
+        onChange={(ev) => { const f = ev.currentTarget.files?.[0]; ev.currentTarget.value = ""; void choisir(i, e, f); }} />
+      <Icone nom="photo" /> {libelle}
+    </label>
+  );
+
+  function deplacer(i: number, sens: -1 | 1) {
+    const j = i + sens;
+    if (j < 0 || j >= diapos.length) return;
+    const v = [...diapos];
+    [v[i], v[j]] = [v[j], v[i]];
+    poser(v, `diapos.ordre.${i}`, `Bannière ${i + 1} ${sens < 0 ? "montée" : "descendue"} en ${j + 1}e position.`);
+    viser.current = `[data-cle="${cle}"] [data-diapo="${j}"] [data-geste="${sens < 0 && j === 0 ? "descendre" : sens > 0 && j === v.length - 1 ? "monter" : sens < 0 ? "monter" : "descendre"}"]`;
+  }
+
+  return (
+    <div className="bd" aria-describedby={id("diapos-aide")}>
+      <p className="sr-only" aria-live="polite">{annonce}</p>
+      <div className="pl-tete">
+        <b>Les bannières</b>
+        <p id={id("diapos-aide")} className="aide">Elles défilent dans cet ordre, une toutes les six secondes ; le visiteur peut aussi les faire glisser. Une bannière sans photo s&apos;affiche sur un aplat.</p>
+      </div>
+      <ol className="bd-liste" role="list">
+        {diapos.map((d, i) => {
+          const lien = d.lien ?? "";
+          const connu = !lien || destinations.some((x) => x.valeur === lien);
+          const etatIci = etat?.i === i ? etat : null;
+          return (
+            <li key={i} className="bd-diapo" data-diapo={i}>
+              <div className="bd-tete">
+                <b>Bannière {i + 1}</b>
+                {ecrit ? (
+                  <span className="ac-gestes">
+                    {i > 0 ? <button type="button" className="btn-icone" data-geste="monter" aria-label={`Monter la bannière ${i + 1}`} title="Monter" onClick={() => deplacer(i, -1)}><Icone nom="haut" /></button> : <span className="ac-geste-vide" />}
+                    {i < diapos.length - 1 ? <button type="button" className="btn-icone" data-geste="descendre" aria-label={`Descendre la bannière ${i + 1}`} title="Descendre" onClick={() => deplacer(i, 1)}><Icone nom="bas" /></button> : <span className="ac-geste-vide" />}
+                    <button type="button" className="btn-icone ac-retirer" aria-label={`Retirer la bannière ${i + 1}`} title="Retirer" disabled={diapos.length <= 1}
+                      onClick={() => { poser(diapos.filter((_, k) => k !== i), `diapos.retirer.${i}`, `Bannière ${i + 1} retirée.`); viser.current = `[data-cle="${cle}"] .bd-ajouter`; }}>
+                      <Icone nom="corbeille" />
+                    </button>
+                  </span>
+                ) : null}
+              </div>
+              <div className="ac-photo" data-vide={d.image ? undefined : ""}>
+                {d.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={urlFichier(d.image.chemin)} alt="" loading="lazy" />
+                ) : <span className="ac-photo-vide" aria-hidden="true"><Icone nom="photo" taille={22} /></span>}
+                <div className="ac-photo-corps">
+                  <b>{REGLES.banniere.titre}</b>
+                  <p className="aide">{REGLES.banniere.conseil}</p>
+                  <span className="ac-photo-gestes">
+                    {fichier(i, "banniere", d.image ? "Changer la photo" : "Choisir une photo")}
+                    {d.image ? (
+                      <button type="button" className="btn btn-fantome btn-petit" onClick={() => { regler(i, { image: undefined }, "photo"); setEtat(null); }}>
+                        <Icone nom="croix" /> Retirer la photo
+                      </button>
+                    ) : null}
+                    {d.image ? fichier(i, "ouverture_portrait", d.image.chemin_portrait ? "Changer le cadrage téléphone" : "Cadrage pour téléphone") : null}
+                  </span>
+                  {etatIci ? (
+                    <p id={id(`b${i}-etat`)} className={etatIci.erreur ? "ac-photo-etat ac-photo-erreur" : "ac-photo-etat"} role={etatIci.erreur ? "alert" : "status"}>
+                      {etatIci.enCours ? <span className="ac-roue" aria-hidden="true" /> : null}{etatIci.texte}
+                    </p>
+                  ) : null}
+                  {d.image ? (
+                    <div className="champ ac-photo-alt">
+                      <label htmlFor={id(`b${i}-alt`)}>Description de la photo</label>
+                      <input id={id(`b${i}-alt`)} type="text" value={d.textes?.image_alt_fr ?? ""} maxLength={LONGUEUR_TEXTE}
+                        placeholder="Scie circulaire posée sur des tréteaux" onChange={(ev) => ecrire(i, "image_alt", ev.currentTarget.value)} />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="champ">
+                <label htmlFor={id(`b${i}-titre`)}>Titre</label>
+                <input id={id(`b${i}-titre`)} type="text" value={d.textes?.titre_fr ?? ""} maxLength={LONGUEUR_TEXTE + 50}
+                  aria-invalid={(d.textes?.titre_fr ?? "").length > LONGUEUR_TEXTE || undefined} onChange={(ev) => ecrire(i, "titre", ev.currentTarget.value)} />
+              </div>
+              <div className="champ">
+                <label htmlFor={id(`b${i}-texte`)}>Texte</label>
+                <textarea id={id(`b${i}-texte`)} rows={2} value={d.textes?.texte_fr ?? ""}
+                  aria-invalid={(d.textes?.texte_fr ?? "").length > LONGUEUR_TEXTE || undefined} onChange={(ev) => ecrire(i, "texte", ev.currentTarget.value)} />
+              </div>
+              <div className="ac-deux">
+                <div className="champ">
+                  <label htmlFor={id(`b${i}-lien`)}>Le bouton mène à</label>
+                  <select id={id(`b${i}-lien`)} value={lien} onChange={(ev) => regler(i, { lien: ev.currentTarget.value || undefined }, "lien")}>
+                    <option value="">Pas de bouton</option>
+                    {!connu ? <option value={lien}>{lien}</option> : null}
+                    {destinations.map((x) => <option key={x.valeur} value={x.valeur}>{x.libelle}</option>)}
+                  </select>
+                </div>
+                <div className="champ">
+                  <label htmlFor={id(`b${i}-cta`)}>Texte du bouton</label>
+                  <input id={id(`b${i}-cta`)} type="text" value={d.textes?.cta_fr ?? ""} placeholder="Découvrir" disabled={!lien}
+                    maxLength={LONGUEUR_TEXTE + 50} onChange={(ev) => ecrire(i, "cta", ev.currentTarget.value)} />
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      {ecrit ? (
+        <button type="button" className="btn btn-fantome btn-petit bd-ajouter" disabled={diapos.length >= MAX_DIAPOS}
+          onClick={() => { poser([...diapos, { textes: {} }], `diapos.ajouter.${diapos.length}`, `Bannière ${diapos.length + 1} ajoutée.`); viser.current = `[data-cle="${cle}"] [data-diapo="${diapos.length}"] input[type="text"]:not([disabled])`; }}>
+          <Icone nom="plus" /> {diapos.length >= MAX_DIAPOS ? `${MAX_DIAPOS} bannières au plus` : "Ajouter une bannière"}
+        </button>
       ) : null}
     </div>
   );

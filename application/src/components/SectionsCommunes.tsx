@@ -1,4 +1,5 @@
 import { Lookbook } from "./Lookbook";
+import { Bannieres } from "./Bannieres";
 import { PieceSaison } from "./PieceSaison";
 import { urlFichier, urlPhoto } from "@/lib/photos";
 import { prixDepuis } from "@/lib/catalogue";
@@ -48,4 +49,26 @@ export function SectionPiece({ rang, section, donnees, cadre, gabarit }: {
 }) {
   const produit = donnees.pieces.get(rang);
   return produit ? <PieceSaison rang={rang} section={section} produit={produit} cadre={cadre} gabarit={gabarit} /> : null;
+}
+
+/** Les bannières : celles qui ont une photo ou un titre (une diapo vide ne
+ *  se montre pas) ; sans aucune, la section ne s'affiche pas. */
+export function SectionBannieres({ rang, section, cadre }: {
+  rang: number;
+  section: Extract<Section, { type: "bannieres" }>;
+  cadre: Cadre;
+}) {
+  const diapos = section.diapos
+    .map((d) => ({
+      titre: texte(d.textes, "titre"),
+      texte: texte(d.textes, "texte"),
+      cta: texte(d.textes, "cta"),
+      lien: d.lien ?? null,
+      alt: texte(d.textes, "image_alt", texte(d.textes, "titre", cadre.boutique.nom)),
+      paysage: d.image ? urlFichier(d.image.chemin) : null,
+      portrait: d.image?.portrait ? urlFichier(d.image.portrait) : null,
+    }))
+    .filter((d) => d.paysage || d.titre);
+  if (!diapos.length) return null;
+  return <Bannieres rang={rang} etiquette={texte(section.textes, "etiquette")} titre={texte(section.textes, "titre")} diapos={diapos} />;
 }

@@ -1689,7 +1689,7 @@ if (section("4bis")) {
     const avant = await plan();
     verifie(avant.includes("Avis clients") && avant.includes("Questions fréquentes"), `l'accueil de haut en bas (${avant.join(" > ")})`);
     await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
-    verifie((await page.locator(".pa-modeles .ac-modele").count()) === 11, "« Ajouter une section » : la bibliothèque, onze sections (lookbook et pièce de la saison compris)");
+    verifie((await page.locator(".pa-modeles .ac-modele").count()) === 12, "« Ajouter une section » : la bibliothèque, douze sections (bannières, lookbook et pièce de la saison compris)");
     verifie(await page.locator(".pa-modeles .ac-modele", { hasText: "Avis clients" }).isDisabled(), "une section déjà posée ne s'ajoute pas deux fois");
     await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
     await page.getByRole("button", { name: "Monter « Avis clients »" }).focus();
@@ -1753,6 +1753,49 @@ if (section("4bis")) {
     await capture(page, "editeur-lookbook-point");
     await clic(page, page.getByRole("button", { name: "Défaire" }));
     verifie(await attendre(async () => (await cadreLeft()) === "46%", 12000), "« Défaire » : le point revient sur la pièce");
+  });
+
+  await etape("les bannières, dans l'éditeur : ajoutées, une photo, deux bannières, l'aperçu les fait défiler", async () => {
+    const photo = (l, h, c) => page.evaluate(([l, h, c]) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = l; canvas.height = h;
+      const g = canvas.getContext("2d");
+      const d = g.createLinearGradient(0, 0, l, h);
+      d.addColorStop(0, c); d.addColorStop(1, "#1f1f23");
+      g.fillStyle = d; g.fillRect(0, 0, l, h);
+      return canvas.toDataURL("image/jpeg", 0.92).split(",")[1];
+    }, [l, h, c]).then((b64) => Buffer.from(b64, "base64"));
+    const diaposCadre = async () => (await cadreSelma()?.evaluate(() => [...document.querySelectorAll(".bnr .bnr-diapo")].map((d) => d.querySelector(".bnr-titre")?.textContent ?? "")).catch(() => null)) ?? [];
+    await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
+    await clic(page, page.locator(".pa-modeles .ac-modele", { hasText: "Bannières" }));
+    verifie((await plan()).at(-1) === "Bannières", "« Bannières » : ajoutée en bas de l'accueil, ouverte");
+    const section = page.locator(".pa-liste .ac-section[data-ouverte]");
+    const b1 = section.locator(".bd-diapo[data-diapo='0']");
+    verifie((await section.locator(".bd-diapo").count()) === 1, "une première bannière, à régler");
+    await b1.getByLabel("Choisir une photo").setInputFiles({ name: "IMG_4001.jpg", mimeType: "image/jpeg", buffer: await photo(3000, 1500, "#8a6d4a") });
+    await b1.locator(".ac-photo > img").waitFor({ timeout: 20000 });
+    const chemin = (await b1.locator(".ac-photo > img").getAttribute("src")).replace(/^.*\/fichiers\//, "");
+    verifie(/^maison-selma\/accueil\/photo-[0-9a-f]{12}\.webp$/.test(chemin), `la photo de la bannière, déposée dans le dossier de la boutique : ${chemin}`);
+    await clic(page, b1.getByLabel("Titre", { exact: true }));
+    await tape(page, "La saison du lin");
+    await b1.getByLabel("Le bouton mène à").selectOption("/catalogue");
+    await clic(page, b1.getByLabel("Texte du bouton"));
+    await tape(page, "Voir tout");
+    await clic(page, section.getByRole("button", { name: "Ajouter une bannière" }));
+    verifie(await page.evaluate(() => document.activeElement?.closest(".bd-diapo")?.getAttribute("data-diapo")) === "1", "« Ajouter une bannière » : la deuxième, le curseur dans son titre");
+    await tape(page, "Payé à la livraison");
+    verifie(await brouillonEnregistre(), "le brouillon les garde");
+    verifie(await attendre(async () => JSON.stringify(await diaposCadre()) === JSON.stringify(["La saison du lin", "Payé à la livraison"]), 15000),
+      `l'aperçu montre les deux bannières (${JSON.stringify(await diaposCadre())})`);
+    verifie((await fichierLocal(chemin)).status === 200, "la photo de la bannière, employée par le brouillon, reste au dépôt");
+    await cadreSelma().locator(".bnr").scrollIntoViewIfNeeded();
+    await capture(page, "editeur-bannieres", true);
+    await clic(page, section.getByRole("button", { name: "Monter la bannière 2" }));
+    verifie(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")) === "Descendre la bannière 1", "montée en tête : le focus la suit");
+    verifie(await attendre(async () => (await diaposCadre())[0] === "Payé à la livraison", 15000), "l'aperçu suit le nouvel ordre");
+    await clic(page, page.getByRole("button", { name: "Retirer « Bannières »" }));
+    verifie(!(await plan()).includes("Bannières"), "les bannières retirées de l'accueil");
+    verifie(await attendre(async () => (await diaposCadre()).length === 0, 15000), "et de l'aperçu");
   });
 
   await etape("la photo d'ouverture, depuis l'éditeur : réduite, posée, publiée, puis retirée du dépôt", async () => {

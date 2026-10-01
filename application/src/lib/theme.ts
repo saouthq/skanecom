@@ -108,10 +108,20 @@ export type Section =
   // La structure immersive (migration 69), et toutes les autres : la photo
   // d'un look et ses points vers les pièces portées ; la pièce de la saison.
   | { type: "lookbook"; textes: TextesSection; image?: ImageSection; points: PointLookbook[] }
-  | { type: "piece"; textes: TextesSection; produit?: string };
+  | { type: "piece"; textes: TextesSection; produit?: string }
+  // Les bannières (migration 75) : une à cinq, qui défilent, chacune sa
+  // photo, ses textes et le lien de son bouton.
+  | { type: "bannieres"; textes: TextesSection; diapos: Diapo[] };
 
 /** Un point du lookbook : sa place sur la photo (en %), la pièce qu'il montre. */
 export type PointLookbook = { x: number; y: number; produit: string };
+
+/** Une bannière : sa photo (et son cadrage pour téléphone), titre, texte,
+ *  bouton, description de la photo ; le lien, un chemin de la boutique. */
+export type Diapo = { textes: TextesSection; image?: ImageSection; lien?: string };
+
+/** Cinq bannières au plus (la base tient la même règle, migration 75). */
+export const MAX_DIAPOS = 5;
 
 export type TypeSection = Section["type"];
 
@@ -300,6 +310,17 @@ function sectionsSures(valeur: unknown, defaut: Section[]): Section[] {
       case "piece":
         sections.push({ type: "piece", textes, ...(typeof s.produit === "string" && SLUG.test(s.produit) ? { produit: s.produit } : {}) });
         break;
+      case "bannieres": {
+        const diapos = (Array.isArray(s.diapos) ? s.diapos : []).flatMap((brute): Diapo[] => {
+          if (!brute || typeof brute !== "object") return [];
+          const d = brute as Record<string, unknown>;
+          const image = imageSure(d.image);
+          const lienDiapo = lienSur(d.lien);
+          return [{ textes: textesSurs(d.textes), ...(image ? { image } : {}), ...(lienDiapo ? { lien: lienDiapo } : {}) }];
+        }).slice(0, MAX_DIAPOS);
+        sections.push({ type: "bannieres", textes, diapos });
+        break;
+      }
       // « comment_ca_marche » : l'ancien nom des engagements (paiement à la
       // livraison, livraison, retours).
       case "comment_ca_marche":

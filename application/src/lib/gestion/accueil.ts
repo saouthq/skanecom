@@ -1,4 +1,4 @@
-import { gabaritDe, type CodeTheme, type Structure, type TypeSection } from "@/lib/theme";
+import { gabaritDe, MAX_DIAPOS, type CodeTheme, type Structure, type TypeSection } from "@/lib/theme";
 
 /* ============================================================================
    COMPOSER L'ACCUEIL (backoffice, migration 59) — ce qui se partage entre
@@ -27,7 +27,18 @@ export type SectionBrute = {
   points?: { x: number; y: number; produit: string }[];
   /** La pièce de la saison : son produit. */
   produit?: string;
+  /** Les bannières : une à cinq diapos. */
+  diapos?: DiapoBrute[];
 };
+
+/** Une bannière, telle que la base la garde (migration 75). */
+export type DiapoBrute = {
+  textes?: Record<string, string>;
+  image?: { chemin: string; chemin_portrait?: string };
+  lien?: string;
+};
+
+export { MAX_DIAPOS };
 
 /** Une pièce publiée, à pointer sur le lookbook ou à mettre en avant. */
 export type PieceCatalogue = { slug: string; nom: string; image: string | null };
@@ -54,8 +65,8 @@ export const MAX_POINTS = 6;
 export const MAX_SECTIONS = 12;
 
 /** Les photos que le backoffice téléverse (règles de la console : images-marque). */
-export type EmplacementAccueil = "ouverture" | "ouverture_portrait" | "recit" | "lookbook";
-export const EMPLACEMENTS_ACCUEIL: EmplacementAccueil[] = ["ouverture", "ouverture_portrait", "recit", "lookbook"];
+export type EmplacementAccueil = "ouverture" | "ouverture_portrait" | "recit" | "lookbook" | "banniere";
+export const EMPLACEMENTS_ACCUEIL: EmplacementAccueil[] = ["ouverture", "ouverture_portrait", "recit", "lookbook", "banniere"];
 
 /** Le chemin d'une photo déposée par le backoffice — les seules qu'il
  *  retire du dépôt quand l'accueil ne les emploie plus (jamais une photo de
@@ -134,6 +145,11 @@ export const BIBLIOTHEQUE: Record<TypeSection, Entree> = {
     resume: "La photo d'un look, et sur elle des points vers les pièces portées : un toucher ouvre la pièce.",
     textes: [ETIQUETTE, { cle: "titre", libelle: "Titre" }],
   },
+  bannieres: {
+    nom: "Bannières",
+    resume: "Une à cinq bannières qui défilent : une photo, un titre, un bouton vers un rayon ou une page.",
+    textes: [ETIQUETTE, { cle: "titre", libelle: "Titre", aide: "Facultatif : au-dessus des bannières." }],
+  },
   piece: {
     nom: "La pièce de la saison",
     resume: "Un produit en grand, achetable depuis l'accueil : ses photos, votre texte, ses tailles.",
@@ -156,7 +172,7 @@ export function entreeDe(type: TypeSection, structure: Structure): Entree {
 }
 
 /** L'ordre de la bibliothèque. */
-export const TYPES: TypeSection[] = ["hero", "piece", "selection", "rayons", "editorial", "lookbook", "avis", "questions", "marques", "engagements", "texte"];
+export const TYPES: TypeSection[] = ["hero", "bannieres", "piece", "selection", "rayons", "editorial", "lookbook", "avis", "questions", "marques", "engagements", "texte"];
 
 /** Les titres que la vitrine montre quand la section n'a pas le sien
  *  (selon la structure : le Bento a ses rayons, sur les textes éditoriaux). */
@@ -182,6 +198,7 @@ export function nouvelleSection(type: TypeSection, cle: string): SectionBrute {
     case "avis": return { cle, type, textes: {}, nombre: 6 };
     case "questions": return { cle, type, textes: {}, nombre: 5 };
     case "lookbook": return { cle, type, textes: {}, points: [] };
+    case "bannieres": return { cle, type, textes: {}, diapos: [{ textes: {} }] };
     default: return { cle, type, textes: {} };
   }
 }
@@ -191,6 +208,20 @@ const LIEN = /^\/[A-Za-z0-9/_=~%.-]*$/;
 const CLE_TEXTE = /^[a-z][a-z0-9_]*_(fr|ar)$/;
 const CHEMIN = /^[a-z0-9][a-z0-9/_.-]*$/;
 
+const cheminSur = (c: unknown): c is string => typeof c === "string" && CHEMIN.test(c) && !c.includes("..");
+
+/** Des textes pour la base : clés en _fr / _ar, retours à la ligne unifiés,
+ *  les vides retirés ; null si une clé est illisible. */
+function textesVersBase(source: Record<string, string> | undefined): Record<string, string> | null {
+  const textes: Record<string, string> = {};
+  for (const [k, v] of Object.entries(source ?? {})) {
+    if (!CLE_TEXTE.test(k) || typeof v !== "string") return null;
+    const propre = v.replace(/\r\n?/g, "\n").trim();
+    if (propre) textes[k] = propre;
+  }
+  return textes;
+}
+
 /** La forme envoyée à la base : la clé locale retirée, les textes vides
  *  aussi ; null si un élément est illisible (la base refuserait). */
 export function versBase(sections: SectionBrute[]): Record<string, unknown>[] | null {
@@ -198,12 +229,8 @@ export function versBase(sections: SectionBrute[]): Record<string, unknown>[] | 
   for (const s of sections) {
     if (!s || !(s.type in BIBLIOTHEQUE)) return null;
     const x: Record<string, unknown> = { type: s.type };
-    const textes: Record<string, string> = {};
-    for (const [k, v] of Object.entries(s.textes ?? {})) {
-      if (!CLE_TEXTE.test(k) || typeof v !== "string") return null;
-      const propre = v.replace(/\r\n?/g, "\n").trim();
-      if (propre) textes[k] = propre;
-    }
+    const textes = textesVersBase(s.textes);
+    if (!textes) return null;
     if (Object.keys(textes).length) x.textes = textes;
     if (s.image) {
       if (typeof s.image.chemin !== "string" || !CHEMIN.test(s.image.chemin) || s.image.chemin.includes("..")) return null;
@@ -251,6 +278,27 @@ export function versBase(sections: SectionBrute[]): Record<string, unknown>[] | 
       if (s.type !== "piece" || !SLUG.test(s.produit)) return null;
       x.produit = s.produit;
     }
+    if (s.diapos !== undefined) {
+      if (s.type !== "bannieres" || !Array.isArray(s.diapos) || s.diapos.length < 1 || s.diapos.length > MAX_DIAPOS) return null;
+      const diapos: Record<string, unknown>[] = [];
+      for (const d of s.diapos) {
+        if (!d || typeof d !== "object") return null;
+        const y: Record<string, unknown> = {};
+        const t = textesVersBase(d.textes);
+        if (!t) return null;
+        if (Object.keys(t).length) y.textes = t;
+        if (d.image) {
+          if (!cheminSur(d.image.chemin)) return null;
+          y.image = { chemin: d.image.chemin, ...(cheminSur(d.image.chemin_portrait) ? { chemin_portrait: d.image.chemin_portrait } : {}) };
+        }
+        if (d.lien !== undefined && d.lien !== "") {
+          if (!LIEN.test(d.lien) || d.lien.startsWith("//") || d.lien.includes("..")) return null;
+          y.lien = d.lien;
+        }
+        diapos.push(y);
+      }
+      x.diapos = diapos;
+    }
     sortie.push(x);
   }
   return sortie;
@@ -260,7 +308,8 @@ export function versBase(sections: SectionBrute[]): Record<string, unknown>[] | 
 export function problemesAccueil(sections: SectionBrute[]): { general?: string; parSection: Record<string, string> } {
   const parSection: Record<string, string> = {};
   for (const s of sections) {
-    const long = Object.entries(s.textes ?? {}).find(([, v]) => v.trim().length > LONGUEUR_TEXTE);
+    const tous = [s.textes ?? {}, ...(s.diapos ?? []).map((d) => d.textes ?? {})].flatMap((t) => Object.entries(t));
+    const long = tous.find(([, v]) => v.trim().length > LONGUEUR_TEXTE);
     if (long && s.cle) parSection[s.cle] = `Un texte dépasse ${LONGUEUR_TEXTE} caractères : raccourcissez-le.`;
   }
   if (sections.length === 0) return { general: "L'accueil garde une section au moins.", parSection };
@@ -292,6 +341,8 @@ export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" |
     case "lookbook":
       if (!s.image) return "Masquée tant qu'elle n'a pas de photo.";
       return (s.points ?? []).some((p) => a.catalogue.some((c) => c.slug === p.produit)) ? null : "La photo paraît seule : posez un point sur une pièce portée.";
+    case "bannieres":
+      return (s.diapos ?? []).some((d) => d.image || (d.textes?.titre_fr ?? "").trim()) ? null : "Masquée tant qu'aucune bannière n'a de photo ni de titre.";
     case "piece":
       // En Monoproduit, sans produit choisi, la page de vente vend le premier mis en avant.
       if (!s.produit) return structure === "monoproduit" ? null : "Masquée tant qu'aucune pièce n'est choisie.";

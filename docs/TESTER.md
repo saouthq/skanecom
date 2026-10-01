@@ -70,6 +70,7 @@ outils/essayer.sh
 
 **Quincaillerie du Sud** (Commerce, sur les composants techniques)
 - L'accueil s'ouvre sur la recherche : taper `perc` dans la grande barre, les pièces s'affichent pendant la frappe ; les rayons en raccourcis dessous, les services en bande.
+- Sous les services, **trois bannières qui défilent** (une toutes les six secondes) : les flèches, les points, la pause ; au téléphone, les faire glisser au doigt. Un geste arrête le défilement. Entrée (ou un clic) sur la première mène au rayon Scies.
 - **Tous les rayons** : le grand menu ; survoler « Quincaillerie », ses sous-rayons paraissent. Au clavier : Tab jusqu'au bouton, Entrée, Tab, ↓, Tab entre dans les sous-rayons ; Échap referme.
 - **Comparer** : dans Perceuses et visseuses, survoler une carte, cocher « Comparer » sur deux pièces ; la barre du bas les montre ; « Comparer (2) » les met côte à côte (« Seulement les différences », « Retirer »).
 - Au téléphone : la barre d'onglets en bas (Accueil, Rayons, Chercher, Compte, Panier) ; elle se retire sur une fiche.

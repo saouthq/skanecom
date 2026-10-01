@@ -14,13 +14,16 @@ export function PhotoOuverture({
   portrait,
   alt,
   className = "",
+  prioritaire = true,
 }: {
   paysage: string;
   portrait?: string;
   alt: string;
   className?: string;
+  /** Faux pour une photo plus bas sur la page (les bannières qui suivent la première). */
+  prioritaire?: boolean;
 }) {
-  const commun = { alt, fill: true, priority: true, sizes: "100vw" } as const;
+  const commun = { alt, fill: true, priority: prioritaire, sizes: "100vw" } as const;
   const { props: grand } = getImageProps({ ...commun, src: paysage });
   const petit = portrait ? getImageProps({ ...commun, src: portrait }).props : null;
   return (

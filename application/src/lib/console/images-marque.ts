@@ -13,7 +13,7 @@ import { definitionDe, gabaritDe } from "@/lib/theme";
      récit) : WebP, réduites avant l'envoi.
    ========================================================================== */
 
-export type Emplacement = "logo" | "monogramme" | "favicon" | "ouverture" | "ouverture_portrait" | "recit" | "lookbook";
+export type Emplacement = "logo" | "monogramme" | "favicon" | "ouverture" | "ouverture_portrait" | "recit" | "lookbook" | "banniere";
 export const EMPLACEMENTS: Emplacement[] = ["logo", "monogramme", "favicon", "ouverture", "ouverture_portrait", "recit"];
 
 export type Regle = {
@@ -75,6 +75,13 @@ export const REGLES: Record<Emplacement, Regle> = {
     role: "La photo d'un look, avec des points sur les pièces portées.",
     conseil: "Une photo où les pièces se voient bien, 1 200 px au moins sur son plus grand côté.",
     genre: "photo", boite: { largeur: 2000, hauteur: 2000 }, minimum: 1200, fait: "Photo du lookbook enregistrée",
+  },
+  // Le backoffice seul la dépose (section « bannieres », migration 75).
+  banniere: {
+    titre: "Photo de la bannière",
+    role: "Une bannière de la bande qui défile, sur toute la largeur de la page.",
+    conseil: "Paysage, 2 400 px de large idéalement, 1 200 au moins ; le sujet au centre, le texte se pose en bas à gauche.",
+    genre: "photo", boite: { largeur: 2400, hauteur: 2400 }, minimum: 1200, fait: "Photo de la bannière enregistrée",
   },
 };
 

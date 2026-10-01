@@ -4,7 +4,7 @@ import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
 import { Rail } from "./Rail";
 import { Engagements } from "./AccueilEditorial";
-import { SectionLookbook, SectionPiece } from "./SectionsCommunes";
+import { SectionBannieres, SectionLookbook, SectionPiece } from "./SectionsCommunes";
 import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliotheque";
 import { Fleche } from "./Icones";
 import { descendance, racinesGarnies, type Cadre } from "@/lib/boutique";
@@ -46,6 +46,8 @@ export function AccueilImmersif({ cadre, donnees }: Props) {
             return collections ? <Collections key={i} rang={i} section={s} cadre={cadre} rayons={garnis} /> : null;
           case "lookbook":
             return <SectionLookbook key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
+          case "bannieres":
+            return <SectionBannieres key={i} rang={i} section={s} cadre={cadre} />;
           case "editorial":
             return <Recit key={i} rang={i} section={s} cadre={cadre} />;
           case "texte":

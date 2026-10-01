@@ -778,6 +778,34 @@ if (section("4")) {
     await page.goto(Q + "/", { waitUntil: "networkidle" });
   });
 
+  await etape("les bannières : elles défilent, aux flèches, aux points, au clavier", async () => {
+    // Trois bannières sous les services (supabase/seed-commerce.sql, migration 75).
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
+    const bn = page.locator(".bnr");
+    const actif = () => bn.locator(".bnr-point").evaluateAll((l) => l.findIndex((x) => x.getAttribute("aria-current") === "true"));
+    verifie((await bn.locator(".bnr-diapo").count()) === 3, "trois bannières, sous la bande des services");
+    verifie((await bn.boundingBox()).y > (await page.locator(".co-services").boundingBox()).y && (await bn.boundingBox()).y < (await page.locator(".co-rayons").boundingBox()).y,
+      "entre les services et les rayons");
+    await bn.scrollIntoViewIfNeeded();
+    await page.mouse.move(5, 5);
+    verifie(await actif() === 0, "la première d'abord");
+    verifie(await attend(async () => (await actif()) === 1, 8000), "six secondes plus tard, la suivante, seule");
+    await capture(page, "quinca-bannieres");
+    await clic(page, bn.getByRole("button", { name: "Bannière suivante" }));
+    verifie(await attend(async () => (await actif()) === 2, 2000), "la flèche : la troisième");
+    await page.mouse.move(5, 5);
+    await pause(7000);
+    verifie(await actif() === 2, "après un geste, plus de défilement seul");
+    verifie(await bn.getByRole("button", { name: "Reprendre le défilement" }).count() === 1, "le bouton dit qu'il est arrêté");
+    await clic(page, bn.getByRole("button", { name: "Bannière 1 sur 3" }));
+    verifie(await attend(async () => (await actif()) === 0, 2000), "un point : sa bannière");
+    await bn.locator(".bnr-diapo").first().locator("a").focus();
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/categorie\/scies$/);
+    verifie(true, "au clavier, Entrée sur la bannière : son rayon (les scies)");
+    await page.goto(Q + "/", { waitUntil: "networkidle" });
+  });
+
   await etape("le grand menu des rayons, à la souris puis au clavier", async () => {
     const bouton = page.getByRole("button", { name: "Tous les rayons" });
     await clic(page, bouton);

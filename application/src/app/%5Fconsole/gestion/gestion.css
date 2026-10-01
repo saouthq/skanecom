@@ -1849,6 +1849,19 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .ac-mini[data-type=piece] i:nth-child(1) { grid-row: 1 / -1; background: color-mix(in srgb, var(--ui-accent) 22%, var(--ui-bord)); }
 .ac-mini[data-type=piece] i:nth-child(2) { block-size: 4px; align-self: end; }
 .ac-mini[data-type=piece] i:nth-child(3) { block-size: 8px; inline-size: 80%; align-self: start; background: var(--ui-texte-2); border-radius: 3px; }
+/* Les bannières : une large bande, et ses trois points dessous. */
+.ac-mini[data-type=bannieres] { grid-template-columns: repeat(3, 5px); grid-template-rows: 1fr 5px; justify-content: center; column-gap: 3px; row-gap: 4px; }
+.ac-mini[data-type=bannieres] i:nth-child(1) { grid-column: 1 / -1; justify-self: stretch; inline-size: calc(100% + 2.6rem); margin-inline: -1.3rem; background: color-mix(in srgb, var(--ui-accent) 22%, var(--ui-bord)); background-size: cover; background-position: center; }
+.ac-mini[data-type=bannieres] i:not(:first-child) { border-radius: 50%; background: var(--ui-texte-3); }
+.ac-mini[data-type=bannieres] i:nth-child(2) { background: var(--ui-texte-2); }
+
+/* Les bannières, une carte chacune */
+.bd { display: grid; gap: .75rem; padding-block-start: .25rem; }
+.bd-liste { display: grid; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+.bd-diapo { display: grid; gap: .75rem; padding: .875rem; border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l, 12px); background: var(--ui-panneau); }
+.bd-tete { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.bd-tete b { font-size: .875rem; }
+.bd-ajouter { justify-self: start; }
 
 /* Les points du lookbook, posés sur la photo */
 .pl { display: grid; gap: .75rem; padding-block-start: .25rem; }
