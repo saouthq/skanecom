@@ -712,15 +712,6 @@
    "rapport": 1.25
   },
   {
-   "id": "f043f739-f131-4f02-a7c0-5d18c85f81b7",
-   "chemin": "dar-alia/rayons/rangement",
-   "largeurs": [
-    1200,
-    600
-   ],
-   "rapport": 1.25
-  },
-  {
    "id": "bd3c7d81-e3bb-4d43-8f19-553233768375",
    "chemin": "dar-alia/produits/cuilleres-olivier",
    "largeurs": [
@@ -799,7 +790,8 @@
     1200,
     600
    ],
-   "rapport": 1.25
+   "rapport": 1.25,
+   "gravite": "North"
   },
   {
    "id": "15a1e1ab-1b0f-48f0-926a-7abce33ef829",
@@ -848,7 +840,7 @@
    "gravite": "West"
   },
   {
-   "id": "3ff492eb-42c0-45c8-82e2-6b3c6c2031e1",
+   "id": "4fe5d8e9-059c-40f0-a5e3-c9c417ac7ca8",
    "chemin": "dar-alia/produits/photophores",
    "largeurs": [
     1200,
@@ -863,7 +855,8 @@
     1200,
     600
    ],
-   "rapport": 1.25
+   "rapport": 1.25,
+   "gravite": "East"
   },
   {
    "id": "cf6e3749-b841-4b7a-a5dc-a0e0215ba6d5",
