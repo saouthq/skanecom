@@ -449,6 +449,185 @@
    ],
    "rapport": 1.25,
    "gravite": "West"
+  },
+  {
+   "id": "a4480ec7-aec4-48b7-95e2-849975e71af2",
+   "chemin": "yasmine-beaute/produits/serum-eclat",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "c27db46b-9475-4131-afd8-11639bfb6b56",
+   "chemin": "yasmine-beaute/produits/huile-figue-barbarie",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "0f93bc06-478c-4b16-bf45-f345a50c02c5",
+   "chemin": "yasmine-beaute/produits/huile-calendula",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "16eea061-deb7-4ff1-80e7-abc98a2270f9",
+   "chemin": "yasmine-beaute/produits/savons-huile-olive",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "53b746f7-4155-440e-bca9-b744c406526c",
+   "chemin": "yasmine-beaute/produits/huile-lavande",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "6b243d23-3fb9-47c9-a2bb-ae410a0053f3",
+   "chemin": "yasmine-beaute/produits/huile-massage-neroli",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "2b72219c-92ec-4501-8c2c-a1859503962d",
+   "chemin": "yasmine-beaute/produits/huile-capillaire-romarin",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "6b535409-dd2b-46b2-a2f5-ffbab9f361dd",
+   "chemin": "yasmine-beaute/produits/vernis-ongles",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "2aade48b-4658-40cd-aa19-03dd67572ad7",
+   "chemin": "yasmine-beaute/produits/vernis-irise",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "8d8d3af9-2f0a-43ca-b2a4-d009b9a8ea2e",
+   "chemin": "yasmine-beaute/produits/palette-fards",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "02aec075-b6c3-4513-a5b8-39122b0ac06b",
+   "chemin": "yasmine-beaute/produits/pinceaux-trousse",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "ace4c6bd-cb16-49ab-95d4-cced78699cac",
+   "chemin": "yasmine-beaute/produits/eau-parfum-fleur-blanche",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "6f771373-ba37-4eed-bded-9a9f90977d70",
+   "chemin": "yasmine-beaute/produits/coffret-parfums",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "dba95fd0-bad0-43ef-8b38-a3ae49e99dc4",
+   "chemin": "yasmine-beaute/produits/coffret-savons",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "b7bf9256-0c9d-44d7-9348-dbab8d4feef4",
+   "chemin": "yasmine-beaute/accueil/hero",
+   "largeurs": [
+    2000,
+    1000
+   ]
+  },
+  {
+   "id": "b7bf9256-0c9d-44d7-9348-dbab8d4feef4",
+   "chemin": "yasmine-beaute/accueil/hero-portrait",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25,
+   "gravite": "Center"
+  },
+  {
+   "id": "30024380-e0dd-47a4-9b59-916e74dde4b0",
+   "chemin": "yasmine-beaute/accueil/rituel",
+   "largeurs": [
+    1200,
+    600
+   ]
+  },
+  {
+   "id": "ee61e4bf-7a08-4ad9-8fdc-2acd27c33c6a",
+   "chemin": "yasmine-beaute/rayons/soins-du-visage",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "03585302-0142-4d84-84f6-4acfb2b65dfd",
+   "chemin": "yasmine-beaute/rayons/corps-et-bain",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "1119d5b7-c7bf-453d-8cb8-32196158a6a0",
+   "chemin": "yasmine-beaute/rayons/maquillage",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
   }
  ]
 }
