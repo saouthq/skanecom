@@ -36,7 +36,7 @@ html[data-gabarit="editorial"] .btn {
   min-block-size: 52px; padding-inline: 1.75rem; font-size: var(--ed-texte-ui); font-weight: 500;
   letter-spacing: .005em; text-transform: none;
 }
-html[data-gabarit="editorial"] .btn-primaire:hover { background: color-mix(in srgb, var(--theme-encre) 82%, var(--theme-fond)); }
+html[data-gabarit="editorial"] .btn-primaire:hover { background: color-mix(in srgb, var(--theme-bouton) 82%, var(--theme-sur-bouton)); }
 html[data-gabarit="editorial"] .btn-second { border-color: color-mix(in srgb, var(--theme-encre) 30%, transparent); }
 html[data-gabarit="editorial"] .btn-second:hover { border-color: var(--theme-encre); background: transparent; color: var(--theme-encre); }
 html[data-gabarit="editorial"] .btn .icone-fleche { transition: transform .3s var(--theme-courbe); }
@@ -133,9 +133,9 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 }
 
 /* --- Sections de l'accueil ------------------------------------------------ */
-.ed-section { margin-block: clamp(4rem, 8vw, 7.5rem); }
+.ed-section { margin-block: calc(clamp(4rem, 8vw, 7.5rem) * var(--echelle-espace, 1)); }
 .ed-section-tete { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; margin-block-end: 2rem; }
-.ed-section-tete h2 { font-size: clamp(2.25rem, 3.8vw, 3.5rem); margin-block-start: .5rem; }
+.ed-section-tete h2 { font-size: calc(clamp(2.25rem, 3.8vw, 3.5rem) * var(--echelle-titres, 1)); margin-block-start: .5rem; }
 .ed-section-tete .lien-souligne { white-space: nowrap; padding-block-end: .5rem; }
 
 /* Ouverture pleine page, posée sous l'en-tête transparent. */
@@ -173,7 +173,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 }
 .ed-ouverture .etiquette { color: color-mix(in srgb, var(--theme-surface) 90%, transparent); }
 .ed-ouverture h1 {
-  max-inline-size: 11ch; margin-block: 1rem 0; font-size: clamp(3.5rem, 9.5vw, 8.5rem); line-height: .88; letter-spacing: -.03em;
+  max-inline-size: 11ch; margin-block: 1rem 0; font-size: calc(clamp(3.5rem, 9.5vw, 8.5rem) * var(--echelle-titres, 1)); line-height: .88; letter-spacing: -.03em;
   text-shadow: 0 1px 30px rgb(0 0 0 / .18);
 }
 .ed-ouverture .chapo { margin-block-start: 1.5rem; max-inline-size: 36ch; font-size: 1.0625rem; color: color-mix(in srgb, var(--theme-surface) 90%, transparent); }
@@ -187,7 +187,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 /* Ouverture sur socle (photo détourée) : le produit posé sur un aplat. */
 .ed-ouverture-socle { padding-block: 1.5rem 0; }
 .ed-ouverture-socle-grille { display: grid; gap: 2rem; }
-.ed-ouverture-texte h1 { margin-block: .875rem 0; font-size: clamp(3.25rem, 7.5vw, 7.25rem); line-height: .9; letter-spacing: -.025em; }
+.ed-ouverture-texte h1 { margin-block: .875rem 0; font-size: calc(clamp(3.25rem, 7.5vw, 7.25rem) * var(--echelle-titres, 1)); line-height: .9; letter-spacing: -.025em; }
 .ed-ouverture-texte .chapo { margin-block-start: 1.5rem; }
 .ed-ouverture-texte .ed-ouverture-actions { flex-direction: column; align-items: flex-start; gap: 1rem; }
 .ed-socle { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 5; padding: 12% 10%; background: var(--theme-surface-2); }
@@ -205,7 +205,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 }
 
 .ed-ouverture-texte-seul { padding-block: clamp(4.5rem, 13vw, 10rem) clamp(2rem, 6vw, 4rem); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
-.ed-ouverture-texte-seul h1 { font-size: clamp(3.25rem, 8.5vw, 7.5rem); line-height: .9; letter-spacing: -.025em; }
+.ed-ouverture-texte-seul h1 { font-size: calc(clamp(3.25rem, 8.5vw, 7.5rem) * var(--echelle-titres, 1)); line-height: .9; letter-spacing: -.025em; }
 
 /* Les collections : grandes vignettes, nom et nombre de modèles dessous ;
    bande à faire glisser sur téléphone. */
@@ -243,9 +243,9 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 .ed-collection:hover .ed-collection-nom::after { opacity: .7; transform: none; }
 
 /* Le récit : image et texte, bord à bord. */
-.ed-recit { display: grid; margin-block: clamp(4rem, 9vw, 8rem); background: var(--theme-surface-2); }
+.ed-recit { display: grid; margin-block: calc(clamp(4rem, 9vw, 8rem) * var(--echelle-espace, 1)); background: var(--theme-surface-2); }
 .ed-recit-texte { padding: 3rem var(--theme-marge) 3.5rem; display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; }
-.ed-recit-texte h2 { font-size: clamp(2.75rem, 5.2vw, 5rem); line-height: .92; letter-spacing: -.025em; }
+.ed-recit-texte h2 { font-size: calc(clamp(2.75rem, 5.2vw, 5rem) * var(--echelle-titres, 1)); line-height: .92; letter-spacing: -.025em; }
 .ed-recit-texte .chapo { max-inline-size: 40ch; }
 @media (min-width: 900px) {
   .ed-recit { grid-template-columns: 1fr 1fr; align-items: center; }
@@ -255,7 +255,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 }
 
 /* Les engagements, en une ligne : chacun son pictogramme dans un rond. */
-.ed-engagements { margin-block: clamp(3.5rem, 7vw, 6rem) 0; border-block: 1px solid var(--theme-filet); }
+.ed-engagements { margin-block: calc(clamp(3.5rem, 7vw, 6rem) * var(--echelle-espace, 1)) 0; border-block: 1px solid var(--theme-filet); }
 .ed-engagements ul { display: grid; gap: 2rem; list-style: none; margin: 0; padding-block: 3rem; }
 .ed-engagements li { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 1rem; row-gap: .25rem; align-items: start; }
 .ed-engagements svg {
@@ -268,7 +268,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 @media (min-width: 1100px) { .ed-engagements ul { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.5rem; } }
 
 .ed-texte { max-inline-size: 48rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1.25rem; }
-.ed-texte h2 { font-size: clamp(2.25rem, 4.2vw, 3.5rem); }
+.ed-texte h2 { font-size: calc(clamp(2.25rem, 4.2vw, 3.5rem) * var(--echelle-titres, 1)); }
 
 /* --- Grille et carte -------------------------------------------------------- */
 .ed-grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem .625rem; }
@@ -326,7 +326,7 @@ html[data-gabarit="editorial"] .attente-cartel .filigrane { inline-size: 14%; op
 /* --- Listes ----------------------------------------------------------------- */
 .ed-entete-liste { padding-block: 2rem 2.25rem; text-align: center; }
 .ed-entete-liste .fil ol { justify-content: center; }
-.ed-entete-liste h1 { margin-block-start: 1.5rem; font-size: clamp(3rem, 7.5vw, 6rem); line-height: .92; letter-spacing: -.025em; }
+.ed-entete-liste h1 { margin-block-start: 1.5rem; font-size: calc(clamp(3rem, 7.5vw, 6rem) * var(--echelle-titres, 1)); line-height: .92; letter-spacing: -.025em; }
 .ed-entete-liste .chapo { margin: 1.25rem auto 0; }
 .ed-entete-liste .sous-rayons { justify-content: center; gap: .5rem; margin-block-start: 1.75rem; }
 .ed-entete-liste .recherche-page { margin-inline: auto; }
@@ -371,7 +371,7 @@ html[data-gabarit="editorial"] .listing-outils select { border-color: transparen
 }
 .ed-fiche-panneau { padding: 1.75rem var(--theme-marge) 0; }
 .ed-fiche-collant { display: flex; flex-direction: column; gap: 1.25rem; }
-.ed-fiche-collant h1 { font-size: clamp(2.375rem, 3.4vw, 3.375rem); line-height: .98; letter-spacing: -.02em; }
+.ed-fiche-collant h1 { font-size: calc(clamp(2.375rem, 3.4vw, 3.375rem) * var(--echelle-titres, 1)); line-height: .98; letter-spacing: -.02em; }
 .ed-fiche-collant .etiquette { margin-block-start: 1rem; }
 @media (min-width: 900px) {
   .ed-fiche-panneau { padding: 2.75rem clamp(2rem, 4.5vw, 5.5rem) 0; }
@@ -383,7 +383,7 @@ html[data-gabarit="editorial"] .fiche-stock { font-size: .875rem; margin-block: 
 html[data-gabarit="editorial"] .axe legend { font-size: var(--ed-texte-ui); }
 /* Les tailles : des cases nettes. (La couleur garde ses ronds.) */
 html[data-gabarit="editorial"] .valeur:not(.valeur-couleur) {
-  border-radius: 0; min-inline-size: 3.5rem; min-block-size: 48px; padding: .5rem 1.125rem;
+  border-radius: var(--theme-radius-doux); min-inline-size: 3.5rem; min-block-size: 48px; padding: .5rem 1.125rem;
   font-size: var(--ed-texte-ui); border-color: color-mix(in srgb, var(--theme-encre) 20%, transparent);
   transition: border-color .2s var(--theme-courbe), box-shadow .2s var(--theme-courbe);
 }
@@ -409,7 +409,7 @@ html[data-gabarit="editorial"] .pli > summary::after { font-size: 1.375rem; }
 html[data-gabarit="editorial"] .pli > div { font-size: .9375rem; line-height: 1.7; }
 
 /* --- Pied de page ----------------------------------------------------------- */
-.ed-pied { margin-block-start: clamp(4.5rem, 9vw, 8rem); border-block-start: 1px solid var(--theme-filet); }
+.ed-pied { margin-block-start: calc(clamp(4.5rem, 9vw, 8rem) * var(--echelle-espace, 1)); border-block-start: 1px solid var(--theme-filet); }
 /* L'accueil finit par les engagements (filet bas) : le pied s'y colle. */
 main:has(> .ed-engagements:last-child) + .ed-pied { margin-block-start: 0; border-block-start: 0; }
 .ed-pied-grille { display: grid; gap: 2.5rem; padding-block: 3.5rem 1rem; }
@@ -454,12 +454,12 @@ main:has(> .ed-engagements:last-child) + .ed-pied { margin-block-start: 0; borde
    rangée : jamais seule sur une rangée neuve (2, 3 puis 4 colonnes). */
 .ed-tuile-fin {
   display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: .375rem;
-  aspect-ratio: 4 / 5; padding: clamp(1.25rem, 2.2vw, 2rem);
+  aspect-ratio: var(--theme-ratio-carte, 4 / 5); padding: clamp(1.25rem, 2.2vw, 2rem);
   background: var(--theme-surface-2); color: var(--theme-encre); text-decoration: none;
   transition: background-color .5s var(--theme-courbe);
 }
 .ed-tuile-fin:hover { background: color-mix(in srgb, var(--theme-surface-2) 82%, var(--theme-filet-fort)); }
-.ed-tuile-fin .tuile-fin-titre { font-family: var(--theme-font-display); font-size: clamp(1.875rem, 2.6vw, 2.625rem); line-height: .98; letter-spacing: -.015em; }
+.ed-tuile-fin .tuile-fin-titre { font-family: var(--theme-font-display); font-size: calc(clamp(1.875rem, 2.6vw, 2.625rem) * var(--echelle-titres, 1)); line-height: .98; letter-spacing: -.015em; }
 .ed-tuile-fin .tuile-fin-compte { font-size: .8125rem; color: var(--theme-encre-doux); }
 .ed-tuile-fin .tuile-fin-lien {
   display: inline-flex; align-items: center; gap: .375rem; margin-block-start: .875rem; font-size: var(--ed-texte-ui);

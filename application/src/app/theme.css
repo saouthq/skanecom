@@ -11,8 +11,9 @@
    Aucun composant n'écrit une couleur : il emploie la couche 2, ou les classes
    des feuilles de gabarit (editorial.css, technique.css).
 
-   Mode clair seulement : pas de `prefers-color-scheme: dark` (les boutiques
-   choisissent leur palette ; un mode sombre imposé la trahirait).
+   Pas de `prefers-color-scheme: dark` : la boutique choisit son mode (clair
+   ou sombre, écran « Apparence ») ; un mode sombre imposé par le visiteur
+   trahirait sa palette.
    ========================================================================== */
 
 :root {
@@ -26,6 +27,12 @@
   --theme-encre-doux:    #5F5A53;
   --theme-accent:        #7A5A3A;
   --theme-accent-clair:  #C9A882;   /* l'accent sur fond encre */
+  /* Les boutons principaux : la feuille du thème (lib/theme.ts) les calcule
+     d'après le style (teinte) et le contraste ; ici, ceux du gabarit éditorial. */
+  --theme-bouton:        var(--theme-encre);
+  --theme-sur-bouton:    var(--theme-fond);
+  --theme-bouton-trait:  var(--theme-encre);
+  --theme-ratio-carte:   4 / 5;
   --theme-succes:        #3D6B47;
   --theme-erreur:        #A33A2B;
   --theme-alerte:        #8A6112;
@@ -68,7 +75,7 @@
   --color-sur-primaire:    var(--theme-surface);
   --color-accent:          var(--theme-accent);
   --color-accent-inverse:  var(--theme-accent-clair);
-  --color-sur-accent:      var(--theme-surface);
+  --color-sur-accent:      var(--theme-sur-accent, var(--theme-surface));
   --color-succes:          var(--theme-succes);
   --color-erreur:          var(--theme-erreur);
   --color-alerte:          var(--theme-alerte);

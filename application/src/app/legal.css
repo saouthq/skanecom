@@ -13,7 +13,7 @@
 .legal-tete { padding-block-end: 2rem; border-block-end: 1px solid var(--theme-filet); }
 .legal-tete > * { max-inline-size: 48rem; }
 .legal-surtitre { margin: 0 0 .75rem; font-size: .8125rem; font-weight: 500; color: var(--theme-encre-doux); }
-.legal-tete h1 { margin: 0; font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.75rem); line-height: 1.02; letter-spacing: -.02em; }
+.legal-tete h1 { margin: 0; font-size: calc(clamp(2.25rem, 1.6rem + 2.6vw, 3.75rem) * var(--echelle-titres, 1)); line-height: 1.02; letter-spacing: -.02em; }
 .legal-version { margin: 1rem 0 0; font-size: .8125rem; color: var(--theme-encre-doux); }
 .legal-intro { margin-block-start: 1.25rem; font-size: 1.0625rem; line-height: 1.6; color: var(--theme-encre); max-inline-size: 60ch; }
 .legal-intro p { margin: 0; }

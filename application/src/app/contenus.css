@@ -10,11 +10,11 @@
 .page-boutique { max-inline-size: 44rem; margin-inline: auto; padding-block: clamp(2rem, 5vw, 4rem) clamp(2.5rem, 6vw, 4.5rem); }
 .page-boutique-tete { margin-block-end: clamp(1.75rem, 4vw, 2.75rem); }
 .page-boutique-tete h1 {
-  margin-block-start: 1.25rem; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: .96; letter-spacing: -.02em; text-wrap: balance;
+  margin-block-start: 1.25rem; font-size: calc(clamp(2.5rem, 6vw, 4.5rem) * var(--echelle-titres, 1)); line-height: .96; letter-spacing: -.02em; text-wrap: balance;
 }
 .page-boutique-texte { font-size: 1.0625rem; line-height: 1.75; color: color-mix(in srgb, var(--theme-encre) 88%, var(--theme-encre-doux)); }
 .page-boutique-texte > * + * { margin-block-start: 1.1em; }
-.page-boutique-texte h2 { margin-block-start: 2.25em; font-size: clamp(1.625rem, 3vw, 2.125rem); line-height: 1.1; color: var(--theme-encre); }
+.page-boutique-texte h2 { margin-block-start: 2.25em; font-size: calc(clamp(1.625rem, 3vw, 2.125rem) * var(--echelle-titres, 1)); line-height: 1.1; color: var(--theme-encre); }
 .page-boutique-texte h3 { margin-block-start: 1.75em; font-family: var(--theme-font-texte); font-size: 1.0625rem; font-weight: 600; color: var(--theme-encre); }
 .page-boutique-texte h2 + *, .page-boutique-texte h3 + * { margin-block-start: .6em; }
 .page-boutique-texte ul, .page-boutique-texte ol { padding-inline-start: 1.25rem; }
@@ -37,7 +37,7 @@
 /* --- Contact --------------------------------------------------------------- */
 .contact-page { padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 7vw, 5.5rem); }
 .contact-tete { max-inline-size: 44rem; margin-block-end: clamp(2rem, 5vw, 3.5rem); }
-.contact-tete h1 { margin-block: .75rem 1rem; font-size: clamp(2.75rem, 7vw, 5rem); line-height: .95; letter-spacing: -.02em; }
+.contact-tete h1 { margin-block: .75rem 1rem; font-size: calc(clamp(2.75rem, 7vw, 5rem) * var(--echelle-titres, 1)); line-height: .95; letter-spacing: -.02em; }
 .contact-grille { display: grid; gap: clamp(2rem, 5vw, 4rem); }
 @media (min-width: 900px) { .contact-grille { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; } }
 .contact-canaux { display: grid; gap: .75rem; list-style: none; margin: 0; padding: 0; }
@@ -74,7 +74,7 @@
 /* --- Suivre ma commande ------------------------------------------------------ */
 .suivi-page { max-inline-size: 36rem; padding-block: clamp(2rem, 5vw, 4rem) clamp(3rem, 7vw, 5.5rem); }
 .suivi-tete { margin-block-end: 2rem; }
-.suivi-tete h1 { margin-block: .75rem 1rem; font-size: clamp(2.5rem, 6vw, 4rem); line-height: .96; letter-spacing: -.02em; }
+.suivi-tete h1 { margin-block: .75rem 1rem; font-size: calc(clamp(2.5rem, 6vw, 4rem) * var(--echelle-titres, 1)); line-height: .96; letter-spacing: -.02em; }
 .suivi-formulaire {
   display: grid; gap: 1.25rem; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--theme-filet);
   border-radius: var(--theme-radius-carte); background: var(--theme-surface);

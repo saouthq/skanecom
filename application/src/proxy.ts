@@ -25,6 +25,25 @@ import { hoteDe, resoudre } from "@/lib/annuaire";
 
 const HOTE_CONSOLE = (process.env.NEXT_PUBLIC_CONSOLE_HOTE ?? "").toLowerCase();
 
+/* L'APERÇU DE L'APPARENCE (écran « Apparence » du backoffice, migration 64)
+   — `?apercu=<jeton>.<version>` : la boutique rend le brouillon de son
+   apparence à qui présente le jeton (son cadre d'aperçu, un lien ouvert sur
+   un téléphone). Le jeton suit dans un cookie de la boutique, partitionné
+   (il vit aussi dans le cadre du backoffice, d'un autre site) : la
+   navigation garde l'aperçu. `?apercu=fin` le quitte. Le segment interne
+   devient `<boutique>~<jeton>.<version>` : une entrée de cache à part, que
+   la version change à chaque brouillon enregistré ; la page n'est jamais
+   gardée ni indexée. */
+const COOKIE_APERCU = "skanecom_apercu";
+const JETON_APERCU = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[0-9]{1,9}$/;
+
+/* Qui peut afficher la boutique dans un cadre : elle-même, et la console
+   (l'aperçu de l'écran « Apparence »). Personne d'autre (détournement de
+   clic sur le tunnel de commande). */
+const CADRES_PERMIS = HOTE_CONSOLE
+  ? `frame-ancestors 'self' ${HOTE_CONSOLE.endsWith(".localhost") || HOTE_CONSOLE === "localhost" ? `http://${HOTE_CONSOLE}:*` : `https://${HOTE_CONSOLE}`}`
+  : "frame-ancestors 'self'";
+
 const interne = (chemin: string) =>
   chemin === "/_b" || chemin.startsWith("/_b/") || chemin === "/_console" || chemin.startsWith("/_console/");
 
@@ -86,9 +105,26 @@ export async function proxy(request: NextRequest) {
   const resolution = await resoudre(hote);
   switch (resolution.etat) {
     case "boutique": {
+      const demande = request.nextUrl.searchParams.get("apercu");
+      const garde = request.cookies.get(COOKIE_APERCU)?.value ?? null;
+      const jeton = demande !== null ? (JETON_APERCU.test(demande) ? demande : null) : garde && JETON_APERCU.test(garde) ? garde : null;
+      const segment = jeton ? `${resolution.slug}~${jeton}` : resolution.slug;
       const reponse = NextResponse.rewrite(
-        new URL(`/_b/${resolution.slug}${pathname === "/" ? "" : pathname}${search}`, request.url),
+        new URL(`/_b/${segment}${pathname === "/" ? "" : pathname}${search}`, request.url),
       );
+      reponse.headers.set("content-security-policy", CADRES_PERMIS);
+      if (demande !== null) {
+        if (jeton) {
+          reponse.cookies.set(COOKIE_APERCU, jeton, { path: "/", httpOnly: true, secure: true, sameSite: "none", partitioned: true, maxAge: 2 * 3600 });
+        } else {
+          reponse.cookies.set(COOKIE_APERCU, "", { path: "/", httpOnly: true, secure: true, sameSite: "none", partitioned: true, maxAge: 0 });
+        }
+      }
+      if (jeton) {
+        reponse.headers.set("cache-control", "private, no-store");
+        reponse.headers.set("x-robots-tag", "noindex, nofollow");
+        return reponse;
+      }
       // Le tunnel de commande et le compte sont propres à chaque acheteur :
       // jamais en cache, jamais indexés, et l'adresse ne part pas chez un
       // site tiers.

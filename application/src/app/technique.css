@@ -18,8 +18,8 @@ html[data-gabarit="technique"] { --entete-h: 7.25rem; }
 html[data-gabarit="technique"] :where(h1, h2, h3) { font-weight: 800; font-stretch: 86%; letter-spacing: -.005em; line-height: 1.08; }
 
 html[data-gabarit="technique"] .btn { font-weight: 700; font-size: .9375rem; }
-html[data-gabarit="technique"] .btn-primaire { background: var(--theme-accent); color: var(--theme-encre); }
-html[data-gabarit="technique"] .btn-primaire:hover { background: color-mix(in srgb, var(--theme-accent) 86%, var(--theme-encre)); }
+html[data-gabarit="technique"] .btn-primaire { background: var(--theme-bouton); color: var(--theme-sur-bouton); }
+html[data-gabarit="technique"] .btn-primaire:hover { background: color-mix(in srgb, var(--theme-bouton) 86%, var(--theme-sur-bouton)); }
 html[data-gabarit="technique"] .btn-primaire:disabled { background: var(--theme-surface-2); color: var(--theme-encre-doux); opacity: 1; }
 html[data-gabarit="technique"] .btn-second { background: var(--theme-surface); border-color: var(--theme-filet-fort); }
 html[data-gabarit="technique"] .btn-second:hover { background: var(--theme-surface); color: var(--theme-encre); border-color: var(--theme-encre); }
@@ -105,7 +105,7 @@ html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent);
   display: inline-block; margin: 0; padding: .25rem .5rem; background: var(--theme-accent); color: var(--theme-encre);
   border-radius: var(--theme-radius-net); font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
 }
-.te-banniere h1 { margin-block: 1rem .75rem; font-size: clamp(2.375rem, 6vw, 4.75rem); font-stretch: 72%; line-height: .94; text-transform: uppercase; letter-spacing: 0; }
+.te-banniere h1 { margin-block: 1rem .75rem; font-size: calc(clamp(2.375rem, 6vw, 4.75rem) * var(--echelle-titres, 1)); font-stretch: 72%; line-height: .94; text-transform: uppercase; letter-spacing: 0; }
 .te-banniere-chapo { max-inline-size: 46ch; color: color-mix(in srgb, var(--theme-surface) 84%, transparent); font-size: 1rem; }
 .te-banniere-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.5rem; margin-block-start: 1.5rem; }
 .te-banniere-actions .btn { min-block-size: 52px; padding-inline: 1.5rem; }
@@ -119,12 +119,12 @@ html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent);
 }
 
 /* --- Sections --------------------------------------------------------------- */
-.te-section { margin-block: clamp(2.25rem, 5vw, 3.75rem); }
+.te-section { margin-block: calc(clamp(2.25rem, 5vw, 3.75rem) * var(--echelle-espace, 1)); }
 .te-section-tete {
   display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
   margin-block-end: 1.25rem; padding-block-end: .625rem; border-block-end: 2px solid var(--theme-encre);
 }
-.te-section-tete h2 { font-size: clamp(1.375rem, 2.4vw, 1.875rem); text-transform: uppercase; font-stretch: 78%; }
+.te-section-tete h2 { font-size: calc(clamp(1.375rem, 2.4vw, 1.875rem) * var(--echelle-titres, 1)); text-transform: uppercase; font-stretch: 78%; }
 .te-lien-fleche { display: inline-flex; align-items: center; gap: .375rem; font-size: .875rem; font-weight: 700; white-space: nowrap; }
 .te-lien-fleche:hover { text-decoration: underline; text-underline-offset: .2em; }
 
@@ -156,7 +156,7 @@ html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent);
 .te-services .te-lien-fleche { margin-block-start: .25rem; }
 
 .te-bandeau { display: grid; gap: 1.5rem; align-items: center; padding: 1.25rem; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-bloc); }
-.te-bandeau h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); text-transform: uppercase; font-stretch: 76%; margin-block-end: .75rem; }
+.te-bandeau h2 { font-size: calc(clamp(1.5rem, 3vw, 2.25rem) * var(--echelle-titres, 1)); text-transform: uppercase; font-stretch: 76%; margin-block-end: .75rem; }
 .te-bandeau p { color: var(--theme-encre-doux); margin-block-end: 1rem; }
 @media (min-width: 900px) { .te-bandeau { grid-template-columns: 1fr 1fr; gap: 3rem; padding: 1.5rem; } }
 .te-texte h2 { font-size: 1.5rem; margin-block-end: .75rem; }
@@ -221,7 +221,7 @@ html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent);
 
 /* --- Listes ----------------------------------------------------------------- */
 .te-entete-liste { padding-block: 1.25rem .75rem; }
-.te-entete-liste h1 { margin-block-start: .875rem; font-size: clamp(1.875rem, 4vw, 2.75rem); text-transform: uppercase; font-stretch: 76%; }
+.te-entete-liste h1 { margin-block-start: .875rem; font-size: calc(clamp(1.875rem, 4vw, 2.75rem) * var(--echelle-titres, 1)); text-transform: uppercase; font-stretch: 76%; }
 .te-entete-liste .chapo { margin-block-start: .5rem; max-inline-size: 70ch; font-size: .9375rem; }
 .te-entete-liste .sous-rayons a { border-radius: var(--theme-radius-doux); font-weight: 600; }
 .te-listing { display: grid; gap: 1rem; padding-block-end: 2rem; }
@@ -242,7 +242,7 @@ html[data-gabarit="technique"] .fil { padding-block: 1.25rem .25rem; }
 .te-galerie-vignettes button[aria-pressed="true"] { border-color: var(--theme-encre); }
 @media (min-width: 1000px) { .te-galerie { position: sticky; inset-block-start: calc(var(--entete-h) + 1rem); } }
 .te-fiche-marque { margin: 0 0 .375rem; font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--theme-encre-doux); }
-.te-fiche-achat h1 { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+.te-fiche-achat h1 { font-size: calc(clamp(1.75rem, 3vw, 2.5rem) * var(--echelle-titres, 1)); }
 .ref-variante { margin-block: .5rem 1.25rem; font-family: var(--theme-font-mono); font-size: .8125rem; color: var(--theme-encre-doux); }
 .te-fiche-achat .fiche-achat { padding-block-start: 1.25rem; border-block-start: 1px solid var(--theme-filet); }
 html[data-gabarit="technique"] .fiche-prix .prix-fort { font-size: 2.125rem; font-weight: 800; letter-spacing: -.01em; }
@@ -343,7 +343,7 @@ html[data-gabarit="technique"] .te-fiche-details h2 { border-block-end-width: 1p
 }
 .te-tuile-fin:hover { background: color-mix(in srgb, var(--theme-encre) 88%, var(--theme-surface)); }
 .te-tuile-fin .tuile-fin-titre {
-  font-family: var(--theme-font-display); font-weight: 800; font-stretch: 78%; font-size: clamp(1.375rem, 2vw, 1.75rem);
+  font-family: var(--theme-font-display); font-weight: 800; font-stretch: 78%; font-size: calc(clamp(1.375rem, 2vw, 1.75rem) * var(--echelle-titres, 1));
   line-height: 1.02; text-transform: uppercase;
 }
 .te-tuile-fin .tuile-fin-compte { font-size: .875rem; color: color-mix(in srgb, var(--theme-surface) 70%, transparent); }

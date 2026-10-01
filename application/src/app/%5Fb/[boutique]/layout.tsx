@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import "../../globals.css";
 import { chargeCadre } from "@/lib/boutique";
-import { feuilleDuTheme, texte } from "@/lib/theme";
+import { attributsDuStyle, feuilleDuTheme, texte } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 import { directionDe, localeOgDe, t } from "@/lib/i18n";
 import { Entete } from "@/components/Entete";
@@ -17,6 +17,7 @@ import { TransitionsVue } from "@/components/TransitionsVue";
 import { AncresDouces } from "@/components/AncresDouces";
 import { Suspense } from "react";
 import { ProgressionNavigation } from "@/components/console/Retours";
+import { ApercuApparence } from "@/components/ApercuApparence";
 
 /* ============================================================================
    LE LAYOUT RACINE D'UNE BOUTIQUE
@@ -30,7 +31,9 @@ import { ProgressionNavigation } from "@/components/console/Retours";
 
    `data-gabarit` sur <html> choisit la feuille du gabarit (editorial.css ou
    technique.css) ; l'en-tête, le pied et les pages choisissent leurs
-   composants d'après le même code.
+   composants d'après le même code. Le style réglé à l'écran « Apparence »
+   (`data-coins`, `data-boutons`…) est lu par app/apparence.css ; dans le
+   cadre d'aperçu du backoffice, ApercuApparence le remplace en direct.
 
    Polices : servies par l'application (app/polices.css, @fontsource),
    jamais par Google ; chaque famille ne se charge que si le thème l'emploie.
@@ -54,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     applicationName: b.nom,
     icons: theme.favicon ? { icon: urlFichier(theme.favicon) } : undefined,
     openGraph: { type: "website", siteName: b.nom, locale: localeOgDe(b.langue_defaut), title: titre, description },
-    robots: { index: true, follow: true },
+    robots: cadre.apercu ? { index: false, follow: false } : { index: true, follow: true },
   };
 }
 
@@ -72,29 +75,38 @@ export default async function RacineBoutique({ children, params }: Props) {
       data-pro={cadre.comptesPro ? cadre.boutique.id : undefined}
       data-gabarit={cadre.theme.code}
       data-monogramme={cadre.theme.monogramme ? "" : undefined}
+      {...attributsDuStyle(cadre.theme.style)}
       className="h-full"
     >
       <head>
         <style dangerouslySetInnerHTML={{ __html: feuilleDuTheme(cadre.theme, urlFichier) }} />
         {/* Les pixels publicitaires, d'emblée si ce navigateur les a acceptés (lib/pixels.ts). */}
-        {cadre.pixels ? <script dangerouslySetInnerHTML={{ __html: scriptPixels(cadre.boutique.slug, cadre.pixels) }} /> : null}
+        {cadre.pixels && !cadre.apercu ? <script dangerouslySetInnerHTML={{ __html: scriptPixels(cadre.boutique.slug, cadre.pixels) }} /> : null}
       </head>
       <body className="min-h-full flex flex-col bg-fond text-encre">
         <a className="saut-contenu" href="#principal">
           {t.commun.sauterAuContenu}
         </a>
         {/* Le bandeau des pixels, fixé en bas de l'écran mais premier au clavier : on y répond sans traverser la page. */}
-        {cadre.pixels ? <PixelsPub boutique={cadre.boutique.slug} nom={cadre.boutique.nom} pixels={cadre.pixels} /> : null}
+        {cadre.pixels && !cadre.apercu ? <PixelsPub boutique={cadre.boutique.slug} nom={cadre.boutique.nom} pixels={cadre.pixels} /> : null}
+        {/* L'aperçu d'un brouillon d'apparence, ouvert hors du backoffice (un téléphone) : il le dit, et s'en sort. */}
+        {cadre.apercu ? (
+          <p className="bandeau-apercu" role="status">
+            <span>{t.apercu.bandeau}</span>
+            <a href="/?apercu=fin">{t.apercu.quitter}</a>
+          </p>
+        ) : null}
         <FavorisActifs actif={cadre.favoris}>
           <Entete cadre={cadre} />
           {children}
           <Pied cadre={cadre} />
         </FavorisActifs>
         {cadre.whatsappFlottant && cadre.whatsapp ? <BoutonWhatsApp numero={cadre.whatsapp} nom={cadre.boutique.nom} /> : null}
-        {cadre.statistiques ? <MesureAudience /> : null}
+        {cadre.statistiques && !cadre.apercu ? <MesureAudience /> : null}
         <Apparitions />
         <TransitionsVue />
         <AncresDouces />
+        <ApercuApparence code={cadre.theme.code} />
         <Suspense fallback={null}>
           <ProgressionNavigation />
         </Suspense>

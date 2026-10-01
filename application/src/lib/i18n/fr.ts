@@ -1013,6 +1013,12 @@ export const fr = {
     ecrireNous: "Écrivez-nous",
   },
 
+  /* L'aperçu d'un brouillon d'apparence, ouvert hors du backoffice. */
+  apercu: {
+    bandeau: "Aperçu du brouillon : les visiteurs voient encore la version publiée.",
+    quitter: "Quitter l'aperçu",
+  },
+
   seo: {
     gabaritTitre: (nom: string) => `%s | ${nom}`,
     descriptionSite: (nom: string) => `${nom} : stock réel, prix en dinars, paiement à la livraison partout en Tunisie.`,

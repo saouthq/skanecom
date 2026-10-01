@@ -120,6 +120,9 @@ export type Cadre = {
   whatsappFlottant: boolean;
   /** Réglage `vitrine.annonce` : une phrase en tête du site, avant les faits de service. */
   annonce: string | null;
+  /** La page montre le BROUILLON de l'apparence (aperçu de l'écran
+   *  « Apparence ») : ni mesure d'audience ni pixels, un bandeau le dit. */
+  apercu?: boolean;
 };
 
 /** Ce que rendent public.boutique_publique (la vitrine, boutique ouverte) et
@@ -156,10 +159,25 @@ function delai(zones: Zone[]): { min: number; max: number } | null {
   return { min: Math.min(...mins), max: Math.max(...maxs) };
 }
 
-export const chargeCadre = cache(async (slug: string): Promise<Cadre | null> => {
-  const { data, error } = await supabase.rpc("boutique_publique", { p_slug: slug });
+/** Le cadre d'une boutique. `segment` est le premier segment de l'adresse
+ *  interne : le slug, ou `<slug>~<jeton>.<version>` quand la façade sert
+ *  l'aperçu d'un brouillon d'apparence (src/proxy.ts) — le thème prend alors
+ *  le brouillon (gabarit, couleurs, polices, style), si le jeton est bon. */
+export const chargeCadre = cache(async (segment: string): Promise<Cadre | null> => {
+  const [slug, apercu] = segment.split("~", 2);
+  const jeton = apercu?.split(".")[0] ?? null;
+  const [{ data, error }, brouillon] = await Promise.all([
+    supabase.rpc("boutique_publique", { p_slug: slug }),
+    jeton && /^[0-9a-f-]{36}$/.test(jeton)
+      ? supabase.rpc("apercu_apparence", { p_slug: slug, p_jeton: jeton }).then((r) => (r.error ? null : (r.data as Record<string, unknown> | null)))
+      : Promise.resolve(null),
+  ]);
   if (error) throw new Error(`Boutique illisible : ${error.message}`);
-  return data ? cadreDe(data as CadreBrut) : null;
+  if (!data) return null;
+  const brut = data as CadreBrut;
+  if (!brouillon || !brut.theme) return { ...cadreDe(brut), apercu: false };
+  const { code, couleurs, polices, style } = brouillon;
+  return { ...cadreDe({ ...brut, theme: { ...brut.theme, code, couleurs, polices, style } }), apercu: true };
 });
 
 /** Le cadre, composé de ce que la base a rendu. */

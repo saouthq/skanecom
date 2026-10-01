@@ -29,6 +29,7 @@
 @import "./contenus.css";
 @import "./bibliotheque.css";
 @import "./vitrine-mouvement.css";
+@import "./apparence.css";
 
 :root {
   --theme-marge: 1rem;      /* gouttière mobile : 16 px */

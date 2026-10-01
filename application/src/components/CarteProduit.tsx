@@ -85,6 +85,7 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
       <Photo
         photo={urlPhoto(produit)}
         survol={photoSurvol(produit)}
+        ratio="var(--theme-ratio-carte)"
         tailles={tailles ?? "(min-width: 1100px) 24vw, (min-width: 700px) 32vw, 48vw"}
         prioritaire={prioritaire}
         nom={champ(produit, "nom")}
@@ -131,7 +132,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
   return (
     <article className="te-carte">
       <Link className="te-carte-lien" href={`/produit/${produit.slug}`}>
-        <Photo photo={photo} ratio="1 / 1" tailles={tailles ?? "(min-width: 1100px) 20vw, (min-width: 700px) 30vw, 48vw"} prioritaire={prioritaire}>
+        <Photo photo={photo} ratio="var(--theme-ratio-carte)" tailles={tailles ?? "(min-width: 1100px) 20vw, (min-width: 700px) 30vw, 48vw"} prioritaire={prioritaire}>
           {reduction ? <span className="te-remise">−{reduction} %</span> : null}
         </Photo>
         {produit.marque ? <span className="te-carte-marque">{produit.marque}</span> : null}

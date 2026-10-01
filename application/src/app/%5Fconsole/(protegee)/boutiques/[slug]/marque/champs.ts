@@ -1,4 +1,4 @@
-import type { JetonCouleur, Police } from "@/lib/theme";
+import { POLICES_INFO, type JetonCouleur, type Police } from "@/lib/theme";
 
 /* Ce que le formulaire de marque règle, partagé par la page, l'éditeur et
    le gestionnaire d'enregistrement. */
@@ -13,13 +13,10 @@ export const GROUPES_COULEURS: { titre: string; jetons: { cle: JetonCouleur; lib
   { titre: "États", jetons: [{ cle: "succes", libelle: "En stock" }, { cle: "erreur", libelle: "Erreur" }, { cle: "alerte", libelle: "Stock faible" }] },
 ];
 
-export const POLICES: { valeur: Police; libelle: string; texte: boolean }[] = [
-  { valeur: "instrument-serif", libelle: "Instrument Serif — magazine, élégante", texte: false },
-  { valeur: "instrument-sans", libelle: "Instrument Sans — nette, contemporaine", texte: true },
-  { valeur: "archivo", libelle: "Archivo — technique, condensée", texte: true },
-  { valeur: "young-serif", libelle: "Young Serif — empattements, chaleureuse", texte: false },
-  { valeur: "plex-sans", libelle: "IBM Plex Sans — sobre, lisible", texte: true },
-];
+// Les familles servies (lib/theme.ts), avec leur caractère.
+export const POLICES: { valeur: Police; libelle: string; texte: boolean }[] = POLICES_INFO.map((p) => ({
+  valeur: p.valeur, libelle: `${p.nom} — ${p.caractere}`, texte: p.texte,
+}));
 
 export const POLICES_TITRES = POLICES;
 export const POLICES_TEXTE = POLICES.filter((p) => p.texte);

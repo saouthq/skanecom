@@ -31,6 +31,8 @@ export function Apparitions() {
 
   useEffect(() => {
     if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // La boutique a coupé les animations (écran « Apparence »).
+    if (document.documentElement.dataset.animations === "non") return;
     const racine = document.documentElement;
     const hauteur = window.innerHeight;
 

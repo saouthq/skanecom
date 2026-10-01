@@ -8,7 +8,7 @@
 /* ---- La page ---- */
 .sav-page { padding-block: clamp(1.5rem, 4vw, 3.25rem) clamp(3rem, 7vw, 6rem); }
 .sav-tete { display: grid; gap: .625rem; max-inline-size: 46rem; margin-block-end: clamp(1.5rem, 4vw, 2.75rem); }
-.sav-tete h1 { font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.02; }
+.sav-tete h1 { font-size: calc(clamp(2.25rem, 5vw, 3.5rem) * var(--echelle-titres, 1)); line-height: 1.02; }
 .sav-chapo { color: var(--theme-encre-doux); font-size: clamp(1rem, 1.6vw, 1.125rem); line-height: 1.55; }
 .sav-revendeur {
   display: inline-flex; align-items: center; gap: .5rem; justify-self: start; margin: 0;

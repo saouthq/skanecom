@@ -1,0 +1,109 @@
+/* ============================================================================
+   L'APPARENCE — ce que l'écran « Apparence » du backoffice règle par-dessus
+   le gabarit (lib/theme.ts, REGLAGES_STYLE ; migration 64). Chaque réglage
+   est un attribut de <html> posé par le layout de la boutique
+   (`data-boutons="pilule"`…) ; les couleurs des boutons, les angles et le
+   format des photos sont des variables de la feuille du thème.
+
+   Chargée APRÈS les feuilles des gabarits : à spécificité égale, elle
+   l'emporte. Rien ici ne change une boutique qui garde les choix de son
+   gabarit (les valeurs par défaut reproduisent l'existant).
+   ========================================================================== */
+
+/* ---- Les boutons : leur forme -------------------------------------------- */
+
+/* Contour : le trait et le texte de la teinte (ou du texte quand la teinte se
+   lit mal sur le fond) ; plein au survol. */
+html[data-boutons="contour"] .btn-primaire {
+  background: transparent; color: var(--theme-bouton-trait);
+  border-color: currentColor; box-shadow: inset 0 0 0 .5px currentColor;
+}
+html[data-boutons="contour"][data-gabarit] .btn-primaire:hover {
+  background: var(--theme-bouton); color: var(--theme-sur-bouton); border-color: var(--theme-bouton); box-shadow: none;
+}
+
+/* Pilule : les boutons, les filtres et les choix de déclinaison s'arrondissent
+   entièrement, quels que soient les coins. */
+html[data-boutons="pilule"] :is(.btn, .btn-filtrer, .bouton-panier, .icone-btn, .panier-ensemble-ajout, .te-recherche),
+html[data-boutons="pilule"][data-gabarit] :is(.te-carte .btn, .valeur:not(.valeur-couleur)) {
+  border-radius: 999px;
+}
+html[data-boutons="pilule"] .btn { padding-inline: max(1.25rem, 1em); }
+
+/* ---- Les cartes des produits --------------------------------------------- */
+
+/* La photo d'une carte suit les coins (un peu moins arrondie que la carte). */
+html[data-gabarit] :is(.ed-carte, .te-carte) .cadre-image { border-radius: var(--theme-radius-carte); }
+
+html[data-cartes="cadre"] .ed-carte,
+html[data-cartes="ombre"] .ed-carte {
+  padding: .625rem .625rem 1rem; background: var(--theme-surface); border-radius: var(--theme-radius-carte);
+  transition: box-shadow .3s var(--theme-courbe), border-color .3s var(--theme-courbe), transform .3s var(--theme-courbe);
+}
+html[data-cartes="cadre"] .ed-carte { box-shadow: inset 0 0 0 1px var(--theme-filet); }
+html[data-cartes="cadre"] .ed-carte:hover { box-shadow: inset 0 0 0 1px var(--theme-filet-fort); }
+html[data-cartes="ombre"] .ed-carte { box-shadow: var(--theme-shadow-carte); }
+html[data-cartes="ombre"] .ed-carte:hover { box-shadow: var(--theme-shadow-releve); transform: translateY(-2px); }
+html:is([data-cartes="cadre"], [data-cartes="ombre"]) .ed-carte .cadre-image {
+  border-radius: calc(var(--theme-radius-carte) * .7);
+}
+html:is([data-cartes="cadre"], [data-cartes="ombre"]) .ed-carte-corps { padding-inline: .375rem; }
+
+/* Gabarit technique : la carte a d'office son cadre. */
+html[data-cartes="nues"] .te-carte { border-color: transparent; background: transparent; box-shadow: none; }
+html[data-cartes="nues"] .te-carte:hover { border-color: transparent; box-shadow: none; }
+html[data-cartes="ombre"] .te-carte { border-color: transparent; box-shadow: var(--theme-shadow-carte); }
+html[data-cartes="ombre"] .te-carte:hover { border-color: transparent; box-shadow: var(--theme-shadow-releve); }
+
+/* ---- Les titres ----------------------------------------------------------- */
+
+html[data-titres="sobre"] { --echelle-titres: .84; }
+html[data-titres="immense"] { --echelle-titres: 1.18; }
+
+/* L'écriture des titres. Chaque gabarit a la sienne (bas de casse pour
+   l'éditorial, capitales pour les grands titres du technique) : la règle ne
+   joue que quand la boutique choisit l'autre. En capitales, un léger
+   interlettrage, jamais l'approche serrée des grands titres en bas de casse. */
+html[data-gabarit="editorial"][data-casse="majuscules"] :is(h1, h2),
+html[data-gabarit="editorial"][data-casse="majuscules"] .marque-texte {
+  text-transform: uppercase; letter-spacing: .015em;
+}
+html[data-gabarit="technique"][data-casse="normale"] :is(.te-banniere h1, .te-section-tete h2, .te-bandeau h2, .te-entete-liste h1, .te-fiche-details h2, .te-logo .marque-texte, .te-pied .marque-texte, .te-tuile-fin .tuile-fin-titre, .tiroir-titre) {
+  text-transform: none;
+}
+
+/* ---- La densité ----------------------------------------------------------- */
+
+html[data-densite="serree"] { --echelle-espace: .68; }
+html[data-densite="aeree"] { --echelle-espace: 1.32; }
+
+/* ---- Le mode sombre ------------------------------------------------------- */
+
+/* Sur une photo, le texte reste clair et le bouton blanc, quel que soit le
+   mode : l'ouverture et l'en-tête transparent posé dessus gardent les
+   valeurs du mode clair (le voile de l'ouverture assure le contraste). */
+html[data-mode="sombre"] .ed-ouverture { --theme-surface: #FFFFFF; --theme-encre: #141414; }
+html[data-mode="sombre"] .ed-entete[data-transparent]:not(:hover):not(:focus-within) { --theme-surface: #FFFFFF; }
+
+/* Les photos détourées se posent sur leur fond par « assombrir » : sur un fond
+   foncé, l'objet s'y perdrait. Elles gardent un plateau clair. */
+html[data-mode="sombre"] .cadre-image.detoure { background: color-mix(in srgb, var(--theme-encre) 92%, var(--theme-fond)); }
+
+/* ---- Les animations ------------------------------------------------------- */
+
+/* Coupées : rien n'apparaît au défilement (components/Apparitions.tsx ne
+   s'arme pas), les survols restent. */
+html[data-animations="non"] { --theme-courbe: linear; }
+html[data-animations="non"] .ed-carte:hover .photo-principale { transform: none; }
+
+/* ---- L'aperçu d'un brouillon (ouvert hors du backoffice) ------------------ */
+
+.bandeau-apercu {
+  position: sticky; inset-block-start: 0; z-index: 60; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: .25rem 1rem; margin: 0; padding: .625rem 1rem; background: #1F1B16; color: #FFFFFF;
+  font-family: var(--theme-font-texte); font-size: .8125rem; line-height: 1.4; text-align: center;
+}
+.bandeau-apercu a { color: #FFFFFF; font-weight: 600; text-decoration: underline; text-underline-offset: .2em; }
+.bandeau-apercu a:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
+/* Dans le cadre du backoffice, l'éditeur le dit déjà. */
+html[data-dans-cadre] .bandeau-apercu { display: none; }

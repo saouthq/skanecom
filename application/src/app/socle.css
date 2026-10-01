@@ -13,7 +13,7 @@
   margin-inline: auto;
   padding-inline: var(--theme-marge);
 }
-.section { padding-block: clamp(3rem, 7vw, 6.5rem); }
+.section { padding-block: calc(clamp(3rem, 7vw, 6.5rem) * var(--echelle-espace, 1)); }
 
 /* Repère du haut de page pour le routeur (components/Gabarit.tsx). */
 .haut-de-page { position: absolute; inset-block-start: 0; inset-inline-start: 0; inline-size: 1px; block-size: 1px; pointer-events: none; }
@@ -53,8 +53,8 @@
   cursor: pointer; text-align: center; white-space: nowrap;
   transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe), border-color .2s var(--theme-courbe), opacity .2s;
 }
-.btn-primaire { background: var(--theme-encre); color: var(--theme-fond); }
-.btn-primaire:hover { background: color-mix(in srgb, var(--theme-encre) 86%, var(--theme-fond)); }
+.btn-primaire { background: var(--theme-bouton); color: var(--theme-sur-bouton); }
+.btn-primaire:hover { background: color-mix(in srgb, var(--theme-bouton) 86%, var(--theme-sur-bouton)); }
 .btn-second { background: transparent; color: var(--theme-encre); border-color: var(--theme-encre); }
 .btn-second:hover { background: var(--theme-encre); color: var(--theme-fond); }
 .btn-clair { background: var(--theme-surface); color: var(--theme-encre); }
@@ -519,7 +519,7 @@ html[data-gabarit=technique] .panier-ensemble-photo { aspect-ratio: 1; backgroun
 @media (hover: hover) { .panier-ensemble-ajout:not([aria-disabled]):hover { background: var(--theme-encre); color: var(--theme-fond); } }
 .panier-ensemble-ajout[aria-disabled] { border-color: transparent; color: var(--theme-succes); cursor: default; padding-inline: .25rem; }
 @media (pointer: coarse) { .panier-ensemble-ajout { min-block-size: 44px; } }
-html[data-gabarit=editorial] .panier-ensemble-ajout { border-radius: 0; letter-spacing: .02em; }
+html[data-gabarit=editorial] .panier-ensemble-ajout { border-radius: var(--theme-radius-doux); letter-spacing: .02em; }
 html[data-gabarit=technique] .panier-ensemble-ajout:not([aria-disabled]) {
   border-color: var(--theme-accent); background: var(--theme-accent); color: var(--theme-encre);
   border-radius: var(--theme-radius-doux); font-weight: 700;

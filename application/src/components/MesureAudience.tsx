@@ -18,6 +18,8 @@ import { PANIER_AJOUT } from "@/lib/panier-contrat";
 
 function suivi(): boolean {
   const n = navigator as Navigator & { globalPrivacyControl?: boolean };
+  // Dans un cadre (l'aperçu de l'écran « Apparence ») : l'équipe, pas un visiteur.
+  if (window.self !== window.top) return false;
   return !(n.doNotTrack === "1" || n.globalPrivacyControl === true);
 }
 

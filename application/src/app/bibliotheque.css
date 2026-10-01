@@ -14,7 +14,7 @@
 .bi-avis-tete > .te-section-tete { margin-block-end: 0; flex: 1 1 18rem; }
 .bi-avis-note { display: flex; align-items: center; gap: .875rem; margin: 0; }
 .bi-avis-note > b {
-  font-family: var(--theme-font-display); font-weight: 400; font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-family: var(--theme-font-display); font-weight: 400; font-size: calc(clamp(2.5rem, 5vw, 3.5rem) * var(--echelle-titres, 1));
   line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
 }
 .bi-avis-note > span { display: grid; gap: .3125rem; }

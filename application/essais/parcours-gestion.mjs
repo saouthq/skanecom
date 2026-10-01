@@ -20,6 +20,10 @@ import { creeTesteur } from "./testeur.mjs";
       au catalogue, le stock mais pas les fiches ni les photos ; une commande
       à retirer au magasin, prête puis retirée ; les réglages en lecture
       seule.
+   6. La gérante de Dar Alia règle l'apparence de sa vitrine : la vraie
+      vitrine dans le cadre suit chaque geste (souris, clavier), le brouillon
+      s'enregistre seul, défaire et refaire, une autre structure, le lien
+      d'aperçu ouvert hors du backoffice, publier ; puis au téléphone.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -38,6 +42,7 @@ const attendue = (url) => url.includes("/gestion/maison-selma");
 await sansDoubleAuthentification("gerant@maymar.test");
 await sansDoubleAuthentification("gerant@quincaillerie.test");
 await sansDoubleAuthentification("gerant@selma.test");
+await sansDoubleAuthentification("gerant@dar-alia.test");
 const navigateur = await t.navigateur();
 
 /* TOTP (RFC 6238), le même calcul que parcours-console.mjs. */
@@ -1921,6 +1926,137 @@ console.log("\n== 5. Le préparateur d'une autre boutique ==");
     } else {
       verifie((await page.locator(".vide").innerText()).includes("Personne"), "aucun client : la liste le dit");
     }
+  });
+  await ctx.close();
+}
+
+/* ------------------------------------------------------------------ */
+console.log("\n== 6. L'apparence de la vitrine (Dar Alia) ==");
+{
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "apparence");
+  const V = t.adresse("maison.localhost");
+  const cadre = () => page.frames().find((f) => f.url().startsWith(V));
+  const html = async (nom) => (await cadre()?.evaluate((n) => document.documentElement.getAttribute(n), nom).catch(() => null)) ?? null;
+  const titre = async () => (await cadre()?.evaluate(() => getComputedStyle(document.querySelector("h1, h2")).fontFamily).catch(() => "")) ?? "";
+  const attend = async (fn, ms = 6000) => { const fin = Date.now() + ms; while (Date.now() < fin) { if (await fn()) return true; await pause(120); } return false; };
+  const statut = () => page.locator(".ap-statut").innerText().catch(() => "");
+
+  await etape("connexion, double authentification", async () => {
+    await connexion(page, "gerant@dar-alia.test");
+    await page.waitForURL(/double-authentification/, { timeout: 15000 });
+    const secret = (await page.locator("[data-secret-totp]").textContent()).trim();
+    await clic(page, page.locator("#code"));
+    await tape(page, totp(secret));
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/gestion\/dar-alia$/, { timeout: 15000 });
+    verifie(true, "la gérante de Dar Alia entre dans son backoffice");
+  });
+
+  await etape("l'écran Apparence : la vraie vitrine à côté", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "Apparence" }));
+    await page.waitForURL(/\/apparence$/);
+    await page.waitForLoadState("networkidle");
+    verifie(await attend(async () => (await html("data-gabarit")) === "editorial", 10000), "le cadre montre la vitrine de Dar Alia, telle que publiée");
+    verifie((await statut()).includes("version publiée"), "rien à publier encore : « C'est la version publiée »");
+    await capture(page, "apparence-ouverture");
+  });
+
+  await etape("les coins à la souris, les boutons au clavier", async () => {
+    await clic(page, page.locator(".ap-option", { hasText: "Arrondis" }));
+    verifie(await attend(async () => (await html("data-coins")) === "arrondis"), "« Arrondis » : la vitrine du cadre s'arrondit aussitôt, sans recharger");
+    const angle = await cadre().evaluate(() => getComputedStyle(document.querySelector(".ed-carte .cadre-image")).borderTopLeftRadius);
+    verifie(angle === "16px", `les photos des cartes aussi (${angle})`);
+    await page.locator("input[name='style.boutons'][value='pleins']").focus();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    verifie(await attend(async () => (await html("data-boutons")) === "pilule"), "les flèches du clavier parcourent les formes : « Pilule »");
+  });
+
+  await etape("une ambiance sombre, le brouillon s'enregistre seul", async () => {
+    await clic(page, page.locator(".ap-ambiance", { has: page.locator(".ap-ambiance-nom", { hasText: /^Nuit$/ }) }));
+    verifie(await attend(async () => (await html("data-mode")) === "sombre"), "« Nuit » : la vitrine passe en mode sombre");
+    const fond = await cadre().evaluate(() => getComputedStyle(document.body).backgroundColor);
+    verifie(fond === "rgb(18, 18, 18)", `son fond (${fond})`);
+    const surPhoto = await cadre().evaluate(() => getComputedStyle(document.querySelector(".ed-ouverture h1")).color);
+    verifie(surPhoto === "rgb(255, 255, 255)", `le titre posé sur la photo d'ouverture reste blanc (${surPhoto})`);
+    verifie((await page.locator(".ap-contrastes li[data-ok]").count()) === 3, "les trois contrastes se lisent (texte, texte secondaire, accent)");
+    verifie(await attend(async () => (await statut()).includes("Brouillon enregistré"), 8000), "le brouillon s'enregistre de lui-même, une seconde plus tard");
+    await capture(page, "apparence-nuit");
+  });
+
+  await etape("une police, défaite puis refaite", async () => {
+    await clic(page, page.locator(".ap-police", { hasText: "Bodoni Moda" }));
+    verifie(await attend(async () => (await titre()).includes("Bodoni")), "les titres de la vitrine en Bodoni Moda");
+    await page.keyboard.press("Control+z");
+    verifie(await attend(async () => !(await titre()).includes("Bodoni")), "Ctrl+Z : la police d'avant");
+    await page.keyboard.press("Control+Shift+z");
+    verifie(await attend(async () => (await titre()).includes("Bodoni")), "Ctrl+Maj+Z : Bodoni revient");
+    await pause(1200);
+    await capture(page, "apparence-bodoni");
+  });
+
+  await etape("une autre structure : le cadre rend le brouillon", async () => {
+    await clic(page, page.locator(".ap-option-large", { hasText: "Technique" }));
+    verifie(await attend(async () => (await html("data-gabarit")) === "technique", 15000), "« Technique » : le cadre se recharge sur l'aperçu du brouillon, d'autres composants");
+    await clic(page, page.locator(".ap-appareils button", { hasText: "Téléphone" }));
+    await pause(1500);
+    await capture(page, "apparence-technique-telephone");
+    await clic(page, page.locator(".ap-option-large", { hasText: "Éditoriale" }));
+    verifie(await attend(async () => (await html("data-gabarit")) === "editorial", 15000), "et revient à l'éditoriale");
+    await clic(page, page.locator(".ap-appareils button", { hasText: "Ordinateur" }));
+  });
+
+  await etape("le lien d'aperçu, hors du backoffice", async () => {
+    await attend(async () => (await statut()).includes("Brouillon enregistré"), 8000);
+    const lien = (await page.locator(".ap-lien code").innerText()).trim();
+    verifie(/\?apercu=[0-9a-f-]{36}\.\d+$/.test(lien), "« Sur votre téléphone » : le lien du brouillon");
+    const autre = await ctx.newPage();
+    await autre.goto(lien, { waitUntil: "networkidle" });
+    verifie(await autre.locator(".bandeau-apercu").isVisible(), "ouvert seul : le bandeau dit que c'est un aperçu");
+    verifie((await autre.evaluate(() => document.documentElement.dataset.mode)) === "sombre", "et la vitrine montre le brouillon (sombre)");
+    await capture(autre, "apparence-lien-apercu");
+    await clic(autre, autre.getByRole("link", { name: "Quitter l'aperçu" }));
+    await autre.waitForLoadState("networkidle");
+    verifie((await autre.evaluate(() => document.documentElement.dataset.mode)) === "clair" && !(await autre.locator(".bandeau-apercu").count()),
+      "« Quitter l'aperçu » : la version publiée, claire");
+    await autre.close();
+  });
+
+  await etape("publier", async () => {
+    await clic(page, page.getByRole("button", { name: "Publier" }));
+    verifie(await attend(async () => (await page.locator(".ap-retour").first().innerText().catch(() => "")).includes("publiée"), 10000), "« Apparence publiée » : la page le dit");
+    verifie((await statut()).includes("version publiée") && (await page.getByRole("button", { name: "Publier" }).isDisabled()), "plus rien à publier");
+    // Ce que la base sert désormais à la vitrine (l'accueil, lui, reste cinq minutes en cache).
+    const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/boutique_publique`, {
+      method: "POST",
+      headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", "content-type": "application/json" },
+      body: JSON.stringify({ p_slug: "dar-alia" }),
+    });
+    const style = (await r.json())?.theme?.style ?? {};
+    verifie(style.mode === "sombre" && style.boutons === "pilule" && style.coins === "arrondis", `publiée : la vitrine reçoit sombre, pilules, coins arrondis (${JSON.stringify(style)})`);
+    // Une page jamais gardée en cache (la recherche) la montre aussitôt.
+    const vitrine = await ctx.newPage();
+    await vitrine.goto(`${V}/recherche?q=lin`, { waitUntil: "networkidle" });
+    const a = await vitrine.evaluate(() => ({ ...document.documentElement.dataset }));
+    verifie(a.mode === "sombre" && a.boutons === "pilule" && a.coins === "arrondis", `la recherche de la vitrine, aussitôt : sombre, pilules, coins arrondis (${a.mode}, ${a.boutons}, ${a.coins})`);
+    await vitrine.close();
+  });
+
+  await etape("au téléphone : les réglages, puis l'aperçu", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload({ waitUntil: "networkidle" });
+    verifie(await page.locator(".ap-onglets").isVisible() && !(await page.locator(".ap-apercu").isVisible()), "au téléphone : deux onglets, les réglages d'abord");
+    await clic(page, page.locator(".ap-option", { hasText: "Ronds" }));
+    await capture(page, "apparence-tel-reglages");
+    await clic(page, page.locator(".ap-onglets button", { hasText: "Aperçu" }));
+    verifie(await attend(async () => (await html("data-coins")) === "ronds", 8000), "l'onglet Aperçu : la vitrine, en téléphone, coins ronds");
+    verifie((await page.locator(".ap-appareils button[aria-pressed='true']").innerText()).includes("Téléphone"), "l'aperçu se met d'office en téléphone");
+    await pause(1200);
+    await capture(page, "apparence-tel-apercu");
+    await clic(page, page.getByRole("button", { name: "Revenir à la version publiée" }));
+    verifie(await attend(async () => (await html("data-coins")) === "arrondis", 8000), "« Revenir à la version publiée » : l'essai abandonné");
   });
   await ctx.close();
 }

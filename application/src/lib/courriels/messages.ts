@@ -2,6 +2,8 @@ import type { Cadre } from "@/lib/boutique";
 import { numeroLisible } from "@/lib/legal";
 import { t } from "@/lib/i18n";
 import { urlFichier } from "@/lib/photos";
+import { definitionDe } from "@/lib/theme";
+import { plusLisible, versContraste } from "@/lib/couleur";
 import { rendre, type Courriel, type Marque } from "./modele";
 
 /* ============================================================================
@@ -35,8 +37,14 @@ function logoEnImage(cadre: Cadre): Marque["logo"] {
 
 /** La marque d'une boutique, lue dans son thème et ses réglages. */
 export function marqueDeBoutique(cadre: Cadre, site: string | null): Marque {
-  const c = cadre.theme.couleurs;
+  // Une boutique en mode sombre écrit des e-mails clairs (les messageries
+  // inversent mal un fond foncé) : la palette claire du gabarit, son accent
+  // ramené à une teinte qui se lit sur le blanc.
+  const sombre = cadre.theme.style.mode === "sombre";
+  const clair = definitionDe(cadre.theme.code).couleurs;
+  const c = sombre ? { ...clair, accent: versContraste(cadre.theme.couleurs.accent, clair.surface, 3) } : cadre.theme.couleurs;
   const technique = cadre.theme.code === "technique";
+  const enAccent = cadre.theme.style.teinte === "accent";
   const angle = Number.parseInt(cadre.theme.angles.carte, 10);
   const telephone = typeof cadre.reglages["contact.telephone"] === "string" ? String(cadre.reglages["contact.telephone"]) : "";
   const whatsapp = cadre.whatsapp ?? "";
@@ -54,10 +62,11 @@ export function marqueDeBoutique(cadre: Cadre, site: string | null): Marque {
     },
     // L'accent du gabarit technique se lit en fond (jaune, texte encre), jamais
     // en texte ; celui de l'éditorial, en retenue : le bouton est à l'encre.
-    bouton: technique ? { fond: c.accent, texte: c.encre } : { fond: c.encre, texte: c.surface },
+    // La teinte des boutons suit l'écran « Apparence » ; le texte, le plus lisible.
+    bouton: enAccent ? { fond: c.accent, texte: plusLisible(c.accent, [c.encre, c.surface]) } : { fond: c.encre, texte: c.surface },
     angle: Number.isFinite(angle) ? angle : 0,
     titres: technique ? "sans" : "serif",
-    capitales: technique,
+    capitales: cadre.theme.style.casse === "majuscules",
     contact: contact || null,
   };
 }

@@ -336,6 +336,31 @@ const TRACES = {
       <path d="m5.64 5.64 3.89 3.89M14.47 9.53l3.89-3.89M14.47 14.47l3.89 3.89M9.53 14.47l-3.89 3.89" />
     </>
   ),
+  // L'écran « Apparence » : l'aperçu sur ordinateur, sur téléphone ; défaire, refaire.
+  ecran: (
+    <>
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </>
+  ),
+  mobile: (
+    <>
+      <rect width="14" height="20" x="5" y="2" rx="2.5" />
+      <path d="M11 18h2" />
+    </>
+  ),
+  defaire: (
+    <>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </>
+  ),
+  refaire: (
+    <>
+      <path d="m15 14 5-5-5-5" />
+      <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+    </>
+  ),
 } as const;
 
 export type NomIcone = keyof typeof TRACES;
