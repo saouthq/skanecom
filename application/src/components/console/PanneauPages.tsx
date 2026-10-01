@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState, type RefObject } from "react";
 import { Icone } from "@/components/console/Icone";
 import { ZoneTexte } from "@/components/console/ZoneTexte";
 import { LIMITES, problemesPage, slugDe } from "@/lib/pages-forme";
@@ -28,7 +28,7 @@ const memes = (a: ContenuPage, b: ContenuPage) =>
   a.titre_fr === b.titre_fr && a.corps_fr === b.corps_fr && a.genre === b.genre && a.publie === b.publie && a.dans_pied === b.dans_pied;
 
 export function PanneauPages({
-  pages, modeles, office, ecrit, affichee, courante, ouvrir, ecrire, creer, ranger, retirer,
+  pages, modeles, office, ecrit, affichee, courante, ouvrir, ecrire, creer, ranger, retirer, videurRef, generation,
 }: {
   pages: PageEditeur[];
   modeles: ModelePage[];
@@ -47,6 +47,11 @@ export function PanneauPages({
   ranger: (ids: string[]) => Promise<string | null>;
   /** Retirer une page de la boutique — aussitôt : null, ou ce qui l'a empêché. */
   retirer: (page: PageEditeur) => Promise<string | null>;
+  /** Où la page ouverte confie de quoi envoyer tout de suite ce qui attend
+   *  encore (« Publier » l'appelle d'abord : la dernière frappe en est). */
+  videurRef: RefObject<(() => Promise<void>) | null>;
+  /** Change quand le brouillon est abandonné : l'écriture repart de la page en ligne. */
+  generation: number;
 }) {
   const [annonce, setAnnonce] = useState("");
   const [souci, setSouci] = useState<string | null>(null);
@@ -57,7 +62,7 @@ export function PanneauPages({
   }
   if (page) {
     return (
-      <Ecriture key={page.id} page={page} affichee={affichee} ecrit={ecrit} retour={() => ouvrir(null)} ecrire={ecrire}
+      <Ecriture key={`${page.id}-${generation}`} page={page} affichee={affichee} ecrit={ecrit} retour={() => ouvrir(null)} ecrire={ecrire} videurRef={videurRef}
         retirer={async () => {
           const r = await retirer(page);
           if (!r) { ouvrir(null); setAnnonce(`« ${(page.brouillon ?? page.en_ligne).titre_fr} » retirée de la boutique.`); }
@@ -170,13 +175,14 @@ export function PanneauPages({
 }
 
 /** L'écriture d'une page : chaque frappe part dans son brouillon, une seconde plus tard. */
-function Ecriture({ page, affichee, ecrit, retour, ecrire, retirer }: {
+function Ecriture({ page, affichee, ecrit, retour, ecrire, retirer, videurRef }: {
   page: PageEditeur;
   affichee: string | null;
   ecrit: boolean;
   retour: () => void;
   ecrire: (page: PageEditeur, contenu: ContenuPage | null) => Promise<Refus>;
   retirer: () => Promise<string | null>;
+  videurRef: RefObject<(() => Promise<void>) | null>;
 }) {
   const [aRetirer, setARetirer] = useState(false);
   const [retrait, setRetrait] = useState<{ envoi: boolean; souci: string | null }>({ envoi: false, souci: null });
@@ -203,6 +209,21 @@ function Ecriture({ page, affichee, ecrit, retour, ecrire, retirer }: {
     const minuterie = window.setTimeout(() => { void envoyer(); }, 900);
     return () => window.clearTimeout(minuterie);
   }, [c, envoye, envoi]);
+
+  // « Publier » d'abord envoie ce qui attend encore (la frappe d'il y a une
+  // demi-seconde) : sinon la page partirait sans elle.
+  const dernier = useRef({ c, envoye, aRevoir });
+  useEffect(() => { dernier.current = { c, envoye, aRevoir }; });
+  useEffect(() => {
+    videurRef.current = async () => {
+      const { c: part, envoye: deja, aRevoir: refuse } = dernier.current;
+      if (!ecrit || refuse || memes(part, deja)) return;
+      const r = await ecrire(page, memes(part, page.en_ligne) ? null : part);
+      if (r) setRefus(r);
+      else setEnvoye(part);
+    };
+    return () => { videurRef.current = null; };
+  }, [videurRef, ecrire, page, ecrit]);
 
   const erreur = (champ: "titre" | "corps") => (refus?.champ === champ ? refus.texte : problemes[champ]);
   const etat = envoi ? "Enregistrement…" : refus && !refus.champ ? refus.texte : memes(c, envoye) ? (page.brouillon || !memes(c, page.en_ligne) ? "Dans le brouillon : « Publier » la met en ligne." : "C'est la page en ligne.") : "Modifications…";

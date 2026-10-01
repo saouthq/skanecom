@@ -182,6 +182,8 @@ export function EditeurApparence({
   const [pagesEtat, setPagesEtat] = useState<PageEditeur[]>(pagesInitiales);
   const [pageCourante, setPageCourante] = useState<string | null>(pageOuverte);
   const pagesEnBrouillon = pagesEtat.some((p) => p.brouillon !== null);
+  const videurPages = useRef<(() => Promise<void>) | null>(null);
+  const [generationPages, setGenerationPages] = useState(0);
   // Les réglages de l'en-tête et du pied : ceux en vigueur, sous ce que le brouillon change.
   const [reglagesPublies, setReglagesPublies] = useState<ReglagesVitrine>(reglagesInitiaux);
   const reglages: ReglagesVitrine = { ...reglagesPublies, ...contenu.reglages };
@@ -656,7 +658,11 @@ export function EditeurApparence({
 
   /* --- Publier, abandonner. */
   const publier = async () => {
-    if (!ecrit || enVol.current) return;
+    if (!ecrit) return;
+    // La page en cours d'écriture envoie d'abord ce qui attend encore, puis on attend son tour.
+    await videurPages.current?.();
+    for (let i = 0; enVol.current && i < 50; i++) await new Promise((r) => window.setTimeout(r, 100));
+    if (enVol.current) return;
     if (cadreARevoir) {
       setPanneau("cadre");
       setRetour({ ok: false, texte: "Un réglage de l'en-tête ou du pied de page est à revoir (dit sous son champ) avant de publier." });
@@ -710,8 +716,10 @@ export function EditeurApparence({
       setBrouillon(null);
       setSauveA(null);
       setOuverte(null);
-      // Les brouillons des pages s'en vont avec (une page créée ici reste, hors ligne).
+      // Les brouillons des pages s'en vont avec (une page créée ici reste,
+      // hors ligne) ; la page ouverte repart de ce qui est en ligne.
       setPagesEtat((v) => v.map((x) => ({ ...x, brouillon: null })));
+      setGenerationPages((n) => n + 1);
       setComparer(false);
       setEtat({ genre: "repos" });
       setRetour({ ok: true, texte: oublie ? "Retour à la version publiée." : "Retour à la version publiée (⌘Z pour reprendre l'essai)." });
@@ -876,6 +884,8 @@ export function EditeurApparence({
               creer={creerPage}
               ranger={rangerPages}
               retirer={retirerPage}
+              videurRef={videurPages}
+              generation={generationPages}
             />
           </div>
 
