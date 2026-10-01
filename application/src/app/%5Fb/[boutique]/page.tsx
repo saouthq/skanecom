@@ -3,6 +3,7 @@ import { Gabarit } from "@/components/Gabarit";
 import { AccueilEditorial } from "@/components/AccueilEditorial";
 import { AccueilTechnique } from "@/components/AccueilTechnique";
 import { AccueilBento } from "@/components/AccueilBento";
+import { AccueilImmersif } from "@/components/AccueilImmersif";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { donneesAccueil } from "@/lib/accueil";
 import { texte } from "@/lib/theme";
@@ -47,6 +48,8 @@ export default async function Accueil({ params }: Params) {
         </div>
       ) : cadre.theme.structure === "bento" ? (
         <AccueilBento cadre={cadre} donnees={donnees} />
+      ) : cadre.theme.structure === "immersif" ? (
+        <AccueilImmersif cadre={cadre} donnees={donnees} />
       ) : (
         <AccueilEditorial cadre={cadre} donnees={donnees} />
       )}

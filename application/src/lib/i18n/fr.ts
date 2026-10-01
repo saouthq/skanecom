@@ -124,6 +124,18 @@ export const fr = {
     bentoCodTexte: "partout en Tunisie",
     bentoAvisTotal: (n: number) => (n > 1 ? `${n} avis vérifiés` : "1 avis vérifié"),
     bentoRayonsTitre: "Les rayons",
+    // La structure immersive (et toutes les autres : lookbook, pièce de la saison)
+    pieceEtiquette: "La pièce de la saison",
+    voirLaFiche: "Voir la fiche complète",
+    lookbookTitre: "Le lookbook",
+    lookbookAide: "Touchez un point de la photo : la pièce portée s'ouvre.",
+    lookbookPoint: (nom: string) => `Voir la pièce : ${nom}`,
+    lookbookVoir: "Voir la pièce",
+    lookbookFermer: "Fermer",
+    lookbookPieces: "Les pièces du look",
+    railPrecedent: "Précédent",
+    railSuivant: "Suivant",
+    railPosition: (n: number, total: number) => `${String(n).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
   },
 
   catalogue: {

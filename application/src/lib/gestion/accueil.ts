@@ -23,7 +23,14 @@ export type SectionBrute = {
   alignement?: "debut" | "fin";
   tri?: "selection" | "nouveautes";
   page?: string;
+  /** Le lookbook : ses points sur la photo (en %), vers des pièces. */
+  points?: { x: number; y: number; produit: string }[];
+  /** La pièce de la saison : son produit. */
+  produit?: string;
 };
+
+/** Une pièce publiée, à pointer sur le lookbook ou à mettre en avant. */
+export type PieceCatalogue = { slug: string; nom: string; image: string | null };
 
 export type AccueilGestion = {
   code: CodeTheme;
@@ -38,13 +45,17 @@ export type AccueilGestion = {
   avis: { actif: boolean; montrables: number };
   marques: number;
   produits: number;
+  catalogue: PieceCatalogue[];
 };
+
+/** Six points au plus sur un lookbook (la base tient la même règle, migration 69). */
+export const MAX_POINTS = 6;
 
 export const MAX_SECTIONS = 12;
 
 /** Les photos que le backoffice téléverse (règles de la console : images-marque). */
-export type EmplacementAccueil = "ouverture" | "ouverture_portrait" | "recit";
-export const EMPLACEMENTS_ACCUEIL: EmplacementAccueil[] = ["ouverture", "ouverture_portrait", "recit"];
+export type EmplacementAccueil = "ouverture" | "ouverture_portrait" | "recit" | "lookbook";
+export const EMPLACEMENTS_ACCUEIL: EmplacementAccueil[] = ["ouverture", "ouverture_portrait", "recit", "lookbook"];
 
 /** Le chemin d'une photo déposée par le backoffice — les seules qu'il
  *  retire du dépôt quand l'accueil ne les emploie plus (jamais une photo de
@@ -118,10 +129,21 @@ export const BIBLIOTHEQUE: Record<TypeSection, Entree> = {
     unique: true,
     textes: [ETIQUETTE, { cle: "titre", libelle: "Titre" }],
   },
+  lookbook: {
+    nom: "Lookbook",
+    resume: "La photo d'un look, et sur elle des points vers les pièces portées : un toucher ouvre la pièce.",
+    textes: [ETIQUETTE, { cle: "titre", libelle: "Titre" }],
+  },
+  piece: {
+    nom: "La pièce de la saison",
+    resume: "Un produit en grand, achetable depuis l'accueil : ses photos, votre texte, ses tailles.",
+    unique: true,
+    textes: [ETIQUETTE, { cle: "titre", libelle: "Titre", aide: "Vide : le nom du produit." }, { cle: "texte", libelle: "Texte", long: true, aide: "Vide : la description du produit." }],
+  },
 };
 
 /** L'ordre de la bibliothèque. */
-export const TYPES: TypeSection[] = ["hero", "selection", "rayons", "editorial", "avis", "questions", "marques", "engagements", "texte"];
+export const TYPES: TypeSection[] = ["hero", "piece", "selection", "rayons", "editorial", "lookbook", "avis", "questions", "marques", "engagements", "texte"];
 
 /** Les titres que la vitrine montre quand la section n'a pas le sien
  *  (selon la structure : le Bento a ses rayons, sur les textes éditoriaux). */
@@ -133,6 +155,7 @@ export function titreParDefaut(type: TypeSection, code: Structure, tri?: string)
     case "avis": return "Ce qu'en disent nos clients";
     case "questions": return "Vos questions";
     case "marques": return "Les marques";
+    case "lookbook": return "Le lookbook";
     case "engagements": return code === "technique" ? "Commander, simplement" : "Nos engagements";
     default: return "";
   }
@@ -144,6 +167,7 @@ export function nouvelleSection(type: TypeSection, cle: string): SectionBrute {
     case "selection": return { cle, type, textes: {}, nombre: 8 };
     case "avis": return { cle, type, textes: {}, nombre: 6 };
     case "questions": return { cle, type, textes: {}, nombre: 5 };
+    case "lookbook": return { cle, type, textes: {}, points: [] };
     default: return { cle, type, textes: {} };
   }
 }
@@ -199,6 +223,20 @@ export function versBase(sections: SectionBrute[]): Record<string, unknown>[] | 
       if (s.type !== "questions" || !SLUG.test(s.page) || s.page.length > 60) return null;
       x.page = s.page;
     }
+    if (s.points !== undefined) {
+      if (s.type !== "lookbook" || !Array.isArray(s.points) || s.points.length > MAX_POINTS) return null;
+      const points = [];
+      for (const p of s.points) {
+        if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y) || p.x < 0 || p.x > 100 || p.y < 0 || p.y > 100 || !SLUG.test(p.produit)) return null;
+        // Au dixième de pour cent : assez pour poser un point, sans bruit.
+        points.push({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10, produit: p.produit });
+      }
+      if (points.length) x.points = points;
+    }
+    if (s.produit !== undefined && s.produit !== "") {
+      if (s.type !== "piece" || !SLUG.test(s.produit)) return null;
+      x.produit = s.produit;
+    }
     sortie.push(x);
   }
   return sortie;
@@ -217,7 +255,7 @@ export function problemesAccueil(sections: SectionBrute[]): { general?: string; 
 }
 
 /** Pourquoi la vitrine ne montrera PAS une section (rien à y mettre), ou null. */
-export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" | "rayons" | "pages" | "avis" | "marques" | "produits">): string | null {
+export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" | "rayons" | "pages" | "avis" | "marques" | "produits" | "catalogue">): string | null {
   // La vitrine ne montre que les rayons qui ont des pièces.
   const garnis = a.rayons.filter((r) => !r.parent && r.produits > 0).length;
   switch (s.type) {
@@ -237,6 +275,12 @@ export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" |
     case "editorial":
     case "texte":
       return !Object.entries(s.textes ?? {}).some(([k, v]) => (k.startsWith("titre_") || k.startsWith("texte_")) && v.trim()) ? "Masquée tant qu'elle n'a ni titre ni texte." : null;
+    case "lookbook":
+      if (!s.image) return "Masquée tant qu'elle n'a pas de photo.";
+      return (s.points ?? []).some((p) => a.catalogue.some((c) => c.slug === p.produit)) ? null : "La photo paraît seule : posez un point sur une pièce portée.";
+    case "piece":
+      if (!s.produit) return "Masquée tant qu'aucune pièce n'est choisie.";
+      return a.catalogue.some((c) => c.slug === s.produit) ? null : "Masquée : cette pièce n'est plus publiée.";
     case "selection": {
       if (a.produits === 0) return "Aucun produit publié : la vitrine dit « Le catalogue arrive » (une fois).";
       const rayon = s.rayon ? a.rayons.find((r) => r.slug === s.rayon) : null;

@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icone } from "@/components/console/Icone";
 import {
-  BIBLIOTHEQUE, LONGUEUR_TEXTE, MAX_SECTIONS, TYPES,
+  BIBLIOTHEQUE, LONGUEUR_TEXTE, MAX_POINTS, MAX_SECTIONS, TYPES,
   nouvelleSection, problemesAccueil, sectionMasquee, titreParDefaut,
-  type AccueilGestion, type EmplacementAccueil, type SectionBrute,
+  type AccueilGestion, type EmplacementAccueil, type PieceCatalogue, type SectionBrute,
 } from "@/lib/gestion/accueil";
 import { REGLES } from "@/lib/console/images-marque";
 import { preparerPhoto } from "@/lib/console/photo-navigateur";
@@ -279,7 +279,7 @@ export function PanneauAccueil({
 }
 
 /** Le réglage d'une section en quelques mots (« Les nouveautés · Robes · 8 »). */
-function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "pages">): string {
+function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "pages" | "catalogue">): string {
   const rayon = (slug?: string) => a.rayons.find((r) => r.slug === slug)?.nom ?? slug;
   switch (s.type) {
     case "selection":
@@ -293,6 +293,12 @@ function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "page
     case "hero":
     case "editorial":
       return s.image ? "Avec sa photo" : "Sans photo";
+    case "lookbook": {
+      const n = (s.points ?? []).length;
+      return !s.image ? "Sans photo" : n ? `${n} point${n > 1 ? "s" : ""} sur la photo` : "Aucun point encore";
+    }
+    case "piece":
+      return a.catalogue.find((c) => c.slug === s.produit)?.nom ?? "";
     default:
       return "";
   }
@@ -302,7 +308,7 @@ function Reglages({
   s, accueil, structure, destinations, ecrit, changer, texte, photoAction,
 }: {
   s: SectionBrute;
-  accueil: Pick<AccueilGestion, "rayons" | "pages">;
+  accueil: Pick<AccueilGestion, "rayons" | "pages" | "catalogue">;
   structure: Structure;
   destinations: { valeur: string; libelle: string }[];
   ecrit: boolean;
@@ -417,8 +423,24 @@ function Reglages({
         </div>
       ) : null}
 
-      {s.type === "hero" || s.type === "editorial" ? (
+      {s.type === "piece" ? (
+        <div className="champ">
+          <label htmlFor={id("produit")}>La pièce</label>
+          <select id={id("produit")} value={s.produit ?? ""} onChange={(e) => changer(cle, { produit: e.currentTarget.value || undefined }, "produit")}>
+            <option value="">Choisir une pièce…</option>
+            {s.produit && !accueil.catalogue.some((c) => c.slug === s.produit) ? <option value={s.produit}>{s.produit} (plus publiée)</option> : null}
+            {accueil.catalogue.map((c) => <option key={c.slug} value={c.slug}>{c.nom}</option>)}
+          </select>
+          <p className="aide">Ses photos, ses déclinaisons et son prix viennent de sa fiche : on la met au panier sans quitter l&apos;accueil.</p>
+        </div>
+      ) : null}
+
+      {s.type === "hero" || s.type === "editorial" || s.type === "lookbook" ? (
         <Photos s={s} action={photoAction} ecrit={ecrit} changer={changer} texte={texte} id={id} />
+      ) : null}
+
+      {s.type === "lookbook" && s.image ? (
+        <PointsLookbook s={s} catalogue={accueil.catalogue} ecrit={ecrit} changer={changer} id={id} />
       ) : null}
     </fieldset>
   );
@@ -426,7 +448,7 @@ function Reglages({
 
 /** Le dessin de la section, en blocs : on la reconnaît d'un coup d'œil. */
 export function Miniature({ type, photo = null }: { type: TypeSection; photo?: string | null }) {
-  const n = { hero: 3, rayons: 3, selection: 4, editorial: 4, engagements: 4, texte: 3, avis: 3, questions: 4, marques: 6 }[type];
+  const n = { hero: 3, rayons: 3, selection: 4, editorial: 4, engagements: 4, texte: 3, avis: 3, questions: 4, marques: 6, lookbook: 3, piece: 3 }[type];
   // Sa photo, s'il en a une : en fond de l'ouverture, à la place de l'image du récit.
   const fond = photo ? { backgroundImage: `url("${photo}")` } : undefined;
   return (
@@ -453,7 +475,9 @@ function Photos({
 }) {
   const cle = s.cle ?? "";
   const ouverture = s.type === "hero";
-  const principal: EmplacementAccueil = ouverture ? "ouverture" : "recit";
+  const principal: EmplacementAccueil = ouverture ? "ouverture" : s.type === "lookbook" ? "lookbook" : "recit";
+  // Les points du lookbook sont posés sur une photo : elle changée ou retirée, ils partent avec elle.
+  const sansPoints = s.type === "lookbook" ? { points: [] } : {};
   const [etat, setEtat] = useState<{ e: EmplacementAccueil; texte: string; erreur?: boolean; enCours?: boolean } | null>(null);
 
   async function choisir(e: EmplacementAccueil, fichier: File | undefined) {
@@ -476,7 +500,7 @@ function Photos({
       else {
         const { image_alt_fr: _ancienne, ...textes } = s.textes ?? {};
         void _ancienne;
-        changer(cle, { image: { chemin: rep.chemin }, textes }, "photo");
+        changer(cle, { image: { chemin: rep.chemin }, textes, ...sansPoints }, "photo");
       }
       setEtat({ e, texte: e === "ouverture_portrait" ? "Cadrage posé dans le brouillon : « Publier » le met en ligne." : "Photo posée dans le brouillon : « Publier » la met en ligne." });
     } catch {
@@ -515,7 +539,7 @@ function Photos({
         <span className="ac-photo-gestes">
           {fichier(principal, s.image ? "Changer la photo" : "Choisir une photo")}
           {s.image ? (
-            <button type="button" className="btn btn-fantome btn-petit" onClick={() => { changer(cle, { image: undefined, alignement: undefined }, "photo"); setEtat(null); }}>
+            <button type="button" className="btn btn-fantome btn-petit" onClick={() => { changer(cle, { image: undefined, alignement: undefined, ...sansPoints }, "photo"); setEtat(null); }}>
               <Icone nom="croix" /> Retirer la photo
             </button>
           ) : null}
@@ -565,6 +589,121 @@ function Photos({
           </>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** Les points du lookbook : choisir la pièce, puis toucher la photo là où
+ *  elle est portée. Un point se glisse à la souris ou au doigt, se déplace
+ *  aux flèches du clavier (Maj : de cinq), se retire (Suppr). Chaque point
+ *  dit sa pièce, et sa pièce se change dans la liste. */
+function PointsLookbook({ s, catalogue, ecrit, changer, id }: {
+  s: SectionBrute;
+  catalogue: PieceCatalogue[];
+  ecrit: boolean;
+  changer: (cle: string, x: Partial<SectionBrute>, champ?: string) => void;
+  id: (champ: string) => string;
+}) {
+  const cle = s.cle ?? "";
+  const points = s.points ?? [];
+  const [piece, setPiece] = useState(catalogue[0]?.slug ?? "");
+  const [glisse, setGlisse] = useState<{ i: number; x: number; y: number } | null>(null);
+  const [annonce, setAnnonce] = useState("");
+  const scene = useRef<HTMLDivElement>(null);
+  const nom = (slug: string) => catalogue.find((c) => c.slug === slug)?.nom ?? `${slug} (plus publiée)`;
+  const borne = (v: number) => Math.round(Math.min(100, Math.max(0, v)) * 10) / 10;
+  const poser = (suivants: NonNullable<SectionBrute["points"]>, dit: string) => {
+    changer(cle, { points: suivants }, "points");
+    setAnnonce(dit);
+  };
+  const ici = (e: { clientX: number; clientY: number }) => {
+    const r = scene.current!.getBoundingClientRect();
+    return { x: borne(((e.clientX - r.left) / r.width) * 100), y: borne(((e.clientY - r.top) / r.height) * 100) };
+  };
+  const plein = points.length >= MAX_POINTS;
+  const viserPoint = (i: number) => requestAnimationFrame(() => scene.current?.querySelector<HTMLElement>(`[data-point="${i}"]`)?.focus());
+
+  function ajouter(x: number, y: number) {
+    if (!ecrit || plein || !piece) return;
+    poser([...points, { x, y, produit: piece }], `Point ${points.length + 1} posé : ${nom(piece)}.`);
+    viserPoint(points.length);
+  }
+
+  return (
+    <div className="pl" aria-describedby={id("points-aide")}>
+      <p className="sr-only" aria-live="polite">{annonce}</p>
+      <div className="pl-tete">
+        <b>Les points</b>
+        <p id={id("points-aide")} className="aide">
+          {plein ? `${MAX_POINTS} points au plus : retirez-en un pour en poser un autre.` : "Choisissez la pièce, puis touchez la photo là où elle est portée. Glissez un point pour l'ajuster (ou ses flèches, au clavier)."}
+        </p>
+      </div>
+      {!plein ? (
+        <div className="champ pl-piece">
+          <label htmlFor={id("piece-a-poser")}>Pièce à poser</label>
+          <select id={id("piece-a-poser")} value={piece} disabled={!ecrit} onChange={(e) => setPiece(e.currentTarget.value)}>
+            {catalogue.map((c) => <option key={c.slug} value={c.slug}>{c.nom}</option>)}
+          </select>
+        </div>
+      ) : null}
+      <div ref={scene} className="pl-scene" data-plein={plein ? "" : undefined}
+        onClick={(e) => { if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === "IMG") { const p = ici(e); ajouter(p.x, p.y); } }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={urlFichier(s.image!.chemin)} alt="" draggable={false} />
+        {points.map((p, i) => {
+          const vu = glisse?.i === i ? glisse : p;
+          return (
+            <button key={i} type="button" className="pl-point" data-point={i} style={{ left: `${vu.x}%`, top: `${vu.y}%` }} disabled={!ecrit}
+              aria-label={`Point ${i + 1} : ${nom(p.produit)}, à ${Math.round(p.x)} % de la largeur et ${Math.round(p.y)} % de la hauteur. Flèches pour le déplacer, Suppr pour le retirer.`}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => { if (!ecrit) return; e.currentTarget.setPointerCapture(e.pointerId); setGlisse({ i, x: p.x, y: p.y }); }}
+              onPointerMove={(e) => { if (glisse?.i === i) setGlisse({ i, ...ici(e) }); }}
+              onPointerUp={() => {
+                if (glisse?.i !== i) return;
+                const fin = glisse;
+                setGlisse(null);
+                if (fin.x !== p.x || fin.y !== p.y) poser(points.map((q, k) => (k === i ? { ...q, x: fin.x, y: fin.y } : q)), `Point ${i + 1} déplacé.`);
+              }}
+              onKeyDown={(e) => {
+                const pas = e.shiftKey ? 5 : 1;
+                const d = { ArrowLeft: [-pas, 0], ArrowRight: [pas, 0], ArrowUp: [0, -pas], ArrowDown: [0, pas] }[e.key];
+                if (d) {
+                  e.preventDefault();
+                  poser(points.map((q, k) => (k === i ? { ...q, x: borne(q.x + d[0]), y: borne(q.y + d[1]) } : q)), `Point ${i + 1} : ${Math.round(borne(p.x + d[0]))} %, ${Math.round(borne(p.y + d[1]))} %.`);
+                } else if (e.key === "Delete" || e.key === "Backspace") {
+                  e.preventDefault();
+                  poser(points.filter((_, k) => k !== i), `Point ${i + 1} retiré.`);
+                }
+              }}>
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+      {!plein && ecrit ? (
+        <button type="button" className="btn btn-fantome btn-petit pl-centre" disabled={!piece} onClick={() => ajouter(50, 50)}>
+          <Icone nom="plus" /> Poser un point au centre
+        </button>
+      ) : null}
+      {points.length ? (
+        <ol className="pl-liste" role="list">
+          {points.map((p, i) => (
+            <li key={i}>
+              <span className="pl-numero" aria-hidden="true">{i + 1}</span>
+              <label className="sr-only" htmlFor={id(`point-${i}`)}>Pièce du point {i + 1}</label>
+              <select id={id(`point-${i}`)} value={p.produit} disabled={!ecrit}
+                onChange={(e) => { const v = e.currentTarget.value; poser(points.map((q, k) => (k === i ? { ...q, produit: v } : q)), `Point ${i + 1} : ${nom(v)}.`); }}>
+                {!catalogue.some((c) => c.slug === p.produit) ? <option value={p.produit}>{nom(p.produit)}</option> : null}
+                {catalogue.map((c) => <option key={c.slug} value={c.slug}>{c.nom}</option>)}
+              </select>
+              <button type="button" className="btn-icone ac-retirer" disabled={!ecrit} aria-label={`Retirer le point ${i + 1} (${nom(p.produit)})`} title="Retirer"
+                onClick={() => poser(points.filter((_, k) => k !== i), `Point ${i + 1} retiré.`)}>
+                <Icone nom="corbeille" />
+              </button>
+            </li>
+          ))}
+        </ol>
+      ) : null}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { PhotoOuverture } from "./PhotoOuverture";
 import { TuileFin } from "./TuileFin";
 import { Etoiles } from "./Etoiles";
 import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliotheque";
+import { SectionLookbook, SectionPiece } from "./SectionsCommunes";
 import { Billets, Camion, Fleche, Retour, Telephone } from "./Icones";
 import { descendance, racinesGarnies, type Cadre } from "@/lib/boutique";
 import { prixDepuis, type Produit } from "@/lib/catalogue";
@@ -53,6 +54,10 @@ export function AccueilBento({ cadre, donnees }: Props) {
             return <Recit key={i} rang={i} section={s} cadre={cadre} />;
           case "engagements":
             return <Engagements key={i} rang={i} cadre={cadre} />;
+          case "lookbook":
+            return <SectionLookbook key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
+          case "piece":
+            return <SectionPiece key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
           case "texte": {
             const titre = texte(s.textes, "titre");
             const corps = texte(s.textes, "texte");

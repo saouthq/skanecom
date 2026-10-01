@@ -28,8 +28,8 @@ export const GABARITS: CodeTheme[] = ["editorial", "technique"];
    une structure bâtie sur l'un d'eux. Le Bento (l'accueil en mosaïque,
    l'en-tête flottant) reprend les composants éditoriaux : `code` reste la
    famille de composants, `structure` dit le choix. */
-export type Structure = CodeTheme | "bento";
-export const STRUCTURES: Structure[] = ["editorial", "bento", "technique"];
+export type Structure = CodeTheme | "bento" | "immersif";
+export const STRUCTURES: Structure[] = ["editorial", "bento", "immersif", "technique"];
 
 export const JETONS_COULEUR = [
   "fond", "surface", "surface_2", "filet", "filet_fort", "contour_champ",
@@ -101,7 +101,14 @@ export type Section =
   // que la boutique a déjà — ses avis, une page de questions, ses marques.
   | { type: "avis"; textes: TextesSection; nombre?: number }
   | { type: "questions"; textes: TextesSection; page?: string; nombre?: number }
-  | { type: "marques"; textes: TextesSection };
+  | { type: "marques"; textes: TextesSection }
+  // La structure immersive (migration 69), et toutes les autres : la photo
+  // d'un look et ses points vers les pièces portées ; la pièce de la saison.
+  | { type: "lookbook"; textes: TextesSection; image?: ImageSection; points: PointLookbook[] }
+  | { type: "piece"; textes: TextesSection; produit?: string };
+
+/** Un point du lookbook : sa place sur la photo (en %), la pièce qu'il montre. */
+export type PointLookbook = { x: number; y: number; produit: string };
 
 export type TypeSection = Section["type"];
 
@@ -275,6 +282,21 @@ function sectionsSures(valeur: unknown, defaut: Section[]): Section[] {
       case "marques":
         sections.push({ type: "marques", textes });
         break;
+      case "lookbook": {
+        const image = imageSure(s.image);
+        const points = (Array.isArray(s.points) ? s.points : []).flatMap((p) => {
+          const q = p as { x?: unknown; y?: unknown; produit?: unknown } | null;
+          const x = typeof q?.x === "number" ? q.x : NaN;
+          const y = typeof q?.y === "number" ? q.y : NaN;
+          return x >= 0 && x <= 100 && y >= 0 && y <= 100 && typeof q?.produit === "string" && SLUG.test(q.produit)
+            ? [{ x, y, produit: q.produit }] : [];
+        }).slice(0, 6);
+        sections.push({ type: "lookbook", textes, ...(image ? { image } : {}), points });
+        break;
+      }
+      case "piece":
+        sections.push({ type: "piece", textes, ...(typeof s.produit === "string" && SLUG.test(s.produit) ? { produit: s.produit } : {}) });
+        break;
       // « comment_ca_marche » : l'ancien nom des engagements (paiement à la
       // livraison, livraison, retours).
       case "comment_ca_marche":
@@ -319,7 +341,7 @@ export function gabaritDe(code: unknown): CodeTheme {
 
 /** La structure d'un code lu en base. */
 export function structureDe(code: unknown): Structure {
-  if (code === "bento") return "bento";
+  if (code === "bento" || code === "immersif") return code;
   return gabaritDe(code);
 }
 
@@ -332,6 +354,22 @@ const PROPRE_A: Partial<Record<Structure, { style: Partial<Style>; sections?: Se
       { type: "hero", textes: {} },
       { type: "rayons", textes: {} },
       { type: "selection", textes: {}, nombre: 8 },
+      { type: "editorial", textes: {} },
+      { type: "avis", textes: {}, nombre: 3 },
+      { type: "engagements", textes: {} },
+    ],
+  },
+  // L'immersif : la photo d'abord, des angles nets, des boutons au trait ;
+  // les sections qui n'ont rien à montrer (un lookbook sans photo, une pièce
+  // sans produit) ne s'affichent pas.
+  immersif: {
+    style: { coins: "droits", boutons: "contour", cartes: "nues", photos: "3-4", titres: "immense" },
+    sections: [
+      { type: "hero", textes: {} },
+      { type: "piece", textes: {} },
+      { type: "selection", textes: {}, nombre: 8 },
+      { type: "lookbook", textes: {}, points: [] },
+      { type: "rayons", textes: {} },
       { type: "editorial", textes: {} },
       { type: "avis", textes: {}, nombre: 3 },
       { type: "engagements", textes: {} },

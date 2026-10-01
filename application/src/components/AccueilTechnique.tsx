@@ -4,6 +4,7 @@ import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
 import { TuileFin } from "./TuileFin";
 import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliotheque";
+import { SectionLookbook, SectionPiece } from "./SectionsCommunes";
 import { Billets, Bulle, Camion, Fleche, Magasin, Retour } from "./Icones";
 import { descendance, type Cadre } from "@/lib/boutique";
 import type { Categorie, Produit } from "@/lib/catalogue";
@@ -43,6 +44,10 @@ export function AccueilTechnique({ cadre, donnees }: Props) {
             return <Services key={i} rang={i} cadre={cadre} />;
           case "texte":
             return <Texte key={i} rang={i} section={s} />;
+          case "lookbook":
+            return <SectionLookbook key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
+          case "piece":
+            return <SectionPiece key={i} rang={i} section={s} donnees={donnees} cadre={cadre} gabarit="technique" />;
           case "avis":
             return donnees.avis ? (
               <div key={i} className="te-section" data-section={i}>

@@ -94,7 +94,7 @@ export default async function Apparence({
       modeles={cadre ? modelesDePages(cadre) : []}
       office={pagesAutomatiques(cadre, slug)}
       affichee={hote}
-      infos={{ rayons: infos.rayons, pages: infos.pages, avis: infos.avis, marques: infos.marques, produits: infos.produits }}
+      infos={{ rayons: infos.rayons, pages: infos.pages, avis: infos.avis, marques: infos.marques, produits: infos.produits, catalogue: infos.catalogue ?? [] }}
       reglages={reglagesLus(a.reglages, true)}
       whatsapp={String((numero as { valeur?: unknown } | null)?.valeur ?? "").replace(/\D/g, "").length >= 8}
       version={a.version}

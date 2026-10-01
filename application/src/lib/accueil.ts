@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { listeProduits, type Produit } from "./catalogue";
+import { chargeProduit, listeProduits, type Produit } from "./catalogue";
 import { chargePage } from "./pages";
 import { questions as questionsDe } from "./texte-riche";
 import type { Cadre } from "./boutique";
@@ -38,7 +38,13 @@ export type DonneesAccueil = {
   avis: AvisAccueil | null;
   questions: Map<number, QuestionsAccueil>;
   marques: Marque[];
+  /** Les points de chaque lookbook, avec leur pièce (un produit retiré : son point se tait). */
+  lookbooks: Map<number, PointLook[]>;
+  /** La pièce de la saison de chaque section « piece » (publiée). */
+  pieces: Map<number, Produit>;
 };
+
+export type PointLook = { x: number; y: number; produit: Produit };
 
 /** Il faut deux citations au moins : une seule ferait une vitrine qui se
  *  vante, pas une boutique dont on parle. */
@@ -51,6 +57,14 @@ export async function donneesAccueil(cadre: Cadre): Promise<DonneesAccueil> {
   const questions = new Map<number, QuestionsAccueil>();
   let avis: AvisAccueil | null = null;
   let marques: Marque[] = [];
+  const lookbooks = new Map<number, PointLook[]>();
+  const pieces = new Map<number, Produit>();
+  // Chaque pièce citée (points, pièce de la saison) n'est lue qu'une fois.
+  const lues = new Map<string, Promise<Produit | null>>();
+  const piece = (slug: string) => {
+    if (!lues.has(slug)) lues.set(slug, chargeProduit(cadre.boutique.id, slug).catch(() => null));
+    return lues.get(slug)!;
+  };
 
   const nombreAvis = Math.max(0, ...sections.map((s) => (s.type === "avis" ? (s.nombre ?? 6) : 0)));
 
@@ -70,6 +84,18 @@ export async function donneesAccueil(cadre: Cadre): Promise<DonneesAccueil> {
         if (liste.length === 0) return;
         questions.set(i, { slug: page.slug, titre: page.titre_fr, total: liste.length, liste: liste.slice(0, s.nombre ?? 5) });
       }
+      if (s.type === "lookbook" && s.image && s.points.length) {
+        const points = await Promise.all(s.points.map(async (p) => {
+          const produit = await piece(p.produit);
+          return produit ? { x: p.x, y: p.y, produit } : null;
+        }));
+        const vivants = points.filter((p) => p !== null);
+        if (vivants.length) lookbooks.set(i, vivants);
+      }
+      if (s.type === "piece" && s.produit) {
+        const produit = await piece(s.produit);
+        if (produit && produit.variantes.length) pieces.set(i, produit);
+      }
     }),
     nombreAvis > 0
       ? supabase.rpc("avis_accueil", { p_boutique_id: cadre.boutique.id, p_limite: nombreAvis }).then(({ data, error }) => {
@@ -88,6 +114,8 @@ export async function donneesAccueil(cadre: Cadre): Promise<DonneesAccueil> {
     avis,
     questions,
     marques: marques.length >= MARQUES_MIN ? marques : [],
+    lookbooks,
+    pieces,
   };
 }
 

@@ -5,6 +5,7 @@ import { Photo } from "./Photo";
 import { PhotoOuverture } from "./PhotoOuverture";
 import { TuileFin } from "./TuileFin";
 import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliotheque";
+import { SectionLookbook, SectionPiece } from "./SectionsCommunes";
 import { Billets, Camion, Fleche, Retour, Telephone } from "./Icones";
 import { descendance, racinesGarnies, type Cadre } from "@/lib/boutique";
 import type { Produit } from "@/lib/catalogue";
@@ -49,6 +50,10 @@ export function AccueilEditorial({ cadre, donnees }: Props) {
             return <Engagements key={i} rang={i} section={s} cadre={cadre} />;
           case "texte":
             return <Texte key={i} rang={i} section={s} />;
+          case "lookbook":
+            return <SectionLookbook key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
+          case "piece":
+            return <SectionPiece key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
           case "avis":
             return donnees.avis ? (
               <div key={i} className="enveloppe ed-section" data-section={i}>
@@ -286,7 +291,7 @@ function Recit({ rang, section, cadre, inverse }: { rang: number; section: Extra
   );
 }
 
-function Engagements({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "engagements" }>; cadre: Cadre }) {
+export function Engagements({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "engagements" }>; cadre: Cadre }) {
   const { livraison } = cadre;
   const faits = [
     livraison.cod ? { icone: <Billets />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,

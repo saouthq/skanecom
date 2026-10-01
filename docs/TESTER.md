@@ -4,7 +4,7 @@ Cinq boutiques de démonstration tournent avec la même application, chacune ave
 
 | Adresse | Boutique | Gabarit |
 |---|---|---|
-| http://mode.localhost:4200 | Maison Selma — prêt-à-porter | éditorial |
+| http://mode.localhost:4200 | Maison Selma — prêt-à-porter | Immersif |
 | http://maymar.localhost:4200 | Maymar — bagages | éditorial |
 | http://quincaillerie.localhost:4200 | Quincaillerie du Sud — outillage | technique |
 | http://beaute.localhost:4200 | Yasmine Beauté — soins et parfums | éditorial |
@@ -56,8 +56,11 @@ outils/essayer.sh
 
 ## 3. Quoi essayer
 
-**Maison Selma** (éditorial)
-- L'en-tête est posé sur la photo d'ouverture ; il redevient opaque quand on descend.
+**Maison Selma** (Immersif, sur les composants éditoriaux)
+- L'ouverture prend tout l'écran, l'en-tête posé sur la photo ; il redevient opaque quand on descend.
+- **La pièce de la saison**, juste après : la robe à bretelles en grand, choisir M, **Ajouter au panier** sans quitter l'accueil (au téléphone, la barre d'achat colle en bas une fois le bloc passé).
+- Les nouveautés et les collections glissent : au doigt, ou par les flèches (le compteur suit).
+- **Le lookbook** : la carte du combishort est ouverte sur la photo ; Échap la ferme, Entrée sur le point la rouvre ; la liste à côté mène à la fiche. Dans l'éditeur (`gerant@selma.test`, Vitrine → Accueil → Lookbook), cliquer la photo pose un point, le glisser ou ses flèches le déplacent (Maj : 5 % d'un coup), chacun choisit sa pièce.
 - Survoler une carte : la deuxième photo du produit apparaît (robe à bretelles, pull mérinos, polo).
 - Catalogue → **Filtrer** : cocher une taille ; le tiroir reste ouvert pour cocher la suivante ; « Voir les N résultats » le referme. Retirer un filtre par sa puce. Trier par prix.
 - Fiche produit : choisir une taille, **Ajouter au panier** → le panier s'ouvre, avec la vignette et la jauge « plus que … pour la livraison offerte ».

@@ -117,3 +117,6 @@ html[data-gabarit="technique"] .legal-num { color: var(--theme-encre-doux); }
 }
 .pied-legal-bouton:hover { text-decoration: underline; text-underline-offset: .2em; }
 .pied-legal-bouton:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+/* Dans le cadre de l'éditeur de la vitrine, le bandeau ne cache pas ce qu'on règle
+   (l'aperçu ne mesure rien, il ne pose aucun témoin). */
+html[data-dans-cadre] .pub-consentement { display: none; }

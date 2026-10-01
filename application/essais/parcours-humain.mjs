@@ -28,9 +28,14 @@ const espion = (page, nom) => t.espion(page, nom, (url) => /\/produit\/(perceuse
 const navigateur = await t.navigateur();
 const compte = (page) => page.locator("header .bouton-panier-compte").innerText().catch(() => "");
 const tiroirOuvert = (page, classe) => page.locator(`.tiroir.${classe}[role=dialog]`).isVisible().catch(() => false);
+// Attend qu'une condition se vérifie (l'écran répond après un geste).
+const attend = async (condition, ms) => {
+  for (const fin = Date.now() + ms; Date.now() < fin; await pause(120)) if (await condition().catch(() => false)) return true;
+  return false;
+};
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
+console.log("\n== 1. Maison Selma (structure immersive), à la souris ==");
 {
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
@@ -52,6 +57,49 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
     await capture(page, "selma-accueil-complete", true);
     const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     verifie(!deborde, "pas de défilement horizontal");
+  });
+
+  await etape("l'Immersif : la pièce de la saison, les rangées, le lookbook", async () => {
+    // Selma est en Immersif (supabase/seed-immersif.sql). Un navigateur à
+    // part : la robe mise au panier ici ne doit pas peser sur la suite.
+    const ci = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+    const p = await ci.newPage();
+    espion(p, "selma-immersif");
+    await p.goto(S + "/", { waitUntil: "networkidle" });
+    verifie(await p.evaluate(() => document.documentElement.dataset.structure) === "immersif", "Selma est en structure immersive");
+    const hauteur = await p.locator(".im-ouverture").evaluate((e) => e.getBoundingClientRect().height / innerHeight);
+    verifie(hauteur > 0.9, `l'ouverture prend l'écran (${Math.round(hauteur * 100)} %)`);
+    // La pièce de la saison : le bloc d'achat de la fiche, sur l'accueil.
+    const piece = p.locator(".ps");
+    await piece.scrollIntoViewIfNeeded();
+    verifie((await piece.locator("h2").innerText()).includes("Robe à bretelles en lin"), "la pièce de la saison : la robe à bretelles, son nom pour titre");
+    await clic(p, piece.locator(".valeur", { hasText: /^M$/ }).first());
+    await clic(p, piece.getByRole("button", { name: "Ajouter au panier" }).first());
+    verifie(await attend(async () => (await compte(p)).trim() === "1", 6000), "« Ajouter au panier » depuis l'accueil : le panier compte la pièce");
+    await capture(p, "selma-immersif-piece");
+    await p.keyboard.press("Escape");
+    // La sélection glisse : la flèche avance le compteur.
+    const rail = p.locator(".im-section .im-rail").filter({ hasText: "Nouveautés" });
+    await rail.scrollIntoViewIfNeeded();
+    const avant = await rail.locator(".im-rail-position").innerText();
+    await clic(p, rail.getByRole("button", { name: "Suivant" }));
+    verifie(await attend(async () => (await rail.locator(".im-rail-position").innerText()) !== avant, 4000),
+      `la flèche fait glisser la rangée (${avant} → ${await rail.locator(".im-rail-position").innerText()})`);
+    verifie(await rail.getByRole("button", { name: "Précédent" }).isEnabled(), "et « Précédent » revient en arrière");
+    // Le lookbook : un point, sa pièce ; Échap la ferme ; la liste mène à la fiche.
+    const look = p.locator(".lk");
+    await look.scrollIntoViewIfNeeded();
+    const point = look.getByRole("button", { name: /Combishort/ });
+    verifie(await point.getAttribute("aria-expanded") === "true" && await look.locator(".lk-carte").isVisible(), "le lookbook s'ouvre sur la carte de sa pièce");
+    await capture(p, "selma-immersif-lookbook");
+    await point.focus();
+    await p.keyboard.press("Escape");
+    verifie(await look.locator(".lk-carte").count() === 0 && await point.getAttribute("aria-expanded") === "false", "Échap ferme la carte");
+    await p.keyboard.press("Enter");
+    verifie(await attend(() => look.locator(".lk-carte").isVisible(), 2000), "au clavier, Entrée sur le point la rouvre");
+    await clic(p, look.locator(".lk-pieces a").first());
+    verifie(await p.waitForURL(/\/produit\/combishort-fleurs$/, { timeout: 8000 }).then(() => true, () => false), "la pièce du look mène à sa fiche");
+    await ci.close();
   });
 
   await etape("la mesure d'audience : un signal par page, sans cookie", async () => {
@@ -85,7 +133,8 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), à la souris ==");
   await etape("collection « Robes » depuis l'accueil", async () => {
     await page.goto(S + "/", { waitUntil: "networkidle" });
     await page.evaluate(() => window.scrollTo(0, 0)); await pause(300);
-    const tuile = page.locator(".ed-collections a", { hasText: "Robes" });
+    // Selma est en Immersif (supabase/seed-immersif.sql) : ses collections glissent en rangée.
+    const tuile = page.locator(".im-collections a", { hasText: "Robes" });
     await clic(page, tuile);
     await page.waitForURL(/\/categorie\/robes$/);
     await page.waitForLoadState("networkidle");

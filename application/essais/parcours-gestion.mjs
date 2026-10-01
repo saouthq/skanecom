@@ -1689,7 +1689,7 @@ if (section("4bis")) {
     const avant = await plan();
     verifie(avant.includes("Avis clients") && avant.includes("Questions fréquentes"), `l'accueil de haut en bas (${avant.join(" > ")})`);
     await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
-    verifie((await page.locator(".pa-modeles .ac-modele").count()) === 9, "« Ajouter une section » : la bibliothèque, neuf sections");
+    verifie((await page.locator(".pa-modeles .ac-modele").count()) === 11, "« Ajouter une section » : la bibliothèque, onze sections (lookbook et pièce de la saison compris)");
     verifie(await page.locator(".pa-modeles .ac-modele", { hasText: "Avis clients" }).isDisabled(), "une section déjà posée ne s'ajoute pas deux fois");
     await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
     await page.getByRole("button", { name: "Monter « Avis clients »" }).focus();
@@ -1735,6 +1735,24 @@ if (section("4bis")) {
     await clic(page, page.getByRole("button", { name: "Défaire" }));
     verifie(await attendre(async () => !(await titresCadre()).includes("Elles l'ont portée") && (await titresCadre()).some((x) => x.startsWith("Ce qu'en disent")), 12000),
       "« Défaire » : toute la frappe d'un coup, le titre d'avant revient");
+  });
+
+  await etape("le lookbook, dans l'éditeur : un point déplacé au clavier, l'aperçu le suit", async () => {
+    // Selma est en Immersif, avec un lookbook d'un point (supabase/seed-immersif.sql).
+    const b = page.locator(".pa-liste [data-geste='ouvrir']", { hasText: "Lookbook" });
+    if ((await b.getAttribute("aria-expanded")) !== "true") await clic(page, b);
+    const point = page.locator(".pa-liste .ac-section[data-ouverte] .pl-point").first();
+    verifie(/Combishort.*46 %.*32 %/.test(await point.getAttribute("aria-label")), "le point du combishort, à sa place (46 %, 32 %)");
+    const cadreLeft = () => cadreSelma().evaluate(() => document.querySelector(".lk-point")?.style.left ?? "");
+    verifie(await attendre(async () => (await cadreLeft()) === "46%", 8000), "le même point sur la photo de l'aperçu");
+    await point.focus();
+    await page.keyboard.press("Shift+ArrowRight");
+    verifie(/51 %/.test(await point.getAttribute("aria-label")), "Maj+→ : le point avance de 5 %, et le dit");
+    verifie(await brouillonEnregistre(), "le brouillon le garde");
+    verifie(await attendre(async () => (await cadreLeft()) === "51%", 12000), "l'aperçu le suit, sans recharger");
+    await capture(page, "editeur-lookbook-point");
+    await clic(page, page.getByRole("button", { name: "Défaire" }));
+    verifie(await attendre(async () => (await cadreLeft()) === "46%", 12000), "« Défaire » : le point revient sur la pièce");
   });
 
   await etape("la photo d'ouverture, depuis l'éditeur : réduite, posée, publiée, puis retirée du dépôt", async () => {

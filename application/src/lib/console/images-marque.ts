@@ -13,7 +13,7 @@ import { definitionDe, gabaritDe } from "@/lib/theme";
      récit) : WebP, réduites avant l'envoi.
    ========================================================================== */
 
-export type Emplacement = "logo" | "monogramme" | "favicon" | "ouverture" | "ouverture_portrait" | "recit";
+export type Emplacement = "logo" | "monogramme" | "favicon" | "ouverture" | "ouverture_portrait" | "recit" | "lookbook";
 export const EMPLACEMENTS: Emplacement[] = ["logo", "monogramme", "favicon", "ouverture", "ouverture_portrait", "recit"];
 
 export type Regle = {
@@ -68,6 +68,13 @@ export const REGLES: Record<Emplacement, Regle> = {
     role: "À côté du texte qui raconte la boutique, plus bas sur l'accueil.",
     conseil: "1 000 px au moins sur son plus grand côté.",
     genre: "photo", boite: { largeur: 2000, hauteur: 2000 }, minimum: 1000, fait: "Photo du récit enregistrée",
+  },
+  // Le backoffice seul la dépose (l'écran de la console n'a pas d'emplacement lookbook).
+  lookbook: {
+    titre: "Photo du lookbook",
+    role: "La photo d'un look, avec des points sur les pièces portées.",
+    conseil: "Une photo où les pièces se voient bien, 1 200 px au moins sur son plus grand côté.",
+    genre: "photo", boite: { largeur: 2000, hauteur: 2000 }, minimum: 1200, fait: "Photo du lookbook enregistrée",
   },
 };
 
