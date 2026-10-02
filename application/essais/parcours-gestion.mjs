@@ -2420,6 +2420,7 @@ if (section("7")) {
   const SF = `${process.env.RELAIS ?? "http://127.0.0.1:54321"}/skanfact-dev`;
   const E = "00000000-0000-4000-8888-00000000e001";
   const facturesSF = async () => (await (await fetch(`${SF}/commercant/factures?entreprise=${E}`)).json()).factures;
+  const clesSF = async () => (await (await fetch(`${SF}/commercant/cles?entreprise=${E}`)).json()).cles;
   const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const SUPA = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const rpc = async (nom, corps) => {
@@ -2539,6 +2540,19 @@ if (section("7")) {
       if (!faite) await pause(250);
     }
     verifie(faite, "reconnectée : la facture qui attendait est partie");
+    verifie((await clesSF()).length === 1, "une seule clé valable chez SkanFact (un seul « SkanEcom (connexion) »)");
+  });
+
+  await etape("Déconnecter : la clé oubliée ici, et coupée dans SkanFact", async () => {
+    const [ancienne] = await clesSF();
+    verifie(!!ancienne, "la boutique a sa clé chez SkanFact");
+    await page.goto(`${C}/gestion/maymar/skanfact`, { waitUntil: "networkidle" });
+    await clic(page, page.locator(".fa-delier summary"));
+    await clic(page, page.getByRole("button", { name: "Déconnecter la boutique" }));
+    await page.getByText("coupée dans SkanFact", { exact: false }).first().waitFor();
+    const r = await fetch(`${SF}/v1/entreprises/${E}/ventes?type=facture&limite=1`, { headers: { authorization: `Bearer ${ancienne}` } });
+    verifie(r.status === 401, `l'ancienne clé reçoit ${r.status} de SkanFact (401 attendu) : l'accès est coupé des deux côtés`);
+    verifie((await clesSF()).length === 0, "SkanFact ne garde aucune clé valable pour la boutique");
   });
   await ctx.close();
 }

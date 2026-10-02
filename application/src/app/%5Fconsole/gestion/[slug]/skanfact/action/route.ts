@@ -1,13 +1,15 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers } from "@/lib/console/http";
-import { envoyerApres, envoyerFile } from "@/lib/gestion/skanfact";
+import { couperCles, enFond, envoyerApres, envoyerFile } from "@/lib/gestion/skanfact";
 import { messageRefus } from "@/lib/gestion/libelles";
 
 /* ============================================================================
    LES GESTES DE LA FACTURATION SKANFACT DU COMMERÇANT (module skanfact) :
    · regler : les taux de TVA (produits, livraison) et le moment de la
      facture (à la confirmation, ou à la livraison) ;
-   · deconnecter : la clé oubliée chez SkanEcom (ce qui est fait reste) ;
+   · deconnecter : la clé oubliée chez SkanEcom, et coupée dans SkanFact
+     (brique 135 ; SkanFact en panne : la coupure lui est renvoyée plus
+     tard, le commerçant n'attend pas) — ce qui est fait reste ;
    · reessayer : un envoi que SkanFact a refusé, après correction — il part
      tout de suite ;
    · facturer : une commande confirmée ou livrée avant la connexion ;
@@ -56,7 +58,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (geste === "deconnecter") {
     const { error } = await sb.rpc("gestion_skanfact_deconnecter", { p_boutique_id: id });
     if (error) return retour(messageRefus(error.hint, error.message));
-    return retour("Boutique déconnectée de SkanFact : la clé est oubliée chez SkanEcom. Ce qui est fait reste, dans SkanFact et ici.", true);
+    // La clé est déjà oubliée ici ; SkanFact la coupe aussi (quatre secondes au plus d'attente, le reste en fond).
+    const travail = couperCles(id);
+    let minuterie: ReturnType<typeof setTimeout> | undefined;
+    const k = await Promise.race([travail, new Promise<null>((r) => { minuterie = setTimeout(() => r(null), 4000); })]);
+    clearTimeout(minuterie);
+    if (!k) enFond(travail);
+    return retour(k && !k.en_attente
+      ? "Boutique déconnectée de SkanFact : la clé est oubliée chez SkanEcom et coupée dans SkanFact. Ce qui est fait reste, dans SkanFact et ici."
+      : "Boutique déconnectée de SkanFact : la clé est oubliée chez SkanEcom. SkanFact ne répond pas pour l'instant : la coupure de l'accès lui sera renvoyée.", true);
   }
 
   const bilanTexte = async (numero?: string) => {
@@ -89,6 +99,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const { error } = await sb.rpc("gestion_skanfact_avancer", { p_boutique_id: id });
     if (error) return retour(messageRefus(error.hint, error.message));
     const b = await envoyerFile(id, { budgetMs: 8000 });
+    if (b.coupures?.en_attente) return retour("SkanFact ne répond toujours pas : la coupure de l'ancien accès lui sera renvoyée seule.");
+    if (b.coupures?.coupees && !b.faits && !b.plus_tard && !b.refuses) {
+      return retour(b.coupures.coupees > 1 ? "Les anciens accès sont coupés dans SkanFact." : "L'ancien accès est coupé dans SkanFact.", true);
+    }
     if (b.coupee) return retour("SkanFact refuse la clé de la boutique (accès retiré ou expiré) : reconnectez la boutique à SkanFact.");
     if (b.plus_tard) return retour(`SkanFact ne répond toujours pas : ${b.plus_tard} envoi${b.plus_tard > 1 ? "s repartiront" : " repartira"} seul${b.plus_tard > 1 ? "s" : ""}, à l'identique.`);
     if (b.refuses) return retour(`${b.faits} fait${b.faits > 1 ? "s" : ""}, ${b.refuses} refusé${b.refuses > 1 ? "s" : ""} par SkanFact : leur raison est écrite ci-dessous.`);

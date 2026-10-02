@@ -23,12 +23,15 @@
 // est suivie), puis l'échange du code par le serveur de SkanEcom (POST
 // /v1/partenaires/skanecom/echanger, son secret reconnu à son EMPREINTE
 // SHA-256 seule ; un code vaut dix minutes, une fois) contre une clé d'un an ;
+// « Déconnecter » chez SkanEcom (brique 135 : POST
+// /v1/partenaires/skanecom/deconnecter { cle }, la clé coupée ici) ;
 // B1 POST …/commandes-en-ligne, B2 GET …/:ref, B3 POST …/:ref/paiements,
 // B4 POST …/:ref/retours (l'avoir, l'argent rendu), avec les refus de la
 // plateforme (« deux chemins, un chiffre », un retour trop grand, l'argent
 // rendu de trop, le timbre). Gestes de développement : ce qu'une entreprise a
 // reçu (GET /skanfact-dev/commercant/factures?entreprise=…), révoquer ses
-// clés (POST /skanfact-dev/commercant/revoquer { entreprise }), faire
+// clés (POST /skanfact-dev/commercant/revoquer { entreprise }), les lire
+// (GET /skanfact-dev/commercant/cles?entreprise=…), faire
 // refuser par SkanFact la prochaine facture (POST
 // /skanfact-dev/commercant/refuser { entreprise }, le refus « deux chemins,
 // un chiffre » de la plateforme, une fois).
@@ -79,10 +82,12 @@ let etat;
 let enPanne = false;
 let commercants;
 let codes;
+let coupees;
 function reinitialiser() {
   enPanne = false;
   commercants = Object.fromEntries(Object.entries(COMMERCANTS).map(([e, nom]) => [e, { nom, cles: new Set(), numero: 0, avoirs: 0, commandes: new Map(), refuser: false }]));
   codes = new Map();
+  coupees = new Set();
   const c1 = { id: "00000000-0000-4000-8888-000000000001", ref: "menuiserie", raison_sociale: "Menuiserie du Lac", identifiant: "1234567 a/M/000" };
   const c2 = { id: "00000000-0000-4000-8888-000000000002", ref: "atelier", raison_sociale: "Atelier d'essai SARL", identifiant: "7654321B/A/000" };
   etat = {
@@ -152,6 +157,7 @@ async function api(req, res, url) {
     return boutique(req, res, m[1], commercant, m[2]);
   }
   if (url.pathname.slice(PREFIXE.length) === "/v1/partenaires/skanecom/echanger" && req.method === "POST") return echanger(req, res, jeton ?? "");
+  if (url.pathname.slice(PREFIXE.length) === "/v1/partenaires/skanecom/deconnecter" && req.method === "POST") return deconnecter(req, res, jeton ?? "");
   if (jeton !== CLE) return json(res, 401, { motif: "Connexion requise" });
   if (!m) return json(res, 404, { motif: "Introuvable" });
   if (m[1] !== ENTREPRISE) return json(res, 404, { motif: "Introuvable" });
@@ -307,10 +313,27 @@ async function connecterPost(req, res) {
   codes.set(sha256(code), { entreprise, expire: Date.now() + CODE_MS, servi: false });
   return suite({ code, etat });
 }
-async function echanger(req, res, secret) {
+const secretJuste = (secret) => {
   const voulu = Buffer.from(PARTENAIRE.empreinteSecret, "utf8");
   const vu = Buffer.from(sha256(secret), "utf8");
-  if (!secret || voulu.length !== vu.length || !timingSafeEqual(voulu, vu)) return json(res, 401, { motif: "le secret du partenaire est faux" });
+  return Boolean(secret) && voulu.length === vu.length && timingSafeEqual(voulu, vu);
+};
+/* Brique 135 : « Déconnecter » chez SkanEcom coupe la clé ici. Seule une clé
+   remise à SkanEcom par une connexion ; redemander donne la même réponse. */
+async function deconnecter(req, res, secret) {
+  if (!secretJuste(secret)) return json(res, 401, { motif: "le secret du partenaire est faux" });
+  const d = await lire(req);
+  const cle = typeof d?.cle === "string" ? d.cle : "";
+  if (cle.length < 20 || cle.length > 200) return json(res, 400, { motif: "Champ invalide", champ: "cle" });
+  if (coupees.has(cle)) return json(res, 200, { coupee: true });
+  const c = Object.values(commercants).find((x) => x.cles.has(cle));
+  if (!c) return json(res, 404, { motif: `cette clé n'a pas été remise à ${PARTENAIRE.nom} par une connexion : rien n'est coupé` });
+  c.cles.delete(cle);
+  coupees.add(cle);
+  return json(res, 200, { coupee: true });
+}
+async function echanger(req, res, secret) {
+  if (!secretJuste(secret)) return json(res, 401, { motif: "le secret du partenaire est faux" });
   const d = await lire(req);
   const code = typeof d?.code === "string" ? d.code : "";
   if (code.length < 20 || code.length > 200) return json(res, 400, { motif: "Champ invalide", champ: "code" });
@@ -621,6 +644,12 @@ export function skanfactDev(req, res) {
   if (chemin.startsWith("/v10/") && req.method === "GET") return ecranSimule(res);
   if (chemin === "/connecter" && req.method === "GET") return connecterGet(res, url.searchParams);
   if (chemin === "/connecter" && req.method === "POST") return void connecterPost(req, res);
+  // Développement : les clés valables d'une entreprise (pour essayer qu'une clé coupée reçoit 401).
+  if (chemin === "/commercant/cles" && req.method === "GET") {
+    const c = commercants[url.searchParams.get("entreprise") ?? ""];
+    if (!c) return json(res, 404, { motif: "Entreprise inconnue" });
+    return json(res, 200, { cles: [...c.cles] });
+  }
   if (chemin === "/commercant/factures" && req.method === "GET") {
     const c = commercants[url.searchParams.get("entreprise") ?? ""];
     if (!c) return json(res, 404, { motif: "Entreprise inconnue" });

@@ -56,9 +56,14 @@ export default async function SkanFact({ params, searchParams }: {
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_skanfact", { p_boutique_id: boutique.boutique_id });
+  const [{ data, error }, { data: coupures }] = await Promise.all([
+    sb.rpc("gestion_skanfact", { p_boutique_id: boutique.boutique_id }),
+    // Les accès quittés (déconnectés, renouvelés) que SkanFact n'a pas encore coupés.
+    sb.rpc("gestion_skanfact_coupures", { p_boutique_id: boutique.boutique_id }),
+  ]);
   if (error) throw new Error(`Facturation SkanFact illisible : ${error.message}`);
   const e = data as EtatSkanFact;
+  const aCouper = (coupures as { essais: number; prochain_essai: string; erreur: string | null }[] | null) ?? [];
   const regle = REGLER.includes(boutique.role);
   const action = `/gestion/${slug}/skanfact/action`;
   const connecter = `/gestion/${slug}/skanfact/connecter`;
@@ -94,6 +99,21 @@ export default async function SkanFact({ params, searchParams }: {
       <div className="pile">
         {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
         {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
+        {aCouper.some((x) => x.essais > 0) ? (
+          <div className="message sf-message-attention sf-a-couper" role="status">
+            <span>
+              {aCouper.length > 1 ? `${aCouper.length} anciens accès attendent` : "Un ancien accès attend"} d&apos;être coupé{aCouper.length > 1 ? "s" : ""} dans
+              SkanFact ({aCouper[0].erreur ?? "SkanFact ne répondait pas"}). Il{aCouper.length > 1 ? "s" : ""} ne sert{aCouper.length > 1 ? "ent" : ""} plus
+              à la boutique ; SkanEcom renverra la coupure seul, prochain essai {quand(aCouper[0].prochain_essai, maintenant)}.
+            </span>
+            {regle ? (
+              <form action={action} method="post">
+                <input type="hidden" name="geste" value="renvoyer" />
+                <button type="submit" className="btn btn-second btn-petit">Renvoyer maintenant</button>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
 
         {!e.actif && !c ? (
           <div className="vide">
@@ -250,7 +270,7 @@ export default async function SkanFact({ params, searchParams }: {
                         <summary className="btn btn-fantome">Déconnecter</summary>
                         <form action={action} method="post" className="pile">
                           <input type="hidden" name="geste" value="deconnecter" />
-                          <p className="aide">SkanEcom oublie la clé : les prochaines commandes ne partiront plus dans SkanFact. Ce qui est fait reste. Pour couper aussi l&apos;accès côté SkanFact, faites-le dans SkanFact.</p>
+                          <p className="aide">SkanEcom oublie la clé et la fait couper dans SkanFact : les prochaines commandes n&apos;y partiront plus. Ce qui est fait reste, dans SkanFact et ici.</p>
                           <button type="submit" className="btn btn-danger">Déconnecter la boutique</button>
                         </form>
                       </details>

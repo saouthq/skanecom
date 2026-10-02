@@ -1,6 +1,6 @@
 import { getRequestExecutionContext } from "vinext/shims/request-context";
 import { clientService } from "@/lib/console/service";
-import { adresseSkanFact } from "@/lib/console/skanfact";
+import { adresseSkanFact, secretPartenaire } from "@/lib/console/skanfact";
 import { dechiffrer } from "./chiffre";
 
 /* ============================================================================
@@ -234,11 +234,67 @@ async function appeler(url: string, cle: string, route: string, corps: Corps, ge
   return classer(r.status, lu, genre);
 }
 
-export type Bilan = { faits: number; refuses: number; plus_tard: number; coupee: boolean };
+export type Bilan = { faits: number; refuses: number; plus_tard: number; coupee: boolean; coupures?: Coupures };
+
+/* LES CLÉS QUITTÉES (brique 135 de SkanFact, migration 82) : une clé que la
+   boutique a oubliée (« Déconnecter ») ou remplacée (reconnexion,
+   renouvellement) se fait couper dans SkanFact, par le serveur, avec le
+   secret de SkanEcom : POST /v1/partenaires/skanecom/deconnecter { cle }.
+   200 (coupée, ou déjà coupée) et 404 (SkanFact ne la tient pas de
+   SkanEcom : rien à couper) la retirent de la file ; une panne, un 5xx, un
+   401 (le secret de la plateforme refusé) la renvoient plus tard, la même
+   clé. Jamais d'exception. */
+export type Coupures = { coupees: number; en_attente: number };
+
+export async function couperCles(boutiqueId: string): Promise<Coupures> {
+  const bilan: Coupures = { coupees: 0, en_attente: 0 };
+  try {
+    const url = adresseSkanFact();
+    const secret = secretPartenaire();
+    if (!url || !secret) return bilan;
+    const service = clientService();
+    const { data } = await service.rpc("skanfact_prendre_coupures", { p_boutique_id: boutiqueId });
+    for (const k of (data as { id: string; cle_chiffree: string }[] | null) ?? []) {
+      const noter = (resultat: "fait" | "plus_tard", erreur: string | null) =>
+        service.rpc("skanfact_noter_coupure", { p_id: k.id, p_resultat: resultat, p_erreur: erreur });
+      const cle = await dechiffrer(k.cle_chiffree, boutiqueId);
+      if (!cle) {
+        // Le chiffrement a changé : la clé ne se relit plus, rien ne peut la faire couper (elle expirera seule).
+        await noter("fait", null);
+        continue;
+      }
+      let statut = 0;
+      try {
+        statut = (await fetch(`${url}/v1/partenaires/skanecom/deconnecter`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${secret}`, "content-type": "application/json", accept: "application/json" },
+          body: JSON.stringify({ cle }),
+          signal: AbortSignal.timeout(DELAI_MS),
+          cache: "no-store",
+        })).status;
+      } catch {
+        // réseau : plus tard
+      }
+      if (statut === 200 || statut === 404) {
+        await noter("fait", null);
+        bilan.coupees++;
+      } else {
+        await noter("plus_tard", statut === 401 ? "SkanFact refuse le secret de SkanEcom, qui s'en occupe"
+          : statut ? `SkanFact a répondu ${statut}` : "SkanFact ne répond pas");
+        bilan.en_attente++;
+      }
+    }
+  } catch {
+    // La base ou le réseau a lâché : la file reste telle quelle, elle repartira.
+  }
+  return bilan;
+}
 
 /** Faire partir ce qui est dû dans la file d'une boutique (ou d'une de ses commandes). Jamais d'exception. */
 export async function envoyerFile(boutiqueId: string, options: { numero?: string; max?: number; budgetMs?: number } = {}): Promise<Bilan> {
   const bilan: Bilan = { faits: 0, refuses: 0, plus_tard: 0, coupee: false };
+  // Les clés quittées d'abord (elles partent même quand la boutique n'est plus connectée).
+  if (!options.numero) bilan.coupures = await couperCles(boutiqueId);
   try {
     const service = clientService();
     const { data, error } = await service.rpc("skanfact_file", { p_boutique_id: boutiqueId, p_numero: options.numero ?? null });
