@@ -24,6 +24,9 @@ import { creeTesteur } from "./testeur.mjs";
       vitrine dans le cadre suit chaque geste (souris, clavier), le brouillon
       s'enregistre seul, défaire et refaire, une autre structure, le lien
       d'aperçu ouvert hors du backoffice, publier ; puis au téléphone.
+   7. Le gérant de Maymar connecte son SkanFact (module skanfact) : une
+      clé refusée, la bonne gardée chiffrée ; une commande livrée devient
+      une facture dans son SkanFact ; SkanFact en panne, elle se renvoie.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -2407,6 +2410,131 @@ if (section("6")) {
     await clic(page, page.locator("section:has(#t-vitrine)").getByText("Ajouter au panier depuis la carte"));
     await t.envoie(page, page.locator("section:has(#t-vitrine)").getByRole("button", { name: "Enregistrer" }));
     verifie((await plusDeLaVitrine()) === 18, "rallumé : les « + » reviennent");
+  });
+  await ctx.close();
+}
+
+console.log("\n== 7. La facturation SkanFact du gérant de Maymar (module skanfact) ==");
+if (section("7")) {
+  // SkanFact simulé par le relais (outils/skanfact-dev.mjs) : la page « Relier SkanEcom à SkanFact », l'entreprise du commerçant.
+  const SF = `${process.env.RELAIS ?? "http://127.0.0.1:54321"}/skanfact-dev`;
+  const E = "00000000-0000-4000-8888-00000000e001";
+  const facturesSF = async () => (await (await fetch(`${SF}/commercant/factures?entreprise=${E}`)).json()).factures;
+  const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SUPA = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rpc = async (nom, corps) => {
+    const texte = await (await fetch(`${SUPA}/rest/v1/rpc/${nom}`, {
+      method: "POST", headers: { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json" }, body: JSON.stringify(corps) })).text();
+    return texte ? JSON.parse(texte) : null;
+  };
+  const aLivrer = async (id) => (await fetch(`${SUPA}/rest/v1/commandes?select=numero,statut&boutique_id=eq.${id}&statut=in.(confirmee,expediee)&mode_livraison=eq.domicile&order=numero`, {
+    headers: { apikey: cle, authorization: `Bearer ${cle}` } })).json();
+  await fetch(`${SF}/reinitialiser`, { method: "POST", body: "{}" });
+  // La console allume le module pour Maymar (le geste de son administrateur).
+  const { users } = await (await fetch(`${SUPA}/auth/v1/admin/users?per_page=1000`, { headers: { apikey: cle, authorization: `Bearer ${cle}` } })).json();
+  const admin = users.find((u) => u.email === "admin@skanecom.test");
+  const maymar = (await rpc("console_boutique", { p_slug: "maymar" })).boutique;
+  await rpc("console_changer_module", { p_acteur: admin.id, p_boutique_id: maymar.id, p_module: "skanfact", p_actif: true });
+  await sansDoubleAuthentification("gerant@maymar.test");
+  const ctx = await navigateur.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "skanfact");
+  // Expédier (si besoin) puis livrer une commande, depuis sa fiche.
+  const livrer = async (k) => {
+    await page.goto(`${C}/gestion/maymar/commandes/${k.numero}`, { waitUntil: "networkidle" });
+    if (k.statut === "confirmee") {
+      await clic(page, page.getByRole("button", { name: /Marquer expédiée/ }));
+      await page.getByRole("button", { name: /Livrée, paiement encaissé/ }).waitFor();
+    }
+    await clic(page, page.getByRole("button", { name: /Livrée, paiement encaissé/ }));
+    await page.getByText("Livraison enregistrée", { exact: false }).first().waitFor();
+    await page.locator("#t-skanfact").waitFor();
+  };
+  // Une commande livrée sans facture SkanFact (livrée avant la connexion).
+  const livreeSansFacture = async (id) => {
+    const lire = async (chemin) => (await fetch(`${SUPA}/rest/v1/${chemin}`, { headers: { apikey: cle, authorization: `Bearer ${cle}` } })).json();
+    const faites = new Set((await lire(`skanfact_envois?select=commande_id&boutique_id=eq.${id}&genre=eq.facture`)).map((x) => x.commande_id));
+    return (await lire(`commandes?select=id,numero&boutique_id=eq.${id}&statut=eq.livree&order=numero`)).find((k) => !faites.has(k.id));
+  };
+
+  await etape("connexion du gérant de Maymar", async () => {
+    await connexion(page, "gerant@maymar.test");
+    await page.waitForURL(/double-authentification/, { timeout: 15000 });
+    const secret = (await page.locator("[data-secret-totp]").textContent()).trim();
+    await clic(page, page.locator("#code"));
+    await tape(page, totp(secret));
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    verifie(true, "le gérant entre dans son backoffice");
+  });
+
+  await etape("« Connecter SkanFact » : refusé, puis autorisé chez SkanFact", async () => {
+    await clic(page, page.locator(".app-cote").getByRole("link", { name: "SkanFact" }));
+    await page.waitForURL(/\/gestion\/maymar\/skanfact$/);
+    await clic(page, page.getByRole("button", { name: "Connecter SkanFact" }));
+    await page.waitForURL(/skanfact-dev\/connecter\?partenaire=skanecom/);
+    verifie(new URL(page.url()).searchParams.get("retour") === `${C}/skanfact/retour`, "SkanFact reçoit l'adresse de retour exacte, sans paramètres");
+    await clic(page, page.getByRole("button", { name: "Refuser" }));
+    await page.getByText("Vous avez refusé la connexion", { exact: false }).first().waitFor();
+    verifie(true, "refusé chez SkanFact : la page le dit, rien n'a changé");
+    await clic(page, page.getByRole("button", { name: "Connecter SkanFact" }));
+    await page.waitForURL(/skanfact-dev\/connecter/);
+    await clic(page, page.getByRole("button", { name: "Autoriser" }));
+    await page.getByText("Connecté à Comptoir du Lac SARL.", { exact: false }).first().waitFor();
+    verifie(true, "autorisé : « Connecté à Comptoir du Lac SARL. »");
+    await page.locator("#sf-tva-produits").selectOption("19");
+    await page.locator("#sf-tva-livraison").selectOption("7");
+    await clic(page, page.getByRole("button", { name: "Enregistrer les réglages" }));
+    await page.getByText("Réglages enregistrés", { exact: false }).first().waitFor();
+    verifie(true, "les taux de TVA choisis : 19 % et 7 %");
+    await capture(page, "gestion-skanfact-connectee");
+  });
+
+  await etape("une commande livrée : sa facture naît dans le SkanFact du gérant", async () => {
+    const [k] = await aLivrer(maymar.id);
+    verifie(!!k, `une commande à livrer : ${k?.numero} (${k?.statut})`);
+    await livrer(k);
+    const f = (await facturesSF()).find((x) => x.reference === k.numero);
+    verifie(!!f && f.paiements[0]?.mode === "especes" && f.lignes.some((l) => l.designation === "Livraison" && l.tauxTva === "7"),
+      `SkanFact a reçu ${f?.numero} (${f?.net} DT) : la livraison à 7 %, encaissée en espèces`);
+    verifie((await page.locator("#t-skanfact").innerText()).includes(f?.numero ?? "?"), "la fiche de la commande dit sa facture, « Voir la facture dans SkanFact »");
+    await capture(page, "gestion-skanfact-commande");
+  });
+
+  await etape("SkanFact en panne : la livraison se fait, la facture repart à l'identique", async () => {
+    const [k] = await aLivrer(maymar.id);
+    if (!k) { verifie(true, "plus de commande à livrer : l'essai de panne est sauté"); return; }
+    await fetch(`${SF}/panne`, { method: "POST", body: JSON.stringify({ active: true }) });
+    await livrer(k);
+    verifie(/En attente : SkanFact ne répond pas/.test(await page.locator("#t-skanfact").innerText()), "en panne : livrée quand même, la facture « En attente »");
+    await fetch(`${SF}/panne`, { method: "POST", body: JSON.stringify({ active: false }) });
+    await page.goto(`${C}/gestion/maymar/skanfact`, { waitUntil: "networkidle" });
+    await clic(page, page.getByRole("button", { name: "Renvoyer maintenant" }));
+    await page.waitForURL(/\/skanfact\?/);
+    await page.waitForLoadState("networkidle");
+    const f = (await facturesSF()).filter((x) => x.reference === k.numero);
+    verifie(f.length === 1, `revenu : la facture ${f[0]?.numero} est faite, une seule fois`);
+  });
+
+  await etape("l'accès retiré dans SkanFact (401) : coupée, puis reconnectée", async () => {
+    await fetch(`${SF}/commercant/revoquer`, { method: "POST", body: JSON.stringify({ entreprise: E }) });
+    const k = await livreeSansFacture(maymar.id);
+    verifie(!!k, `une commande livrée avant la connexion : ${k?.numero}`);
+    await page.goto(`${C}/gestion/maymar/commandes/${k.numero}`, { waitUntil: "networkidle" });
+    await clic(page, page.getByRole("button", { name: "Facturer dans SkanFact" }));
+    await page.waitForURL(/erreur=/);
+    await page.goto(`${C}/gestion/maymar/skanfact`, { waitUntil: "networkidle" });
+    verifie(/La connexion à SkanFact est coupée/.test(await page.locator("body").innerText()), "401 : « La connexion à SkanFact est coupée »");
+    await clic(page, page.getByRole("button", { name: "Reconnecter SkanFact" }));
+    await page.waitForURL(/skanfact-dev\/connecter/);
+    await clic(page, page.getByRole("button", { name: "Autoriser" }));
+    await page.getByText("Connecté à Comptoir du Lac SARL.", { exact: false }).first().waitFor();
+    let faite = false;
+    for (let i = 0; i < 20 && !faite; i++) {
+      faite = (await facturesSF()).some((x) => x.reference === k.numero);
+      if (!faite) await pause(250);
+    }
+    verifie(faite, "reconnectée : la facture qui attendait est partie");
   });
   await ctx.close();
 }

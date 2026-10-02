@@ -49,6 +49,15 @@ export default defineConfig({
       SKANFACT_ENTREPRISE: bindings.secret(),
       SKANFACT_CLE: bindings.secret(),
       SKANFACT_AVIS_SECRET: bindings.secret(),
+      // Le chiffrement des clés SkanFact que les commerçants confient à leur
+      // boutique (module Facturation SkanFact, src/lib/gestion/chiffre.ts) :
+      // 32 octets en base64, posés une fois — changé, les clés gardées ne se
+      // relisent plus (chaque boutique se reconnecte).
+      SKANFACT_CHIFFRE: bindings.secret(),
+      // Le secret de SkanEcom, partenaire déclaré de SkanFact (« Connecter
+      // SkanFact », B0) : 32 octets tirés au hasard, posé une fois ; SkanFact
+      // n'en connaît que l'empreinte SHA-256 (src/lib/console/skanfact.ts).
+      SKANFACT_SECRET: bindings.secret(),
     },
   }),
 });

@@ -1,6 +1,7 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers, versAvecErreur } from "@/lib/console/http";
 import { messageRefus } from "@/lib/gestion/libelles";
+import { envoyerApres } from "@/lib/gestion/skanfact";
 
 /* ============================================================================
    LES GESTES SUR UNE COMMANDE — formulaires HTML ordinaires (ils marchent
@@ -65,5 +66,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   }
 
   if (erreur) return versAvecErreur(fiche, messageRefus(erreur.hint, erreur.message));
+  // Confirmée, livrée, refusée, annulée : ce que la base a mis dans la file du SkanFact
+  // du commerçant (module skanfact) part tout de suite — une facture, un paiement, un
+  // retour. Ce qui l'empêche reste dans la file ; le geste, lui, est fait.
+  if (geste !== "note") await envoyerApres(boutique.boutique_id, numero);
   return vers(`${fiche}?fait=${encodeURIComponent(fait)}`);
 }

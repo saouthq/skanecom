@@ -4,6 +4,7 @@ import { CompteurCommandes } from "@/components/console/Veille";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { BandeauSupport } from "@/components/console/AccesSupport";
+import { enFond, envoyerFile } from "@/lib/gestion/skanfact";
 import { DIRECTION } from "@/lib/gestion/tableau";
 import { PEUT_MODIFIER, PEUT_STOCKER } from "@/lib/gestion/catalogue";
 import { PEUT_ECRIRE } from "@/lib/gestion/pages";
@@ -33,7 +34,7 @@ export default async function BackofficeBoutique({
   // pas l'un après l'autre : chaque page du backoffice les attend.
   const sb = await clientSession();
   const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }] = await Promise.all([
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }] = await Promise.all([
     sb.rpc("gestion_sav_etat", etat),
     sb.rpc("gestion_pro_etat", etat),
     sb.rpc("gestion_devis_etat", etat),
@@ -43,7 +44,25 @@ export default async function BackofficeBoutique({
     sb.rpc("gestion_paniers_etat", etat),
     sb.rpc("gestion_visites_etat", etat),
     sb.rpc("gestion_lettre_etat", etat),
+    sb.rpc("gestion_skanfact_etat", etat),
   ]);
+  // La facturation SkanFact, si la boutique a le module (ou y reste connectée) : ce que SkanFact a
+  // refusé, une connexion coupée ou bientôt expirée. Ce qui attendait une panne repart, en fond.
+  const etatSkanFact = sf as { actif: boolean; connecte: boolean; coupee: boolean; expire_bientot: boolean; a_regler: boolean;
+                               dus: number; refuses: number } | null;
+  if (etatSkanFact?.dus) enFond(envoyerFile(boutique.boutique_id));
+  const alerteSkanFact = etatSkanFact?.coupee ? "connexion coupée" : etatSkanFact?.a_regler ? "taux de TVA à choisir"
+    : etatSkanFact?.expire_bientot ? "connexion à renouveler" : null;
+  const lienSkanFact = DIRECTION.includes(boutique.role) && (etatSkanFact?.actif || etatSkanFact?.connecte)
+    ? [{
+        href: `/gestion/${slug}/skanfact`, libelle: "SkanFact", icone: "billet" as const,
+        extra: etatSkanFact.refuses
+          ? <span className="app-nav-compte" aria-label={`${etatSkanFact.refuses} envoi${etatSkanFact.refuses > 1 ? "s" : ""} refusé${etatSkanFact.refuses > 1 ? "s" : ""} par SkanFact`}>{etatSkanFact.refuses}</span>
+          : alerteSkanFact
+            ? <span className="app-nav-compte" aria-label={alerteSkanFact}>!</span>
+            : undefined,
+      }]
+    : [];
   // Le service après-vente, si la boutique a le module : ses demandes à rappeler.
   const etatSav = sav as { actif: boolean; nouvelles: number } | null;
   // Les comptes professionnels, si la boutique a le module : les demandes en attente.
@@ -122,6 +141,7 @@ export default async function BackofficeBoutique({
             ? [{ href: `/gestion/${slug}/lettre`, libelle: "Lettre", icone: "courriel" as const }]
             : []),
           { href: `/gestion/${slug}/encaissements`, libelle: "Encaissements", icone: "billet" as const },
+          ...lienSkanFact,
         ]
       : []),
     ...lienDevis,

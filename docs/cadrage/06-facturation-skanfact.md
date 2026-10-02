@@ -165,6 +165,35 @@ depuis la console, le lien d'espace client (§ 3.7).
 
 ---
 
+## 4 ter. Les commerçants facturent dans LEUR SkanFact (briques 131 à 133, branché le 02/10)
+
+Le contrat de SkanFact : `docs/boutique.md` de la plateforme, B0 à B4. Le module **Facturation SkanFact**
+(`skanfact`, coupé par défaut, allumé par la console) relie la boutique à l'entreprise du commerçant dans
+SkanFact ; SkanEcom ne refait ni la facturation ni la comptabilité.
+
+| Ce qui se passe | Où |
+|---|---|
+| **B0 « Connecter SkanFact »** : un état de 32 octets tiré au hasard, gardé dans la base (la boutique, le membre, dix minutes, une fois) et dans un cookie httpOnly de ce navigateur ; le navigateur part sur `SKANFACT_URL/connecter?partenaire=skanecom&retour=…&etat=…` ; au retour, l'état doit être celui du cookie ET celui de la base pour ce membre, sinon rien ; le code s'échange au serveur (`POST /v1/partenaires/skanecom/echanger`, `Authorization: Bearer <SKANFACT_SECRET>`) ; la clé d'un an est chiffrée (AES-GCM, `SKANFACT_CHIFFRE`, la boutique en contexte) avant d'entrer dans la base ; « Connecté à <nom> » | `gestion/[slug]/skanfact/connecter/route.ts`, `_console/skanfact/retour/route.ts`, `lib/gestion/chiffre.ts` |
+| L'accès qui finit : prévenu à 30 jours (« Renouveler la connexion ») ; un **401** de SkanFact coupe la boutique (la clé oubliée, « Reconnecter SkanFact ») ; « Déconnecter » oublie la clé chez SkanEcom (ce qui est fait reste) | page `gestion/[slug]/skanfact`, navigation (pastille) |
+| Les réglages du commerçant : ses taux de TVA (produits, livraison ; rien ne part avant), le moment de la facture (**à la confirmation**, par défaut, ou **à la livraison** — les deux défendables, donc un réglage) | migration 81 (`gestion_skanfact_regler`) |
+| **La file des envois** : chaque envoi naît dans la base (déclencheurs sur les commandes et le SAV), une fois par clé ; son corps est figé au premier essai ; une panne (réseau, 429, 5xx) le renvoie **à l'identique** à 1 min, 5 min, 30 min, 2 h puis toutes les 6 h ; un refus (400, 403, 404, 409) attend, avec la phrase de SkanFact sur la commande et « Réessayer » (le corps se refait, après correction). La file part après chaque geste de l'équipe, et en fond à chaque page du backoffice tant que quelque chose est dû | migration 81, `lib/gestion/skanfact.ts` |
+| **B1** la facture : les lignes figées, TTC au millime, la remise répartie au millime près (une ligne se coupe en deux quand sa quantité ne divise pas son prix remisé), la livraison à son taux, l'encaissement s'il est fait, `totalAttendu` = ce que le client paie, `timbre: false` (une commande SkanEcom ne fait pas payer de timbre) | `construire()` |
+| **B3** le paiement à la livraison (une facture faite à la confirmation) ; **B4** le retour : toute la commande refusée à la livraison ou annulée après sa facture (le timbre de la facture, pas d'argent rendu), un article remboursé au SAV (une unité, à son prix facturé, l'argent rendu en espèces ou en ligne) | déclencheurs `commandes_skanfact`, `sav_skanfact` |
+| Les données : le client (nom ou raison sociale, référence, e-mail, téléphone, adresse, matricule d'un compte pro), les lignes, les paiements. Jamais les notes, ni le commentaire d'un refus : le motif d'un avoir est fixe | page SkanFact, « Ce qui part vers SkanFact » |
+| SkanFact simulé : la page « Relier SkanEcom à SkanFact » (Autoriser, Refuser), l'échange (le secret reconnu à son empreinte, un code de dix minutes, une fois), B1 à B4 avec les refus de la plateforme | `outils/skanfact-dev.mjs` |
+
+**Les secrets** : `SKANFACT_SECRET` (32 octets tirés une fois par l'aperçu en ligne, `openssl rand -hex 32` ;
+jamais écrit nulle part, seule son empreinte SHA-256 s'affiche) et `SKANFACT_CHIFFRE`. **SkanFact déclare
+SkanEcom** avec l'adresse exacte de retour (`https://<console>/skanfact/retour`) et cette empreinte : la
+console les montre (Boutique → Modules → Facturation SkanFact → « SkanEcom chez SkanFact »).
+
+**À VÉRIFIER** (SkanFact le note aussi) : la ligne d'arrondi à 0 %, le timbre d'une vente en ligne à un
+particulier ; et, avant le premier vrai client, la **déclaration INPDP** (des données personnelles partent
+chez SkanFact — Skander s'en occupe). **Pas encore** : un tour de file sans activité au backoffice (une tâche
+planifiée du Worker) ; l'argent rendu d'une commande payée en ligne puis annulée (Konnect est coupé).
+
+---
+
 ## 5. À trancher par Skander
 
 - **L'entreprise qui facture** : SkanEcom est-elle une entreprise à part dans SkanFact (sa raison sociale,

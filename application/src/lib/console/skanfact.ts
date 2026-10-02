@@ -17,6 +17,42 @@ import { clientService } from "./service";
 
 export type ConfigSkanFact = { url: string; entreprise: string; cle: string };
 
+/** L'adresse de SkanFact seule (les commerçants y facturent avec leur propre entreprise et leur clé). */
+export function adresseSkanFact(): string | null {
+  const url = (process.env.SKANFACT_URL ?? "").trim().replace(/\/+$/, "");
+  return /^https?:\/\/[^/]/.test(url) ? url : null;
+}
+
+/* SKANECOM, PARTENAIRE DÉCLARÉ DE SKANFACT (B0, « Connecter SkanFact ») :
+   le secret de SkanEcom (SKANFACT_SECRET, 32 octets tirés au hasard, posé
+   une fois dans les secrets du Worker — jamais dans le dépôt ni dans le
+   navigateur) et l'adresse exacte de la page de retour. SkanFact ne garde
+   que l'EMPREINTE du secret (SHA-256) et l'adresse : la console les montre
+   à l'administrateur, pour qu'il les lui transmette. */
+export function secretPartenaire(): string | null {
+  const s = (process.env.SKANFACT_SECRET ?? "").trim();
+  return s.length >= 32 ? s : null;
+}
+
+/** Le cookie qui garde l'état de « Connecter SkanFact » dans le navigateur du commerçant (dix minutes). */
+export const COOKIE_ETAT_SKANFACT = "skanecom_skanfact_etat";
+
+/** L'adresse exacte (sans paramètres) où SkanFact renvoie le commerçant : la console, /skanfact/retour. */
+export function adresseRetourSkanFact(): string | null {
+  const hote = (process.env.NEXT_PUBLIC_CONSOLE_HOTE ?? "").trim().toLowerCase();
+  if (!/^[a-z0-9.-]+$/.test(hote)) return null;
+  const local = hote === "localhost" || hote.endsWith(".localhost");
+  return local ? `http://${hote}:${process.env.PORT || "4200"}/skanfact/retour` : `https://${hote}/skanfact/retour`;
+}
+
+/** L'empreinte du secret, telle que `printf %s "$SECRET" | sha256sum` la donne. */
+export async function empreinteSecret(): Promise<string | null> {
+  const s = secretPartenaire();
+  if (!s) return null;
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(h)].map((o) => o.toString(16).padStart(2, "0")).join("");
+}
+
 export function configSkanFact(): ConfigSkanFact | null {
   const url = (process.env.SKANFACT_URL ?? "").trim().replace(/\/+$/, "");
   const entreprise = (process.env.SKANFACT_ENTREPRISE ?? "").trim();
@@ -231,9 +267,9 @@ export const accueilSkanFact = (c: ConfigSkanFact) => `${c.url}/v10/?e=${encodeU
 const SYMBOLES: Record<string, string> = { TND: "DT", EUR: "€", USD: "$" };
 
 /** « 1073.190 » en dinars → « 1 073,190 DT », sans passer par un nombre à virgule. */
-export function montant(texte: string | null | undefined, devise = "TND"): string {
+export function montant(texte: string | null | undefined, devise = "TND", symboleImpose?: string): string {
   const m = /^(-?)(\d+)(?:\.(\d+))?$/.exec(String(texte ?? "").trim());
-  const symbole = SYMBOLES[devise] ?? devise;
+  const symbole = symboleImpose ?? SYMBOLES[devise] ?? devise;
   if (!m) return `${texte ?? "—"} ${symbole}`;
   const entiers = m[2].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   return `${m[1] ? "−" : ""}${entiers}${m[3] ? `,${m[3]}` : ""} ${symbole}`;

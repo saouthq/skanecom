@@ -108,6 +108,7 @@ Ce qui ne se décide pas sans lui, rappelé à chaque point d'étape :
 | E-mails | Resend ou Brevo, et un domaine d'envoi vérifié (`COURRIELS_ENVOI`) |
 | Transporteurs | Lesquels brancher en premier (API) |
 | Facturation des clients | Par SkanFact (D20), **branché le 01/10** (`cadrage/06-facturation-skanfact.md` § 4 bis) : poser les secrets `SKANFACT_URL`, `SKANFACT_ENTREPRISE`, `SKANFACT_CLE` (gestes `ventes.pieces.voir` et `ventes.contrat.modifier`, clé créée par le propriétaire), `SKANFACT_AVIS_SECRET` ; s'abonner aux avis dans SkanFact ; le prix de l'abonnement de chaque boutique (le contrat se crée depuis la console) ; trancher le seuil du retard (15 jours) et Maymar |
+| Facturation des commerçants | Le module « Facturation SkanFact » (B0 à B4, `cadrage/06-facturation-skanfact.md` § 4 ter), **branché le 02/10** : SkanFact déclare SkanEcom (l'adresse de retour et l'empreinte du secret, lues dans la console : Modules → Facturation SkanFact) ; poser `SKANFACT_URL` sur l'aperçu ; la **déclaration INPDP** avant le premier vrai client ; vérifier avec un comptable la ligne d'arrondi à 0 % et le timbre |
 | Konnect | Le compte marchand de chaque client qui le veut |
 | Anti-robots | Les clés Turnstile |
 | Maymar | Le domaine `maymar.tn`, les photos selon le protocole (celles reçues ne sont pas montrables), les informations légales |

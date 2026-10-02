@@ -4,6 +4,8 @@ import { Icone, type NomIcone } from "@/components/console/Icone";
 import { dateJournal } from "@/lib/console/libelles";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
+import { adresseRetourSkanFact, adresseSkanFact, empreinteSecret } from "@/lib/console/skanfact";
+import { chiffrementPret } from "@/lib/gestion/chiffre";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   return { title: `Modules · ${(await params).slug}` };
@@ -31,6 +33,7 @@ const ICONES: Record<string, NomIcone> = {
   devis: "fichier",
   avis: "etoile",
   promotions: "etiquette",
+  skanfact: "fichier",
 };
 
 export default async function Modules({ params, searchParams }: {
@@ -47,6 +50,10 @@ export default async function Modules({ params, searchParams }: {
   if (error) throw new Error(`Modules illisibles : ${error.message}`);
   const modules = data as Module[];
   const actifs = modules.filter((m) => m.actif).length;
+  // SkanEcom, partenaire déclaré de SkanFact (« Connecter SkanFact ») : ce que SkanFact doit déclarer.
+  const partenaire = modules.some((m) => m.code === "skanfact")
+    ? { url: adresseSkanFact(), retour: adresseRetourSkanFact(), empreinte: await empreinteSecret(), chiffre: await chiffrementPret() }
+    : null;
 
   return (
     <>
@@ -81,6 +88,20 @@ export default async function Modules({ params, searchParams }: {
                     ) : null}
                     {m.change_le ? (
                       <p className="md-note">{m.actif ? "Activé" : "Coupé"} le {dateJournal(m.change_le)}{m.change_par ? ` par ${m.change_par}` : ""}</p>
+                    ) : null}
+                    {m.code === "skanfact" && partenaire ? (
+                      <details className="md-partenaire">
+                        <summary>SkanEcom chez SkanFact {partenaire.url && partenaire.empreinte && partenaire.retour && partenaire.chiffre
+                          ? <span className="ui-etat ui-etat-point ui-etat-vert">Branché</span>
+                          : <span className="ui-etat ui-etat-point">À brancher</span>}</summary>
+                        <p className="aide">Ce que SkanFact déclare pour que les commerçants connectent leur boutique : l&apos;adresse exacte de retour, et l&apos;empreinte (SHA-256) du secret de SkanEcom — jamais le secret.</p>
+                        <dl className="liste-def">
+                          <div><dt>Adresse de retour</dt><dd><code className="md-code">{partenaire.retour ?? "— (NEXT_PUBLIC_CONSOLE_HOTE)"}</code></dd></div>
+                          <div><dt>Empreinte du secret</dt><dd><code className="md-code">{partenaire.empreinte ?? "— (SKANFACT_SECRET manque)"}</code></dd></div>
+                          <div><dt>Adresse de SkanFact</dt><dd>{partenaire.url ? <code className="md-code">{partenaire.url}</code> : "— (SKANFACT_URL manque)"}</dd></div>
+                          <div><dt>Chiffrement des clés</dt><dd>{partenaire.chiffre ? "posé" : "— (SKANFACT_CHIFFRE manque)"}</dd></div>
+                        </dl>
+                      </details>
                     ) : null}
                   </div>
                   <form action={`/boutiques/${slug}/modules/changer`} method="post" className="md-action">

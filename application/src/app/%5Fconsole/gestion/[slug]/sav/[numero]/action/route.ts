@@ -1,6 +1,7 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers, versAvecErreur } from "@/lib/console/http";
 import { erreurSav } from "@/lib/gestion/sav";
+import { envoyerApres } from "@/lib/gestion/skanfact";
 
 /* ============================================================================
    LES GESTES SUR UNE DEMANDE DE SAV — formulaires HTML ordinaires, réponse
@@ -46,5 +47,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     p_note: texte("note"),
   });
   if (error) return versAvecErreur(fiche, erreurSav(error.hint, error.message));
+  // Un article remboursé : son retour (un avoir, l'argent rendu) part au SkanFact du commerçant (module skanfact).
+  if (geste === "resoudre" && texte("issue") === "remboursement") await envoyerApres(boutique.boutique_id);
   return vers(`${fiche}?fait=${geste}`);
 }

@@ -6,6 +6,8 @@ import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { RetourAppel } from "@/components/console/Raccourcis";
 import { Icone } from "@/components/console/Icone";
+import { FactureSkanFact, type EtatFactureSkanFact } from "@/components/console/FactureSkanFact";
+import { adresseSkanFact } from "@/lib/console/skanfact";
 import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
 import { lieu, type Magasin } from "@/lib/commande";
 import {
@@ -107,6 +109,7 @@ const FAIT: Record<string, string> = {
   annuler: "Commande annulée. Le stock est rendu.",
   expedier: "Commande expédiée.",
   livrer: "Livraison enregistrée : le paiement est encaissé.",
+  skanfact: "C'est fait dans SkanFact.",
   refuser: "Refus enregistré. Le stock est rendu.",
   note: "Note interne enregistrée.",
 };
@@ -189,6 +192,9 @@ export default async function FicheCommande({
     ? await sb.rpc("gestion_numeros_verifies", { p_boutique_id: boutique.boutique_id, p_commandes: [f.numero] })
     : { data: [] };
   const numeroVerifie = ((verifiees as string[] | null) ?? []).includes(f.numero);
+  // Ce que SkanFact sait de la commande (module skanfact) : sa facture, ses paiements, ses avoirs.
+  const { data: sf } = await sb.rpc("gestion_skanfact_commande", { p_boutique_id: boutique.boutique_id, p_numero: f.numero });
+  const etatSkanFact = sf as EtatFactureSkanFact | null;
 
   const role = boutique.role;
   const maintenant = new Date();
@@ -533,6 +539,13 @@ export default async function FicheCommande({
                 </p>
               </section>
             )}
+
+            {etatSkanFact && (etatSkanFact.envois.length
+              || (etatSkanFact.actif && etatSkanFact.connecte && ["confirmee", "expediee", "livree"].includes(f.statut))) ? (
+              <FactureSkanFact e={etatSkanFact} statut={f.statut} numero={f.numero} action={`/gestion/${slug}/skanfact/action`}
+                fiche={`/gestion/${slug}/commandes/${f.numero}`}
+                peutAgir={["proprietaire", "admin", "confirmateur", "preparateur"].includes(role)} url={adresseSkanFact()} maintenant={maintenant} />
+            ) : null}
 
             {annulable && peut(role, CONFIRMER) ? (
               <details className="bo-pli bo-annuler carte">

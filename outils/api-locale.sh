@@ -42,6 +42,9 @@ SECRET_DEV="secret-de-developpement-skanecom-local-uniquement"
 SKANFACT_ENTREPRISE_DEV="00000000-0000-4000-8888-00000000e000"
 SKANFACT_CLE_DEV="skf_dev_local_skanecom"
 SKANFACT_AVIS_DEV="whsec_dev_local_skanecom"
+# Le secret de SkanEcom, partenaire de SkanFact (« Connecter SkanFact », B0) :
+# de développement ; SkanFact simulé n'en connaît que l'empreinte.
+SKANFACT_SECRET_DEV="skanecom-partenaire-developpement-local-uniquement"
 ADMIN_EMAIL=admin@skanecom.test
 ADMIN_MDP=console-locale-skanecom
 EQUIPE_MDP=equipe-locale-skanecom
@@ -147,6 +150,7 @@ CONF
   # que l'application reçoit plus bas.
   FICHIERS_DEPOT_CLE="$(jeton service_role)" \
   SKANFACT_ENTREPRISE="$SKANFACT_ENTREPRISE_DEV" SKANFACT_CLE="$SKANFACT_CLE_DEV" SKANFACT_AVIS_SECRET="$SKANFACT_AVIS_DEV" \
+  SKANFACT_PARTENAIRE_EMPREINTE="$(printf '%s' "$SKANFACT_SECRET_DEV" | sha256sum | cut -d' ' -f1)" \
     setsid node "$RACINE/outils/relais-rest.mjs" > "$OUTILS/relais.log" 2>&1 < /dev/null &
   echo $! > "$OUTILS/relais.pid"
 
@@ -170,6 +174,10 @@ ENV
     printf 'SKANFACT_ENTREPRISE=%s\n' "$SKANFACT_ENTREPRISE_DEV"
     printf 'SKANFACT_CLE=%s\n' "$SKANFACT_CLE_DEV"
     printf 'SKANFACT_AVIS_SECRET=%s\n' "$SKANFACT_AVIS_DEV"
+    # Le chiffrement des clés que les commerçants confient (32 octets, de développement).
+    printf 'SKANFACT_CHIFFRE=%s\n' "$(printf '%s' "$SECRET_DEV" | openssl dgst -sha256 -binary | base64 -w0)"
+    # Le secret de SkanEcom chez SkanFact (B0), de développement.
+    printf 'SKANFACT_SECRET=%s\n' "$SKANFACT_SECRET_DEV"
   } > "$RACINE/application/.dev.vars"
 
   # Jusqu'à une minute : au premier démarrage, GoTrue passe ses propres

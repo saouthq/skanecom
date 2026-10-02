@@ -81,7 +81,15 @@ Le workflow fait ensuite tout, à chaque exécution :
   Supabase, réservé aux membres de l'organisation) s'il n'a pas de compte,
   puis inscrit dans `plateforme.administrateurs`. Lien périmé : relancer le
   workflow avec « Renvoyer l'invitation ». La double authentification se
-  règle à la première connexion à la console.
+  règle à la première connexion à la console ;
+- SkanFact : « aucune » pour les secrets de la facturation des clients
+  tant que Skander ne les pose pas ; le chiffrement des clés des commerçants
+  (`SKANFACT_CHIFFRE`) et le secret de SkanEcom chez SkanFact
+  (`SKANFACT_SECRET`, 32 octets) tirés au hasard UNE fois, jamais écrits
+  nulle part. Le résumé de l'exécution qui tire le secret en donne
+  l'empreinte (SHA-256) ; chaque exécution redonne l'adresse de retour. La
+  console les redit (une boutique → Modules → Facturation SkanFact →
+  « SkanEcom chez SkanFact ») : c'est ce que SkanFact déclare.
 
 Le jeton Cloudflare du dépôt (ajouté le 29/09) expire fin octobre : le
 renouveler avec le modèle « Edit Cloudflare Workers ».
