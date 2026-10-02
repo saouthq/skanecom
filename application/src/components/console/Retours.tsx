@@ -33,7 +33,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
    Restent des envois ordinaires : la connexion et la double
    authentification, l'accès support (il change de session), les exports et
-   les téléversements, tout formulaire marqué data-rechargement.
+   les téléversements, « Connecter SkanFact » (la réponse part sur un autre
+   site, qu'un fetch ne suit pas), tout formulaire marqué data-rechargement.
 
    Posés une fois, dans la coquille ; aucun formulaire n'a à s'en soucier.
    ========================================================================== */
@@ -42,7 +43,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 const GESTE_EN_COURS = "skanecom:geste";
 /** Lu par le proxy : la page de retour n'est pas rendue pour rien (src/proxy.ts). */
 const EN_TETE_GESTE = "x-skanecom-geste";
-const EXCLUS = /\/(export|session|support)(\/|$)|\/(analyser|envoyer|images|photos)$/;
+const EXCLUS = /\/(export|session|support)(\/|$)|\/(analyser|envoyer|images|photos|connecter)$/;
 
 type AvecTransitions = Document & {
   startViewTransition?: (miseAJour: () => Promise<void>) => { finished: Promise<void> };

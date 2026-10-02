@@ -73,8 +73,10 @@ export default async function SkanFact({ params, searchParams }: {
   const expireBientot = c?.etat === "connectee" && joursRestants <= 30;
   const aRegler = c !== null && (!c.tva_produits || !c.tva_livraison);
 
+  // L'envoi ordinaire (data-rechargement), jamais en place : la réponse envoie
+  // la page entière chez SkanFact, un autre site, qu'un fetch ne suit pas.
   const boutonConnecter = (libelle: string, principal = true) => (
-    <form action={connecter} method="post">
+    <form action={connecter} method="post" data-rechargement="">
       <button type="submit" className={`btn ${principal ? "btn-primaire" : "btn-second"}`}>
         <Icone nom="lien" taille={16} /> {libelle}
       </button>

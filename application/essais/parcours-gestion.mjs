@@ -2471,6 +2471,10 @@ if (section("7")) {
   await etape("« Connecter SkanFact » : refusé, puis autorisé chez SkanFact", async () => {
     await clic(page, page.locator(".app-cote").getByRole("link", { name: "SkanFact" }));
     await page.waitForURL(/\/gestion\/maymar\/skanfact$/);
+    // La page entière part chez SkanFact (l'envoi ordinaire) : SkanFact simulé,
+    // comme le vrai, ne répond pas aux fetch d'un autre site (pas de CORS).
+    verifie(await page.getByRole("button", { name: "Connecter SkanFact" }).evaluate((b) => b.form?.dataset.rechargement !== undefined),
+      "« Connecter SkanFact » n'est pas envoyé en place : la page entière part chez SkanFact");
     await clic(page, page.getByRole("button", { name: "Connecter SkanFact" }));
     await page.waitForURL(/skanfact-dev\/connecter\?partenaire=skanecom/);
     verifie(new URL(page.url()).searchParams.get("retour") === `${C}/skanfact/retour`, "SkanFact reçoit l'adresse de retour exacte, sans paramètres");

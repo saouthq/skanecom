@@ -176,6 +176,10 @@ function deposeFichier(req, res) {
 
 http
   .createServer((req, res) => {
+    // SkanFact simulé, SANS en-tête CORS, comme le vrai : ses pages se visitent
+    // (« Relier SkanEcom à SkanFact »), son API s'appelle depuis le serveur. Un
+    // formulaire de la console qui le suivrait par fetch échoue ici aussi.
+    if (req.url.startsWith(SKANFACT + "/")) return skanfactDev(req, res);
     // L'application lit la vitrine côté serveur ; le CORS ouvert ne sert qu'aux
     // essais depuis un navigateur en local.
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -190,7 +194,6 @@ http
     if (req.url === "/email-dev/rendu" && req.method === "POST") return recoitRendu(req, res);
     if (req.url.startsWith("/email-dev/rendu/dernier") && req.method === "GET") return dernierRendu(req.url, res);
     if (req.url.startsWith("/email-dev/dernier") && req.method === "GET") return dernierEmail(req.url, res);
-    if (req.url.startsWith(SKANFACT + "/")) return skanfactDev(req, res);
 
     const cible = AMONTS.find((a) => req.url === a.prefixe || req.url.startsWith(a.prefixe + "/") || req.url.startsWith(a.prefixe + "?"));
     if (!cible) {
