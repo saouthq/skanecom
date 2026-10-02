@@ -23,6 +23,9 @@
 #   98 765 001 (le plombier, compte pro en attente, devis à chiffrer),
 #   22 345 002 (l'électricienne, pro validée, devis prêt à accepter).
 #
+# SKANFACT_REEL=<adresse> : la console parle à un vrai serveur d'essai de
+# SkanFact au lieu du simulé (application/essais/skanfact-reel.mjs).
+#
 # Prérequis : la base locale (outils/base-locale.sh reinit) et Node.
 # Adresse : http://127.0.0.1:54321 (comme `supabase start`).
 #
@@ -169,8 +172,9 @@ ENV
     printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$(jeton service_role)"
     printf 'COURRIELS_ENVOI=relais\n'
     printf 'COURRIELS_CROCHET_SECRET=v1,whsec_%s\n' "$(printf '%s' "$SECRET_DEV" | base64 -w0)"
-    # SkanFact simulé par le relais (la facturation des clients, cadrage 06).
-    printf 'SKANFACT_URL=http://127.0.0.1:54321/skanfact-dev\n'
+    # SkanFact simulé par le relais (la facturation des clients, cadrage 06),
+    # ou un vrai serveur d'essai de SkanFact (SKANFACT_REEL).
+    printf 'SKANFACT_URL=%s\n' "${SKANFACT_REEL:-http://127.0.0.1:54321/skanfact-dev}"
     printf 'SKANFACT_ENTREPRISE=%s\n' "$SKANFACT_ENTREPRISE_DEV"
     printf 'SKANFACT_CLE=%s\n' "$SKANFACT_CLE_DEV"
     printf 'SKANFACT_AVIS_SECRET=%s\n' "$SKANFACT_AVIS_DEV"

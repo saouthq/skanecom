@@ -130,6 +130,7 @@ bun run parcours:console                       # la console SkanEcom : créer, r
 bun run parcours:commande                      # une vraie commande dans chaque gabarit (base fraîche : outils/essayer.sh)
 bun run parcours:gestion                       # l'équipe de Maymar traite ses commandes au backoffice
 bun run apercu                                 # captures des pages clés des boutiques
+bun run essai:skanfact-reel                    # contre un VRAI SkanFact d'essai (cadrage 06, § 4 ter : SKANFACT_REEL)
 ```
 
 Les captures arrivent dans `.outils/captures/` (à la racine du dépôt).
