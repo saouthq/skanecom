@@ -60,7 +60,13 @@ export async function resoudre(hote: string): Promise<Resolution> {
   if (connu && connu.expire > Date.now()) return connu.resolution;
 
   try {
-    const resolution = await demandeALaBase(hote);
+    // Une base lente une fois (le Worker qui démarre rend plusieurs pages
+    // d'un coup) n'est pas une base en panne : un second essai, puis la
+    // page de secours. Une base qui refuse (HTTP) échoue tout de suite.
+    const resolution = await demandeALaBase(hote).catch((e) => {
+      if (!["TimeoutError", "AbortError"].includes((e as Error)?.name)) throw e;
+      return demandeALaBase(hote);
+    });
     memoire.set(hote, {
       resolution,
       expire: Date.now() + (resolution.etat === "inconnu" ? DUREE_INCONNU : resolution.etat === "fermee" ? DUREE_FERMEE : DUREE_CONNU),

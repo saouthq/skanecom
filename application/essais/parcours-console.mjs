@@ -308,7 +308,16 @@ await etape("la galerie des modèles : chaque structure, sa démonstration en ap
     "quatre aperçus vivants ; l'Éditorial et la Technique disent qu'ils n'ont pas encore de démonstration");
   const bento = page.locator(".mo-modele", { has: page.locator("h2", { hasText: /^Bento$/ }) });
   await bento.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(1500);
+  // Les aperçus se chargent à l'approche (loading="lazy") : on attend que chacun ait son titre.
+  const charge = async (hote) => {
+    for (let i = 0; i < 40; i++) {
+      const f = page.frames().find((x) => x.url().includes(hote));
+      if (f && await f.title().catch(() => "")) return;
+      await page.waitForTimeout(500);
+    }
+  };
+  await charge("maison.localhost");
+  await charge("mode.localhost");
   const cadre = page.frames().find((f) => f.url().includes("maison.localhost"));
   verifie(Boolean(cadre) && (await cadre.title()).startsWith("Dar Alia"), "Bento : la vraie vitrine de Dar Alia, en réduction");
   verifie((await page.frames().find((f) => f.url().includes("mode.localhost"))?.locator(".pub-consentement").count()) === 0,
