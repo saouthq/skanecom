@@ -6,7 +6,7 @@ import { Pagination } from "@/components/console/Pagination";
 import { dateJournal } from "@/lib/console/libelles";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
-import { ACTIONS, GENRES_JOURNAL, jourValide } from "@/lib/console/journal";
+import { ACTIONS, GENRES_JOURNAL, jourValide, libelleSignal } from "@/lib/console/journal";
 import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 
 export const metadata: Metadata = { title: "Journal" };
@@ -41,6 +41,7 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
   const detail = (x: LigneJournal) =>
     x.action.startsWith("note.") || x.action.startsWith("annonce.") ? ""
     : x.action === "boutique.formule" ? (x.cible ? nomsFormules.get(x.cible) ?? x.cible : SANS_FORMULE)
+    : x.action.startsWith("vigilance.") ? libelleSignal(x.cible)
     : x.cible ?? "";
   const choisie = boutiques.find((b) => b.slug === p.boutique) ?? null;
   const genre = GENRES_JOURNAL.find((g) => g.cle === p.genre) ?? null;

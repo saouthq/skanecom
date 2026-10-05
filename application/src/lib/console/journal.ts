@@ -34,6 +34,7 @@ export const ACTIONS: Record<string, string> = {
   "boutique.cloner": "Configuration clonée",
   "domaine.principal": "Domaine principal changé",
   "domaine.retirer": "Domaine retiré",
+  "domaine.certificats_verifies": "Certificats des domaines vérifiés",
   "note.ajouter": "Note de suivi",
   "note.epingler": "Note épinglée",
   "note.detacher": "Note détachée",
@@ -97,4 +98,20 @@ export function jourValide(v: string | null | undefined): string | null {
   const d = new Date(`${v}T00:00:00Z`);
   // (le 30 février n'existe pas : on relit le jour)
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : null;
+}
+
+/** Ce qu'un signal d'« À surveiller » mis à plus tard ou repris désigne
+ *  (sa clé : « <boutique>:<genre>[:<détail>] »), lisible au journal. */
+const SIGNAUX: Record<string, string> = {
+  attente: "Commandes à confirmer", refus: "Refus à la livraison", silence: "Aucune commande récente",
+  formule: "Ouverte sans formule", sav: "SAV sans réponse", devis: "Devis à chiffrer", avis: "Avis à relire",
+  epuises: "Produits épuisés", facturation: "Facture en retard", "sans-client": "Sans client SkanFact",
+  preparation: "Mise en place à finir", support: "Accès support ouvert", suspendue: "Boutique suspendue",
+  rappel: "Rappel d'une note",
+};
+export function libelleSignal(cle: string | null): string {
+  if (!cle) return "";
+  const [, genre = "", detail] = cle.split(":");
+  if (genre === "certificat" && detail) return `Certificat de ${detail}`;
+  return SIGNAUX[genre] ?? genre;
 }

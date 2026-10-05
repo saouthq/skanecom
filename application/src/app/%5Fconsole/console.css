@@ -1717,3 +1717,92 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .pr-plus[open] > summary { margin-block-end: .5rem; }
 .pr-retirer { justify-self: start; color: var(--ui-rouge); }
 @media (max-width: 40rem) { .pr-ligne { padding-inline: 1rem; } }
+
+/* ---------------------------------------------------------------------------
+   L'ÉTAT TECHNIQUE (/etat) — un verdict, puis une carte par service : son
+   état d'un mot, ses chiffres en deux colonnes, ce qu'il faut regarder.
+   --------------------------------------------------------------------------- */
+.et-verdict { display: flex; gap: .875rem; align-items: flex-start; margin-block-end: 1.25rem; }
+.et-verdict > .icone { flex: none; margin-block-start: .125rem; color: var(--ui-vert); }
+.et-verdict[data-niveau="attention"] { border-color: var(--ui-ambre-bord); background: var(--ui-ambre-fond); }
+.et-verdict[data-niveau="attention"] > .icone { color: var(--ui-ambre); }
+.et-verdict[data-niveau="panne"] { border-color: var(--ui-rouge-bord); background: var(--ui-rouge-fond); }
+.et-verdict[data-niveau="panne"] > .icone { color: var(--ui-rouge); }
+.et-verdict > div { display: grid; gap: .25rem; min-inline-size: 0; }
+.et-verdict p { margin: 0; }
+.et-verdict-titre { font-weight: 600; font-size: .9375rem; }
+.et-verdict-liste { display: flex; flex-wrap: wrap; gap: .25rem .875rem; margin: .25rem 0 0; padding: 0; list-style: none; font-size: .8125rem; }
+.et-verdict-liste a { font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.et-grille { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 64rem) { .et-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } .et-large { grid-column: 1 / -1; } }
+.et-carte { display: grid; gap: 1rem; scroll-margin-block-start: 5rem; }
+.et-carte > .message { margin: 0; }
+.et-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .75rem; }
+.et-tete h2 { font-size: 1rem; margin: 0; scroll-margin-block-start: 5.5rem; }
+.et-faits { display: grid; margin: 0; }
+.et-faits > div {
+  display: grid; grid-template-columns: minmax(0, 13rem) minmax(0, 1fr); gap: 1rem;
+  padding-block: .5rem; border-block-start: 1px solid var(--ui-bord-leger); font-size: .875rem;
+}
+.et-faits > div:first-child { border-block-start: 0; padding-block-start: 0; }
+.et-faits dt { color: var(--ui-texte-2); }
+.et-faits dd { margin: 0; min-inline-size: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+@media (max-width: 30rem) { .et-faits > div { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .75rem; } }
+.et-pose { color: var(--ui-vert); font-weight: 500; }
+.et-manque { color: var(--ui-rouge); font-weight: 500; }
+.et-points { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.et-points li {
+  display: flex; gap: .5rem; align-items: flex-start; padding: .625rem .75rem; border-radius: var(--ui-r);
+  font-size: .8125rem; line-height: 1.45; color: var(--ui-texte);
+  background: var(--ui-ambre-fond); box-shadow: inset 0 0 0 1px var(--ui-ambre-bord);
+}
+.et-points li > .icone { flex: none; margin-block-start: .125rem; color: var(--ui-ambre); }
+.et-points li[data-niveau="panne"] { background: var(--ui-rouge-fond); box-shadow: inset 0 0 0 1px var(--ui-rouge-bord); }
+.et-points li[data-niveau="panne"] > .icone { color: var(--ui-rouge); }
+.et-points a { font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.et-pied { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; align-items: center; padding-block-start: .75rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.et-pied form { margin: 0; }
+.et-pied .aide { margin: 0; }
+.et-domaines { display: grid; margin: 0; padding: 0; list-style: none; }
+.et-domaines li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .25rem 1rem;
+  padding-block: .625rem; border-block-start: 1px solid var(--ui-bord-leger);
+}
+.et-domaines li:first-child { border-block-start: 0; padding-block-start: 0; }
+.et-domaine { display: grid; gap: .125rem; min-inline-size: 0; }
+.et-hote { font-weight: 500; font-size: .875rem; overflow-wrap: anywhere; }
+.et-domaine .discret { font-size: .8125rem; }
+.et-domaine-etat { display: grid; justify-items: end; gap: .125rem; }
+.et-note { margin-block-start: 1.25rem; }
+
+/* ---------------------------------------------------------------------------
+   LES REVENUS (/revenus) — quatre chiffres, puis par formule et par boutique.
+   --------------------------------------------------------------------------- */
+.rv-chiffres > li .aide { margin: 0; }
+.rv-chiffres > li[data-niveau="attention"] { box-shadow: var(--ui-ombre-xs), inset 3px 0 0 var(--ui-ambre); }
+.rv-chiffres .tbp-valeur small { font-size: .875rem; font-weight: 500; color: var(--ui-texte-3); }
+.rv-bloc { margin-block-end: 1.25rem; }
+.rv-tete { display: grid; gap: .25rem; padding: 1rem 1.25rem .75rem; }
+.rv-tete h2 { font-size: 1rem; margin: 0; }
+.rv-tete .aide { margin: 0; }
+.rv-tete a { text-decoration: underline; text-underline-offset: 2px; }
+.console .rv-tableau :is(th, td) { white-space: nowrap; }
+.console .rv-tableau .rv-n { text-align: end; font-variant-numeric: tabular-nums; }
+.console .rv-tableau tfoot :is(th, td) { border-block-start: 1px solid var(--ui-bord); font-weight: 600; }
+/* Le total se lit comme une ligne, pas comme un en-tête. */
+.console .carte-plate .rv-tableau tfoot th {
+  background: transparent; font-size: .875rem; color: var(--ui-texte); padding-block: .75rem;
+  border-block-start: 1px solid var(--ui-bord); border-block-end: 0;
+}
+/* Ce qui reste à faire, en lien d'action ; ce qui manque, en gris. */
+.console .rv-tableau a.rv-a-faire { color: var(--ui-accent); font-weight: 500; }
+.console .rv-tableau a.rv-a-faire:hover { text-decoration: underline; text-underline-offset: 2px; }
+.console .rv-tableau a.discret { color: var(--ui-texte-3); font-weight: 400; }
+.console .rv-tableau a.discret:hover { color: var(--ui-accent); }
+.rv-skanfact { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .375rem .5rem; font-variant-numeric: tabular-nums; }
+.rv-sans-contrat { display: block; margin: .125rem 0 0; }
+.rv-vide { padding: 0 1.25rem 1.25rem; margin: 0; }
+/* Au téléphone, le nom reste à gauche quand le tableau défile. */
+.console .rv-tableau :is(th, td):first-child { position: sticky; inset-inline-start: 0; z-index: 1; background: var(--ui-panneau); box-shadow: inset -1px 0 0 var(--ui-bord-leger); }
+.console .rv-tableau thead th:first-child { background: var(--ui-survol); }
+.console .rv-tableau tbody tr:hover td:first-child { background: var(--ui-survol); }

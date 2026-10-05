@@ -11,7 +11,8 @@ import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, date
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { formateMontant } from "@/lib/prix";
-import { ACTIONS } from "@/lib/console/journal";
+import { ACTIONS, libelleSignal } from "@/lib/console/journal";
+import { hoteLocal } from "@/lib/console/etat";
 import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
@@ -197,9 +198,12 @@ export default async function FicheBoutique({ params, searchParams }: {
                       </td>
                       <td>{d.principal ? <span className="ui-etat">Principal</span> : <span className="discret">Secondaire</span>}</td>
                       <td>
-                        <span className={CERTIFICAT[d.statut_certificat]?.classe ?? "ui-etat ui-etat-point ui-etat-ambre"}>
-                          {CERTIFICAT[d.statut_certificat]?.texte ?? "En attente"}
-                        </span>
+                        {/* Un domaine local n'a pas de certificat : il ne se vérifie pas (État technique). */}
+                        {hoteLocal(d.hote) ? <span className="ui-etat ui-etat-point">Local</span> : (
+                          <span className={CERTIFICAT[d.statut_certificat]?.classe ?? "ui-etat ui-etat-point ui-etat-ambre"}>
+                            {CERTIFICAT[d.statut_certificat]?.texte ?? "En attente"}
+                          </span>
+                        )}
                       </td>
                       <td className="text-end">
                         {d.principal ? null : (
@@ -302,6 +306,7 @@ export default async function FicheBoutique({ params, searchParams }: {
                           : j.action.startsWith("mise_en_place.") && j.cible ? (ETAPES_MISE_EN_PLACE[j.cible as CleEtape]?.titre ?? j.cible)
                           : j.action.startsWith("support.") && j.cible ? (MODES_SUPPORT[j.cible as ModeSupport]?.titre ?? j.cible)
                           : j.action === "boutique.formule" ? (formules.formules.find((x) => x.code === j.cible)?.nom ?? j.cible ?? SANS_FORMULE)
+                          : j.action.startsWith("vigilance.") ? libelleSignal(j.cible)
                           : j.action.startsWith("catalogue.photos") || j.action.startsWith("note.") ? "" : (j.cible ?? "")}</td>
                         <td>
                           {j.acteur ? (

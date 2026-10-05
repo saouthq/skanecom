@@ -2,7 +2,7 @@ import { acces } from "@/lib/console/session";
 import { clientService } from "@/lib/console/service";
 import { ipDe, vers } from "@/lib/console/http";
 import { dateJournal } from "@/lib/console/libelles";
-import { ACTIONS, GENRES_JOURNAL, jourValide } from "@/lib/console/journal";
+import { ACTIONS, GENRES_JOURNAL, jourValide, libelleSignal } from "@/lib/console/journal";
 import { tableurCsv } from "@/lib/gestion/export";
 import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 
@@ -51,6 +51,7 @@ export async function GET(req: Request) {
   const detail = (x: LigneJournal) =>
     x.action.startsWith("note.") || x.action.startsWith("annonce.") ? ""
     : x.action === "boutique.formule" ? (x.cible ? noms.get(x.cible) ?? x.cible : SANS_FORMULE)
+    : x.action.startsWith("vigilance.") ? libelleSignal(x.cible)
     : x.cible ?? "";
   const csv = tableurCsv(
     ["Quand", "Geste", "Boutique", "Détail", "Par", "IP"],

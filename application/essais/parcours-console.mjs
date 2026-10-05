@@ -1897,6 +1897,45 @@ await etape("perdu : un motif est demandé", async () => {
 });
 
 /* ------------------------------------------------------------------ */
+console.log("\n== 3 sexies. L'état technique : ce qui répond, ce qui est branché, ce qui attend ==");
+
+await etape("l'état technique : la base répond, les e-mails et les fichiers passent par le relais, aucun secret à l'écran", async () => {
+  await clic(page, page.locator(".app-cote").getByRole("link", { name: "État technique" }));
+  await page.waitForURL(/\/etat$/);
+  const carte = (id) => page.locator(`section[aria-labelledby="t-${id}"]`);
+  verifie((await carte("base").locator(".et-tete .ui-etat").innerText()) === "Répond" && /Répond en\s*\d[\d\s ]* ms/.test(await carte("base").innerText()),
+    "la base répond, et dit en combien de temps");
+  verifie((await carte("courriels").innerText()).includes("Relais local") && (await carte("courriels").locator(".et-pose").count()) >= 1,
+    "les e-mails : le relais local, le crochet de Supabase Auth posé");
+  verifie((await carte("skanfact").locator(".et-tete .ui-etat").innerText()) === "Branché", "SkanFact : branché (le relais le simule)");
+  verifie((await carte("fichiers").innerText()).includes("Relais local"), "les fichiers : le relais local");
+  verifie((await carte("domaines").innerText()).includes("ne se vérifient pas"), "des domaines « .localhost » seulement : rien à vérifier, et c'est dit");
+  // Les secrets posés sont dits « posés » : aucune valeur ne passe dans la page.
+  const html = await page.content();
+  const vars = readFileSync(new URL("../.dev.vars", import.meta.url), "utf8").split("\n").filter((l) => l.includes("="))
+    .map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim().replace(/^"|"$/g, "")]);
+  // L'adresse de SkanFact n'est pas un secret ; de COURRIELS_ENVOI, seule la clé (« resend:<clé>:<adresse> ») l'est.
+  const secrets = vars.filter(([k]) => k !== "SKANFACT_URL")
+    .map(([k, v]) => (k === "COURRIELS_ENVOI" ? v.split(":")[1] ?? "" : v)).filter((v) => v.length >= 12);
+  verifie(secrets.length >= 5 && secrets.every((s) => !html.includes(s)), `aucune des ${secrets.length} valeurs de secret dans la page`);
+  await capture(page, "console-etat", true);
+});
+
+await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {
+  await clic(page, page.locator(".app-cote").getByRole("link", { name: "Revenus" }));
+  await page.waitForURL(/\/revenus$/);
+  const premier = await page.locator(".rv-chiffres > li").first().innerText();
+  verifie(premier.includes("Prix à fixer") && premier.includes("Aucune formule n'a encore de prix"), "le revenu mensuel : « Prix à fixer », et pourquoi");
+  const formules = await page.locator('section[aria-labelledby="t-formules"] tbody tr').allInnerTexts();
+  verifie(formules.length === 3 && formules.every((l) => l.includes("Prix à fixer")), "par formule : les trois, sans prix inventé");
+  const boutiques = await page.locator('section[aria-labelledby="t-boutiques"] tbody').innerText();
+  verifie(boutiques.includes("Maymar") && !["Maison Selma", "Dar Alia", "Yasmine Beauté"].some((n) => boutiques.includes(n)),
+    "par boutique : les clientes, pas les démonstrations");
+  verifie(boutiques.includes("Choisir sa formule") && boutiques.includes("Non reliée"), "sans formule : l'invitation à la choisir ; sans SkanFact : « Non reliée »");
+  await capture(page, "console-revenus", true);
+});
+
+/* ------------------------------------------------------------------ */
 console.log("\n== 4. Les portes ==");
 
 await etape("un formulaire posté depuis un autre site est refusé", async () => {
@@ -1949,9 +1988,10 @@ await etape("la galerie des e-mails, aux couleurs de la boutique choisie", async
   await page.locator(".crl-cadre").waitFor({ timeout: 15_000 }).catch(() => {});
   await pause(600);
   const liste = page.getByRole("navigation", { name: "E-mails" });
-  verifie(await liste.getByRole("link").count() === 6,
-    "six e-mails dans la liste : le code, la nouvelle adresse, la lettre (confirmer, déjà inscrit), l'invitation, le mot de passe");
-  verifie(await page.locator(".crl-cadre").count() === 1, "un seul aperçu à la fois, pas six empilés");
+  const noms = await liste.getByRole("link").allInnerTexts();
+  verifie(noms.length === 10 && ["Commande reçue", "En route", "Livrée", "Nouvelle commande (équipe)"].every((n) => noms.some((x) => x.includes(n))),
+    "dix e-mails dans la liste : le code, la nouvelle adresse, la lettre (confirmer, déjà inscrit), l'invitation, le mot de passe, et les quatre de la commande");
+  verifie(await page.locator(".crl-cadre").count() === 1, "un seul aperçu à la fois, pas dix empilés");
   const sujet = await page.locator(".crl-sujet").first().innerText();
   verifie(/^Votre code de connexion — .+/.test(sujet), `le sujet dit qui écrit : « ${sujet} »`);
   await capture(page, "console-courriels");

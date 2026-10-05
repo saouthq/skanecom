@@ -14,6 +14,7 @@ const PAGES: ElementPalette[] = [
   { groupe: "Aller à", icone: "boutique", href: "/", titre: "Boutiques" },
   { groupe: "Aller à", icone: "plus", href: "/nouvelle-boutique", titre: "Nouvelle boutique" },
   { groupe: "Aller à", icone: "graphique", href: "/tableau", titre: "Tableau de bord" },
+  { groupe: "Aller à", icone: "tendance", href: "/revenus", titre: "Revenus" },
   { groupe: "Aller à", icone: "billet", href: "/formules", titre: "Formules" },
   { groupe: "Aller à", icone: "ecran", href: "/modeles", titre: "Modèles" },
   { groupe: "Aller à", icone: "personne", href: "/prospects", titre: "Prospects" },
@@ -23,6 +24,7 @@ const PAGES: ElementPalette[] = [
   { groupe: "Aller à", icone: "equipe", href: "/equipe-plateforme", titre: "Équipe SkanEcom" },
   { groupe: "Aller à", icone: "journal", href: "/journal", titre: "Journal" },
   { groupe: "Aller à", icone: "courriel", href: "/journal?vue=envois", titre: "Journal des envois" },
+  { groupe: "Aller à", icone: "outil", href: "/etat", titre: "État technique" },
   { groupe: "Aller à", icone: "personne", href: "/compte", titre: "Mon compte" },
 ];
 
@@ -62,6 +64,7 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
           liens: [
             { href: "/", libelle: "Boutiques", icone: "boutique", exact: true, aussi: ["/boutiques/", "/nouvelle-boutique"], extra: badge },
             { href: "/tableau", libelle: "Tableau de bord", icone: "graphique" },
+            { href: "/revenus", libelle: "Revenus", icone: "tendance" },
           ],
         },
         {
@@ -84,6 +87,7 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
           liens: [
             { href: "/equipe-plateforme", libelle: "Équipe SkanEcom", icone: "equipe" },
             { href: "/journal", libelle: "Journal", icone: "journal" },
+            { href: "/etat", libelle: "État technique", icone: "outil" },
           ],
         },
       ]}

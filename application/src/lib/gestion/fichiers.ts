@@ -151,6 +151,18 @@ function depotLocal(): string | null {
   return ["127.0.0.1", "localhost"].includes(new URL(base).hostname) ? base : null;
 }
 
+/** Où partent les fichiers : le relais local, le bucket R2 lié au Worker, ou
+ *  nulle part (la liaison manque) — pour l'état technique de la console. */
+export async function modeFichiers(): Promise<"local" | "r2" | "manque"> {
+  if (depotLocal()) return "local";
+  try {
+    const { env } = await import("cloudflare:workers");
+    return env.FICHIERS ? "r2" : "manque";
+  } catch {
+    return "manque";
+  }
+}
+
 async function bucket(): Promise<R2> {
   const { env } = await import("cloudflare:workers");
   const r2 = env.FICHIERS as R2 | undefined;
