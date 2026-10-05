@@ -167,6 +167,8 @@ export function vigilances(lignes: LignePilotage[], maintenant: number, options:
  *  certificat, vitrine vidée par les ruptures, formule à poser. */
 function signesDeSante(b: LignePilotage, sa: Sante, maintenant: number): Vigilance[] {
   const out: Vigilance[] = [];
+  // Une boutique fermée, suspendue ou en préparation ne vend pas : ses signaux d'activité n'en sont pas.
+  if (b.statut !== "active") return out;
   const pousse = (cle: string, niveau: Vigilance["niveau"], texte: string, href = `/boutiques/${b.slug}`) =>
     out.push({ cle: `${b.id}:${cle}`, niveau, boutique: b, texte, href });
   const clos = sa.livrees_30j + sa.refusees_30j;
@@ -177,7 +179,7 @@ function signesDeSante(b: LignePilotage, sa: Sante, maintenant: number): Vigilan
         `${Math.round(taux * 100)} % de refus à la livraison sur 30 jours (${sa.refusees_30j} sur ${clos} colis)`, `/tableau?boutique=${b.slug}`);
     }
   }
-  if (b.statut === "active") {
+  {
     const derniere = sa.derniere_commande ? new Date(sa.derniere_commande).getTime() : null;
     const jours = derniere === null ? null : Math.floor((maintenant - derniere) / 86_400_000);
     const ouverteDepuis = Math.floor((maintenant - new Date(b.creee_le).getTime()) / 86_400_000);

@@ -11,12 +11,16 @@ import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const retour = cheminEquipe(slug);
-  return ecriture(req, async ({ user, formulaire, ip }) => {
+  return ecriture(req, async ({ user, formulaire, ip, roleAdmin }) => {
     const email = String(formulaire.get("email") ?? "").trim().toLowerCase();
     const role = String(formulaire.get("role") ?? "");
     const saisie = { email, role };
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return versAvecErreur(retour, "Adresse e-mail invalide.", saisie);
     if (!ROLES_EQUIPE.some((r) => r.code === role)) return versAvecErreur(retour, "Choisissez un rôle.", saisie);
+    // Avant tout lien (sinon un compte naîtrait pour un refus) : le support n'ouvre pas les rôles qui engagent.
+    if (roleAdmin !== "super_admin" && (role === "proprietaire" || role === "admin")) {
+      return versAvecErreur(retour, "Seul un super-administrateur donne le rôle propriétaire ou administrateur.", saisie);
+    }
 
     const boutique = await boutiqueDe(slug);
     if (!boutique) return new Response("Boutique introuvable", { status: 404 });

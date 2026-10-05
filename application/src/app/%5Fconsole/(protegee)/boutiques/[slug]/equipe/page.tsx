@@ -49,7 +49,11 @@ export default async function Equipe({ params, searchParams }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ erreur?: string; ok?: string; email?: string; role?: string }>;
 }) {
-  await exigeAdmin();
+  const { role: roleAdmin } = await exigeAdmin();
+  // Le support n'ouvre ni ne touche les rôles qui engagent la boutique (la base le redit).
+  const superAdmin = roleAdmin === "super_admin";
+  const engage = (r: string) => r === "proprietaire" || r === "admin";
+  const rolesPermis = superAdmin ? ROLES_EQUIPE : ROLES_EQUIPE.filter((r) => !engage(r.code));
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const boutique = await boutiqueDe(slug);
   if (!boutique) notFound();
@@ -129,13 +133,15 @@ export default async function Equipe({ params, searchParams }: {
                         </p>
                       </div>
                     </div>
-                    <div className="membre-gestes">
+                    {!superAdmin && engage(m.role) ? (
+                      <div className="membre-gestes"><span className="ui-etat">{LIBELLES_ROLE[m.role] ?? m.role}</span></div>
+                    ) : <div className="membre-gestes">
                       {m.actif ? (
                         <form action={`${action}/modifier`} method="post" className="membre-role">
                           <input type="hidden" name="user_id" value={m.user_id} />
                           <label className="sr-only" htmlFor={`role-${m.user_id}`}>Rôle de {qui}</label>
                           <select id={`role-${m.user_id}`} name="role" defaultValue={m.role} className="entree">
-                            {ROLES_EQUIPE.map((r) => <option key={r.code} value={r.code}>{LIBELLES_ROLE[r.code]}</option>)}
+                            {rolesPermis.map((r) => <option key={r.code} value={r.code}>{LIBELLES_ROLE[r.code]}</option>)}
                           </select>
                           <button type="submit" className="btn btn-second btn-petit">Changer</button>
                         </form>
@@ -159,7 +165,7 @@ export default async function Equipe({ params, searchParams }: {
                           {m.actif ? "Retirer l'accès" : "Rendre l'accès"}
                         </button>
                       </form>
-                    </div>
+                    </div>}
                   </li>
                 );
               })}
@@ -182,7 +188,7 @@ export default async function Equipe({ params, searchParams }: {
             </div>
             <fieldset className="choix">
               <legend>Rôle</legend>
-              {ROLES_EQUIPE.map((r) => (
+              {rolesPermis.map((r) => (
                 <label key={r.code} className="choix-carte role-choix">
                   <input type="radio" name="role" value={r.code} required defaultChecked={(messages.role ?? "confirmateur") === r.code} />
                   <span>

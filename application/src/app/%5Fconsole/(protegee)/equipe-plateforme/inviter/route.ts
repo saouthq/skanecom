@@ -11,7 +11,9 @@ import { COOKIE_LIEN_ADMIN, ROLES_PLATEFORME } from "@/lib/console/equipe-platef
    lui sera demandée à la première connexion, comme à tout administrateur. */
 export async function POST(req: Request) {
   const retour = "/equipe-plateforme";
-  return ecriture(req, async ({ user, formulaire, ip }) => {
+  return ecriture(req, async ({ user, formulaire, ip, roleAdmin }) => {
+    // Avant tout lien : sinon un compte serait créé (ou son lien d'invitation remplacé) pour un refus.
+    if (roleAdmin !== "super_admin") return versAvecErreur(retour, "Seul un super-administrateur invite dans l'équipe SkanEcom.");
     const email = String(formulaire.get("email") ?? "").trim().toLowerCase();
     const role = String(formulaire.get("role") ?? "");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return versAvecErreur(retour, "Adresse e-mail invalide.", { email, role });

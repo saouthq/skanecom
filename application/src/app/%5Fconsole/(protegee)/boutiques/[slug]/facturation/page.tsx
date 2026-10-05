@@ -48,7 +48,9 @@ export default async function PageFacturation({ params, searchParams }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ erreur?: string; ok?: string; identifiant?: string } & ValeursAbonnement>;
 }) {
-  await exigeAdmin();
+  const { role } = await exigeAdmin();
+  // Relier, délier, l'abonnement engagent le client : le super-administrateur seul (la base le redit).
+  const superAdmin = role === "super_admin";
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const boutique = await boutiqueDe(slug);
   if (!boutique) notFound();
@@ -159,10 +161,12 @@ export default async function PageFacturation({ params, searchParams }: {
                           Voir <Icone nom="externe" taille={14} />
                         </a>
                       ) : null}
-                      <form action={`${base}/lier`} method="post">
-                        <input type="hidden" name="client" value={c.id} />
-                        <button type="submit" className="btn btn-primaire">Relier à ce client</button>
-                      </form>
+                      {superAdmin ? (
+                        <form action={`${base}/lier`} method="post">
+                          <input type="hidden" name="client" value={c.id} />
+                          <button type="submit" className="btn btn-primaire">Relier à ce client</button>
+                        </form>
+                      ) : <span className="aide">Un super-administrateur le relie.</span>}
                     </span>
                   </li>
                 );
@@ -289,18 +293,20 @@ export default async function PageFacturation({ params, searchParams }: {
                   Sa fiche dans SkanFact <Icone nom="externe" taille={14} />
                 </a>
               ) : null}
-              <details className="fa-delier">
+              {superAdmin ? <details className="fa-delier">
                 <summary className="btn btn-fantome">Délier</summary>
                 <form action={`${base}/delier`} method="post" className="pile">
                   <p className="aide">La console oubliera ce client et sa situation. Dans SkanFact, rien ne change : ni le client, ni ses factures.</p>
                   <button type="submit" className="btn btn-danger">Délier ce client</button>
                 </form>
-              </details>
+              </details> : null}
             </div>
           </section>
-          <AbonnementSkanFact base={base} config={config} nom={boutique.nom} suivi={lien.contrat} contrats={contrats} maintenant={instant}
-            valeurs={{ objet: messages.objet, designation: messages.designation, prix: messages.prix, tva: messages.tva, periode: messages.periode,
-              prochaine: messages.prochaine, emettre_seul: messages.emettre_seul }} />
+          {superAdmin ? (
+            <AbonnementSkanFact base={base} config={config} nom={boutique.nom} suivi={lien.contrat} contrats={contrats} maintenant={instant}
+              valeurs={{ objet: messages.objet, designation: messages.designation, prix: messages.prix, tva: messages.tva, periode: messages.periode,
+                prochaine: messages.prochaine, emettre_seul: messages.emettre_seul }} />
+          ) : <p className="message">L&apos;abonnement de {boutique.nom} se tient dans SkanFact, par un super-administrateur.</p>}
           <Regles config={config} hote={hote} avis={f.dernier_avis} />
         </div>
       </div>

@@ -40,14 +40,14 @@ export function ipDe(req: Request): string | null {
 
 export async function ecriture(
   req: Request,
-  action: (contexte: { user: User; formulaire: FormData; ip: string | null }) => Promise<Response>,
+  action: (contexte: { user: User; formulaire: FormData; ip: string | null; roleAdmin: string }) => Promise<Response>,
 ): Promise<Response> {
   if (!memeOrigine(req)) return new Response("Origine refusée", { status: 403 });
   const a = await acces();
   if (a.etat === "anonyme") return vers("/connexion");
   if (a.etat === "refuse") return vers("/refuse");
   if (a.etat === "aal1") return vers("/double-authentification");
-  return action({ user: a.user, formulaire: await req.formData(), ip: ipDe(req) });
+  return action({ user: a.user, formulaire: await req.formData(), ip: ipDe(req), roleAdmin: a.role });
 }
 
 /** Message lisible d'une erreur de la base (contraintes, droits, version). */

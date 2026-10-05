@@ -425,13 +425,15 @@ export default async function FicheBoutique({ params, searchParams }: {
                 </p>
               </div>
             </div>
-            <form action={`/boutiques/${b.slug}/demonstration`} method="post" className="carte-pied">
-              <input type="hidden" name="boutique_id" value={b.id} />
-              <input type="hidden" name="demonstration" value={b.demonstration ? "false" : "true"} />
-              <button type="submit" className="btn btn-second btn-bloc">
-                {b.demonstration ? "C'est une boutique cliente" : "C'est une boutique de démonstration"}
-              </button>
-            </form>
+            {superAdmin ? (
+              <form action={`/boutiques/${b.slug}/demonstration`} method="post" className="carte-pied">
+                <input type="hidden" name="boutique_id" value={b.id} />
+                <input type="hidden" name="demonstration" value={b.demonstration ? "false" : "true"} />
+                <button type="submit" className="btn btn-second btn-bloc">
+                  {b.demonstration ? "C'est une boutique cliente" : "C'est une boutique de démonstration"}
+                </button>
+              </form>
+            ) : null}
           </section>
         </div>
       </div>
