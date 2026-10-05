@@ -65,9 +65,15 @@ export default async function Boutique({ children, params }: {
             {role === "super_admin" ? <form action={`${base}/statut`} method="post">
               <input type="hidden" name="boutique_id" value={b.id} />
               {b.statut === "active" ? (
-                <button type="submit" name="statut" value="suspendue" className="btn btn-second">
-                  <Icone nom="alimentation" taille={16} /> Suspendre la boutique
-                </button>
+                // Suspendre retire une vitrine en ligne : un second geste le confirme.
+                <details className="bt-confirmer" data-reste-ouvert>
+                  <summary className="btn btn-second"><Icone nom="alimentation" taille={16} /> Suspendre la boutique</summary>
+                  <div className="bt-confirmer-panneau" role="group" aria-label="Confirmer la suspension">
+                    <p>Sa vitrine cesse d&apos;être servie aux visiteurs. Les commandes déjà passées restent à traiter au backoffice ; la boutique se rouvre d&apos;un geste.</p>
+                    <input type="hidden" name="confirme" value="1" />
+                    <button type="submit" name="statut" value="suspendue" className="btn btn-danger btn-petit">Suspendre maintenant</button>
+                  </div>
+                </details>
               ) : (
                 <button type="submit" name="statut" value="active" className="btn btn-primaire">
                   <Icone nom="alimentation" taille={16} /> Ouvrir la boutique

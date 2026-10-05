@@ -25,10 +25,26 @@ const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-dig
    regard. En liste (?vue=liste), le même état en tableau. Sur l'aperçu en
    ligne seulement (supabase/apercu/codes-demo.sql), les codes de connexion
    que Supabase aurait envoyés par SMS ou par e-mail. */
-export default async function Tableau({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
+/** Les filtres de la liste : par défaut, les boutiques en activité (les fermées à part). */
+const STATUTS_FILTRE = [
+  { cle: "", titre: "En activité" },
+  { cle: "active", titre: "Ouvertes" },
+  { cle: "en_preparation", titre: "En préparation" },
+  { cle: "suspendue", titre: "Suspendues" },
+  { cle: "fermee", titre: "Fermées" },
+  { cle: "toutes", titre: "Tout statut" },
+] as const;
+
+/** Pour chercher sans se soucier des accents ni des majuscules. */
+const plat = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+export default async function Tableau({ searchParams }: { searchParams: Promise<{ vue?: string; q?: string; statut?: string; formule?: string; type?: string }> }) {
   const { user } = await exigeAdmin();
-  const { vue } = await searchParams;
-  const enListe = vue === "liste";
+  const p = await searchParams;
+  const enListe = p.vue === "liste";
+  const q = (p.q ?? "").trim().slice(0, 80);
+  const statut = STATUTS_FILTRE.find((x) => x.cle === p.statut)?.cle ?? "";
+  const type = p.type === "clientes" || p.type === "demos" ? p.type : "";
   const service = clientService();
   const [{ data, error }, { data: codesApercu }, { data: df }, { data: ds }] = await Promise.all([
     service.rpc("console_pilotage"),
@@ -43,6 +59,25 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
   const codes = Array.isArray(codesApercu) ? (codesApercu as CodeApercu[]) : null;
   if (error) throw new Error(`Boutiques illisibles : ${error.message}`);
   const boutiques = (data ?? []) as LignePilotage[];
+  const formuleFiltre = p.formule === "sur-mesure" || formules.formules.some((f) => f.code === p.formule) ? (p.formule as string) : "";
+  const codeFormuleDe = new Map(formules.boutiques.map((x) => [x.id, x.formule]));
+  const filtree = q !== "" || statut !== "" || formuleFiltre !== "" || type !== "";
+  const visibles = boutiques.filter((b) =>
+    (statut === "toutes" ? true : statut === "" ? b.statut !== "fermee" : b.statut === statut)
+    && (type === "" || (type === "demos") === b.demonstration)
+    && (formuleFiltre === "" || (formuleFiltre === "sur-mesure" ? !codeFormuleDe.get(b.id) : codeFormuleDe.get(b.id) === formuleFiltre))
+    && (q === "" || [b.nom, b.slug, b.hote ?? ""].some((t) => plat(t).includes(plat(q)))));
+  const fermees = boutiques.filter((b) => b.statut === "fermee").length;
+  const lienVue = (liste: boolean) => {
+    const u = new URLSearchParams();
+    if (liste) u.set("vue", "liste");
+    if (q) u.set("q", q);
+    if (statut) u.set("statut", statut);
+    if (formuleFiltre) u.set("formule", formuleFiltre);
+    if (type) u.set("type", type);
+    const t = u.toString();
+    return `/${t ? `?${t}` : ""}`;
+  };
   const hoteConsole = (await headers()).get("host");
   const maintenant = new Date().getTime();
   const aSurveiller = vigilances(boutiques, maintenant, { skanfact: configSkanFact() !== null, sante: (ds ?? []) as Sante[] });
@@ -57,9 +92,11 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
   const encaisse = clientes.reduce((n, b) => n + b.commandes.encaisse_semaine, 0);
   const tuiles = (liste: LignePilotage[]) => (
     <div className="pl-grille">
-      {liste.map((b) => <TuileBoutique key={b.id} b={b} maintenant={maintenant} hoteConsole={hoteConsole} />)}
+      {liste.map((b) => <TuileBoutique key={b.id} b={b} maintenant={maintenant} hoteConsole={hoteConsole} formule={formuleDe.get(b.id) ?? SANS_FORMULE} />)}
     </div>
   );
+  const clientesVisibles = visibles.filter((b) => !b.demonstration);
+  const demosVisibles = visibles.filter((b) => b.demonstration);
 
   return (
     <>
@@ -76,8 +113,8 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
         actions={
           <>
             <nav className="segments pl-vues" aria-label="Affichage des boutiques">
-              <Link href="/" aria-current={enListe ? undefined : "page"}><Icone nom="apercu" taille={14} /> Tuiles</Link>
-              <Link href="/?vue=liste" aria-current={enListe ? "page" : undefined}><Icone nom="liste" taille={14} /> Liste</Link>
+              <Link href={lienVue(false)} aria-current={enListe ? undefined : "page"}><Icone nom="apercu" taille={14} /> Tuiles</Link>
+              <Link href={lienVue(true)} aria-current={enListe ? "page" : undefined}><Icone nom="liste" taille={14} /> Liste</Link>
             </nav>
             <Link href="/nouvelle-boutique" className="btn btn-primaire"><Icone nom="plus" /> Nouvelle boutique</Link>
           </>
@@ -114,14 +151,49 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
             )}
           </section>
 
-          {enListe ? (
+          <form action="/" method="get" className="pl-filtres" role="search" aria-label="Chercher une boutique">
+            {enListe ? <input type="hidden" name="vue" value="liste" /> : null}
+            <label className="sr-only" htmlFor="pl-q">Nom, identifiant ou domaine</label>
+            <span className="pl-filtres-q">
+              <Icone nom="recherche" taille={16} />
+              <input id="pl-q" name="q" type="search" className="entree" defaultValue={q} placeholder="Nom, identifiant ou domaine" autoComplete="off" />
+            </span>
+            <label className="sr-only" htmlFor="pl-statut">Statut</label>
+            <select id="pl-statut" name="statut" className="entree" defaultValue={statut}>
+              {STATUTS_FILTRE.map((x) => <option key={x.cle} value={x.cle}>{x.titre}{x.cle === "fermee" && fermees ? ` (${fermees})` : ""}</option>)}
+            </select>
+            <label className="sr-only" htmlFor="pl-formule">Formule</label>
+            <select id="pl-formule" name="formule" className="entree" defaultValue={formuleFiltre}>
+              <option value="">Toute formule</option>
+              {formules.formules.map((f) => <option key={f.code} value={f.code}>{f.nom}</option>)}
+              <option value="sur-mesure">{SANS_FORMULE}</option>
+            </select>
+            <label className="sr-only" htmlFor="pl-type">Clientes ou démonstrations</label>
+            <select id="pl-type" name="type" className="entree" defaultValue={type}>
+              <option value="">Clientes et démos</option>
+              <option value="clientes">Clientes</option>
+              <option value="demos">Démos</option>
+            </select>
+            <button type="submit" className="btn btn-second">Filtrer</button>
+            {filtree ? (
+              <span className="pl-filtres-compte">
+                {visibles.length} sur {boutiques.length} · <Link href={enListe ? "/?vue=liste" : "/"} className="btn-lien">Tout voir</Link>
+              </span>
+            ) : fermees ? (
+              <span className="pl-filtres-compte discret">{fermees} fermée{fermees > 1 ? "s" : ""} à part</span>
+            ) : null}
+          </form>
+
+          {visibles.length === 0 ? (
+            <p className="message">Aucune boutique pour ce filtre. <Link href={enListe ? "/?vue=liste" : "/"}>Tout voir</Link></p>
+          ) : enListe ? (
             <div className="carte carte-plate defile">
               <table className="tableau">
                 <thead>
                   <tr><th>Boutique</th><th>Domaine</th><th>Statut</th><th>Formule</th><th>Mise en place</th><th className="text-end">À confirmer</th><th>7 jours</th><th className="text-end">Produits</th><th aria-label="Ouvrir" /></tr>
                 </thead>
                 <tbody>
-                  {boutiques.map((b) => (
+                  {[...clientesVisibles, ...demosVisibles].map((b) => (
                     <tr key={b.id} className="ligne-lien">
                       <td>
                         <span className="cellule-titre">
@@ -134,7 +206,7 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
                       </td>
                       <td className="discret">{b.hote ?? "—"}</td>
                       <td><span className={`statut statut-${b.statut}`}>{LIBELLES_STATUT[b.statut] ?? b.statut}</span></td>
-                      <td className={formuleDe.get(b.id) ? undefined : "discret"}>{formuleDe.get(b.id) ?? SANS_FORMULE}</td>
+                      <td className={formuleDe.get(b.id) ? "whitespace-nowrap" : "discret whitespace-nowrap"}>{formuleDe.get(b.id) ?? SANS_FORMULE}</td>
                       <td>
                         <span className="mp-mini" title={`${b.mise_en_place.faites} étapes faites sur ${b.mise_en_place.total}`}>
                           <span className="mp-barre" aria-hidden="true">
@@ -158,16 +230,16 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
                 </tbody>
               </table>
             </div>
-          ) : clientes.length && demos.length ? (
+          ) : clientesVisibles.length && demosVisibles.length ? (
             <>
-              <h2 className="pl-groupe">Clientes <span className="pl-compte tabular-nums">{clientes.length}</span></h2>
-              {tuiles(clientes)}
-              <h2 className="pl-groupe">Démonstrations <span className="pl-compte tabular-nums">{demos.length}</span></h2>
+              <h2 className="pl-groupe">Clientes <span className="pl-compte tabular-nums">{clientesVisibles.length}</span></h2>
+              {tuiles(clientesVisibles)}
+              <h2 className="pl-groupe">Démonstrations <span className="pl-compte tabular-nums">{demosVisibles.length}</span></h2>
               <p className="aide pl-groupe-aide">Montrées aux prospects : leurs commandes ne comptent pas dans la synthèse ni dans « À surveiller ».</p>
-              {tuiles(demos)}
+              {tuiles(demosVisibles)}
             </>
           ) : (
-            tuiles(boutiques)
+            tuiles(visibles)
           )}
         </>
       )}

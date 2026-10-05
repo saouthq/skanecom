@@ -776,6 +776,12 @@ await etape("la liste de mise en place", async () => {
   await page.goto(`${CONSOLE}/?vue=liste`, { waitUntil: "networkidle" });
   const ligne = page.locator("tr", { hasText: "Outillage Pro Démo" }).last();
   verifie((await ligne.locator(".mp-mini").innerText()).includes(`${faites + 1}/10`), "la liste aussi");
+  // Chercher une boutique : par une partie de son identifiant, sans majuscules.
+  await clic(page, page.locator("#pl-q")); await tape(page, SUFFIXE.toUpperCase());
+  await envoie(page, () => page.keyboard.press("Enter"));
+  const lignesTrouvees = await page.locator(".tableau tbody tr").allInnerTexts();
+  verifie(lignesTrouvees.length === 1 && lignesTrouvees[0].includes("Outillage Pro Démo") && (await page.locator(".pl-filtres-compte").innerText()).includes("1 sur"),
+    `la recherche « ${SUFFIXE.toUpperCase()} » ne garde que la boutique d'essai`);
 });
 
 /* ------------------------------------------------------------------ */
@@ -1320,7 +1326,7 @@ await etape("le cycle de vie : renommer, cloner la configuration, fermer", async
   verifie(page.url().includes(`/boutiques/${CLONE}`) && !page.url().includes("ok="), "sans la case cochée, rien ne part");
   await clic(page, page.getByLabel("Le contrat est fini : fermer la boutique"));
   await envoie(page, page.getByRole("button", { name: "Fermer la boutique" }));
-  verifie((await page.locator(".ui-etat", { hasText: "Fermée" }).count()) > 0, "fermée : son statut le dit");
+  verifie((await page.locator(".statut-fermee").innerText()).includes("Fermée"), "fermée : son statut le dit");
   await capture(page, "console-boutique-fermee");
 });
 

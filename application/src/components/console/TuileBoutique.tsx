@@ -28,7 +28,7 @@ export function Semaine({ jours }: { jours: number[] }) {
   );
 }
 
-export function TuileBoutique({ b, maintenant, hoteConsole }: { b: LignePilotage; maintenant: number; hoteConsole: string | null }) {
+export function TuileBoutique({ b, maintenant, hoteConsole, formule }: { b: LignePilotage; maintenant: number; hoteConsole: string | null; formule?: string }) {
   const { accent, fond, encre } = couleursDe(b);
   const c = b.commandes;
   const mp = b.mise_en_place;
@@ -108,7 +108,7 @@ export function TuileBoutique({ b, maintenant, hoteConsole }: { b: LignePilotage
 
       <div className="pl-pied">
         <span className="discret">
-          {(b.marque.code && LIBELLES_THEME[b.marque.code]) ?? "—"} · {b.publies} produit{b.publies > 1 ? "s" : ""} en vitrine
+          {formule ? <>{formule} · </> : null}{(b.marque.code && LIBELLES_THEME[b.marque.code]) ?? "—"} · {b.publies} en vitrine
         </span>
         {b.hote ? (
           <a className="pl-vitrine" href={adresseVitrine(b.hote, hoteConsole)} target="_blank" rel="noopener">

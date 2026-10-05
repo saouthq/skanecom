@@ -12,6 +12,7 @@ import "../globals.css";
    Une nouvelle page hors de ces dossiers doit l'importer aussi. */
 import { Suspense } from "react";
 import { EnvoiFormulaires, ProgressionNavigation } from "@/components/console/Retours";
+import { FermeConfirmations } from "@/components/console/FermeConfirmations";
 import { AncresDouces } from "@/components/AncresDouces";
 import { feuilleDuTheme, themeDeLaBoutique } from "@/lib/theme";
 
@@ -56,6 +57,7 @@ export default function RacineConsole({ children }: { children: React.ReactNode 
       <body className="console min-h-full flex flex-col bg-fond text-encre">
         <Suspense fallback={null}><ProgressionNavigation /></Suspense>
         <EnvoiFormulaires />
+        <FermeConfirmations />
         <AncresDouces />
         {children}
       </body>

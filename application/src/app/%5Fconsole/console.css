@@ -1031,6 +1031,14 @@ html:has(.mq-pied) { scroll-padding-block-end: 6rem; }
 .pl-demo { display: inline-flex; align-items: center; padding: .125rem .5rem; border-radius: 999px; font-size: .75rem; font-weight: 500; color: var(--ui-texte-2); background: var(--ui-panneau); box-shadow: inset 0 0 0 1px var(--ui-bord-fort); }
 /* L'accueil, en deux groupes quand il y a des démonstrations. */
 .pl-groupe { display: flex; align-items: center; gap: .5rem; margin: 2rem 0 .75rem; font-size: 1rem; font-weight: 600; }
+/* Chercher une boutique : une ligne au bureau, empilée au téléphone. */
+.pl-filtres { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 1.5rem 0 1.25rem; }
+.pl-filtres-q { position: relative; flex: 1 1 16rem; min-inline-size: 0; }
+.pl-filtres-q > .icone { position: absolute; inset-inline-start: .75rem; inset-block-start: 50%; translate: 0 -50%; color: var(--ui-texte-3); pointer-events: none; }
+.console .pl-filtres-q input { padding-inline-start: 2.25rem; }
+.console .pl-filtres select { inline-size: auto; flex: 0 1 auto; }
+.pl-filtres-compte { font-size: .8125rem; color: var(--ui-texte-2); }
+@media (max-width: 40rem) { .console .pl-filtres select { flex: 1 1 40%; min-inline-size: 0; } .pl-filtres-q { flex-basis: 100%; } }
 .pl-groupe:first-of-type { margin-block-start: 1.5rem; }
 .pl-groupe-aide { margin: -.375rem 0 .875rem; }
 .pl-vitrine { display: inline-flex; align-items: center; gap: .3125rem; min-block-size: 32px; padding-inline: .5rem; margin-inline-end: -.5rem; border-radius: var(--ui-r-s); font-weight: 500; color: var(--ui-texte-2); }
@@ -1381,3 +1389,31 @@ a.sf-numero .icone { color: var(--ui-texte-3); }
 .bt-retour { margin: 0 0 .75rem; }
 /* Une carte plate (sans marge, pour un tableau ou une liste bord à bord) garde un en-tête aéré. */
 .console .carte-plate > .carte-tete { padding: 1.125rem 1.25rem .875rem; margin: 0; }
+
+/* ---- Un geste qui retire une vitrine : un second clic le confirme ---- */
+.bt-confirmer { position: relative; }
+.bt-confirmer > summary { list-style: none; cursor: pointer; }
+.bt-confirmer > summary::-webkit-details-marker { display: none; }
+.bt-confirmer[open] > summary { background: var(--ui-survol); }
+.bt-confirmer-panneau {
+  position: absolute; inset-inline-end: 0; inset-block-start: calc(100% + .375rem); z-index: 20;
+  inline-size: min(21rem, calc(100vw - 2rem)); display: grid; gap: .75rem; justify-items: start;
+  padding: .875rem 1rem; background: var(--ui-panneau); border: 1px solid var(--ui-bord); border-radius: var(--ui-r);
+  box-shadow: var(--ui-ombre-l, 0 12px 32px rgb(0 0 0 / .12)); font-size: .8125rem; color: var(--ui-texte-2);
+}
+.bt-confirmer-panneau p { margin: 0; line-height: 1.45; }
+
+/* ---- La fiche d'une boutique : son activité sur 30 jours, ses signaux ---- */
+.bt-activite { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1rem; margin: 0 0 1rem; }
+.bt-activite > div { display: grid; gap: .125rem; }
+.bt-activite dt { font-size: .75rem; color: var(--ui-texte-3); }
+.bt-activite dd { margin: 0; font-size: 1.125rem; font-weight: 600; letter-spacing: -.01em; }
+.bt-activite dd small { font-size: .75rem; font-weight: 500; color: var(--ui-texte-3); }
+.bt-activite > div[data-alerte] dd { color: var(--ui-rouge); }
+.bt-signaux { display: grid; gap: .25rem; margin: 0 0 .25rem; padding: 0; list-style: none; font-size: .8125rem; }
+.bt-signaux a { display: flex; align-items: baseline; gap: .5rem; padding: .375rem .5rem; margin-inline: -.5rem; border-radius: 6px; color: var(--ui-texte); text-decoration: none; }
+.bt-signaux a:hover { background: var(--ui-survol); }
+.bt-signaux .pl-point { flex: none; translate: 0 -1px; }
+.bt-signaux-calme { display: flex; align-items: center; gap: .375rem; margin: 0; color: var(--ui-vert); }
+.bt-signaux [data-niveau="attention"] .pl-point { background: #F59E0B; }
+.bt-signaux [data-niveau="urgent"] .pl-point { background: var(--ui-rouge); box-shadow: 0 0 0 3px var(--ui-rouge-fond); }

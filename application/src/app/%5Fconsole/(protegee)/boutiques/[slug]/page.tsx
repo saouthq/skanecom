@@ -19,6 +19,11 @@ import { MiseEnPlace } from "@/components/console/MiseEnPlace";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
 import { titreBoutique } from "@/lib/console/titre-boutique";
+import { depuis, vigilances, type LignePilotage, type Sante } from "@/lib/console/pilotage";
+import { configSkanFact } from "@/lib/console/skanfact";
+
+/** Ce que rend public.console_tableau pour une boutique, sur la période. */
+type Activite = { id: string; recues: number; livrees: number; refusees: number; chiffre: number; precedent: { recues: number; chiffre: number } };
 
 type Fiche = {
   boutique: { id: string; slug: string; nom: string; statut: string; langue_defaut: string; created_at: string; demonstration: boolean };
@@ -55,13 +60,23 @@ export default async function FicheBoutique({ params, searchParams }: {
   const hoteConsole = (await headers()).get("host");
   // Une boutique vide peut recevoir le préréglage d'un métier.
   const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
-  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }] = await Promise.all([
+  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     vide ? clientService().rpc("console_metiers", { p_acteur: user.id }) : Promise.resolve({ data: null }),
     clientService().rpc("console_formules", { p_acteur: user.id }),
     clientService().rpc("console_notes", { p_acteur: user.id, p_boutique_id: b.id }),
+    // L'activité et la santé de la boutique : les mêmes chiffres et les mêmes signaux que l'accueil et le tableau de bord.
+    clientService().rpc("console_pilotage"),
+    clientService().rpc("console_sante", { p_acteur: user.id }),
+    clientService().rpc("console_tableau", { p_acteur: user.id, p_jours: 30 }),
   ]);
+  const maintenant = new Date().getTime();
+  const ligne = ((dp ?? []) as LignePilotage[]).find((x) => x.id === b.id) ?? null;
+  const sante = ((dsa ?? []) as Sante[]).find((x) => x.id === b.id) ?? null;
+  const activite = (((dt ?? { boutiques: [] }) as { boutiques: Activite[] }).boutiques).find((x) => x.id === b.id) ?? null;
+  const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [] }) : [];
+  const clos = activite ? activite.livrees + activite.refusees : 0;
   const notes = (dn ?? []) as { id: number; texte: string; epinglee: boolean; le: string; auteur: string | null; vous: boolean }[];
   const formules = (df ?? { formules: [], droits: [], boutiques: [] }) as DonneesFormules;
   const codeFormule = formules.boutiques.find((x) => x.id === b.id)?.formule ?? null;
@@ -266,6 +281,37 @@ export default async function FicheBoutique({ params, searchParams }: {
         </div>
 
         <div className="pile">
+          {activite ? (
+            <section className="carte" aria-labelledby="t-activite" id="activite">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-activite" className="carte-titre-icone"><Icone nom="graphique" /> Activité · 30 jours</h2>
+                  <p>
+                    {sante?.derniere_commande ? <>Dernière commande il y a {depuis(sante.derniere_commande, maintenant)}</> : "Aucune commande encore"}
+                    {b.demonstration ? " · démonstration : hors tableau de bord" : null}
+                  </p>
+                </div>
+              </div>
+              <dl className="bt-activite">
+                <div><dt>Reçues</dt><dd className="tabular-nums">{activite.recues}</dd></div>
+                <div><dt>Livrées</dt><dd className="tabular-nums">{activite.livrees}</dd></div>
+                <div data-alerte={clos >= 5 && activite.refusees / clos >= 0.25 ? "" : undefined}>
+                  <dt>Refus</dt><dd className="tabular-nums">{clos ? `${Math.round((activite.refusees / clos) * 100)} %` : "—"}</dd>
+                </div>
+                <div><dt>Chiffre livré</dt><dd className="tabular-nums">{formateMontant(activite.chiffre)} <small>TND</small></dd></div>
+              </dl>
+              {signaux.length ? (
+                <ul className="bt-signaux" role="list">
+                  {signaux.map((v) => (
+                    <li key={v.cle} data-niveau={v.niveau}><Link href={v.href}><span className="pl-point" aria-hidden="true" />{v.texte}</Link></li>
+                  ))}
+                </ul>
+              ) : <p className="aide bt-signaux-calme"><Icone nom="coche" taille={14} /> Rien à signaler.</p>}
+              <div className="carte-pied">
+                <Link href={`/tableau?boutique=${b.slug}`} className="btn-lien aide inline-flex items-center gap-1 whitespace-nowrap">Au tableau de bord <Icone nom="droite" taille={12} /></Link>
+              </div>
+            </section>
+          ) : null}
           <section className="carte" aria-labelledby="t-formule" id="formule">
             <div className="carte-tete">
               <div>
@@ -285,7 +331,7 @@ export default async function FicheBoutique({ params, searchParams }: {
               <input type="hidden" name="boutique_id" value={b.id} />
               <label className="sr-only" htmlFor="bt-formule">Formule de {b.nom}</label>
               <select id="bt-formule" className="entree" key={codeFormule ?? "sur-mesure"} name="formule" defaultValue={codeFormule ?? ""}>
-                <option value="">{SANS_FORMULE} (tout ouvert)</option>
+                <option value="">{SANS_FORMULE}</option>
                 {formules.formules.map((x) => <option key={x.code} value={x.code}>{x.nom}{x.prix !== null ? ` · ${formateMontant(x.prix)} TND` : ""}</option>)}
               </select>
               <button type="submit" className="btn btn-second">Changer</button>
