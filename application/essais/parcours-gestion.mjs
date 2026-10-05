@@ -1483,7 +1483,9 @@ if (section("4bis")) {
     verifie((await carte("RENTREE15").innerText()).includes("−15,000 TND") && (await carte("RENTREE15").innerText()).includes("dès 120,000 TND"), "ce qu'il offre, à quelle condition");
     await t.envoie(page, carte("RENTREE15").getByRole("button", { name: "Couper" }));
     verifie((await carte("RENTREE15").locator(".ui-etat").innerText()).includes("Coupé"), "coupé : il passe avec les codes finis, « Réactiver » à la place");
-    await clic(page, nouveau().getByLabel("Le code"));
+    // Créé, le formulaire s'est replié : « Nouveau code » le rouvre, comme on le ferait.
+    verifie(!(await page.locator("details#nouveau").evaluate((d) => d.open)), "le code créé, le formulaire se replie : la liste reprend la place");
+    await clic(page, page.locator(".page-actions").getByRole("button", { name: "Nouveau code" }));
     await tape(page, "rentree15");
     await clic(page, nouveau().getByLabel(/^Un pourcentage/));
     await clic(page, nouveau().getByLabel("La remise"));

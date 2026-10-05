@@ -262,7 +262,9 @@ export function EnvoiFormulaires() {
 
       // Réussi, le geste laisse le formulaire comme un rechargement l'aurait
       // laissé : ses champs aux valeurs que le serveur vient de rendre, le pli
-      // qui le contenait refermé (le focus revient à son titre). Refusé
+      // qui le contenait refermé (le focus revient à son titre) — sauf un pli
+      // marqué data-reste-ouvert : une liste qu'on édite (les zones, les prix
+      // par quantité), où l'on veut voir ce qu'on vient d'ajouter. Refusé
       // (?erreur=), tout reste en place pour corriger.
       // Sauf si l'on a déjà recommencé à écrire pendant l'animation : la
       // remise à zéro effacerait la nouvelle saisie.
@@ -270,7 +272,7 @@ export function EnvoiFormulaires() {
       if (!retourUrl.searchParams.has("erreur") && form.isConnected && !suivi.ecrit) {
         form.reset();
         const pli = form.parentElement?.closest("details");
-        if (pli?.open) {
+        if (pli?.open && !pli.hasAttribute("data-reste-ouvert")) {
           if (pli.contains(document.activeElement)) focus = pli.querySelector<HTMLElement>(":scope > summary");
           pli.open = false;
         }

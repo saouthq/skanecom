@@ -427,7 +427,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                 description={parZone
                   ? "Chaque zone a son tarif et son délai, annoncés à l'acheteur dès qu'il choisit son gouvernorat."
                   : "Préparées ici, elles ne s'appliquent qu'avec « Tarif par zone » (ci-dessus)."}>
-                <details className="rg-pli rg-eteignable" data-eteinte={parZone ? undefined : ""} open={parZone || messages.dans === "zones" ? true : undefined}>
+                <details className="rg-pli rg-eteignable" data-reste-ouvert data-eteinte={parZone ? undefined : ""} open={parZone || messages.dans === "zones" ? true : undefined}>
                   <summary className="btn btn-second btn-petit">{e.zones.length ? `Les ${e.zones.length} zones préparées` : "Préparer des zones"}</summary>
                   <ul className="rg-zones" role="list">
                     {e.zones.map((z) => (
@@ -505,7 +505,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
               <Section id="gouvernorats" retour={retourDe("gouvernorats")} titre="Gouvernorats"
                 etat={sansZone ? <span className="ui-etat ui-etat-ambre">{sansZone} au tarif fixe</span> : null}
                 description="La zone de chacun des 24 gouvernorats. Sans zone, c'est le tarif de livraison ci-dessus : jamais la gratuité par oubli.">
-                <details className="rg-pli" open={parZone || messages.dans === "gouvernorats" ? true : undefined}>
+                <details className="rg-pli" data-reste-ouvert open={parZone || messages.dans === "gouvernorats" ? true : undefined}>
                   <summary className="btn btn-second btn-petit">Les 24 gouvernorats et leur zone</summary>
                   <form action={action} method="post">
                     <input type="hidden" name="section" value="gouvernorats" />

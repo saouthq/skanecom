@@ -396,7 +396,7 @@ export default async function FicheProduitBackoffice({
                 </div>
               </div>
               {reglePrix ? (
-                <details className="fp-pli" open={paliers.length > 0 ? true : undefined}>
+                <details className="fp-pli" data-reste-ouvert open={paliers.length > 0 ? true : undefined}>
                 <summary className="btn btn-second btn-petit">{paliers.length ? "Les prix par quantité" : "Poser des prix par quantité"}</summary>
                 <form action={action} method="post" className="formulaire">
                   <input type="hidden" name="action" value="paliers" />
