@@ -2377,24 +2377,34 @@ if (section("6")) {
 
     // Cliqué là où on le voit : le centre du bouton affiché, rapporté à l'écran
     // (le cadre est réduit, et le texte de l'ouverture glisse au défilement).
-    await cadre().evaluate(() => window.scrollTo(0, 0));
+    await cadre().evaluate(() => window.scrollTo(0, 0)).catch(() => {});
     await pause(500);
+    // Le cadre vient de se rendre de nouveau : on attend que le bouton y soit
+    // (sous la charge de la CI, il arrive après la pause).
     const bouton = cadre().locator("[data-section] [data-texte='cta']").first();
-    const libelle = (await bouton.innerText()).trim();
+    await bouton.waitFor({ state: "visible", timeout: 15_000 }).catch(() => {});
+    const libelle = (await bouton.innerText({ timeout: 10_000 })).trim();
     // Le centre du bouton une fois posé : deux relevés égaux à 150 ms d'écart
     // (sous la charge, le texte de l'ouverture glisse encore après la pause).
     const centre = () => bouton.evaluate((el) => { const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, l: innerWidth }; });
-    let ici = await centre();
-    for (let i = 0; i < 20; i++) {
-      await pause(150);
-      const encore = await centre();
-      const pose = Math.abs(encore.x - ici.x) < 0.5 && Math.abs(encore.y - ici.y) < 0.5;
-      ici = encore;
-      if (pose) break;
+    // Cliquer là où on le voit ; si le cadre a bougé entre le relevé et le clic
+    // (le champ du panneau ne se marque pas), on relève et on reclique — comme
+    // quelqu'un qui a cliqué à côté.
+    for (let essai = 0; essai < 3; essai++) {
+      let ici = await centre();
+      for (let i = 0; i < 20; i++) {
+        await pause(150);
+        const encore = await centre();
+        const pose = Math.abs(encore.x - ici.x) < 0.5 && Math.abs(encore.y - ici.y) < 0.5;
+        ici = encore;
+        if (pose) break;
+      }
+      const boite = await page.locator(".ap-scene iframe").boundingBox();
+      const echelle = boite.width / ici.l;
+      await page.mouse.click(boite.x + ici.x * echelle, boite.y + ici.y * echelle);
+      if (await attend(async () => (await page.locator(".champ[data-lie] input").count()) > 0, 2500)) break;
+      note("INFO  ", `clic à côté du bouton (essai ${essai + 1}) : on relève sa place et on reclique`);
     }
-    const boite = await page.locator(".ap-scene iframe").boundingBox();
-    const echelle = boite.width / ici.l;
-    await page.mouse.click(boite.x + ici.x * echelle, boite.y + ici.y * echelle);
     await page.keyboard.press("Control+End");
     await tape(page, " vite");
     const champBouton = page.locator(".champ[data-lie] input");
