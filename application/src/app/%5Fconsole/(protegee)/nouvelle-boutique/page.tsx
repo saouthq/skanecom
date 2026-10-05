@@ -5,6 +5,7 @@ import { clientService } from "@/lib/console/service";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
+import { IdentifiantDepuisNom } from "@/components/console/IdentifiantDepuisNom";
 import type { Metier } from "@/lib/console/metiers";
 import { LIBELLES_THEME } from "@/lib/console/libelles";
 import { STRUCTURES_CONSOLE } from "@/lib/console/structures";
@@ -40,7 +41,8 @@ export default async function NouvelleBoutique({ searchParams }: {
         description="Elle naîtra « en préparation » : la vitrine ne l'affiche qu'une fois ouverte."
       />
 
-      <form action="/nouvelle-boutique/creer" method="post" className="carte formulaire">
+      <form action="/nouvelle-boutique/creer" method="post" className="carte formulaire nb-formulaire">
+        <IdentifiantDepuisNom />
         {v.erreur ? <p className="message message-erreur" role="alert">{v.erreur}</p> : null}
         <div className="champ">
           <label htmlFor="nom">Nom de la boutique</label>
@@ -51,7 +53,7 @@ export default async function NouvelleBoutique({ searchParams }: {
             <label htmlFor="slug">Identifiant</label>
             <input id="slug" name="slug" required pattern="[a-z0-9]([a-z0-9\-]{0,46}[a-z0-9])?" maxLength={48} defaultValue={v.slug ?? ""}
               aria-describedby="aide-slug" placeholder="maymar" />
-            <p id="aide-slug" className="aide">Minuscules, chiffres et tirets. Il ne change plus ensuite.</p>
+            <p id="aide-slug" className="aide">Tiré du nom ; minuscules, chiffres et tirets. Il ne change plus ensuite.</p>
           </div>
           <div className="champ">
             <label htmlFor="hote">Domaine principal</label>
@@ -69,6 +71,8 @@ export default async function NouvelleBoutique({ searchParams }: {
             </p>
           </div>
         ) : <ChoixMetier metiers={metiers} choisi={v.metier} />}
+        {/* Un métier pose sa structure : le choix ne sert que pour « partir de zéro ». */}
+        {modele ? null : <p className="aide nb-structure-metier">La structure suit le métier choisi (indiquée sur sa carte) ; elle se change ensuite dans Marque.</p>}
         {modele ? null : <fieldset className="choix choix-2 mt-gabarit">
           <legend>Structure</legend>
           {STRUCTURES_CONSOLE.map((x) => (

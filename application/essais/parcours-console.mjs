@@ -350,7 +350,8 @@ await etape("créer la boutique", async () => {
   await clic(page, page.getByRole("link", { name: "Nouvelle boutique" }).first());
   await page.waitForURL(/nouvelle-boutique/);
   await clic(page, page.locator("#nom")); await tape(page, "Outillage Pro Démo");
-  await clic(page, page.locator("#slug")); await tape(page, SLUG);
+  verifie((await page.locator("#slug").inputValue()) === "outillage-pro-demo", "l'identifiant suit le nom (sans accents, en tirets)");
+  await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, SLUG);
   await clic(page, page.locator("#hote")); await tape(page, HOTE);
   await clic(page, page.getByLabel(/^Technique/));
   await capture(page, "console-nouvelle-boutique");
@@ -364,7 +365,7 @@ await etape("créer la boutique", async () => {
 await etape("un identifiant déjà pris est refusé, la saisie gardée", async () => {
   await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
   await clic(page, page.locator("#nom")); await tape(page, "Doublon");
-  await clic(page, page.locator("#slug")); await tape(page, SLUG);
+  await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, SLUG);
   await clic(page, page.locator("#hote")); await tape(page, `autre-${SUFFIXE}.localhost`);
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(/erreur=/);
@@ -378,7 +379,7 @@ await etape("un métier pose rayons, caractéristiques, palette et accueil d'un 
   verifie((await page.locator(".mt-carte").count()) === 9, "neuf choix : aucun, et huit métiers");
   verifie(await page.locator(".mt-gabarit").isVisible(), "sans métier, le gabarit se choisit");
   await clic(page, page.locator("#nom")); await tape(page, "Bijoux Démo");
-  await clic(page, page.locator("#slug")); await tape(page, `bijoux-${SUFFIXE}`);
+  await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, `bijoux-${SUFFIXE}`);
   await clic(page, page.locator("#hote")); await tape(page, `bijoux-${SUFFIXE}.localhost`);
   await clic(page, page.getByLabel(/^Bijoux et montres/));
   verifie(!(await page.locator(".mt-gabarit").isVisible()), "un métier choisi règle le gabarit : son choix s'efface");
@@ -1246,9 +1247,12 @@ await etape("les formules : la matrice, et ce qu'une formule ferme à la boutiqu
   await page.waitForURL(/\/formules$/);
   const noms = await page.locator(".fo-tete .fo-nom").evaluateAll((l) => l.map((e) => e.value));
   verifie(["Essentiel", "Pro", "Complète"].every((n) => noms.includes(n)), `trois formules de départ : ${noms.join(", ")}`);
-  const prix = await page.locator('.fo-tete input[name="prix"]').evaluateAll((l) => l.map((e) => e.value));
+  const prix = await page.locator('.fo-tete input[name^="prix__"]').evaluateAll((l) => l.map((e) => e.value));
   verifie(prix.length === 3 && prix.every((p) => p === ""), "aucun prix inventé : chacune « Prix à fixer »");
   await capture(page, "console-formules", true);
+  // Un seul enregistrement, en bas de l'écran ; rien de changé, rien de réécrit.
+  await envoie(page, page.getByRole("button", { name: "Enregistrer les formules" }));
+  verifie((await page.locator(".message-succes").innerText()).includes("Rien n'a changé"), "un seul « Enregistrer » ; rien de changé, rien n'est réécrit");
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
   await page.locator("#bt-formule").selectOption("essentiel");
   await envoie(page, page.locator("#formule").getByRole("button", { name: "Changer" }));
@@ -1345,7 +1349,7 @@ await etape("le cycle de vie : renommer, cloner la configuration, fermer", async
   await page.waitForURL(/modele=/);
   verifie((await page.locator(".nb-modele").innerText()).includes("Outillage Pro Démo Sud"), "le formulaire dit de quelle boutique on part");
   await clic(page, page.locator("#nom")); await tape(page, "Outillage Clone");
-  await clic(page, page.locator("#slug")); await tape(page, CLONE);
+  await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, CLONE);
   await clic(page, page.locator("#hote")); await tape(page, `${CLONE}.localhost`);
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(new RegExp(`/boutiques/${CLONE}`));
@@ -1455,6 +1459,12 @@ await etape("la galerie des e-mails, aux couleurs de la boutique choisie", async
   await pause(600);
   verifie((await page.locator(".crl-sujet").first().innerText()).includes("Quincaillerie du Sud"), "une autre boutique : son nom dans le sujet");
   await capture(page, "console-courriels-quincaillerie-telephone");
+  // La boutique se choisit dans une liste (elle tient à trente boutiques) : la changer suffit.
+  await page.locator("#crl-boutique").selectOption({ label: "Dar Alia" });
+  await page.waitForURL((u) => !u.searchParams.get("boutique")?.includes("quincaillerie"), { timeout: 10_000 }).catch(() => {});
+  await page.locator(".crl-cadre").waitFor({ timeout: 15_000 }).catch(() => {});
+  verifie((await page.locator(".crl-sujet").first().innerText()).includes("Dar Alia") && page.url().includes("vue=telephone"),
+    "choisie dans la liste : Dar Alia, toujours sur téléphone");
 });
 
 await etape("le crochet de Supabase : l'e-mail de la boutique, signé ou rien", async () => {

@@ -26,7 +26,7 @@ export type Formule = {
 export type DonneesFormules = {
   formules: Formule[];
   droits: Droit[];
-  boutiques: { id: string; slug: string; nom: string; formule: string | null; demonstration: boolean }[];
+  boutiques: { id: string; slug: string; nom: string; formule: string | null; demonstration: boolean; statut?: string }[];
 };
 
 export const GROUPES_DROITS: { cle: string; titre: string; aide: string }[] = [

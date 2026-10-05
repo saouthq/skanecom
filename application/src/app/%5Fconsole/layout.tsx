@@ -13,6 +13,7 @@ import "../globals.css";
 import { Suspense } from "react";
 import { EnvoiFormulaires, ProgressionNavigation } from "@/components/console/Retours";
 import { FermeConfirmations } from "@/components/console/FermeConfirmations";
+import { EnvoiAuChangement } from "@/components/console/EnvoiAuChangement";
 import { AncresDouces } from "@/components/AncresDouces";
 import { feuilleDuTheme, themeDeLaBoutique } from "@/lib/theme";
 
@@ -58,6 +59,7 @@ export default function RacineConsole({ children }: { children: React.ReactNode 
         <Suspense fallback={null}><ProgressionNavigation /></Suspense>
         <EnvoiFormulaires />
         <FermeConfirmations />
+        <EnvoiAuChangement />
         <AncresDouces />
         {children}
       </body>

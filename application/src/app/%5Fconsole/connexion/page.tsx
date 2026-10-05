@@ -32,11 +32,12 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
         {erreur ? <p className="message message-erreur" role="alert">{erreur}</p> : null}
         <div className="champ">
           <label htmlFor="email">Adresse e-mail</label>
-          <input id="email" name="email" type="email" autoComplete="username" required defaultValue={email ?? ""} autoFocus placeholder="prenom@exemple.tn" />
+          <input id="email" name="email" type="email" autoComplete="username" required defaultValue={email ?? ""} autoFocus={!email} placeholder="prenom@exemple.tn" />
         </div>
         <div className="champ">
           <label htmlFor="mot_de_passe">Mot de passe</label>
-          <ChampMotDePasse id="mot_de_passe" name="mot_de_passe" autoComplete="current-password" />
+          {/* Après un refus, l'adresse est déjà là : c'est le mot de passe qu'on retape. */}
+          <ChampMotDePasse id="mot_de_passe" name="mot_de_passe" autoComplete="current-password" autoFocus={Boolean(email)} />
         </div>
         <button type="submit" className="btn btn-primaire btn-bloc btn-grand">Se connecter</button>
       </form>

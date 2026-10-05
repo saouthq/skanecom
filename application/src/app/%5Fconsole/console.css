@@ -1276,8 +1276,20 @@ a.sf-numero .icone { color: var(--ui-texte-3); }
 .fo-case input[type="checkbox"] { inline-size: 1.125rem; block-size: 1.125rem; cursor: pointer; }
 .fo-oui { color: var(--ui-vert); }
 .fo-non { color: var(--ui-texte-3); }
-.fo-pied { display: grid; gap: .375rem; justify-items: center; background: var(--ui-doux); }
-.fo-pied form { display: contents; }
+/* (une cellule reste une cellule : display: grid sur un <td> empilait les pieds sous la première colonne) */
+.fo-pied { text-align: center; background: var(--ui-doux); }
+.fo-barre { margin-block-start: 1rem; }
+/* Au téléphone : une formule à la fois, choisie au-dessus du tableau. */
+.fo-choix { display: none; }
+@media (max-width: 40rem) {
+  .fo-choix { display: flex; flex-wrap: wrap; margin-block: .75rem; }
+  .fo-barre .aide { display: none; }
+  .fo-choix label { cursor: pointer; }
+  .fo-choix label:has(input:checked) { background: var(--ui-panneau); color: var(--ui-texte); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+  .fo-choix label:has(input:focus-visible) { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+  .fo-tableau { min-inline-size: 0 !important; }
+  .fo-sans { display: block; }
+}
 .fo-sans a { font-weight: 500; }
 .fo-note { margin-block-start: .75rem; }
 /* La carte « Formule » d'une boutique */
@@ -1340,7 +1352,15 @@ a.sf-numero .icone { color: var(--ui-texte-3); }
 
 /* ---- Les annonces ---- */
 .an-cadre { display: grid; gap: 1.25rem; align-items: start; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 1100px) { .an-cadre { grid-template-columns: minmax(0, 28rem) minmax(0, 1fr); } }
+@media (min-width: 1100px) { .an-cadre { grid-template-columns: minmax(0, 1fr) minmax(0, 26rem); } }
+.an-demo { color: var(--ui-texte-3); font-size: .75rem; }
+/* « Toutes les boutiques » choisi : la liste reste là, en retrait, pour qu'on voie à qui elle ira. */
+.an-cible:has(input[name="toutes"][value="1"]:checked) .an-boutiques { opacity: .5; }
+.crl-boutique { display: inline-flex; align-items: center; gap: .5rem; font-size: .875rem; color: var(--ui-texte-2); }
+.console .crl-boutique select { inline-size: auto; min-inline-size: 14rem; }
+/* Nouvelle boutique : un métier choisi pose sa structure (le choix se cache, plus haut) ; une phrase le dit. */
+.nb-structure-metier { display: none; margin: 0; }
+form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-metier { display: block; }
 .an-cible { display: grid; gap: .375rem; border: 0; padding: 0; margin: 0; }
 .an-cible legend { font-weight: 500; font-size: .875rem; margin-block-end: .25rem; }
 .an-boutiques { display: grid; gap: .25rem; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); padding-inline-start: 1.5rem; }
@@ -1353,7 +1373,11 @@ a.sf-numero .icone { color: var(--ui-texte-3); }
 .an-meta { font-size: .75rem; color: var(--ui-texte-3); }
 .an-gestes { display: flex; gap: .5rem; margin-block-start: .25rem; }
 /* Trois choix côte à côte dès qu'il y a la place ; l'un sous l'autre au téléphone. */
-@media (min-width: 720px) { .choix-3 { grid-template-columns: repeat(3, 1fr); } }
+/* Trois choix côte à côte s'il y a la place (10 rem chacun au moins), sinon les uns sous les autres :
+   jamais une case qui déborde ni un texte qui passe à la ligne mot par mot. */
+.choix-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
+/* Deux champs côte à côte (des dates…), l'un sous l'autre quand c'est étroit. */
+.console .grille-champs { display: grid; gap: 1.125rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
 
 /* ---- Le cycle de vie d'une boutique ---- */
 .bt-vie { display: grid; gap: 1rem; }

@@ -18,13 +18,14 @@ export const metadata: Metadata = { title: "E-mails" };
    avant, les six aperçus s'empilaient sur 5 600 px.
    ========================================================================== */
 
-type Boutique = { slug: string; nom: string; hote_principal: string | null };
+type Boutique = { slug: string; nom: string; statut: string; hote_principal: string | null };
 
 export default async function Courriels({ searchParams }: { searchParams: Promise<{ boutique?: string; vue?: string; courriel?: string }> }) {
   await exigeAdmin();
   const p = await searchParams;
   const { data } = await clientService().rpc("console_boutiques");
-  const boutiques = ((data ?? []) as Boutique[]).filter((b) => b.slug);
+  // (une boutique fermée n'envoie plus rien)
+  const boutiques = ((data ?? []) as Boutique[]).filter((b) => b.slug && b.statut !== "fermee");
   const choisie = boutiques.find((b) => b.slug === p.boutique) ?? boutiques[0];
   const telephone = p.vue === "telephone";
 
@@ -62,20 +63,22 @@ export default async function Courriels({ searchParams }: { searchParams: Promis
         description="Ce que reçoivent l'acheteur et l'équipe, tels qu'ils partent. Des exemples : rien n'est envoyé d'ici."
       />
       <div className="crl-barre">
-        <nav className="segments" aria-label="Boutique">
-          {boutiques.map((b) => (
-            <Link key={b.slug} href={lien({ boutique: b.slug, vue: p.vue })} scroll={false} aria-current={b.slug === choisie?.slug ? "page" : undefined}
-                  className={b.slug === choisie?.slug ? "crl-segment crl-segment-actif" : "crl-segment"}>
-              {b.nom}
-            </Link>
-          ))}
-        </nav>
+        {/* Une liste, pas une rangée d'onglets : elle tient à trente boutiques comme à trois. */}
+        <form action="/courriels" method="get" className="crl-boutique">
+          <label htmlFor="crl-boutique">Aux couleurs de</label>
+          <select id="crl-boutique" name="boutique" className="entree" defaultValue={choisie?.slug} data-envoi-auto>
+            {boutiques.map((b) => <option key={b.slug} value={b.slug}>{b.nom}</option>)}
+          </select>
+          {p.vue ? <input type="hidden" name="vue" value={p.vue} /> : null}
+          {vu && vu.cle !== exemples[0]?.cle ? <input type="hidden" name="courriel" value={vu.cle} /> : null}
+          <noscript><button type="submit" className="btn btn-second btn-petit">Voir</button></noscript>
+        </form>
         <nav className="segments" aria-label="Écran">
           <Link href={lien({})} scroll={false} className={telephone ? "crl-segment" : "crl-segment crl-segment-actif"} aria-current={telephone ? undefined : "page"}>
             <Icone nom="apercu" taille={14} /> Ordinateur
           </Link>
           <Link href={lien({ vue: "telephone" })} scroll={false} className={telephone ? "crl-segment crl-segment-actif" : "crl-segment"} aria-current={telephone ? "page" : undefined}>
-            <Icone nom="telephone" taille={14} /> Téléphone
+            <Icone nom="mobile" taille={14} /> Téléphone
           </Link>
         </nav>
       </div>

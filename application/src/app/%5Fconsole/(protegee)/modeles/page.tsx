@@ -38,7 +38,7 @@ export default async function Modeles() {
         {structures.map((s) => {
           const demos = boutiques.filter((b) => b.demonstration && b.marque.code === s.code);
           const demo = demos.find((b) => b.statut === "active" && b.hote) ?? demos[0] ?? null;
-          const clientes = boutiques.filter((b) => !b.demonstration && b.marque.code === s.code);
+          const clientes = boutiques.filter((b) => !b.demonstration && b.statut !== "fermee" && b.marque.code === s.code);
           const nom = LIBELLES_THEME[s.code] ?? s.code;
           const url = demo?.hote && demo.statut === "active" ? adresseVitrine(demo.hote, hoteConsole) : null;
           return (

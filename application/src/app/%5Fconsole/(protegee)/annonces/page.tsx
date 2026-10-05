@@ -34,7 +34,10 @@ export default async function Annonces({ searchParams }: { searchParams: Promise
   ]);
   if (error) throw new Error(`Annonces illisibles : ${error.message}`);
   const annonces = (data ?? []) as Annonce[];
-  const boutiques = ((df ?? { boutiques: [] }) as DonneesFormules).boutiques.filter((b) => !b.demonstration);
+  // Les clientes d'abord, puis les démonstrations (qui ne la reçoivent que cochées) ; jamais une boutique fermée.
+  const boutiques = ((df ?? { boutiques: [] }) as DonneesFormules).boutiques
+    .filter((b) => b.statut !== "fermee")
+    .sort((a, b) => Number(a.demonstration) - Number(b.demonstration));
 
   return (
     <>
@@ -88,10 +91,10 @@ export default async function Annonces({ searchParams }: { searchParams: Promise
             <fieldset className="an-cible">
               <legend>Pour</legend>
               <label className="opt"><input type="radio" name="toutes" value="1" defaultChecked /> Toutes les boutiques</label>
-              <label className="opt"><input type="radio" name="toutes" value="0" /> Seulement :</label>
+              <label className="opt"><input type="radio" name="toutes" value="0" /> Seulement ces boutiques :</label>
               <div className="an-boutiques">
                 {boutiques.map((b) => (
-                  <label key={b.id} className="opt"><input type="checkbox" name="boutique" value={b.id} /> {b.nom}</label>
+                  <label key={b.id} className="opt"><input type="checkbox" name="boutique" value={b.id} /> {b.nom}{b.demonstration ? <span className="an-demo"> · démo</span> : null}</label>
                 ))}
               </div>
             </fieldset>
