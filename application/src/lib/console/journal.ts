@@ -56,6 +56,10 @@ export const ACTIONS: Record<string, string> = {
   "compte.code_secours": "Code de secours utilisé",
   "export.journal": "Journal exporté",
   "export.tableau": "Tableau de bord exporté",
+  "export.boutiques": "Liste des boutiques exportée",
+  "boutique.contact": "Coordonnées du client",
+  "vigilance.reportee": "Signal mis à plus tard",
+  "vigilance.reprise": "Signal repris",
 };
 
 /** Les genres de gestes, pour filtrer le journal (le préfixe de l'action). */
@@ -76,6 +80,7 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "mise_en_place", titre: "Mise en place" },
   { cle: "compte", titre: "Comptes (mot de passe, codes de secours)" },
   { cle: "export", titre: "Exports" },
+  { cle: "vigilance", titre: "À surveiller (mis à plus tard)" },
 ];
 
 /** Un jour « 2026-10-05 » d'un formulaire, ou rien. */

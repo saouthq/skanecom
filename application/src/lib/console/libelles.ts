@@ -5,6 +5,15 @@ export const LIBELLES_STATUT: Record<string, string> = {
   fermee: "Fermée",
 };
 
+/** Pourquoi une boutique est suspendue (console_suspendre) : ce que lit son équipe. */
+export const MOTIFS_SUSPENSION: Record<string, string> = {
+  impaye: "Abonnement impayé",
+  demande: "À la demande de la boutique",
+  contenu: "Contenu à corriger",
+  securite: "Sécurité ou fraude",
+  autre: "Autre raison",
+};
+
 /** Les noms des modules (plateforme.modules), pour le journal et les messages. */
 export const LIBELLES_MODULES: Record<string, string> = {
   paiement_en_ligne: "Paiement en ligne",

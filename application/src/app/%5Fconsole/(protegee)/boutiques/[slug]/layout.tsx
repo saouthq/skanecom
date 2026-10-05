@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
-import { LIBELLES_STATUT, adresseVitrine, deNom } from "@/lib/console/libelles";
+import { LIBELLES_STATUT, MOTIFS_SUSPENSION, adresseVitrine, deNom } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { Icone } from "@/components/console/Icone";
 import { Onglets } from "@/components/console/Onglets";
@@ -68,9 +68,21 @@ export default async function Boutique({ children, params }: {
                 // Suspendre retire une vitrine en ligne : un second geste le confirme.
                 <details className="bt-confirmer" data-reste-ouvert>
                   <summary className="btn btn-second"><Icone nom="alimentation" taille={16} /> Suspendre la boutique</summary>
-                  <div className="bt-confirmer-panneau" role="group" aria-label="Confirmer la suspension">
+                  <div className="bt-confirmer-panneau fb-suspendre" role="group" aria-label="Confirmer la suspension">
                     <p>Sa vitrine cesse d&apos;être servie aux visiteurs. Les commandes déjà passées restent à traiter au backoffice ; la boutique se rouvre d&apos;un geste.</p>
                     <input type="hidden" name="confirme" value="1" />
+                    <div className="champ">
+                      <label htmlFor="su-motif">Pourquoi</label>
+                      <select id="su-motif" name="motif" className="entree" required defaultValue="">
+                        <option value="" disabled>Choisir un motif…</option>
+                        {Object.entries(MOTIFS_SUSPENSION).map(([cle, titre]) => <option key={cle} value={cle}>{titre}</option>)}
+                      </select>
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="su-message">Le message à son équipe <span className="discret">(lu en tête de son backoffice)</span></label>
+                      <textarea id="su-message" name="message" className="entree" rows={3} maxLength={600}
+                        placeholder="Votre abonnement d'octobre reste à régler : appelez-nous pour rouvrir la vitrine." />
+                    </div>
                     <button type="submit" name="statut" value="suspendue" className="btn btn-danger btn-petit">Suspendre maintenant</button>
                   </div>
                 </details>

@@ -748,11 +748,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 }
 
 /* ---- La veille : compteur des commandes à confirmer, alertes ---- */
-.console .app-nav-compte {
-  margin-inline-start: auto; min-inline-size: 1.25rem; block-size: 1.25rem; padding-inline: .375rem; border-radius: 999px;
-  display: inline-grid; place-items: center; font-size: .6875rem; font-weight: 700; font-variant-numeric: tabular-nums;
-  background: var(--ui-ambre); color: #fff;
-}
+/* (le compteur lui-même, .app-nav-compte, est dans la feuille de la console : la console a aussi le sien) */
 /* Ce qui tourne sans attendre personne (des prix barrés en cours) : en vert, pas en alerte. */
 .console .app-nav-compte.app-nav-compte-doux { background: var(--ui-vert-fond); color: var(--ui-vert); box-shadow: inset 0 0 0 1px var(--ui-vert-bord), 0 0 0 2px var(--ui-fond); }
 .bo-alertes { display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; font-weight: 500; color: var(--ui-vert); white-space: nowrap; }

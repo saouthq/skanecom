@@ -66,11 +66,19 @@ export const titreEtape = (cle: CleEtape | null) => (cle ? ETAPES_MISE_EN_PLACE[
 export type Vigilance = {
   cle: string;
   niveau: "urgent" | "attention" | "info";
+  /** Le genre du signal (« attente », « formule », « preparation »…) : les
+   *  simples informations se regroupent par genre (lib/console/accueil.ts). */
+  type: string;
   /** null : la plateforme elle-même (les e-mails refusés). */
   boutique: LignePilotage | null;
   texte: string;
+  /** Dans un groupe, ce qu'on dit de la boutique à côté de son nom (« 2/10 »). */
+  court?: string;
   href: string;
 };
+
+/** Le genre d'un signal, lu dans sa clé : « <boutique>:<genre>[:…] », « plateforme:<genre> ». */
+const typeDe = (cle: string) => cle.split(":")[1] ?? cle;
 
 /** Ce que rend public.console_rappels : les notes de suivi dont le rappel est venu. */
 export type Rappel = { id: number; texte: string; rappel: string; boutique: { id: string; slug: string; nom: string }; auteur: string | null };
@@ -123,7 +131,7 @@ export function vigilances(
   maintenant: number,
   options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number } = {},
 ): Vigilance[] {
-  const out: Vigilance[] = [];
+  const out: Omit<Vigilance, "type">[] = [];
   if (options.envoisRefuses) {
     const n = options.envoisRefuses;
     out.push({
@@ -176,6 +184,7 @@ export function vigilances(
       out.push({
         cle: `${b.id}:preparation`, niveau: "info", boutique: b, href: `/boutiques/${b.slug}#t-mise-en-place`,
         texte: `en préparation, ${b.mise_en_place.faites} étapes sur ${b.mise_en_place.total}${etape ? ` · prochaine : ${etape.toLowerCase()}` : ""}`,
+        court: `${b.mise_en_place.faites}/${b.mise_en_place.total}${etape ? ` · ${etape.toLowerCase()}` : ""}`,
       });
     }
     if (b.support) {
@@ -189,18 +198,18 @@ export function vigilances(
     }
   }
   const rang = { urgent: 0, attention: 1, info: 2 } as const;
-  return out.sort((a, b) => rang[a.niveau] - rang[b.niveau]);
+  return out.map((v) => ({ ...v, type: typeDe(v.cle) })).sort((a, b) => rang[a.niveau] - rang[b.niveau]);
 }
 
 
 /** La santé d'une boutique cliente : refus, silence, demandes qui attendent,
  *  certificat, vitrine vidée par les ruptures, formule à poser. */
-function signesDeSante(b: LignePilotage, sa: Sante, maintenant: number): Vigilance[] {
-  const out: Vigilance[] = [];
+function signesDeSante(b: LignePilotage, sa: Sante, maintenant: number): Omit<Vigilance, "type">[] {
+  const out: Omit<Vigilance, "type">[] = [];
   // Une boutique fermée, suspendue ou en préparation ne vend pas : ses signaux d'activité n'en sont pas.
   if (b.statut !== "active") return out;
-  const pousse = (cle: string, niveau: Vigilance["niveau"], texte: string, href = `/boutiques/${b.slug}`) =>
-    out.push({ cle: `${b.id}:${cle}`, niveau, boutique: b, texte, href });
+  const pousse = (cle: string, niveau: Vigilance["niveau"], texte: string, href = `/boutiques/${b.slug}`, court?: string) =>
+    out.push({ cle: `${b.id}:${cle}`, niveau, boutique: b, texte, href, court });
   const clos = sa.livrees_30j + sa.refusees_30j;
   if (clos >= SEUILS.refusMinimum) {
     const taux = sa.refusees_30j / clos;
@@ -226,7 +235,8 @@ function signesDeSante(b: LignePilotage, sa: Sante, maintenant: number): Vigilan
     pousse("devis", "attention", `${sa.devis.n} devis à chiffrer, le plus ancien depuis ${depuis(sa.devis.depuis!, maintenant)}`);
   }
   if (attend(sa.avis, SEUILS.joursAvis * 24)) {
-    pousse("avis", "info", `${sa.avis.n} avis à relire avant publication, le plus ancien depuis ${depuis(sa.avis.depuis!, maintenant)}`);
+    pousse("avis", "info", `${sa.avis.n} avis à relire avant publication, le plus ancien depuis ${depuis(sa.avis.depuis!, maintenant)}`,
+      `/boutiques/${b.slug}`, `${sa.avis.n} avis, depuis ${depuis(sa.avis.depuis!, maintenant)}`);
   }
   for (const hote of sa.certificats_erreur) {
     pousse(`certificat:${hote}`, "urgent", `certificat en erreur sur ${hote} : les visiteurs voient un avertissement`, `/boutiques/${b.slug}#t-domaines`);

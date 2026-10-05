@@ -258,7 +258,7 @@ await etape("bon code : la console s'ouvre", async () => {
     "« À surveiller » : les commandes de Maymar qui attendent depuis des heures");
   await capture(page, "console-tableau");
   // La même chose en liste, au clavier : le sélecteur d'affichage, puis Entrée.
-  await page.getByRole("link", { name: "Liste" }).focus();
+  await page.getByRole("link", { name: "Liste", exact: true }).focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(/vue=liste/);
   await page.waitForLoadState("networkidle");
@@ -277,7 +277,7 @@ await etape("les boutiques de démonstration à part : la synthèse ne compte qu
   verifie(["Maison Selma", "Dar Alia", "Yasmine Beauté", "Quincaillerie du Sud"].every((n) => demos.includes(n)) && !demos.includes("Maymar"),
     `marquées « Démonstration » : ${demos.join(", ")} ; Maymar est une cliente`);
   const synthese = (await page.locator(".pl-synthese").innerText()).replace(/\s+/g, " ");
-  verifie(/\d+ clientes?/.test(synthese) && synthese.includes("de démonstration") && synthese.includes("clientes seules"), `la synthèse : « ${synthese} »`);
+  verifie(/Clientes \d+/.test(synthese) && synthese.includes("de démonstration à part") && synthese.includes("clientes seules"), `les chiffres : « ${synthese} »`);
   // Dar Alia passe cliente depuis sa page, puis redevient une démonstration.
   await page.goto(CONSOLE + "/boutiques/dar-alia", { waitUntil: "networkidle" });
   verifie((await page.locator("h1").first().innerText()).includes("Démonstration"), "sa page le dit, à côté de son statut");
@@ -292,6 +292,48 @@ await etape("les boutiques de démonstration à part : la synthèse ne compte qu
   await page.goto(CONSOLE + "/boutiques/dar-alia", { waitUntil: "networkidle" });
   await envoie(page, page.locator("section:has(#t-demonstration)").getByRole("button", { name: "C'est une boutique de démonstration" }));
   verifie((await page.locator("h1").first().innerText()).includes("Démonstration"), "et redevient une démonstration");
+});
+
+await etape("« À surveiller » rangé : ce qui presse, à plus tard d'un geste ; les informations repliées", async () => {
+  await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
+  const pressants = page.locator(".pl-vigilance-liste > li");
+  const avant = await pressants.count();
+  verifie(avant > 0 && (await pressants.first().getAttribute("data-niveau")) !== "info", `ce qui presse d'abord : ${avant} ligne(s), sans les simples informations`);
+  const badge = Number(await page.locator(".app-cote .app-nav-compte").innerText());
+  verifie(badge === avant, `la navigation compte ce qui presse (${badge})`);
+  const infos = page.locator(".pl-infos");
+  verifie((await infos.getAttribute("open")) === null && (await infos.locator("summary").innerText()).includes("sans formule"),
+    `les informations, repliées : « ${(await infos.locator("summary").innerText()).replace(/\s+/g, " ")} »`);
+  await clic(page, infos.locator("summary"));
+  verifie(await infos.locator(".pl-puce", { hasText: "Maymar" }).first().isVisible(), "dépliées : un genre par ligne, ses boutiques en pastilles");
+  // Mettre la ligne des commandes à confirmer à plus tard, au clavier.
+  const ligne = pressants.filter({ hasText: "à confirmer" }).first();
+  await clic(page, ligne.locator(".pl-plus-tard > summary"));
+  await page.keyboard.press("Tab");
+  verifie((await page.evaluate(() => document.activeElement?.textContent)) === "Jusqu'à demain", "Tab entre dans le menu : « Jusqu'à demain »");
+  await envoie(page, () => page.keyboard.press("Enter"));
+  verifie((await page.locator(".pl-vigilance-retour").innerText()).includes("il reviendra"), `« ${await page.locator(".pl-vigilance-retour").innerText()} »`);
+  verifie(await pressants.count() === avant - 1 && (await page.locator(".pl-reportes summary").innerText()).includes("1 mis à plus tard"),
+    "la ligne quitte ce qui presse et passe dans « mis à plus tard »");
+  const compteur = page.locator(".app-cote .app-nav-compte");
+  verifie((await compteur.count() ? Number(await compteur.innerText()) : 0) === avant - 1, "le compteur de la navigation suit");
+  await capture(page, "console-accueil-plus-tard");
+  await clic(page, page.locator(".pl-reportes > summary"));
+  await envoie(page, page.locator(".pl-reportes").getByRole("button", { name: "Reprendre" }));
+  verifie(await pressants.count() === avant && await page.locator(".pl-reportes").count() === 0, "« Reprendre » : elle revient, tout de suite");
+});
+
+await etape("trier les boutiques, exporter ce qu'on voit", async () => {
+  await page.locator("#pl-tri").selectOption("nom");
+  await page.waitForURL(/tri=nom/);
+  await page.waitForLoadState("networkidle");
+  const noms = await page.locator(".pl-grille").first().locator(".pl-nom").allInnerTexts();
+  verifie(noms.join("|") === [...noms].sort((a, b) => a.localeCompare(b, "fr")).join("|"), `changer le tri suffit (sans « Filtrer ») : ${noms.join(", ")}`);
+  const csv = await page.evaluate(async () => (await fetch(document.querySelector(".pl-exporter").href)).text());
+  const lignes = csv.replace(/^\uFEFF/, "").trim().split("\r\n");
+  verifie(lignes[0].startsWith("Boutique;Identifiant;Domaine;Statut") && lignes.length > 3 && lignes.some((l) => l.startsWith("Maymar;maymar;")),
+    `l'export : ${lignes.length - 1} boutiques, dans l'ordre choisi`);
+  await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
 });
 
 await etape("la galerie des modèles : chaque structure, sa démonstration en aperçu vivant", async () => {
@@ -347,6 +389,9 @@ await etape("la galerie des modèles : chaque structure, sa démonstration en ap
 console.log("\n== 2. Mettre une boutique en place ==");
 
 await etape("créer la boutique", async () => {
+  // « Nouvelle boutique » : le bouton de l'accueil (ce n'est plus une rubrique du menu).
+  await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
+  verifie(await page.locator(".app-cote").getByRole("link", { name: "Nouvelle boutique" }).count() === 0, "le menu ne la répète pas : c'est un bouton de l'accueil");
   await clic(page, page.getByRole("link", { name: "Nouvelle boutique" }).first());
   await page.waitForURL(/nouvelle-boutique/);
   await clic(page, page.locator("#nom")); await tape(page, "Outillage Pro Démo");
@@ -756,6 +801,10 @@ await etape("les photos à l'import : renvoyer le même dossier ne double rien ;
 await etape("la liste de mise en place", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
   const carte = page.locator("section:has(#t-mise-en-place)");
+  // Une boutique ouverte replie sa mise en place : on la déplie pour la lire.
+  const deplie = async () => { if (await carte.locator(".mp-pli:not([open])").count()) await clic(page, carte.locator(".mp-pli > summary")); };
+  verifie(await carte.locator(".mp-pli:not([open])").count() === 1, "boutique ouverte : la liste est repliée sous l'avancement");
+  await deplie();
   const fait = async (cle) => (await carte.locator(`[data-etape="${cle}"]`).getAttribute("data-fait")) === "";
   const faites = await carte.locator(".mp-etape[data-fait]").count();
   verifie(await fait("marque") && await fait("catalogue") && await fait("domaine") && await fait("mise_en_ligne"),
@@ -765,6 +814,7 @@ await etape("la liste de mise en place", async () => {
   verifie(/J\+0/.test(await carte.locator('[data-etape="marque"]').innerText()), "chaque étape faite est datée depuis la création (J+0)");
   await envoie(page, carte.getByRole("button", { name: "Recueil des éléments : faite" }));
   await page.waitForURL(/ok=/);
+  await deplie();
   verifie((await page.getByRole("status").innerText()).includes("« Recueil des éléments » : faite") && await fait("recueil")
     && (await carte.locator('[data-etape="recueil"]').innerText()).includes(ADMIN.email),
     "le recueil se coche à la main, avec son auteur");
@@ -1318,6 +1368,61 @@ await etape("le lien remis s'envoie aussi par e-mail, au nom de la boutique", as
   const courriel = await dernierCourriel(APPELS);
   verifie(courriel?.nom === "Outillage Pro Démo" && courriel.texte.includes(lien),
     `au nom de la boutique (« ${courriel?.nom} »), avec le lien affiché`);
+});
+
+/* ------------------------------------------------------------------ */
+console.log("\n== 3 quater. La fiche d'une boutique : à faire maintenant, le client, suspendre en le disant ==");
+
+await etape("la fiche : ce qu'il y a à faire maintenant, en une ligne", async () => {
+  await page.goto(`${CONSOLE}/boutiques/maymar`, { waitUntil: "networkidle" });
+  const ligne = page.locator(".fb-maintenant");
+  verifie((await ligne.innerText()).startsWith("À faire maintenant") && ["urgent", "attention"].includes(await ligne.getAttribute("data-niveau")),
+    `« ${(await ligne.innerText()).replace(/\s+/g, " ")} »`);
+  verifie(await page.locator(".mp .mp-pli").count() === 1 && (await page.locator(".mp .mp-pli").getAttribute("open")) === null,
+    "boutique ouverte : la mise en place se replie sous son avancement");
+});
+
+await etape("le client : ses coordonnées notées, puis appelé d'un geste", async () => {
+  const carte = page.locator("#client");
+  verifie((await carte.innerText()).includes("Personne à joindre"), "rien de noté : la carte le dit");
+  await clic(page, carte.locator("summary", { hasText: "Noter ses coordonnées" }));
+  await page.locator("#cl-nom").fill("Sami Ben Ali, gérant");
+  await page.locator("#cl-telephone").fill("20 123 456");
+  await page.locator("#cl-matricule").fill("1234567/a/m/000");
+  await envoie(page, carte.getByRole("button", { name: "Enregistrer" }));
+  verifie((await page.locator("#client [role=status]").innerText()).includes("Coordonnées enregistrées"), "« Coordonnées enregistrées. »");
+  verifie(await page.locator('#client a[href="tel:+21620123456"]').isVisible(), "« Appeler » : le numéro au format international");
+  verifie((await page.locator("#client").getByRole("link", { name: "WhatsApp" }).getAttribute("href")) === "https://wa.me/21620123456",
+    "« WhatsApp » : sans autre numéro, celui du téléphone");
+  verifie((await carte.innerText()).includes("1234567/A/M/000"), "le matricule, en capitales");
+  await capture(page, "console-fiche-client", true);
+});
+
+await etape("suspendre en disant pourquoi : l'équipe de la boutique le lit", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await clic(page, page.locator("summary", { hasText: "Suspendre la boutique" }));
+  await page.locator("#su-motif").selectOption("impaye");
+  await page.locator("#su-message").fill("Votre abonnement d'octobre reste à régler : appelez-nous pour rouvrir.");
+  await envoie(page, page.getByRole("button", { name: "Suspendre maintenant" }));
+  verifie((await page.locator(".fb-suspension").innerText()).includes("Abonnement impayé") && (await page.locator(".fb-suspension").innerText()).includes("appelez-nous"),
+    "la fiche dit la suspension, son motif et le message");
+  const tel = await navigateur.newContext(TELEPHONE);
+  const p = await tel.newPage();
+  t.espion(p, "suspendue", attendue);
+  await p.goto(CONSOLE + "/connexion", { waitUntil: "networkidle" });
+  await p.locator("#email").fill(APPELS);
+  await p.locator("#mot_de_passe").fill("oubli du jeudi matin");
+  await p.keyboard.press("Enter");
+  await p.waitForURL(new RegExp(`/gestion/${SLUG}`));
+  await p.waitForLoadState("networkidle");
+  const bandeau = await p.locator(".ann-suspension").innerText();
+  verifie(bandeau.includes("suspendue par SkanEcom") && bandeau.includes("Abonnement impayé") && bandeau.includes("appelez-nous"),
+    `au backoffice, en tête : « ${bandeau.replace(/\s+/g, " ").slice(0, 110)}… »`);
+  await capture(p, "backoffice-suspendu-telephone");
+  await envoie(page, page.getByRole("button", { name: "Ouvrir la boutique" }));
+  await p.reload({ waitUntil: "networkidle" });
+  verifie(await p.locator(".ann-suspension").count() === 0, "rouverte : le bandeau s'en va");
+  await tel.close();
 });
 
 /* ------------------------------------------------------------------

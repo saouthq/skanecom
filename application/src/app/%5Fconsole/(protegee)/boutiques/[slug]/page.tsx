@@ -16,6 +16,8 @@ import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { MiseEnPlace } from "@/components/console/MiseEnPlace";
+import { CarteClient, type Contact } from "@/components/console/CarteClient";
+import { MOTIFS_SUSPENSION } from "@/lib/console/libelles";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
 import { titreBoutique } from "@/lib/console/titre-boutique";
@@ -60,7 +62,7 @@ export default async function FicheBoutique({ params, searchParams }: {
   const hoteConsole = (await headers()).get("host");
   // Une boutique vide peut recevoir le préréglage d'un métier.
   const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
-  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }] = await Promise.all([
+  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     vide ? clientService().rpc("console_metiers", { p_acteur: user.id }) : Promise.resolve({ data: null }),
@@ -70,6 +72,8 @@ export default async function FicheBoutique({ params, searchParams }: {
     clientService().rpc("console_pilotage"),
     clientService().rpc("console_sante", { p_acteur: user.id }),
     clientService().rpc("console_tableau", { p_acteur: user.id, p_jours: 30 }),
+    clientService().rpc("console_contact", { p_acteur: user.id, p_boutique_id: b.id }),
+    b.statut === "suspendue" ? clientService().rpc("console_suspension", { p_acteur: user.id, p_boutique_id: b.id }) : Promise.resolve({ data: null }),
   ]);
   const maintenant = new Date().getTime();
   const ligne = ((dp ?? []) as LignePilotage[]).find((x) => x.id === b.id) ?? null;
@@ -77,6 +81,15 @@ export default async function FicheBoutique({ params, searchParams }: {
   const activite = (((dt ?? { boutiques: [] }) as { boutiques: Activite[] }).boutiques).find((x) => x.id === b.id) ?? null;
   const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [] }) : [];
   const clos = activite ? activite.livrees + activite.refusees : 0;
+  const suspension = (dsu ?? null) as { motif: string | null; message: string | null; le: string } | null;
+  // « À faire maintenant » : le signal le plus pressant ; sinon, en préparation, l'étape suivante.
+  const pressants = signaux.filter((v) => v.niveau !== "info");
+  const etapeSuivante = (miseEnPlace as DonneesMiseEnPlace | null)?.etapes.find((e) => !e.fait) ?? null;
+  const maintenantFaire: { niveau: string; texte: string; href?: string; geste?: string } = pressants.length
+    ? { niveau: pressants[0].niveau, texte: `${pressants[0].texte}${pressants.length > 1 ? ` (et ${pressants.length - 1} autre${pressants.length > 2 ? "s" : ""} signal${pressants.length > 2 ? "s" : ""} plus bas)` : ""}`, href: pressants[0].href, geste: "Voir" }
+    : b.statut === "en_preparation" && etapeSuivante
+      ? { niveau: "info", texte: `${ETAPES_MISE_EN_PLACE[etapeSuivante.cle].titre.toLowerCase()}, l'étape suivante de sa mise en place.`, href: "#t-mise-en-place", geste: "La mise en place" }
+      : { niveau: "calme", texte: b.statut === "suspendue" ? "la boutique est suspendue ; rien d'autre n'attend." : b.statut === "fermee" ? "la boutique est fermée." : "rien ne presse, la boutique tourne." };
   const notes = (dn ?? []) as { id: number; texte: string; epinglee: boolean; le: string; auteur: string | null; vous: boolean; rappel: string | null; rappel_fait_le: string | null }[];
   const aujourdhui = jourTunis();
   // Un rappel venu passe devant (après les épinglées) : c'est ce qu'il y a à faire.
@@ -107,7 +120,59 @@ export default async function FicheBoutique({ params, searchParams }: {
       {messages.ok && !messages.carte ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
       {messages.erreur && !messages.carte ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
 
-      {miseEnPlace ? <MiseEnPlace slug={b.slug} boutiqueId={b.id} donnees={miseEnPlace as DonneesMiseEnPlace} /> : null}
+      {suspension ? (
+        <div className="message message-attention fb-suspension" role="status">
+          <span>
+            <b>Suspendue depuis le {dateJournal(suspension.le).split(" ")[0]}</b>
+            {suspension.motif ? <> · {MOTIFS_SUSPENSION[suspension.motif] ?? suspension.motif}</> : null}
+            {suspension.message ? <> — son équipe lit en tête de son backoffice : « {suspension.message} »</> : <> — sans message à son équipe.</>}
+          </span>
+        </div>
+      ) : null}
+
+      {/* Une ligne, ce qu'il y a à faire maintenant : le signal le plus pressant, sinon l'étape suivante. */}
+      <p className="fb-maintenant" data-niveau={maintenantFaire.niveau}>
+        <Icone nom={maintenantFaire.niveau === "calme" ? "succes" : "alerte"} taille={16} />
+        <span><b>{maintenantFaire.niveau === "calme" ? "Rien à faire maintenant" : "À faire maintenant"}</b> : {maintenantFaire.texte}</span>
+        {maintenantFaire.href ? <Link href={maintenantFaire.href} className="btn btn-second btn-petit">{maintenantFaire.geste} <Icone nom="droite" taille={13} /></Link> : null}
+      </p>
+
+      <div className="grille-2 fb-tete">
+        <CarteClient slug={b.slug} boutiqueId={b.id} contact={(dc ?? null) as Contact | null} retour={retour("client")} />
+        {activite ? (
+          <section className="carte" aria-labelledby="t-activite" id="activite">
+            <div className="carte-tete">
+              <div>
+                <h2 id="t-activite" className="carte-titre-icone"><Icone nom="graphique" /> Activité · 30 jours</h2>
+                <p>
+                  {sante?.derniere_commande ? <>Dernière commande il y a {depuis(sante.derniere_commande, maintenant)}</> : "Aucune commande encore"}
+                  {b.demonstration ? " · démonstration : hors tableau de bord" : null}
+                </p>
+              </div>
+            </div>
+            <dl className="bt-activite">
+              <div><dt>Reçues</dt><dd className="tabular-nums">{activite.recues}</dd></div>
+              <div><dt>Livrées</dt><dd className="tabular-nums">{activite.livrees}</dd></div>
+              <div data-alerte={clos >= 5 && activite.refusees / clos >= 0.25 ? "" : undefined}>
+                <dt>Refus</dt><dd className="tabular-nums">{clos ? `${Math.round((activite.refusees / clos) * 100)} %` : "—"}</dd>
+              </div>
+              <div><dt>Chiffre livré</dt><dd className="tabular-nums">{formateMontant(activite.chiffre)} <small>TND</small></dd></div>
+            </dl>
+            {signaux.length ? (
+              <ul className="bt-signaux" role="list">
+                {signaux.map((v) => (
+                  <li key={v.cle} data-niveau={v.niveau}><Link href={v.href}><span className="pl-point" aria-hidden="true" />{v.texte}</Link></li>
+                ))}
+              </ul>
+            ) : <p className="aide bt-signaux-calme"><Icone nom="coche" taille={14} /> Rien à signaler.</p>}
+            <div className="carte-pied">
+              <Link href={`/tableau?boutique=${b.slug}`} className="btn-lien aide inline-flex items-center gap-1 whitespace-nowrap">Au tableau de bord <Icone nom="droite" taille={12} /></Link>
+            </div>
+          </section>
+        ) : null}
+      </div>
+
+      {miseEnPlace ? <MiseEnPlace slug={b.slug} boutiqueId={b.id} donnees={miseEnPlace as DonneesMiseEnPlace} replie={b.statut !== "en_preparation"} /> : null}
 
       <div className="grille-2">
         <div className="pile">
@@ -297,37 +362,6 @@ export default async function FicheBoutique({ params, searchParams }: {
         </div>
 
         <div className="pile">
-          {activite ? (
-            <section className="carte" aria-labelledby="t-activite" id="activite">
-              <div className="carte-tete">
-                <div>
-                  <h2 id="t-activite" className="carte-titre-icone"><Icone nom="graphique" /> Activité · 30 jours</h2>
-                  <p>
-                    {sante?.derniere_commande ? <>Dernière commande il y a {depuis(sante.derniere_commande, maintenant)}</> : "Aucune commande encore"}
-                    {b.demonstration ? " · démonstration : hors tableau de bord" : null}
-                  </p>
-                </div>
-              </div>
-              <dl className="bt-activite">
-                <div><dt>Reçues</dt><dd className="tabular-nums">{activite.recues}</dd></div>
-                <div><dt>Livrées</dt><dd className="tabular-nums">{activite.livrees}</dd></div>
-                <div data-alerte={clos >= 5 && activite.refusees / clos >= 0.25 ? "" : undefined}>
-                  <dt>Refus</dt><dd className="tabular-nums">{clos ? `${Math.round((activite.refusees / clos) * 100)} %` : "—"}</dd>
-                </div>
-                <div><dt>Chiffre livré</dt><dd className="tabular-nums">{formateMontant(activite.chiffre)} <small>TND</small></dd></div>
-              </dl>
-              {signaux.length ? (
-                <ul className="bt-signaux" role="list">
-                  {signaux.map((v) => (
-                    <li key={v.cle} data-niveau={v.niveau}><Link href={v.href}><span className="pl-point" aria-hidden="true" />{v.texte}</Link></li>
-                  ))}
-                </ul>
-              ) : <p className="aide bt-signaux-calme"><Icone nom="coche" taille={14} /> Rien à signaler.</p>}
-              <div className="carte-pied">
-                <Link href={`/tableau?boutique=${b.slug}`} className="btn-lien aide inline-flex items-center gap-1 whitespace-nowrap">Au tableau de bord <Icone nom="droite" taille={12} /></Link>
-              </div>
-            </section>
-          ) : null}
           <section className="carte" aria-labelledby="t-formule" id="formule">
             <div className="carte-tete">
               <div>

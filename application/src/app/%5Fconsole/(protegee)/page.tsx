@@ -4,14 +4,14 @@ import { headers } from "next/headers";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_STATUT } from "@/lib/console/libelles";
-import { couleursDe, depuis, vigilances, type LignePilotage, type Rappel } from "@/lib/console/pilotage";
-import { configSkanFact } from "@/lib/console/skanfact";
+import { couleursDe, depuis, type LignePilotage, type Vigilance } from "@/lib/console/pilotage";
+import { GROUPES_INFO_COURT, STATUTS_FILTRE, TRIS, filtreBoutiques, lisFiltres, parametres, trieBoutiques } from "@/lib/console/accueil";
+import { chargeAccueil } from "@/lib/console/accueil-serveur";
 import { formateMontant } from "@/lib/prix";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { Semaine, TuileBoutique } from "@/components/console/TuileBoutique";
-import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
-import type { Sante } from "@/lib/console/pilotage";
+import { SANS_FORMULE } from "@/lib/console/formules";
 
 export const metadata: Metadata = { title: "Boutiques" };
 
@@ -20,82 +20,68 @@ type CodeApercu = { id: number; le: string; canal: "sms" | "email"; destinataire
 const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" });
 
 /* LE POSTE DE PILOTAGE — toutes les boutiques d'un coup d'œil (lib/console/
-   pilotage.ts) : chacune à sa couleur, avec sa photo et son monogramme, sa
-   semaine, ce qui attend, sa mise en place ; en tête, ce qui demande un
-   regard. En liste (?vue=liste), le même état en tableau. Sur l'aperçu en
-   ligne seulement (supabase/apercu/codes-demo.sql), les codes de connexion
-   que Supabase aurait envoyés par SMS ou par e-mail. */
-/** Les filtres de la liste : par défaut, les boutiques en activité (les fermées à part). */
-const STATUTS_FILTRE = [
-  { cle: "", titre: "En activité" },
-  { cle: "active", titre: "Ouvertes" },
-  { cle: "en_preparation", titre: "En préparation" },
-  { cle: "suspendue", titre: "Suspendues" },
-  { cle: "fermee", titre: "Fermées" },
-  { cle: "toutes", titre: "Tout statut" },
-] as const;
+   pilotage.ts, accueil.ts) : en tête, quatre chiffres ; puis « À surveiller »
+   rangé — ce qui presse, chaque ligne mise à plus tard d'un geste ; les
+   simples informations regroupées par genre, repliées ; ce qu'on a reporté,
+   à part. Ensuite chaque boutique, à sa couleur, triée comme on le choisit ;
+   en liste (?vue=liste), le même état en tableau ; « Exporter » emporte ce
+   que montre le filtre. Sur l'aperçu en ligne seulement
+   (supabase/apercu/codes-demo.sql), les codes de connexion que Supabase
+   aurait envoyés par SMS ou par e-mail. */
+const RETOUR = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" });
 
-/** Pour chercher sans se soucier des accents ni des majuscules. */
-const plat = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+/** Mettre un signal à plus tard : jusqu'à demain, ou pour une semaine. Un
+ *  menu qui se ferme comme les autres (Échap, clic dehors : FermeConfirmations). */
+function PlusTard({ v, retour }: { v: Vigilance; retour: string }) {
+  return (
+    <details className="bt-confirmer pl-plus-tard">
+      <summary className="btn btn-fantome btn-petit" aria-label={`Mettre à plus tard : ${v.boutique?.nom ?? "plateforme"}, ${v.texte}`}>
+        <Icone nom="horloge" taille={14} /> <span className="pl-plus-tard-texte">Plus tard</span>
+      </summary>
+      <form action="/vigilance" method="post" className="bt-confirmer-panneau pl-plus-tard-menu">
+        <input type="hidden" name="cle" value={v.cle} />
+        <input type="hidden" name="niveau" value={v.niveau} />
+        <input type="hidden" name="retour" value={retour} />
+        <p className="aide">Le taire pour toute l&apos;équipe ; il revient seul, ou plus tôt s&apos;il s&apos;aggrave.</p>
+        <button type="submit" name="jours" value="1" className="btn btn-second btn-petit">Jusqu&apos;à demain</button>
+        <button type="submit" name="jours" value="7" className="btn btn-second btn-petit">Pendant une semaine</button>
+      </form>
+    </details>
+  );
+}
 
-export default async function Tableau({ searchParams }: { searchParams: Promise<{ vue?: string; q?: string; statut?: string; formule?: string; type?: string }> }) {
+export default async function Tableau({ searchParams }: { searchParams: Promise<{ vue?: string; q?: string; statut?: string; formule?: string; type?: string; tri?: string; ok?: string; erreur?: string; carte?: string }> }) {
   const { user } = await exigeAdmin();
   const p = await searchParams;
   const enListe = p.vue === "liste";
-  const q = (p.q ?? "").trim().slice(0, 80);
-  const statut = STATUTS_FILTRE.find((x) => x.cle === p.statut)?.cle ?? "";
-  const type = p.type === "clientes" || p.type === "demos" ? p.type : "";
-  const service = clientService();
-  const [{ data, error }, { data: codesApercu }, { data: df }, { data: ds }, { data: dr }, { data: de }] = await Promise.all([
-    service.rpc("console_pilotage"),
+  const [{ boutiques, formules, signaux, pressants, infos, reportes, maintenant }, { data: codesApercu }] = await Promise.all([
+    chargeAccueil(user.id),
     // Absente hors de l'aperçu : l'erreur la cache, rien d'autre.
-    service.rpc("console_codes_apercu"),
-    service.rpc("console_formules", { p_acteur: user.id }),
-    service.rpc("console_sante", { p_acteur: user.id }),
-    service.rpc("console_rappels", { p_acteur: user.id }),
-    // (une ligne suffit : on n'en lit que la semaine)
-    service.rpc("console_envois", { p_acteur: user.id, p_echecs: true, p_limite: 1 }),
+    clientService().rpc("console_codes_apercu"),
   ]);
-  const formules = (df ?? { formules: [], droits: [], boutiques: [] }) as DonneesFormules;
-  const nomsFormules = new Map(formules.formules.map((f) => [f.code, f.nom]));
+  const f = lisFiltres(p, formules.formules.map((x) => x.code));
+  const nomsFormules = new Map(formules.formules.map((x) => [x.code, x.nom]));
   const formuleDe = new Map(formules.boutiques.map((x) => [x.id, x.formule ? nomsFormules.get(x.formule) ?? x.formule : null]));
-  const codes = Array.isArray(codesApercu) ? (codesApercu as CodeApercu[]) : null;
-  if (error) throw new Error(`Boutiques illisibles : ${error.message}`);
-  const boutiques = (data ?? []) as LignePilotage[];
-  const formuleFiltre = p.formule === "sur-mesure" || formules.formules.some((f) => f.code === p.formule) ? (p.formule as string) : "";
   const codeFormuleDe = new Map(formules.boutiques.map((x) => [x.id, x.formule]));
-  const filtree = q !== "" || statut !== "" || formuleFiltre !== "" || type !== "";
-  const visibles = boutiques.filter((b) =>
-    (statut === "toutes" ? true : statut === "" ? b.statut !== "fermee" : b.statut === statut)
-    && (type === "" || (type === "demos") === b.demonstration)
-    && (formuleFiltre === "" || (formuleFiltre === "sur-mesure" ? !codeFormuleDe.get(b.id) : codeFormuleDe.get(b.id) === formuleFiltre))
-    && (q === "" || [b.nom, b.slug, b.hote ?? ""].some((t) => plat(t).includes(plat(q)))));
+  const codes = Array.isArray(codesApercu) ? (codesApercu as CodeApercu[]) : null;
+  const filtree = f.q !== "" || f.statut !== "" || f.formule !== "" || f.type !== "";
+  const visibles = trieBoutiques(filtreBoutiques(boutiques, f, codeFormuleDe), f.tri, signaux);
   const fermees = boutiques.filter((b) => b.statut === "fermee").length;
-  const lienVue = (liste: boolean) => {
-    const u = new URLSearchParams();
-    if (liste) u.set("vue", "liste");
-    if (q) u.set("q", q);
-    if (statut) u.set("statut", statut);
-    if (formuleFiltre) u.set("formule", formuleFiltre);
-    if (type) u.set("type", type);
-    const t = u.toString();
-    return `/${t ? `?${t}` : ""}`;
-  };
+  const lienVue = (liste: boolean) => `/${parametres(f, liste ? { vue: "liste" } : {})}`;
+  const ici = lienVue(enListe);
   const hoteConsole = (await headers()).get("host");
-  const maintenant = new Date().getTime();
-  const aSurveiller = vigilances(boutiques, maintenant, {
-    skanfact: configSkanFact() !== null, sante: (ds ?? []) as Sante[], rappels: (dr ?? []) as Rappel[],
-    envoisRefuses: (de as { semaine?: { refuses: number } } | null)?.semaine?.refuses ?? 0,
-  });
+  const messageVigilance = p.carte === "vigilance" ? (p.erreur ? { erreur: p.erreur } : p.ok ? { ok: p.ok } : null) : null;
 
   // La synthèse ne compte que les clientes : les boutiques de démonstration vendent pour de faux.
-  const clientes = boutiques.filter((b) => !b.demonstration);
-  const demos = boutiques.filter((b) => b.demonstration);
+  const clientes = boutiques.filter((b) => !b.demonstration && b.statut !== "fermee");
+  const demos = boutiques.filter((b) => b.demonstration && b.statut !== "fermee");
   const ouvertes = clientes.filter((b) => b.statut === "active").length;
   const enPreparation = clientes.filter((b) => b.statut === "en_preparation").length;
   const publies = clientes.reduce((n, b) => n + b.publies, 0);
   const semaine = clientes.reduce((n, b) => n + b.commandes.semaine, 0);
+  const aConfirmer = clientes.reduce((n, b) => n + b.commandes.a_confirmer, 0);
   const encaisse = clientes.reduce((n, b) => n + b.commandes.encaisse_semaine, 0);
+  const nInfos = infos.reduce((n, g) => n + g.signaux.length, 0);
   const tuiles = (liste: LignePilotage[]) => (
     <div className="pl-grille">
       {liste.map((b) => <TuileBoutique key={b.id} b={b} maintenant={maintenant} hoteConsole={hoteConsole} formule={formuleDe.get(b.id) ?? SANS_FORMULE} />)}
@@ -108,14 +94,7 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
     <>
       <EnTetePage
         titre="Boutiques"
-        description={
-          <span className="pl-synthese ligne-points">
-            <span><b className="tabular-nums">{clientes.length}</b> cliente{clientes.length > 1 ? "s" : ""}, <b className="tabular-nums">{ouvertes}</b> ouverte{ouvertes > 1 ? "s" : ""}{enPreparation ? <>, <b className="tabular-nums">{enPreparation}</b> en préparation</> : null}{demos.length ? <> · <b className="tabular-nums">{demos.length}</b> de démonstration</> : null}</span>
-            <span><b className="tabular-nums">{publies}</b> produit{publies > 1 ? "s" : ""} en vitrine</span>
-            <span><b className="tabular-nums">{semaine}</b> commande{semaine > 1 ? "s" : ""} en 7 jours</span>
-            <span><b className="tabular-nums">{formateMontant(encaisse)}</b> TND encaissés{demos.length ? " (clientes seules)" : ""}</span>
-          </span>
-        }
+        description="Ce qui demande un regard, puis chacune de vos boutiques."
         actions={
           <>
             <nav className="segments pl-vues" aria-label="Affichage des boutiques">
@@ -136,25 +115,106 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
         </div>
       ) : (
         <>
+          {/* Quatre chiffres, les clientes seules (les démonstrations vendent pour de faux). */}
+          <ul className="tbp-chiffres pl-synthese" role="list" aria-label="La plateforme en chiffres">
+            <li className="carte">
+              <span className="tbp-libelle">Clientes</span>
+              <b className="tbp-valeur">{clientes.length}</b>
+              <span className="tbp-evolution discret">
+                {ouvertes} ouverte{ouvertes > 1 ? "s" : ""}{enPreparation ? ` · ${enPreparation} en préparation` : ""}{demos.length ? ` · ${demos.length} de démonstration à part` : ""}
+              </span>
+            </li>
+            <li className="carte">
+              <span className="tbp-libelle">Commandes sur 7 jours</span>
+              <b className="tbp-valeur">{semaine}</b>
+              <span className="tbp-evolution discret">{aConfirmer ? `${aConfirmer} à confirmer en ce moment` : "rien à confirmer en ce moment"}</span>
+            </li>
+            <li className="carte">
+              <span className="tbp-libelle">Encaissé sur 7 jours</span>
+              <b className="tbp-valeur">{formateMontant(encaisse)} <small>TND</small></b>
+              <span className="tbp-evolution discret">clientes seules</span>
+            </li>
+            <li className="carte">
+              <span className="tbp-libelle">Produits en vitrine</span>
+              <b className="tbp-valeur">{publies}</b>
+              <span className="tbp-evolution discret"><Link href="/tableau" className="btn-lien">Le tableau de bord</Link></span>
+            </li>
+          </ul>
+
           <section className="pl-vigilance" aria-labelledby="t-vigilance">
             <h2 id="t-vigilance" className="pl-vigilance-titre">
-              À surveiller{aSurveiller.length ? <span className="pl-compte tabular-nums">{aSurveiller.length}</span> : null}
+              À surveiller{pressants.length ? <span className="pl-compte tabular-nums" data-urgent={pressants.some((v) => v.niveau === "urgent") ? "" : undefined}>{pressants.length}</span> : null}
             </h2>
-            {aSurveiller.length ? (
+            {messageVigilance ? (
+              "erreur" in messageVigilance
+                ? <p className="message message-erreur pl-vigilance-retour" role="alert">{messageVigilance.erreur}</p>
+                : <p className="message message-succes pl-vigilance-retour" role="status">{messageVigilance.ok}</p>
+            ) : null}
+            {pressants.length ? (
               <ul className="pl-vigilance-liste" role="list">
-                {aSurveiller.map((v) => (
+                {pressants.map((v) => (
                   <li key={v.cle} data-niveau={v.niveau}>
-                    <Link href={v.href}>
+                    {/* Toute la ligne mène au signal (le lien s'étire sur elle) ; « Plus tard » passe au-dessus. */}
+                    <Link href={v.href} className="pl-vigilance-lien">
                       <span className="pl-point" aria-hidden="true" />
                       <span><b>{v.boutique?.nom ?? "Plateforme"}</b> : {v.texte}</span>
-                      <Icone nom="droite" taille={14} />
                     </Link>
+                    <PlusTard v={v} retour={ici} />
+                    <Icone nom="droite" taille={14} />
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="pl-vigilance-calme">Rien ne presse : aucune commande n&apos;attend depuis plus de deux heures, aucune boutique en préparation.</p>
+              <p className="pl-vigilance-calme">
+                <Icone nom="succes" taille={16} /> Rien ne presse : aucune commande en souffrance, aucun refus inquiétant, aucun accès ouvert.
+              </p>
             )}
+            {infos.length ? (
+              <details className="pl-repli pl-infos">
+                <summary>
+                  <Icone nom="bas" taille={14} />
+                  <span><b>{nInfos} information{nInfos > 1 ? "s" : ""}</b> · {infos.map((g) => `${GROUPES_INFO_COURT[g.type] ?? g.type} (${g.signaux.length})`).join(", ")}</span>
+                </summary>
+                <ul role="list">
+                  {infos.map((g) => (
+                    <li key={g.type}>
+                      <span className="pl-infos-titre">{g.titre || g.signaux[0].texte}</span>
+                      <span className="pl-puces">
+                        {g.signaux.map((v) => (
+                          <Link key={v.cle} href={v.href} className="pl-puce" title={`${v.boutique?.nom ?? "Plateforme"} : ${v.texte}`}>
+                            {v.boutique?.nom ?? "Plateforme"}{v.court ? <small>{v.court}</small> : null}
+                          </Link>
+                        ))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+            {reportes.length ? (
+              <details className="pl-repli pl-reportes">
+                <summary>
+                  <Icone nom="bas" taille={14} />
+                  <span><b>{reportes.length} mis à plus tard</b> · ils reviendront seuls</span>
+                </summary>
+                <ul role="list">
+                  {reportes.map((v) => (
+                    <li key={v.cle} data-niveau={v.niveau}>
+                      <span className="pl-point" aria-hidden="true" />
+                      <span>
+                        <b>{v.boutique?.nom ?? "Plateforme"}</b> : {v.texte}
+                        <small className="discret"> · revient {RETOUR.format(new Date(v.jusqua))}{v.par ? `, reporté par ${v.par}` : ""}</small>
+                      </span>
+                      <form action="/vigilance" method="post">
+                        <input type="hidden" name="cle" value={v.cle} />
+                        <input type="hidden" name="retour" value={ici} />
+                        <button type="submit" name="geste" value="reprendre" className="btn btn-second btn-petit">Reprendre</button>
+                      </form>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
           </section>
 
           <form action="/" method="get" className="pl-filtres" role="search" aria-label="Chercher une boutique">
@@ -162,33 +222,37 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
             <label className="sr-only" htmlFor="pl-q">Nom, identifiant ou domaine</label>
             <span className="pl-filtres-q">
               <Icone nom="recherche" taille={16} />
-              <input id="pl-q" name="q" type="search" className="entree" defaultValue={q} placeholder="Nom, identifiant ou domaine" autoComplete="off" />
+              <input id="pl-q" name="q" type="search" className="entree" defaultValue={f.q} placeholder="Nom ou domaine" autoComplete="off" />
             </span>
             <label className="sr-only" htmlFor="pl-statut">Statut</label>
-            <select id="pl-statut" name="statut" className="entree" defaultValue={statut}>
+            <select id="pl-statut" name="statut" className="entree" defaultValue={f.statut} data-envoi-auto>
               {STATUTS_FILTRE.map((x) => <option key={x.cle} value={x.cle}>{x.titre}{x.cle === "fermee" && fermees ? ` (${fermees})` : ""}</option>)}
             </select>
             <label className="sr-only" htmlFor="pl-formule">Formule</label>
-            <select id="pl-formule" name="formule" className="entree" defaultValue={formuleFiltre}>
+            <select id="pl-formule" name="formule" className="entree" defaultValue={f.formule} data-envoi-auto>
               <option value="">Toute formule</option>
-              {formules.formules.map((f) => <option key={f.code} value={f.code}>{f.nom}</option>)}
+              {formules.formules.map((x) => <option key={x.code} value={x.code}>{x.nom}</option>)}
               <option value="sur-mesure">{SANS_FORMULE}</option>
             </select>
             <label className="sr-only" htmlFor="pl-type">Clientes ou démonstrations</label>
-            <select id="pl-type" name="type" className="entree" defaultValue={type}>
+            <select id="pl-type" name="type" className="entree" defaultValue={f.type} data-envoi-auto>
               <option value="">Clientes et démos</option>
               <option value="clientes">Clientes</option>
               <option value="demos">Démos</option>
             </select>
+            <label className="sr-only" htmlFor="pl-tri">Trier</label>
+            <select id="pl-tri" name="tri" className="entree" defaultValue={f.tri} data-envoi-auto>
+              {TRIS.map((x) => <option key={x.cle} value={x.cle}>{x.cle ? `Tri : ${x.titre.toLowerCase()}` : x.titre}</option>)}
+            </select>
             <button type="submit" className="btn btn-second">Filtrer</button>
-            {filtree ? (
-              <span className="pl-filtres-compte">
-                {visibles.length} sur {boutiques.length} · <Link href={enListe ? "/?vue=liste" : "/"} className="btn-lien">Tout voir</Link>
-              </span>
-            ) : fermees ? (
-              <span className="pl-filtres-compte discret">{fermees} fermée{fermees > 1 ? "s" : ""} à part</span>
-            ) : null}
           </form>
+          <div className="pl-filtres-pied">
+            <span className="pl-filtres-compte">
+              {filtree ? <>{visibles.length} sur {boutiques.length} · <Link href={enListe ? "/?vue=liste" : "/"} className="btn-lien">Tout voir</Link></>
+                : <>{visibles.length} boutique{visibles.length > 1 ? "s" : ""}{fermees ? <span className="discret"> · {fermees} fermée{fermees > 1 ? "s" : ""} à part</span> : null}</>}
+            </span>
+            <a href={`/export/boutiques${parametres(f)}`} className="btn-lien pl-exporter" download><Icone nom="telecharger" taille={14} /> Exporter la liste (CSV)</a>
+          </div>
 
           {visibles.length === 0 ? (
             <p className="message">Aucune boutique pour ce filtre. <Link href={enListe ? "/?vue=liste" : "/"}>Tout voir</Link></p>
@@ -241,7 +305,7 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
               <h2 className="pl-groupe">Clientes <span className="pl-compte tabular-nums">{clientesVisibles.length}</span></h2>
               {tuiles(clientesVisibles)}
               <h2 className="pl-groupe">Démonstrations <span className="pl-compte tabular-nums">{demosVisibles.length}</span></h2>
-              <p className="aide pl-groupe-aide">Montrées aux prospects : leurs commandes ne comptent pas dans la synthèse ni dans « À surveiller ».</p>
+              <p className="aide pl-groupe-aide">Montrées aux prospects : leurs commandes ne comptent ni dans les chiffres ni dans « À surveiller ».</p>
               {tuiles(demosVisibles)}
             </>
           ) : (

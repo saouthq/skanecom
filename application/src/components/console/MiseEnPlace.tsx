@@ -31,7 +31,9 @@ function libelleChemin(e: EtapeBrute): string {
   return e.cle === "branchements" || e.cle === "legal" ? "Par le support" : "Y aller";
 }
 
-export function MiseEnPlace({ slug, boutiqueId, donnees }: { slug: string; boutiqueId: string; donnees: Donnees }) {
+/** `replie` : une boutique déjà ouverte n'a plus la mise en place pour
+ *  première affaire ; la liste se replie sous son avancement. */
+export function MiseEnPlace({ slug, boutiqueId, donnees, replie = false }: { slug: string; boutiqueId: string; donnees: Donnees; replie?: boolean }) {
   const faites = donnees.etapes.filter((e) => e.fait).length;
   const total = donnees.etapes.length;
   const suivante = donnees.etapes.find((e) => !e.fait);
@@ -99,9 +101,9 @@ export function MiseEnPlace({ slug, boutiqueId, donnees }: { slug: string; bouti
           <span className="mp-barre" aria-hidden="true"><span style={{ inlineSize: `${(faites / total) * 100}%` }} /></span>
         </div>
       </div>
-      {faites === total ? (
+      {faites === total || replie ? (
         <details className="mp-pli">
-          <summary>Revoir les {total} étapes</summary>
+          <summary>{faites === total ? `Revoir les ${total} étapes` : `Voir les ${total - faites} étape${total - faites > 1 ? "s" : ""} qui restent`}</summary>
           {liste}
         </details>
       ) : liste}

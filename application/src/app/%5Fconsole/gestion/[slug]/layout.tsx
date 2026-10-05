@@ -11,6 +11,7 @@ import { PEUT_ECRIRE } from "@/lib/gestion/pages";
 import type { ElementPalette } from "@/lib/gestion/palette";
 import { OuvrirPalette, Palette } from "@/components/console/Palette";
 import { BandeauAnnonces } from "@/components/console/BandeauAnnonces";
+import { BandeauSuspension } from "@/components/console/BandeauSuspension";
 import type { AnnonceBoutique } from "@/lib/console/annonces";
 
 /* ============================================================================
@@ -36,7 +37,7 @@ export default async function BackofficeBoutique({
   // pas l'un après l'autre : chaque page du backoffice les attend.
   const sb = await clientSession();
   const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }, { data: an }] = await Promise.all([
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }, { data: an }, { data: su }] = await Promise.all([
     sb.rpc("gestion_sav_etat", etat),
     sb.rpc("gestion_pro_etat", etat),
     sb.rpc("gestion_devis_etat", etat),
@@ -48,7 +49,9 @@ export default async function BackofficeBoutique({
     sb.rpc("gestion_lettre_etat", etat),
     sb.rpc("gestion_skanfact_etat", etat),
     sb.rpc("gestion_annonces", etat),
+    boutique.statut === "suspendue" ? sb.rpc("gestion_suspension", etat) : Promise.resolve({ data: null }),
   ]);
+  const suspension = (su ?? null) as { motif: string | null; message: string | null; le: string | null } | null;
   const annonces = (Array.isArray(an) ? an : []) as AnnonceBoutique[];
   // La facturation SkanFact, si la boutique a le module (ou y reste connectée) : ce que SkanFact a
   // refusé, une connexion coupée ou bientôt expirée. Ce qui attendait une panne repart, en fond.
@@ -213,8 +216,9 @@ export default async function BackofficeBoutique({
       recherche={<OuvrirPalette />}
       rechercheCompacte={<OuvrirPalette compact />}
       palette={<Palette slug={slug} pages={pages} />}
-      bandeau={boutique.support_jusqu_a || annonces.length ? (
+      bandeau={boutique.support_jusqu_a || annonces.length || suspension ? (
         <>
+          {suspension ? <BandeauSuspension s={suspension} /> : null}
           {boutique.support_jusqu_a ? (
             <BandeauSupport slug={slug} mode={boutique.role as ModeSupport} jusqua={boutique.support_jusqu_a} motif={boutique.support_motif} />
           ) : null}
