@@ -39,6 +39,7 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
         },
       ]}
       email={user.email ?? ""}
+      compte="/compte"
       role={role === "super_admin" ? "Super-administrateur" : "Support"}
     >
       {children}

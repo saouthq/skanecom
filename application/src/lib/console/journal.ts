@@ -50,6 +50,10 @@ export const ACTIONS: Record<string, string> = {
   "administrateur.retirer": "Sortie de l'équipe SkanEcom",
   "administrateur.double_auth": "Double authentification réinitialisée",
   "reglages.modifier": "Réglages modifiés (back-office)",
+  "compte.mot_de_passe": "Mot de passe changé",
+  "compte.deconnexion_partout": "Déconnecté de tous les appareils",
+  "compte.codes_secours": "Codes de secours créés",
+  "compte.code_secours": "Code de secours utilisé",
   "export.journal": "Journal exporté",
   "export.tableau": "Tableau de bord exporté",
 };
@@ -70,6 +74,7 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "annonce", titre: "Annonces" },
   { cle: "administrateur", titre: "Équipe SkanEcom" },
   { cle: "mise_en_place", titre: "Mise en place" },
+  { cle: "compte", titre: "Comptes (mot de passe, codes de secours)" },
   { cle: "export", titre: "Exports" },
 ];
 

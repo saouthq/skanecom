@@ -153,6 +153,35 @@
   border: 1px solid var(--ui-bord); background: var(--ui-panneau); box-shadow: var(--ui-ombre-xs);
 }
 .app-compte-texte { display: grid; min-inline-size: 0; flex: 1; line-height: 1.25; }
+.app-compte-lien { display: flex; align-items: center; gap: inherit; flex: 1; min-inline-size: 0; color: inherit; text-decoration: none; border-radius: var(--ui-r); }
+.app-compte-lien:hover .app-compte-email { text-decoration: underline; text-underline-offset: 3px; }
+.app-compte-lien:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
+
+/* ---- Mon compte (components/console/PageCompte) ---- */
+.cp-grille { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); max-inline-size: 46rem; }
+.cp-qui { display: flex; align-items: center; gap: 1rem; }
+.cp-qui p { margin: 0; }
+.cp-email { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
+.console .avatar-grand { inline-size: 3rem; block-size: 3rem; font-size: 1rem; }
+.cp-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .75rem; margin: 1rem 0; padding: 0; list-style: none; counter-reset: code; }
+.cp-codes li { counter-increment: code; display: flex; align-items: baseline; gap: .5rem; padding: .5rem .75rem; border: 1px dashed var(--ui-bord); border-radius: var(--ui-r); background: var(--ui-survol); }
+.cp-codes li::before { content: counter(code) "."; font-size: .75rem; color: var(--ui-texte-3); min-inline-size: 1.25rem; }
+.cp-codes code { font-family: ui-monospace, monospace; font-size: 1rem; letter-spacing: .06em; white-space: nowrap; }
+/* Au téléphone, un code tient sur sa ligne (jamais « K7Q2M- / 9XR4T »). */
+@media (max-width: 30rem) {
+  .cp-codes { gap: .5rem; }
+  .cp-codes li { padding: .5rem .5rem; gap: .25rem; }
+  .cp-codes li::before { min-inline-size: 1rem; }
+  .cp-codes code { font-size: .875rem; letter-spacing: .02em; }
+}
+.cp-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cp-codes-etat { display: grid; gap: .75rem; justify-items: start; }
+.cp-codes-etat p { margin: 0; }
+@media print {
+  /* Imprimer ses codes : la carte seule. */
+  body:has(.cp-codes) .app-cote, body:has(.cp-codes) .app-entete, body:has(.cp-codes) .app-onglets,
+  body:has(.cp-codes) .cp-grille > :not(#secours), body:has(.cp-codes) .cp-gestes { display: none !important; }
+}
 .app-compte-email { font-size: .8125rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-compte-role { font-size: .75rem; color: var(--ui-texte-3); }
 
@@ -375,6 +404,9 @@
 .console .message-succes::before { color: var(--ui-vert); --message-icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m8.5 12.5 2.5 2.5 4.5-5'/%3E%3C/svg%3E"); }
 .console .message-erreur { background: var(--ui-rouge-fond); border-color: var(--ui-rouge-bord); color: #7F1D1D; }
 .console .message-erreur::before { color: var(--ui-rouge); --message-icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E"); }
+/* Ce qu'il faut faire maintenant (noter ses codes…) : ambre, un triangle. */
+.console .message-attention { background: var(--ui-ambre-fond); border-color: var(--ui-ambre-bord); color: #78350F; }
+.console .message-attention::before { color: var(--ui-ambre); --message-icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E"); }
 .console .message a { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
 /* Posés par le geste en place sous le formulaire (components/console/Retours.tsx). */
 .console .geste-coupure, .console .geste-refus { margin-block-start: .75rem; }
@@ -503,6 +535,12 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 .porte-tete h1 { font-size: 1.375rem; line-height: 1.75rem; }
 .porte-tete p { color: var(--ui-texte-2); max-inline-size: 22rem; }
 .porte-carte { padding: 1.5rem; box-shadow: var(--ui-ombre-m); }
+/* Un libellé avec son lien à droite (« Mot de passe oublié ? »). */
+.champ-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem; }
+.champ-tete-lien { font-size: .8125rem; }
+.ds-secours { margin-block-start: 1rem; padding-block: 1rem; }
+.ds-secours > summary { cursor: pointer; font-size: .875rem; font-weight: 500; color: var(--ui-texte-2); }
+.ds-secours[open] > summary { margin-block-end: 1rem; }
 .porte-pied { text-align: center; font-size: .8125rem; color: var(--ui-texte-3); }
 .porte-qui {
   display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .75rem .25rem .25rem;

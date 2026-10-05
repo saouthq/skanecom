@@ -83,6 +83,9 @@ export default async function EquipeBoutique({
               <a className="btn btn-succes" href={lienWhatsAppPartage(messageLien(lien))} target="_blank" rel="noopener noreferrer">
                 <Icone nom="message" /> Envoyer par WhatsApp
               </a>
+              <form action={`/gestion/${slug}/equipe/envoyer-lien`} method="post">
+                <button type="submit" className="btn btn-second"><Icone nom="courriel" /> Envoyer par e-mail</button>
+              </form>
             </div>
           </section>
         ) : null}
@@ -176,7 +179,7 @@ export default async function EquipeBoutique({
                 <div className="champ">
                   <label htmlFor="email">Adresse e-mail</label>
                   <input id="email" name="email" type="email" required autoComplete="off" defaultValue={messages.email ?? ""} placeholder="prenom@exemple.tn" />
-                  <p className="aide">Son identifiant. Aucun e-mail n&apos;est envoyé : c&apos;est vous qui transmettez le lien.</p>
+                  <p className="aide">Son identifiant. Le lien d&apos;invitation s&apos;affiche ensuite : vous l&apos;envoyez par e-mail d&apos;un clic, ou le transmettez vous-même (WhatsApp, SMS).</p>
                 </div>
                 <fieldset className="choix">
                   <legend>Rôle</legend>

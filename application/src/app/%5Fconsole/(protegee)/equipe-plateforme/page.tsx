@@ -45,10 +45,13 @@ export default async function EquipePlateforme({ searchParams }: { searchParams:
       {lien ? (
         <section className="carte ep-lien" aria-labelledby="t-lien">
           <h2 id="t-lien" className="carte-titre-icone"><Icone nom="lien" /> Le lien pour {lien.email}</h2>
-          <p className="aide">Valable 24 heures, à usage unique. Envoyez-le par WhatsApp ou de vive voix ; personne d&apos;autre ne doit l&apos;ouvrir.</p>
+          <p className="aide">Valable 24 heures, à usage unique. Envoyez-le par e-mail (au nom de SkanEcom), par WhatsApp ou de vive voix ; personne d&apos;autre ne doit l&apos;ouvrir.</p>
           <div className="ep-lien-ligne">
             <code className="md-code">{lien.lien}</code>
             <BoutonCopier texte={lien.lien} libelle="Copier le lien" />
+            <form action="/equipe-plateforme/envoyer-lien" method="post">
+              <button type="submit" className="btn btn-second"><Icone nom="courriel" taille={15} /> Envoyer par e-mail</button>
+            </form>
           </div>
         </section>
       ) : null}
@@ -109,7 +112,7 @@ export default async function EquipePlateforme({ searchParams }: { searchParams:
             <div className="carte-tete">
               <div>
                 <h2 id="t-inviter-plateforme" className="carte-titre-icone"><Icone nom="plus" /> Inviter dans l&apos;équipe</h2>
-                <p>La console lui crée son compte et vous remet un lien à lui envoyer. Aucun e-mail ne part d&apos;ici.</p>
+                <p>La console lui crée son compte et vous remet un lien : envoyez-le par e-mail d&apos;un clic, ou transmettez-le vous-même.</p>
               </div>
             </div>
             <form action="/equipe-plateforme/inviter" method="post" className="formulaire">

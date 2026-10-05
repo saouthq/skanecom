@@ -1,6 +1,10 @@
 import { cookies } from "next/headers";
 import { clientService } from "./service";
 import { COOKIE_LIEN, DUREE_COOKIE_LIEN, cheminEquipe, lienBienvenue, type LienRemis, type MembreEquipe, type TypeLien } from "./equipe";
+import { MARQUE_PLATEFORME, courrielInvitation, courrielMotDePasse, marqueDeBoutique } from "@/lib/courriels/messages";
+import type { Marque } from "@/lib/courriels/modele";
+import { cadre } from "@/lib/boutique";
+import { envoyer } from "@/lib/courriels/envoi";
 
 /* Côté serveur de la console : fabriquer un lien d'accès, et le faire
    arriver jusqu'à la page de l'équipe. */
@@ -61,4 +65,21 @@ export async function remettreLien(req: Request, contexte: {
     maxAge: DUREE_COOKIE_LIEN,
   });
   return null;
+}
+
+/** Le lien remis (invitation ou mot de passe), envoyé aussi par e-mail : au
+ *  nom de la boutique et à ses couleurs pour l'équipe d'une boutique (c'est
+ *  le nom que l'employé connaît), au nom de SkanEcom pour la sienne. L'envoi
+ *  entre au journal des envois, réussi ou refusé. */
+export async function envoyerLienParCourriel(l: { email: string; lien: string; type?: TypeLien }, boutique?: string): Promise<{ ok: true } | { ok: false; raison: string }> {
+  let m: Marque = MARQUE_PLATEFORME;
+  if (boutique) {
+    try {
+      m = marqueDeBoutique(await cadre(boutique), null);
+    } catch {
+      // boutique suspendue ou introuvable : la plateforme écrit
+    }
+  }
+  const c = l.type === "recovery" ? courrielMotDePasse(m, l.lien) : courrielInvitation(m, l.lien);
+  return envoyer({ a: l.email, nom: m.nom, sujet: c.sujet, html: c.html, texte: c.texte });
 }

@@ -1191,12 +1191,18 @@ if (section("2")) {
     await tape(page, vendeur);
     await clic(page, page.locator(".role-choix", { hasText: "Préparation" }));
     await envoie(page.getByRole("button", { name: "Inviter" }));
-    verifie((await ok()).includes("est invité (Préparation)"), `« ${await ok()} »`);
+    verifie((await ok()).includes("(Préparation) : envoyez-lui le lien"), `« ${await ok()} »`);
     lienVendeur = (await page.locator("#lien-acces").inputValue()).trim();
     verifie(new URL(lienVendeur).pathname === "/bienvenue" && (new URL(lienVendeur).searchParams.get("jeton") ?? "").length > 40,
       "un lien d'invitation, à transmettre par WhatsApp");
     verifie((await page.locator(".membre", { hasText: vendeur }).innerText()).includes("Invitation en attente"), "l'employé est en attente");
     await capture(page, "gestion-equipe");
+    // Le même lien, envoyé aussi par e-mail : au nom de Maymar, pas de SkanEcom.
+    await envoie(page.getByRole("button", { name: "Envoyer par e-mail" }));
+    verifie((await ok()).includes(`Lien envoyé par e-mail à ${vendeur}`), `« ${await ok()} »`);
+    const rendu = await (await fetch(`${process.env.RELAIS ?? "http://127.0.0.1:54321"}/email-dev/rendu/dernier?email=${encodeURIComponent(vendeur)}`)).json();
+    verifie(rendu.nom === "Maymar" && rendu.sujet.includes("Maymar") && rendu.texte.includes(lienVendeur),
+      `l'e-mail part au nom de la boutique (« ${rendu.nom} », « ${rendu.sujet} »), avec le lien`);
   });
 
   await etape("l'employé ouvre son lien et arrive dans le backoffice", async () => {

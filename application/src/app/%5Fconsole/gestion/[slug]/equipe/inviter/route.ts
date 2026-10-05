@@ -63,5 +63,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (e3) return versAvecErreur(retour, messageEquipe(e3.hint, e3.message));
 
   await deposerLien(req, slug, { boutique: boutique.nom, userId: j.userId, email, jeton: j.jeton, type: "invite" });
-  return vers(`${retour}?${new URLSearchParams({ ok: `${email} est invité (${libelle}). Envoyez-lui le lien ci-dessous.` })}`);
+  return vers(`${retour}?${new URLSearchParams({ ok: `Invitation prête pour ${email} (${libelle}) : envoyez-lui le lien ci-dessous.` })}`);
 }

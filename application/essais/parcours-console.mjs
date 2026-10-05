@@ -1094,6 +1094,7 @@ await etape("la console montre l'accès ouvert", async () => {
   await capture(page, "console-support", true);
 });
 
+let secretGerant = "";
 await etape("le propriétaire ferme lui-même l'accès du support", async () => {
   const bureau = await navigateur.newContext({ viewport: { width: 1366, height: 860 }, locale: "fr-FR" });
   const p = await bureau.newPage();
@@ -1104,7 +1105,7 @@ await etape("le propriétaire ferme lui-même l'accès du support", async () => 
   await p.keyboard.press("Enter");
   await p.waitForURL(/double-authentification/);
   await p.waitForLoadState("networkidle");
-  const secretGerant = (await p.locator("[data-secret-totp]").textContent()).trim();
+  secretGerant = (await p.locator("[data-secret-totp]").textContent()).trim();
   await clic(p, p.locator("#code"));
   await tape(p, totp(secretGerant));
   await p.keyboard.press("Enter");
@@ -1131,6 +1132,192 @@ await etape("le propriétaire ferme lui-même l'accès du support", async () => 
     && journal.filter((l) => l.includes("Accès support fermé")).length === 2
     && journal.some((l) => l.includes("Accès support fermé") && l.includes(GERANT)),
   "le journal garde les deux ouvertures et les deux fermetures, dont celle du propriétaire");
+});
+
+/* ------------------------------------------------------------------ */
+console.log("\n== 3 ter. Les accès de chacun : Mon compte, codes de secours, mot de passe oublié ==");
+
+/* Se connecter (mot de passe, puis le code de l'application) dans un
+   contexte neuf. Un code déjà donné dans la même demi-minute peut être
+   refusé : on attend alors le suivant. */
+async function entreAvecApplication(contexte, email, mdp, secretTotp, nom) {
+  const p = await contexte.newPage();
+  t.espion(p, nom, attendue);
+  await p.goto(CONSOLE + "/connexion", { waitUntil: "networkidle" });
+  await p.locator("#email").fill(email);
+  await p.locator("#mot_de_passe").fill(mdp);
+  await p.keyboard.press("Enter");
+  await p.waitForURL(/double-authentification/);
+  await p.waitForLoadState("networkidle");
+  for (let essai = 0; essai < 2; essai++) {
+    await p.locator("#code").fill(totp(secretTotp));
+    await p.keyboard.press("Enter");
+    const entre = await p.waitForURL(new RegExp(`/gestion/${SLUG}`), { timeout: 8000 }).then(() => true, () => false);
+    if (entre) return p;
+    await pause(31_000);
+  }
+  throw new Error(`${email} : la double authentification ne passe pas`);
+}
+const dernierCourriel = async (adresse) =>
+  (await fetch(`${RELAIS}/email-dev/rendu/dernier?email=${encodeURIComponent(adresse)}`)).json().catch(() => null);
+const jetonDe = (texte) => (texte ?? "").match(/jeton=([0-9a-f]+)/)?.[1] ?? null;
+
+await etape("la console : son nom, en bas de la barre, ouvre « Mon compte »", async () => {
+  await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
+  await clic(page, page.locator(".app-cote .app-compte-lien"));
+  await page.waitForURL((u) => u.pathname === "/compte");
+  await page.waitForLoadState("networkidle");
+  verifie((await page.locator("h1").innerText()) === "Mon compte" && (await page.locator(".cp-email").innerText()) === ADMIN.email,
+    "« Mon compte » : son adresse, son rôle");
+  verifie((await page.locator("#secours").innerText()).includes("Aucun code de secours"), "pas encore de codes de secours : la carte le signale");
+  await capture(page, "console-mon-compte", true);
+});
+
+let codesGerant = [];
+let bureauGerant;
+await etape("Mon compte du propriétaire : dix codes de secours, montrés une fois", async () => {
+  bureauGerant = await navigateur.newContext({ viewport: { width: 1366, height: 860 }, locale: "fr-FR" });
+  const p = await entreAvecApplication(bureauGerant, GERANT, "la valise est prête", secretGerant, "compte-proprietaire");
+  await p.waitForLoadState("networkidle");
+  await clic(p, p.locator(".app-cote .app-compte-lien"));
+  await p.waitForURL(new RegExp(`/gestion/${SLUG}/compte$`));
+  await p.waitForLoadState("networkidle");
+  verifie((await p.locator(".cp-qui").innerText()).includes("Propriétaire"), "au backoffice, « Mon compte » dit son rôle dans la boutique");
+  await envoie(p, p.getByRole("button", { name: "Créer mes codes de secours" }));
+  codesGerant = await p.locator(".cp-codes code").allInnerTexts();
+  verifie(codesGerant.length === 10 && codesGerant.every((c) => /^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/.test(c)) && new Set(codesGerant).size === 10,
+    `dix codes distincts, lisibles (${codesGerant[0]}…), ni I, L, O, 0 ni 1`);
+  verifie((await p.locator(".cp-codes-neufs .message-attention").innerText()).includes("ne seront plus montrés"), "« Notez-les maintenant : ils ne seront plus montrés »");
+  await capture(p, "backoffice-codes-de-secours");
+  await envoie(p, p.getByRole("button", { name: "C'est noté" }));
+  verifie(await p.locator(".cp-codes").count() === 0 && (await p.locator("#secours").innerText()).includes("10 codes encore valables"),
+    "« C'est noté » : les codes disparaissent, la carte dit qu'il en reste dix");
+});
+
+let secretNeuf = "";
+await etape("téléphone perdu : un code de secours remplace l'application", async () => {
+  const tel = await navigateur.newContext(TELEPHONE);
+  const p = await tel.newPage();
+  t.espion(p, "code-de-secours", attendue);
+  await p.goto(CONSOLE + "/connexion", { waitUntil: "networkidle" });
+  await p.locator("#email").fill(GERANT);
+  await p.locator("#mot_de_passe").fill("la valise est prête");
+  await p.keyboard.press("Enter");
+  await p.waitForURL(/double-authentification/);
+  await p.waitForLoadState("networkidle");
+  await clic(p, p.getByText("Téléphone perdu ? Utiliser un code de secours"));
+  await p.locator("#code_secours").fill("AAAAA-BBBBB");
+  await clic(p, p.getByRole("button", { name: "Utiliser ce code" }));
+  await p.waitForURL(/secours=1/);
+  verifie((await p.getByRole("alert").innerText()).includes("inconnu"), `un code inventé : « ${await p.getByRole("alert").innerText()} »`);
+  verifie(await p.evaluate(() => document.activeElement?.id) === "code_secours", "le curseur revient dans le champ du code de secours");
+  // Tapé comme on le lit, en minuscules et sans tiret.
+  await p.locator("#code_secours").fill(codesGerant[0].toLowerCase().replace("-", ""));
+  await p.keyboard.press("Enter");
+  await p.waitForURL(/remplace=1/);
+  await p.waitForLoadState("networkidle");
+  verifie((await p.getByRole("status").first().innerText()).includes("Il vous en reste 9"), "code accepté : la page dit combien il en reste (9)");
+  secretNeuf = (await p.locator("[data-secret-totp]").textContent()).trim();
+  verifie(secretNeuf.length >= 16 && secretNeuf !== secretGerant, "l'ancienne application est retirée : un nouveau QR code à enregistrer");
+  await capture(p, "console-code-de-secours-accepte");
+  await p.locator("#code").fill(totp(secretNeuf));
+  await p.keyboard.press("Enter");
+  await p.waitForURL(new RegExp(`/gestion/${SLUG}`));
+  verifie(true, "la nouvelle application enregistrée, il est dans son backoffice");
+  secretGerant = secretNeuf;
+
+  // Le même code, une seconde fois : refusé.
+  const autre = await navigateur.newContext({ viewport: { width: 1366, height: 860 }, locale: "fr-FR" });
+  const q = await autre.newPage();
+  t.espion(q, "code-servi", attendue);
+  await q.goto(CONSOLE + "/connexion", { waitUntil: "networkidle" });
+  await q.locator("#email").fill(GERANT);
+  await q.locator("#mot_de_passe").fill("la valise est prête");
+  await q.keyboard.press("Enter");
+  await q.waitForURL(/double-authentification/);
+  await clic(q, q.getByText("Téléphone perdu ? Utiliser un code de secours"));
+  await q.locator("#code_secours").fill(codesGerant[0]);
+  await q.keyboard.press("Enter");
+  await q.waitForURL(/secours=1/);
+  verifie((await q.getByRole("alert").innerText()).includes("déjà utilisé"), "le même code une seconde fois : refusé");
+  await autre.close();
+  await tel.close();
+});
+
+await etape("Mon compte : changer son mot de passe (l'actuel d'abord)", async () => {
+  const p = bureauGerant.pages()[0];
+  await p.goto(`${CONSOLE}/gestion/${SLUG}/compte`, { waitUntil: "networkidle" });
+  await p.locator("#cp-actuel").fill("pas le bon du tout");
+  await p.locator("#cp-nouveau").fill("la valise est partie");
+  await p.locator("#cp-confirmation").fill("la valise est partie");
+  await envoie(p, p.getByRole("button", { name: "Changer le mot de passe" }));
+  verifie((await p.locator("#mot-de-passe [role=alert]").innerText()).includes("n'est pas le bon"), "un mot de passe actuel faux : refusé, à sa place");
+  await p.locator("#cp-actuel").fill("la valise est prête");
+  await p.locator("#cp-nouveau").fill("la valise est partie");
+  await p.locator("#cp-confirmation").fill("la valise est partie");
+  await envoie(p, p.getByRole("button", { name: "Changer le mot de passe" }));
+  verifie((await p.locator("#mot-de-passe [role=status]").innerText()).includes("Mot de passe changé"), "le bon : « Mot de passe changé »");
+});
+
+await etape("se déconnecter de tous les appareils : les autres sessions tombent", async () => {
+  const tel = await navigateur.newContext(TELEPHONE);
+  const p = await entreAvecApplication(tel, GERANT, "la valise est partie", secretGerant, "deconnexion-partout");
+  verifie(true, "le nouveau mot de passe ouvre le backoffice, sur le téléphone");
+  const bureau = bureauGerant.pages()[0];
+  await bureau.goto(`${CONSOLE}/gestion/${SLUG}/compte`, { waitUntil: "networkidle" });
+  await clic(bureau, bureau.getByRole("button", { name: "Se déconnecter de tous les appareils" }));
+  await clic(bureau, bureau.getByRole("button", { name: "Tout déconnecter" }));
+  await bureau.waitForURL(/\/connexion\?/);
+  verifie((await bureau.getByRole("status").innerText()).includes("Déconnecté de tous vos appareils"), "sur l'ordinateur : retour à la connexion, qui le dit");
+  const r = await brut(tel, "GET", `/gestion/${SLUG}`);
+  verifie((r.status === 307 || r.status === 303) && r.location.includes("/connexion"), `le téléphone aussi est dehors (${r.status} → ${r.location})`);
+  await p.close();
+  await tel.close();
+  await bureauGerant.close();
+});
+
+await etape("« Mot de passe oublié ? » : l'adresse tapée suit, le lien part par e-mail", async () => {
+  const autre = await navigateur.newContext({ viewport: { width: 1366, height: 860 }, locale: "fr-FR" });
+  const p = await autre.newPage();
+  t.espion(p, "mot-de-passe-oublie", attendue);
+  const avant = jetonDe((await dernierCourriel(APPELS))?.texte);
+  await p.goto(CONSOLE + "/connexion", { waitUntil: "networkidle" });
+  await clic(p, p.locator("#email"));
+  await tape(p, APPELS);
+  await clic(p, p.getByRole("link", { name: "Mot de passe oublié ?" }));
+  await p.waitForURL(/mot-de-passe-oublie/);
+  verifie((await p.locator("#email").inputValue()) === APPELS, "l'adresse tapée à la connexion est déjà dans le champ");
+  await clic(p, p.getByRole("button", { name: "Recevoir le lien" }));
+  await p.waitForURL(/envoye=1/);
+  verifie((await p.getByRole("status").innerText()).includes(`Si un compte existe pour ${APPELS}`), "la réponse ne dit pas si le compte existe");
+  await capture(p, "console-mot-de-passe-oublie");
+  const courriel = await dernierCourriel(APPELS);
+  const jeton = jetonDe(courriel?.texte);
+  verifie(courriel?.sujet?.startsWith("Nouveau mot de passe") && jeton && jeton !== avant, `l'e-mail part : « ${courriel?.sujet} »`);
+  // Une seconde demande, aussitôt : rien ne repart (une toutes les deux minutes).
+  await p.goto(`${CONSOLE}/mot-de-passe-oublie?email=${encodeURIComponent(APPELS)}`, { waitUntil: "networkidle" });
+  await clic(p, p.getByRole("button", { name: "Recevoir le lien" }));
+  await p.waitForURL(/envoye=1/);
+  verifie(jetonDe((await dernierCourriel(APPELS))?.texte) === jeton, "une seconde demande aussitôt : la même réponse, mais aucun e-mail de plus");
+  // Le lien de l'e-mail : choisir le mot de passe, entrer.
+  await p.goto(courriel.texte.match(/https?:\/\/\S+bienvenue\S+/)[0], { waitUntil: "networkidle" });
+  await p.locator("#mot_de_passe").fill("oubli du jeudi matin");
+  await p.locator("#confirmation").fill("oubli du jeudi matin");
+  await clic(p, p.getByRole("button", { name: "Enregistrer et entrer" }));
+  await p.waitForURL(new RegExp(`/gestion/${SLUG}`));
+  verifie(true, "le lien de l'e-mail : un nouveau mot de passe, et le backoffice");
+  await autre.close();
+});
+
+await etape("le lien remis s'envoie aussi par e-mail, au nom de la boutique", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/equipe`, { waitUntil: "networkidle" });
+  await envoie(page, ligneDe(APPELS).getByRole("button", { name: "Lien de mot de passe" }));
+  const lien = await lienAffiche();
+  await envoie(page, page.getByRole("button", { name: "Envoyer par e-mail" }));
+  verifie((await page.getByRole("status").first().innerText()).includes(`Lien envoyé par e-mail à ${APPELS}`), "« Lien envoyé par e-mail »");
+  const courriel = await dernierCourriel(APPELS);
+  verifie(courriel?.nom === "Outillage Pro Démo" && courriel.texte.includes(lien),
+    `au nom de la boutique (« ${courriel?.nom} »), avec le lien affiché`);
 });
 
 /* ------------------------------------------------------------------

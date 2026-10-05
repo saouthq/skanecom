@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Double authentification" };
    Le code valide fait passer la session en « aal2 » : la console s'ouvre.
    ========================================================================== */
 
-export default async function DoubleAuthentification({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
+export default async function DoubleAuthentification({ searchParams }: { searchParams: Promise<{ erreur?: string; secours?: string; remplace?: string }> }) {
   const a = await acces();
   if (a.etat === "anonyme") redirect("/connexion");
   if (a.etat === "ok") redirect("/");
@@ -31,7 +31,7 @@ export default async function DoubleAuthentification({ searchParams }: { searchP
     if (e.etat === "aucune") redirect("/refuse");
     if (e.etat === "ok") redirect("/gestion");
   }
-  const { erreur } = await searchParams;
+  const { erreur, secours, remplace } = await searchParams;
 
   const sb = await clientSession();
   const { data: facteurs } = await sb.auth.mfa.listFactors();
@@ -50,20 +50,35 @@ export default async function DoubleAuthentification({ searchParams }: { searchP
     inscription = { id: data.id, qr: data.totp.qr_code, secret: data.totp.secret, uri: data.totp.uri };
   }
 
+  // Après un code de secours : combien il en reste (s'il n'en reste plus
+  // beaucoup, la personne le sait avant d'en avoir besoin).
+  let restants: number | null = null;
+  if (remplace && inscription) {
+    const { data } = await sb.rpc("compte_codes_secours");
+    restants = (data as { restants?: number } | null)?.restants ?? null;
+  }
+
   return (
     <Porte
       titre="Double authentification"
       qui={a.user.email}
-      description={inscription
-        ? "Première connexion : reliez votre compte à une application d'authentification, puis saisissez le code qu'elle affiche."
-        : "Saisissez le code à six chiffres affiché par votre application d'authentification."}
+      description={remplace && inscription
+        ? "Enregistrez maintenant votre nouvelle application, puis saisissez le code qu'elle affiche."
+        : inscription
+          ? "Première connexion : reliez votre compte à une application d'authentification, puis saisissez le code qu'elle affiche."
+          : "Saisissez le code à six chiffres affiché par votre application d'authentification."}
       pied={
         <form action="/session/fermer" method="post">
           <button type="submit" className="btn-lien">Se déconnecter</button>
         </form>
       }
     >
-      <FormulaireCode facteur={valide?.id ?? inscription?.id ?? ""} erreurInitiale={erreur}>
+      <FormulaireCode facteur={valide?.id ?? inscription?.id ?? ""} erreurInitiale={secours ? undefined : erreur}>
+        {remplace && inscription ? (
+          <p className="message message-succes" role="status">
+            Code de secours accepté.{restants !== null ? ` Il vous en reste ${restants} : ${restants <= 3 ? "pensez à les remplacer dans « Mon compte »." : "chacun ne sert qu'une fois."}` : ""}
+          </p>
+        ) : null}
         {inscription ? (
           <ol className="etapes-porte">
             <li>
@@ -95,7 +110,7 @@ export default async function DoubleAuthentification({ searchParams }: { searchP
               <div className="champ">
                 <label htmlFor="code">Saisissez le code à six chiffres</label>
                 <input id="code" name="code" className="chiffres" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
-                  autoComplete="one-time-code" required autoFocus placeholder="000000" />
+                  autoComplete="one-time-code" required autoFocus={!secours} placeholder="000000" />
               </div>
             </li>
           </ol>
@@ -103,10 +118,25 @@ export default async function DoubleAuthentification({ searchParams }: { searchP
           <div className="champ">
             <label htmlFor="code">Code à six chiffres</label>
             <input id="code" name="code" className="chiffres" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
-              autoComplete="one-time-code" required autoFocus placeholder="000000" />
+              autoComplete="one-time-code" required autoFocus={!secours} placeholder="000000" />
           </div>
         )}
       </FormulaireCode>
+      {valide ? (
+        <details className="carte porte-carte ds-secours" open={Boolean(secours)}>
+          <summary>Téléphone perdu ? Utiliser un code de secours</summary>
+          <form action="/double-authentification/secours" method="post" className="formulaire">
+            {secours && erreur ? <p className="message message-erreur" role="alert">{erreur}</p> : null}
+            <div className="champ">
+              <label htmlFor="code_secours">Un de vos dix codes de secours</label>
+              <input id="code_secours" name="code_secours" className="chiffres" required autoComplete="off" autoCapitalize="characters"
+                spellCheck={false} placeholder="K7Q2M-9XR4T" autoFocus={Boolean(secours)} />
+              <p className="aide">Il ne servira qu&apos;une fois ; vous enregistrerez ensuite votre nouvelle application. Pas de codes ? Un super-administrateur SkanEcom réinitialise votre double authentification.</p>
+            </div>
+            <button type="submit" className="btn btn-second btn-bloc">Utiliser ce code</button>
+          </form>
+        </details>
+      ) : null}
     </Porte>
   );
 }

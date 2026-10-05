@@ -65,14 +65,20 @@ function Navigation({ groupes }: { groupes: GroupeCoquille[] }) {
   );
 }
 
-function Compte({ email, role }: { email: string; role: string }) {
-  return (
-    <div className="app-compte">
+function Compte({ email, role, compte }: { email: string; role: string; compte?: string }) {
+  const qui = (
+    <>
       <span className="avatar" style={styleAvatar(email)} aria-hidden="true">{initiales(email)}</span>
       <span className="app-compte-texte">
         <span className="app-compte-email" title={email}>{email}</span>
         <span className="app-compte-role">{role}</span>
       </span>
+    </>
+  );
+  return (
+    <div className="app-compte">
+      {/* Un clic sur soi : « Mon compte » (mot de passe, codes de secours, appareils). */}
+      {compte ? <Link href={compte} className="app-compte-lien" title="Mon compte">{qui}<span className="sr-only"> — Mon compte</span></Link> : qui}
       <form action="/session/fermer" method="post">
         <button type="submit" className="btn-icone" aria-label="Se déconnecter" title="Se déconnecter">
           <Icone nom="sortie" taille={16} />
@@ -97,7 +103,7 @@ function Onglets({ liens }: { liens: LienCoquille[] }) {
   );
 }
 
-export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, onglets, email, role, bandeau, recherche, rechercheCompacte, palette, children }: {
+export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, onglets, email, role, compte, bandeau, recherche, rechercheCompacte, palette, children }: {
   accueil: string;
   titre: string;
   sousTitre: string;
@@ -109,6 +115,8 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, on
   onglets?: LienCoquille[];
   email: string;
   role: string;
+  /** La page « Mon compte » (un clic sur son adresse y mène). */
+  compte?: string;
   /** Au-dessus du contenu, sur toutes les pages : l'accès support en cours. */
   bandeau?: React.ReactNode;
   /** Le bouton de recherche de la barre latérale, et celui de l'en-tête du téléphone. */
@@ -142,7 +150,7 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, on
         </div>
         {recherche ? <div className="app-cote-recherche">{recherche}</div> : null}
         <Navigation groupes={groupes} />
-        <Compte email={email} role={role} />
+        <Compte email={email} role={role} compte={compte} />
       </aside>
 
       <header className="app-haut">
@@ -154,7 +162,7 @@ export function Coquille({ accueil, titre, sousTitre, logo, changer, groupes, on
           </summary>
           <div className="app-menu-feuille">
             <Navigation groupes={changer ? [...groupes, { liens: [{ href: changer.href, libelle: changer.libelle, icone: "selecteur", exact: true }] }] : groupes} />
-            <Compte email={email} role={role} />
+            <Compte email={email} role={role} compte={compte} />
           </div>
         </MenuMobile>
       </header>

@@ -206,6 +206,7 @@ export default async function BackofficeBoutique({
         { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
       ]}
       email={user.email ?? ""}
+      compte={boutique.support_jusqu_a ? undefined : `/gestion/${slug}/compte`}
       role={boutique.support_jusqu_a
         ? `Support · ${MODES_SUPPORT[boutique.role as ModeSupport]?.court ?? boutique.role}`
         : (LIBELLES_ROLE[boutique.role] ?? boutique.role)}

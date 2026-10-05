@@ -55,6 +55,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     }
     const echec = await remettreLien(req, { acteur: user.id, ip, boutique, userId: userId!, email, jeton, type: "invite" });
     if (echec) return versAvecErreur(retour, echec);
-    return vers(`${retour}?${new URLSearchParams({ ok: `${email} est invité (${libelle}). Envoyez-lui le lien ci-dessous.` })}`);
+    return vers(`${retour}?${new URLSearchParams({ ok: `Invitation prête pour ${email} (${libelle}) : envoyez-lui le lien ci-dessous.` })}`);
   });
 }
