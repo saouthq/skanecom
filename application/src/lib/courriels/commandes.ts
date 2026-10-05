@@ -172,7 +172,7 @@ export async function envoyerCourrielsCommandes(boutiqueId?: string | null): Pro
       let ok = true;
       let raison: string | null = null;
       for (const a of e.a) {
-        const r = await envoyer({ a, nom: e.boutique.nom, sujet: courriel.sujet, html: courriel.html, texte: courriel.texte });
+        const r = await envoyer({ a, nom: e.boutique.nom, sujet: courriel.sujet, html: courriel.html, texte: courriel.texte, boutique: e.boutique.id, nature: "commande" });
         if (!r.ok) { ok = false; raison = r.raison; }
       }
       await service.rpc("courriels_commandes_noter", { p_id: e.id, p_ok: ok, p_erreur: raison });

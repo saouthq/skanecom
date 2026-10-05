@@ -23,22 +23,27 @@ export type EvenementCourriel = {
   };
 };
 
-export type Pret = { a: string; nom: string; courriel: Courriel; code: string | null };
+export type Pret = {
+  a: string; nom: string; courriel: Courriel; code: string | null;
+  /** La boutique qui écrit (son id), pour compter l'envoi ; null : SkanEcom. */
+  boutique: string | null;
+  nature: "code" | "equipe";
+};
 
-async function qui(redirection: string | undefined): Promise<{ marque: Marque; boutique: boolean }> {
+async function qui(redirection: string | undefined): Promise<{ marque: Marque; boutique: string | null }> {
   if (redirection) {
     try {
       const url = new URL(redirection);
       const resolution = await resoudre(hoteDe(url.host));
       if (resolution.etat === "boutique") {
         const cadre = await chargeCadre(resolution.slug);
-        return { marque: marqueDeBoutique(cadre, url.origin), boutique: true };
+        return { marque: marqueDeBoutique(cadre, url.origin), boutique: cadre.boutique.id };
       }
     } catch {
       // adresse illisible ou boutique introuvable : la plateforme écrit
     }
   }
-  return { marque: MARQUE_PLATEFORME, boutique: false };
+  return { marque: MARQUE_PLATEFORME, boutique: null };
 }
 
 /** Le lien d'accueil de la console : choisir son mot de passe (invitation ou oubli). */
@@ -59,22 +64,22 @@ export async function composer(ev: EvenementCourriel): Promise<Pret | { erreur: 
     case "email":
     case "reauthentication": {
       if (!email || !d.token) return { erreur: "code ou adresse absents" };
-      return { a: email, nom: marque.nom, courriel: courrielCode(marque, d.token, !boutique), code: d.token };
+      return { a: email, nom: marque.nom, courriel: courrielCode(marque, d.token, !boutique), code: d.token, boutique, nature: "code" };
     }
     case "invite": {
       if (!email || !d.token_hash || !site) return { erreur: "invitation incomplète" };
-      return { a: email, nom: marque.nom, courriel: courrielInvitation(marque, lienBienvenue(site, d.token_hash, "invite", email)), code: null };
+      return { a: email, nom: marque.nom, courriel: courrielInvitation(marque, lienBienvenue(site, d.token_hash, "invite", email)), code: null, boutique, nature: "equipe" };
     }
     case "recovery": {
       if (!email || !d.token_hash || !site) return { erreur: "lien de mot de passe incomplet" };
-      return { a: email, nom: marque.nom, courriel: courrielMotDePasse(marque, lienBienvenue(site, d.token_hash, "recovery", email)), code: null };
+      return { a: email, nom: marque.nom, courriel: courrielMotDePasse(marque, lienBienvenue(site, d.token_hash, "recovery", email)), code: null, boutique, nature: "equipe" };
     }
     case "email_change": {
       // La nouvelle adresse reçoit son code ; l'ancienne, si Supabase en envoie un aussi, le sien.
       const a = ev.user?.new_email || email;
       const code = ev.user?.new_email ? d.token_new || d.token : d.token;
       if (!a || !code) return { erreur: "changement d'adresse incomplet" };
-      return { a, nom: marque.nom, courriel: courrielChangementEmail(marque, code, !boutique), code };
+      return { a, nom: marque.nom, courriel: courrielChangementEmail(marque, code, !boutique), code, boutique, nature: "code" };
     }
     default:
       return { erreur: `type d'e-mail inconnu : ${type || "aucun"}` };

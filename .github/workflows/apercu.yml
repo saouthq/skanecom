@@ -301,6 +301,10 @@ jobs:
           # Les e-mails : rédigés par l'application, gardés pour la console (rien ne part de l'aperçu).
           printf '%s' "$COURRIELS_CROCHET_SECRET" | $WRANGLER secret put COURRIELS_CROCHET_SECRET --name skanecom-application
           printf '%s' "apercu" | $WRANGLER secret put COURRIELS_ENVOI --name skanecom-application
+          # Les SMS : l'aperçu les confie à un crochet Postgres (rien ne part) ;
+          # le secret, déclaré, est exigé — « aucun », sauf valeur posée à la main.
+          printf '%s' "$($WRANGLER secret list --name skanecom-application --format json 2>/dev/null || true)" | grep -q '"SMS_ENVOI"' \
+            || printf '%s' "aucun" | $WRANGLER secret put SMS_ENVOI --name skanecom-application
           # La facturation SkanFact (cadrage 06) n'est pas branchée sur l'aperçu :
           # « aucune », seulement quand le secret manque (une valeur posée à la
           # main reste). Le Worker exige ces secrets déclarés pour se déployer.

@@ -15,6 +15,7 @@ const PAGES: ElementPalette[] = [
   { groupe: "Aller à", icone: "plus", href: "/nouvelle-boutique", titre: "Nouvelle boutique" },
   { groupe: "Aller à", icone: "graphique", href: "/tableau", titre: "Tableau de bord" },
   { groupe: "Aller à", icone: "tendance", href: "/revenus", titre: "Revenus" },
+  { groupe: "Aller à", icone: "jauge", href: "/consommation", titre: "Consommation (quotas d'e-mails et de SMS)" },
   { groupe: "Aller à", icone: "billet", href: "/formules", titre: "Formules" },
   { groupe: "Aller à", icone: "ecran", href: "/modeles", titre: "Modèles" },
   { groupe: "Aller à", icone: "personne", href: "/prospects", titre: "Prospects" },
@@ -65,6 +66,7 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
             { href: "/", libelle: "Boutiques", icone: "boutique", exact: true, aussi: ["/boutiques/", "/nouvelle-boutique"], extra: badge },
             { href: "/tableau", libelle: "Tableau de bord", icone: "graphique" },
             { href: "/revenus", libelle: "Revenus", icone: "tendance" },
+            { href: "/consommation", libelle: "Consommation", icone: "jauge" },
           ],
         },
         {

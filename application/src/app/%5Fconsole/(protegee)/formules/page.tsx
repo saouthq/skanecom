@@ -135,6 +135,26 @@ export default async function Formules({ searchParams }: { searchParams: Promise
                 </tbody>
               );
             })}
+            <tbody>
+              <tr className="fo-groupe">
+                <th scope="colgroup" colSpan={colonnes.length + 1}>
+                  Envois compris <span className="aide">Par mois. Se règlent, avec leur prix au-delà, dans <Link href="/consommation#t-formules">Consommation</Link>.</span>
+                </th>
+              </tr>
+              {([["emails", "E-mails par mois", "Les confirmations, le suivi des commandes, les codes"], ["sms", "SMS par mois", "Les codes de connexion par SMS"]] as const).map(([cle, libelle, aide]) => (
+                <tr key={cle}>
+                  <th scope="row" className="fo-droit"><span>{libelle}</span><span className="aide">{aide}</span></th>
+                  {colonnes.map((f) => {
+                    const n = f.quotas?.[cle] ?? null;
+                    return (
+                      <td key={f.code || "neuve"} className="fo-case fo-quota">
+                        {f.neuve ? <span className="fo-non" aria-label="à régler après la création">—</span> : n === null ? <span className="discret">Sans limite</span> : n.toLocaleString("fr-FR")}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
             {peutModifier && colonnes.some((f) => !f.neuve && f.boutiques === 0) ? (
               <tfoot>
                 <tr>

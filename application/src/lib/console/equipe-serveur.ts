@@ -73,13 +73,16 @@ export async function remettreLien(req: Request, contexte: {
  *  entre au journal des envois, réussi ou refusé. */
 export async function envoyerLienParCourriel(l: { email: string; lien: string; type?: TypeLien }, boutique?: string): Promise<{ ok: true } | { ok: false; raison: string }> {
   let m: Marque = MARQUE_PLATEFORME;
+  let id: string | null = null;
   if (boutique) {
     try {
-      m = marqueDeBoutique(await cadre(boutique), null);
+      const c = await cadre(boutique);
+      m = marqueDeBoutique(c, null);
+      id = c.boutique.id;
     } catch {
       // boutique suspendue ou introuvable : la plateforme écrit
     }
   }
   const c = l.type === "recovery" ? courrielMotDePasse(m, l.lien) : courrielInvitation(m, l.lien);
-  return envoyer({ a: l.email, nom: m.nom, sujet: c.sujet, html: c.html, texte: c.texte });
+  return envoyer({ a: l.email, nom: m.nom, sujet: c.sujet, html: c.html, texte: c.texte, boutique: id, nature: "equipe" });
 }

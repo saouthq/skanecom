@@ -11,7 +11,7 @@ import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, date
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { formateMontant } from "@/lib/prix";
-import { ACTIONS, libelleSignal } from "@/lib/console/journal";
+import { ACTIONS, CANAL_JOURNAL, cibleLisible, estGesteEnvois, libelleSignal } from "@/lib/console/journal";
 import { hoteLocal } from "@/lib/console/etat";
 import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
@@ -22,7 +22,9 @@ import { MOTIFS_SUSPENSION } from "@/lib/console/libelles";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
 import { titreBoutique } from "@/lib/console/titre-boutique";
-import { depuis, vigilances, type LignePilotage, type Sante } from "@/lib/console/pilotage";
+import { depuis, vigilances, type LignePilotage, type Quotas, type Sante } from "@/lib/console/pilotage";
+import { CANAUX, nomMois, type DonneesConsommation } from "@/lib/console/consommation";
+import { Mesure } from "@/components/console/JaugeEnvois";
 import { configSkanFact } from "@/lib/console/skanfact";
 
 /** Ce que rend public.console_tableau pour une boutique, sur la période. */
@@ -63,7 +65,7 @@ export default async function FicheBoutique({ params, searchParams }: {
   const hoteConsole = (await headers()).get("host");
   // Une boutique vide peut recevoir le préréglage d'un métier.
   const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
-  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }] = await Promise.all([
+  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     // Les métiers : le choix d'une boutique vide, et leur nom au journal.
@@ -76,12 +78,20 @@ export default async function FicheBoutique({ params, searchParams }: {
     clientService().rpc("console_tableau", { p_acteur: user.id, p_jours: 30 }),
     clientService().rpc("console_contact", { p_acteur: user.id, p_boutique_id: b.id }),
     b.statut === "suspendue" ? clientService().rpc("console_suspension", { p_acteur: user.id, p_boutique_id: b.id }) : Promise.resolve({ data: null }),
+    // Ses envois du mois face à son quota (la même lecture que la page Consommation).
+    clientService().rpc("console_consommation", { p_acteur: user.id }),
   ]);
   const maintenant = new Date().getTime();
   const ligne = ((dp ?? []) as LignePilotage[]).find((x) => x.id === b.id) ?? null;
   const sante = ((dsa ?? []) as Sante[]).find((x) => x.id === b.id) ?? null;
   const activite = (((dt ?? { boutiques: [] }) as { boutiques: Activite[] }).boutiques).find((x) => x.id === b.id) ?? null;
-  const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [] }) : [];
+  const consommation = (dco ?? null) as DonneesConsommation | null;
+  const envois = consommation?.boutiques.find((x) => x.id === b.id) ?? null;
+  const quotas: Quotas | null = envois && !b.demonstration && b.statut === "active" ? {
+    boutiques: CANAUX.flatMap(({ cle }) => (envois[cle].quota === null ? [] : [{ id: b.id, canal: cle, envoyes: envois[cle].envoyes, quota: envois[cle].quota! }])),
+    forfaits: { email: null, sms: null }, mois: { email: 0, sms: 0 }, jour: { email: 0, sms: 0 },
+  } : null;
+  const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [], quotas }) : [];
   const clos = activite ? activite.livrees + activite.refusees : 0;
   const suspension = (dsu ?? null) as { motif: string | null; message: string | null; le: string } | null;
   // « À faire maintenant » : le signal le plus pressant ; sinon, en préparation, l'étape suivante.
@@ -309,7 +319,8 @@ export default async function FicheBoutique({ params, searchParams }: {
                           : j.action === "boutique.formule" ? (formules.formules.find((x) => x.code === j.cible)?.nom ?? j.cible ?? SANS_FORMULE)
                           : j.action.startsWith("vigilance.") ? libelleSignal(j.cible)
                           : j.action === "boutique.metier" && j.cible ? (metiers.find((m) => m.code === j.cible)?.nom ?? j.cible)
-                          : j.action.startsWith("catalogue.photos") || j.action.startsWith("note.") ? "" : (j.cible ?? "")}</td>
+                          : estGesteEnvois(j.action) && j.cible ? (CANAL_JOURNAL[j.cible] ?? j.cible)
+                          : j.action.startsWith("catalogue.photos") || j.action.startsWith("note.") ? "" : cibleLisible(j.cible)}</td>
                         <td>
                           {j.acteur ? (
                             <span className="inline-flex items-center gap-2 whitespace-nowrap">
@@ -395,6 +406,24 @@ export default async function FicheBoutique({ params, searchParams }: {
               <Link href="/formules" className="aide bt-formule-lien">Voir ce que chacune ouvre</Link>
             </form>}
           </section>
+
+          {envois && consommation ? (
+            <section className="carte" aria-labelledby="t-envois" id="envois">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-envois" className="carte-titre-icone"><Icone nom="jauge" /> Envois du mois</h2>
+                  <p>
+                    E-mails et SMS de {nomMois(consommation.mois)}
+                    {envois.depassement === "codes_par_email" ? " · au-delà, codes par e-mail" : ""}
+                  </p>
+                </div>
+                <Link href={`/consommation#t-b-${b.slug}`} className="btn btn-fantome btn-petit">{superAdmin ? "Régler" : "Détail"}</Link>
+              </div>
+              <div className="carte-pied bt-envois">
+                {CANAUX.map(({ cle, libelle }) => <Mesure key={cle} libelle={libelle} c={envois[cle]} d={consommation} />)}
+              </div>
+            </section>
+          ) : null}
 
           <section className="carte" aria-labelledby="t-equipe">
             <div className="carte-tete">

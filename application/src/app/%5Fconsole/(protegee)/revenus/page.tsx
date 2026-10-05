@@ -7,6 +7,7 @@ import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { montant } from "@/lib/console/skanfact";
 import { formateMontant } from "@/lib/prix";
+import { CANAUX, coutDepassement, niveauQuota, nomMois, type DonneesConsommation } from "@/lib/console/consommation";
 
 export const metadata: Metadata = { title: "Revenus" };
 
@@ -38,9 +39,20 @@ const nul = (texte: string | null) => !texte || /^0+(\.0+)?$/.test(texte);
 
 export default async function Revenus() {
   const { user } = await exigeAdmin();
-  const { data, error } = await clientService().rpc("console_revenus", { p_acteur: user.id });
+  const [{ data, error }, { data: dc }] = await Promise.all([
+    clientService().rpc("console_revenus", { p_acteur: user.id }),
+    clientService().rpc("console_consommation", { p_acteur: user.id }),
+  ]);
   if (error) throw new Error(`Revenus illisibles : ${error.message}`);
   const r = data as DonneesRevenus;
+  // Les dépassements de quota du mois (la page Consommation) : chiffrés seulement si la formule en fixe le prix.
+  const conso = (dc ?? null) as DonneesConsommation | null;
+  const prixQuota = new Map((conso?.formules ?? []).map((f) => [f.code, f]));
+  const depasses = (conso?.boutiques ?? []).filter((b) => !b.demonstration).flatMap((b) => CANAUX
+    .filter(({ cle }) => niveauQuota(b[cle].envoyes, b[cle].quota) === "depasse")
+    .map(({ cle }) => ({ id: b.id, cout: coutDepassement(b[cle], cle, prixQuota.get(b.formule ?? "")) })));
+  const auDela = new Set(depasses.map((x) => x.id)).size;
+  const surplus = depasses.reduce((n, x) => n + (x.cout ?? 0), 0);
 
   const ouvertes = r.boutiques.filter((b) => b.statut === "active");
   const payantes = ouvertes.filter((b) => b.prix !== null);
@@ -78,6 +90,15 @@ export default async function Revenus() {
           <span className="tbp-libelle">À l&apos;ouverture</span>
           <b className="tbp-valeur">{aVenir ? `+ ${tnd(aVenir)}` : "—"}</b>
           <span className="aide">{enPreparation.length ? `${pluriel(enPreparation.length, "boutique", "boutiques")} en préparation` : "Aucune boutique en préparation."}{enPause ? ` · ${tnd(enPause)} en pause (suspendues)` : ""}</span>
+        </li>
+        <li className="carte">
+          <span className="tbp-libelle">Dépassements{conso ? ` · ${nomMois(conso.mois)}` : ""}</span>
+          <b className="tbp-valeur">{surplus ? `+ ${tnd(surplus)}` : "—"}</b>
+          <span className="aide">
+            {!auDela ? "Aucune boutique au-delà de son quota d'envois." : (
+              <>{auDela > 1 ? `${auDela} boutiques au-delà de leur quota` : "Une boutique au-delà de son quota"}{depasses.some((x) => x.cout === null) ? ", dépassement sans prix fixé" : ""} · <Link href="/consommation">voir</Link></>
+            )}
+          </span>
         </li>
         <li className="carte" data-niveau={r.skanfact.en_retard ? "attention" : undefined}>
           <span className="tbp-libelle">Reste à encaisser</span>

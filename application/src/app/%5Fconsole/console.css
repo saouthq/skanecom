@@ -214,8 +214,16 @@
   background: var(--ui-panneau); border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l);
   box-shadow: var(--ui-ombre-l);
   animation: menu-entre .18s cubic-bezier(.2, .7, .2, 1);
+  /* Plus long que l'écran (la console a seize rubriques) : il défile lui-même,
+     jusqu'en bas, sans jamais entraîner la page derrière. */
+  max-block-size: calc(100dvh - 60px - .5rem - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
 }
 .app-menu-feuille .app-nav-lien { block-size: 44px; font-size: .9375rem; }
+/* Menu ouvert : la page derrière ne défile plus (le doigt fait défiler le
+   menu) et reste où elle était — la racine seule (avec le corps aussi, la
+   page remontait en haut à la fermeture). */
+html:has(.app-menu[open]) { overflow: hidden; }
 @keyframes menu-entre { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
 
 /* --------------------------------------------------------------------------
@@ -625,6 +633,7 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 .app-menu[open] > summary::before {
   content: ""; position: fixed; inset: 56px 0 0; z-index: 35; cursor: default;
   background: rgb(24 24 27 / .28); animation: voile-entre .18s ease-out;
+  touch-action: none; /* glisser sur le voile ne fait pas défiler la page */
 }
 @keyframes voile-entre { from { opacity: 0; } }
 
@@ -1790,6 +1799,9 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
    LES REVENUS (/revenus) — quatre chiffres, puis par formule et par boutique.
    --------------------------------------------------------------------------- */
 .rv-chiffres > li .aide { margin: 0; }
+.rv-chiffres > li .aide a { text-decoration: underline; text-underline-offset: 2px; }
+/* Cinq chiffres : sur une ligne à l'ordinateur. */
+.tbp-chiffres.rv-chiffres { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
 .rv-chiffres > li[data-niveau="attention"] { box-shadow: var(--ui-ombre-xs), inset 3px 0 0 var(--ui-ambre); }
 .rv-chiffres .tbp-valeur small { font-size: .875rem; font-weight: 500; color: var(--ui-texte-3); }
 .rv-bloc { margin-block-end: 1.25rem; }
@@ -1824,3 +1836,146 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .bt-monogramme .pl-masque { inline-size: 30px; block-size: 30px; }
 /* L'assistant ramené en haut à chaque étape : sous la barre fixe du téléphone, pas dessous. */
 .nb-formulaire { scroll-margin-block-start: 5.5rem; }
+
+/* ---- La consommation (consommation/page.tsx) : les envois de chaque
+   boutique face à son quota. Une jauge par canal (vert, ambre à 80 %,
+   rouge au-delà), une ligne qui s'ouvre sur le détail et les réglages. --- */
+.cs-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .875rem; }
+.console .cs-mois select.entree { inline-size: auto; min-block-size: var(--ui-h-s); padding-block: 0; font-weight: 500; }
+.en-direct { display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; font-weight: 500; color: var(--ui-vert); white-space: nowrap; }
+.en-direct-point { inline-size: .5rem; block-size: .5rem; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
+.en-direct-heure { color: var(--ui-texte-3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.en-direct[data-pause] { color: var(--ui-texte-3); }
+@media (prefers-reduced-motion: no-preference) {
+  .en-direct:not([data-pause]) .en-direct-point { animation: en-direct-pouls 2.4s ease-in-out infinite; }
+  @keyframes en-direct-pouls { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 0%, transparent); } }
+}
+
+.cs-chiffres > li .aide { margin: 0; }
+.cs-chiffres > li .aide a { text-decoration: underline; text-underline-offset: 2px; }
+.cs-chiffres .tbp-valeur small { font-size: .875rem; font-weight: 500; color: var(--ui-texte-3); }
+.cs-chiffres > li[data-niveau="attention"] { box-shadow: var(--ui-ombre-xs), inset 3px 0 0 var(--ui-ambre); }
+.cs-chiffres > li[data-niveau="alerte"] { box-shadow: var(--ui-ombre-xs), inset 3px 0 0 var(--ui-rouge); }
+.cs-chiffres .cs-jauge { margin-block: .25rem .125rem; }
+
+.cs-jauge { display: block; block-size: 6px; border-radius: 999px; background: var(--ui-doux); box-shadow: inset 0 0 0 1px var(--ui-bord-leger); overflow: hidden; }
+.cs-jauge > span { display: block; block-size: 100%; border-radius: inherit; background: var(--ui-vert); }
+.cs-jauge[data-niveau="proche"] > span, .cs-jauge[data-niveau="atteint"] > span { background: #D97706; }
+.cs-jauge[data-niveau="depasse"] > span { background: var(--ui-rouge); }
+.cs-jauge-vide { background: repeating-linear-gradient(90deg, var(--ui-bord-leger) 0 6px, transparent 6px 10px); box-shadow: none; }
+
+.cs-bloc { margin-block-end: 1.25rem; scroll-margin-block-start: 5rem; }
+.cs-tete { display: grid; gap: .25rem; padding: 1rem 1.25rem .75rem; }
+.cs-tete h2 { font-size: 1rem; margin: 0; }
+.cs-tete .aide { margin: 0; max-inline-size: 70ch; }
+.cs-tete a { text-decoration: underline; text-underline-offset: 2px; }
+.cs-bloc > .message { margin: 0 1.25rem .75rem; }
+.cs-vide { padding: 0 1.25rem 1.25rem; margin: 0; }
+
+.cs-liste { margin: 0; padding: 0; list-style: none; border-block-start: 1px solid var(--ui-bord-leger); }
+.cs-ligne { border-block-end: 1px solid var(--ui-bord-leger); }
+.cs-ligne:last-child { border-block-end: 0; }
+.cs-intertitre { padding: .875rem 1.25rem .375rem; font-size: .75rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--ui-texte-3); border-block-end: 1px solid var(--ui-bord-leger); background: var(--ui-survol); }
+.cs-details { scroll-margin-block-start: 5rem; }
+.cs-resume {
+  display: grid; align-items: center; gap: .75rem 1.5rem;
+  grid-template-columns: minmax(10rem, 1.2fr) repeat(2, minmax(8.5rem, 1fr)) 1.75rem;
+  padding: .875rem 1.25rem; list-style: none;
+}
+.cs-resume::-webkit-details-marker { display: none; }
+summary.cs-resume { cursor: pointer; }
+summary.cs-resume:hover { background: var(--ui-survol); }
+summary.cs-resume:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--ui-accent); border-radius: var(--ui-r-s); }
+.cs-details[open] > .cs-resume { background: var(--ui-survol); }
+.cs-qui { display: grid; gap: .125rem; min-inline-size: 0; }
+.cs-nom { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-formule { font-size: .8125rem; color: var(--ui-texte-3); }
+.cs-ligne[data-demo] .cs-nom { font-weight: 500; color: var(--ui-texte-2); }
+.cs-mesure { display: grid; gap: .3125rem; min-inline-size: 0; }
+.cs-mesure-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 .5rem; font-size: .8125rem; }
+.cs-canal { color: var(--ui-texte-3); white-space: nowrap; }
+.cs-chiffre { font-variant-numeric: tabular-nums; color: var(--ui-texte-2); white-space: nowrap; }
+.cs-chiffre b { color: var(--ui-texte); font-weight: 600; }
+.cs-note { font-size: .75rem; color: var(--ui-texte-3); font-variant-numeric: tabular-nums; }
+.cs-mesure[data-niveau="proche"] .cs-note, .cs-mesure[data-niveau="atteint"] .cs-note { color: var(--ui-ambre); font-weight: 500; }
+.cs-mesure[data-niveau="depasse"] .cs-note { color: var(--ui-rouge); font-weight: 600; }
+.cs-note[data-risque] { color: var(--ui-ambre); font-weight: 500; }
+.cs-chevron { display: grid; place-items: center; inline-size: 1.75rem; block-size: 1.75rem; border-radius: var(--ui-r-s); color: var(--ui-texte-3); }
+summary.cs-resume:hover .cs-chevron { background: var(--ui-doux); color: var(--ui-texte); }
+.cs-details[open] .cs-chevron { color: var(--ui-texte); }
+.cs-skanecom .cs-resume { background: var(--ui-survol); }
+
+.cs-panneau { display: grid; gap: 1rem; padding: .25rem 1.25rem 1.25rem; background: var(--ui-survol); }
+.cs-panneau > .message { margin: 0; }
+.cs-panneau-grille { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); align-items: start; }
+.cs-panneau h3 { margin: 0 0 .5rem; font-size: .8125rem; font-weight: 600; }
+.cs-detail, .cs-form { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r); background: var(--ui-panneau); }
+.cs-form > h3 { margin: 0; }
+.cs-form > .aide { margin: -.5rem 0 0; }
+.cs-detail { gap: 1.25rem; }
+.cs-detail-canal { display: grid; gap: .5rem; }
+.cs-detail-canal > h3 { margin: 0; }
+.cs-detail-canal > .aide { margin: 0; }
+.cs-natures { display: grid; gap: .25rem; margin: 0; padding: 0; list-style: none; font-size: .8125rem; }
+.cs-natures li { display: flex; justify-content: space-between; gap: .75rem; }
+.cs-natures b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.cs-natures .cs-refuses { color: var(--ui-rouge); }
+.cs-histo { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; align-items: end; block-size: 3.75rem; margin: .25rem 0 0; padding: 0; list-style: none; }
+.cs-histo > li { display: grid; grid-template-rows: minmax(0, 1fr) auto; block-size: 100%; gap: 2px; text-align: center; }
+.cs-histo-barre { align-self: end; display: block; min-block-size: 2px; border-radius: 3px 3px 0 0; background: color-mix(in srgb, var(--ui-accent) 55%, transparent); }
+.cs-histo > li:last-child .cs-histo-barre { background: var(--ui-accent); }
+.cs-histo-mois { font-size: .6875rem; color: var(--ui-texte-3); }
+.cs-champs { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cs-champs .aide { font-size: .75rem; }
+.cs-depassement { display: grid; gap: .5rem; margin: 0; padding: 0; border: 0; }
+.cs-depassement > legend { margin-block-end: .375rem; font-size: .8125rem; font-weight: 500; }
+.cs-choix { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .5rem; align-items: start; padding: .5rem .625rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r-s); cursor: pointer; font-size: .8125rem; }
+.cs-choix:has(input:checked) { border-color: var(--ui-accent); background: var(--ui-accent-doux); }
+.cs-choix input { margin-block-start: .1875rem; accent-color: var(--ui-accent); }
+.cs-choix > span { display: grid; gap: .125rem; }
+.cs-choix .aide { font-size: .75rem; }
+.cs-form > .btn { justify-self: start; }
+.cs-credit { display: grid; gap: .625rem; grid-template-columns: minmax(0, 6rem) minmax(0, 7.5rem); align-items: end; }
+.cs-credit .cs-motif { grid-column: 1 / -1; }
+.cs-credit > .btn { grid-column: 1 / -1; justify-self: start; }
+.cs-credits { display: grid; gap: .25rem; margin: 0; padding: .5rem 0 0; list-style: none; border-block-start: 1px solid var(--ui-bord-leger); font-size: .8125rem; }
+.cs-credits li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; }
+.cs-fiche { justify-self: start; display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; font-weight: 500; color: var(--ui-accent); }
+.cs-fiche:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+.cs-formules { display: grid; }
+.console .cs-tableau :is(th, td) { white-space: nowrap; vertical-align: middle; }
+.console .cs-tableau .cs-n { text-align: end; font-variant-numeric: tabular-nums; }
+.console .cs-tableau tbody th { font-weight: 600; }
+.cs-cellule { display: inline-flex; align-items: center; gap: .375rem; }
+.console .cs-cellule input.entree { inline-size: 7.5rem; min-block-size: var(--ui-h-s); padding: 0 .5rem; font-variant-numeric: tabular-nums; }
+/* Le nom de la formule se lit comme le début de la ligne, pas comme un en-tête. */
+.console .carte-plate .cs-tableau tbody th { background: transparent; font-size: .875rem; color: var(--ui-texte); text-transform: none; letter-spacing: 0; }
+.cs-cellule span { font-size: .75rem; color: var(--ui-texte-3); }
+.cs-pied { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: .875rem 1.25rem 1.125rem; margin: 0; }
+.cs-forfaits { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); padding: 0 1.25rem 1.25rem; }
+.cs-forfait { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; padding: 1rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r); }
+.cs-forfait > h3 { grid-column: 1 / -1; margin: 0; font-size: .875rem; font-weight: 600; }
+.cs-forfait > .champ:first-of-type { grid-column: 1 / -1; }
+.cs-forfait > .btn { grid-column: 1 / -1; justify-self: start; }
+.cs-forfait > p { grid-column: 1 / -1; margin: 0; font-size: .875rem; }
+
+/* Au téléphone : le nom et la flèche, puis les deux jauges côte à côte. */
+@media (max-width: 47.99rem) {
+  .cs-resume { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 1.75rem; grid-template-areas: "qui qui fleche" "email sms sms"; gap: .625rem 1rem; padding: .875rem 1rem; }
+  .cs-resume > .cs-qui { grid-area: qui; }
+  .cs-resume > .cs-mesure:nth-of-type(2) { grid-area: email; }
+  .cs-resume > .cs-mesure:nth-of-type(3) { grid-area: sms; }
+  .cs-resume > .cs-chevron { grid-area: fleche; }
+  .cs-mesure-tete { display: grid; justify-content: start; }
+  .cs-panneau { padding: .25rem 1rem 1rem; }
+  .cs-intertitre { padding-inline: 1rem; }
+  .cs-tete { padding-inline: 1rem; }
+  .cs-bloc > .message { margin-inline: 1rem; }
+  .cs-forfaits { padding-inline: 1rem; }
+  .cs-pied { padding-inline: 1rem; }
+}
+@media (max-width: 22rem) { .cs-champs { grid-template-columns: minmax(0, 1fr); } }
+/* La fiche d'une boutique : ses envois du mois (les mêmes jauges que la page Consommation). */
+.bt-envois { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fo-quota { font-variant-numeric: tabular-nums; font-size: .875rem; white-space: nowrap; }

@@ -21,6 +21,8 @@ export type Formule = {
   position: number;
   droits: string[];
   boutiques: number;
+  /** Les envois compris par mois (null : pas encore décidé), réglés dans la page Consommation. */
+  quotas?: { emails: number | null; sms: number | null; prix_sms: number | null; prix_emails: number | null };
 };
 
 export type DonneesFormules = {

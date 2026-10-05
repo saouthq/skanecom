@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     if (r.ok) {
       const origine = req.headers.get("origin") ?? new URL(req.url).origin;
       const c = courrielMotDePasse(MARQUE_PLATEFORME, lienBienvenue(origine, r.jeton, "recovery", email));
-      await envoyer({ a: email, nom: MARQUE_PLATEFORME.nom, sujet: c.sujet, html: c.html, texte: c.texte });
+      await envoyer({ a: email, nom: MARQUE_PLATEFORME.nom, sujet: c.sujet, html: c.html, texte: c.texte, nature: "equipe" });
     }
   }
   return vers(`/mot-de-passe-oublie?${new URLSearchParams({ envoye: "1", email })}`);

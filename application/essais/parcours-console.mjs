@@ -126,14 +126,14 @@ async function brut(contexte, methode, chemin, { entetes = {}, formulaire } = {}
    Standard Webhooks, signé avec le secret de développement
    (outils/api-locale.sh → application/.dev.vars). */
 const SECRET_CROCHET = Buffer.from("secret-de-developpement-skanecom-local-uniquement");
-async function crochetCourriel(evenement, { signe = true, decalageS = 0 } = {}) {
+async function crochetCourriel(evenement, { signe = true, decalageS = 0, chemin = "/crochets/courriel" } = {}) {
   const corps = JSON.stringify(evenement);
   const id = `msg_${Date.now()}`;
   const horodatage = String(Math.floor(Date.now() / 1000) - decalageS);
   const signature = createHmac("sha256", SECRET_CROCHET).update(`${id}.${horodatage}.${corps}`).digest("base64");
   return new Promise((ok, ko) => {
     const req = http.request({
-      host: "127.0.0.1", port: Number(t.port), method: "POST", path: "/crochets/courriel",
+      host: "127.0.0.1", port: Number(t.port), method: "POST", path: chemin,
       headers: {
         host: new URL(CONSOLE).host, "content-type": "application/json", "content-length": Buffer.byteLength(corps),
         "webhook-id": id, "webhook-timestamp": horodatage, "webhook-signature": `v1,${signe ? signature : "pas-la-bonne"}`,
@@ -144,6 +144,21 @@ async function crochetCourriel(evenement, { signe = true, decalageS = 0 } = {}) 
   });
 }
 const RELAIS = process.env.RELAIS ?? "http://127.0.0.1:54321";
+
+/* La vitrine annonce le numéro avant de demander un code par SMS
+   (components/Connexion.tsx → /compte/code-sms), comme le ferait son navigateur. */
+async function annonceSms(hoteVitrine, telephone) {
+  const corps = JSON.stringify({ telephone });
+  const vitrine = new URL(t.adresse(hoteVitrine));
+  return new Promise((ok, ko) => {
+    const req = http.request({
+      host: "127.0.0.1", port: Number(t.port), method: "POST", path: "/compte/code-sms",
+      headers: { host: vitrine.host, origin: vitrine.origin, "content-type": "application/json", "content-length": Buffer.byteLength(corps) },
+    }, (r) => { r.resume(); r.on("end", () => ok(r.statusCode)); });
+    req.on("error", ko);
+    req.end(corps);
+  });
+}
 
 /* Attend qu'une page réponde comme prévu (l'annuaire de la vitrine
    redemande une boutique fermée toutes les 10 s). */
@@ -1936,6 +1951,52 @@ await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrat
     "par boutique : les clientes, pas les démonstrations");
   verifie(boutiques.includes("Choisir sa formule") && boutiques.includes("Non reliée"), "sans formule : l'invitation à la choisir ; sans SkanFact : « Non reliée »");
   await capture(page, "console-revenus", true);
+});
+
+console.log("\n== 3 septies. La consommation : ce que chaque boutique envoie, à combien elle a droit ==");
+await etape("la consommation : chaque boutique, ses e-mails et ses SMS du mois ; une exception, un crédit, puis tout remis", async () => {
+  await clic(page, page.locator(".app-cote").getByRole("link", { name: "Consommation" }));
+  await page.waitForURL(/\/consommation$/);
+  verifie((await page.locator("h1").innerText()) === "Consommation" && (await page.locator(".en-direct").count()) === 1, "la page, « En direct » (le mois en cours se relit seul)");
+  const maymar = page.locator("#t-b-maymar");
+  verifie((await maymar.locator(".cs-nom").innerText()) === "Maymar" && (await maymar.locator(".cs-mesure").count()) === 2, "Maymar : ses e-mails et ses SMS");
+  verifie((await maymar.innerText()).includes("sans limite fixée"), "sans quota fixé : « sans limite fixée », rien d'inventé");
+  // Une exception de 5 000 e-mails, ouverte au clavier.
+  await maymar.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  await maymar.locator("#q-email-maymar").fill("5 000");
+  await clic(page, maymar.getByRole("button", { name: "Enregistrer les quotas" }));
+  await page.waitForURL(/carte=b-maymar/);
+  verifie((await maymar.locator(".message-succes").innerText()).includes("Quotas de la boutique enregistrés"), "l'exception enregistrée, dite dans la ligne restée ouverte");
+  verifie(/\/\s*5\s000/.test(await maymar.locator(".cs-mesure").first().innerText()), "la jauge des e-mails : « / 5 000 »");
+  // Un crédit de 250 pour le mois, puis retiré.
+  await maymar.locator("#c-n-maymar").fill("250");
+  await clic(page, maymar.getByRole("button", { name: "Ajouter" }));
+  await page.waitForURL(/ok=250/);
+  verifie(/\/\s*5\s250/.test(await maymar.locator(".cs-mesure").first().innerText()), "avec le crédit du mois : « / 5 250 »");
+  await clic(page, maymar.locator(".cs-credits").getByRole("button", { name: /Retirer le crédit/ }));
+  await page.waitForURL(/Cr%C3%A9dit\+retir%C3%A9|Crédit\+retiré/);
+  // L'exception effacée : la boutique revient à sa formule (sur mesure : sans limite).
+  await maymar.locator("#q-email-maymar").fill("");
+  await clic(page, maymar.getByRole("button", { name: "Enregistrer les quotas" }));
+  await page.waitForFunction(() => document.querySelector("#t-b-maymar .cs-mesure")?.textContent?.includes("sans limite fixée"));
+  verifie(true, "le crédit retiré, l'exception effacée : Maymar revient à « sans limite fixée »");
+  await capture(page, "console-consommation", true);
+});
+
+await etape("le crochet des SMS : la boutique retrouvée par l'annonce de la vitrine, le SMS compté à son mois ; sans signature, rien ne part", async () => {
+  const telephone = "+216 29 000 417";
+  verifie((await annonceSms("maymar.localhost", telephone)) === 204, "la vitrine annonce le numéro (204, la même réponse dans tous les cas)");
+  const evenement = { user: { phone: "21629000417" }, sms: { otp: "730418" } };
+  const faux = await crochetCourriel(evenement, { signe: false, chemin: "/crochets/sms" });
+  verifie(faux.status === 401, `mal signé : refusé (HTTP ${faux.status})`);
+  const r = await crochetCourriel(evenement, { chemin: "/crochets/sms" });
+  verifie(r.status === 200, `signé : le SMS part (HTTP ${r.status})`);
+  const relu = await (await fetch(`${RELAIS}/sms-dev/dernier?telephone=21629000417`)).json();
+  verifie(relu.code === "730418", "le relais a reçu le code (le fournisseur de SMS en local)");
+  await page.goto(CONSOLE + "/journal?vue=envois", { waitUntil: "networkidle" });
+  const ligne = await page.locator("tbody tr").first().innerText();
+  verifie(ligne.includes("•••417") && ligne.includes("Maymar") && !ligne.includes("29000417"), "au journal des envois : le numéro masqué, au nom de Maymar");
 });
 
 /* ------------------------------------------------------------------ */

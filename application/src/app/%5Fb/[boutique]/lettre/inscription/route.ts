@@ -57,7 +57,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   const courriel = resultat.etat === "a_confirmer" && resultat.jeton
     ? courrielLettre(marque, `${site}/lettre?${new URLSearchParams({ j: resultat.jeton })}`)
     : courrielLettreDeja(marque);
-  const envoi = await envoyer({ a: email.toLowerCase(), nom: cadre.boutique.nom, sujet: courriel.sujet, html: courriel.html, texte: courriel.texte });
+  const envoi = await envoyer({
+    a: email.toLowerCase(), nom: cadre.boutique.nom, sujet: courriel.sujet, html: courriel.html, texte: courriel.texte,
+    boutique: cadre.boutique.id, nature: "lettre",
+  });
   if (!envoi.ok) {
     console.error(`lettre (${boutique}) : ${envoi.raison}`);
     return reponse({ ok: false, raison: "envoi" }, 503);

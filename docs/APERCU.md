@@ -71,7 +71,8 @@ Le workflow fait ensuite tout, à chaque exécution :
   (`supabase/functions/apercu-installer`, déployée par Claude, protégée par
   la clé `service_role`), le jeu de démo une fois, les crochets des codes ;
 - l'authentification, par l'API de gestion de Supabase : crochet « Send
-  SMS » vers `private.crochet_sms_apercu`, crochet « Send Email » vers
+  SMS » vers `private.crochet_sms_apercu` (qui garde le code et compte le
+  SMS à sa boutique, page Consommation de la console), crochet « Send Email » vers
   l'application (`/crochets/courriel` sur l'adresse de la console, signé par
   un secret dérivé de la clé `service_role`, jamais écrit nulle part),
   connexion par téléphone, adresse de la console et adresses de retour,

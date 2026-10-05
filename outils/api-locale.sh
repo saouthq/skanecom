@@ -171,6 +171,7 @@ ENV
   {
     printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$(jeton service_role)"
     printf 'COURRIELS_ENVOI=relais\n'
+    printf 'SMS_ENVOI=relais\n'
     printf 'COURRIELS_CROCHET_SECRET=v1,whsec_%s\n' "$(printf '%s' "$SECRET_DEV" | base64 -w0)"
     # SkanFact simulé par le relais (la facturation des clients, cadrage 06),
     # ou un vrai serveur d'essai de SkanFact (SKANFACT_REEL).

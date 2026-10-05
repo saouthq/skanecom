@@ -314,6 +314,12 @@ const TRACES = {
       <path d="M16 7h6v6" />
     </>
   ),
+  jauge: (
+    <>
+      <path d="m12 14 4-4" />
+      <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+    </>
+  ),
   billet: (
     <>
       <rect width="20" height="12" x="2" y="6" rx="2" />

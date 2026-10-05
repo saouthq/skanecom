@@ -66,6 +66,27 @@ export const ACTIONS: Record<string, string> = {
   "prospect.etape": "Prospect : étape changée",
   "prospect.gagne": "Prospect gagné (boutique créée)",
   "prospect.retirer": "Prospect retiré",
+  "boutique.quotas": "Quotas d'envoi de la boutique",
+  "boutique.credit_envois": "Crédit d'envois du mois",
+  "boutique.credit_envois_retire": "Crédit d'envois retiré",
+  "formule.quotas": "Quotas d'envoi de la formule",
+  "plateforme.forfait_envoi": "Forfait du fournisseur d'envois",
+  // Les gestes des back-offices (tracés par la boutique elle-même)
+  "accueil.modifier": "Accueil de la vitrine modifié",
+  "apparence.publier": "Apparence de la vitrine publiée",
+  "page.creer": "Page créée", "page.modifier": "Page modifiée", "page.ordonner": "Pages réordonnées", "page.retirer": "Page retirée",
+  "arrivage.annoncer": "Arrivage annoncé", "arrivage.modifier": "Arrivage modifié", "arrivage.annuler": "Arrivage annulé", "arrivage.recevoir": "Arrivage reçu",
+  "avis.publier": "Avis publié", "avis.ecarter": "Avis écarté", "avis.repondre": "Réponse à un avis", "avis.retirer_photo": "Photo d'un avis retirée",
+  "clients.compte_pro": "Compte pro d'un client", "clients.confiance": "Confiance accordée à un client",
+  "code_promo.creer": "Code promo créé", "code_promo.modifier": "Code promo modifié", "code_promo.retirer": "Code promo retiré",
+  "soldes.lancer": "Soldes lancés", "soldes.terminer": "Soldes terminés",
+  "lot.creer": "Pack créé", "lot.modifier": "Pack modifié", "lot.retirer": "Pack retiré",
+  "devis.envoyer": "Devis envoyé", "devis.annuler": "Devis annulé",
+  "objectif.fixer": "Objectif du mois fixé",
+  "lettre.retirer": "Inscrit à la lettre retiré",
+  "export.commandes": "Commandes exportées", "export.lettre": "Inscrits à la lettre exportés",
+  "reglages.zone": "Zone de livraison", "reglages.zone_supprimee": "Zone de livraison supprimée", "reglages.gouvernorats": "Gouvernorats livrés",
+  "reglages.tranche_poids": "Tranche de poids", "reglages.tranche_poids_supprimee": "Tranche de poids supprimée",
   "vigilance.reportee": "Signal mis à plus tard",
   "vigilance.reprise": "Signal repris",
 };
@@ -90,7 +111,26 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "export", titre: "Exports" },
   { cle: "vigilance", titre: "À surveiller (mis à plus tard)" },
   { cle: "prospect", titre: "Prospects" },
+  { cle: "plateforme", titre: "Plateforme (forfaits des fournisseurs)" },
+  { cle: "page", titre: "Pages de la vitrine" },
+  { cle: "apparence", titre: "Apparence de la vitrine" },
+  { cle: "accueil", titre: "Accueil de la vitrine" },
+  { cle: "avis", titre: "Avis clients" },
+  { cle: "code_promo", titre: "Codes promo" },
+  { cle: "soldes", titre: "Soldes" },
+  { cle: "lot", titre: "Packs" },
+  { cle: "arrivage", titre: "Arrivages" },
+  { cle: "devis", titre: "Devis" },
+  { cle: "clients", titre: "Clients" },
+  { cle: "objectif", titre: "Objectif du mois" },
+  { cle: "lettre", titre: "Lettre d'information" },
 ];
+
+/** Le canal d'un geste sur les envois (crédit, forfait du fournisseur), au journal. */
+export const CANAL_JOURNAL: Record<string, string> = { email: "E-mails", sms: "SMS" };
+/** Le détail d'une ligne, sans identifiant technique (le numéro d'une page retirée ne dit rien). */
+export const cibleLisible = (c: string | null) => (c && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-/i.test(c) ? c : "");
+export const estGesteEnvois = (action: string) => action.startsWith("boutique.credit_envois") || action === "plateforme.forfait_envoi";
 
 /** Un jour « 2026-10-05 » d'un formulaire, ou rien. */
 export function jourValide(v: string | null | undefined): string | null {
@@ -107,7 +147,8 @@ const SIGNAUX: Record<string, string> = {
   formule: "Ouverte sans formule", sav: "SAV sans réponse", devis: "Devis à chiffrer", avis: "Avis à relire",
   epuises: "Produits épuisés", facturation: "Facture en retard", "sans-client": "Sans client SkanFact",
   preparation: "Mise en place à finir", support: "Accès support ouvert", suspendue: "Boutique suspendue",
-  rappel: "Rappel d'une note",
+  rappel: "Rappel d'une note", "quota-email": "Quota d'e-mails", "quota-sms": "Quota de SMS",
+  "forfait-email": "Forfait d'e-mails du fournisseur", "forfait-sms": "Forfait de SMS du fournisseur",
 };
 export function libelleSignal(cle: string | null): string {
   if (!cle) return "";

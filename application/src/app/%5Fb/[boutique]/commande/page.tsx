@@ -3,7 +3,7 @@ import { Gabarit } from "@/components/Gabarit";
 import { Tunnel } from "@/components/Tunnel";
 import { CommandeHorsLigne } from "@/components/CommandeHorsLigne";
 import { cadre as chargeCadre } from "@/lib/boutique";
-import { verificationDe } from "@/lib/connexion";
+import { verificationVitrine } from "@/lib/connexion-serveur";
 import { identiteLegale } from "@/lib/legal";
 import { supabase } from "@/lib/supabase";
 import { t } from "@/lib/i18n";
@@ -69,7 +69,7 @@ export default async function Commande({
         boutiqueId={cadre.boutique.id}
         boutique={cadre.boutique.slug}
         compteObligatoire={cadre.reglages["compte.obligatoire"] !== false}
-        verification={verificationDe(cadre.reglages)}
+        verification={await verificationVitrine(cadre)}
         rappel={cadre.livraison.rappel}
         cod={cadre.livraison.cod}
         gouvernorats={(gouvernorats ?? []).map((g) => ({ code: g.code as string, nom: g.nom_fr as string }))}

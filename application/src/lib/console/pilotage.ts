@@ -103,6 +103,15 @@ export type Sante = {
   formule: string | null;
 };
 
+/** Ce que rend public.console_quotas : les boutiques clientes ouvertes qui ont
+ *  un quota, et le forfait du fournisseur face aux envois du mois et du jour. */
+export type Quotas = {
+  boutiques: { id: string; canal: "email" | "sms"; envoyes: number; quota: number }[];
+  forfaits: Record<"email" | "sms", { fournisseur: string | null; mois: number | null; jour: number | null } | null>;
+  mois: Record<"email" | "sms", number>;
+  jour: Record<"email" | "sms", number>;
+};
+
 /* Les seuils : un refus sur quatre à la livraison coûte déjà plus que la
    marge (aller, retour, colis immobilisé) ; on en parle à partir de cinq
    colis clos sur trente jours, pour ne pas crier sur deux commandes. */
@@ -115,6 +124,7 @@ export const SEUILS = {
   heuresDevis: 24,
   joursAvis: 3,
   partEpuises: 0.5,
+  partQuota: 0.8,
 } as const;
 
 /** Ce qui demande un regard, toutes boutiques confondues, le plus pressant d'abord :
@@ -125,12 +135,13 @@ export const SEUILS = {
  *  depuis plus de SEUIL_RETARD_JOURS jours (lue dans SkanFact, comptée depuis
  *  son échéance : le retard grandit sans relecture) ou une boutique ouverte
  *  sans client SkanFact. Jamais pour une démonstration. S'y ajoutent les
- *  rappels des notes de suivi venus à échéance, et les e-mails refusés de la
- *  semaine (la plateforme elle-même). */
+ *  rappels des notes de suivi venus à échéance, les e-mails refusés de la
+ *  semaine et le forfait du fournisseur à 80 % (la plateforme elle-même), une
+ *  boutique à 80 % de son quota d'envois ou au-delà. */
 export function vigilances(
   lignes: LignePilotage[],
   maintenant: number,
-  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number } = {},
+  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null } = {},
 ): Vigilance[] {
   const out: Omit<Vigilance, "type">[] = [];
   if (options.envoisRefuses) {
@@ -141,6 +152,7 @@ export function vigilances(
     });
   }
   const parId = new Map(lignes.map((b) => [b.id, b]));
+  if (options.quotas) out.push(...signesDeQuotas(options.quotas, parId));
   const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date(maintenant));
   for (const r of options.rappels ?? []) {
     const b = parId.get(r.boutique.id);
@@ -244,6 +256,44 @@ function signesDeSante(b: LignePilotage, sa: Sante, maintenant: number): Omit<Vi
   }
   if (sa.publies > 0 && sa.epuises > 0 && sa.epuises / sa.publies >= SEUILS.partEpuises) {
     pousse("epuises", "attention", `${sa.epuises} produit${sa.epuises > 1 ? "s" : ""} épuisé${sa.epuises > 1 ? "s" : ""} sur ${sa.publies} en vitrine`);
+  }
+  return out;
+}
+
+const nombre = (n: number) => n.toLocaleString("fr-FR");
+const CANAL = { email: { quota: "quota d'e-mails", unite: "e-mails" }, sms: { quota: "quota de SMS", unite: "SMS" } } as const;
+
+/** Le forfait du fournisseur (toute la plateforme) et le quota de chaque boutique, à 80 % et au-delà. */
+function signesDeQuotas(q: Quotas, parId: Map<string, LignePilotage>): Omit<Vigilance, "type">[] {
+  const out: Omit<Vigilance, "type">[] = [];
+  for (const canal of ["email", "sms"] as const) {
+    const f = q.forfaits[canal];
+    const qui = f?.fournisseur ? `${f.fournisseur} : ` : "Forfait du fournisseur : ";
+    if (f?.mois && q.mois[canal] >= SEUILS.partQuota * f.mois) {
+      const plein = q.mois[canal] >= f.mois;
+      out.push({
+        cle: `plateforme:forfait-${canal}`, niveau: plein ? "urgent" : "attention", boutique: null, href: "/consommation#t-forfait",
+        texte: `${qui}${nombre(q.mois[canal])} ${CANAL[canal].unite} sur ${nombre(f.mois)} ce mois${plein ? " — le fournisseur refuse au-delà" : ` (${Math.round((q.mois[canal] / f.mois) * 100)} %)`}`,
+      });
+    }
+    if (f?.jour && q.jour[canal] >= SEUILS.partQuota * f.jour) {
+      out.push({
+        cle: `plateforme:forfait-${canal}:jour`, niveau: q.jour[canal] >= f.jour ? "urgent" : "attention", boutique: null, href: "/consommation#t-forfait",
+        texte: `${qui}${nombre(q.jour[canal])} ${CANAL[canal].unite} sur ${nombre(f.jour)} aujourd'hui`,
+      });
+    }
+  }
+  for (const x of q.boutiques) {
+    const b = parId.get(x.id);
+    if (!b || x.envoyes < SEUILS.partQuota * x.quota || (x.quota === 0 && x.envoyes === 0)) continue;
+    const au_dela = x.envoyes > x.quota;
+    out.push({
+      cle: `${b.id}:quota-${x.canal}`, niveau: au_dela ? "attention" : "info", boutique: b, href: `/consommation#t-b-${b.slug}`,
+      texte: au_dela
+        ? `au-delà de son ${CANAL[x.canal].quota} : ${nombre(x.envoyes)} sur ${nombre(x.quota)} ce mois`
+        : `${Math.round((x.envoyes / Math.max(1, x.quota)) * 100)} % de son ${CANAL[x.canal].quota} (${nombre(x.envoyes)} sur ${nombre(x.quota)})`,
+      court: `${nombre(x.envoyes)}/${nombre(x.quota)}`,
+    });
   }
   return out;
 }

@@ -31,10 +31,21 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  v_boutique jsonb;
 begin
   delete from plateforme.codes_apercu where le < now() - interval '1 hour';
   insert into plateforme.codes_apercu (canal, destinataire, code)
   values ('sms', '+' || ltrim(coalesce(event #>> '{user,phone}', ''), '+'), coalesce(event #>> '{sms,otp}', ''));
+  -- Compté comme en production (la consommation, migration …_console_consommation) :
+  -- la boutique, d'après l'annonce de la vitrine. Jamais au prix du code.
+  begin
+    v_boutique := public.console_boutique_du_sms(event #>> '{user,phone}');
+    perform public.console_noter_envoi('sms', event #>> '{user,phone}', v_boutique ->> 'nom', 'Code de connexion', 'apercu', true, null,
+                                       (v_boutique ->> 'id')::uuid, 'code');
+  exception when others then
+    null;
+  end;
   return '{}'::jsonb;
 end;
 $$;

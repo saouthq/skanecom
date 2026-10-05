@@ -98,6 +98,13 @@ export function Identification({
     }
     setEnvoi(true);
     setErreur(null);
+    // Par SMS, le numéro annoncé d'abord : le crochet des SMS saura pour
+    // quelle boutique le code part (compté à son mois). Jamais bloquant.
+    if (cible.canal === "sms") {
+      await fetch("/compte/code-sms", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ telephone: cible.valeur }),
+      }).catch(() => null);
+    }
     // Par e-mail, l'adresse de la boutique en lien de retour : l'e-mail part
     // à son nom et à ses couleurs (le crochet des e-mails, lib/courriels).
     const { error } = await supabaseNavigateur().auth.signInWithOtp(

@@ -40,6 +40,11 @@ export default defineConfig({
       // Un secret déclaré est exigé partout — en local, seuls ceux-ci passent.
       COURRIELS_CROCHET_SECRET: bindings.secret(),
       COURRIELS_ENVOI: bindings.secret(),
+      // Les SMS des codes de connexion (src/lib/sms/envoi.ts, crochet
+      // /crochets/sms, signé du même secret que celui des e-mails) :
+      // « relais » en local, « aucun » sur l'aperçu (ses codes passent par un
+      // crochet Postgres), « twilio:<compte>:<jeton>:<expéditeur> » en production.
+      SMS_ENVOI: bindings.secret(),
       // La facturation des clients, lue dans SkanFact (src/lib/console/skanfact.ts,
       // cadrage 06) : son adresse, l'entreprise SkanEcom, une clé qui n'a que le
       // geste ventes.pieces.voir, et le secret de l'abonnement aux avis.

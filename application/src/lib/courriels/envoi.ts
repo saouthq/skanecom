@@ -12,7 +12,17 @@ import { clientService } from "@/lib/console/service";
    Le nom affiché est celui de la boutique : l'acheteur reçoit « Maymar ».
    ========================================================================== */
 
-export type Envoi = { a: string; nom: string; sujet: string; html: string; texte: string; code?: string | null };
+/** Ce qu'est l'envoi, pour le compter (la consommation de chaque boutique,
+ *  migration …_console_consommation) : un code de connexion, le suivi d'une
+ *  commande, un accès de l'équipe (invitation, mot de passe), la lettre. */
+export type NatureEnvoi = "code" | "commande" | "equipe" | "lettre";
+
+export type Envoi = {
+  a: string; nom: string; sujet: string; html: string; texte: string; code?: string | null;
+  /** La boutique pour qui l'e-mail part (son id) ; absente : SkanEcom elle-même. */
+  boutique?: string | null;
+  nature?: NatureEnvoi;
+};
 export type Resultat = { ok: true } | { ok: false; raison: string };
 
 const guillemets = (x: string) => `"${x.replace(/["\\\r\n]/g, "")}"`;
@@ -23,8 +33,9 @@ export function lireEnvoi(valeur: string): { fournisseur: string; cle: string; e
   return { fournisseur, cle, expediteur: reste.join(":") };
 }
 
-/** Envoie, puis note l'envoi au journal (l'adresse masquée par la base) :
- *  la console voit ce qui part et ce qui casse. Le journal ne bloque jamais l'envoi. */
+/** Envoie, puis note l'envoi au journal (l'adresse masquée par la base) et
+ *  le compte au mois de sa boutique : la console voit ce qui part, ce qui
+ *  casse, et ce que chaque boutique consomme. Le journal ne bloque jamais l'envoi. */
 export async function envoyer(e: Envoi): Promise<Resultat> {
   const resultat = await envoyerSansJournal(e);
   try {
@@ -32,6 +43,7 @@ export async function envoyer(e: Envoi): Promise<Resultat> {
       p_canal: "email", p_destinataire: e.a, p_expediteur: e.nom, p_sujet: e.sujet,
       p_fournisseur: lireEnvoi(process.env.COURRIELS_ENVOI ?? "").fournisseur || "aucun",
       p_ok: resultat.ok, p_raison: resultat.ok ? null : resultat.raison,
+      p_boutique_id: e.boutique ?? null, p_nature: e.nature ?? null,
     });
   } catch { /* un journal indisponible n'empêche pas l'e-mail */ }
   return resultat;

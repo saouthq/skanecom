@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   const pret = await composer(evenement);
   if ("erreur" in pret) return erreur(400, pret.erreur);
 
-  const r = await envoyer({ a: pret.a, nom: pret.nom, ...pret.courriel, code: pret.code });
+  const r = await envoyer({ a: pret.a, nom: pret.nom, ...pret.courriel, code: pret.code, boutique: pret.boutique, nature: pret.nature });
   if (!r.ok) {
     console.error(`Crochet des e-mails : ${r.raison}`);
     return erreur(502, "L'e-mail n'a pas pu partir");

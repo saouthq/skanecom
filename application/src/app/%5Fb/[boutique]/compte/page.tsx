@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Compte } from "@/components/Compte";
 import { Gabarit } from "@/components/Gabarit";
 import { cadre as chargeCadre } from "@/lib/boutique";
-import { verificationDe } from "@/lib/connexion";
+import { verificationVitrine } from "@/lib/connexion-serveur";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default async function PageCompte({ params }: { params: Promise<{ boutique: string }> }) {
   const { boutique } = await params;
   const cadre = await chargeCadre(boutique);
-  const verification = verificationDe(cadre.reglages);
+  const verification = await verificationVitrine(cadre);
   return (
     <Gabarit className="enveloppe flex-1 compte-page">
       <header className="compte-tete">
