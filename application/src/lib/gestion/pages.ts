@@ -5,6 +5,7 @@ import { texte } from "@/lib/theme";
 import { t } from "@/lib/i18n";
 import { cadreDe, type Cadre, type CadreBrut } from "@/lib/boutique";
 import { aUnContact, contactDe } from "@/lib/contact";
+import { lienReglages } from "@/lib/gestion/reglages-ecrans";
 import type { Role } from "@/lib/console/session";
 
 export { slugDe } from "@/lib/pages-forme";
@@ -99,13 +100,13 @@ export function modelesDePages(cadre: Cadre): Modele[] {
 export type PageAutomatique = { titre: string; chemin: string; source: string; reglages: string | null };
 
 export function pagesAutomatiques(cadre: Cadre | null, slug: string): PageAutomatique[] {
-  const reglages = (ancre: string) => `/gestion/${slug}/reglages#t-${ancre}`;
+  const reglages = (section: string) => lienReglages(slug, section);
   return [
     { titre: "Conditions de vente", chemin: "/conditions-de-vente", source: "Livraison, paiement, refus, retours et identité légale : tirées de vos réglages.", reglages: reglages("legal") },
     { titre: "Mentions légales", chemin: "/mentions-legales", source: "Raison sociale, matricule fiscal, adresse, contact.", reglages: reglages("legal") },
     { titre: "Confidentialité", chemin: "/confidentialite", source: "Les données gardées, pourquoi et combien de temps ; les droits du client.", reglages: reglages("legal") },
     ...(cadre?.sav ? [{ titre: "Garantie et SAV", chemin: "/garantie-et-sav", source: "La garantie annoncée et la marche à suivre pour un souci.", reglages: reglages("sav") }] : []),
-    ...(!cadre || aUnContact(contactDe(cadre)) ? [{ titre: "Contact", chemin: "/contact", source: "Téléphone, WhatsApp, e-mail, magasin, horaires et réseaux.", reglages: reglages("vitrine") }] : []),
+    ...(!cadre || aUnContact(contactDe(cadre)) ? [{ titre: "Contact", chemin: "/contact", source: "Téléphone, WhatsApp, e-mail, magasin, horaires et réseaux.", reglages: reglages("contact") }] : []),
     { titre: "Suivre ma commande", chemin: "/suivi", source: "Le numéro de la commande et le téléphone suffisent : sans compte.", reglages: null },
   ];
 }

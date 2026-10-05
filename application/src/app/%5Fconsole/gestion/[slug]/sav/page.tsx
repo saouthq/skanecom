@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
+import { Pagination } from "@/components/console/Pagination";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { age, lienAppel, telephoneLisible } from "@/lib/gestion/libelles";
@@ -103,7 +104,10 @@ export default async function ServiceApresVente({
                     <span className="avatar" style={styleAvatar(d.client_nom)} aria-hidden="true">{initiales(d.client_nom)}</span>
                     <span className="bo-ligne-client-texte">
                       <strong>{d.client_nom}</strong>
-                      <span>{telephoneLisible(d.client_telephone)} · {d.commande}</span>
+                      <span className="bo-ligne-coord">
+                        <span>{telephoneLisible(d.client_telephone)}</span>
+                        <span>{d.commande}</span>
+                      </span>
                     </span>
                   </span>
                   <span className="bo-ligne-articles sav-ligne-article">
@@ -131,13 +135,7 @@ export default async function ServiceApresVente({
         </ul>
       )}
 
-      {pages > 1 ? (
-        <nav className="bo-pages" aria-label="Pages">
-          {page > 1 ? <Link href={lien(etape.cle, page - 1)} className="btn btn-second">Précédentes</Link> : <span />}
-          <span className="text-petit discret">Page {page} sur {pages}</span>
-          {page < pages ? <Link href={lien(etape.cle, page + 1)} className="btn btn-second">Suivantes</Link> : <span />}
-        </nav>
-      ) : null}
+      <Pagination page={page} pages={pages} total={liste.total} parPage={PAR_PAGE} lien={(n) => lien(etape.cle, n)} unite={["demande", "demandes"]} />
     </>
   );
 }

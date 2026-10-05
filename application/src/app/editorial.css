@@ -79,7 +79,11 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 .ed-entete[data-transparent]:not(:hover):not(:focus-within) {
   background: transparent; color: var(--theme-surface); border-color: transparent;
   backdrop-filter: none;
+  /* Une photo claire (un mur blanc, un ciel) sous un texte clair : une ombre
+     douce le détache, sans se voir sur une photo sombre (recette du 05/10). */
+  text-shadow: 0 1px 10px rgb(0 0 0 / .35);
 }
+.ed-entete[data-transparent]:not(:hover):not(:focus-within) svg { filter: drop-shadow(0 1px 6px rgb(0 0 0 / .35)); }
 .ed-entete[data-transparent]:not(:hover):not(:focus-within) :focus-visible { outline-color: var(--theme-surface); }
 .ed-entete-rang {
   display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 1rem;
@@ -89,6 +93,14 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
 .ed-entete-fin { display: flex; align-items: center; justify-content: flex-end; gap: .25rem; margin-inline-end: -.5rem; }
 .ed-logo { --logo-h: 1.125rem; display: flex; justify-content: center; }
 .ed-logo .marque-texte { font-size: 1.625rem; letter-spacing: 0; }
+/* Au téléphone, un nom long (« Yasmine Beauté ») ne doit pas toucher les
+   icônes : il rétrécit avec l'écran, et la colonne du milieu cède la place
+   aux icônes (recette du 05/10). */
+@media (max-width: 479px) {
+  .ed-entete-rang { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .ed-logo { min-inline-size: 0; }
+  .ed-logo .marque-texte { font-size: clamp(1.125rem, 6.2vw, 1.625rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
 @media (min-width: 900px) {
   .ed-entete-debut { margin-inline-start: 0; }
   .ed-logo { --logo-h: 1.375rem; }
@@ -164,13 +176,13 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
   background:
     linear-gradient(to top, color-mix(in srgb, #000 58%, transparent) 0%, color-mix(in srgb, #000 28%, transparent) 34%, transparent 64%),
     linear-gradient(to right, color-mix(in srgb, #000 26%, transparent) 0%, transparent 55%),
-    linear-gradient(to bottom, color-mix(in srgb, #000 32%, transparent), transparent 20%);
+    linear-gradient(to bottom, color-mix(in srgb, #000 42%, transparent), color-mix(in srgb, #000 16%, transparent) 14%, transparent 28%);
 }
 .ed-ouverture[data-alignement="fin"] .ed-ouverture-voile {
   background:
     linear-gradient(to top, color-mix(in srgb, #000 58%, transparent) 0%, color-mix(in srgb, #000 28%, transparent) 34%, transparent 64%),
     linear-gradient(to left, color-mix(in srgb, #000 26%, transparent) 0%, transparent 55%),
-    linear-gradient(to bottom, color-mix(in srgb, #000 32%, transparent), transparent 20%);
+    linear-gradient(to bottom, color-mix(in srgb, #000 42%, transparent), color-mix(in srgb, #000 16%, transparent) 14%, transparent 28%);
 }
 .ed-ouverture-contenu { padding-block: 7rem 3rem; }
 .ed-ouverture-bloc { max-inline-size: 42rem; animation: bloc-entre 1s .15s var(--theme-courbe) both; }
@@ -328,7 +340,11 @@ html[data-gabarit="editorial"] .attente-cartel .filigrane { inline-size: 14%; op
   line-height: 1.05; letter-spacing: -.01em; text-transform: none; color: color-mix(in srgb, var(--theme-encre) 78%, transparent);
   text-wrap: balance;
 }
-.attente-cartel .attente-mention { display: inline-flex; align-items: center; gap: .625rem; }
+.attente-cartel .attente-mention { display: inline-flex; align-items: center; gap: .625rem; white-space: nowrap; }
+/* Une carte étroite (deux colonnes au téléphone) : la mention tient sur une
+   ligne, ses filets s'effacent plutôt que de la couper (recette du 05/10). */
+@container (max-width: 12rem) { .attente-cartel .attente-mention::before, .attente-cartel .attente-mention::after { display: none; } }
+@media (max-width: 599px) { .attente-cartel .attente-mention { letter-spacing: .12em; gap: .375rem; } .attente-cartel .attente-mention::before, .attente-cartel .attente-mention::after { inline-size: .75rem; } }
 .attente-cartel .attente-mention::before, .attente-cartel .attente-mention::after {
   content: ""; inline-size: 1.25rem; block-size: 1px; background: currentColor; opacity: .4;
 }

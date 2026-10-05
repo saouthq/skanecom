@@ -121,6 +121,8 @@
 /* Au-dessus de la barre d'achat collante de la fiche (téléphone). */
 @media (max-width: 899px) {
   html:has(.achat-mobile) .whatsapp-flottant { inset-block-end: calc(5.75rem + env(safe-area-inset-bottom)); }
+  /* En bas de page, le bouton ne cache plus les derniers liens du pied. */
+  html:has(.whatsapp-flottant) footer[data-zone="pied"] { padding-block-end: calc(4.5rem + env(safe-area-inset-bottom)); }
 }
 /* Pendant la commande et sur sa page de fin : rien ne détourne de « Confirmer ». */
 html:has(.tunnel-page, .merci) .whatsapp-flottant { display: none; }

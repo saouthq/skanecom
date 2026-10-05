@@ -214,6 +214,12 @@ export default async function FicheCommande({
   const numeroVerifie = ((verifiees as string[] | null) ?? []).includes(f.numero);
   // Ce que SkanFact sait de la commande (module skanfact) : sa facture, ses paiements, ses avoirs.
   const { data: sf } = await sb.rpc("gestion_skanfact_commande", { p_boutique_id: boutique.boutique_id, p_numero: f.numero });
+  // Le transporteur habituel de la boutique (Réglages → Livraison) : l'expédition
+  // part de lui, au lieu d'un champ vide à retaper à chaque colis (recette du 05/10).
+  const { data: transporteurRegle } = f.statut === "confirmee" && !f.transporteur
+    ? await sb.from("reglages").select("valeur").eq("boutique_id", boutique.boutique_id).eq("cle", "livraison.transporteur").maybeSingle()
+    : { data: null };
+  const transporteurParDefaut = typeof transporteurRegle?.valeur === "string" ? transporteurRegle.valeur : "";
   const etatSkanFact = sf as EtatFactureSkanFact | null;
 
   const role = boutique.role;
@@ -507,7 +513,7 @@ export default async function FicheCommande({
                     <div className="deux-colonnes">
                       <div className="champ">
                         <label htmlFor="transporteur">Transporteur</label>
-                        <input id="transporteur" name="transporteur" maxLength={80} defaultValue={f.transporteur ?? ""} placeholder="Nom du livreur ou de la société" />
+                        <input id="transporteur" name="transporteur" maxLength={80} defaultValue={f.transporteur ?? transporteurParDefaut} placeholder="Nom du livreur ou de la société" />
                       </div>
                       <div className="champ">
                         <label htmlFor="suivi">
@@ -676,7 +682,12 @@ export default async function FicheCommande({
                   </div>
                 ) : null}
                 <div className="bo-total">
-                  <dt>{f.sur_place ? "Payé au comptoir" : retrait ? "À encaisser au retrait" : "À encaisser à la livraison"}</dt>
+                  <dt>
+                    {f.sur_place ? "Payé au comptoir"
+                      : f.statut === "livree" ? (retrait ? "Encaissé au retrait" : "Encaissé à la livraison")
+                      : f.statut === "refusee" || f.statut === "annulee" ? "Non encaissé"
+                      : retrait ? "À encaisser au retrait" : "À encaisser à la livraison"}
+                  </dt>
                   <dd><Prix millimes={f.total_millimes} fort /></dd>
                 </div>
               </dl>

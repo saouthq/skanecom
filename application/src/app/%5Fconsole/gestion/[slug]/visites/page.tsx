@@ -104,7 +104,7 @@ export default async function PageVisites({
       {!v.actif ? (
         <p className="message">
           La mesure d&apos;audience est coupée : plus rien n&apos;est compté. Les chiffres d&apos;avant restent ici.{" "}
-          <Link href={`/gestion/${slug}/reglages#t-vitrine`}>La rallumer</Link>
+          <Link href={`/gestion/${slug}/reglages/vitrine`}>La rallumer</Link>
         </p>
       ) : null}
 

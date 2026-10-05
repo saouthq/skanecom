@@ -11,6 +11,7 @@ import { champ, t } from "@/lib/i18n";
 import { urlFichier } from "@/lib/photos";
 import { assurancesPanier, bandeau, faitsDeService, lienConseil } from "@/lib/faits";
 import { descendance, type Cadre } from "@/lib/boutique";
+import { aUnContact, contactDe } from "@/lib/contact";
 
 /* ============================================================================
    L'EN-TÊTE — un par gabarit, parce que les deux métiers ne cherchent pas de
@@ -74,6 +75,18 @@ function entreesMenu(cadre: Cadre): EntreeMenu[] {
   ];
 }
 
+/** « Besoin d'aide ? » au bas du menu du téléphone : ce que le pied de page
+ *  offre déjà — le suivi d'une commande, les pages de la boutique (questions,
+ *  livraison…), le contact, la garantie. */
+function aideMenu(cadre: Cadre): { href: string; nom: string }[] {
+  return [
+    { href: "/suivi", nom: t.pied.suivreCommande },
+    ...cadre.pages.filter((p) => p.dans_pied).map((p) => ({ href: `/${p.slug}`, nom: champ(p, "titre") })),
+    ...(aUnContact(contactDe(cadre)) ? [{ href: "/contact", nom: t.pied.contact }] : []),
+    ...(cadre.sav ? [{ href: "/garantie-et-sav", nom: t.sav.lienPied }] : []),
+  ];
+}
+
 /** L'accueil s'ouvre-t-il par une photo pleine page (et pas détourée) ? */
 function ouvertureSurPhoto(cadre: Cadre): boolean {
   // Le Bento ouvre sur une tuile, pas sur une photo pleine page.
@@ -112,7 +125,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
       <EnteteDefilant className="ed-entete" surImage={ouvertureSurPhoto(cadre)}>
         <div className="enveloppe ed-entete-rang" data-zone="entete">
           <div className="ed-entete-debut">
-            <MenuMobile entrees={entreesMenu(cadre)} faits={faits} className="cache-desktop" />
+            <MenuMobile entrees={entreesMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="cache-desktop" />
             <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="ed-nav cache-mobile"
               replier={liens.some((l) => l.cle === "catalogue") ? undefined : { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue }} />
           </div>
@@ -183,7 +196,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
       ) : null}
       <header className="te-entete" data-zone="entete">
         <div className="enveloppe te-entete-rang">
-          <MenuMobile entrees={entreesMenu(cadre)} faits={faits} className="te-menu cache-desktop" />
+          <MenuMobile entrees={entreesMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="te-menu cache-desktop" />
           <Link href="/" className="te-logo" aria-label={t.marque.accueilAria(cadre.boutique.nom)}>
             <Logo cadre={cadre} />
           </Link>

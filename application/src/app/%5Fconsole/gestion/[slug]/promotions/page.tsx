@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { BoutonCopier } from "@/components/console/BoutonCopier";
+import { OuvrirDetails } from "@/components/console/OuvrirDetails";
 import { FormCodePromo } from "@/components/console/FormCodePromo";
 import { OngletsPromotions } from "@/components/console/OngletsPromotions";
 import { clientSession, exigeMembre } from "@/lib/console/session";
@@ -64,7 +65,7 @@ export default async function Promotions({
             ? "Des codes à donner — en story, dans le colis, à une cliente fidèle : un pourcentage, un montant ou la livraison offerte. La base les vérifie à chaque commande ; une commande passée garde sa remise."
             : "Le module est coupé : aucun code ne s'applique plus. Ils restent ici, avec ce qu'ils ont rapporté."
         }
-        actions={regle ? <a className="btn btn-primaire" href="#nouveau"><Icone nom="etiquette" /> Nouveau code</a> : undefined}
+        actions={regle ? <OuvrirDetails cible="nouveau" className="btn btn-primaire"><Icone nom="etiquette" /> Nouveau code</OuvrirDetails> : undefined}
       />
       <OngletsPromotions slug={slug} courant="codes" />
 
@@ -84,13 +85,26 @@ export default async function Promotions({
         </section>
       ) : null}
 
+      {/* Le formulaire d'un nouveau code : replié en tête (il prenait la moitié de
+          la page entre deux listes), ouvert d'office tant qu'aucun code n'existe. */}
+      {regle ? (
+        <details id="nouveau" className="carte pm-nouveau" open={liste.codes.length === 0 ? true : undefined}>
+          <summary className="pm-nouveau-tete">
+            <span className="carte-titre-icone"><Icone nom="plus" /> Nouveau code</span>
+            <span className="aide">Un pourcentage, un montant ou la livraison offerte, à donner en story, dans le colis, à une cliente fidèle.</span>
+          </summary>
+          <p className="aide pm-nouveau-aide">Il s&apos;applique au tunnel, sur les articles ; jamais au-delà de leur montant. Un code ne vaut pas sur un devis, dont le prix est déjà négocié.</p>
+          <FormCodePromo action={action} suffixe="nouveau" />
+        </details>
+      ) : null}
+
       <section aria-labelledby="t-vivants" className="pm-section">
         <h2 id="t-vivants" className="pm-titre">En cours <span className="compte-onglet">{vivants.length}</span></h2>
         {vivants.length === 0 ? (
           <div className="vide cat-vide">
             <span className="vide-icone"><Icone nom="etiquette" taille={20} /></span>
             <strong>Aucun code en cours</strong>
-            <p>{regle ? "Créez-en un ci-dessous : il vaut dès son premier jour." : "La direction de la boutique les crée."}</p>
+            <p>{regle ? "Créez-en un ci-dessus : il vaut dès son premier jour." : "La direction de la boutique les crée."}</p>
           </div>
         ) : (
           <ul className="pm-liste" role="list">
@@ -98,18 +112,6 @@ export default async function Promotions({
           </ul>
         )}
       </section>
-
-      {regle ? (
-        <section id="nouveau" className="carte pm-nouveau" aria-labelledby="t-nouveau">
-          <div className="carte-tete">
-            <div>
-              <h2 id="t-nouveau" className="carte-titre-icone"><Icone nom="etiquette" /> Nouveau code</h2>
-              <p>Il s&apos;applique au tunnel, sur les articles ; jamais au-delà de leur montant. Un code ne vaut pas sur un devis, dont le prix est déjà négocié.</p>
-            </div>
-          </div>
-          <FormCodePromo action={action} suffixe="nouveau" />
-        </section>
-      ) : null}
 
       {finis.length > 0 ? (
         <section aria-labelledby="t-finis" className="pm-section">

@@ -58,11 +58,15 @@ export const MENU_OUVRIR = "skanecom:menu-ouvrir";
 export function MenuMobile({
   entrees,
   faits,
+  aide = [],
   className = "",
 }: {
   entrees: EntreeMenu[];
   /** Les faits de service (paiement, livraison), en bas du tiroir. */
   faits: string[];
+  /** « Besoin d'aide ? » : suivre sa commande, les questions, le contact —
+   *  au téléphone, le pied de page est loin (recette du 05/10). */
+  aide?: { href: string; nom: string }[];
   className?: string;
 }) {
   const [ouvert, setOuvert] = useState(false);
@@ -129,6 +133,18 @@ export function MenuMobile({
             ))}
           </ul>
         </nav>
+        {aide.length > 0 ? (
+          <nav className="menu-aide" aria-label={t.commun.besoinAide}>
+            <p className="menu-aide-titre">{t.commun.besoinAide}</p>
+            <ul>
+              {aide.map((a) => (
+                <li key={a.href}>
+                  <Link href={a.href} onClick={ferme} aria-current={chemin === a.href ? "page" : undefined}>{a.nom}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
       </Tiroir>
     </>
   );

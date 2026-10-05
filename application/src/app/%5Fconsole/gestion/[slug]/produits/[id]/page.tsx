@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";
-import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
+import { EnTetePage } from "@/components/console/Coquille";
 import { DepotPhotos } from "@/components/console/DepotPhotos";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
@@ -11,6 +12,8 @@ import { urlFichier } from "@/lib/photos";
 import { formateMontant } from "@/lib/prix";
 import { paliersDe } from "@/lib/paliers";
 import { quand } from "@/lib/gestion/libelles";
+import { adresseVitrine } from "@/lib/console/libelles";
+import { cadreDeGestion } from "@/lib/gestion/pages";
 import {
   LIBELLES_MOTIF,
   MODES_STOCK,
@@ -44,18 +47,20 @@ export default async function FicheProduitBackoffice({
   searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
-  searchParams: Promise<{ ok?: string; erreur?: string; stock?: string }>;
+  searchParams: Promise<{ ok?: string; erreur?: string; stock?: string; toutes?: string }>;
 }) {
   const [{ slug, id }, messages] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }, { data: lusPaliers }] = await Promise.all([
+  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }, { data: lusPaliers }, cadre, hoteConsole] = await Promise.all([
     sb.rpc("gestion_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_fiche_technique", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id }),
     sb.rpc("gestion_soldes_du_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_paliers", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
+    cadreDeGestion(sb, boutique.boutique_id),
+    headers().then((h) => h.get("host")),
   ]);
   // Les prix par quantité (« 2 pour 99 », migration 71) : trois lignes à remplir.
   const paliers = paliersDe(lusPaliers);
@@ -80,6 +85,11 @@ export default async function FicheProduitBackoffice({
   const stockTotal = actives.reduce((n, v) => n + v.stock, 0);
   const prixMin = actives.length ? Math.min(...actives.map((v) => v.prix)) : null;
   const maintenant = new Date();
+  // La fiche sur la vitrine : ce que le client voit (un brouillon : l'aperçu n'existe pas encore).
+  const hote = cadre?.boutique.hote_principal ?? null;
+  const surVitrine = hote && f.publie ? `${adresseVitrine(hote, hoteConsole)}/produit/${f.slug}` : null;
+  // Les mouvements : les huit derniers, le reste replié.
+  const MOUVEMENTS_VUS = 8;
 
   return (
     <>
@@ -98,15 +108,26 @@ export default async function FicheProduitBackoffice({
             <span className="tabular-nums">{stockTotal}</span> pièce{stockTotal > 1 ? "s" : ""} en stock ·{" "}
             {actives.length} déclinaison{actives.length > 1 ? "s" : ""} en vente
             {prixMin !== null ? <> · dès <Prix millimes={prixMin} /></> : null}
+            {f.variantes.length > actives.length ? <> · {f.variantes.length - actives.length} hors vente</> : null}
+            {" · "}créé {quand(f.cree_le, maintenant)}
           </>
         }
+        actions={surVitrine ? (
+          <a className="btn btn-second" href={surVitrine} target="_blank" rel="noopener">
+            Voir sur la vitrine <Icone nom="externe" taille={14} />
+          </a>
+        ) : undefined}
       />
 
       <div className="pile">
         {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
         {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
+        {!modifie ? (
+          <p className="message">{stocke ? "Vous tenez le stock ; la fiche et les prix reviennent au propriétaire." : "Lecture seule."}</p>
+        ) : null}
 
-        <div className="grille-2">
+        {/* Une seule colonne, à toute la largeur : chaque déclinaison tient sur une ligne. */}
+        <div className="fp-cadre">
           <div className="pile">
             {/* ---------------- Photos ---------------- */}
             <section className="carte" aria-labelledby="t-photos">
@@ -249,6 +270,27 @@ export default async function FicheProduitBackoffice({
                   </span>
                 </p>
               ) : null}
+              {modifie && f.variantes.length > 1 ? (
+                /* Toutes les tailles au même prix : un geste au lieu d'un par ligne. */
+                <details className="var-toutes" open={messages.toutes ? true : undefined}>
+                  <summary className="btn btn-second btn-petit">
+                    <Icone nom="etiquette" taille={14} /> Même prix pour les {f.variantes.length} déclinaisons
+                  </summary>
+                  <form action={action} method="post" className="var-prix" id="var-toutes">
+                    <input type="hidden" name="action" value="prix_toutes" />
+                    <div className="champ">
+                      <label htmlFor="prix-toutes">Prix <span className="facultatif">TND</span></label>
+                      <input id="prix-toutes" name="prix" inputMode="decimal" required placeholder={formateMontant(f.variantes[0].prix)} />
+                    </div>
+                    <div className="champ">
+                      <label htmlFor="barre-toutes">Prix barré <span className="facultatif">TND</span></label>
+                      <input id="barre-toutes" name="prix_barre" inputMode="decimal" placeholder="—" aria-describedby="toutes-aide" />
+                    </div>
+                    <button type="submit" className="btn btn-primaire btn-petit">Appliquer aux {f.variantes.length}</button>
+                    <p id="toutes-aide" className="legende var-toutes-aide">Prix barré vide : il est retiré partout. Le stock, l&apos;alerte, le minimum et la mise en vente ne bougent pas.</p>
+                  </form>
+                </details>
+              ) : null}
               <ul className="var-liste" role="list">
                 {f.variantes.map((v) => {
                   const etat = etatStock(v.stock, v.seuil);
@@ -354,6 +396,8 @@ export default async function FicheProduitBackoffice({
                 </div>
               </div>
               {reglePrix ? (
+                <details className="fp-pli" open={paliers.length > 0 ? true : undefined}>
+                <summary className="btn btn-second btn-petit">{paliers.length ? "Les prix par quantité" : "Poser des prix par quantité"}</summary>
                 <form action={action} method="post" className="formulaire">
                   <input type="hidden" name="action" value="paliers" />
                   <ul className="pq-lignes" role="list">
@@ -381,6 +425,7 @@ export default async function FicheProduitBackoffice({
                     <button type="submit" className="btn btn-second">Enregistrer les prix par quantité</button>
                   </div>
                 </form>
+                </details>
               ) : paliers.length ? (
                 <ul className="pq-lecture" role="list">
                   {paliers.map((p) => <li key={p.quantite}>{p.quantite} pièces : <Prix millimes={p.prixMillimes} /></li>)}
@@ -392,13 +437,11 @@ export default async function FicheProduitBackoffice({
 
             {/* ---------------- Une déclinaison de plus ---------------- */}
             {modifie && f.axes.length > 0 ? (
-              <section className="carte" aria-labelledby="t-ajouter">
-                <div className="carte-tete">
-                  <div>
-                    <h2 id="t-ajouter" className="carte-titre-icone"><Icone nom="plus" /> Ajouter une déclinaison</h2>
-                    <p>Une couleur ou une taille de plus. Elle arrive sans stock : faites ensuite la réception.</p>
-                  </div>
-                </div>
+              <details className="carte carte-pli" aria-labelledby="t-ajouter" open={messages.erreur ? true : undefined}>
+                <summary className="carte-pli-tete">
+                  <span id="t-ajouter" className="carte-titre-icone"><Icone nom="plus" /> Ajouter une déclinaison</span>
+                  <span className="aide">Une couleur ou une taille de plus. Elle arrive sans stock : faites ensuite la réception.</span>
+                </summary>
                 <form action={action} method="post" className="formulaire">
                   <input type="hidden" name="action" value="ajouter" />
                   <div className="deux-colonnes">
@@ -425,7 +468,7 @@ export default async function FicheProduitBackoffice({
                     <button type="submit" className="btn btn-primaire">Ajouter la déclinaison</button>
                   </div>
                 </form>
-              </section>
+              </details>
             ) : null}
 
             {/* ---------------- La fiche ---------------- */}
@@ -534,14 +577,14 @@ export default async function FicheProduitBackoffice({
               <div className="carte-tete">
                 <div>
                   <h2 id="t-mouvements" className="carte-titre-icone"><Icone nom="journal" /> Mouvements de stock</h2>
-                  <p>Les trente derniers, toutes déclinaisons confondues.</p>
+                  <p>Les plus récents d&apos;abord, toutes déclinaisons confondues.</p>
                 </div>
               </div>
               {f.mouvements.length === 0 ? (
                 <p className="discret">Aucun mouvement pour le moment.</p>
               ) : (
                 <ol className="mvt-liste">
-                  {f.mouvements.map((m, i) => (
+                  {f.mouvements.slice(0, MOUVEMENTS_VUS).map((m, i) => (
                     <li key={`${m.le}-${i}`} className="mvt">
                       <span className={`mvt-delta ${m.delta > 0 ? "mvt-plus" : "mvt-moins"}`}>{m.delta > 0 ? `+${m.delta}` : `−${-m.delta}`}</span>
                       <span className="mvt-texte">
@@ -563,24 +606,36 @@ export default async function FicheProduitBackoffice({
                   ))}
                 </ol>
               )}
+              {f.mouvements.length > MOUVEMENTS_VUS ? (
+                <details className="mvt-plus-anciens">
+                  <summary className="btn btn-second btn-petit">Les {f.mouvements.length - MOUVEMENTS_VUS} mouvements d&apos;avant</summary>
+                  <ol className="mvt-liste" start={MOUVEMENTS_VUS + 1}>
+                    {f.mouvements.slice(MOUVEMENTS_VUS).map((m, i) => (
+                    <li key={`${m.le}-${i}`} className="mvt">
+                      <span className={`mvt-delta ${m.delta > 0 ? "mvt-plus" : "mvt-moins"}`}>{m.delta > 0 ? `+${m.delta}` : `−${-m.delta}`}</span>
+                      <span className="mvt-texte">
+                        <span>
+                          <span className="font-medium">{LIBELLES_MOTIF[m.motif] ?? m.motif}</span>
+                          {m.commande ? <> · <Link className="lien" href={`/gestion/${slug}/commandes/${m.commande}`}>{m.commande}</Link></> : null}
+                        </span>
+                        {/* (le commentaire d'une commande ne fait que répéter son numéro) */}
+                        {m.commentaire && !(m.commande && m.commentaire.startsWith(`Commande ${m.commande}`)) ? (
+                          <span className="mvt-note-texte">{m.commentaire}</span>
+                        ) : null}
+                        <span className="mvt-meta">
+                          {[m.libelle ?? m.sku, `reste ${m.stock_apres}`, m.auteur ?? (m.commande ? "boutique en ligne" : null), quand(m.le, maintenant)]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </span>
+                    </li>
+                    ))}
+                  </ol>
+                </details>
+              ) : null}
             </section>
           </div>
 
-          <aside className="pile">
-            <section className="carte" aria-labelledby="t-resume">
-              <h2 id="t-resume" className="carte-titre-icone"><Icone nom="apercu" /> En bref</h2>
-              <dl className="liste-def mt-3">
-                <div><dt>Stock total</dt><dd className="tabular-nums">{stockTotal}</dd></div>
-                <div><dt>Déclinaisons</dt><dd>{actives.length} en vente{f.variantes.length > actives.length ? ` · ${f.variantes.length - actives.length} hors vente` : ""}</dd></div>
-                <div><dt>Adresse</dt><dd className="text-petit">/produit/{f.slug}</dd></div>
-                <div><dt>Créé</dt><dd className="text-petit">{quand(f.cree_le, maintenant)}</dd></div>
-              </dl>
-              <p className="text-petit discret mt-4 flex items-center gap-2">
-                <span className="avatar" style={styleAvatar(boutique.nom, { inlineSize: 22, blockSize: 22, fontSize: ".5625rem" })} aria-hidden="true">{initiales(boutique.nom)}</span>
-                {modifie ? "Vous pouvez tout modifier." : stocke ? "Vous tenez le stock ; la fiche et les prix reviennent au propriétaire." : "Lecture seule."}
-              </p>
-            </section>
-          </aside>
         </div>
       </div>
     </>

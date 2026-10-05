@@ -944,7 +944,7 @@ export function EditeurApparence({
           </div>
 
           <div className="ap-panneau" role="tabpanel" id="ap-panneau-cadre" aria-labelledby="ap-onglet-cadre" hidden={panneau !== "cadre"}>
-            <PanneauCadre reglages={reglages} ecrit={ecrit} whatsapp={whatsapp} lienReglages={lienRetour + "/reglages"} regler={reglerReglage} />
+            <PanneauCadre reglages={reglages} ecrit={ecrit} whatsapp={whatsapp} lienReglages={lienRetour + "/reglages/contact"} regler={reglerReglage} />
           </div>
 
           <div className="ap-panneau" role="tabpanel" id="ap-panneau-pages" aria-labelledby="ap-onglet-pages" hidden={panneau !== "pages"}>

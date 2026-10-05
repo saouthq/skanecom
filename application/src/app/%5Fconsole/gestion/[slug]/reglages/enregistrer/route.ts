@@ -3,6 +3,7 @@ import { memeOrigine, vers } from "@/lib/console/http";
 import { rafraichirVitrine } from "@/lib/console/vitrine-cache";
 import { millimes } from "@/lib/console/import";
 import { grammesSaisis, libelleTranche, messageReglages, valeursDe, type EtatReglages } from "@/lib/gestion/reglages";
+import { groupeDe } from "@/lib/gestion/reglages-ecrans";
 
 /* ============================================================================
    ENREGISTRER LES RÉGLAGES — une section à la fois (ses seuls champs), une
@@ -35,12 +36,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const texte = (cle: string) => String(f.get(cle) ?? "").trim();
   const section = texte("section");
   const ecran = `/gestion/${slug}/reglages`;
-  // Le message revient dans la section envoyée (`dans`), là où l'on regarde : en
-  // haut de la page, il était à des milliers de pixels au-dessus de l'écran.
+  // Le message revient dans la section envoyée (`dans`), sur la page de son
+  // thème (lib/gestion/reglages-ecrans.ts), là où l'on regarde.
   // Un réglage enregistré paraît aussitôt sur la vitrine (elle ne garde plus ses cinq minutes de cache).
   const retour = (ancre: string) => (m: string, ok = false) => {
     if (ok) rafraichirVitrine(slug);
-    return vers(`${ecran}?${new URLSearchParams({ ...(ok ? { ok: m } : { erreur: m }), dans: ancre.replace(/^t-/, "") })}#${ancre}`);
+    const groupe = groupeDe(ancre);
+    return vers(`${ecran}${groupe ? `/${groupe}` : ""}?${new URLSearchParams({ ...(ok ? { ok: m } : { erreur: m }), dans: ancre.replace(/^t-/, "") })}#${ancre}`);
   };
   const b = boutique.boutique_id;
   const sb = await clientSession();

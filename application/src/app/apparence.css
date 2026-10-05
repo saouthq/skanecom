@@ -16,7 +16,14 @@
    lit mal sur le fond) ; plein au survol. */
 html[data-boutons="contour"] .btn-primaire {
   background: transparent; color: var(--theme-bouton-trait);
-  border-color: currentColor; box-shadow: inset 0 0 0 .5px currentColor;
+  border-color: currentColor; box-shadow: inset 0 0 0 1px currentColor;
+  font-weight: 600;
+}
+/* Deux contours de même poids côte à côte (« Ajouter au panier »,
+   « Commander maintenant ») : on ne voyait plus lequel est le geste
+   principal. Le second garde un filet léger (recette du 05/10). */
+html[data-boutons="contour"] .btn-second:not(:hover) {
+  border-color: color-mix(in srgb, var(--theme-encre) 28%, transparent);
 }
 html[data-boutons="contour"][data-gabarit] .btn-primaire:hover {
   background: var(--theme-bouton); color: var(--theme-sur-bouton); border-color: var(--theme-bouton); box-shadow: none;

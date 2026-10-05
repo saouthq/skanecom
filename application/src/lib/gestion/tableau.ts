@@ -46,15 +46,16 @@ export function pourcent(x: number | null | undefined): string {
   return x === null || x === undefined ? "—" : POURCENT.format(x);
 }
 
-/** 45 → « 45 min » ; 130 → « 2 h 10 » ; 3000 → « 2 j ». */
+/** 45 → « 45 min » ; 130 → « 2 h 10 » ; 3000 → « 2 j ». Espaces insécables :
+ *  le nombre ne se sépare pas de son unité en bout de ligne (« 13 » / « h »). */
 export function duree(minutes: number): string {
-  if (minutes < 60) return `${Math.max(1, Math.round(minutes))} min`;
+  if (minutes < 60) return `${Math.max(1, Math.round(minutes))}\u00a0min`;
   if (minutes < 48 * 60) {
     const h = Math.floor(minutes / 60);
     const m = Math.round(minutes % 60);
-    return m ? `${h} h ${String(m).padStart(2, "0")}` : `${h} h`;
+    return m ? `${h}\u00a0h\u00a0${String(m).padStart(2, "0")}` : `${h}\u00a0h`;
   }
-  return `${Math.round(minutes / 1440)} j`;
+  return `${Math.round(minutes / 1440)}\u00a0j`;
 }
 
 /** L'évolution d'un chiffre : relative (« 12 % »), ou en points pour un

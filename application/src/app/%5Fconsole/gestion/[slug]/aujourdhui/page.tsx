@@ -8,6 +8,7 @@ import { lieu } from "@/lib/commande";
 import { LIBELLES_RESULTAT, lienAppel, lienWhatsApp, messageConfirmation, telephoneLisible } from "@/lib/gestion/libelles";
 import { DIRECTION } from "@/lib/gestion/tableau";
 import { duMois, enTnd, type Objectif } from "@/lib/gestion/objectif";
+import { jourArrivageCourt, type EcranArrivages } from "@/lib/gestion/arrivages";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
 
@@ -62,7 +63,12 @@ type Etat = {
   };
 };
 
-type Tache = { cle: string; nombre: number; titre: string; detail: string; href: string; icone: NomIcone; action?: { href: string; libelle: string } };
+type Tache = {
+  cle: string; nombre: number; titre: string; detail: string; href: string; icone: NomIcone; action?: { href: string; libelle: string };
+  /** Ce qui suit son cours sans geste de l'équipe (colis en route, précommandes) :
+   *  compté, mais sans la couleur « à faire » tant que rien n'est anormal. */
+  enCours?: boolean; alerte?: boolean;
+};
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Tunis" });
 
@@ -83,7 +89,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
   const confirme = CONFIRMER.includes(boutique.role);
-  const [{ data, error }, { data: file }, { data: alertes }, { data: paniers }, { data: dob }] = await Promise.all([
+  const [{ data, error }, { data: file }, { data: alertes }, { data: paniers }, { data: dob }, { data: arr }] = await Promise.all([
     sb.rpc("gestion_aujourdhui", { p_boutique_id: boutique.boutique_id }),
     // La première de la file « à confirmer » : la plus ancienne (gestion_liste_commandes).
     confirme
@@ -97,7 +103,14 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
     DIRECTION.includes(boutique.role)
       ? sb.rpc("gestion_objectif", { p_boutique_id: boutique.boutique_id })
       : Promise.resolve({ data: null }),
+    // Les arrivages annoncés : une pièce épuisée qui arrive ne se recommande pas.
+    sb.rpc("gestion_arrivages", { p_boutique_id: boutique.boutique_id }),
   ]);
+  // Référence → la date du premier arrivage attendu qui l'apporte (recette du 05/10).
+  const arrivePar = new Map<string, string>();
+  for (const a of ((arr as EcranArrivages | null)?.arrivages ?? []).filter((x) => x.statut === "attendu")) {
+    for (const l of a.lignes) if (!arrivePar.has(l.sku) || a.date_prevue < arrivePar.get(l.sku)!) arrivePar.set(l.sku, a.date_prevue);
+  }
   const objectif = dob as Objectif | null;
   const relances = paniers as { actif: boolean; a_relancer: number } | null;
   const reassort = alertes as { actif: boolean; a_prevenir: number; ouvertes: number } | null;
@@ -125,14 +138,14 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
     },
     {
       cle: "en_livraison", nombre: c.en_livraison, icone: "camion", href: `${base}?etape=expediees`,
-      titre: "En route chez le client",
+      titre: "En route chez le client", enCours: true, alerte: c.en_retard > 0,
       detail: c.en_retard
         ? `${pluriel(c.en_retard, "colis", "colis")} depuis plus de 5 jours : un appel au transporteur.`
         : c.en_livraison ? "Rien d'anormal sur la route." : "Aucun colis en route.",
     },
     ...(c.precommandes
       ? [{ cle: "precommandes", nombre: c.precommandes, icone: "calendrier" as const, href: `${base}?etape=precommandes`,
-          titre: c.precommandes > 1 ? "Précommandes en attente" : "Précommande en attente",
+          titre: c.precommandes > 1 ? "Précommandes en attente" : "Précommande en attente", enCours: true,
           detail: "Elles attendent leur arrivage : à la réception, elles sont servies d'abord et passent « À préparer ».",
           action: { href: `${base}/produits/arrivages`, libelle: "Voir les arrivages" } }]
       : []),
@@ -223,16 +236,32 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
                     <b>{p.produit}</b>
                     <span className="discret">{[p.declinaison, p.sku].filter(Boolean).join(" · ")}</span>
                   </span>
-                  <span className={p.stock <= 0 ? "ui-etat ui-etat-rouge" : "ui-etat ui-etat-ambre"}>
-                    {p.stock <= 0 ? "Épuisé" : `${p.stock} en stock`}
+                  <span className="ui-etats">
+                    {arrivePar.has(p.sku) ? (
+                      <span className="ui-etat ui-etat-bleu"><Icone nom="calendrier" taille={12} /> Arrive le {jourArrivageCourt(arrivePar.get(p.sku)!)}</span>
+                    ) : null}
+                    <span className={p.stock <= 0 ? "ui-etat ui-etat-rouge" : "ui-etat ui-etat-ambre"}>
+                      {p.stock <= 0 ? "Épuisé" : `${p.stock} en stock`}
+                    </span>
                   </span>
                 </Link>
               </li>
             ))}
           </ul>
-          <Link className="btn btn-second btn-petit" href={`${base}/produits/reception`}>
-            <Icone nom="colis" taille={14} /> Enregistrer un arrivage
-          </Link>
+          <div className="jd-stock-gestes">
+            {/* La liste montre les plus urgentes ; le catalogue, toutes. */}
+            {e.stock.ruptures + e.stock.bas > e.stock.pieces.length ? (
+              <Link className="btn btn-second btn-petit" href={`${base}/produits?filtre=stock_bas`}>
+                Toutes les {e.stock.ruptures + e.stock.bas} au catalogue <Icone nom="droite" taille={14} />
+              </Link>
+            ) : null}
+            <Link className="btn btn-second btn-petit" href={`${base}/produits/reception`}>
+              <Icone nom="colis" taille={14} /> Réceptionner une livraison
+            </Link>
+            <Link className="btn btn-second btn-petit" href={`${base}/produits/arrivages`}>
+              <Icone nom="calendrier" taille={14} /> Annoncer un arrivage
+            </Link>
+          </div>
         </section>
       ) : null}
 
@@ -291,7 +320,8 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
 
 function Carte({ tache, rang }: { tache: Tache; rang: number }) {
   return (
-    <li className="jd-carte" data-a-faire={tache.nombre > 0 ? "" : undefined} style={{ "--i": rang } as React.CSSProperties}>
+    <li className="jd-carte" data-a-faire={tache.nombre > 0 && (!tache.enCours || tache.alerte) ? "" : undefined}
+        data-en-cours={tache.nombre > 0 && tache.enCours && !tache.alerte ? "" : undefined} style={{ "--i": rang } as React.CSSProperties}>
       <Link href={tache.href} className="jd-carte-lien">
         <span className="jd-carte-icone"><Icone nom={tache.icone} taille={18} /></span>
         <span className="jd-carte-nombre">{tache.nombre}</span>

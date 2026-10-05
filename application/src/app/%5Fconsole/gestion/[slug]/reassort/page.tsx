@@ -64,7 +64,7 @@ export default async function Reassort({
         <p className="message mb-4">
           <span>
             Le réglage est coupé : les fiches ne proposent plus l&apos;alerte. Les demandes déjà faites restent ici.{" "}
-            <Link href={`/gestion/${slug}/reglages#t-vitrine`}>Réglages, Vitrine et contact</Link>
+            <Link href={`/gestion/${slug}/reglages/vitrine`}>Réglages, Fonctions de la vitrine</Link>
           </span>
         </p>
       ) : null}

@@ -42,6 +42,7 @@ export const fr = {
     menu: "Menu",
     ouvrirMenu: "Ouvrir le menu",
     fermerMenu: "Fermer le menu",
+    besoinAide: "Besoin d'aide ?",
     tousLesRayons: "Tous les rayons",
     toutVoir: "Tout voir",
     decouvrir: "Découvrir",

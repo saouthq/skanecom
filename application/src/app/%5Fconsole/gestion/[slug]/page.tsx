@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
+import { Pagination } from "@/components/console/Pagination";
 import { Icone } from "@/components/console/Icone";
 import { AlertesCommandes } from "@/components/console/Veille";
 import { RaccourciRecherche } from "@/components/console/Raccourcis";
@@ -89,7 +90,10 @@ export default async function Commandes({
 }) {
   const [{ slug }, recherche] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
-  const etape = ETAPES.find((e) => e.cle === recherche.etape) ?? ETAPES[0];
+  // Sans onglet demandé, chacun arrive sur son travail : le préparateur sur
+  // « À préparer », les autres sur « À confirmer ».
+  const parDefaut = boutique.role === "preparateur" ? "a_preparer" : "a_confirmer";
+  const etape = ETAPES.find((e) => e.cle === (recherche.etape ?? parDefaut)) ?? ETAPES[0];
   const q = (recherche.q ?? "").trim().slice(0, 60);
   const page = Math.max(1, Number.parseInt(recherche.page ?? "1", 10) || 1);
 
@@ -137,7 +141,7 @@ export default async function Commandes({
               <label htmlFor="q" className="sr-only">Chercher une commande</label>
               <span className="bo-recherche-champ">
                 <Icone nom="recherche" />
-                <input id="q" name="q" type="search" className="entree" defaultValue={q} placeholder="Numéro, nom ou téléphone" autoComplete="off" />
+                <input id="q" name="q" type="search" className="entree" defaultValue={q} placeholder="N°, nom ou téléphone" autoComplete="off" />
                 <kbd className="bo-recherche-touche" aria-hidden="true">/</kbd>
               </span>
               <RaccourciRecherche cible="q" />
@@ -211,7 +215,10 @@ export default async function Commandes({
                     <span className="avatar" style={styleAvatar(c.contact_nom)} aria-hidden="true">{initiales(c.contact_nom)}</span>
                     <span className="bo-ligne-client-texte">
                       <strong>{c.contact_nom}</strong>
-                      <span>{telephoneLisible(c.contact_telephone)} · {c.mode_livraison === "retrait" ? "retrait en magasin" : lieu(c.ville, c.gouvernorat)}</span>
+                      <span className="bo-ligne-coord">
+                        <span>{telephoneLisible(c.contact_telephone)}</span>
+                        <span>{c.mode_livraison === "retrait" ? "retrait en magasin" : lieu(c.ville, c.gouvernorat)}</span>
+                      </span>
                     </span>
                   </span>
                   <span className="bo-ligne-articles">
@@ -259,13 +266,7 @@ export default async function Commandes({
 
       {geste && liste.commandes.length ? <BarreLot formulaire={FORMULAIRE_LOT} geste={geste} /> : null}
 
-      {pages > 1 ? (
-        <nav className="bo-pages" aria-label="Pages">
-          {page > 1 ? <Link href={lien(etape.cle, page - 1)} className="btn btn-second">Précédentes</Link> : <span />}
-          <span className="text-petit discret">Page {page} sur {pages}</span>
-          {page < pages ? <Link href={lien(etape.cle, page + 1)} className="btn btn-second">Suivantes</Link> : <span />}
-        </nav>
-      ) : null}
+      <Pagination page={page} pages={pages} total={liste.total} parPage={PAR_PAGE} lien={(n) => lien(etape.cle, n)} unite={["commande", "commandes"]} />
     </>
   );
 }

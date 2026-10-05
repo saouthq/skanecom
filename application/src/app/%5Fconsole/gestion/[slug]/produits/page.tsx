@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Prix } from "@/components/Prix";
 import { EnTetePage } from "@/components/console/Coquille";
+import { Pagination } from "@/components/console/Pagination";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { urlFichier } from "@/lib/photos";
@@ -133,7 +134,12 @@ export default async function Catalogue({
                   {p.stock_total === 0 ? (
                     <span className="ui-etat ui-etat-point ui-etat-rouge">Rupture</span>
                   ) : p.variantes_bas > 0 ? (
-                    <span className="ui-etat ui-etat-point ui-etat-ambre">{p.stock_total} · stock bas</span>
+                    <span className="cat-stock-bas">
+                      <span className="tabular-nums">{p.stock_total} en stock</span>
+                      <span className="ui-etat ui-etat-point ui-etat-ambre" title="Sous le seuil d'alerte de la déclinaison">
+                        {p.variantes_bas} déclinaison{p.variantes_bas > 1 ? "s" : ""} en stock bas
+                      </span>
+                    </span>
                   ) : (
                     <span className="tabular-nums">{p.stock_total} en stock</span>
                   )}
@@ -152,13 +158,7 @@ export default async function Catalogue({
         </ul>
       )}
 
-      {pages > 1 ? (
-        <nav className="bo-pages" aria-label="Pages">
-          {page > 1 ? <Link href={lien(filtre.cle, page - 1)} className="btn btn-second">Précédents</Link> : <span />}
-          <span className="text-petit discret">Page {page} sur {pages}</span>
-          {page < pages ? <Link href={lien(filtre.cle, page + 1)} className="btn btn-second">Suivants</Link> : <span />}
-        </nav>
-      ) : null}
+      <Pagination page={page} pages={pages} total={liste.total} parPage={PAR_PAGE} lien={(n) => lien(filtre.cle, n)} unite={["produit", "produits"]} />
     </>
   );
 }

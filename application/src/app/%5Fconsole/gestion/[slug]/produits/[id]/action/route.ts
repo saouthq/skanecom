@@ -86,6 +86,34 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       );
     }
 
+    case "prix_toutes": {
+      // Un prix pour toutes les déclinaisons : le reste de chaque ligne (alerte,
+      // mise en vente ; le minimum, passé à null) reste tel qu'il est en base.
+      const retour = (m: string, ok = false) => {
+        if (ok) rafraichirVitrine(slug);
+        return vers(`${fiche}?${new URLSearchParams(ok ? { ok: m } : { erreur: m, toutes: "1" })}#${ok ? "t-declinaisons" : "var-toutes"}`);
+      };
+      const p = prix(f.get("prix"));
+      const pb = prix(f.get("prix_barre"));
+      if (!p) return retour("Prix illisible : écrivez par exemple 189,000.");
+      if (pb === undefined) return retour("Prix barré illisible : écrivez par exemple 229,000, ou laissez vide.");
+      const { data } = await sb.rpc("gestion_produit", { p_boutique_id: b, p_produit_id: id });
+      const variantes = (data as FicheProduit | null)?.variantes ?? [];
+      if (!variantes.length) return retour("Produit introuvable.");
+      let faites = 0;
+      for (const v of variantes) {
+        const { error } = await sb.rpc("gestion_enregistrer_variante", {
+          p_boutique_id: b, p_variante_id: v.id, p_prix: p, p_prix_barre: pb, p_seuil: v.seuil, p_actif: v.actif, p_quantite_min: null,
+        });
+        if (error) {
+          if (faites) rafraichirVitrine(slug);
+          return retour(`${v.libelle ?? v.sku} : ${messageCatalogue(error.hint, error.message)}${faites ? ` (${faites} sur ${variantes.length} déjà au nouveau prix)` : ""}.`);
+        }
+        faites++;
+      }
+      return retour(`Les ${faites} déclinaisons sont à ${formateMontant(p)} TND${pb ? `, barré ${formateMontant(pb)} TND` : ""}.`, true);
+    }
+
     case "stock": {
       const vid = texte("variante_id");
       // Une erreur garde le mouvement de stock ouvert (stock=…), pour corriger.

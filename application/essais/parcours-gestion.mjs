@@ -511,7 +511,8 @@ if (section("2")) {
   });
 
   await etape("ajouter une couleur", async () => {
-    const axes = page.locator("section:has(#t-ajouter) input[name^='axe.']");
+    await clic(page, page.locator("summary:has(#t-ajouter)"));
+    const axes = page.locator("details:has(#t-ajouter) input[name^='axe.']");
     const n = await axes.count();
     verifie(n === 2, `un champ par axe du produit (taille, couleur) : ${n}`);
     for (let i = 0; i < n; i++) {
@@ -783,17 +784,34 @@ if (section("2")) {
   const section = (id) => page.locator(`section:has(#t-${id})`);
   const journal = () => page.locator("section:has(#t-journal)").innerText();
 
-  await etape("les réglages : ce qui s'applique à la boutique", async () => {
+  // Une page par thème : on y va comme l'équipe, par la liste des thèmes.
+  const theme = async (nom, chemin) => {
+    await clic(page, page.locator(".rg-nav").getByRole("link", { name: nom }));
+    await page.waitForURL(new RegExp(`/reglages/${chemin}(\\?|#|$)`));
+    await page.waitForLoadState("networkidle");
+  };
+
+  await etape("les réglages : une tuile par thème, ce qui est réglé, ce qui manque", async () => {
     await clic(page, page.locator(".app-cote").getByRole("link", { name: "Réglages" }));
     await page.waitForURL(/\/gestion\/maymar\/reglages$/);
     await page.waitForLoadState("networkidle");
-    for (const id of ["commandes", "livraison", "zones", "gouvernorats", "paiement", "vitrine", "journal"]) {
-      verifie(await page.locator(`#t-${id}`).count() === 1, `la section « ${await page.locator(`#t-${id}`).innerText().catch(() => id)} »`);
+    const tuiles = await page.locator(".rg-tuile b").allInnerTexts();
+    for (const nom of ["Commandes", "Livraison", "Paiement", "Fonctions de la vitrine", "Contact et réseaux", "Informations légales", "Vos données"]) {
+      verifie(tuiles.includes(nom), `la tuile « ${nom} »`);
     }
-    verifie(await section("commandes").getByLabel("Compte obligatoire").isChecked(), "au départ : compte obligatoire");
-    verifie((await section("zones").innerText()).includes("Non appliquées"), "les zones de Maymar existent, mais le tarif est le même partout");
-    verifie((await section("commandes").innerText()).includes("MAY-"), "le préfixe des numéros est affiché, réglé par SkanEcom");
+    const livraison = await page.locator(".rg-tuile", { hasText: "Livraison" }).innerText();
+    verifie(livraison.includes("7,000 TND partout"), `chaque tuile dit ce qui est réglé (« ${livraison.split("\n").at(-1)} »)`);
+    verifie((await page.locator(".rg-attention").innerText()).includes("Informations légales"), "« À régler avant d'ouvrir » : les informations légales manquent");
+    verifie(await page.locator("#t-journal").count() === 1, "et les derniers changements, au journal");
+    const hauteur = await page.evaluate(() => document.documentElement.scrollHeight);
+    verifie(hauteur < 2000, `l'accueil des réglages tient en un écran ou deux (${hauteur} px, contre 9 000 avant)`);
     await capture(page, "gestion-reglages", true);
+    await clic(page, page.locator(".rg-tuile", { hasText: "Commandes" }));
+    await page.waitForURL(/\/reglages\/commandes$/);
+    await page.waitForLoadState("networkidle");
+    verifie(await section("commandes").getByLabel("Compte obligatoire").isChecked(), "au départ : compte obligatoire");
+    verifie((await section("commandes").innerText()).includes("MAY-"), "le préfixe des numéros est affiché, réglé par SkanEcom");
+    verifie((await page.locator(".rg-nav [aria-current=page]").innerText()).includes("Commandes"), "la liste des thèmes, à gauche, dit où l'on est");
   });
 
   await etape("ouvrir aux invités, confirmer d'office, le code par e-mail", async () => {
@@ -812,6 +830,9 @@ if (section("2")) {
   });
 
   await etape("les frais par zone, et une zone de plus", async () => {
+    await theme("Livraison", "livraison");
+    verifie((await section("zones").innerText()).includes("Non appliquées"), "les zones de Maymar existent, mais le tarif est le même partout");
+    verifie(await page.locator(".rg-pli:not([open]) #g-tunis").count() === 1, "tarif unique : les 24 gouvernorats restent repliés");
     verifie(await fraisPour("sfax") === 7000, `avant : Sfax paie le tarif fixe (${await fraisPour("sfax")})`);
     await clic(page, section("livraison").getByText("Tarif par zone"));
     await section("livraison").locator("#seuil").fill("300");
@@ -885,6 +906,7 @@ if (section("2")) {
   });
 
   await etape("un moyen de paiement qu'on ne coupe pas, un WhatsApp", async () => {
+    await theme("Paiement", "paiement");
     await clic(page, section("paiement").getByText("Paiement à la livraison"));
     await envoie(section("paiement").getByRole("button", { name: "Enregistrer" }));
     verifie((await page.getByRole("alert").innerText()).includes("au moins un moyen de paiement"), "le seul moyen de paiement ne se coupe pas");
@@ -893,14 +915,15 @@ if (section("2")) {
     await page.reload({ waitUntil: "networkidle" });
     verifie(await section("paiement").getByLabel("Paiement à la livraison").isChecked(), "rechargée, la page le confirme : il reste coché");
     verifie((await section("paiement").innerText()).includes("Bientôt"), "Konnect : prévu, à activer par SkanEcom");
-    await section("vitrine").locator("#whatsapp").fill("20 123 456");
-    await envoie(section("vitrine").getByRole("button", { name: "Enregistrer" }));
-    verifie(await section("vitrine").locator("#whatsapp").inputValue() === "21620123456", "le numéro est mis au format international");
+    await theme("Contact et réseaux", "contact");
+    await section("contact").locator("#whatsapp").fill("20 123 456");
+    await envoie(section("contact").getByRole("button", { name: "Enregistrer" }));
+    verifie(await section("contact").locator("#whatsapp").inputValue() === "21620123456", "le numéro est mis au format international");
   });
 
   await etape("les réglages sur téléphone", async () => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`${C}/gestion/maymar/reglages#t-zones`, { waitUntil: "networkidle" });
+    await page.goto(`${C}/gestion/maymar/reglages/livraison#t-zones`, { waitUntil: "networkidle" });
     const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     verifie(!deborde, "rien ne déborde en largeur");
     await pause(800);
@@ -909,11 +932,12 @@ if (section("2")) {
   });
 
   await etape("remettre Maymar comme au départ", async () => {
-    await page.goto(`${C}/gestion/maymar/reglages`, { waitUntil: "networkidle" });
+    await page.goto(`${C}/gestion/maymar/reglages/commandes`, { waitUntil: "networkidle" });
     await clic(page, section("commandes").getByText("Compte obligatoire"));
     await clic(page, section("commandes").getByText("SMS ou e-mail, au choix"));
     await clic(page, section("commandes").getByText("Confirmée par téléphone"));
     await envoie(section("commandes").getByRole("button", { name: "Enregistrer" }));
+    await theme("Livraison", "livraison");
     await clic(page, section("livraison").getByText("Même tarif partout"));
     await section("livraison").locator("#seuil").fill("");
     await envoie(section("livraison").getByRole("button", { name: "Enregistrer" }));
@@ -921,6 +945,7 @@ if (section("2")) {
   });
 
   await etape("les informations légales, jusqu'aux pages de la vitrine", async () => {
+    await theme("Informations légales", "legal");
     const legal = section("legal");
     verifie((await legal.innerText()).includes("À compléter avant d'ouvrir"), "ce qui manque est signalé");
     await legal.locator("#retractation").fill("5");
@@ -951,7 +976,7 @@ if (section("2")) {
   });
 
   await etape("couper le supplément au poids", async () => {
-    await page.goto(`${C}/gestion/maymar/reglages#t-poids`, { waitUntil: "networkidle" });
+    await page.goto(`${C}/gestion/maymar/reglages/livraison#t-poids`, { waitUntil: "networkidle" });
     await clic(page, section("livraison").getByText("Supplément selon le poids du colis"));
     await envoie(section("livraison").getByRole("button", { name: "Enregistrer" }));
     verifie((await section("poids").innerText()).includes("Non appliqué"), "de nouveau le tarif seul");
@@ -1075,7 +1100,7 @@ if (section("2")) {
   });
 
   await etape("les données de la boutique, dans un tableur", async () => {
-    await page.goto(`${C}/gestion/maymar/reglages#t-donnees`, { waitUntil: "networkidle" });
+    await page.goto(`${C}/gestion/maymar/reglages/donnees`, { waitUntil: "networkidle" });
     const donnees = page.locator("section:has(#t-donnees)");
     verifie(await donnees.getByRole("link", { name: /Télécharger/ }).count() === 7, "sept exports : commandes, articles, clients, catalogue, stock, le SAV (module) et les versements des livreurs");
     const [telechargement] = await Promise.all([
@@ -1431,6 +1456,10 @@ if (section("4bis")) {
   });
 
   await etape("un code créé au clavier, coupé, refusé en double, retiré", async () => {
+    verifie(!(await page.locator("details#nouveau").evaluate((d) => d.open)), "le formulaire d'un nouveau code attend, replié, en tête de la liste");
+    await clic(page, page.locator(".page-actions").getByRole("button", { name: "Nouveau code" }));
+    verifie(await page.locator("details#nouveau").evaluate((d) => d.open) && await page.evaluate(() => document.activeElement?.getAttribute("name") === "code"),
+      "« Nouveau code » l'ouvre, le curseur dans le code");
     await clic(page, nouveau().getByLabel("Le code"));
     await tape(page, "rentree 15");
     verifie((await nouveau().getByLabel("Le code").inputValue()) === "RENTREE15", "tapé « rentree 15 » : écrit RENTREE15, en capitales, sans espace");
@@ -1909,6 +1938,8 @@ if (section("4bis")) {
     // Le pull en mérinos : 189,000 l'unité.
     await page.goto(`${C}/gestion/maison-selma/produits/00000000-0000-4000-8003-000000000109#paliers`, { waitUntil: "networkidle" });
     const bloc = page.locator("#paliers");
+    verifie(!(await bloc.locator("details").evaluate((d) => d.open)), "sans prix par quantité, le bloc reste replié");
+    await clic(page, bloc.getByRole("button", { name: "Poser des prix par quantité" }).or(bloc.locator("summary")).first());
     await clic(page, bloc.getByLabel("Pièces").first());
     await tape(page, "2");
     await clic(page, bloc.getByLabel(/Prix total/).first());
@@ -1948,7 +1979,7 @@ if (section("4bis")) {
     const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const entetes = { apikey: cle, authorization: `Bearer ${cle}` };
     const lu = async (c) => (await (await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/reglages?boutique_id=eq.00000000-0000-4000-8000-000000000003&cle=eq.${c}&select=valeur`, { headers: entetes })).json())[0]?.valeur;
-    await page.goto(`${C}/gestion/maison-selma/reglages#t-publicite`, { waitUntil: "networkidle" });
+    await page.goto(`${C}/gestion/maison-selma/reglages/publicite`, { waitUntil: "networkidle" });
     verifie((await page.locator("#pixel-meta").inputValue()) === "1000000000000003" && (await page.locator("#pixel-tiktok").inputValue()) === "CSELMA0000000000DEMO",
       "la section Publicité montre les deux pixels");
     const section = page.locator("section", { has: page.locator("#t-publicite") });
@@ -1956,16 +1987,16 @@ if (section("4bis")) {
     await page.keyboard.press("Control+a");
     await tape(page, "12345abc");
     await page.keyboard.press("Enter");
-    await section.locator(".message-erreur").waitFor({ timeout: 8000 });
-    const y = (await section.locator(".message-erreur").boundingBox())?.y ?? -1;
-    verifie((await section.locator(".message-erreur").innerText()).includes("pixel Meta illisible") && y > 0 && y < 860 && (await lu("pub.pixel_meta")) === "1000000000000003",
+    await section.locator("[role=alert]").waitFor({ timeout: 8000 });
+    const y = (await section.locator("[role=alert]").boundingBox())?.y ?? -1;
+    verifie((await section.locator("[role=alert]").innerText()).includes("pixel Meta illisible") && y > 0 && y < 860 && (await lu("pub.pixel_meta")) === "1000000000000003",
       `Entrée : refusé, et le refus se lit dans la section, à l'écran (${Math.round(y)} px) ; le pixel d'avant reste`);
     await capture(page, "gestion-publicite-refus");
     await page.locator("#pixel-meta").focus();
     await page.keyboard.press("Control+a");
     await tape(page, "1234 5678 9012 3456");
     await page.keyboard.press("Enter");
-    await section.locator(".message-succes").waitFor({ timeout: 8000 });
+    await section.locator("[role=status]").waitFor({ timeout: 8000 });
     verifie((await lu("pub.pixel_meta")) === "1234567890123456", "collé avec ses espaces : enregistré en chiffres seuls");
     // Le jeu de démo d'avant, pour la suite — tapé dès que le message paraît,
     // pendant l'animation : la saisie n'est ni effacée ni tenue pour un double envoi.
@@ -1993,6 +2024,9 @@ if (section("5")) {
     await connexion(page, "prepa@quincaillerie.test");
     await page.waitForURL(/\/gestion\/quincaillerie-demo$/, { timeout: 15000 });
     verifie(true, "le préparateur entre dans le backoffice de la quincaillerie");
+    verifie((await page.locator(".bo-etapes [aria-current=page]").innerText()).includes("À préparer"),
+      "il arrive sur « À préparer » : son travail d'abord");
+    await page.goto(`${C}/gestion/quincaillerie-demo?etape=a_confirmer`, { waitUntil: "networkidle" });
     const premiere = page.locator(".bo-ligne-lien").first();
     if (await premiere.count()) {
       await clic(page, premiere);
@@ -2068,8 +2102,10 @@ if (section("5")) {
   await etape("les réglages, en lecture seule", async () => {
     await page.goto(`${C}/gestion/quincaillerie-demo/reglages`, { waitUntil: "networkidle" });
     verifie((await page.locator("main").innerText()).includes("Lecture seule"), "l'écran le dit");
+    await page.goto(`${C}/gestion/quincaillerie-demo/reglages/livraison`, { waitUntil: "networkidle" });
+    verifie((await page.locator("main").innerText()).includes("Lecture seule"), "chaque thème aussi");
     verifie(await page.getByRole("button", { name: /^Enregistrer/ }).count() === 0, "aucun bouton « Enregistrer »");
-    verifie(await page.locator("fieldset:disabled").count() >= 4, "les champs sont grisés");
+    verifie(await page.locator("fieldset:disabled").count() >= 3, "les champs sont grisés");
     const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/reglages/enregistrer", { section: "commandes", "compte.obligatoire": "0" });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("propriétaire"),
       `même en postant le formulaire à la main, la base refuse (${r.status})`);
@@ -2077,7 +2113,7 @@ if (section("5")) {
 
   await etape("l'export des données, pas pour lui", async () => {
     await page.goto(`${C}/gestion/quincaillerie-demo/reglages`, { waitUntil: "networkidle" });
-    verifie(await page.locator("#t-donnees").count() === 0, "pas de section « Vos données »");
+    verifie(await page.locator(".rg-tuile", { hasText: "Vos données" }).count() === 0, "pas de tuile « Vos données »");
     await page.goto(`${C}/gestion/quincaillerie-demo/export/clients`, { waitUntil: "networkidle" });
     verifie(decodeURIComponent(page.url().replace(/\+/g, " ")).includes("Seuls le propriétaire et l'administrateur exportent"),
       "l'adresse de l'export, tapée à la main : la base refuse");
@@ -2381,7 +2417,7 @@ if (section("6")) {
 
   await etape("le site vitrine : réglé au backoffice, la fiche propose d'écrire ou d'appeler, puis retour à la boutique", async () => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`${C}/gestion/dar-alia/reglages`, { waitUntil: "networkidle" });
+    await page.goto(`${C}/gestion/dar-alia/reglages/commandes`, { waitUntil: "networkidle" });
     const commandes = page.locator("section:has(#t-commandes)");
     const statut = () => page.getByRole("status").first().innerText().catch(() => "");
     verifie(await commandes.getByLabel("Une boutique en ligne").isChecked(), "au départ : une boutique en ligne");
@@ -2412,7 +2448,7 @@ if (section("6")) {
   });
 
   await etape("le « + » des cartes : coupé puis rallumé au backoffice, la vitrine suit aussitôt", async () => {
-    await page.goto(`${C}/gestion/dar-alia/reglages`, { waitUntil: "networkidle" });
+    await page.goto(`${C}/gestion/dar-alia/reglages/vitrine`, { waitUntil: "networkidle" });
     const vitrine = page.locator("section:has(#t-vitrine)");
     const statut = () => page.getByRole("status").first().innerText().catch(() => "");
     const caseAjout = vitrine.getByRole("checkbox", { name: /Ajouter au panier depuis la carte/ });

@@ -5,11 +5,15 @@ import { notFound } from "next/navigation";
 import { Etoiles } from "@/components/Etoiles";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
+import { Pagination } from "@/components/console/Pagination";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { quand, telephoneLisible } from "@/lib/gestion/libelles";
 import { noteLisible } from "@/lib/avis";
 import { urlFichier } from "@/lib/photos";
 import { CLASSES_STATUT_AVIS, FILTRES_AVIS, LIBELLES_STATUT_AVIS, PEUT_MODERER, type ListeAvis } from "@/lib/gestion/avis";
+
+/** Une page d'avis (…_listes_paginees.sql). */
+const PAR_PAGE = 20;
 
 export const metadata: Metadata = { title: "Avis" };
 
@@ -25,13 +29,16 @@ export default async function Avis({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ filtre?: string; ok?: string; erreur?: string }>;
+  searchParams: Promise<{ filtre?: string; page?: string; ok?: string; erreur?: string }>;
 }) {
   const [{ slug }, recherche] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
   const filtre = FILTRES_AVIS.find((f) => f.cle === recherche.filtre) ?? FILTRES_AVIS[0];
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_liste_avis", { p_boutique_id: boutique.boutique_id, p_filtre: filtre.cle });
+  const page = Math.max(1, Number.parseInt(recherche.page ?? "1", 10) || 1);
+  const { data, error } = await sb.rpc("gestion_liste_avis", {
+    p_boutique_id: boutique.boutique_id, p_filtre: filtre.cle, p_limite: PAR_PAGE, p_decalage: (page - 1) * PAR_PAGE,
+  });
   if (error) throw new Error(`Avis illisibles : ${error.message}`);
   const liste = data as ListeAvis;
   const { a_moderer, publies, ecartes, moyenne } = liste.compteurs;
@@ -41,6 +48,8 @@ export default async function Avis({
   const modere = PEUT_MODERER.includes(boutique.role);
   const maintenant = new Date();
   const compteurs = { a_moderer, publies, ecartes };
+  const pages = Math.max(1, Math.ceil(compteurs[filtre.cle] / PAR_PAGE));
+  const lien = (n: number) => `${base}?filtre=${filtre.cle}${n > 1 ? `&page=${n}` : ""}`;
 
   return (
     <>
@@ -54,7 +63,7 @@ export default async function Avis({
             : "Le module est coupé : la vitrine ne montre plus d'avis. Ils restent ici, tels quels."
         }
         actions={
-          <Link className="btn btn-second" href={`/gestion/${slug}/reglages#t-avis`}>
+          <Link className="btn btn-second" href={`/gestion/${slug}/reglages/service#t-avis`}>
             <Icone nom="reglages" /> {liste.moderation === "automatique" ? "Publication automatique" : "Relecture avant publication"}
           </Link>
         }
@@ -178,6 +187,7 @@ export default async function Avis({
           ))}
         </ul>
       )}
+      <Pagination page={page} pages={pages} total={compteurs[filtre.cle]} parPage={PAR_PAGE} lien={lien} unite={["avis", "avis"]} />
     </>
   );
 }

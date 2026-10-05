@@ -70,7 +70,7 @@ function Compte({ email, role }: { email: string; role: string }) {
     <div className="app-compte">
       <span className="avatar" style={styleAvatar(email)} aria-hidden="true">{initiales(email)}</span>
       <span className="app-compte-texte">
-        <span className="app-compte-email">{email}</span>
+        <span className="app-compte-email" title={email}>{email}</span>
         <span className="app-compte-role">{role}</span>
       </span>
       <form action="/session/fermer" method="post">

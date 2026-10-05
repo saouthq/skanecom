@@ -5,6 +5,7 @@ import { EnTetePage } from "@/components/console/Coquille";
 import { Compteur } from "@/components/console/Compteur";
 import { Icone } from "@/components/console/Icone";
 import { BoutonCopier } from "@/components/console/BoutonCopier";
+import { Pagination } from "@/components/console/Pagination";
 import { RaccourciRecherche } from "@/components/console/Raccourcis";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { DIRECTION } from "@/lib/gestion/tableau";
@@ -24,20 +25,23 @@ export const metadata: Metadata = { title: "Lettre" };
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Tunis" });
 const SEMAINE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
+/** Une page de la liste (la base en rend cinquante : …_listes_paginees.sql). */
+const PAR_PAGE = 50;
 
 export default async function PageLettre({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string; ok?: string; erreur?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; ok?: string; erreur?: string }>;
 }) {
   const [{ slug }, recherche] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
   if (!DIRECTION.includes(boutique.role)) redirect(`/gestion/${slug}`);
   const q = (recherche.q ?? "").trim().slice(0, 80);
+  const page = Math.max(1, Number.parseInt(recherche.page ?? "1", 10) || 1);
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_lettre", { p_boutique_id: boutique.boutique_id, p_recherche: q || null });
+  const { data, error } = await sb.rpc("gestion_lettre", { p_boutique_id: boutique.boutique_id, p_recherche: q || null, p_decalage: (page - 1) * PAR_PAGE });
   if (error) throw new Error(`Lettre illisible : ${error.message}`);
   const l = data as EcranLettre;
   const c = l.compteurs;
@@ -46,6 +50,8 @@ export default async function PageLettre({
   const base = `/gestion/${slug}/lettre`;
   const action = `${base}/action`;
   const max = Math.max(1, ...l.semaines.map((s) => s.inscrits));
+  const pages = Math.max(1, Math.ceil(l.trouves / PAR_PAGE));
+  const lien = (n: number) => `${base}?${new URLSearchParams({ ...(q ? { q } : {}), ...(n > 1 ? { page: String(n) } : {}) })}`;
 
   return (
     <>
@@ -71,7 +77,7 @@ export default async function PageLettre({
       {!l.actif ? (
         <p className="message mb-4">
           La lettre est coupée : le pied de page ne propose plus l&apos;inscription. Les inscrits restent ici.{" "}
-          <Link href={`/gestion/${slug}/reglages#t-vitrine`}>La rallumer</Link>
+          <Link href={`/gestion/${slug}/reglages/vitrine`}>La rallumer</Link>
         </p>
       ) : null}
 
@@ -134,12 +140,12 @@ export default async function PageLettre({
                 {q
                   ? `${l.trouves} adresse${l.trouves > 1 ? "s" : ""} pour « ${q} ».`
                   : "Les plus récents d'abord, avec la page où ils se sont inscrits."}
-                {l.trouves > l.abonnes.length ? ` Les ${l.abonnes.length} plus récentes ici ; toutes dans l'export.` : ""}
+                {pages > 1 ? " Toutes les adresses sont dans l'export." : ""}
               </p>
             </div>
             {l.abonnes.length ? (
               <div className="lt-outils">
-                <BoutonCopier texte={l.abonnes.map((a) => a.email).join(", ")} libelle={`Copier ${l.abonnes.length > 1 ? `les ${l.abonnes.length} adresses` : "l'adresse"}`} classe="btn btn-second btn-petit" />
+                <BoutonCopier texte={l.abonnes.map((a) => a.email).join(", ")} libelle={pages > 1 ? `Copier les ${l.abonnes.length} de cette page` : `Copier ${l.abonnes.length > 1 ? `les ${l.abonnes.length} adresses` : "l'adresse"}`} classe="btn btn-second btn-petit" />
                 {peutRetirer ? (
                   <a className="btn btn-second btn-petit" href={`/gestion/${slug}/export/lettre`} download>
                     <Icone nom="fichier" taille={14} /> Exporter (CSV)
@@ -176,6 +182,7 @@ export default async function PageLettre({
               ))}
             </ul>
           )}
+          <Pagination page={page} pages={pages} total={l.trouves} parPage={PAR_PAGE} lien={lien} unite={["inscrit", "inscrits"]} />
         </section>
 
         <p className="aide vi-methode">

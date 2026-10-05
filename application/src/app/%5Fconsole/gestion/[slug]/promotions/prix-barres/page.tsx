@@ -93,7 +93,7 @@ export default async function PrixBarres({
         <p className="message pb-reglage mb-4">
           <span>
             La vitrine n&apos;affiche pas les prix barrés : vos clients voient le nouveau prix, sans l&apos;ancien à côté.
-            {direction ? <> <Link href={`/gestion/${slug}/reglages#t-vitrine`}>Les afficher</Link> (Réglages, Vitrine et contact), ou cochez-le au lancement.</> : null}
+            {direction ? <> <Link href={`/gestion/${slug}/reglages/vitrine`}>Les afficher</Link> (Réglages, Fonctions de la vitrine), ou cochez-le au lancement.</> : null}
           </span>
         </p>
       ) : null}

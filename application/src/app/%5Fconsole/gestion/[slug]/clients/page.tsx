@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
+import { Pagination } from "@/components/console/Pagination";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { quand, telephoneLisible } from "@/lib/gestion/libelles";
@@ -132,8 +133,14 @@ export default async function Clients({
                     {c.nb_commandes} commande{c.nb_commandes > 1 ? "s" : ""}
                     {c.livrees ? <span className="discret"> · {c.livrees} livrée{c.livrees > 1 ? "s" : ""}</span> : null}
                   </span>
-                  <span className="cl-ligne-date">{c.derniere_commande ? quand(c.derniere_commande, maintenant) : "—"}</span>
-                  <span className="cat-ligne-prix">{c.encaisse > 0 ? <Prix millimes={c.encaisse} /> : <span className="discret">—</span>}</span>
+                  <span className="cl-ligne-date">
+                    {c.derniere_commande ? quand(c.derniere_commande, maintenant) : "—"}
+                    <span className="cl-legende">dernière commande</span>
+                  </span>
+                  <span className="cat-ligne-prix cl-ligne-prix">
+                    {c.encaisse > 0 ? <Prix millimes={c.encaisse} /> : <span className="discret">—</span>}
+                    <span className="cl-legende">encaissé</span>
+                  </span>
                 </Link>
               </li>
             );
@@ -141,13 +148,7 @@ export default async function Clients({
         </ul>
       )}
 
-      {pages > 1 ? (
-        <nav className="bo-pages" aria-label="Pages">
-          {page > 1 ? <Link href={lien(filtre.cle, page - 1)} className="btn btn-second">Précédents</Link> : <span />}
-          <span className="text-petit discret">Page {page} sur {pages}</span>
-          {page < pages ? <Link href={lien(filtre.cle, page + 1)} className="btn btn-second">Suivants</Link> : <span />}
-        </nav>
-      ) : null}
+      <Pagination page={page} pages={pages} total={liste.total} parPage={PAR_PAGE} lien={(n) => lien(filtre.cle, n)} unite={["client", "clients"]} />
     </>
   );
 }

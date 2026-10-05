@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const { data, error } = await sb.rpc("gestion_export", { p_boutique_id: boutique.boutique_id, p_quoi: quoi });
   if (error) {
     const message = error.hint === "role" ? "Seuls le propriétaire et l'administrateur exportent les données." : error.message;
-    return vers(`/gestion/${slug}/reglages?${new URLSearchParams({ erreur: message })}#t-donnees`);
+    return vers(`/gestion/${slug}/reglages/donnees?${new URLSearchParams({ erreur: message, dans: "donnees" })}#t-donnees`);
   }
   const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Africa/Tunis" }).format(new Date());
   return new Response(versCsv(quoi, (data ?? []) as Record<string, unknown>[]), {

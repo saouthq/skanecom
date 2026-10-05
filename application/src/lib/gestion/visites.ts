@@ -67,7 +67,9 @@ export function nomPage(chemin: string, nom: string | null = null): string {
     case "compte": return "Mon compte";
     case "favoris": return "Mes favoris";
     case "suivi": return "Suivi de commande";
-    default: return lisible(chemin.slice(1));
+    case "contact": return "Contact";
+    // « /garantie-et-sav » → « Garantie et sav » : une capitale, comme les autres lignes.
+    default: { const l = lisible(chemin.slice(1)); return l.charAt(0).toUpperCase() + l.slice(1); }
   }
 }
 

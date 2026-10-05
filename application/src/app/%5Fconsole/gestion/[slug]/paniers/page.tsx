@@ -65,7 +65,7 @@ export default async function Paniers({
         <p className="message mb-4">
           <span>
             La commande en invité est ouverte : le tunnel ne sait pas qui achète, aucun nouveau panier n&apos;est gardé.{" "}
-            <Link href={`/gestion/${slug}/reglages#t-commandes`}>Réglages, Commandes</Link>
+            <Link href={`/gestion/${slug}/reglages/commandes`}>Réglages, Commandes</Link>
           </span>
         </p>
       ) : null}
@@ -170,7 +170,7 @@ function CartePanier({ p, boutique, vitrine, slug, maintenant, relance, action }
               <form action={action} method="post">
                 <input type="hidden" name="geste" value="relance" />
                 <input type="hidden" name="panier" value={p.id} />
-                <button className="btn btn-primaire"><Icone nom="coche" taille={14} /> Relancé</button>
+                <button className="btn btn-primaire" title="Le message est parti : ce panier passe dans « Relancés », il ne sera pas relancé deux fois"><Icone nom="coche" taille={14} /> Marquer relancé</button>
               </form>
               <form action={action} method="post">
                 <input type="hidden" name="geste" value="ignore" />

@@ -155,7 +155,14 @@ export default async function TableauDeBord({
                 <span><i className="tb-pastille tb-pastille-livrees" /> Livrées</span>
               </p>
             </div>
-            <ol className="tb-barres" data-jours={jours} aria-label="Commandes par jour">
+            {/* L'échelle : le plus haut jour, sa moitié quand elle tombe juste, zéro. */}
+            <div className="tb-graphe">
+            <span className="tb-echelle" aria-hidden="true">
+              <span>{max}</span>
+              {max % 2 === 0 && max > 2 ? <span>{max / 2}</span> : <span />}
+              <span>0</span>
+            </span>
+            <ol className="tb-barres" data-jours={jours} data-milieu={max % 2 === 0 && max > 2 ? "" : undefined} aria-label="Commandes par jour">
               {t.par_jour.map((j, i) => (
                 <li key={j.jour} style={{ "--i": i } as React.CSSProperties} title={`${JOUR_LONG.format(new Date(j.jour))} : ${j.recues} reçue${j.recues > 1 ? "s" : ""}, ${j.livrees} livrée${j.livrees > 1 ? "s" : ""}`}>
                   <span className="tb-barre" style={{ blockSize: `${(j.recues / max) * 100}%` }}>
@@ -165,6 +172,7 @@ export default async function TableauDeBord({
                 </li>
               ))}
             </ol>
+            </div>
             <p className="tb-axe" aria-hidden="true">
               <span>{JOUR.format(new Date(t.du))}</span>
               <span>{JOUR.format(new Date(t.au))}</span>

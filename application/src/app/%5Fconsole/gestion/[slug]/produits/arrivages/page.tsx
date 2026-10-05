@@ -63,7 +63,7 @@ export default async function Arrivages({
           <p className="message ar-coupe">
             Les précommandes sont coupées : la vitrine ne propose rien de ces arrivages. Ils servent quand même à préparer la réception.{" "}
             {boutique.role === "proprietaire" || boutique.role === "admin" ? (
-              <Link href={`/gestion/${slug}/reglages#vitrine`}>Allumer « Précommandes sur arrivage »</Link>
+              <Link href={`/gestion/${slug}/reglages/vitrine`}>Allumer « Précommandes sur arrivage »</Link>
             ) : null}
           </p>
         ) : null}

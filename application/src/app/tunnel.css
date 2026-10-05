@@ -34,6 +34,8 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 .tunnel-vide { max-inline-size: 36rem; margin-inline: auto; }
 
 .tunnel { display: grid; gap: 1.5rem; align-items: start; }
+/* Au téléphone, le récapitulatif (après le formulaire dans la page) se montre en tête. */
+@media (max-width: 899px) { .tunnel-recap { order: -1; } }
 @media (min-width: 900px) {
   .tunnel { grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem); gap: clamp(2rem, 5vw, 5rem); }
   .tunnel-formulaire { grid-column: 1; grid-row: 1; }

@@ -554,17 +554,9 @@ export function Tunnel({
 
   return (
     <div className="tunnel" data-gabarit-tunnel={gabarit}>
-      <Recap
-        panier={lignesPanier}
-        devis={devis}
-        enPanne={devisEnPanne}
-        ouvert={recapOuvert}
-        onBascule={() => setRecapOuvert((o) => !o)}
-        zone={zone}
-        retrait={enRetrait}
-        fige={fige}
-      />
-
+      {/* Le formulaire d'abord pour le clavier et le lecteur d'écran ; le
+         récapitulatif s'affiche à droite (ordinateur) ou en tête (téléphone)
+         par la grille, sans passer avant le premier champ. */}
       <form className="tunnel-formulaire" noValidate onSubmit={confirmer} onFocus={integre ? commence : undefined}>
         {alerte ? (
           <div className="tunnel-alerte" role="alert" tabIndex={-1} ref={refAlerte}>
@@ -816,6 +808,17 @@ export function Tunnel({
           <p className="legende">{t.commande.donnees}</p>
         </div>
       </form>
+
+      <Recap
+        panier={lignesPanier}
+        devis={devis}
+        enPanne={devisEnPanne}
+        ouvert={recapOuvert}
+        onBascule={() => setRecapOuvert((o) => !o)}
+        zone={zone}
+        retrait={enRetrait}
+        fige={fige}
+      />
     </div>
   );
 }
