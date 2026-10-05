@@ -1,4 +1,4 @@
-import { clientSession } from "@/lib/console/session";
+import { acces, accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers, versAvecErreur } from "@/lib/console/http";
 import { retourCompte } from "@/lib/console/compte";
 
@@ -6,8 +6,10 @@ import { retourCompte } from "@/lib/console/compte";
    dans les cookies par @supabase/ssr). */
 /* Deux façons de répondre : JSON pour le formulaire avec JavaScript (le QR
    code reste à l'écran), redirection 303 pour le formulaire sans. */
-/* Activée depuis « Mon compte » (retour) : on y revient, avec le conseil
-   des codes de secours ; sinon, la porte décide (« / »). */
+/* Activée depuis « Mon compte » (retour), ou pour la première fois à la
+   connexion : on mène à « Mon compte », sur ses codes de secours (la
+   console, ou le backoffice de sa première boutique) ; sinon, la porte
+   décide (« / »). */
 function reponse(req: Request, ok: boolean, erreur?: string, retour?: string | null): Response {
   const suite = retour
     ? `${retour}?${new URLSearchParams({ ok: "Double authentification activée. Créez maintenant vos codes de secours, pour le jour où vous perdriez votre téléphone.", carte: "secours" })}#t-secours`
@@ -29,5 +31,13 @@ export async function POST(req: Request) {
   const sb = await clientSession();
   const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: facteur, code });
   if (error) return reponse(req, false, "Code incorrect ou expiré : réessayez avec le code suivant.", retour);
-  return reponse(req, true, undefined, retour);
+  return reponse(req, true, undefined, retour ?? (f.get("premiere") ? await compteDe() : null));
+}
+
+/** « Mon compte » de la personne : la console, ou le backoffice de sa première boutique. */
+async function compteDe(): Promise<string | null> {
+  const a = await acces();
+  if (a.etat === "ok") return "/compte";
+  const e = await accesEquipe();
+  return e.etat === "ok" && e.boutiques[0] ? `/gestion/${e.boutiques[0].slug}/compte` : null;
 }

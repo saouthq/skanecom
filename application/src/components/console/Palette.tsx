@@ -22,7 +22,11 @@ export const PALETTE_OUVRIR = "palette:ouvrir";
 
 const plat = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-export function Palette({ source, pages }: { source: string; pages: ElementPalette[] }) {
+export function Palette({ source, pages, invite = "Une commande, un client, un produit, une page…" }: {
+  source: string; pages: ElementPalette[];
+  /** Ce que l'on peut chercher ici (le backoffice et la console ne cherchent pas la même chose). */
+  invite?: string;
+}) {
   const router = useRouter();
   const chemin = usePathname();
   const liste = useId();
@@ -141,7 +145,7 @@ export function Palette({ source, pages }: { source: string; pages: ElementPalet
               setActif(0);
             }}
             onKeyDown={auClavier}
-            placeholder="Une commande, un client, un produit, une page…"
+            placeholder={invite}
             aria-label="Rechercher et aller"
             role="combobox"
             aria-expanded="true"
@@ -151,7 +155,11 @@ export function Palette({ source, pages }: { source: string; pages: ElementPalet
             spellCheck={false}
           />
           {cherche ? <span className="palette-attente" aria-hidden="true" /> : null}
-          <kbd>Échap</kbd>
+          {/* Échap au clavier ; au doigt, un vrai bouton « Fermer » (pas de touche Échap sur un téléphone). */}
+          <button type="button" className="palette-fermer" onClick={() => dialogue.current?.close()} aria-label="Fermer la recherche">
+            <kbd className="palette-touche">Échap</kbd>
+            <span className="palette-fermer-tactile">Fermer</span>
+          </button>
         </div>
         <div className="palette-liste" id={liste} role="listbox" aria-label="Résultats">
           {groupes.map((g) => (

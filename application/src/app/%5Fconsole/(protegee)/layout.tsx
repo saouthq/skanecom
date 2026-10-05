@@ -56,7 +56,7 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
       logo={<LogoSkanEcom />}
       recherche={<OuvrirPalette />}
       rechercheCompacte={<OuvrirPalette compact />}
-      palette={<Palette source="/recherche" pages={PAGES} />}
+      palette={<Palette source="/recherche" pages={PAGES} invite="Une boutique, un client, un prospect, une page…" />}
       // Rangée par usage ; « Nouvelle boutique » est un bouton de l'accueil, pas une rubrique.
       groupes={[
         {

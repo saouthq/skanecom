@@ -27,7 +27,7 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
     <Porte
       titre="Connexion"
       description="Le backoffice de votre boutique, ou la console de la plateforme."
-      pied={<>Propriétaires et administrateurs confirment leur connexion par double authentification.</>}
+      pied={<>Un second facteur (un code de votre téléphone) peut protéger votre compte : il vous est proposé à la connexion, et exigé si votre boutique ou SkanEcom le demande.</>}
     >
       <form action="/session/ouvrir" method="post" className="carte porte-carte formulaire">
         {erreur ? <p className="message message-erreur" role="alert">{erreur}</p> : null}
@@ -36,13 +36,13 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
           <label htmlFor="email">Adresse e-mail</label>
           <input id="email" name="email" type="email" autoComplete="username" required defaultValue={email ?? ""} autoFocus={!email} placeholder="prenom@exemple.tn" />
         </div>
-        <div className="champ">
-          <div className="champ-tete">
-            <label htmlFor="mot_de_passe">Mot de passe</label>
-            <LienOublie email={email} />
-          </div>
+        {/* « Mot de passe oublié ? » s'affiche dans la rangée du libellé, mais vient
+            après le champ au clavier : Tab mène de l'adresse au mot de passe. */}
+        <div className="champ champ-avec-lien">
+          <label htmlFor="mot_de_passe">Mot de passe</label>
           {/* Après un refus, l'adresse est déjà là : c'est le mot de passe qu'on retape. */}
           <ChampMotDePasse id="mot_de_passe" name="mot_de_passe" autoComplete="current-password" autoFocus={Boolean(email)} />
+          <LienOublie email={email} />
         </div>
         <button type="submit" className="btn btn-primaire btn-bloc btn-grand">Se connecter</button>
       </form>

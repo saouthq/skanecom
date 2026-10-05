@@ -99,6 +99,8 @@ export default async function DoubleAuthentification({ searchParams }: {
     >
       <FormulaireCode facteur={valide?.id ?? inscription?.id ?? ""} erreurInitiale={secours ? undefined : erreur}>
         {retour ? <input type="hidden" name="retour" value={retour} /> : null}
+        {/* Une première activation (ou un téléphone remplacé) : ensuite, ses codes de secours. */}
+        {inscription && !retour ? <input type="hidden" name="premiere" value="1" /> : null}
         {remplace && inscription ? (
           <p className="message message-succes" role="status">
             Code de secours accepté.{restants !== null ? ` Il vous en reste ${restants} : ${restants <= 3 ? "pensez à les remplacer dans « Mon compte »." : "chacun ne sert qu'une fois."}` : ""}

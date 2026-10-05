@@ -33,15 +33,20 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
   const vue = p.vue === "envois" ? "envois" : "gestes";
   const page = Math.max(1, Number.parseInt(p.page ?? "1", 10) || 1);
   const service = clientService();
-  const { data: df } = await service.rpc("console_formules", { p_acteur: user.id });
+  const [{ data: df }, { data: dm }] = await Promise.all([
+    service.rpc("console_formules", { p_acteur: user.id }),
+    service.rpc("console_metiers", { p_acteur: user.id }),
+  ]);
   const donnees = (df ?? { boutiques: [], formules: [] }) as DonneesFormules;
   const boutiques = donnees.boutiques;
   const nomsFormules = new Map(donnees.formules.map((f) => [f.code, f.nom]));
+  const nomsMetiers = new Map(((dm ?? []) as { code: string; nom: string }[]).map((m) => [m.code, m.nom]));
   // Le détail d'une ligne : rien pour une note ou une annonce (leur numéro ne dit rien), le nom d'une formule.
   const detail = (x: LigneJournal) =>
     x.action.startsWith("note.") || x.action.startsWith("annonce.") ? ""
     : x.action === "boutique.formule" ? (x.cible ? nomsFormules.get(x.cible) ?? x.cible : SANS_FORMULE)
     : x.action.startsWith("vigilance.") ? libelleSignal(x.cible)
+    : x.action === "boutique.metier" && x.cible ? nomsMetiers.get(x.cible) ?? x.cible
     : x.cible ?? "";
   const choisie = boutiques.find((b) => b.slug === p.boutique) ?? null;
   const genre = GENRES_JOURNAL.find((g) => g.cle === p.genre) ?? null;

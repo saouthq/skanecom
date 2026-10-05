@@ -550,6 +550,11 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 /* Un libellé avec son lien à droite (« Mot de passe oublié ? »). */
 .champ-tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem .75rem; }
 .champ-tete-lien { font-size: .8125rem; }
+/* Un lien dans la rangée du libellé, placé après le champ dans le document (l'ordre du clavier). */
+.console .champ-avec-lien { grid-template-columns: minmax(0, 1fr) auto; column-gap: .75rem; }
+.champ-avec-lien > label { grid-area: 1 / 1; }
+.champ-avec-lien > .champ-tete-lien { grid-area: 1 / 2; align-self: baseline; }
+.champ-avec-lien > :not(label, .champ-tete-lien) { grid-area: 2 / 1 / 3 / 3; }
 .ds-secours { margin-block-start: 1rem; padding-block: 1rem; }
 .ds-secours > summary { cursor: pointer; font-size: .875rem; font-weight: 500; color: var(--ui-texte-2); }
 .ds-secours[open] > summary { margin-block-end: 1rem; }
@@ -1646,7 +1651,13 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .nb-tete-numero { display: inline-grid; place-items: center; flex: none; inline-size: 1.5rem; block-size: 1.5rem; border-radius: 50%; border: 1px solid var(--ui-bord); font-size: .75rem; font-variant-numeric: tabular-nums; }
 .nb-tete-etape[aria-current="step"] .nb-tete-numero { background: var(--ui-texte); border-color: var(--ui-texte); color: var(--ui-panneau); }
 .nb-tete-etape[data-faite] .nb-tete-numero { background: var(--ui-vert-fond); border-color: var(--ui-vert-bord); color: var(--ui-vert); }
-@media (max-width: 40rem) { .nb-tete-etape > span:not(.nb-tete-numero) { display: none; } .nb-tete-etape { justify-content: center; } .nb-tete-etape[aria-current="step"] > span { display: inline; } }
+@media (max-width: 40rem) {
+  .nb-tete-etape > span:not(.nb-tete-numero) { display: none; }
+  .nb-tete-etape { justify-content: center; }
+  /* L'étape en cours dit son nom, sur une ligne, et prend la place qu'il lui faut ; son numéro reste centré. */
+  .nb-tete-etape[aria-current="step"] > span:not(.nb-tete-numero) { display: inline; white-space: nowrap; }
+  .nb-tete li:has([aria-current="step"]) { flex: 0 0 auto; }
+}
 .nb-etape { display: grid; gap: 1rem; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
 .nb-etape[hidden] { display: none; }
 .nb-etape-titre { padding: 0; margin-block-end: .75rem; font-size: 1.0625rem; font-weight: 600; color: var(--ui-texte); }
@@ -1806,3 +1817,10 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .console .rv-tableau :is(th, td):first-child { position: sticky; inset-inline-start: 0; z-index: 1; background: var(--ui-panneau); box-shadow: inset -1px 0 0 var(--ui-bord-leger); }
 .console .rv-tableau thead th:first-child { background: var(--ui-survol); }
 .console .rv-tableau tbody tr:hover td:first-child { background: var(--ui-survol); }
+.pr-le { max-inline-size: 13rem; }
+.pr-form input[type="date"] { min-inline-size: 0; max-inline-size: 100%; }
+/* L'en-tête de la fiche d'une boutique : son monogramme, à sa couleur (comme sur sa tuile). */
+.bt-monogramme { background: #fff; color: var(--pl-accent); box-shadow: inset 0 0 0 1px var(--ui-bord); }
+.bt-monogramme .pl-masque { inline-size: 30px; block-size: 30px; }
+/* L'assistant ramené en haut à chaque étape : sous la barre fixe du téléphone, pas dessous. */
+.nb-formulaire { scroll-margin-block-start: 5.5rem; }

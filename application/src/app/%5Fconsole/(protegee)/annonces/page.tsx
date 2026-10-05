@@ -122,7 +122,7 @@ export default async function Annonces({ searchParams }: { searchParams: Promise
                         <p className="an-meta">
                           {dateJournal(a.debut)}{a.fin ? ` → ${dateJournal(a.fin)}` : ", sans fin"} ·{" "}
                           {a.cible ? a.cible.map((c) => c.nom).join(", ") : "toutes les boutiques"} ·{" "}
-                          {a.fermee_par ? `fermée par ${a.fermee_par} personne${a.fermee_par > 1 ? "s" : ""}` : "fermée par personne encore"}{a.auteur ? ` · ${a.auteur}` : ""}
+                          {a.fermee_par ? `fermée par ${a.fermee_par} personne${a.fermee_par > 1 ? "s" : ""}` : "personne ne l'a encore fermée"}{a.auteur ? ` · ${a.auteur}` : ""}
                         </p>
                         <form action="/annonces/arreter" method="post" className="an-gestes">
                           <input type="hidden" name="annonce_id" value={a.id} />

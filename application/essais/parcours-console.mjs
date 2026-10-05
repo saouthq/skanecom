@@ -244,8 +244,11 @@ await etape("bon code : la console s'ouvre", async () => {
   await clic(page, page.locator("#code"));
   await tape(page, totp(secret));
   await page.keyboard.press("Enter");
-  await page.waitForURL((u) => u.pathname === "/");
-  await page.waitForLoadState("networkidle");
+  // Une première activation mène aux codes de secours, avant le reste.
+  await page.waitForURL((u) => u.pathname === "/compte");
+  verifie((await page.locator("#secours").innerText()).includes("Créez maintenant vos codes de secours"),
+    "activée : « Mon compte » propose aussitôt les codes de secours");
+  await page.goto(`${CONSOLE}/`, { waitUntil: "networkidle" });
   // Le poste de pilotage : une tuile par boutique, à sa couleur, avec sa semaine.
   const tuiles = await page.locator(".pl-tuile .pl-nom").allInnerTexts();
   verifie(tuiles.includes("Maymar") && tuiles.includes("Quincaillerie du Sud"),

@@ -1,5 +1,6 @@
 import { LIBELLES_THEME } from "@/lib/console/libelles";
 import { cePose, type Metier } from "@/lib/console/metiers";
+import { typographie } from "@/lib/typographie";
 
 /* ============================================================================
    LE MÉTIER D'UNE BOUTIQUE — des cartes à choisir (une seule) : le nom, ce
@@ -29,7 +30,7 @@ export function ChoixMetier({ metiers, choisi, aucun = true }: { metiers: Metier
               {m.accent ? <span className="mt-pastille" style={{ background: m.accent }} aria-hidden="true" /> : null}
               {m.nom}
             </b>
-            <span className="aide">{m.description}</span>
+            <span className="aide">{typographie(m.description)}</span>
             <span className="aide mt-pose">Structure {LIBELLES_THEME[m.gabarit] ?? m.gabarit} · {cePose(m)}</span>
           </span>
         </label>

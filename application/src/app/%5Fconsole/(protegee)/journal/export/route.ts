@@ -48,10 +48,13 @@ export async function GET(req: Request) {
   await service.rpc("console_tracer_export", { p_acteur: a.user.id, p_quoi: "journal", p_filtres: { ...filtres, lignes: j.lignes.length } });
 
   const noms = new Map(donnees.formules.map((f) => [f.code, f.nom]));
+  const { data: dm } = await service.rpc("console_metiers", { p_acteur: a.user.id });
+  const nomsMetiers = new Map(((dm ?? []) as { code: string; nom: string }[]).map((m) => [m.code, m.nom]));
   const detail = (x: LigneJournal) =>
     x.action.startsWith("note.") || x.action.startsWith("annonce.") ? ""
     : x.action === "boutique.formule" ? (x.cible ? noms.get(x.cible) ?? x.cible : SANS_FORMULE)
     : x.action.startsWith("vigilance.") ? libelleSignal(x.cible)
+    : x.action === "boutique.metier" && x.cible ? nomsMetiers.get(x.cible) ?? x.cible
     : x.cible ?? "";
   const csv = tableurCsv(
     ["Quand", "Geste", "Boutique", "Détail", "Par", "IP"],

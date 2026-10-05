@@ -66,7 +66,8 @@ export default async function FicheBoutique({ params, searchParams }: {
   const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
-    vide ? clientService().rpc("console_metiers", { p_acteur: user.id }) : Promise.resolve({ data: null }),
+    // Les métiers : le choix d'une boutique vide, et leur nom au journal.
+    clientService().rpc("console_metiers", { p_acteur: user.id }),
     clientService().rpc("console_formules", { p_acteur: user.id }),
     clientService().rpc("console_notes", { p_acteur: user.id, p_boutique_id: b.id }),
     // L'activité et la santé de la boutique : les mêmes chiffres et les mêmes signaux que l'accueil et le tableau de bord.
@@ -307,6 +308,7 @@ export default async function FicheBoutique({ params, searchParams }: {
                           : j.action.startsWith("support.") && j.cible ? (MODES_SUPPORT[j.cible as ModeSupport]?.titre ?? j.cible)
                           : j.action === "boutique.formule" ? (formules.formules.find((x) => x.code === j.cible)?.nom ?? j.cible ?? SANS_FORMULE)
                           : j.action.startsWith("vigilance.") ? libelleSignal(j.cible)
+                          : j.action === "boutique.metier" && j.cible ? (metiers.find((m) => m.code === j.cible)?.nom ?? j.cible)
                           : j.action.startsWith("catalogue.photos") || j.action.startsWith("note.") ? "" : (j.cible ?? "")}</td>
                         <td>
                           {j.acteur ? (

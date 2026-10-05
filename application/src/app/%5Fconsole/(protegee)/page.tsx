@@ -125,12 +125,12 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
               </span>
             </li>
             <li className="carte">
-              <span className="tbp-libelle">Commandes sur 7 jours</span>
+              <span className="tbp-libelle">Commandes sur 7&nbsp;jours</span>
               <b className="tbp-valeur">{semaine}</b>
               <span className="tbp-evolution discret">{aConfirmer ? `${aConfirmer} à confirmer en ce moment` : "rien à confirmer en ce moment"}</span>
             </li>
             <li className="carte">
-              <span className="tbp-libelle">Encaissé sur 7 jours</span>
+              <span className="tbp-libelle">Encaissé sur 7&nbsp;jours</span>
               <b className="tbp-valeur">{formateMontant(encaisse)} <small>TND</small></b>
               <span className="tbp-evolution discret">clientes seules</span>
             </li>

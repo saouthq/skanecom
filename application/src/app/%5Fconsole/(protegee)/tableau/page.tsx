@@ -90,12 +90,17 @@ export default async function TableauPlateforme({ searchParams }: { searchParams
         <li className="carte">
           <span className="tbp-libelle">Chiffre livré</span>
           <b className="tbp-valeur">{tnd(chiffre)}</b>
-          <span className="tbp-evolution" data-sens={evChiffre.sens}>{evChiffre.texte} <span className="discret">vs {tnd(chiffreAvant)}</span></span>
+          {/* Rien avant : pas de « +∞ % » ni de « vs 0 », la phrase le dit. */}
+          {chiffreAvant === 0
+            ? <span className="tbp-evolution discret">rien de livré les {jours} jours d&apos;avant</span>
+            : <span className="tbp-evolution" data-sens={evChiffre.sens}>{evChiffre.texte} <span className="discret">vs {tnd(chiffreAvant)}</span></span>}
         </li>
         <li className="carte">
           <span className="tbp-libelle">Commandes reçues</span>
           <b className="tbp-valeur">{recues}</b>
-          <span className="tbp-evolution" data-sens={evRecues.sens}>{evRecues.texte} <span className="discret">vs {recuesAvant}</span></span>
+          {recuesAvant === 0
+            ? <span className="tbp-evolution discret">aucune les {jours} jours d&apos;avant</span>
+            : <span className="tbp-evolution" data-sens={evRecues.sens}>{evRecues.texte} <span className="discret">vs {recuesAvant}</span></span>}
         </li>
         <li className="carte" data-alerte={tauxRefus !== null && tauxRefus >= SEUILS.refusAttention ? "" : undefined}>
           <span className="tbp-libelle">Refus à la livraison</span>

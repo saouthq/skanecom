@@ -340,8 +340,11 @@ if (section("2")) {
     await clic(page, page.locator("#code"));
     await tape(page, totp(secret));
     await page.keyboard.press("Enter");
-    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
-    verifie(true, "le code de l'application ouvre le backoffice");
+    // Une première activation mène à « Mon compte », sur les codes de secours ; puis le backoffice.
+    await page.waitForURL(/\/gestion\/maymar\/compte/, { timeout: 15000 });
+    verifie((await page.locator("#secours").innerText()).includes("Créez maintenant vos codes de secours"),
+      "le code de l'application ouvre le backoffice, sur « Mon compte » : les codes de secours d'abord");
+    await page.goto(`${C}/gestion/maymar`, { waitUntil: "networkidle" });
     verifie((await page.locator(".app-cote").getByRole("link", { name: "Visites" }).count()) === 0, "Maymar ne mesure pas son audience : pas d'écran Visites");
     verifie((await page.locator(".app-cote").getByRole("link", { name: "Lettre", exact: true }).count()) === 0, "ni de lettre : pas d'écran Lettre");
   });
@@ -1292,8 +1295,9 @@ if (section("4")) {
     await clic(page, page.locator("#code"));
     await tape(page, totp(secret));
     await page.keyboard.press("Enter");
-    await page.waitForURL(/\/gestion\/quincaillerie-demo$/, { timeout: 15000 });
-    verifie(true, "le propriétaire de la quincaillerie entre dans son backoffice");
+    await page.waitForURL(/\/gestion\/quincaillerie-demo\/compte/, { timeout: 15000 });
+    verifie(true, "le propriétaire de la quincaillerie entre dans son backoffice (ses codes de secours d'abord)");
+    await page.goto(`${C}/gestion/quincaillerie-demo`, { waitUntil: "networkidle" });
   });
 
   await etape("les devis : la demande du plombier, chiffrée et envoyée", async () => {

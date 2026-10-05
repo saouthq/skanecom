@@ -252,15 +252,14 @@ function FormProspect({ p, metiers, saisie = {} }: { p: Prospect | null; metiers
           </select>
         </div>
       </div>
-      <div className="deux-colonnes">
-        <div className="champ">
-          <label htmlFor={`pr-action-${id}`}>Prochaine action</label>
-          <input id={`pr-action-${id}`} name="prochaine_action" className="entree" maxLength={200} defaultValue={val("prochaine_action")} placeholder="Montrer la démonstration" autoComplete="off" />
-        </div>
-        <div className="champ">
-          <label htmlFor={`pr-le-${id}`}>Le</label>
-          <input id={`pr-le-${id}`} name="prochaine_le" type="date" className="entree" defaultValue={val("prochaine_le")} />
-        </div>
+      {/* La prochaine action se lit en entier ; sa date, à sa mesure, dessous. */}
+      <div className="champ">
+        <label htmlFor={`pr-action-${id}`}>Prochaine action</label>
+        <input id={`pr-action-${id}`} name="prochaine_action" className="entree" maxLength={200} defaultValue={val("prochaine_action")} placeholder="Montrer la démonstration" autoComplete="off" />
+      </div>
+      <div className="champ pr-le">
+        <label htmlFor={`pr-le-${id}`}>Le</label>
+        <input id={`pr-le-${id}`} name="prochaine_le" type="date" className="entree" defaultValue={val("prochaine_le")} />
       </div>
       <details className="pr-plus" open={Boolean(p?.email || p?.note || saisie.email || saisie.note)}>
         <summary className="aide">E-mail, d&apos;où il vient, une note</summary>

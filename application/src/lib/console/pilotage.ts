@@ -52,13 +52,14 @@ export function couleursDe(l: LignePilotage): { accent: string; fond: string; en
   return { accent: t.couleurs.accent, fond: t.couleurs.fond, encre: t.couleurs.encre };
 }
 
-/** « depuis 5 h », « depuis 2 j », « depuis 20 min ». */
+/** « depuis 5 h », « depuis 2 j », « depuis 20 min » — le nombre et son unité
+ *  liés par une espace insécable : jamais « 5 » en fin de ligne et « h » dessous. */
 export function depuis(iso: string, maintenant: number): string {
   const minutes = Math.max(0, Math.round((maintenant - new Date(iso).getTime()) / 60_000));
-  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 60) return `${minutes}\u00a0min`;
   const heures = Math.round(minutes / 60);
-  if (heures < 48) return `${heures} h`;
-  return `${Math.round(heures / 24)} j`;
+  if (heures < 48) return `${heures}\u00a0h`;
+  return `${Math.round(heures / 24)}\u00a0j`;
 }
 
 export const titreEtape = (cle: CleEtape | null) => (cle ? ETAPES_MISE_EN_PLACE[cle]?.titre ?? cle : null);

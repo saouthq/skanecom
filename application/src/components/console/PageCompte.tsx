@@ -130,7 +130,8 @@ export function PageCompte({ d }: { d: DonneesCompte }) {
                     <b>{d.codes.restants} code{d.codes.restants > 1 ? "s" : ""}</b> encore valable{d.codes.restants > 1 ? "s" : ""}
                     {d.codes.crees_le ? <span className="discret">, créés le {JOUR.format(new Date(d.codes.crees_le))}</span> : null}.
                   </p>
-                ) : (
+                ) : d.messages.carte === "secours" && d.messages.ok ? null : (
+                  // Juste après l'activation, le message vert dit déjà qu'il faut les créer.
                   <p className="message message-attention">Aucun code de secours : un téléphone perdu, et il faudra qu&apos;un super-administrateur réinitialise votre double authentification.</p>
                 )}
                 {d.codes.restants > 0 ? (

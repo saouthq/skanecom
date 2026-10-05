@@ -7,6 +7,8 @@ import { LIBELLES_STATUT, MOTIFS_SUSPENSION, adresseVitrine, deNom } from "@/lib
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { Icone } from "@/components/console/Icone";
 import { Onglets } from "@/components/console/Onglets";
+import { themeDeLaBoutique } from "@/lib/theme";
+import { urlFichier } from "@/lib/photos";
 
 /* L'en-tête commun des pages d'une boutique dans la console : son nom, son
    état, sa vitrine, et les onglets (vue d'ensemble, équipe, marque,
@@ -20,10 +22,13 @@ export default async function Boutique({ children, params }: {
   const { slug } = await params;
   const { data } = await clientService().rpc("console_boutique", { p_slug: slug });
   if (!data) notFound();
-  const { boutique: b, domaines } = data as {
+  const { boutique: b, domaines, theme } = data as {
     boutique: { id: string; slug: string; nom: string; statut: string; demonstration: boolean };
     domaines: { hote: string; principal: boolean }[];
+    theme: { code: string; couleurs: Record<string, string> | null; monogramme_chemin: string | null } | null;
   };
+  // Le monogramme de la boutique, à sa couleur : le même repère que sa tuile à l'accueil.
+  const accent = themeDeLaBoutique({ code: theme?.code ?? "editorial", couleurs: theme?.couleurs ?? null }).couleurs.accent;
   const principal = domaines.find((d) => d.principal)?.hote;
   const hoteConsole = (await headers()).get("host");
   const [equipe, { data: modules }] = await Promise.all([
@@ -42,7 +47,11 @@ export default async function Boutique({ children, params }: {
         </div>
         <div className="page-tete-rang">
           <div className="cellule-titre">
-            <span className="initiale initiale-l" aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
+            <span className="initiale initiale-l bt-monogramme" aria-hidden="true" style={{ "--pl-accent": accent } as React.CSSProperties}>
+              {theme?.monogramme_chemin ? (
+                <span className="pl-masque" style={{ maskImage: `url("${urlFichier(theme.monogramme_chemin)}")`, WebkitMaskImage: `url("${urlFichier(theme.monogramme_chemin)}")` }} />
+              ) : b.nom.trim().charAt(0).toUpperCase()}
+            </span>
             <span>
               <h1>
                 {b.nom}
