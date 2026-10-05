@@ -101,7 +101,7 @@ export function TuileBoutique({ b, maintenant, hoteConsole }: { b: LignePilotage
             <span className="tabular-nums">{mp.faites}/{mp.total}</span>
           </span>
           <span className="pl-mise-barre" aria-hidden="true"><span style={{ inlineSize: `${(mp.faites / Math.max(1, mp.total)) * 100}%` }} /></span>
-          <span className="pl-mise-suite">{prochaine ? <>Prochaine : {prochaine}</> : "Tout est fait"}</span>
+          <span className="pl-mise-suite">{prochaine ? <>Prochaine étape : {prochaine.toLowerCase()}</> : "Tout est fait"}</span>
         </div>
       </div>
       </Link>

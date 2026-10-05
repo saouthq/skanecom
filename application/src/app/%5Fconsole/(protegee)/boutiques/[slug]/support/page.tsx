@@ -7,9 +7,10 @@ import { deNom } from "@/lib/console/libelles";
 import { DUREES_SUPPORT, MODES_SUPPORT, heureSupport, resteSupport, type AccesSupport, type ModeSupport } from "@/lib/console/support";
 import { ListeAcces } from "@/components/console/AccesSupport";
 import { Icone, type NomIcone } from "@/components/console/Icone";
+import { titreBoutique } from "@/lib/console/titre-boutique";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { title: `Support · ${(await params).slug}` };
+  return { title: await titreBoutique(params, "Support") };
 }
 
 const TRANSPARENCE: { icone: NomIcone; texte: string }[] = [

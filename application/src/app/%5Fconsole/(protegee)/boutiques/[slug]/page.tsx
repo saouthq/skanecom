@@ -9,11 +9,13 @@ import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
+import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { MiseEnPlace } from "@/components/console/MiseEnPlace";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
+import { titreBoutique } from "@/lib/console/titre-boutique";
 
 type Fiche = {
   boutique: { id: string; slug: string; nom: string; statut: string; langue_defaut: string; created_at: string; demonstration: boolean };
@@ -57,7 +59,7 @@ const CERTIFICAT: Record<string, { texte: string; classe: string }> = {
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { title: (await params).slug };
+  return { title: await titreBoutique(params) };
 }
 
 /* La vue d'ensemble d'une boutique : ses domaines, son équipe, sa marque,
@@ -195,13 +197,19 @@ export default async function FicheBoutique({ params, searchParams }: {
               </div>
             </div>
             {actifs.length > 0 ? (
-              <div className="flex items-center" aria-hidden="true">
-                {actifs.slice(0, 5).map((m, i) => (
-                  <span key={m.user_id} className="avatar" style={styleAvatar(m.email ?? "?", { marginInlineStart: i ? -8 : 0, boxShadow: "0 0 0 2px #fff" })}>
-                    {initiales(m.email ?? "?")}
-                  </span>
+              // Qui, et avec quel rôle : des initiales empilées ne le disaient pas.
+              <ul className="bt-membres" role="list">
+                {actifs.slice(0, 4).map((m) => (
+                  <li key={m.user_id}>
+                    <span className="avatar" style={styleAvatar(m.email ?? "?", { inlineSize: 26, blockSize: 26, fontSize: ".5625rem" })} aria-hidden="true">
+                      {initiales(m.email ?? "?")}
+                    </span>
+                    <span className="bt-membre-qui">{m.email ?? m.telephone ?? "Sans adresse"}</span>
+                    <span className="bt-membre-role">{m.en_attente ? "Invitation en attente" : LIBELLES_ROLE[m.role] ?? m.role}</span>
+                  </li>
                 ))}
-              </div>
+                {actifs.length > 4 ? <li className="bt-membres-plus">et {actifs.length - 4} autre{actifs.length - 4 > 1 ? "s" : ""}</li> : null}
+              </ul>
             ) : null}
             <div className="carte-pied">
               <Link href={`/boutiques/${b.slug}/equipe`} className="btn btn-second btn-bloc">

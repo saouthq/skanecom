@@ -51,7 +51,7 @@ export default async function NouvelleBoutique({ searchParams }: {
           </div>
         </div>
         <ChoixMetier metiers={metiers} choisi={v.metier} />
-        <fieldset className="choix mt-gabarit">
+        <fieldset className="choix choix-2 mt-gabarit">
           <legend>Structure</legend>
           {STRUCTURES_CONSOLE.map((x) => (
             <label key={x.code} className="choix-carte">

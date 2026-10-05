@@ -762,9 +762,9 @@ await etape("la liste de mise en place", async () => {
   verifie(!(await fait("equipe")) && (await carte.locator('[data-etape="equipe"]').getByRole("link", { name: "Aller à l'étape : équipe" }).count()) === 1,
     "l'équipe reste à faire, avec le chemin pour la faire");
   verifie(/J\+0/.test(await carte.locator('[data-etape="marque"]').innerText()), "chaque étape faite est datée depuis la création (J+0)");
-  await envoie(page, carte.getByRole("button", { name: "Recueil : faite" }));
+  await envoie(page, carte.getByRole("button", { name: "Recueil des éléments : faite" }));
   await page.waitForURL(/ok=/);
-  verifie((await page.getByRole("status").innerText()).includes("« Recueil » : faite") && await fait("recueil")
+  verifie((await page.getByRole("status").innerText()).includes("« Recueil des éléments » : faite") && await fait("recueil")
     && (await carte.locator('[data-etape="recueil"]').innerText()).includes(ADMIN.email),
     "le recueil se coche à la main, avec son auteur");
   verifie((await carte.locator(".mp-compte").innerText()).includes(`${faites + 1} sur 10`), `l'avancement : ${faites + 1} sur 10`);
@@ -1273,20 +1273,28 @@ console.log("\n== 5. Les e-mails ==");
 await etape("la galerie des e-mails, aux couleurs de la boutique choisie", async () => {
   await clic(page, page.locator(".app-cote").getByRole("link", { name: "E-mails" }));
   await page.waitForURL(/\/courriels/);
-  // Pas « networkidle » : les cadres des aperçus (srcdoc, sans script) ne
-  // signalent jamais leur chargement à Playwright, qui attendrait sans fin.
-  await page.locator(".crl-cadre").nth(5).waitFor({ timeout: 15_000 }).catch(() => {});
+  // Pas « networkidle » : le cadre de l'aperçu (srcdoc, sans script) ne
+  // signale jamais son chargement à Playwright, qui attendrait sans fin.
+  await page.locator(".crl-cadre").waitFor({ timeout: 15_000 }).catch(() => {});
   await pause(600);
-  verifie(await page.locator(".crl-cadre").count() === 6,
-    "six e-mails : le code, la nouvelle adresse, la lettre (confirmer, déjà inscrit), l'invitation, le mot de passe");
+  const liste = page.getByRole("navigation", { name: "E-mails" });
+  verifie(await liste.getByRole("link").count() === 6,
+    "six e-mails dans la liste : le code, la nouvelle adresse, la lettre (confirmer, déjà inscrit), l'invitation, le mot de passe");
+  verifie(await page.locator(".crl-cadre").count() === 1, "un seul aperçu à la fois, pas six empilés");
   const sujet = await page.locator(".crl-sujet").first().innerText();
   verifie(/^Votre code de connexion — .+/.test(sujet), `le sujet dit qui écrit : « ${sujet} »`);
-  await capture(page, "console-courriels", true);
+  await capture(page, "console-courriels");
+  await clic(page, liste.getByRole("link", { name: /Invitation/ }));
+  await page.waitForURL(/courriel=invitation/);
+  await pause(400);
+  verifie((await page.locator(".crl-sujet").innerText()).includes("SkanEcom")
+    && await liste.getByRole("link", { name: /Invitation/ }).getAttribute("aria-current") === "page",
+    "un clic dans la liste : l'invitation s'affiche, marquée dans la liste");
   await page.goto(CONSOLE + "/courriels?boutique=quincaillerie-demo&vue=telephone", { waitUntil: "load" });
-  await page.locator(".crl-cadre").nth(5).waitFor({ timeout: 15_000 }).catch(() => {});
+  await page.locator(".crl-cadre").waitFor({ timeout: 15_000 }).catch(() => {});
   await pause(600);
   verifie((await page.locator(".crl-sujet").first().innerText()).includes("Quincaillerie du Sud"), "une autre boutique : son nom dans le sujet");
-  await capture(page, "console-courriels-quincaillerie-telephone", true);
+  await capture(page, "console-courriels-quincaillerie-telephone");
 });
 
 await etape("le crochet de Supabase : l'e-mail de la boutique, signé ou rien", async () => {

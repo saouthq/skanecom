@@ -4,9 +4,10 @@ import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { imagesDuTheme } from "@/lib/console/images-marque";
 import { EditeurMarque, type ThemeEdite } from "./EditeurMarque";
+import { titreBoutique } from "@/lib/console/titre-boutique";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { title: `Marque · ${(await params).slug}` };
+  return { title: await titreBoutique(params, "Marque") };
 }
 
 /* C2 · Réglages de marque, avec aperçu. */

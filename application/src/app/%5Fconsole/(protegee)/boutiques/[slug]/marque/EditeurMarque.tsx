@@ -105,25 +105,31 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme, images: imagesInit
           <h2 id="t-couleurs">Couleurs</h2>
           <p className="aide">Une couleur laissée à la valeur du gabarit n&apos;est pas personnalisée.</p>
           {GROUPES_COULEURS.map((g) => (
-            <fieldset key={g.titre} className="grid gap-3">
+            <fieldset key={g.titre} className="mq-groupe">
               <legend className="text-petit font-medium text-encre-doux">{g.titre}</legend>
+              {/* Deux par rang sur ordinateur : treize couleurs sur une
+                  colonne faisaient la moitié de la page. */}
               {g.jetons.map(({ cle, libelle }) => {
                 const perso = couleurs[cle] !== undefined && couleurs[cle]!.toUpperCase() !== defauts.couleurs[cle].toUpperCase();
                 return (
-                  <div key={cle} className="flex flex-wrap items-center gap-3">
+                  <div key={cle} className="mq-couleur">
                     <input type="color" aria-label={libelle} value={couleur(cle).toLowerCase()} onChange={(e) => change(cle, e.target.value)}
-                      className="w-11 h-11 p-0.5 border border-contour-champ rounded-doux bg-surface cursor-pointer" />
-                    <label className="flex-1 min-w-[10rem]" htmlFor={`c-${cle}`}>
-                      {libelle}
-                      {perso ? <span className="text-legende text-accent ms-2">personnalisée</span> : null}
-                    </label>
+                      className="mq-pastille" />
+                    <span className="mq-nom">
+                      <label htmlFor={`c-${cle}`}>{libelle}</label>
+                      {perso ? (
+                        <span className="mq-perso">
+                          personnalisée ·{" "}
+                          <button type="button" className="btn-lien" aria-label={`${libelle} : revenir à la couleur du gabarit`}
+                            // Le bouton disparaît : le curseur reste sur la couleur, pas en haut de page.
+                            onClick={() => { retire(cle); document.getElementById(`c-${cle}`)?.focus(); }}>
+                            Rétablir
+                          </button>
+                        </span>
+                      ) : null}
+                    </span>
                     <input id={`c-${cle}`} name={`couleur.${cle}`} value={couleur(cle)} onChange={(e) => change(cle, e.target.value)}
-                      pattern="#[0-9A-Fa-f]{6}" maxLength={7} className="w-28 font-mono text-petit px-2 py-2 border border-contour-champ rounded-doux bg-surface" />
-                    {/* Place réservée même sans personnalisation : les champs restent alignés. */}
-                    <button type="button" className={`btn-lien text-petit w-20 ${perso ? "" : "invisible"}`} onClick={() => retire(cle)}
-                      tabIndex={perso ? 0 : -1} aria-hidden={!perso} aria-label={`${libelle} : revenir à la couleur du gabarit`}>
-                      Rétablir
-                    </button>
+                      pattern="#[0-9A-Fa-f]{6}" maxLength={7} className="mq-hexa" />
                   </div>
                 );
               })}
@@ -148,8 +154,11 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme, images: imagesInit
           ))}
         </section>
 
-        <div className="flex gap-3">
+        {/* Toujours à portée : le gabarit se règle en haut, le bouton était
+            3 000 px plus bas. */}
+        <div className="mq-pied">
           <button type="submit" className="btn btn-primaire">Enregistrer la marque</button>
+          <p className="aide">Le logo et les images, eux, sont enregistrés dès leur envoi.</p>
         </div>
       </div>
 

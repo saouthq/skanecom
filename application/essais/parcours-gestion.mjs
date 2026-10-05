@@ -799,14 +799,16 @@ if (section("2")) {
     for (const nom of ["Commandes", "Livraison", "Paiement", "Fonctions de la vitrine", "Contact et réseaux", "Informations légales", "Vos données"]) {
       verifie(tuiles.includes(nom), `la tuile « ${nom} »`);
     }
-    const livraison = await page.locator(".rg-tuile", { hasText: "Livraison" }).innerText();
+    // Par son titre : « À la livraison » (la tuile Paiement) contient aussi le mot.
+    const tuile = (nom) => page.locator(".rg-tuile").filter({ has: page.locator("b", { hasText: new RegExp(`^${nom}$`) }) });
+    const livraison = await tuile("Livraison").innerText();
     verifie(livraison.includes("7,000 TND partout"), `chaque tuile dit ce qui est réglé (« ${livraison.split("\n").at(-1)} »)`);
     verifie((await page.locator(".rg-attention").innerText()).includes("Informations légales"), "« À régler avant d'ouvrir » : les informations légales manquent");
     verifie(await page.locator("#t-journal").count() === 1, "et les derniers changements, au journal");
     const hauteur = await page.evaluate(() => document.documentElement.scrollHeight);
     verifie(hauteur < 2000, `l'accueil des réglages tient en un écran ou deux (${hauteur} px, contre 9 000 avant)`);
     await capture(page, "gestion-reglages", true);
-    await clic(page, page.locator(".rg-tuile", { hasText: "Commandes" }));
+    await clic(page, tuile("Commandes"));
     await page.waitForURL(/\/reglages\/commandes$/);
     await page.waitForLoadState("networkidle");
     verifie(await section("commandes").getByLabel("Compte obligatoire").isChecked(), "au départ : compte obligatoire");

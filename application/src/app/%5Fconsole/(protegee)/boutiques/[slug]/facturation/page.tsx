@@ -12,9 +12,10 @@ import {
 } from "@/lib/console/skanfact";
 import { Icone, type NomIcone } from "@/components/console/Icone";
 import { AbonnementSkanFact, type ValeursAbonnement } from "@/components/console/AbonnementSkanFact";
+import { titreBoutique } from "@/lib/console/titre-boutique";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { title: `Facturation · ${(await params).slug}` };
+  return { title: await titreBoutique(params, "Facturation") };
 }
 
 type Facturation = {

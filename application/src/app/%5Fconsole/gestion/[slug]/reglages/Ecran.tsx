@@ -215,7 +215,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
       retraitActif ? "retrait en magasin" : null,
     ].filter(Boolean).join(" · "),
     paiement: [v("paiement.cod_actif") ? "À la livraison" : null, konnect?.module_actif && konnect.valeur ? "en ligne (Konnect)" : null].filter(Boolean).join(" · ") || "Aucun moyen actif",
-    vitrine: `${allumees} fonction${allumees > 1 ? "s" : ""} allumée${allumees > 1 ? "s" : ""} sur ${fonctions.length}${texteDe("vitrine.annonce") ? " · une annonce en tête" : ""}`,
+    vitrine: `${compteAllumees(allumees, fonctions.length)}${texteDe("vitrine.annonce") ? " · une annonce en tête" : ""}`,
     contact: sansContact ? "Aucun numéro" : [texteDe("contact.whatsapp") ? "WhatsApp" : null, texteDe("contact.telephone") ? "téléphone" : null,
       reseaux ? `${reseaux} réseau${reseaux > 1 ? "x" : ""}` : null].filter(Boolean).join(" · "),
     service: [savActif ? (Number(v("sav.garantie_mois") ?? 0) ? `Garantie ${v("sav.garantie_mois")} mois` : "Garantie légale") : null,
@@ -709,7 +709,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
           {/* ---------------- Fonctions de la vitrine ---------------- */}
           {groupe === "vitrine" ? (
             <Section id="vitrine" titre="Ce que la vitrine propose"
-              description={`${allumees} fonction${allumees > 1 ? "s" : ""} allumée${allumees > 1 ? "s" : ""} sur ${fonctions.length}. Chacune s'allume ou se coupe ici, la vitrine suit aussitôt.`}>
+              description={`${compteAllumees(allumees, fonctions.length)}. Chacune s'allume ou se coupe ici, la vitrine suit aussitôt.`}>
               <form action={action} method="post">
                 <input type="hidden" name="section" value="vitrine" />
                 <fieldset className="pile rg-corps" disabled={!modifie}>
@@ -1007,4 +1007,10 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
       </div>
     </>
   );
+}
+
+/** « Aucune fonction allumée sur 9 », « 1 fonction allumée sur 9 », « 3 fonctions… ». */
+function compteAllumees(n: number, total: number): string {
+  if (n === 0) return `Aucune fonction allumée sur ${total}`;
+  return `${n} fonction${n > 1 ? "s" : ""} allumée${n > 1 ? "s" : ""} sur ${total}`;
 }

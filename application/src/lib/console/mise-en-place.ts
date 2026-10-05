@@ -21,12 +21,12 @@ export type EtapeBrute = {
 export type MiseEnPlace = { creee_le: string; etapes: EtapeBrute[] };
 
 export const ETAPES_MISE_EN_PLACE: Record<CleEtape, { titre: string; aide: string }> = {
-  recueil: { titre: "Recueil", aide: "Logo, couleurs, photos, fichier catalogue, conditions de livraison, transporteur habituel." },
+  recueil: { titre: "Recueil des éléments", aide: "Logo, couleurs, photos, fichier catalogue, conditions de livraison, transporteur habituel." },
   marque: { titre: "Marque", aide: "Gabarit, couleurs, logo et images de l'accueil." },
   catalogue: { titre: "Catalogue", aide: "Import, contrôle des prix et du stock, photos." },
   domaine: { titre: "Domaine", aide: "Le domaine du client, branché sur la vitrine." },
-  branchements: { titre: "Branchements", aide: "Le livreur et le WhatsApp de confirmation (au backoffice, Réglages)." },
-  legal: { titre: "Informations légales", aide: "Raison sociale, siège, RNE, matricule fiscal, courriel (au backoffice, Réglages)." },
+  branchements: { titre: "Branchements", aide: "Le livreur et le WhatsApp de confirmation, dans les réglages du backoffice." },
+  legal: { titre: "Informations légales", aide: "Raison sociale, siège, RNE, matricule fiscal, courriel, dans les réglages du backoffice." },
   equipe: { titre: "Équipe", aide: "Le propriétaire invité, et ses employés." },
   commande_test: { titre: "Commande test", aide: "De bout en bout : commande, confirmation, bordereau, livraison et refus simulés." },
   formation: { titre: "Formation", aide: "Une à deux heures avec l'équipe du client." },
@@ -71,7 +71,14 @@ export function detailEtape(e: EtapeBrute): string | null {
     }
     case "commande_test": {
       const n = Number(d.commandes ?? 0);
-      return n ? `${n} commande${n > 1 ? "s" : ""} en base, dont ${Number(d.livrees ?? 0)} livrée(s) et ${Number(d.refusees ?? 0)} refusée(s).` : "Aucune commande pour l'instant.";
+      if (!n) return "Aucune commande pour l'instant.";
+      const livrees = Number(d.livrees ?? 0);
+      const refusees = Number(d.refusees ?? 0);
+      const dont = [
+        livrees ? `${livrees} livrée${livrees > 1 ? "s" : ""}` : null,
+        refusees ? `${refusees} refusée${refusees > 1 ? "s" : ""}` : null,
+      ].filter(Boolean);
+      return `${n} commande${n > 1 ? "s" : ""} en base${dont.length ? `, dont ${dont.join(" et ")}` : ", aucune encore livrée"}.`;
     }
     default:
       return null;

@@ -8,9 +8,10 @@ import { dateJournal } from "@/lib/console/libelles";
 import type { ProduitReference } from "@/lib/console/photos-import";
 import { Icone } from "@/components/console/Icone";
 import { ImportPhotos } from "./ImportPhotos";
+import { titreBoutique } from "@/lib/console/titre-boutique";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { title: `Photos · ${(await params).slug}` };
+  return { title: await titreBoutique(params, "Photos") };
 }
 
 type Lot = { id: string; cree_le: string; qui: string | null; photos: number; produits: number; retire_le: string | null; retire_par: string | null };

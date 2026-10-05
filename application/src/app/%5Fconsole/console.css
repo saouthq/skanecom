@@ -724,6 +724,37 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 .mp-etape[data-fait] .mp-titre .ui-etat { display: none; }
 .mp-detail { font-size: .75rem; color: var(--ui-texte-3); }
 .mp-action { display: flex; align-self: center; }
+.mp-pli > summary { display: inline-flex; align-items: center; gap: .375rem; margin-block-start: .25rem; font-size: .8125rem; font-weight: 500; color: var(--ui-texte-2); cursor: pointer; }
+.mp-pli > summary { list-style: none; }
+.mp-pli > summary::-webkit-details-marker { display: none; }
+.mp-pli > summary::before { content: ""; inline-size: .375rem; block-size: .375rem; margin-inline: .125rem .25rem; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform .15s; }
+.mp-pli[open] > summary::before { transform: rotate(45deg); }
+.mp-pli > summary:hover { color: var(--ui-texte); }
+.mp-pli[open] > summary { margin-block-end: 1rem; }
+.bt-membres { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.bt-membres > li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .625rem; font-size: .8125rem; }
+.bt-membre-qui { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-membre-role { color: var(--ui-texte-3); font-size: .75rem; }
+.bt-membres-plus { color: var(--ui-texte-3); font-size: .75rem; padding-inline-start: 2.25rem; }
+/* La marque : couleurs deux par rang, enregistrer toujours à portée. */
+.mq-groupe { display: grid; gap: .5rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
+.mq-groupe > legend { margin-block-end: .25rem; }
+.mq-couleur { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .625rem; }
+.mq-pastille { inline-size: 2.25rem; block-size: 2.25rem; padding: 2px; border: 1px solid var(--ui-bord); border-radius: 6px; background: var(--ui-panneau); cursor: pointer; }
+.mq-nom { display: grid; min-inline-size: 0; font-size: .875rem; line-height: 1.3; }
+.mq-perso { font-size: .75rem; color: var(--ui-accent); }
+.mq-perso .btn-lien { font-size: inherit; }
+.mq-hexa { inline-size: 6.25rem; padding: .375rem .5rem; font-family: ui-monospace, monospace; font-size: .8125rem; border: 1px solid var(--ui-bord); border-radius: 6px; background: var(--ui-panneau); }
+.mq-pied {
+  position: sticky; inset-block-end: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem;
+  margin-inline: -.25rem; padding: .75rem 1rem;
+  background: color-mix(in srgb, var(--ui-panneau) 92%, transparent); backdrop-filter: blur(6px);
+  border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r); box-shadow: 0 -6px 20px -12px rgb(0 0 0 / .18);
+}
+.mq-pied .aide { margin: 0; }
+/* Le champ où l'on tape ne passe jamais sous la barre d'enregistrement. */
+html:has(.mq-pied) { scroll-padding-block-end: 6rem; }
 .mp-mini { display: inline-flex; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--ui-texte-2); }
 .mp-mini .mp-barre { inline-size: 4.5rem; min-inline-size: 0; }
 
@@ -865,17 +896,34 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 
 /* Les e-mails (console → E-mails) : chaque exemple dans sa boîte de réception. */
 .crl-barre { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; justify-content: space-between; margin-block-end: 1.25rem; }
-.crl-segment { display: inline-flex; align-items: center; gap: .375rem; padding: .3125rem .75rem; border-radius: 6px; font-weight: 500; color: var(--ui-texte-2); text-decoration: none; }
+.crl-barre .segments { max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; }
+.crl-segment { display: inline-flex; flex: none; align-items: center; gap: .375rem; padding: .3125rem .75rem; border-radius: 6px; font-weight: 500; color: var(--ui-texte-2); text-decoration: none; white-space: nowrap; }
 .crl-segment-actif { background: var(--ui-panneau); color: var(--ui-texte); box-shadow: var(--ui-ombre-s); }
-.crl-grille { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 36rem), 1fr)); }
-.crl-grille-telephone { grid-template-columns: repeat(auto-fill, minmax(min(100%, 25rem), 1fr)); }
+.crl-cadre-page { display: grid; gap: 1.25rem; align-items: start; grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr); }
+.crl-liste { display: grid; gap: 1rem; padding: .75rem; position: sticky; inset-block-start: 1rem; }
+.crl-groupe ul { display: grid; gap: .125rem; margin: 0; padding: 0; list-style: none; }
+.crl-groupe-titre { margin: 0 0 .25rem; padding-inline: .625rem; font-size: .75rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--ui-texte-3); }
+.crl-lien { display: grid; gap: .125rem; padding: .5rem .625rem; border-radius: 6px; text-decoration: none; color: var(--ui-texte); }
+.crl-lien:hover { background: var(--ui-doux); }
+.crl-lien[aria-current="page"] { background: var(--ui-accent-doux); box-shadow: inset 3px 0 0 var(--ui-accent); }
+.crl-lien-nom { font-weight: 500; font-size: .875rem; }
+.crl-lien-pour { font-size: .8125rem; color: var(--ui-texte-2); }
 .crl-carte { display: grid; gap: .75rem; padding: 1rem; }
 .crl-pour { margin: 0; }
 .crl-boite { display: grid; gap: .125rem; padding: .625rem .875rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r); background: var(--ui-doux); }
 .crl-de { font-weight: 600; font-size: .875rem; }
 .crl-sujet { font-size: .875rem; color: var(--ui-texte-2); }
 .crl-cadre { inline-size: 100%; block-size: 44rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r); background: #fff; }
-.crl-grille-telephone .crl-cadre { inline-size: 375px; max-inline-size: 100%; justify-self: center; block-size: 46rem; }
+.crl-carte-telephone .crl-cadre { inline-size: 375px; max-inline-size: 100%; justify-self: center; block-size: 46rem; }
+@media (max-width: 899px) {
+  .crl-cadre-page { grid-template-columns: minmax(0, 1fr); }
+  /* Au téléphone, la liste se resserre (deux par rang, sans la ligne
+     d'aide) pour que l'aperçu commence dans le premier écran. */
+  .crl-liste { position: static; gap: .625rem; }
+  .crl-groupe ul { grid-template-columns: 1fr 1fr; gap: .25rem; }
+  .crl-lien { min-block-size: 2.75rem; align-content: center; }
+  .crl-lien-pour { display: none; }
+}
 .crl-texte summary { cursor: pointer; font-size: .8125rem; color: var(--ui-texte-2); }
 .crl-texte pre { margin: .5rem 0 0; padding: .75rem; white-space: pre-wrap; font-size: .8125rem; background: var(--ui-doux); border-radius: var(--ui-r); }
 

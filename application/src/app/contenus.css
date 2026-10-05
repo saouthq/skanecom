@@ -121,6 +121,9 @@
 /* Au-dessus de la barre d'achat collante de la fiche (téléphone). */
 @media (max-width: 899px) {
   html:has(.achat-mobile) .whatsapp-flottant { inset-block-end: calc(5.75rem + env(safe-area-inset-bottom)); }
+  /* Pendant qu'on descend la page, il se retire : il ne couvre plus le « + »
+     des cartes de droite ; il revient dès qu'on remonte. */
+  html[data-defile="bas"] .whatsapp-flottant { transform: translateY(calc(100% + 2rem)); opacity: 0; pointer-events: none; }
   /* En bas de page, le bouton ne cache plus les derniers liens du pied. */
   html:has(.whatsapp-flottant) footer[data-zone="pied"] { padding-block-end: calc(4.5rem + env(safe-area-inset-bottom)); }
 }

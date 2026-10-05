@@ -9,9 +9,10 @@ import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { BoutonCopier } from "@/components/console/BoutonCopier";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
+import { titreBoutique } from "@/lib/console/titre-boutique";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { title: `Équipe · ${(await params).slug}` };
+  return { title: await titreBoutique(params, "Équipe") };
 }
 
 function lienRemis(valeur: string | undefined): LienRemis | null {

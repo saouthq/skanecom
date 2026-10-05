@@ -5,9 +5,10 @@ import { exigeAdmin } from "@/lib/console/session";
 import { LIMITE_LIGNES } from "@/lib/console/import";
 import Link from "next/link";
 import { Icone } from "@/components/console/Icone";
+import { titreBoutique } from "@/lib/console/titre-boutique";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { title: `Import · ${(await params).slug}` };
+  return { title: await titreBoutique(params, "Import") };
 }
 
 /* C5 · Importer un catalogue : choisir le fichier. La vérification vient

@@ -6,9 +6,10 @@ import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { adresseRetourSkanFact, adresseSkanFact, empreinteSecret } from "@/lib/console/skanfact";
 import { chiffrementPret } from "@/lib/gestion/chiffre";
+import { titreBoutique } from "@/lib/console/titre-boutique";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { title: `Modules · ${(await params).slug}` };
+  return { title: await titreBoutique(params, "Modules") };
 }
 
 /* ============================================================================
@@ -110,7 +111,7 @@ export default async function Modules({ params, searchParams }: {
                     {m.actif ? (
                       <button type="submit" name="actif" value="false" className="btn btn-second btn-petit" aria-label={`Couper : ${m.libelle}`}>Couper</button>
                     ) : m.disponible ? (
-                      <button type="submit" name="actif" value="true" className="btn btn-primaire btn-petit" aria-label={`Activer : ${m.libelle}`}>Activer</button>
+                      <button type="submit" name="actif" value="true" className="btn btn-second btn-petit" aria-label={`Activer : ${m.libelle}`}>Activer</button>
                     ) : null}
                   </form>
                 </li>
