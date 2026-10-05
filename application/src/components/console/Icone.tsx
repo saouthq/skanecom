@@ -159,6 +159,12 @@ const TRACES = {
       <path d="M12 6v6l4 2" />
     </>
   ),
+  calendrier: (
+    <>
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </>
+  ),
   camion: (
     <>
       <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />

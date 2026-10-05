@@ -7,6 +7,7 @@ import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { millimes } from "@/lib/console/import";
 import { telephoneLisible } from "@/lib/commande";
+import { jourArrivageCourt } from "@/lib/gestion/arrivages";
 import {
   CANAUX,
   messageSaisie,
@@ -385,7 +386,10 @@ export function FormSaisie({
                     <span className="sc-quoi">
                       <b>{t.produit.nom}</b>
                       <span className="discret">{t.declinaison.libelle ? `${t.declinaison.libelle} · ` : ""}<span className="sc-sku">{t.declinaison.sku}</span></span>
-                      {manquant ? <span className="sc-alerte">Plus que {t.declinaison.stock} en stock</span> : null}
+                      {c?.precommande && !manquant ? (
+                        <span className="sc-pre"><Icone nom="calendrier" taille={12} /> Précommande · arrivée vers le {jourArrivageCourt(c.precommande.date_prevue)}</span>
+                      ) : null}
+                      {manquant ? <span className="sc-alerte">{c?.precommande ? `Il en arrive ${c.quantite_disponible} au plus` : `Plus que ${t.declinaison.stock} en stock`}</span> : null}
                       {minimum ? <span className="sc-alerte">Vendu par {t.declinaison.quantite_min} au moins</span> : null}
                       {c?.palier ? <span className="sc-palier">Prix par {c.palier} appliqué</span> : null}
                       {c?.lot ? <span className="sc-palier">Pack « {c.lot} » : −{formatePrix(c.remise_lot_millimes ?? 0)}</span> : null}

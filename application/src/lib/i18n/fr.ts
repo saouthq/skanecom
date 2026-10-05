@@ -1118,6 +1118,24 @@ export const fr = {
   },
 
   /** « Prévenez-moi de son retour » (components/AlerteRetour.tsx). */
+  /** Les précommandes sur arrivage (réglage catalogue.precommandes) : une
+   *  déclinaison épuisée qu'un arrivage annoncé apporte se commande déjà. */
+  precommande: {
+    etat: "En précommande",
+    titre: (jour: string) => `En précommande · arrivée prévue vers le ${jour}`,
+    texte: "Elle n'est pas encore en stock : commandez-la maintenant, nous l'expédions dès son arrivée. Vous ne payez qu'à la livraison.",
+    reste: (n: number) => (n > 1 ? `Encore ${n} à précommander sur cet arrivage.` : "Plus qu'une à précommander sur cet arrivage."),
+    bouton: "Précommander",
+    valeurs: (valeurs: string, jour: string) => `${valeurs} : en précommande, arrivée prévue vers le ${jour}.`,
+    ligne: (jour: string) => `Précommande · arrivée vers le ${jour}`,
+    ligneCourte: "Précommande",
+    suiteTitre: "L'arrivage",
+    tunnel: (jour: string) =>
+      `Votre commande comprend une précommande : elle part dès l'arrivage, prévu vers le ${jour}. Vous payez à la livraison, rien avant.`,
+    merci: (jour: string) =>
+      `Elle comprend une précommande : nous l'expédions dès l'arrivage, prévu vers le ${jour}. Rien n'est à payer avant.`,
+    suivi: (jour: string) => `Elle attend son arrivage, prévu vers le ${jour} : elle part dès qu'il est là.`,
+  },
   alerte: {
     ouvrir: "Prévenez-moi de son retour",
     titre: "Nous vous écrivons dès son retour.",

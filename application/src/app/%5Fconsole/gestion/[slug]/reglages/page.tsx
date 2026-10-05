@@ -629,6 +629,8 @@ export default async function Reglages({
                       aide="L'ancien prix, barré, à côté du prix payé — pour les déclinaisons qui en ont un." />
                     <Case cle="catalogue.prevenir_retour" valeur={Boolean(v("catalogue.prevenir_retour"))} titre="Prévenir du retour d'une pièce épuisée"
                       aide="Sur une déclinaison épuisée, la fiche propose « Prévenez-moi de son retour » ; quand le stock revient, l'écran Réassort dit qui prévenir, message prêt." />
+                    <Case cle="catalogue.precommandes" valeur={Boolean(v("catalogue.precommandes"))} titre="Précommandes sur arrivage"
+                      aide="Une déclinaison épuisée qu'un arrivage annoncé apporte (Catalogue → Arrivages) se commande déjà, avec sa date prévue, dans la limite de ce qui arrive. Rien n'est encaissé avant : la commande attend dans « Précommandes » et part à la réception." />
                     <Case cle="catalogue.favoris" valeur={Boolean(v("catalogue.favoris"))} titre="Les favoris"
                       aide="Un cœur sur les cartes et les fiches, et « Mes favoris » ; un client connecté les retrouve partout. Le catalogue dit combien aiment chaque pièce, jamais qui." />
                     <Case cle="vitrine.partage" valeur={Boolean(v("vitrine.partage"))} titre="Partager une fiche"

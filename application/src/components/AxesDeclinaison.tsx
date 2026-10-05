@@ -4,7 +4,7 @@ import { couleurDeColoris } from "@/lib/coloris";
 import { formatePrix } from "@/lib/prix";
 import { prixApplique as prixDe, type PrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
-import { stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
+import { jourPrevu, precommandeDe, stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
 
 /* ============================================================================
    LES AXES D'UNE DÉCLINAISON — taille, couleur, contenance : un bouton par
@@ -13,8 +13,9 @@ import { stockPourValeur, valeursAxe, type Produit } from "@/lib/catalogue";
 
    Une valeur entièrement épuisée reste visible, barrée et inactive (la
    masquer ferait croire qu'elle n'existe pas) ; avec « Prévenez-moi de son
-   retour », elle reste choisissable. Le prix par valeur ne s'affiche que
-   sur l'axe qui le fait varier.
+   retour », elle reste choisissable — et aussi quand un arrivage annoncé
+   l'apporte (réglage catalogue.precommandes) : elle se précommande. Le prix
+   par valeur ne s'affiche que sur l'axe qui le fait varier.
    ========================================================================== */
 
 export function AxesDeclinaison({ produit, choix, setChoix, prixPros, prevenirRetour }: {
@@ -26,10 +27,19 @@ export function AxesDeclinaison({ produit, choix, setChoix, prixPros, prevenirRe
 }) {
   /* Les valeurs entièrement épuisées d'un axe : barrées, jamais cachées. */
   const epuisees = (cle: string) => valeursAxe(produit, cle).filter((v) => stockPourValeur(produit, cle, v) === 0);
+  /* Parmi elles, celles qu'un arrivage apporte : la date la plus proche. */
+  const precommande = (cle: string, valeur: string) =>
+    produit.variantes
+      .filter((v) => v.options?.[cle] === valeur)
+      .map((v) => precommandeDe(v)?.date_prevue)
+      .filter((d): d is string => Boolean(d))
+      .sort()[0] ?? null;
 
   return produit.options.map((axe) => {
     const valeurs = valeursAxe(produit, axe.cle);
-    const horsStock = epuisees(axe.cle);
+    const epuiseesAxe = epuisees(axe.cle);
+    const aPrecommander = epuiseesAxe.filter((v) => precommande(axe.cle, v));
+    const horsStock = epuiseesAxe.filter((v) => !aPrecommander.includes(v));
     const estCouleur = axe.cle === "couleur";
 
     /* Le prix par valeur, quand c'est CET axe qui le fait varier (une
@@ -51,6 +61,7 @@ export function AxesDeclinaison({ produit, choix, setChoix, prixPros, prevenirRe
         <div className={estCouleur ? "valeurs valeurs-couleur" : "valeurs"}>
           {valeurs.map((valeur) => {
             const epuise = horsStock.includes(valeur);
+            const enPrecommande = aPrecommander.includes(valeur);
             return (
               <button
                 key={valeur}
@@ -61,6 +72,7 @@ export function AxesDeclinaison({ produit, choix, setChoix, prixPros, prevenirRe
                 title={estCouleur ? valeur : undefined}
                 disabled={epuise && !prevenirRetour}
                 data-epuise={epuise && prevenirRetour ? "" : undefined}
+                data-precommande={enPrecommande ? "" : undefined}
                 onClick={() => setChoix((c) => ({ ...c, [axe.cle]: valeur }))}
               >
                 {estCouleur ? (
@@ -75,6 +87,12 @@ export function AxesDeclinaison({ produit, choix, setChoix, prixPros, prevenirRe
             );
           })}
         </div>
+        {/* Une phrase par date d'arrivée : deux arrivages, deux dates dites. */}
+        {[...new Set(aPrecommander.map((v) => precommande(axe.cle, v)!))].sort().map((date) => (
+          <p key={date} className="legende axe-note axe-note-precommande">
+            {t.precommande.valeurs(aPrecommander.filter((v) => precommande(axe.cle, v) === date).join(", "), jourPrevu(date))}
+          </p>
+        ))}
         {horsStock.length > 0 ? (
           <p className="legende axe-note">
             {prevenirRetour ? t.alerte.ruptureExpliquee(horsStock.join(", ")) : t.produit.ruptureExpliquee(horsStock.join(", "))}

@@ -44,7 +44,8 @@ export function FormReception({ action, produits }: { action: string; produits: 
   const suivante = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
-    const champs = [...document.querySelectorAll<HTMLInputElement>(".rc-quantite")];
+    // Les produits masqués par le filtre sont sautés.
+    const champs = [...document.querySelectorAll<HTMLInputElement>(".rc-quantite")].filter((c) => c.offsetParent !== null);
     champs[champs.indexOf(e.currentTarget) + 1]?.focus();
   };
 

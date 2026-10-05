@@ -5,7 +5,8 @@ import { evenementPub, lignesPub } from "@/lib/pixels";
 import { signaleEtape } from "@/lib/etapes-visite";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Billets, Camion, Coche, Etiquette, Magasin as IconeMagasin } from "./Icones";
+import { Billets, Calendrier, Camion, Coche, Etiquette, Magasin as IconeMagasin } from "./Icones";
+import { jourPrevu } from "@/lib/catalogue";
 import { Prix } from "./Prix";
 import { Connexion, Identification } from "./Connexion";
 import { ouvrePanier, ramenePanier, retireDuPanier, usePanierLu } from "@/lib/panier";
@@ -1064,6 +1065,11 @@ function Recap({
                   <span className="tunnel-ligne-nom">{d?.produit_nom ?? ligne.libelle}</span>
                   {d?.variante_libelle ? <span className="legende">{d.variante_libelle}</span> : null}
                   <span className="legende">{t.commande.quantite(ligne.quantite)}</span>
+                  {d?.precommande && !indisponible ? (
+                    <span className="tunnel-ligne-precommande">
+                      <Calendrier taille={13} /> {t.precommande.ligne(jourPrevu(d.precommande.date_prevue))}
+                    </span>
+                  ) : null}
                   {indisponible ? (
                     <span className="tunnel-ligne-alerte">
                       {t.commande.indisponible}{" "}
@@ -1109,6 +1115,13 @@ function Recap({
             );
           })}
         </ul>
+
+        {/* Une précommande : la commande part à l'arrivage, on le dit avant qu'elle soit passée. */}
+        {devis?.precommande ? (
+          <p className="tunnel-precommande legende" data-precommande={devis.precommande.date_prevue}>
+            {t.precommande.tunnel(jourPrevu(devis.precommande.date_prevue))}
+          </p>
+        ) : null}
 
         {devis ? (
           <dl className="tunnel-totaux">

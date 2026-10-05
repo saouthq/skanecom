@@ -17,6 +17,7 @@ import {
   type Etape,
 } from "@/lib/gestion/libelles";
 import { PEUT_SAISIR } from "@/lib/gestion/saisie";
+import { jourArrivageCourt } from "@/lib/gestion/arrivages";
 import { BarreLot } from "@/components/console/BarreLot";
 
 export const metadata: Metadata = { title: "Commandes" };
@@ -48,12 +49,14 @@ type Ligne = {
   appels: number;
   dernier_appel: string | null;
   client: { nb_commandes: number; nb_refus: number; niveau_risque: string; compte: boolean } | null;
+  /** Elle attend un arrivage (précommande) : la date prévue du dernier. */
+  arrivage_prevu?: string | null;
 };
 
 type Liste = {
   etape: Etape;
   total: number;
-  compteurs: Record<"a_confirmer" | "a_preparer" | "expediees" | "cloturees", number>;
+  compteurs: Record<"a_confirmer" | "a_preparer" | "precommandes" | "expediees" | "cloturees", number>;
   commandes: Ligne[];
 };
 
@@ -125,7 +128,8 @@ export default async function Commandes({
     <>
       <EnTetePage
         titre="Commandes"
-        description={etape.cle === "a_confirmer" ? "La plus ancienne en haut : c'est elle qu'on appelle d'abord." : undefined}
+        description={etape.cle === "a_confirmer" ? "La plus ancienne en haut : c'est elle qu'on appelle d'abord."
+          : etape.cle === "precommandes" ? "Elles attendent leur arrivage : à la réception (Catalogue → Arrivages), elles sont servies dans l'ordre et passent « À préparer »." : undefined}
         actions={
           <>
             <form role="search" method="get" action={`/gestion/${slug}`} className="bo-recherche">
@@ -155,7 +159,7 @@ export default async function Commandes({
       />
 
       <nav className="onglets bo-etapes" aria-label="Étapes des commandes">
-        {ETAPES.map((e) => (
+        {ETAPES.filter((e) => e.cle !== "precommandes" || liste.compteurs.precommandes > 0 || etape.cle === "precommandes").map((e) => (
           <Link key={e.cle} href={lien(e.cle)} aria-current={e.cle === etape.cle ? "page" : undefined}>
             {e.libelle}
             {e.cle !== "toutes" ? <span className="compte-onglet">{liste.compteurs[e.cle]}</span> : null}
@@ -215,6 +219,9 @@ export default async function Commandes({
                     {c.premier_article ? <span> · {c.premier_article}</span> : null}
                   </span>
                   <span className="bo-badges ui-etats">
+                    {c.arrivage_prevu ? (
+                      <span className="ui-etat ui-etat-bleu"><Icone nom="calendrier" taille={12} /> Attend l&apos;arrivage · {jourArrivageCourt(c.arrivage_prevu)}</span>
+                    ) : null}
                     {c.mode_livraison === "retrait" ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> À retirer</span> : null}
                     {c.origine === "manuelle" ? <span className="ui-etat"><Icone nom="crayon" taille={12} /> Saisie par l&apos;équipe</span> : null}
                     {c.client?.compte ? (

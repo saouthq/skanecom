@@ -50,6 +50,8 @@ type Etat = {
   commandes: {
     a_confirmer: number; a_rappeler: number; attente_depuis: string | null;
     a_preparer: number; en_livraison: number; en_retard: number; retraits_prets: number;
+    /** Les précommandes qui attendent leur arrivage (migration 88). */
+    precommandes?: number;
   };
   journee: { recues: number; livrees: number; refusees: number; recues_millimes: number | null; livrees_millimes: number | null };
   modules: { sav: number | null; devis: number | null; avis: number | null; comptes_pro: number | null };
@@ -128,6 +130,12 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
         ? `${pluriel(c.en_retard, "colis", "colis")} depuis plus de 5 jours : un appel au transporteur.`
         : c.en_livraison ? "Rien d'anormal sur la route." : "Aucun colis en route.",
     },
+    ...(c.precommandes
+      ? [{ cle: "precommandes", nombre: c.precommandes, icone: "calendrier" as const, href: `${base}?etape=precommandes`,
+          titre: c.precommandes > 1 ? "Précommandes en attente" : "Précommande en attente",
+          detail: "Elles attendent leur arrivage : à la réception, elles sont servies d'abord et passent « À préparer ».",
+          action: { href: `${base}/produits/arrivages`, libelle: "Voir les arrivages" } }]
+      : []),
     ...(c.retraits_prets
       ? [{ cle: "retraits", nombre: c.retraits_prets, icone: "boutique" as const, href: `${base}?etape=expediees`,
           titre: "Prêtes au comptoir", detail: "Le client vient la retirer : la commande l'attend au magasin." }]

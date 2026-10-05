@@ -1,6 +1,7 @@
 import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers, versAvecErreur } from "@/lib/console/http";
 import { messageReception } from "@/lib/gestion/reception";
+import { rafraichirVitrine } from "@/lib/console/vitrine-cache";
 
 /* ============================================================================
    ENREGISTRER UNE RÉCEPTION — un formulaire HTML ordinaire : une quantité
@@ -39,5 +40,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   });
   if (error) return versAvecErreur(page, messageReception(error.hint, error.message));
   const r = data as { declinaisons: number; pieces: number };
+  // Le stock reçu paraît tout de suite sur les fiches.
+  rafraichirVitrine(slug);
   return vers(`${page}?${new URLSearchParams({ recues: String(r.pieces), declinaisons: String(r.declinaisons) })}`);
 }

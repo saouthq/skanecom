@@ -167,7 +167,10 @@ export default async function BackofficeBoutique({
   const pages: ElementPalette[] = [
     ...liens.map((l) => ({ groupe: "Aller à", icone: l.icone, href: l.href, titre: l.libelle })),
     ...(PEUT_STOCKER.includes(boutique.role)
-      ? [{ groupe: "Aller à", icone: "colis" as const, href: `/gestion/${slug}/produits/reception`, titre: "Réception d'un arrivage" }]
+      ? [
+          { groupe: "Aller à", icone: "colis" as const, href: `/gestion/${slug}/produits/reception`, titre: "Réception d'un arrivage" },
+          { groupe: "Aller à", icone: "calendrier" as const, href: `/gestion/${slug}/produits/arrivages`, titre: "Arrivages annoncés" },
+        ]
       : []),
     ...(PEUT_MODIFIER.includes(boutique.role)
       ? [{ groupe: "Aller à", icone: "colis" as const, href: `/gestion/${slug}/produits/nouveau`, titre: "Nouveau produit" }]

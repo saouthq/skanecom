@@ -551,6 +551,52 @@ console.log("\n== 2 ter. Maison Selma : un pack, commandé ==");
 }
 
 /* ------------------------------------------------------------------ */
+console.log("\n== 2 quater. Maison Selma : une précommande sur arrivage ==");
+{
+  // Selma a allumé les précommandes et annoncé « Le conteneur de Marseille »
+  // (supabase/seed-precommandes.sql) : le polo vert olive XL, épuisé, en
+  // apporte six. La fiche le propose, la commande attend l'arrivage.
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "selma-precommande");
+
+  await etape("épuisée mais annoncée : la fiche propose la précommande, avec sa date", async () => {
+    await page.goto(S + "/produit/polo-coton-pique", { waitUntil: "networkidle" });
+    await clic(page, page.getByRole("button", { name: "Vert olive", exact: true }));
+    await clic(page, page.locator(".valeur", { hasText: /^XL/ }));
+    const bloc = page.locator(".fiche-precommande");
+    await bloc.waitFor({ timeout: 5000 });
+    verifie((await bloc.innerText()).includes("En précommande · arrivée prévue vers le"), `le bloc : « ${(await bloc.innerText()).split("\n")[0]} »`);
+    verifie((await page.locator(".achat .btn-ajout").innerText()).trim() === "Précommander", "le bouton dit « Précommander »");
+    await capture(page, "selma-precommande-fiche");
+    await clic(page, page.locator(".achat .btn-ajout"));
+    await page.locator(".confirmation-ajout").waitFor({ timeout: 5000 });
+  });
+
+  await etape("le tunnel le dit, la commande attend son arrivage", async () => {
+    await page.goto(S + "/commande", { waitUntil: "networkidle" });
+    await page.locator(".tunnel-precommande").waitFor({ timeout: 8000 });
+    verifie((await page.locator(".tunnel-precommande").innerText()).includes("elle part dès l'arrivage"), "le récapitulatif : « elle part dès l'arrivage, prévu vers le … »");
+    await confirmeNumero(page, "20555888", "20 555 888");
+    await remplitAdresse(page, { nom: "Nadia Sassi", adresse: "15 rue de Hollande", ville: "Tunis", gouvernorat: "Tunis" });
+    await page.locator(".tunnel-conditions input[type=checkbox]").check();
+    await clic(page, page.locator(".tunnel-bouton"));
+    await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
+    await page.locator(".merci").waitFor();
+    const merci = await page.locator(".merci").innerText();
+    verifie(merci.includes("L'arrivage") && merci.includes("Précommande"), "la page de fin : l'étape « L'arrivage », la ligne « Précommande »");
+    const cle = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    const [c] = await (await fetch(`${RELAIS}/rest/v1/commandes?boutique_id=eq.00000000-0000-4000-8000-000000000003&contact_telephone=eq.%2B21620555888&select=en_attente_arrivage`, {
+      headers: { apikey: cle, authorization: `Bearer ${cle}` },
+    })).json();
+    verifie(c?.en_attente_arrivage === true, "en base : la commande attend son arrivage");
+    await pause(1200);
+    await capture(page, "selma-precommande-merci");
+  });
+  await ctx.close();
+}
+
+/* ------------------------------------------------------------------ */
 console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==");
 {
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });

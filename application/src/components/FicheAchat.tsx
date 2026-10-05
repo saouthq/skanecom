@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Prix } from "./Prix";
 import { EtatStock } from "./EtatStock";
-import { Coche, Lot, Panier } from "./Icones";
+import { Calendrier, Coche, Lot, Panier } from "./Icones";
 import { LivraisonEstimee } from "./LivraisonEstimee";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, annonceAjout } from "@/lib/panier";
@@ -15,7 +15,7 @@ import { evenementPub } from "@/lib/pixels";
 import { usePrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
 import { useSelection } from "./SelectionVariante";
-import { etatVariante, minimumVariante, type Produit } from "@/lib/catalogue";
+import { etatVariante, jourPrevu, minimumVariante, precommandeDe, type Produit } from "@/lib/catalogue";
 import { AlerteRetour } from "./AlerteRetour";
 import { AxesDeclinaison } from "./AxesDeclinaison";
 import { ContactProduit, lienWhatsappPiece, type ContactVente } from "./ContactProduit";
@@ -28,7 +28,9 @@ import type { CodeTheme } from "@/lib/theme";
    panier, et la barre d'achat collante du mobile. Réglage de la boutique
    (commande.achat_express) : « Commander maintenant » mène droit au tunnel
    avec cette déclinaison et cette quantité seules, le panier n'est pas
-   touché.
+   touché. Réglage catalogue.precommandes : une déclinaison épuisée qu'un
+   arrivage annoncé apporte se précommande (sa date, ce qu'il en reste) ;
+   la base n'y réserve rien, la commande part à l'arrivage.
 
    Trois règles tenues, toutes venues d'un défaut mesuré :
 
@@ -95,15 +97,19 @@ export function FicheAchat({
   const stock = variante?.stock ?? 0;
   // Les prix par quantité du produit (« 2 pour 99 ») : la base les appliquera.
   const paliers = paliersDe(produit.paliers);
-  const sousMinimum = Boolean(variante) && stock > 0 && stock < minimum;
-  const disponible = Boolean(variante) && stock > 0 && !sousMinimum;
+  // Épuisée, mais un arrivage l'apporte : elle se précommande, dans la limite de ce qui arrive.
+  const precommande = precommandeDe(variante);
+  const sousMinimum = Boolean(variante) && stock > 0 && stock < minimum && !precommande;
+  const disponible = Boolean(variante) && stock > 0 && stock >= minimum;
+  const achetable = disponible || Boolean(precommande);
+  const plafond = precommande ? precommande.reste : stock;
   const technique = gabarit === "technique";
 
   // La quantité ne dépasse jamais le stock réel de la déclinaison choisie, ni
   // ne descend sous son minimum ; changer de déclinaison efface le « Ajouté ».
   // Ajusté pendant le rendu, pas dans un effet (un rendu de moins, pas d'état
   // faux affiché).
-  const cleDeclinaison = `${variante?.id ?? ""}:${stock}:${minimum}`;
+  const cleDeclinaison = `${variante?.id ?? ""}:${plafond}:${minimum}`;
   const [declinaisonVue, setDeclinaisonVue] = useState(cleDeclinaison);
   const [minimumVu, setMinimumVu] = useState(minimum);
   if (declinaisonVue !== cleDeclinaison) {
@@ -111,7 +117,7 @@ export function FicheAchat({
     setMinimumVu(minimum);
     // Un autre minimum (les vis au détail par 20, la boîte de 200 à l'unité) :
     // la quantité repart de lui — jamais 20 boîtes par surprise.
-    setQuantite((q) => (minimumVu !== minimum ? minimum : Math.max(minimum, Math.min(q, Math.max(minimum, stock)))));
+    setQuantite((q) => (minimumVu !== minimum ? minimum : Math.max(minimum, Math.min(q, Math.max(minimum, plafond)))));
     setAjoute(false);
   }
 
@@ -153,7 +159,7 @@ export function FicheAchat({
   };
 
   const auPanier = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!variante || !disponible) return;
+    if (!variante || !achetable) return;
     const image =
       variante.image_chemin ??
       produit.images.find((i) => i.variante_id === variante.id)?.chemin ??
@@ -169,8 +175,9 @@ export function FicheAchat({
         ...(image ? { image } : {}),
         ...(minimum > 1 ? { quantiteMin: minimum } : {}),
         ...(paliers.length ? { paliers } : {}),
+        ...(precommande ? { precommande: precommande.date_prevue } : {}),
       },
-      stock,
+      plafond,
     );
     setAjoute(true);
     // La photo qu'on regarde part vers le panier ; sinon, une pastille part du bouton.
@@ -187,7 +194,7 @@ export function FicheAchat({
   };
 
   // L'achat express : cette déclinaison, cette quantité, rien d'autre.
-  const lienExpress = variante && disponible ? `/commande?article=${variante.id}&quantite=${quantite}` : null;
+  const lienExpress = variante && achetable ? `/commande?article=${variante.id}&quantite=${quantite}` : null;
 
   const prixBarre = variante && prixBarres && variante.prix_barre_millimes ? variante.prix_barre_millimes : null;
 
@@ -214,13 +221,22 @@ export function FicheAchat({
 
       {/* Les prix par quantité (« 2 pour 99 ») : un choix règle la quantité. */}
       {variante && paliers.length && !contact ? (
-        <OffresQuantite prixUnitaire={prixApplique} paliers={paliers} quantite={quantite} stock={stock} minimum={minimum}
+        <OffresQuantite prixUnitaire={prixApplique} paliers={paliers} quantite={quantite} stock={plafond} minimum={minimum}
           onChoisir={(q) => setQuantite(q)} />
       ) : null}
 
       <AxesDeclinaison produit={produit} choix={choix} setChoix={setChoix} prixPros={prixPros} prevenirRetour={prevenirRetour} />
 
-      {variante && sousMinimum ? (
+      {variante && precommande ? (
+        <div className="fiche-precommande" data-precommande={precommande.date_prevue}>
+          <p className="fiche-precommande-titre">
+            <Calendrier taille={16} />
+            <span>{t.precommande.titre(jourPrevu(precommande.date_prevue))}</span>
+          </p>
+          <p className="legende">{t.precommande.texte}</p>
+          {precommande.reste <= 5 ? <p className="legende fiche-precommande-reste">{t.precommande.reste(precommande.reste)}</p> : null}
+        </div>
+      ) : variante && sousMinimum ? (
         <div className="fiche-indisponible">
           <p>{t.produit.sousMinimumTitre}</p>
           <p className="legende">{t.produit.sousMinimumTexte(stock, minimum)}</p>
@@ -235,7 +251,9 @@ export function FicheAchat({
       ) : null}
 
       <div className="fiche-stock">
-        {variante ? <EtatStock etat={etatVariante(variante)} restant={stock} /> : <span className="etat etat-rupture">{t.stock.rupture}</span>}
+        {precommande ? (
+          <span className="etat etat-precommande">{t.precommande.etat}</span>
+        ) : variante ? <EtatStock etat={etatVariante(variante)} restant={stock} /> : <span className="etat etat-rupture">{t.stock.rupture}</span>}
       </div>
 
       {minimum > 1 && !sousMinimum ? (
@@ -261,13 +279,13 @@ export function FicheAchat({
             −
           </button>
           <span aria-live="polite">{quantite}</span>
-          <button type="button" aria-label={t.produit.ajouterUnArticle} disabled={quantite >= stock} onClick={() => setQuantite((q) => Math.min(stock, q + 1))}>
+          <button type="button" aria-label={t.produit.ajouterUnArticle} disabled={quantite >= plafond} onClick={() => setQuantite((q) => Math.min(plafond, q + 1))}>
             +
           </button>
         </div>
-        <button type="button" className="btn btn-primaire btn-ajout" data-ajoute={ajoute ? "" : undefined} disabled={!disponible} onClick={auPanier}>
+        <button type="button" className="btn btn-primaire btn-ajout" data-ajoute={ajoute ? "" : undefined} disabled={!achetable} onClick={auPanier}>
           {ajoute ? <Coche taille={16} /> : null}
-          {ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier}
+          {ajoute ? t.panier.ajoute : precommande ? t.precommande.bouton : t.produit.ajouterAuPanier}
         </button>
         <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="fiche-favori" />
       </div>
@@ -313,15 +331,16 @@ export function FicheAchat({
             <>
               {/* Deux actions dans la barre : l'ajout au panier devient une icône. */}
               <button type="button" className="btn btn-second achat-mobile-icone" data-ajoute={ajoute ? "" : undefined} onClick={auPanier}
-                aria-label={ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier} title={t.produit.ajouterAuPanier}>
+                aria-label={ajoute ? t.panier.ajoute : precommande ? t.precommande.bouton : t.produit.ajouterAuPanier}
+                title={precommande ? t.precommande.bouton : t.produit.ajouterAuPanier}>
                 {ajoute ? <Coche taille={18} /> : <Panier taille={18} />}
               </button>
               <Link className="btn btn-primaire" href={lienExpress} prefetch={false}>{t.produit.commanderMaintenant}</Link>
             </>
           ) : (
-            <button type="button" className="btn btn-primaire" data-ajoute={ajoute ? "" : undefined} disabled={!disponible} onClick={auPanier}>
+            <button type="button" className="btn btn-primaire" data-ajoute={ajoute ? "" : undefined} disabled={!achetable} onClick={auPanier}>
               {ajoute ? <Coche taille={16} /> : null}
-              {ajoute ? t.panier.ajoute : t.produit.ajouterAuPanier}
+              {ajoute ? t.panier.ajoute : precommande ? t.precommande.bouton : t.produit.ajouterAuPanier}
             </button>
           )}
         </div>

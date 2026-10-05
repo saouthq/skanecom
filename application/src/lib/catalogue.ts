@@ -60,7 +60,13 @@ export type Variante = {
   image_chemin: string | null;
   /** La quantité minimale d'une commande (1 = à l'unité ; migration 35). */
   quantite_min?: number;
+  /** Épuisée, elle se précommande sur un arrivage annoncé (réglage
+   *  catalogue.precommandes, migration 88) : sa date, ce qui reste à
+   *  précommander. null sinon. */
+  precommande?: Precommande | null;
 };
+
+export type Precommande = { date_prevue: string; reste: number };
 
 export type Image = {
   chemin: string;
@@ -253,6 +259,29 @@ export function trouveVariante(p: Produit, choix: Record<string, string>): Varia
 export function minimumVariante(v: Pick<Variante, "quantite_min"> | null | undefined): number {
   const m = v?.quantite_min;
   return typeof m === "number" && Number.isInteger(m) && m > 1 ? m : 1;
+}
+
+/** La précommande ouverte d'une déclinaison épuisée : ce qui reste à
+ *  précommander couvre au moins son minimum. null sinon (en stock, rien
+ *  d'annoncé, arrivage tout précommandé). */
+export function precommandeDe(v: Pick<Variante, "precommande" | "quantite_min" | "stock"> | null | undefined): Precommande | null {
+  const p = v?.precommande;
+  if (!v || !p || typeof p.date_prevue !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(p.date_prevue) || !Number.isInteger(p.reste)) return null;
+  const minimum = minimumVariante(v);
+  return v.stock < minimum && p.reste >= minimum ? p : null;
+}
+
+/** Tout épuisé, mais une déclinaison au moins se précommande : la carte dit
+ *  « En précommande » au lieu de « Épuisé ». */
+export function sePrecommande(p: Pick<Produit, "variantes">): boolean {
+  return p.variantes.some((v) => precommandeDe(v) !== null);
+}
+
+const JOUR_PREVU = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone: "Africa/Tunis" });
+
+/** « 17 octobre » : le jour prévu d'un arrivage (une date sans heure). */
+export function jourPrevu(date: string): string {
+  return JOUR_PREVU.format(new Date(`${date.slice(0, 10)}T12:00:00`));
 }
 
 /** La variante proposée d'emblée : la première EN STOCK, sinon la première. */

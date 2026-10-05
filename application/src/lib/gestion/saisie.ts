@@ -62,6 +62,8 @@ export type LigneChiffree = {
   /** Le lot qui baisse la ligne (module promotions), et ce qu'il lui retire. */
   lot?: string | null;
   remise_lot_millimes?: number | null;
+  /** Épuisée, elle se précommande sur un arrivage annoncé (migration 88). */
+  precommande?: { arrivage_id: string; date_prevue: string } | null;
   total_ligne_millimes: number | null;
 };
 export type Chiffrage = {
@@ -96,6 +98,7 @@ const MESSAGES: Record<string, string> = {
   comptoir: "Une vente au comptoir se fait au magasin : choisissez « Au magasin ».",
   panier: "Ajoutez au moins un article.",
   stock: "Un article n'est plus disponible dans la quantité demandée : la liste est à jour.",
+  precommande: "Une pièce n'est pas encore arrivée : elle se précommande, mais ne se remet pas au comptoir. Enregistrez une commande à livrer ou à retirer.",
   total: "Un prix a changé pendant la saisie : le total est à jour, vérifiez-le avec le client avant d'enregistrer.",
   note: "La note compte 500 caractères au plus.",
   cle: "La saisie a expiré : rechargez la page.",

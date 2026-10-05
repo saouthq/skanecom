@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Billets, Bouclier, Camion, Coche, Fleche, Magasin, Panier as IconePanier } from "./Icones";
+import { Billets, Bouclier, Calendrier, Camion, Coche, Fleche, Magasin, Panier as IconePanier } from "./Icones";
 import { Prix } from "./Prix";
 import { Tiroir } from "./Tiroir";
 import { ConfirmationAjout } from "./ConfirmationAjout";
@@ -13,6 +13,7 @@ import { changeQuantitePanier, retireDuPanier, usePanier, usePanierLu } from "@/
 import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalLigne, totalMillimes, type AjoutAnnonce } from "@/lib/panier-contrat";
 import { envole } from "@/lib/envol";
 import { appliqueLots } from "@/lib/lots";
+import { jourPrevu } from "@/lib/catalogue";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
@@ -246,6 +247,9 @@ export function BoutonPanier({
                     {minimum > 1 ? <span className="panier-minimum"> · {t.panier.parMinimum(minimum)}</span> : null}
                     {totalLigne(ligne).palier ? <span className="panier-palier"> · {t.panier.palierApplique(totalLigne(ligne).palier!.quantite, formatePrix(totalLigne(ligne).palier!.prixMillimes))}</span> : null}
                   </p>
+                  {ligne.precommande ? (
+                    <p className="panier-precommande legende"><Calendrier taille={13} /> {t.precommande.ligne(jourPrevu(ligne.precommande))}</p>
+                  ) : null}
                   <div className="panier-ligne-actions">
                     <div className="qte qte-petite" role="group" aria-label={t.produit.quantite}>
                       <button type="button" aria-label={t.produit.retirerUnArticle} disabled={minimum > 1 && ligne.quantite <= minimum}

@@ -18,6 +18,7 @@ import {
   etatProduit,
   minimumVariante,
   prixDepuis,
+  sePrecommande,
   stockTotal,
   valeursAxe,
   type Produit,
@@ -113,10 +114,12 @@ export function CarteProduit(props: Props) {
 function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = false }: Props) {
   const prix = prixDepuis(produit);
   const etat = etatProduit(produit);
+  // Épuisé, mais un arrivage annoncé l'apporte : il se précommande.
+  const precommande = etat === "rupture" && sePrecommande(produit);
   const couleurs = colorisDe(produit);
   const reduction = prixBarres ? remise(produit) : null;
   const marqueur =
-    etat === "rupture" ? t.stock.epuise : etat === "faible" ? t.stock.faible(stockTotal(produit)) : reduction ? `−${reduction} %` : null;
+    precommande ? t.precommande.etat : etat === "rupture" ? t.stock.epuise : etat === "faible" ? t.stock.faible(stockTotal(produit)) : reduction ? `−${reduction} %` : null;
   const autres = declinaisons(produit);
   const ajout = choixCarte(produit);
   const paliers = paliersDe(produit.paliers);
@@ -132,7 +135,7 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
         prioritaire={prioritaire}
         nom={champ(produit, "nom")}
       >
-        {marqueur ? <span className="ed-marqueur" data-etat={etat}>{marqueur}</span> : null}
+        {marqueur ? <span className="ed-marqueur" data-etat={precommande ? "precommande" : etat}>{marqueur}</span> : null}
       </Photo>
       <span className="ed-carte-corps">
         <span className="ed-carte-ligne">
@@ -165,6 +168,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
   const prix = prixDepuis(produit);
   const etat = etatProduit(produit);
   const restant = stockTotal(produit);
+  const precommande = etat === "rupture" && sePrecommande(produit);
   const reduction = prixBarres ? remise(produit) : null;
   const unique = produit.variantes.length === 1 ? produit.variantes[0] : null;
   const photo = urlPhoto(produit);
@@ -203,7 +207,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
       <BoutonFavori slug={produit.slug} nom={nom} className="carte-favori" />
       <BoutonComparer slug={produit.slug} nom={nom} photo={produit.images[0]?.chemin ?? null} className="te-carte-comparer" />
       <div className="te-carte-bas">
-        <EtatStock etat={etat} restant={restant} />
+        {precommande ? <span className="etat etat-precommande">{t.precommande.etat}</span> : <EtatStock etat={etat} restant={restant} />}
         {prix !== null ? (
           <p className="te-carte-prix">
             <PrixCarte classe="prix-carte" produitId={produit.id} variantes={produit.variantes} fort ttc />
@@ -229,7 +233,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
           />
         ) : (
           <Link className="btn btn-second btn-bloc te-carte-choisir" href={`/produit/${produit.slug}`} aria-label={`${t.produit.choisir} — ${nom}`}>
-            {etat === "rupture" ? t.produit.voir : t.produit.choisir}
+            {etat === "rupture" && !precommande ? t.produit.voir : t.produit.choisir}
           </Link>
         )}
       </div>

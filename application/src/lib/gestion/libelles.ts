@@ -41,6 +41,8 @@ export function libelleStatut(statut: string, mode?: string | null): string {
 export const ETAPES = [
   { cle: "a_confirmer", libelle: "À confirmer", vide: "Aucune commande à confirmer. Les nouvelles commandes arrivent ici." },
   { cle: "a_preparer", libelle: "À préparer", vide: "Aucune commande confirmée en attente de préparation." },
+  // Les précommandes sur arrivage (réglage catalogue.precommandes) : l'onglet ne paraît que s'il en attend.
+  { cle: "precommandes", libelle: "Précommandes", vide: "Aucune commande n'attend d'arrivage." },
   { cle: "expediees", libelle: "Expédiées", vide: "Aucune commande chez le livreur." },
   { cle: "cloturees", libelle: "Clôturées", vide: "Les commandes livrées, refusées ou annulées se retrouvent ici." },
   { cle: "toutes", libelle: "Toutes", vide: "Aucune commande pour le moment." },
@@ -171,6 +173,8 @@ export function messageRefus(indice: string | undefined, message: string): strin
       return "La commande a changé entre-temps : quelqu'un vient d'agir dessus. La fiche est à jour, vérifiez avant de recommencer.";
     case "commande":
       return "Cette commande n'existe pas dans cette boutique.";
+    case "arrivage":
+      return "Cette commande attend son arrivage : elle part quand ses pièces précommandées sont arrivées (Catalogue → Arrivages, Réceptionner).";
     default:
       return message;
   }

@@ -257,6 +257,16 @@ export function Cloche({ taille = 18, className }: Props) {
   );
 }
 
+/** Un calendrier : la date d'arrivée d'une précommande. */
+export function Calendrier({ taille = 18, className }: Props) {
+  return (
+    <svg width={taille} height={taille} viewBox="0 0 24 24" aria-hidden="true" className={className} {...trait}>
+      <rect x="4" y="5.5" width="16" height="14.5" rx="2" />
+      <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+    </svg>
+  );
+}
+
 /** Une enveloppe : le code reçu par e-mail. */
 export function Enveloppe({ taille = 18, className }: Props) {
   return (

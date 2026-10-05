@@ -644,6 +644,37 @@ html[data-gabarit=technique] .panier-ensemble-ajout:not([aria-disabled]) {
 .fiche-minimum-prix { font-variant-numeric: tabular-nums; color: var(--theme-encre-doux); }
 .panier-minimum { color: var(--theme-encre); font-weight: 500; }
 
+/* --- Précommande sur arrivage (réglage catalogue.precommandes) ------------- */
+/* Une valeur épuisée qu'un arrivage apporte : pas barrée (elle se commande),
+   un filet en pointillé dit « pas encore là ». */
+.valeur[data-precommande] { border-style: dashed; }
+.valeur-couleur[data-precommande] { border: 1px dashed var(--theme-filet-fort); }
+.valeur-couleur[data-precommande][aria-pressed="true"] { border: 1px solid var(--theme-encre); }
+.axe-note-precommande { color: var(--theme-encre); }
+.etat-precommande { color: var(--theme-accent); }
+.fiche-precommande {
+  display: grid; gap: .375rem; padding: 1rem; font-size: .875rem;
+  border-radius: var(--theme-radius-doux);
+  background: color-mix(in srgb, var(--theme-accent) 7%, var(--theme-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-accent) 22%, transparent);
+  animation: fiche-livraison-arrive .5s var(--theme-courbe) backwards;
+}
+.fiche-precommande-titre { display: flex; align-items: flex-start; gap: .5rem; margin: 0; font-weight: 500; color: var(--theme-encre); }
+.fiche-precommande-titre svg { flex: none; margin-block-start: .125rem; color: var(--theme-accent); }
+.fiche-precommande .legende { margin: 0; }
+.fiche-precommande-reste { color: var(--theme-encre); font-weight: 500; }
+.panier-precommande, .tunnel-ligne-precommande {
+  display: inline-flex; align-items: center; gap: .375rem; margin: .25rem 0 0;
+  font-size: .75rem; font-weight: 500; color: var(--theme-accent);
+}
+.panier-precommande svg, .tunnel-ligne-precommande svg { flex: none; }
+.tunnel-precommande {
+  margin: 1rem 0 0; padding: .75rem .875rem; border-radius: var(--theme-radius-doux);
+  background: color-mix(in srgb, var(--theme-accent) 7%, var(--theme-surface)); color: var(--theme-encre);
+}
+.compte-precommande { display: flex; align-items: flex-start; gap: .5rem; margin: .5rem 0 0; font-size: .8125rem; color: var(--theme-encre); }
+.compte-precommande svg { flex: none; margin-block-start: .125rem; color: var(--theme-accent); }
+
 /* --- Caractéristiques ------------------------------------------------------- */
 .caracteristiques { margin: 0; display: grid; }
 .caracteristiques > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1rem; padding-block: .625rem; border-block-end: 1px solid var(--theme-filet); font-size: .875rem; }

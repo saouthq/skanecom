@@ -35,6 +35,9 @@ export type LigneDevis = {
   lot?: string | null;
   remise_lot_millimes?: number | null;
   total_sans_lot_millimes?: number | null;
+  /** Épuisée, la déclinaison se précommande sur un arrivage annoncé
+   *  (réglage catalogue.precommandes, migration 88) : la date prévue. */
+  precommande?: { arrivage_id: string; date_prevue: string } | null;
   total_ligne_millimes: number | null;
 };
 
@@ -69,6 +72,9 @@ export type Devis = {
   /** Les lots que le panier réunit (déjà déduits des lignes et du sous-total). */
   lots?: LotDevis[];
   economie_lots_millimes?: number | null;
+  /** Une ligne au moins en précommande : la commande part quand le dernier
+   *  arrivage qu'elle attend est là (sa date prévue). */
+  precommande?: { date_prevue: string } | null;
   /** Au tunnel d'un devis (module devis) : son numéro, sa validité, la note. */
   devis?: { numero: string; valide_jusqu_au: string; note: string | null };
   /** Le code promo tapé (module promotions) : appliqué, ou pourquoi pas. */
@@ -124,6 +130,8 @@ export type LigneSuivie = {
   total_ligne_millimes: number;
   /** Le lot qui a baissé la ligne (migration 86). */
   lot?: string | null;
+  /** Une précommande pas encore servie (migration 88). */
+  precommande?: boolean;
   image: string | null;
 };
 
@@ -152,6 +160,8 @@ export type CommandeSuivie = {
   /** Le code promo appliqué (module promotions). */
   code_promo: string | null;
   total_millimes: number;
+  /** La commande attend un arrivage : la date prévue du dernier (migration 88). */
+  arrivage_prevu?: string | null;
   lignes: LigneSuivie[];
 };
 

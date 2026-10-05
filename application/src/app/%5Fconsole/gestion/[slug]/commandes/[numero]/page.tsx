@@ -28,6 +28,7 @@ import {
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { canal as canalDe } from "@/lib/gestion/saisie";
+import { jourArrivage } from "@/lib/gestion/arrivages";
 
 /* ============================================================================
    LA FICHE D'UNE COMMANDE — en tête, le geste du moment, selon l'étape :
@@ -77,6 +78,9 @@ type Fiche = {
   motif_annulation: string | null;
   note_client: string | null;
   note_interne: string | null;
+  /** Une précommande attend son arrivage (migration 88) : la date prévue du dernier. */
+  en_attente_arrivage: boolean;
+  arrivage_prevu: string | null;
   confirmee_le: string | null;
   expediee_le: string | null;
   livree_le: string | null;
@@ -92,6 +96,9 @@ type Fiche = {
     lot: string | null;
     remise_lot_millimes: number;
     stock_restant: number | null;
+    /** En précommande sur un arrivage ; servie quand il est arrivé. */
+    precommande: boolean;
+    precommande_servie_le: string | null;
     image: string | null;
   }[];
   historique: { le: string; avant: string | null; apres: string; origine_refus: string | null; commentaire: string | null; auteur: string | null }[];
@@ -213,13 +220,17 @@ export default async function FicheCommande({
   const maintenant = new Date();
   const action = `/gestion/${slug}/commandes/${f.numero}/action`;
   const aConfirmer = f.statut === "recue" || f.statut === "a_arbitrer";
+  // Une précommande qui attend son arrivage (annulée ou refusée, elle n'attend plus rien).
+  const attendArrivage = f.en_attente_arrivage && ["a_arbitrer", "recue", "confirmee"].includes(f.statut);
   const articles = f.lignes.reduce((n, l) => n + l.quantite, 0);
   const prenom = f.contact.nom.trim().split(/\s+/)[0] ?? f.contact.nom;
   const annulable = aConfirmer || f.statut === "confirmee";
   const retrait = f.mode_livraison === "retrait";
   const statut = libelleStatut(f.statut, f.mode_livraison);
   const saisie = f.origine === "manuelle" ? canalDe(f.canal) ?? canalDe("autre") : undefined;
-  const fait = messages.fait ? ((retrait ? FAIT_RETRAIT[messages.fait] : undefined) ?? FAIT[messages.fait]) : undefined;
+  const fait = messages.fait === "appel-confirmee" && attendArrivage
+    ? "Commande confirmée : elle attend son arrivage, puis passe à la préparation."
+    : messages.fait ? ((retrait ? FAIT_RETRAIT[messages.fait] : undefined) ?? FAIT[messages.fait]) : undefined;
 
   const journal = [
     ...f.historique.map((e) => ({
@@ -305,6 +316,14 @@ export default async function FicheCommande({
           </p>
         ) : null}
         {messages.erreur ? <p className="message message-erreur bo-message" role="alert">{messages.erreur}</p> : null}
+        {attendArrivage ? (
+          <p className="message ar-attente bo-message">
+            <span>
+              Précommande : elle attend son arrivage, prévu le {f.arrivage_prevu ? jourArrivage(f.arrivage_prevu) : "…"}. Elle part dès qu&apos;il est réceptionné.{" "}
+              {peut(role, EXPEDIER) ? <Link href={`/gestion/${slug}/produits/arrivages`}>Arrivages</Link> : null}
+            </span>
+          </p>
+        ) : null}
 
         <div className="grille-2 bo-fiche">
           <div className="pile bo-fiche-principal">
@@ -449,6 +468,25 @@ export default async function FicheCommande({
                 ) : (
                   <p className="bo-action-aide">Votre rôle ne permet pas d&apos;enregistrer le retrait.</p>
                 )}
+              </section>
+            ) : f.statut === "confirmee" && attendArrivage ? (
+              <section className="carte bo-action" aria-labelledby="action-titre">
+                <div className="bo-action-tete">
+                  <span className="bo-action-icone"><Icone nom="calendrier" /></span>
+                  <div>
+                    <p className="bo-action-sur">Étape en cours</p>
+                    <h2 id="action-titre">En attente de l&apos;arrivage</h2>
+                  </div>
+                </div>
+                <p className="bo-action-aide">
+                  Confirmée {f.confirmee_le ? quand(f.confirmee_le, maintenant) : ""}. Ses pièces précommandées arrivent vers le {f.arrivage_prevu ? jourArrivage(f.arrivage_prevu) : "…"} :
+                  à la réception de l&apos;arrivage, elle est servie la première et passe « À préparer ».
+                </p>
+                {peut(role, EXPEDIER) ? (
+                  <div className="bo-boutons">
+                    <Link href={`/gestion/${slug}/produits/arrivages`} className="btn btn-second"><Icone nom="calendrier" /> Voir les arrivages</Link>
+                  </div>
+                ) : null}
               </section>
             ) : f.statut === "confirmee" ? (
               <section className="carte bo-action" aria-labelledby="action-titre">
@@ -601,8 +639,14 @@ export default async function FicheCommande({
                       {l.variante_libelle ? <span className="text-petit discret">{l.variante_libelle}</span> : null}
                       <span className="text-petit discret">
                         {l.sku ? `Réf. ${l.sku}` : "Sans référence"}
-                        {l.stock_restant !== null ? ` · reste ${l.stock_restant} en stock` : ""}
+                        {l.stock_restant !== null && !(l.precommande && !l.precommande_servie_le) ? ` · reste ${l.stock_restant} en stock` : ""}
                       </span>
+                      {l.precommande ? (
+                        <span className="text-petit bo-article-pre" data-servie={l.precommande_servie_le ? "" : undefined}>
+                          <Icone nom="calendrier" taille={12} />{" "}
+                          {l.precommande_servie_le ? `Précommande · servie ${quand(l.precommande_servie_le, maintenant)}` : "Précommande · attend l'arrivage"}
+                        </span>
+                      ) : null}
                       {l.lot ? (
                         <span className="text-petit bo-article-lot">
                           <Icone nom="etiquette" taille={12} /> Pack « {l.lot} » · −{formatePrix(l.remise_lot_millimes)}

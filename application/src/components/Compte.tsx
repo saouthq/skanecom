@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Coche } from "./Icones";
+import { Calendrier, Coche } from "./Icones";
 import { EspacePro } from "./EspacePro";
 import { MesDevis } from "./MesDevis";
 import { AvisCommande } from "./DonnerAvis";
@@ -12,6 +12,7 @@ import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import { lieu, telephoneLisible, type Magasin } from "@/lib/commande";
 import { sessionAcheteur, type SessionAcheteur, type Verification } from "@/lib/connexion";
 import { urlFichier } from "@/lib/photos";
+import { jourPrevu } from "@/lib/catalogue";
 import { t } from "@/lib/i18n";
 import type { MonAvis } from "@/lib/avis";
 
@@ -62,6 +63,8 @@ export type CommandeMienne = {
   total_millimes: number;
   transporteur: string | null;
   numero_suivi: string | null;
+  /** Elle attend un arrivage (précommande, migration 88) : sa date prévue. */
+  arrivage_prevu?: string | null;
   lignes: LigneMienne[];
 };
 
@@ -268,6 +271,9 @@ export function ResumeCommande({ c }: { c: CommandeMienne }) {
       </div>
       <Frise statut={c.statut} retrait={retrait} />
       <p className="compte-etat">{etat}</p>
+      {c.arrivage_prevu && ["a_arbitrer", "recue", "confirmee"].includes(c.statut) ? (
+        <p className="compte-precommande"><Calendrier taille={15} /> {t.precommande.suivi(jourPrevu(c.arrivage_prevu))}</p>
+      ) : null}
       <div className="compte-contenu">
         <span className="compte-vignettes" aria-hidden="true">
           {vignettes.map((l, i) => (

@@ -76,6 +76,7 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
   vitrine: [
     { cle: "catalogue.afficher_prix_barres", genre: "booleen" },
     { cle: "catalogue.prevenir_retour", genre: "booleen" },
+    { cle: "catalogue.precommandes", genre: "booleen" },
     { cle: "catalogue.favoris", genre: "booleen" },
     { cle: "catalogue.achetes_ensemble", genre: "booleen" },
     { cle: "catalogue.ajout_carte", genre: "booleen" },
@@ -206,6 +207,7 @@ const LIBELLES_COURTS: Record<string, string> = {
   "paiement.konnect_actif": "Paiement en ligne",
   "catalogue.afficher_prix_barres": "Prix barrés",
   "catalogue.prevenir_retour": "Prévenir du retour",
+  "catalogue.precommandes": "Précommandes sur arrivage",
   "catalogue.favoris": "Favoris",
   "catalogue.achetes_ensemble": "Souvent achetés ensemble",
   "catalogue.ajout_carte": "Ajout depuis la carte",

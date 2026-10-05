@@ -313,6 +313,7 @@ html[data-gabarit="editorial"] .puce { border-color: color-mix(in srgb, var(--th
   font-size: .6875rem; font-weight: 500; letter-spacing: .01em; text-transform: none;
 }
 .ed-marqueur[data-etat="rupture"] { color: var(--theme-encre-doux); }
+.ed-marqueur[data-etat="precommande"] { color: var(--theme-accent); }
 
 /* L'absence de photo, dite comme un cartel : le nom du produit, composé. */
 html[data-gabarit="editorial"] .attente-photo {

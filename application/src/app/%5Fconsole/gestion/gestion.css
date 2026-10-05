@@ -939,6 +939,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .rc-produits { display: grid; gap: .875rem; }
 .console .carte.rc-produit { padding: 0; overflow: hidden; }
 .rc-produit[hidden] { display: none; }
+.rc-ligne[hidden] { display: none; }
 .rc-produit-tete { display: flex; align-items: center; gap: .75rem; padding: .875rem 1.25rem; border-block-end: 1px solid var(--ui-bord); }
 .rc-vignette {
   position: relative; display: grid; place-items: center; flex: none; inline-size: 44px; block-size: 44px; overflow: hidden;
@@ -1593,6 +1594,41 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .pm-case input { margin-block-start: .1875rem; inline-size: 16px; block-size: 16px; accent-color: var(--ui-texte); }
 .pm-case > span { display: grid; gap: .125rem; }
 .pm-case b { font-weight: 500; font-size: .875rem; }
+
+/* ---- Arrivages annoncés (Catalogue → Arrivages, précommandes) ---- */
+.ar-liste { grid-template-columns: 1fr; }
+@media (min-width: 1000px) { .ar-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ar-carte[data-etat="recu"], .ar-carte[data-etat="annule"] { background: var(--ui-doux); }
+.ar-nom { margin: 0; font-size: 1.0625rem; font-weight: 650; letter-spacing: -.01em; }
+.ar-date { display: flex; align-items: center; gap: .4375rem; margin: 0; font-size: .875rem; color: var(--ui-texte); }
+.ar-date svg { flex: none; color: var(--ui-texte-2); }
+.ar-carte[data-etat="retard"] .ar-date { color: #92400E; }
+.ar-lignes { display: grid; margin: 0; padding: 0; list-style: none; border-block: 1px solid var(--ui-bord-leger); }
+.ar-ligne { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; padding-block: .5rem; font-size: .8125rem; }
+.ar-ligne + .ar-ligne { border-block-start: 1px solid var(--ui-bord-leger); }
+.ar-quoi { display: grid; min-inline-size: 0; }
+.ar-quoi b { font-weight: 500; }
+.ar-quoi .discret { font-size: .75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-chiffres { display: grid; justify-items: end; flex: none; color: var(--ui-texte-2); }
+.ar-pre { color: #1D4ED8; font-weight: 600; }
+.ar-recevoir, .ar-annuler { display: grid; gap: .75rem; padding: .875rem; border: 1px solid var(--ui-bord); border-radius: 10px; background: var(--ui-doux); }
+.ar-recevoir .aide, .ar-annuler .aide { margin: 0; }
+.ar-recevoir .rc-lignes { border: 1px solid var(--ui-bord-leger); border-radius: 8px; overflow: hidden; background: var(--ui-panneau); }
+.ar-recevoir > .btn, .ar-annuler > .btn { justify-self: start; }
+.console .message.ar-attente { background: #FFFBEB; border-color: #FDE68A; color: #78350F; }
+.console .message.ar-attente::before { color: #B45309; }
+.bo-article-pre { display: inline-flex; align-items: center; gap: .25rem; color: #1D4ED8; font-weight: 500; }
+.bo-article-pre[data-servie] { color: #15803D; }
+.sc-pre { display: inline-flex; align-items: center; gap: .25rem; font-size: .75rem; font-weight: 500; color: #1D4ED8; }
+.ar-champs { display: grid; gap: 1rem; padding: 1.125rem 1.25rem; border: 1px solid var(--ui-bord); border-radius: 12px; background: var(--ui-panneau); }
+@media (min-width: 760px) { .ar-champs { grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr); } .ar-champ-note { grid-column: 1 / -1; } }
+.ar-filtre { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; max-inline-size: none; }
+.ar-filtre .bo-recherche-champ { flex: 0 1 28rem; min-inline-size: 0; }
+.ar-epuisees { display: inline-flex; align-items: center; gap: .5rem; font-size: .875rem; cursor: pointer; }
+.ar-epuisees input { inline-size: 16px; block-size: 16px; accent-color: var(--ui-texte); }
+@media (max-width: 699px) {
+  .ar-recevoir .rc-ligne { grid-template-columns: minmax(0, 1fr) 5.5rem; padding-inline: .75rem; }
+}
 
 /* Les écrans promotions : une respiration entre les blocs. */
 .pm-synthese, .pm-section, .pm-nouveau, .pb-apercu { margin-block-end: 1.5rem; }

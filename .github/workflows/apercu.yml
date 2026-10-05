@@ -57,6 +57,7 @@ on:
       - "supabase/seed-prix-quantite.sql"
       - "supabase/seed-monoproduit.sql"
       - "supabase/seed-lots.sql"
+      - "supabase/seed-precommandes.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -152,6 +153,7 @@ jobs:
           installe graines seed-prix-quantite.sql supabase/seed-prix-quantite.sql
           installe graines seed-monoproduit.sql supabase/seed-monoproduit.sql
           installe graines seed-lots.sql supabase/seed-lots.sql
+          installe graines seed-precommandes.sql supabase/seed-precommandes.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu

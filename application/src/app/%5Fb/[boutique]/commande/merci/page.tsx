@@ -3,9 +3,10 @@ import Image from "next/image";
 import { cookies } from "next/headers";
 import { Gabarit } from "@/components/Gabarit";
 import { FinDeCommande } from "@/components/FinDeCommande";
-import { Coche } from "@/components/Icones";
+import { Calendrier, Coche } from "@/components/Icones";
 import { Prix } from "@/components/Prix";
 import { cadre as chargeCadre } from "@/lib/boutique";
+import { jourPrevu } from "@/lib/catalogue";
 import { supabase } from "@/lib/supabase";
 import { COOKIE_COMMANDE, lieu, prenomDe, telephoneLisible, type CommandeSuivie } from "@/lib/commande";
 import { urlFichier } from "@/lib/photos";
@@ -77,6 +78,10 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
           fait: false,
         }]
       : []),
+    // Une précommande : elle attend son arrivage avant de partir (migration 88).
+    ...(commande.arrivage_prevu
+      ? [{ titre: t.precommande.suiteTitre, texte: t.precommande.merci(jourPrevu(commande.arrivage_prevu)), fait: false }]
+      : []),
     ...(retrait
       ? [
           { titre: t.commande.suitePreparation, texte: t.commande.suitePreparationTexte(t.commande.pretSous(magasin?.delai_heures ?? 24)), fait: false },
@@ -146,6 +151,9 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
                     <span className="tunnel-ligne-nom">{ligne.produit_nom}</span>
                     {ligne.variante_libelle ? <span className="legende">{ligne.variante_libelle}</span> : null}
                     <span className="legende">{t.commande.quantite(ligne.quantite)}</span>
+                    {ligne.precommande ? (
+                      <span className="tunnel-ligne-precommande"><Calendrier taille={13} /> {t.precommande.ligneCourte}</span>
+                    ) : null}
                   </span>
                   <span className="tunnel-ligne-prix">
                     <Prix millimes={ligne.total_ligne_millimes} />

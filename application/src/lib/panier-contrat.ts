@@ -103,6 +103,10 @@ export type LignePanier = {
    *  l'ajout (« 2 pour 99 », lib/paliers.ts). Le tiroir les applique ; la
    *  base les relit et les applique au chiffrage. */
   paliers?: Palier[];
+  /** COPIE D'AFFICHAGE, facultative : la déclinaison était en précommande à
+   *  l'ajout, la date prévue de son arrivage (AAAA-MM-JJ, migration 88). Le
+   *  tiroir le dit ; le devis relit en base ce qui est en stock ou non. */
+  precommande?: string;
 };
 
 export type Panier = {
@@ -188,12 +192,13 @@ export function litPanier(brut: string | null): Panier {
         Number.isFinite(l?.prixMillimesAjout),
     );
     const propres = lignes.map((l) => {
-      const { image, quantiteMin, paliers, ...reste } = l;
+      const { image, quantiteMin, paliers, precommande, ...reste } = l;
       const avecImage =
         typeof image === "string" && /^[a-z0-9][a-z0-9/_.-]*$/.test(image) && !image.includes("..") ? { ...reste, image } : reste;
       const avecMin = Number.isInteger(quantiteMin) && quantiteMin! > 1 && quantiteMin! <= 999 ? { ...avecImage, quantiteMin } : avecImage;
       const propresPaliers = paliersDe(paliers);
-      return propresPaliers.length ? { ...avecMin, paliers: propresPaliers } : avecMin;
+      const avecPaliers = propresPaliers.length ? { ...avecMin, paliers: propresPaliers } : avecMin;
+      return typeof precommande === "string" && /^\d{4}-\d{2}-\d{2}$/.test(precommande) ? { ...avecPaliers, precommande } : avecPaliers;
     });
     return { version: PANIER_VERSION, lignes: propres, majLe: objet.majLe ?? "" };
   } catch {
@@ -233,6 +238,8 @@ export function ajouteLigne(
     else delete suivante.quantiteMin;
     if (ligne.paliers?.length) suivante.paliers = ligne.paliers;
     else delete suivante.paliers;
+    if (ligne.precommande) suivante.precommande = ligne.precommande;
+    else delete suivante.precommande;
     lignes[index] = suivante;
   } else {
     lignes.push({
