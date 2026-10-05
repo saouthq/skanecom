@@ -9,6 +9,7 @@ import { adresseRetourSkanFact, adresseSkanFact, empreinteSecret } from "@/lib/c
 import { chiffrementPret } from "@/lib/gestion/chiffre";
 import { titreBoutique } from "@/lib/console/titre-boutique";
 import type { DonneesFormules } from "@/lib/console/formules";
+import type { DonneesDroits } from "@/lib/console/droits";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   return { title: await titreBoutique(params, "Modules") };
@@ -55,12 +56,17 @@ export default async function Modules({ params, searchParams }: {
   if (error) throw new Error(`Modules illisibles : ${error.message}`);
   const modules = data as Module[];
   const actifs = modules.filter((m) => m.actif).length;
-  // La formule de la boutique : un module qu'elle n'ouvre pas ne s'active pas.
-  const { data: df } = await service.rpc("console_formules", { p_acteur: user.id });
+  // La formule de la boutique, et ses écarts : un module qui ne lui est pas ouvert ne s'active pas
+  // (sauf à le lui ouvrir d'un geste, ci-dessous).
+  const [{ data: df }, { data: dd }] = await Promise.all([
+    service.rpc("console_formules", { p_acteur: user.id }),
+    service.rpc("console_droits_boutique", { p_acteur: user.id, p_boutique_id: boutique.id }),
+  ]);
   const formules = (df ?? { formules: [], droits: [], boutiques: [] }) as DonneesFormules;
   const codeFormule = formules.boutiques.find((x) => x.id === boutique.id)?.formule ?? null;
   const formule = formules.formules.find((f) => f.code === codeFormule) ?? null;
-  const horsFormule = (code: string) => formule !== null && !formule.droits.includes(`module.${code}`);
+  const ouverts = new Set(((dd as DonneesDroits | null)?.droits ?? []).filter((x) => x.effectif).map((x) => x.code));
+  const horsFormule = (code: string) => !ouverts.has(`module.${code}`);
   const formuleQuiOuvre = (code: string) => formules.formules.find((f) => f.droits.includes(`module.${code}`))?.nom ?? null;
   // SkanEcom, partenaire déclaré de SkanFact (« Connecter SkanFact ») : ce que SkanFact doit déclarer.
   const partenaire = modules.some((m) => m.code === "skanfact")
@@ -73,7 +79,7 @@ export default async function Modules({ params, searchParams }: {
         <h2>Modules</h2>
         <p>
           Ce que {boutique.nom} propose en plus du socle. Un module fait partie de l&apos;offre vendue : il s&apos;active ici,
-          jamais depuis le backoffice de la boutique. Visible sur la vitrine d&apos;ici cinq minutes.
+          jamais depuis le backoffice de la boutique. La vitrine suit tout de suite. Un module hors de sa formule peut lui être ouvert d&apos;un geste (un écart, dans l&apos;onglet Formule).
           {peutChanger ? null : <> Un super-administrateur les active et les coupe.</>}
           {" "}{formule ? <>Formule <Link href={`/boutiques/${slug}#t-formule`}>{formule.nom}</Link> : seuls ses modules s&apos;activent.</> : <>Sans formule : tous s&apos;activent.</>}
         </p>
@@ -127,6 +133,12 @@ export default async function Modules({ params, searchParams }: {
                       <span className="md-hors-formule">
                         <span className="ui-etat">Hors formule</span>
                         {formuleQuiOuvre(m.code) ? <span className="aide">Vient avec {formuleQuiOuvre(m.code)}</span> : null}
+                        {peutChanger ? (
+                          <button type="submit" name="actif" value="true" formAction={`/boutiques/${slug}/modules/changer?ouvrir=1`}
+                            className="btn btn-second btn-petit" aria-label={`L'ouvrir à ${boutique.nom} et l'activer : ${m.libelle}`}>
+                            Lui ouvrir et activer
+                          </button>
+                        ) : null}
                       </span>
                     ) : m.disponible && peutChanger ? (
                       <button type="submit" name="actif" value="true" className="btn btn-second btn-petit" aria-label={`Activer : ${m.libelle}`}>Activer</button>

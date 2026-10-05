@@ -37,7 +37,10 @@ export default async function NouvelleBoutique({ searchParams }: {
   // « À partir de » une boutique : sa configuration, à la place d'un métier et d'une structure.
   const { data: dmodele } = v.modele ? await clientService().rpc("console_boutique", { p_slug: v.modele }) : { data: null };
   const modele = dmodele ? (dmodele as { boutique: { slug: string; nom: string }; theme: { code: string } | null }) : null;
-  const formules = ((df ?? { formules: [] }) as DonneesFormules).formules;
+  const donneesFormules = (df ?? { formules: [], droits: [] }) as DonneesFormules;
+  const formules = donneesFormules.formules;
+  // Les modules construits, et les formules qui ouvrent chacun (pour dire, en direct, ceux qui seront un ajout).
+  const modules = donneesFormules.droits.filter((d) => d.genre === "module" && d.disponible);
   return (
     <div className="max-w-[48rem]">
       <EnTetePage
@@ -167,6 +170,24 @@ export default async function NouvelleBoutique({ searchParams }: {
               </span>
             </label>
           </fieldset>}
+          {role === "super_admin" && modules.length ? (
+            <fieldset className="choix choix-2 nb-modules">
+              <legend>Modules à activer dès maintenant <span className="aide">Tout se change ensuite dans son onglet Modules.</span></legend>
+              {modules.map((m) => (
+                <label key={m.code} className="choix-carte nb-module"
+                  data-formules={formules.filter((f) => f.droits.includes(m.code)).map((f) => f.code).join(" ")}>
+                  <input type="checkbox" name="module" value={m.code.replace(/^module\./, "")} />
+                  <span>
+                    <b>{m.libelle}</b>
+                    {m.description ? <span className="aide">{m.description}</span> : null}
+                    <span className="ui-etat ui-etat-point ui-etat-ambre nb-hors">Hors de la formule choisie : lui sera ouvert en plus</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          ) : null}
+          {/* « Hors formule », en direct : selon la formule cochée (sur mesure ouvre tout). */}
+          <style>{formules.map((f) => `.nb-formulaire:has(input[name="formule"][value="${f.code}"]:checked) .nb-module:not([data-formules~="${f.code}"]):has(input:checked) .nb-hors { display: inline-flex; }`).join("\n")}</style>
           <label className="choix-carte">
             <input type="checkbox" name="demonstration" value="1" defaultChecked={v.demonstration === "1"} />
             <span>

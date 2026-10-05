@@ -23,7 +23,9 @@ export const metadata: Metadata = { title: "Revenus" };
 
 type FormuleRevenus = { code: string; nom: string; prix: number | null; actives: number; en_preparation: number; suspendues: number };
 type BoutiqueRevenus = {
-  slug: string; nom: string; statut: string; formule: string | null; formule_nom: string | null; prix: number | null;
+  slug: string; nom: string; statut: string; formule: string | null; formule_nom: string | null;
+  /** Son prix : le sien s'il en a un (prix_propre), sinon celui de sa formule. */
+  prix: number | null; prix_propre?: boolean; personnalisee?: boolean;
   skanfact: { raison_sociale: string; contrat: boolean; lue_le: string | null; reste: string | null; echu: string | null; retard: number | null } | null;
 };
 type DonneesRevenus = {
@@ -64,6 +66,8 @@ export default async function Revenus() {
   const enPause = r.boutiques.filter((b) => b.statut === "suspendue").reduce((n, b) => n + (b.prix ?? 0), 0);
   const aucunPrix = r.formules.every((f) => f.prix === null);
   const totalFormules = (cle: "actives" | "en_preparation" | "suspendues") => r.formules.reduce((n, f) => n + f[cle], 0);
+  // Le revenu d'une formule : la somme des prix de ses boutiques ouvertes (une boutique peut avoir le sien).
+  const revenuFormule = (code: string) => ouvertes.filter((b) => b.formule === code && b.prix !== null).reduce((n, b) => n + (b.prix ?? 0), 0);
 
   return (
     <>
@@ -129,7 +133,7 @@ export default async function Revenus() {
                   <td className="rv-n">{f.actives}</td>
                   <td className="rv-n">{f.en_preparation}</td>
                   <td className="rv-n">{f.suspendues}</td>
-                  <td className="rv-n">{f.prix === null ? <span className="discret">—</span> : tnd(f.prix * f.actives)}</td>
+                  <td className="rv-n">{revenuFormule(f.code) ? tnd(revenuFormule(f.code)) : <span className="discret">—</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -160,8 +164,13 @@ export default async function Revenus() {
                   <tr key={b.slug}>
                     <td className="font-medium"><Link href={`/boutiques/${b.slug}`}>{b.nom}</Link></td>
                     <td><span className={`statut statut-${b.statut}`}>{LIBELLES_STATUT[b.statut] ?? b.statut}</span></td>
-                    <td>{b.formule_nom ?? <Link href={`/boutiques/${b.slug}#formule`} className="rv-a-faire">Choisir sa formule</Link>}</td>
-                    <td className="rv-n">{b.prix !== null ? tnd(b.prix) : <span className="discret">{b.formule ? "Prix à fixer" : "—"}</span>}</td>
+                    <td>
+                      {b.formule_nom ?? (b.prix !== null || b.personnalisee ? "Sur mesure" : <Link href={`/boutiques/${b.slug}#formule`} className="rv-a-faire">Choisir sa formule</Link>)}
+                      {b.personnalisee ? <Link href={`/boutiques/${b.slug}/droits`} className="aide rv-propre">personnalisée</Link> : null}
+                    </td>
+                    <td className="rv-n">
+                      {b.prix !== null ? <>{tnd(b.prix)}{b.prix_propre ? <span className="aide rv-propre">son prix</span> : null}</> : <span className="discret">{b.formule ? "Prix à fixer" : "—"}</span>}
+                    </td>
                     <td>
                       {!b.skanfact ? <Link href={`/boutiques/${b.slug}/facturation`} className="discret">Non reliée</Link>
                         : !b.skanfact.lue_le ? <span className="discret">Reliée, pas encore lue</span>

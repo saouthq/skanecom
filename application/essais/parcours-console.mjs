@@ -2000,6 +2000,34 @@ await etape("le crochet des SMS : la boutique retrouvée par l'annonce de la vit
 });
 
 /* ------------------------------------------------------------------ */
+console.log("\n== 3 octies. La formule d'une boutique, personnalisée ==");
+await etape("la formule d'une boutique : un droit retiré à « sur mesure », un prix propre, compté dans Revenus, puis revenue à sa formule", async () => {
+  await page.goto(CONSOLE + "/boutiques/maymar", { waitUntil: "networkidle" });
+  await clic(page, page.getByRole("link", { name: "Formule", exact: true }));
+  await page.waitForURL(/\/boutiques\/maymar\/droits$/);
+  verifie((await page.locator(".dr-resume h3").innerText()).includes("Sur mesure"), "l'onglet Formule : Maymar part de « sur mesure »");
+  const ligne = page.locator('.dr-ligne:has(input[value="pub.pixel_meta"])');
+  await ligne.locator("input").uncheck();
+  verifie(await ligne.locator(".dr-retire").isVisible(), "décochée, la ligne dit « Retiré » avant même d'enregistrer");
+  await page.locator("#dr-prix").fill("79");
+  await clic(page, page.getByRole("button", { name: "Enregistrer", exact: true }));
+  await page.waitForURL(/ok=/);
+  const ok = await page.locator(".message-succes").innerText();
+  verifie(ok.includes("Retiré : Pixel Meta") && ok.includes("79,000"), "enregistré : ce qui est retiré, et son prix, dits");
+  verifie((await page.locator(".dr-resume .aide").innerText()).includes("1 retiré"), "le résumé : « 1 retiré pour cette boutique »");
+  await page.goto(CONSOLE + "/revenus", { waitUntil: "networkidle" });
+  const rang = await page.locator('section[aria-labelledby="t-boutiques"] tbody tr', { hasText: "Maymar" }).innerText();
+  verifie(rang.includes("79,000") && rang.includes("son prix") && rang.includes("personnalisée"), "Revenus : son prix propre compte, et elle est dite personnalisée");
+  await page.goto(CONSOLE + "/boutiques/maymar/droits", { waitUntil: "networkidle" });
+  await page.locator("#dr-prix").fill("");
+  await clic(page, page.getByRole("button", { name: /Revenir à/ }));
+  await page.waitForURL(/Revenue/);
+  const revenue = await page.waitForFunction(() => document.querySelector(".dr-resume .aide")?.textContent?.includes("tout ouvert"), null, { timeout: 10_000 })
+    .then(() => true, () => false);
+  verifie(revenue && (await page.locator(".dr-resume .aide").innerText()).includes("prix à fixer"), "revenue à « sur mesure » : tout ouvert, plus de prix propre");
+  await capture(page, "console-formule-boutique", true);
+});
+
 console.log("\n== 4. Les portes ==");
 
 await etape("un formulaire posté depuis un autre site est refusé", async () => {

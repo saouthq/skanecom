@@ -49,6 +49,12 @@ export async function POST(req: Request) {
       const { error: ed } = await service.rpc("console_marquer_demonstration", { p_acteur: user.id, p_boutique_id: id as string, p_demonstration: true });
       if (ed) return versAvecErreur(`/boutiques/${valeurs.slug}`, messageBase(ed));
     }
+    // Les modules cochés : activés tout de suite ; hors de sa formule, ils lui sont d'abord ouverts (un écart tracé).
+    for (const code of formulaire.getAll("module").map(String).filter((m) => /^[a-z_]{2,40}$/.test(m))) {
+      await service.rpc("console_ouvrir_droit", { p_acteur: user.id, p_boutique_id: id as string, p_droit: `module.${code}`, p_ouvert: true });
+      const { error: emod } = await service.rpc("console_changer_module", { p_acteur: user.id, p_boutique_id: id as string, p_module: code, p_actif: true });
+      if (emod) return versAvecErreur(`/boutiques/${valeurs.slug}/modules`, `Boutique créée ; un module n'a pas pu s'activer : ${messageBase(emod)}`);
+    }
     // À partir d'une boutique : sa configuration (apparence, réglages,
     // livraison, rayons), à la place du métier.
     if (valeurs.modele) {

@@ -25,6 +25,7 @@ import { titreBoutique } from "@/lib/console/titre-boutique";
 import { depuis, vigilances, type LignePilotage, type Quotas, type Sante } from "@/lib/console/pilotage";
 import { CANAUX, nomMois, type DonneesConsommation } from "@/lib/console/consommation";
 import { Mesure } from "@/components/console/JaugeEnvois";
+import { resumeEcarts, type DonneesDroits } from "@/lib/console/droits";
 import { configSkanFact } from "@/lib/console/skanfact";
 
 /** Ce que rend public.console_tableau pour une boutique, sur la période. */
@@ -65,7 +66,7 @@ export default async function FicheBoutique({ params, searchParams }: {
   const hoteConsole = (await headers()).get("host");
   // Une boutique vide peut recevoir le préréglage d'un métier.
   const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
-  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }] = await Promise.all([
+  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }, { data: ddr }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     // Les métiers : le choix d'une boutique vide, et leur nom au journal.
@@ -80,7 +81,12 @@ export default async function FicheBoutique({ params, searchParams }: {
     b.statut === "suspendue" ? clientService().rpc("console_suspension", { p_acteur: user.id, p_boutique_id: b.id }) : Promise.resolve({ data: null }),
     // Ses envois du mois face à son quota (la même lecture que la page Consommation).
     clientService().rpc("console_consommation", { p_acteur: user.id }),
+    // Ses écarts à sa formule (onglet Formule) et son prix propre.
+    clientService().rpc("console_droits_boutique", { p_acteur: user.id, p_boutique_id: b.id }),
   ]);
+  const droitsBoutique = (ddr ?? null) as DonneesDroits | null;
+  const ecarts = droitsBoutique ? resumeEcarts(droitsBoutique) : { ajoutes: 0, retires: 0 };
+  const ouvertsBoutique = droitsBoutique ? droitsBoutique.droits.filter((x) => x.effectif).length : 0;
   const maintenant = new Date().getTime();
   const ligne = ((dp ?? []) as LignePilotage[]).find((x) => x.id === b.id) ?? null;
   const sante = ((dsa ?? []) as Sante[]).find((x) => x.id === b.id) ?? null;
@@ -386,15 +392,19 @@ export default async function FicheBoutique({ params, searchParams }: {
                 <h2 id="t-formule" className="carte-titre-icone"><Icone nom="billet" /> Formule</h2>
                 <p>
                   {formule
-                    ? <>{formule.nom}{formule.prix !== null ? <> · {formateMontant(formule.prix)} TND / mois</> : null} · {formule.droits.length} droit{formule.droits.length > 1 ? "s" : ""} sur {formules.droits.length}</>
-                    : <>{SANS_FORMULE} : tout est ouvert, rien n&apos;est limité.</>}
+                    ? <>{formule.nom}{droitsBoutique?.prix_boutique == null && formule.prix !== null ? <> · {formateMontant(formule.prix)} TND / mois</> : null} · {ouvertsBoutique} droit{ouvertsBoutique > 1 ? "s" : ""} sur {formules.droits.length}</>
+                    : <>{SANS_FORMULE}{ecarts.retires ? "" : " : tout est ouvert"}</>}
+                  {ecarts.ajoutes || ecarts.retires
+                    ? <> · <b className="bt-ecarts">{[ecarts.ajoutes ? `${ecarts.ajoutes} ajouté${ecarts.ajoutes > 1 ? "s" : ""}` : null, ecarts.retires ? `${ecarts.retires} retiré${ecarts.retires > 1 ? "s" : ""}` : null].filter(Boolean).join(", ")}</b></>
+                    : null}
+                  {droitsBoutique?.prix_boutique != null ? <> · son prix : {formateMontant(droitsBoutique.prix_boutique)} TND / mois</> : null}
                 </p>
               </div>
             </div>
             {/* Ce que le changement a coupé ou éteint, dit dans la carte, là où l'on vient de cliquer. */}
             {retour("formule")}
             {!superAdmin ? (
-              <p className="carte-pied aide">Seul un super-administrateur change la formule. <Link href="/formules">Voir ce que chacune ouvre</Link></p>
+              <p className="carte-pied aide">Seul un super-administrateur change la formule. <Link href={`/boutiques/${b.slug}/droits`}>Le détail de ses droits</Link></p>
             ) : <form action={`/boutiques/${b.slug}/formule`} method="post" className="carte-pied bt-formule">
               <input type="hidden" name="boutique_id" value={b.id} />
               <label className="sr-only" htmlFor="bt-formule">Formule de {b.nom}</label>
@@ -403,7 +413,7 @@ export default async function FicheBoutique({ params, searchParams }: {
                 {formules.formules.map((x) => <option key={x.code} value={x.code}>{x.nom}{x.prix !== null ? ` · ${formateMontant(x.prix)} TND` : ""}</option>)}
               </select>
               <button type="submit" className="btn btn-second">Changer</button>
-              <Link href="/formules" className="aide bt-formule-lien">Voir ce que chacune ouvre</Link>
+              <Link href={`/boutiques/${b.slug}/droits`} className="aide bt-formule-lien">Personnaliser ses droits et son prix</Link>
             </form>}
           </section>
 

@@ -51,9 +51,11 @@ type AvecTransitions = Document & {
 
 /** L'adresse d'envoi. Par l'attribut, jamais par `form.action` : un champ
  *  nommé « action » (les gestes d'une commande en ont un) masque la
- *  propriété, qui rend alors le champ lui-même. Idem pour method et target. */
-function adresseDe(form: HTMLFormElement): URL {
-  return new URL(form.getAttribute("action") ?? "", window.location.href);
+ *  propriété, qui rend alors le champ lui-même. Idem pour method et target.
+ *  Le bouton pressé peut porter la sienne (formaction), comme sans script. */
+function adresseDe(form: HTMLFormElement, submitter?: HTMLElement | null): URL {
+  const propre = submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement ? submitter.getAttribute("formaction") : null;
+  return new URL(propre ?? form.getAttribute("action") ?? "", window.location.href);
 }
 
 /** Ce formulaire peut-il s'envoyer sans recharger la page ? */
@@ -204,7 +206,7 @@ export function EnvoiFormulaires() {
       }
       let reponse: Response;
       try {
-        reponse = await fetch(adresseDe(form), { method: "POST", body: donnees, credentials: "same-origin", headers: { [EN_TETE_GESTE]: "1" } });
+        reponse = await fetch(adresseDe(form, submitter), { method: "POST", body: donnees, credentials: "same-origin", headers: { [EN_TETE_GESTE]: "1" } });
       } catch {
         coupure(form);
         aRenvoyer.delete(form); // rien n'est renvoyé à l'aveugle

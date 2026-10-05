@@ -47,6 +47,8 @@ export function AssistantCreation({ etapeInitiale = 0 }: { etapeInitiale?: numbe
         ["Métier", form.querySelector('input[name="modele"]') ? "à partir d'une autre boutique" : choixLu("metier") || "aucun"],
         ["Structure", form.querySelector('input[name="modele"]') ? "celle du modèle" : structure()],
         ["Formule", choixLu("formule") || "sur mesure"],
+        ["Modules", [...form.querySelectorAll<HTMLInputElement>('input[name="module"]:checked')]
+          .map((c) => c.closest("label")?.querySelector("b")?.textContent?.trim() ?? c.value).join(", ") || "aucun pour l'instant"],
         ["Démonstration", (form.elements.namedItem("demonstration") as HTMLInputElement | null)?.checked ? "oui" : "non, une cliente"],
       ];
       const dl = form.querySelector<HTMLElement>("[data-recap]");
