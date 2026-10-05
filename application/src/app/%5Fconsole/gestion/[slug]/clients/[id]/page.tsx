@@ -9,6 +9,7 @@ import { LIBELLES_ORIGINE_REFUS, libelleStatut, lienAppel, lienWhatsApp, quand, 
 import { LIBELLES_CONFIANCE, NIVEAUX, PEUT_JUGER, pastilleConfiance, verdictClient, type FicheClient } from "@/lib/gestion/clients";
 import { CarteComptePro } from "@/components/console/ComptePro";
 import { PEUT_DECIDER_PRO, type FicheComptePro } from "@/lib/gestion/pro";
+import { PEUT_SAISIR } from "@/lib/gestion/saisie";
 
 export const metadata: Metadata = { title: "Client" };
 
@@ -76,6 +77,11 @@ export default async function FicheClientBackoffice({
               <Icone nom="message" /> WhatsApp
             </a>
             <a className="btn btn-primaire" href={lienAppel(c.telephone)}><Icone nom="telephone" /> Appeler</a>
+            {PEUT_SAISIR.includes(boutique.role) ? (
+              <Link className="btn btn-second" href={`/gestion/${slug}/commandes/nouvelle?tel=${encodeURIComponent(c.telephone)}`}>
+                <Icone nom="plus" /> Nouvelle commande
+              </Link>
+            ) : null}
           </>
         }
       />

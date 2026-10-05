@@ -27,6 +27,10 @@ import { creeTesteur } from "./testeur.mjs";
    7. Le gérant de Maymar connecte son SkanFact (module skanfact) : une
       clé refusée, la bonne gardée chiffrée ; une commande livrée devient
       une facture dans son SkanFact ; SkanFact en panne, elle se renvoie.
+   8. Une commande reçue sur WhatsApp, saisie par le gérant (le client
+      retrouvé par son numéro, son adresse reprise, les articles au
+      clavier, une remise, la livraison offerte) ; puis une commande
+      Instagram saisie au téléphone par l'employé des appels, à confirmer.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -2329,7 +2333,17 @@ if (section("6")) {
     await pause(500);
     const bouton = cadre().locator("[data-section] [data-texte='cta']").first();
     const libelle = (await bouton.innerText()).trim();
-    const ici = await bouton.evaluate((el) => { const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, l: innerWidth }; });
+    // Le centre du bouton une fois posé : deux relevés égaux à 150 ms d'écart
+    // (sous la charge, le texte de l'ouverture glisse encore après la pause).
+    const centre = () => bouton.evaluate((el) => { const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, l: innerWidth }; });
+    let ici = await centre();
+    for (let i = 0; i < 20; i++) {
+      await pause(150);
+      const encore = await centre();
+      const pose = Math.abs(encore.x - ici.x) < 0.5 && Math.abs(encore.y - ici.y) < 0.5;
+      ici = encore;
+      if (pose) break;
+    }
     const boite = await page.locator(".ap-scene iframe").boundingBox();
     const echelle = boite.width / ici.l;
     await page.mouse.click(boite.x + ici.x * echelle, boite.y + ici.y * echelle);
@@ -2555,6 +2569,107 @@ if (section("7")) {
     verifie((await clesSF()).length === 0, "SkanFact ne garde aucune clé valable pour la boutique");
   });
   await ctx.close();
+}
+
+if (section("8")) {
+  console.log("\n== 8. Une commande reçue hors de la vitrine, saisie par l'équipe ==");
+  const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SUPA = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const lit = async (chemin) => (await fetch(`${SUPA}/rest/v1/${chemin}`, { headers: { apikey: cle, authorization: `Bearer ${cle}` } })).json();
+  const MAYMAR = "00000000-0000-4000-8000-000000000001";
+  const stockDe = async (sku) => (await lit(`variantes?select=stock&boutique_id=eq.${MAYMAR}&sku=eq.${sku}`))[0]?.stock;
+  await sansDoubleAuthentification("gerant@maymar.test");
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "saisie");
+  const recap = () => page.locator(".sc-recap").innerText();
+
+  await etape("le gérant saisit une commande WhatsApp, à la souris et au clavier", async () => {
+    await connexion(page, "gerant@maymar.test");
+    await page.waitForURL(/double-authentification/, { timeout: 15000 });
+    await clic(page, page.locator("#code"));
+    await tape(page, totp((await page.locator("[data-secret-totp]").textContent()).trim()));
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await clic(page, page.getByRole("link", { name: "Saisir une commande" }));
+    await page.getByRole("heading", { name: "Saisir une commande" }).waitFor();
+    verifie(/Il manque d'où vient la commande/.test(await recap()) && await page.locator(".sc-recap .sc-envoyer").isDisabled(),
+      "écran vide : le récapitulatif dit ce qui manque, le bouton attend");
+
+    await clic(page, page.locator(".sc-canal", { hasText: "Téléphone" }));
+    await page.keyboard.press("ArrowRight");
+    verifie(await page.locator("input[name=canal][value=whatsapp]").isChecked(), "le canal : à la souris, puis aux flèches (WhatsApp)");
+    await clic(page, page.getByLabel("Numéro du client"));
+    await tape(page, "23 119 065");
+    verifie(await attend(async () => (await page.getByLabel("Nom", { exact: true }).inputValue()) === "Nadia Belhaj"), "un numéro connu : le nom de la cliente s'écrit seul");
+    await clic(page, page.getByRole("button", { name: /Livrer à sa dernière adresse/ }));
+    verifie(await page.getByLabel("Gouvernorat").inputValue() === "ben-arous", "« Livrer à sa dernière adresse » reprend son adresse et son gouvernorat");
+
+    const recherche = page.getByRole("combobox", { name: "Chercher un article" });
+    await clic(page, recherche);
+    await tape(page, "souple 55 noir");
+    await page.locator(".sc-resultat").first().waitFor();
+    await page.keyboard.press("Enter");
+    verifie(await page.locator(".sc-ligne").count() === 1 && (await recherche.inputValue()) === "", "Entrée ajoute l'article ; la recherche se vide pour le suivant");
+    await clic(page, page.getByRole("button", { name: /Une de plus : Valise souple extensible/ }));
+    const chiffre = () => attend(async () => (await page.locator(".sc-montants").getAttribute("aria-busy")) === "false");
+    verifie(await chiffre() && /Articles \(2\)/.test(await recap()) && /Livraison · Grand Tunis/.test(await recap()), "deux pièces, la livraison chiffrée par la base (Grand Tunis)");
+    const avant = (await page.locator(".sc-total dd").innerText()).trim();
+    await clic(page, page.getByLabel(/Remise accordée/));
+    await tape(page, "10");
+    await clic(page, page.getByLabel("Livraison offerte"));
+    verifie(await attend(async () => /Remise\s*− 10,000/.test(await recap()) && /Offerte/.test(await recap())) && await chiffre(),
+      `la direction : 10 TND de remise, la livraison offerte (${avant} → ${(await page.locator(".sc-total dd").innerText()).trim()})`);
+    await capture(page, "gestion-saisie-prete", true);
+
+    const stockAvant = await stockDe("VAL-SPL-55-NOI");
+    await t.envoie(page, page.locator(".sc-recap .sc-envoyer"));
+    await page.getByText("Commande enregistrée.").waitFor({ timeout: 15000 });
+    const numero = new URL(page.url()).pathname.split("/").pop();
+    verifie(/Reçue sur WhatsApp, saisie par gerant@maymar\.test/.test(await page.locator("main").innerText()), `la fiche ${numero} dit d'où elle vient et qui l'a saisie`);
+    verifie(/Confirmée/.test(await statut(page)), "confirmée avec la cliente : elle est à préparer");
+    const [c] = await lit(`commandes?select=origine,canal,remise_millimes,frais_livraison_millimes&boutique_id=eq.${MAYMAR}&numero=eq.${numero}`);
+    verifie(c?.origine === "manuelle" && c?.canal === "whatsapp" && c?.remise_millimes === 10000 && c?.frais_livraison_millimes === 0,
+      "en base : origine manuelle, WhatsApp, la remise et la livraison offerte");
+    verifie(await stockDe("VAL-SPL-55-NOI") === stockAvant - 2, "le stock est réservé (2 pièces)");
+    await capture(page, "gestion-saisie-fiche");
+  });
+  await ctx.close();
+
+  await etape("l'employé des appels, au téléphone : sans remise, à confirmer", async () => {
+    const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
+    const m = await tel.newPage();
+    t.espion(m, "saisie-telephone");
+    await connexion(m, "appels@maymar.test", true);
+    await m.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await m.goto(`${C}/gestion/maymar/commandes/nouvelle`, { waitUntil: "networkidle" });
+    verifie(await m.getByLabel(/Remise accordée/).count() === 0, "l'employé des appels ne voit ni remise ni livraison offerte");
+    await m.locator(".sc-canal", { hasText: "Instagram" }).tap();
+    await m.getByLabel("Numéro du client").tap();
+    await tape(m, "51 234 567");
+    await m.locator(".sc-client", { hasText: "Nouveau client" }).waitFor();
+    await m.getByLabel("Nom", { exact: true }).tap();
+    await tape(m, "Rania Ben Amor");
+    await m.getByRole("combobox", { name: "Chercher un article" }).tap();
+    await tape(m, "cabine business");
+    await m.locator(".sc-resultat").first().tap();
+    await m.getByLabel("Adresse", { exact: true }).tap();
+    await tape(m, "5 rue de Carthage");
+    await m.getByLabel("Ville ou délégation").tap();
+    await tape(m, "La Marsa");
+    await m.getByLabel("Gouvernorat").selectOption("tunis");
+    await m.getByText("Le client a confirmé sa commande").tap();
+    const barre = m.locator(".sc-barre");
+    verifie(await attend(async () => !(await barre.getByRole("button", { name: "Enregistrer", exact: true }).isDisabled())), "le total et « Enregistrer » restent sous le pouce, en bas de l'écran");
+    const b = await barre.boundingBox();
+    verifie(b && b.y + b.height <= 844 && b.height < 100, "la barre tient sur une ligne, au-dessus de la barre d'onglets");
+    await capture(m, "gestion-saisie-telephone");
+    await t.envoie(m, barre.getByRole("button", { name: "Enregistrer", exact: true }));
+    await m.getByText("Commande enregistrée.").waitFor({ timeout: 15000 });
+    verifie(/Reçue sur Instagram, saisie par appels@maymar\.test/.test(await m.locator("main").innerText()) && /confirmer/i.test(await statut(m)),
+      "la commande Instagram attend sa confirmation, saisie par l'employé");
+    await tel.close();
+  });
 }
 
 await navigateur.close();

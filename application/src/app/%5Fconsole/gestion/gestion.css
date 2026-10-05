@@ -954,6 +954,136 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .rc-barre .btn { inline-size: 100%; }
 }
 
+/* ==========================================================================
+   SAISIR UNE COMMANDE — cinq étapes dans l'ordre d'un appel, le
+   récapitulatif à côté (collant sur ordinateur) ; au téléphone, le total et
+   l'envoi collent en bas de l'écran.
+   ========================================================================== */
+.sc-erreur { margin-block-end: 1rem; }
+.sc-etapes { min-inline-size: 0; }
+.console fieldset.sc-carte { margin: 0; min-inline-size: 0; }
+.sc-titre {
+  float: inline-start; inline-size: 100%; display: flex; align-items: center; gap: .625rem;
+  margin: 0 0 1rem; padding: 0; font-size: .9375rem; font-weight: 600; color: var(--ui-texte);
+}
+.sc-titre + * { clear: both; }
+.sc-num {
+  display: inline-grid; place-items: center; inline-size: 22px; block-size: 22px; border-radius: 999px;
+  background: var(--ui-texte); color: var(--ui-panneau); font-size: .75rem; font-weight: 650; font-variant-numeric: tabular-nums;
+}
+.sc-canaux { display: flex; flex-wrap: wrap; gap: .5rem; }
+.sc-canal {
+  position: relative; display: inline-flex; align-items: center; gap: .4375rem; min-block-size: 36px; padding: 0 .875rem;
+  border: 1px solid var(--ui-bord); border-radius: 999px; background: var(--ui-panneau); color: var(--ui-texte-2);
+  font-size: .875rem; font-weight: 500; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s;
+}
+.sc-canal:hover { border-color: var(--ui-bord-fort); color: var(--ui-texte); }
+.sc-canal input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.sc-canal:has(input:checked) { background: var(--ui-texte); border-color: var(--ui-texte); color: var(--ui-panneau); }
+.sc-canal:has(input:focus-visible) { box-shadow: var(--ui-anneau); }
+@media (pointer: coarse) { .sc-canal { min-block-size: 44px; } }
+.sc-grille { display: grid; gap: .875rem 1rem; }
+@media (min-width: 640px) { .sc-grille { grid-template-columns: 1fr 1fr; } .sc-large { grid-column: 1 / -1; } }
+.sc-client {
+  display: grid; gap: .5rem; margin-block-start: 1rem; padding: .75rem .875rem; border-radius: var(--ui-r);
+  background: var(--ui-survol); border: 1px solid var(--ui-bord-leger); font-size: .875rem;
+}
+.sc-client-risque { background: var(--ui-rouge-fond); border-color: var(--ui-rouge-bord); }
+.sc-client-tete { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .5rem; margin: 0; }
+.sc-client-tete .icone { color: var(--ui-texte-3); }
+.sc-client-texte { margin: 0; color: var(--ui-texte-2); }
+.sc-client-nouveau { display: flex; align-items: flex-start; gap: .5rem; margin: 0; }
+.sc-client-nouveau .icone { flex: none; margin-block-start: .1875rem; color: var(--ui-texte-3); }
+.sc-sku { white-space: nowrap; }
+.sc-client-risque .sc-client-texte { color: var(--ui-rouge); }
+.console .btn.sc-reprendre { justify-self: start; max-inline-size: 100%; white-space: normal; text-align: start; line-height: 1.3; padding-block: .375rem; }
+.sc-recherche { position: relative; }
+.sc-resultats {
+  position: absolute; inset-inline: 0; inset-block-start: calc(100% + .375rem); z-index: 20; display: grid;
+  max-block-size: min(24rem, 60vh); margin: 0; padding: .25rem; overflow: auto; list-style: none;
+  border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l); background: var(--ui-panneau);
+  box-shadow: var(--ui-ombre-l, 0 12px 32px -12px rgb(0 0 0 / .18));
+}
+.sc-resultat {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; align-items: center; gap: .75rem;
+  padding: .5rem .625rem; border-radius: var(--ui-r); cursor: pointer;
+}
+.sc-resultat[data-active] { background: var(--ui-survol); box-shadow: inset 0 0 0 1px var(--ui-bord); }
+.sc-resultat[aria-disabled] { opacity: .55; cursor: not-allowed; }
+.sc-rien { padding: .75rem; font-size: .875rem; color: var(--ui-texte-2); }
+.rc-vignette.sc-vignette { inline-size: 40px; block-size: 40px; }
+.sc-quoi { display: grid; min-inline-size: 0; font-size: .875rem; }
+.sc-quoi b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-quoi .discret { font-size: .75rem; }
+.sc-stock { font-size: .8125rem; color: var(--ui-texte-2); white-space: nowrap; }
+.sc-stock-bas { color: #B45309; }
+.sc-stock-epuise { color: var(--ui-rouge); }
+.sc-prix { font-size: .875rem; font-weight: 600; white-space: nowrap; }
+.sc-vide { margin: .875rem 0 0; font-size: .875rem; }
+.sc-lignes { display: grid; margin: .875rem 0 0; padding: 0; list-style: none; }
+.sc-ligne {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto 6.5rem auto; align-items: center; gap: .75rem;
+  padding-block: .625rem;
+}
+.sc-ligne + .sc-ligne { border-block-start: 1px solid var(--ui-bord-leger); }
+.sc-ligne[data-manque] .sc-quantite .entree { border-color: #DC2626; }
+.sc-alerte { font-size: .75rem; font-weight: 500; color: var(--ui-rouge); }
+.sc-palier { font-size: .75rem; color: var(--ui-vert); }
+.sc-quantite { display: inline-flex; align-items: center; gap: .25rem; }
+.console .sc-quantite .entree { inline-size: 3.25rem; padding-inline: .25rem; text-align: center; }
+.sc-total-ligne { font-size: .875rem; font-weight: 600; text-align: end; white-space: nowrap; }
+.sc-modes { margin-block-end: 1rem; }
+.sc-magasin { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; margin: 0; font-size: .875rem; color: var(--ui-texte-2); }
+.sc-ajustements { align-items: start; margin-block-end: 1rem; }
+.console .opt.sc-offerte { align-self: center; margin-block-start: 1.25rem; }
+.sc-confirmee { margin-block-end: 1rem; }
+.sc-erreur-champ { margin: 0; font-size: .8125rem; color: var(--ui-rouge); }
+.sc-recap { display: grid; gap: .875rem; }
+@media (min-width: 1100px) { .sc-recap { position: sticky; inset-block-start: 1rem; } }
+.sc-recap-titre { margin: 0; font-size: .9375rem; font-weight: 600; }
+.sc-montants { display: grid; gap: .5rem; margin: 0; }
+.sc-montants > div { display: flex; justify-content: space-between; gap: 1rem; font-size: .875rem; }
+.sc-montants dt { color: var(--ui-texte-2); }
+.sc-montants dd { margin: 0; font-weight: 500; text-align: end; transition: opacity .15s; }
+/* Pendant que la base rechiffre : les montants d'avant, estompés. */
+.sc-montants[aria-busy="true"] dd { opacity: .45; }
+.sc-montants s { margin-inline-end: .375rem; }
+.sc-remise dd { color: var(--ui-vert); }
+.sc-montants > .sc-total { margin-block-start: .25rem; padding-block-start: .75rem; border-block-start: 1px solid var(--ui-bord); }
+.sc-total dt { color: var(--ui-texte); font-weight: 600; }
+.sc-total dd { font-size: 1.25rem; font-weight: 650; letter-spacing: -0.01em; }
+.sc-note-recap { display: flex; align-items: center; gap: .375rem; margin: 0; font-size: .8125rem; color: var(--ui-vert); }
+.sc-manque { margin: 0; font-size: .8125rem; color: var(--ui-texte-2); }
+.console .btn.sc-envoyer, .console .btn.sc-envoyer-barre { inline-size: 100%; }
+.sc-barre { display: none; }
+@media (max-width: 1099px) {
+  .sc-recap .sc-envoyer { display: none; }
+  .sc-barre {
+    position: sticky; inset-block-end: 1rem; z-index: 5; display: flex; align-items: center; gap: .75rem;
+    padding: .75rem .875rem; border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l);
+    background: color-mix(in srgb, var(--ui-panneau) 92%, transparent); box-shadow: var(--ui-ombre-l, 0 12px 32px -12px rgb(0 0 0 / .18));
+    backdrop-filter: saturate(1.6) blur(12px);
+  }
+  .sc-barre-total { display: flex; align-items: baseline; gap: .5rem; margin: 0; font-size: .875rem; color: var(--ui-texte-2); white-space: nowrap; }
+  .sc-barre-total b { font-size: 1.125rem; color: var(--ui-texte); }
+  .console .btn.sc-envoyer-barre { flex: 1 1 auto; inline-size: auto; min-inline-size: 0; }
+}
+@media screen and (max-width: 1023px) {
+  /* Au-dessus de la barre d'onglets du téléphone. */
+  .sc-barre { inset-block-end: calc(4.5rem + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 639px) {
+  .sc-resultat { grid-template-columns: 36px minmax(0, 1fr) auto; }
+  .sc-resultat .sc-stock { grid-column: 2; grid-row: 2; }
+  .sc-resultat .sc-prix { grid-column: 3; grid-row: 1 / span 2; }
+  .sc-resultat .sc-quoi b { white-space: normal; }
+  .sc-ligne { grid-template-columns: 36px minmax(0, 1fr) auto; row-gap: .375rem; }
+  .sc-ligne .sc-quantite { grid-column: 2; grid-row: 2; }
+  .sc-ligne .sc-total-ligne { grid-column: 3; grid-row: 1; }
+  .sc-ligne .sc-retirer { grid-column: 3; grid-row: 2; justify-self: end; }
+  .console .opt.sc-offerte { margin-block-start: 0; }
+}
+
 /* Au retour d'un appel (RetourAppel) : le résultat à noter pulse, et le dit. */
 .bo-retour-appel { display: none; }
 .bo-resultats[data-retour-appel] { position: relative; border-radius: 12px; animation: bo-retour-appel 1.2s ease-out 2; }

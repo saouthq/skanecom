@@ -16,6 +16,7 @@ import {
   telephoneLisible,
   type Etape,
 } from "@/lib/gestion/libelles";
+import { PEUT_SAISIR } from "@/lib/gestion/saisie";
 
 export const metadata: Metadata = { title: "Commandes" };
 
@@ -40,6 +41,7 @@ type Ligne = {
   ville: string | null;
   gouvernorat: string | null;
   total_millimes: number;
+  origine: string;
   articles: number;
   premier_article: string | null;
   appels: number;
@@ -114,6 +116,11 @@ export default async function Commandes({
               <button type="submit" className="btn btn-second">Chercher</button>
             </form>
             {etape.cle === "a_confirmer" ? <AlertesCommandes /> : null}
+            {PEUT_SAISIR.includes(boutique.role) ? (
+              <Link href={`/gestion/${slug}/commandes/nouvelle`} className="btn btn-second">
+                <Icone nom="plus" /> Saisir une commande
+              </Link>
+            ) : null}
             {etape.cle === "a_preparer" && aExpedier > 0 ? (
               <Link href={`/gestion/${slug}/bordereaux?etape=a_preparer`} className="btn btn-primaire">
                 <Icone nom="fichier" /> Bordereaux ({aExpedier})
@@ -171,6 +178,7 @@ export default async function Commandes({
                   </span>
                   <span className="bo-badges ui-etats">
                     {c.mode_livraison === "retrait" ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> À retirer</span> : null}
+                    {c.origine === "manuelle" ? <span className="ui-etat"><Icone nom="crayon" taille={12} /> Saisie par l&apos;équipe</span> : null}
                     {c.client?.compte ? (
                       numeroVerifie.has(c.numero)
                         ? <span className="ui-etat ui-etat-vert"><Icone nom="bouclier" taille={12} /> Numéro vérifié</span>

@@ -27,6 +27,7 @@ import {
 } from "@/lib/gestion/libelles";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
+import { canal as canalDe } from "@/lib/gestion/saisie";
 
 /* ============================================================================
    LA FICHE D'UNE COMMANDE — en tête, le geste du moment, selon l'étape :
@@ -53,6 +54,8 @@ type Fiche = {
   numero: string;
   statut: string;
   origine: string;
+  canal: string | null;
+  saisie_par: string | null;
   cree_le: string;
   mode_paiement: string;
   statut_paiement: string;
@@ -102,6 +105,7 @@ type Fiche = {
 };
 
 const FAIT: Record<string, string> = {
+  saisie: "Commande enregistrée.",
   "appel-confirmee": "Commande confirmée : elle passe à la préparation.",
   "appel-injoignable": "Appel noté : injoignable. La commande attend toujours sa confirmation.",
   "appel-rappeler": "Noté : à rappeler.",
@@ -205,6 +209,7 @@ export default async function FicheCommande({
   const annulable = aConfirmer || f.statut === "confirmee";
   const retrait = f.mode_livraison === "retrait";
   const statut = libelleStatut(f.statut, f.mode_livraison);
+  const saisie = f.origine === "manuelle" ? canalDe(f.canal) ?? canalDe("autre") : undefined;
   const fait = messages.fait ? ((retrait ? FAIT_RETRAIT[messages.fait] : undefined) ?? FAIT[messages.fait]) : undefined;
 
   const journal = [
@@ -246,11 +251,12 @@ export default async function FicheCommande({
             <span>{f.numero}</span>
             <span className={`bo-statut bo-statut-${f.statut}`}>{statut}</span>
             {retrait ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> Retrait en magasin</span> : null}
+            {saisie ? <span className="ui-etat"><Icone nom={saisie.icone} taille={12} /> {saisie.libelle}</span> : null}
           </span>
         }
         description={
           <>
-            Passée {quand(f.cree_le, maintenant)} · {age(f.cree_le, maintenant)} · {articles} article{articles > 1 ? "s" : ""} ·{" "}
+            {saisie ? `Reçue ${saisie.par}, saisie${f.saisie_par ? ` par ${f.saisie_par}` : ""}` : "Passée"} {quand(f.cree_le, maintenant)} · {age(f.cree_le, maintenant)} · {articles} article{articles > 1 ? "s" : ""} ·{" "}
             <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> {retrait ? "au retrait" : "à la livraison"}
           </>
         }
@@ -282,7 +288,9 @@ export default async function FicheCommande({
           <p className="message message-succes bo-message" role="status">
             <span>
               {fait}{" "}
-              <Link href={`/gestion/${slug}?etape=a_confirmer`}>Commandes à confirmer</Link>
+              {messages.fait === "saisie"
+                ? <Link href={`/gestion/${slug}/commandes/nouvelle`}>Saisir une autre commande</Link>
+                : <Link href={`/gestion/${slug}?etape=a_confirmer`}>Commandes à confirmer</Link>}
             </span>
           </p>
         ) : null}

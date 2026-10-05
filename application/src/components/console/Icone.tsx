@@ -15,6 +15,7 @@ const TRACES = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  moins: <path d="M5 12h14" />,
   commandes: (
     <>
       <path d="M22 12h-6l-2 3h-4l-2-3H2" />
