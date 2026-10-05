@@ -68,7 +68,7 @@ export function FormSaisie({
   const [lignes, setLignes] = useState<Ligne[]>([]);
   const [recherche, setRecherche] = useState("");
   const [active, setActive] = useState(0);
-  const [mode, setMode] = useState<"domicile" | "retrait">("domicile");
+  const [mode, setMode] = useState<"domicile" | "retrait" | "comptoir">("domicile");
   const [adresse, setAdresse] = useState({ ligne1: "", ligne2: "", ville: "", gouvernorat: "", code_postal: "" });
   const [remise, setRemise] = useState("");
   const [offerte, setOfferte] = useState(false);
@@ -188,6 +188,14 @@ export function FormSaisie({
     }
   };
 
+  // « Au magasin » : le client est là, la vente se fait d'ordinaire sur place
+  // (sauf si une adresse est déjà tapée) ; hors du magasin, pas de comptoir.
+  const choisitCanal = (cle: string) => {
+    setCanal(cle);
+    if (cle === "magasin" && mode === "domicile" && !adresse.ligne1.trim()) setMode("comptoir");
+    if (cle !== "magasin" && mode === "comptoir") setMode("domicile");
+  };
+
   const reprendAdresse = () => {
     const a = client?.adresse;
     if (!a) return;
@@ -213,13 +221,14 @@ export function FormSaisie({
   const pieces = lignes.reduce((s, l) => s + l.quantite, 0);
   const total = chiffrage?.total_millimes ?? null;
   const risque = client?.connu ? client.niveau_risque : undefined;
+  const comptoir = mode === "comptoir";
   const nomGouvernorat = gouvernorats.find((g) => g.code === adresse.gouvernorat)?.nom;
 
   // Dans la barre du téléphone, le total est déjà à côté : le bouton dit seulement le geste.
   const bouton = (classe: string, avecTotal: boolean) => (
     <button type="submit" className={`btn btn-primaire btn-grand ${classe}`} disabled={!pret}>
       <Icone nom="coche" taille={16} />
-      {!avecTotal ? "Enregistrer" : pret && total !== null ? `Enregistrer · ${formatePrix(total)}` : "Enregistrer la commande"}
+      {!avecTotal ? "Enregistrer" : pret && total !== null ? `${comptoir ? "Encaisser" : "Enregistrer"} · ${formatePrix(total)}` : comptoir ? "Enregistrer la vente" : "Enregistrer la commande"}
     </button>
   );
 
@@ -242,7 +251,7 @@ export function FormSaisie({
           <div className="sc-canaux" role="radiogroup" aria-label="Canal de la commande">
             {CANAUX.map((c) => (
               <label key={c.cle} className="sc-canal">
-                <input type="radio" name="canal" value={c.cle} checked={canal === c.cle} onChange={() => setCanal(c.cle)} required />
+                <input type="radio" name="canal" value={c.cle} checked={canal === c.cle} onChange={() => choisitCanal(c.cle)} required />
                 <Icone nom={c.icone} taille={15} /> {c.libelle}
               </label>
             ))}
@@ -410,14 +419,23 @@ export function FormSaisie({
         {/* 4 · La livraison */}
         <fieldset className="carte sc-carte">
           <legend className="sc-titre"><span className="sc-num" aria-hidden="true">4</span> La livraison</legend>
-          {saisie.retrait ? (
+          {saisie.retrait || canal === "magasin" ? (
             <fieldset className="segments sc-modes">
               <legend>Mode de livraison</legend>
+              {canal === "magasin" ? (
+                <label><input type="radio" name="mode-choix" checked={comptoir} onChange={() => setMode("comptoir")} /> <Icone nom="coche" taille={14} /> Remis sur place</label>
+              ) : null}
               <label><input type="radio" name="mode-choix" checked={mode === "domicile"} onChange={() => setMode("domicile")} /> <Icone nom="camion" taille={14} /> À domicile</label>
-              <label><input type="radio" name="mode-choix" checked={mode === "retrait"} onChange={() => setMode("retrait")} /> <Icone nom="boutique" taille={14} /> Retrait au magasin</label>
+              {saisie.retrait ? (
+                <label><input type="radio" name="mode-choix" checked={mode === "retrait"} onChange={() => setMode("retrait")} /> <Icone nom="boutique" taille={14} /> Retrait plus tard</label>
+              ) : null}
             </fieldset>
           ) : null}
-          {mode === "retrait" && saisie.retrait ? (
+          {comptoir ? (
+            <p className="sc-magasin">
+              <Icone nom="boutique" taille={15} /> Le client repart avec ses articles et paie au comptoir : la vente est enregistrée remise et payée, le stock sorti.
+            </p>
+          ) : mode === "retrait" && saisie.retrait ? (
             <p className="sc-magasin">
               <Icone nom="boutique" taille={15} /> Le client vient au magasin : {saisie.retrait.adresse}{saisie.retrait.ville ? `, ${saisie.retrait.ville}` : ""}
               {saisie.retrait.horaires ? <span className="discret"> · {saisie.retrait.horaires}</span> : null}. Sans frais de livraison.
@@ -472,20 +490,22 @@ export function FormSaisie({
                 </p>
               </div>
               <label className="opt sc-offerte">
-                <input type="checkbox" name="offerte" checked={offerte} onChange={(e) => setOfferte(e.target.checked)} disabled={mode === "retrait"} />
+                <input type="checkbox" name="offerte" checked={offerte} onChange={(e) => setOfferte(e.target.checked)} disabled={mode !== "domicile"} />
                 Livraison offerte
               </label>
             </div>
           ) : null}
-          <label className="choix-carte sc-confirmee">
-            <input type="checkbox" name="confirmee" checked={confirmee} onChange={(e) => setConfirmee(e.target.checked)} />
-            <span>
-              <b>Le client a confirmé sa commande</b>
-              <span className="aide">
-                {confirmee ? "Elle part directement en préparation." : "Elle attendra sa confirmation, avec les commandes de la vitrine."}
+          {comptoir ? null : (
+            <label className="choix-carte sc-confirmee">
+              <input type="checkbox" name="confirmee" checked={confirmee} onChange={(e) => setConfirmee(e.target.checked)} />
+              <span>
+                <b>Le client a confirmé sa commande</b>
+                <span className="aide">
+                  {confirmee ? "Elle part directement en préparation." : "Elle attendra sa confirmation, avec les commandes de la vitrine."}
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+          )}
           <div className="champ">
             <label htmlFor={`${id}-note`}>Note interne <span className="facultatif">(facultatif, l&apos;équipe seule la lit)</span></label>
             <textarea id={`${id}-note`} name="note" maxLength={500} rows={2} placeholder="Prix négocié, heure d'appel, cadeau…"
@@ -500,9 +520,9 @@ export function FormSaisie({
         <dl className="sc-montants" aria-busy={calcul}>
           <div><dt>Articles{pieces ? ` (${pieces})` : ""}</dt><dd className="tabular-nums">{chiffrage ? formatePrix(chiffrage.sous_total_millimes) : "—"}</dd></div>
           <div>
-            <dt>{mode === "retrait" ? "Retrait au magasin" : `Livraison${chiffrage?.zone?.nom_fr ? ` · ${chiffrage.zone.nom_fr}` : nomGouvernorat ? ` · ${nomGouvernorat}` : ""}`}</dt>
+            <dt>{comptoir ? "Remis sur place" : mode === "retrait" ? "Retrait au magasin" : `Livraison${chiffrage?.zone?.nom_fr ? ` · ${chiffrage.zone.nom_fr}` : nomGouvernorat ? ` · ${nomGouvernorat}` : ""}`}</dt>
             <dd className="tabular-nums">
-              {mode === "retrait" ? "Gratuit" : !chiffrage ? "—" : chiffrage.frais_livraison_millimes === null ? "Le gouvernorat ?" : chiffrage.livraison_offerte ? (
+              {comptoir ? "Sans livraison" : mode === "retrait" ? "Gratuit" : !chiffrage ? "—" : chiffrage.frais_livraison_millimes === null ? "Le gouvernorat ?" : chiffrage.livraison_offerte ? (
                 <><s className="discret">{formatePrix(chiffrage.frais_boutique_millimes ?? 0)}</s> Offerte</>
               ) : chiffrage.frais_livraison_millimes === 0 ? "Gratuite" : formatePrix(chiffrage.frais_livraison_millimes)}
             </dd>
@@ -510,7 +530,7 @@ export function FormSaisie({
           {chiffrage && chiffrage.remise_millimes > 0 ? (
             <div className="sc-remise"><dt>Remise</dt><dd className="tabular-nums">− {formatePrix(chiffrage.remise_millimes)}</dd></div>
           ) : null}
-          <div className="sc-total"><dt>À payer {mode === "retrait" ? "au retrait" : "à la livraison"}</dt><dd className="tabular-nums" aria-live="polite">{total !== null ? formatePrix(total) : "—"}</dd></div>
+          <div className="sc-total"><dt>À payer {comptoir ? "au comptoir" : mode === "retrait" ? "au retrait" : "à la livraison"}</dt><dd className="tabular-nums" aria-live="polite">{total !== null ? formatePrix(total) : "—"}</dd></div>
         </dl>
         {chiffrage?.tarif === "pro" ? <p className="sc-note-recap"><Icone nom="bouclier" taille={14} /> Prix pro du client</p> : null}
         {erreurChiffrage && erreurChiffrage.indice !== "remise" ? <p className="sc-erreur-champ" role="alert">{erreurChiffrage.texte}</p> : null}

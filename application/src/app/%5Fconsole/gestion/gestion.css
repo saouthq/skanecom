@@ -815,6 +815,20 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .tb-jauge { display: block; block-size: .5rem; border-radius: 999px; background: var(--ui-doux); overflow: hidden; }
 .tb-jauge span { display: block; block-size: 100%; border-radius: inherit; background: var(--ui-rouge); }
 .tb-origine-n { text-align: end; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* D'où viennent les commandes : chaque canal, sa part, ce qu'il a encaissé. */
+.tb-canaux { display: grid; gap: .75rem; }
+.tb-canaux li { display: grid; grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr) auto 7.5rem; align-items: center; gap: .75rem; font-size: .875rem; }
+.tb-canal-nom { display: inline-flex; align-items: center; gap: .4375rem; font-weight: 500; }
+.tb-canal-nom .icone { color: var(--ui-texte-3); }
+.tb-jauge-canal span { background: var(--ui-texte); }
+.tb-canal-n, .tb-canal-m { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tb-canal-m { font-weight: 600; }
+@media (max-width: 639px) {
+  .tb-canaux li { grid-template-columns: minmax(0, 1fr) auto; row-gap: .375rem; }
+  .tb-canaux .tb-jauge { grid-column: 1 / -1; grid-row: 2; }
+  .tb-canal-n { grid-column: 1; grid-row: 3; text-align: start; }
+  .tb-canal-m { grid-column: 2; grid-row: 1; }
+}
 
 .tb-table { inline-size: 100%; border-collapse: collapse; font-size: .875rem; }
 .tb-table th, .tb-table td { padding: .5rem .25rem; text-align: end; border-block-end: 1px solid var(--ui-bord-leger); font-variant-numeric: tabular-nums; }

@@ -29,8 +29,10 @@ import { creeTesteur } from "./testeur.mjs";
       une facture dans son SkanFact ; SkanFact en panne, elle se renvoie.
    8. Une commande reçue sur WhatsApp, saisie par le gérant (le client
       retrouvé par son numéro, son adresse reprise, les articles au
-      clavier, une remise, la livraison offerte) ; puis une commande
-      Instagram saisie au téléphone par l'employé des appels, à confirmer.
+      clavier, une remise, la livraison offerte) ; une vente au comptoir,
+      remise et payée d'un geste ; le tableau de bord dit d'où viennent les
+      commandes ; puis une commande Instagram saisie au téléphone par
+      l'employé des appels, à confirmer.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -1822,9 +1824,12 @@ if (section("4bis")) {
       const b = page.locator(".pa-liste [data-geste='ouvrir']", { hasText: "Ouverture" });
       if ((await b.getAttribute("aria-expanded")) !== "true") await clic(page, b);
     };
+    // Le message « publiée » peut rester d'une publication d'avant : on attend la réponse de celle-ci.
     const publier = async () => {
+      const reponse = page.waitForResponse((r) => r.request().method() === "POST" && /\/apparence\/action/.test(r.url())
+        && (r.request().postData() ?? "").includes("publier"), { timeout: 15000 }).catch(() => null);
       await clic(page, page.getByRole("button", { name: "Publier" }));
-      return attendre(async () => (await page.locator(".ap-retour").first().innerText()).includes("publiée"), 12000);
+      return !!(await reponse) && attendre(async () => (await page.locator(".ap-retour").first().innerText()).includes("publiée"), 12000);
     };
     await ouvrirOuverture();
     const demo = (await vignette().getAttribute("src")).replace(/^.*\/fichiers\//, "");
@@ -2633,6 +2638,33 @@ if (section("8")) {
       "en base : origine manuelle, WhatsApp, la remise et la livraison offerte");
     verifie(await stockDe("VAL-SPL-55-NOI") === stockAvant - 2, "le stock est réservé (2 pièces)");
     await capture(page, "gestion-saisie-fiche");
+  });
+
+  await etape("une vente au comptoir, remise et payée d'un geste ; d'où viennent les commandes", async () => {
+    await page.goto(`${C}/gestion/maymar/commandes/nouvelle`, { waitUntil: "networkidle" });
+    await clic(page, page.locator(".sc-canal", { hasText: "Au magasin" }));
+    verifie(await page.getByLabel("Remis sur place").isChecked() && await page.getByLabel("Adresse", { exact: true }).count() === 0,
+      "« Au magasin » : remis sur place d'emblée, sans adresse");
+    await clic(page, page.getByLabel("Numéro du client"));
+    await tape(page, "97 111 222");
+    await page.locator(".sc-client", { hasText: "Nouveau client" }).waitFor();
+    await clic(page, page.getByLabel("Nom", { exact: true }));
+    await tape(page, "Hédi Mansour");
+    await clic(page, page.getByRole("combobox", { name: "Chercher un article" }));
+    await tape(page, "business noir");
+    await page.locator(".sc-resultat").first().waitFor();
+    await page.keyboard.press("Enter");
+    const caisse = page.locator(".sc-recap .sc-envoyer");
+    verifie(await attend(async () => /^Encaisser · /.test((await caisse.innerText()).trim()) && !(await caisse.isDisabled())), "le bouton dit « Encaisser » et le total, sans livraison");
+    await t.envoie(page, caisse);
+    await page.getByText("Vente enregistrée : remise et payée au comptoir.").waitFor({ timeout: 15000 });
+    verifie(/Vendue au comptoir/.test(await page.locator(".bo-fiche-tete").innerText()) && /Retirée/.test(await statut(page)), "la vente est remise, payée, close");
+    verifie(/Remise au client, payée au comptoir/.test(await page.locator("main").innerText()), "l'historique le dit");
+    await capture(page, "gestion-saisie-comptoir");
+    await page.goto(`${C}/gestion/maymar/tableau`, { waitUntil: "networkidle" });
+    const canaux = page.locator("section", { has: page.getByRole("heading", { name: "D'où viennent les commandes" }) });
+    const texte = await canaux.innerText().catch(() => "");
+    verifie(/La vitrine/.test(texte) && /WhatsApp/.test(texte) && /Au magasin/.test(texte), "le tableau de bord dit d'où viennent les commandes : la vitrine, WhatsApp, le comptoir");
   });
   await ctx.close();
 

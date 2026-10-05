@@ -9,6 +9,7 @@ import { clientSession, exigeMembre } from "@/lib/console/session";
 import { PEUT_FIXER, type Objectif } from "@/lib/gestion/objectif";
 import { formateMontant } from "@/lib/prix";
 import { DIRECTION, delta, duree, pourcent, type Synthese, type Tableau } from "@/lib/gestion/tableau";
+import { canal as canalDe } from "@/lib/gestion/saisie";
 
 export const metadata: Metadata = { title: "Tableau de bord" };
 
@@ -65,6 +66,10 @@ export default async function TableauDeBord({
   const p: Partial<Synthese> = t.precedente;
   const max = Math.max(1, ...t.par_jour.map((j) => j.recues));
   const refusTotal = t.refus_origines.reduce((n, r) => n + r.refus, 0);
+  // Les canaux ne disent quelque chose que si tout ne vient pas de la vitrine.
+  const canaux = (t.canaux ?? []).filter((c) => c.commandes > 0);
+  const canauxTotal = canaux.reduce((n, c) => n + c.commandes, 0);
+  const montrerCanaux = canaux.some((c) => c.canal !== "vitrine");
   const vide = !c.recues;
   const enRoute = (c.en_cours ?? 0) - (c.a_confirmer ?? 0);
 
@@ -232,6 +237,31 @@ export default async function TableauDeBord({
               )}
             </section>
           </div>
+
+          {/* ---------------- D'où viennent les commandes ---------------- */}
+          {montrerCanaux ? (
+            <section className="carte" aria-labelledby="tb-canaux">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="tb-canaux" className="carte-titre-icone"><Icone nom="message" /> D&apos;où viennent les commandes</h2>
+                  <p>La vitrine, ou le canal des commandes saisies par l&apos;équipe ; et ce que chacun a encaissé (commandes livrées).</p>
+                </div>
+              </div>
+              <ul className="tb-canaux" role="list">
+                {canaux.map((c) => {
+                  const k = c.canal === "vitrine" ? { libelle: "La vitrine", icone: "ecran" as const } : canalDe(c.canal) ?? { libelle: c.canal, icone: "commandes" as const };
+                  return (
+                    <li key={c.canal}>
+                      <span className="tb-canal-nom"><Icone nom={k.icone} taille={14} /> {k.libelle}</span>
+                      <span className="tb-jauge tb-jauge-canal" aria-hidden="true"><span style={{ inlineSize: `${(c.commandes / canauxTotal) * 100}%` }} /></span>
+                      <span className="tb-canal-n">{c.commandes} commande{c.commandes > 1 ? "s" : ""} <span className="discret">· {pourcent(c.commandes / canauxTotal)}</span></span>
+                      <span className="tb-canal-m">{c.livrees > 0 ? `${formateMontant(c.encaisse_millimes)} TND` : <span className="discret">pas encore livrée{c.commandes > 1 ? "s" : ""}</span>}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
         </div>
       )}
     </>

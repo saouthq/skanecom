@@ -56,6 +56,7 @@ type Fiche = {
   origine: string;
   canal: string | null;
   saisie_par: string | null;
+  sur_place: boolean;
   cree_le: string;
   mode_paiement: string;
   statut_paiement: string;
@@ -106,6 +107,7 @@ type Fiche = {
 
 const FAIT: Record<string, string> = {
   saisie: "Commande enregistrée.",
+  comptoir: "Vente enregistrée : remise et payée au comptoir.",
   "appel-confirmee": "Commande confirmée : elle passe à la préparation.",
   "appel-injoignable": "Appel noté : injoignable. La commande attend toujours sa confirmation.",
   "appel-rappeler": "Noté : à rappeler.",
@@ -136,8 +138,12 @@ function etapeDe(statut: string): string {
   return "cloturees";
 }
 
-function libelleEvenement(e: Fiche["historique"][number], retrait: boolean): string {
-  if (e.avant === null) return "Commande passée sur la boutique";
+function libelleEvenement(e: Fiche["historique"][number], retrait: boolean, f: Pick<Fiche, "origine" | "canal" | "sur_place">): string {
+  if (e.avant === null) {
+    if (f.origine !== "manuelle") return "Commande passée sur la boutique";
+    return f.sur_place ? "Vente saisie au comptoir" : `Commande saisie par l'équipe, reçue ${canalDe(f.canal)?.par ?? "hors de la vitrine"}`;
+  }
+  if (f.sur_place && e.apres === "livree") return "Remise au client, payée au comptoir";
   switch (e.apres) {
     case "confirmee": return "Confirmée";
     case "expediee": return retrait ? "Prête au retrait" : "Expédiée";
@@ -215,7 +221,7 @@ export default async function FicheCommande({
   const journal = [
     ...f.historique.map((e) => ({
       le: e.le,
-      texte: libelleEvenement(e, retrait),
+      texte: libelleEvenement(e, retrait, f),
       detail: e.commentaire,
       // Sans auteur : la commande passée par l'acheteur, ou un geste du système.
       auteur: e.auteur ?? (e.avant === null ? (f.origine === "vitrine" ? "boutique en ligne" : "saisie") : "système"),
@@ -250,14 +256,15 @@ export default async function FicheCommande({
           <span className="bo-fiche-tete">
             <span>{f.numero}</span>
             <span className={`bo-statut bo-statut-${f.statut}`}>{statut}</span>
-            {retrait ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> Retrait en magasin</span> : null}
-            {saisie ? <span className="ui-etat"><Icone nom={saisie.icone} taille={12} /> {saisie.libelle}</span> : null}
+            {f.sur_place ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> Vendue au comptoir</span>
+              : retrait ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> Retrait en magasin</span> : null}
+            {saisie && !f.sur_place ? <span className="ui-etat"><Icone nom={saisie.icone} taille={12} /> {saisie.libelle}</span> : null}
           </span>
         }
         description={
           <>
-            {saisie ? `Reçue ${saisie.par}, saisie${f.saisie_par ? ` par ${f.saisie_par}` : ""}` : "Passée"} {quand(f.cree_le, maintenant)} · {age(f.cree_le, maintenant)} · {articles} article{articles > 1 ? "s" : ""} ·{" "}
-            <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> {retrait ? "au retrait" : "à la livraison"}
+            {f.sur_place ? `Vendue au comptoir${f.saisie_par ? ` par ${f.saisie_par}` : ""}` : saisie ? `Reçue ${saisie.par}, saisie${f.saisie_par ? ` par ${f.saisie_par}` : ""}` : "Passée"} {quand(f.cree_le, maintenant)} · {age(f.cree_le, maintenant)} · {articles} article{articles > 1 ? "s" : ""} ·{" "}
+            <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> {f.sur_place ? "payés au comptoir" : retrait ? "au retrait" : "à la livraison"}
           </>
         }
         actions={
@@ -288,7 +295,7 @@ export default async function FicheCommande({
           <p className="message message-succes bo-message" role="status">
             <span>
               {fait}{" "}
-              {messages.fait === "saisie"
+              {messages.fait === "saisie" || messages.fait === "comptoir"
                 ? <Link href={`/gestion/${slug}/commandes/nouvelle`}>Saisir une autre commande</Link>
                 : <Link href={`/gestion/${slug}?etape=a_confirmer`}>Commandes à confirmer</Link>}
             </span>
@@ -607,8 +614,8 @@ export default async function FicheCommande({
                   <dd><Prix millimes={f.sous_total_millimes} /></dd>
                 </div>
                 <div>
-                  <dt>{retrait ? "Retrait en magasin" : `Livraison${f.livraison.zone ? ` (${f.livraison.zone})` : ""}`}</dt>
-                  <dd>{retrait ? "Gratuit" : f.frais_livraison_millimes === 0 ? "Offerte" : <Prix millimes={f.frais_livraison_millimes} />}</dd>
+                  <dt>{f.sur_place ? "Remis sur place" : retrait ? "Retrait en magasin" : `Livraison${f.livraison.zone ? ` (${f.livraison.zone})` : ""}`}</dt>
+                  <dd>{f.sur_place ? "Sans livraison" : retrait ? "Gratuit" : f.frais_livraison_millimes === 0 ? "Offerte" : <Prix millimes={f.frais_livraison_millimes} />}</dd>
                 </div>
                 {f.remise_millimes > 0 ? (
                   <div className="bo-remise">
@@ -617,7 +624,7 @@ export default async function FicheCommande({
                   </div>
                 ) : null}
                 <div className="bo-total">
-                  <dt>{retrait ? "À encaisser au retrait" : "À encaisser à la livraison"}</dt>
+                  <dt>{f.sur_place ? "Payé au comptoir" : retrait ? "À encaisser au retrait" : "À encaisser à la livraison"}</dt>
                   <dd><Prix millimes={f.total_millimes} fort /></dd>
                 </div>
               </dl>
@@ -696,7 +703,12 @@ export default async function FicheCommande({
 
             {/* ---------------- La livraison ---------------- */}
             <section className="carte" aria-labelledby="livraison-titre">
-              {retrait ? (
+              {f.sur_place ? (
+                <>
+                  <h2 id="livraison-titre" className="carte-titre-icone"><Icone nom="boutique" /> Vendue au comptoir</h2>
+                  <p className="bo-adresse">Articles remis en main propre au magasin, payés sur place.</p>
+                </>
+              ) : retrait ? (
                 <>
                   <h2 id="livraison-titre" className="carte-titre-icone"><Icone nom="boutique" /> Retrait en magasin</h2>
                   <p className="bo-adresse">

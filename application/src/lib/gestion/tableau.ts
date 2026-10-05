@@ -35,6 +35,8 @@ export type Tableau = {
   refus_origines: { origine: string; refus: number }[];
   gouvernorats: { code: string; nom: string; arrivees: number; refusees: number; taux_refus: number }[];
   produits: { produit: string; quantite: number; montant_millimes: number }[];
+  /** D'où viennent les commandes : « vitrine », ou le canal d'une commande saisie par l'équipe. */
+  canaux: { canal: string; commandes: number; livrees: number; encaisse_millimes: number }[];
 };
 
 const POURCENT = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 0 });

@@ -88,6 +88,7 @@ const MESSAGES: Record<string, string> = {
   gouvernorat: "Choisissez le gouvernorat : il fait les frais de livraison.",
   code_postal: "Le code postal compte 4 chiffres.",
   retrait: "Cette boutique ne propose pas le retrait au magasin.",
+  comptoir: "Une vente au comptoir se fait au magasin : choisissez « Au magasin ».",
   panier: "Ajoutez au moins un article.",
   stock: "Un article n'est plus disponible dans la quantité demandée : la liste est à jour.",
   total: "Un prix a changé pendant la saisie : le total est à jour, vérifiez-le avec le client avant d'enregistrer.",
