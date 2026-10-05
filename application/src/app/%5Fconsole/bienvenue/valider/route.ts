@@ -46,5 +46,6 @@ export async function POST(req: Request) {
         : "Le mot de passe n'a pas pu être enregistré : réessayez.";
     return vers(`/bienvenue?${new URLSearchParams({ reprise: "1", erreur: message })}`);
   }
-  return vers("/gestion");
+  // La double authentification lui est proposée (ou demandée, si un réglage l'exige) ; la porte décide.
+  return vers("/double-authentification");
 }

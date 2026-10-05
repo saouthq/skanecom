@@ -6,6 +6,7 @@ import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import { IdentifiantDepuisNom } from "@/components/console/IdentifiantDepuisNom";
+import { AssistantCreation } from "@/components/console/AssistantCreation";
 import type { Metier } from "@/lib/console/metiers";
 import { LIBELLES_THEME } from "@/lib/console/libelles";
 import { STRUCTURES_CONSOLE } from "@/lib/console/structures";
@@ -14,13 +15,17 @@ import { formateMontant } from "@/lib/prix";
 
 export const metadata: Metadata = { title: "Nouvelle boutique" };
 
-/* C1 · Créer une boutique et lui attribuer son domaine. Elle naît « en
-   préparation » : rien n'est visible tant qu'on ne l'ouvre pas. Son métier,
-   s'il est choisi, pose d'un geste ses rayons, ses caractéristiques, sa
-   palette et sa structure (…_metiers.sql) ; sans métier, on choisit la
-   structure et l'on part de zéro. */
+const ETAPES = ["Le client", "Le métier", "L'apparence", "L'offre"];
+
+/* C1 · Créer une boutique et lui attribuer son domaine, en quatre étapes
+   (le client, le métier, l'apparence, l'offre) et un récapitulatif. Elle
+   naît « en préparation » : rien n'est visible tant qu'on ne l'ouvre pas.
+   Son métier, s'il est choisi, pose d'un geste ses rayons, ses
+   caractéristiques, sa palette et sa structure (…_metiers.sql) ; sans
+   métier, on choisit la structure et l'on part de zéro. La personne à
+   appeler, notée ici, va dans « Le client » de sa fiche. */
 export default async function NouvelleBoutique({ searchParams }: {
-  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string; demonstration?: string; formule?: string; modele?: string }>;
+  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string; demonstration?: string; formule?: string; modele?: string; contact_nom?: string; contact_telephone?: string }>;
 }) {
   const { user, role } = await exigeAdmin();
   const v = await searchParams;
@@ -43,81 +48,140 @@ export default async function NouvelleBoutique({ searchParams }: {
 
       <form action="/nouvelle-boutique/creer" method="post" className="carte formulaire nb-formulaire">
         <IdentifiantDepuisNom />
+        {/* Quatre étapes, une à la fois (AssistantCreation) ; sans JavaScript, le formulaire entier. */}
+        <AssistantCreation etapeInitiale={0} />
+        <ol className="nb-tete" aria-label="Les étapes">
+          {ETAPES.map((e, i) => (
+            <li key={e}>
+              <button type="button" data-aller={i} className="nb-tete-etape" aria-current={i === 0 ? "step" : "false"}>
+                <span className="nb-tete-numero" aria-hidden="true">{i + 1}</span>
+                <span>{e}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
         {v.erreur ? <p className="message message-erreur" role="alert">{v.erreur}</p> : null}
-        <div className="champ">
-          <label htmlFor="nom">Nom de la boutique</label>
-          <input id="nom" name="nom" required maxLength={80} defaultValue={v.nom ?? ""} autoFocus placeholder="Maymar" />
-        </div>
-        <div className="deux-colonnes">
+
+        <fieldset className="nb-etape" data-etape="client">
+          <legend className="nb-etape-titre" tabIndex={-1}>1. Le client</legend>
           <div className="champ">
-            <label htmlFor="slug">Identifiant</label>
-            <input id="slug" name="slug" required pattern="[a-z0-9]([a-z0-9\-]{0,46}[a-z0-9])?" maxLength={48} defaultValue={v.slug ?? ""}
-              aria-describedby="aide-slug" placeholder="maymar" />
-            <p id="aide-slug" className="aide">Tiré du nom ; minuscules, chiffres et tirets. Il ne change plus ensuite.</p>
+            <label htmlFor="nom">Nom de la boutique</label>
+            <input id="nom" name="nom" required maxLength={80} defaultValue={v.nom ?? ""} autoFocus placeholder="Maymar" />
           </div>
-          <div className="champ">
-            <label htmlFor="hote">Domaine principal</label>
-            <input id="hote" name="hote" required placeholder="maymar.tn" defaultValue={v.hote ?? ""} aria-describedby="aide-hote" />
-            <p id="aide-hote" className="aide">Sans « https:// ». Les autres s&apos;ajoutent ensuite.</p>
+          <div className="deux-colonnes">
+            <div className="champ">
+              <label htmlFor="slug">Identifiant</label>
+              <input id="slug" name="slug" required pattern="[a-z0-9]([a-z0-9\-]{0,46}[a-z0-9])?" maxLength={48} defaultValue={v.slug ?? ""}
+                aria-describedby="aide-slug" placeholder="maymar" />
+              <p id="aide-slug" className="aide">Tiré du nom ; minuscules, chiffres et tirets. Il ne change plus ensuite.</p>
+            </div>
+            <div className="champ">
+              <label htmlFor="hote">Domaine principal</label>
+              <input id="hote" name="hote" required placeholder="maymar.tn" defaultValue={v.hote ?? ""} aria-describedby="aide-hote" />
+              <p id="aide-hote" className="aide">Sans « https:// ». Les autres s&apos;ajoutent ensuite.</p>
+            </div>
           </div>
-        </div>
-        {modele ? (
-          <div className="message nb-modele">
-            <input type="hidden" name="modele" value={modele.boutique.slug} />
-            <p>
-              <b>À partir de {modele.boutique.nom}</b> : son apparence ({LIBELLES_THEME[modele.theme?.code ?? "editorial"] ?? modele.theme?.code}), ses réglages, sa livraison, ses rayons
-              et leurs caractéristiques. Ni ses images, ni son catalogue, ni ses clients, ni ses informations légales.{" "}
-              <Link href="/nouvelle-boutique" className="btn-lien whitespace-nowrap">Partir de zéro plutôt</Link>
-            </p>
+          <div className="deux-colonnes">
+            <div className="champ">
+              <label htmlFor="contact_nom">Personne à appeler <span className="discret">(facultatif)</span></label>
+              <input id="contact_nom" name="contact_nom" maxLength={120} defaultValue={v.contact_nom ?? ""} autoComplete="off" placeholder="Prénom Nom, son rôle" />
+            </div>
+            <div className="champ">
+              <label htmlFor="contact_telephone">Son téléphone <span className="discret">(facultatif)</span></label>
+              <input id="contact_telephone" name="contact_telephone" type="tel" inputMode="tel" defaultValue={v.contact_telephone ?? ""}
+                pattern="[0-9+ .\(\)\-]{8,20}" title="Huit chiffres au moins, par exemple 20 123 456" autoComplete="off" placeholder="20 123 456" />
+            </div>
           </div>
-        ) : <ChoixMetier metiers={metiers} choisi={v.metier} />}
-        {/* Un métier pose sa structure : le choix ne sert que pour « partir de zéro ». */}
-        {modele ? null : <p className="aide nb-structure-metier">La structure suit le métier choisi (indiquée sur sa carte) ; elle se change ensuite dans Marque.</p>}
-        {modele ? null : <fieldset className="choix choix-2 mt-gabarit">
-          <legend>Structure</legend>
-          {STRUCTURES_CONSOLE.map((x) => (
-            <label key={x.code} className="choix-carte">
-              <input type="radio" name="theme" value={x.code} defaultChecked={(v.theme ?? "editorial") === x.code} />
+          <div className="nb-nav"><span /><button type="button" data-suivant className="btn btn-primaire">Continuer <Icone nom="droite" taille={14} /></button></div>
+        </fieldset>
+
+        <fieldset className="nb-etape" data-etape="metier">
+          <legend className="nb-etape-titre" tabIndex={-1}>2. Le métier</legend>
+          {modele ? (
+            <div className="message nb-modele">
+              <input type="hidden" name="modele" value={modele.boutique.slug} />
+              <p>
+                <b>À partir de {modele.boutique.nom}</b> : son apparence ({LIBELLES_THEME[modele.theme?.code ?? "editorial"] ?? modele.theme?.code}), ses réglages, sa livraison, ses rayons
+                et leurs caractéristiques. Ni ses images, ni son catalogue, ni ses clients, ni ses informations légales.{" "}
+                <Link href="/nouvelle-boutique" className="btn-lien whitespace-nowrap">Partir de zéro plutôt</Link>
+              </p>
+            </div>
+          ) : <ChoixMetier metiers={metiers} choisi={v.metier} />}
+          <div className="nb-nav">
+            <button type="button" data-precedent className="btn btn-fantome"><Icone nom="gauche" taille={14} /> Retour</button>
+            <button type="button" data-suivant className="btn btn-primaire">Continuer <Icone nom="droite" taille={14} /></button>
+          </div>
+        </fieldset>
+
+        <fieldset className="nb-etape" data-etape="apparence">
+          <legend className="nb-etape-titre" tabIndex={-1}>3. L&apos;apparence</legend>
+          {modele ? <p className="aide">Celle de {modele.boutique.nom}, reprise telle quelle ; elle se change ensuite dans Marque.</p> : (
+            <>
+              {/* Un métier pose sa structure : le choix ne sert que pour « partir de zéro ». */}
+              <p className="aide nb-structure-metier" data-structure-metier>La structure suit le métier choisi (indiquée sur sa carte) ; elle se change ensuite dans Marque.</p>
+              <fieldset className="choix choix-2 mt-gabarit">
+                <legend>Structure</legend>
+                {STRUCTURES_CONSOLE.map((x) => (
+                  <label key={x.code} className="choix-carte">
+                    <input type="radio" name="theme" value={x.code} defaultChecked={(v.theme ?? "editorial") === x.code} />
+                    <span>
+                      <b>{LIBELLES_THEME[x.code]}</b>
+                      <span className="aide">{x.aide}</span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            </>
+          )}
+          <p className="aide">Le logo, les couleurs et les photos se posent ensuite, dans Marque, avec l&apos;aperçu.</p>
+          <div className="nb-nav">
+            <button type="button" data-precedent className="btn btn-fantome"><Icone nom="gauche" taille={14} /> Retour</button>
+            <button type="button" data-suivant className="btn btn-primaire">Continuer <Icone nom="droite" taille={14} /></button>
+          </div>
+        </fieldset>
+
+        <fieldset className="nb-etape" data-etape="offre">
+          <legend className="nb-etape-titre" tabIndex={-1}>4. L&apos;offre</legend>
+          {/* La formule vendue engage le client : le super-administrateur la pose (le support crée « sur mesure »). */}
+          {role !== "super_admin" ? (
+            <p className="aide">Elle naîtra « sur mesure » (tout ouvert) : un super-administrateur posera sa formule.</p>
+          ) : <fieldset className="choix choix-2 nb-formules">
+            <legend>Formule vendue</legend>
+            {formules.map((f) => (
+              <label key={f.code} className="choix-carte">
+                <input type="radio" name="formule" value={f.code} defaultChecked={v.formule === f.code} />
+                <span>
+                  <b>{f.nom}{f.prix !== null ? <span className="discret"> · {formateMontant(f.prix)} TND / mois</span> : null}</b>
+                  {f.description ? <span className="aide">{f.description}</span> : null}
+                </span>
+              </label>
+            ))}
+            <label className="choix-carte">
+              <input type="radio" name="formule" value="" defaultChecked={!v.formule} />
               <span>
-                <b>{LIBELLES_THEME[x.code]}</b>
-                <span className="aide">{x.aide}</span>
+                <b>{SANS_FORMULE}</b>
+                <span className="aide">Tout est ouvert. Pour une démonstration, ou un client dont l&apos;offre n&apos;est pas encore arrêtée.</span>
               </span>
             </label>
-          ))}
-        </fieldset>}
-        {/* La formule vendue engage le client : le super-administrateur la pose (le support crée « sur mesure »). */}
-        {role !== "super_admin" ? (
-          <p className="aide">Elle naîtra « sur mesure » (tout ouvert) : un super-administrateur posera sa formule.</p>
-        ) : <fieldset className="choix choix-2 nb-formules">
-          <legend>Formule vendue</legend>
-          {formules.map((f) => (
-            <label key={f.code} className="choix-carte">
-              <input type="radio" name="formule" value={f.code} defaultChecked={v.formule === f.code} />
-              <span>
-                <b>{f.nom}{f.prix !== null ? <span className="discret"> · {formateMontant(f.prix)} TND / mois</span> : null}</b>
-                {f.description ? <span className="aide">{f.description}</span> : null}
-              </span>
-            </label>
-          ))}
+          </fieldset>}
           <label className="choix-carte">
-            <input type="radio" name="formule" value="" defaultChecked={!v.formule} />
+            <input type="checkbox" name="demonstration" value="1" defaultChecked={v.demonstration === "1"} />
             <span>
-              <b>{SANS_FORMULE}</b>
-              <span className="aide">Tout est ouvert. Pour une démonstration, ou un client dont l&apos;offre n&apos;est pas encore arrêtée.</span>
+              <b>Boutique de démonstration</b>
+              <span className="aide">Pour la montrer aux prospects, pas un client : ses commandes ne compteront pas dans la synthèse de la console. Cela se change ensuite sur sa page.</span>
             </span>
           </label>
-        </fieldset>}
-        <label className="choix-carte">
-          <input type="checkbox" name="demonstration" value="1" defaultChecked={v.demonstration === "1"} />
-          <span>
-            <b>Boutique de démonstration</b>
-            <span className="aide">Pour la montrer aux prospects, pas un client : ses commandes ne compteront pas dans la synthèse de la console. Cela se change ensuite sur sa page.</span>
-          </span>
-        </label>
-        <div className="carte-pied">
-          <span className="aide">Ensuite : la marque, le catalogue, l&apos;équipe.</span>
-          <button type="submit" className="btn btn-primaire">Créer la boutique</button>
-        </div>
+          {/* Le récapitulatif, rempli par l'assistant avant de créer. */}
+          <div className="nb-recap">
+            <p className="nb-recap-titre">Avant de créer</p>
+            <dl data-recap />
+          </div>
+          <div className="nb-nav">
+            <button type="button" data-precedent className="btn btn-fantome"><Icone nom="gauche" taille={14} /> Retour</button>
+            <button type="submit" className="btn btn-primaire">Créer la boutique</button>
+          </div>
+          <p className="aide nb-ensuite">Elle naît « en préparation ». Ensuite : la marque, le catalogue, l&apos;équipe.</p>
+        </fieldset>
       </form>
     </div>
   );

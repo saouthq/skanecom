@@ -27,8 +27,8 @@ export type MembreEquipe = {
 
 /** Les rôles, dans l'ordre du formulaire, avec ce qu'ils permettent. */
 export const ROLES_EQUIPE = [
-  { code: "proprietaire", aide: "Tout le backoffice ; répond de la boutique. Double authentification." },
-  { code: "admin", aide: "Tout le backoffice. Double authentification." },
+  { code: "proprietaire", aide: "Tout le backoffice ; répond de la boutique. Double authentification conseillée." },
+  { code: "admin", aide: "Tout le backoffice. Double authentification conseillée." },
   { code: "confirmateur", aide: "Appelle les clients et confirme les commandes." },
   { code: "preparateur", aide: "Prépare et expédie les colis." },
   { code: "lecture", aide: "Consulte, sans rien modifier." },

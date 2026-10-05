@@ -16,13 +16,14 @@ export function ChoixMetier({ metiers, choisi, aucun = true }: { metiers: Metier
           <input type="radio" name="metier" value="" defaultChecked={!choisi} />
           <span>
             <b>Aucun : partir de zéro</b>
-            <span className="aide">Ni rayons ni caractéristiques ; la structure se choisit ci-dessous.</span>
+            <span className="aide">Ni rayons ni caractéristiques ; la structure se choisit à l&apos;étape suivante.</span>
           </span>
         </label>
       ) : null}
       {metiers.map((m) => (
         <label key={m.code} className="choix-carte mt-carte">
-          <input type="radio" name="metier" value={m.code} defaultChecked={choisi === m.code} />
+          <input type="radio" name="metier" value={m.code} defaultChecked={choisi === m.code}
+            data-gabarit={m.gabarit} data-gabarit-libelle={LIBELLES_THEME[m.gabarit] ?? m.gabarit} />
           <span>
             <b>
               {m.accent ? <span className="mt-pastille" style={{ background: m.accent }} aria-hidden="true" /> : null}

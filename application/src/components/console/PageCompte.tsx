@@ -19,7 +19,7 @@ export type DonneesCompte = {
   email: string;
   role: string;
   retour: string;
-  /** null : la double authentification n'est pas demandée pour ce rôle (aucun facteur). */
+  /** Une application enregistrée (un facteur validé). */
   doubleAuth: boolean;
   codes: { restants: number; crees_le: string | null };
   codesNeufs: string[] | null;
@@ -36,7 +36,7 @@ function Retour({ carte, messages }: { carte: string; messages: DonneesCompte["m
 export function PageCompte({ d }: { d: DonneesCompte }) {
   return (
     <>
-      <EnTetePage titre="Mon compte" description={`Ce que vous réglez pour vous seul : votre mot de passe, ${d.doubleAuth ? "vos codes de secours, " : ""}vos appareils.`} />
+      <EnTetePage titre="Mon compte" description={`Ce que vous réglez pour vous seul : votre mot de passe, ${d.doubleAuth ? "vos codes de secours" : "votre double authentification"}, vos appareils.`} />
       <div className="cp-grille">
         <section className="carte cp-qui" aria-label="Vous">
           <span className="avatar avatar-grand" style={styleAvatar(d.email)} aria-hidden="true">{initiales(d.email)}</span>
@@ -76,7 +76,25 @@ export function PageCompte({ d }: { d: DonneesCompte }) {
           </form>
         </section>
 
-        {/* Sans double authentification (rôles de terrain), pas de codes à garder : pas de carte. */}
+        {/* Pas encore de double authentification : la carte propose de l'activer
+            (elle n'est exigée que si un réglage le veut). */}
+        {!d.doubleAuth ? (
+          <section className="carte" aria-labelledby="t-double-auth" id="double-auth">
+            <div className="carte-tete">
+              <div>
+                <h2 id="t-double-auth" className="carte-titre-icone"><Icone nom="bouclier" /> Double authentification</h2>
+                <p>Pas encore activée : aujourd&apos;hui, votre mot de passe suffit pour entrer dans votre compte.</p>
+              </div>
+            </div>
+            <div className="cp-codes-etat">
+              <p className="aide">Une application sur votre téléphone (Google Authenticator, Aegis, 1Password…) donne un code à six chiffres, demandé à chaque connexion : un mot de passe volé ne suffit plus.</p>
+              <a href={`/double-authentification?${new URLSearchParams({ activer: "1", retour: d.retour })}`} className="btn btn-primaire">
+                <Icone nom="bouclier" taille={14} /> Activer la double authentification
+              </a>
+            </div>
+          </section>
+        ) : null}
+
         {d.doubleAuth ? (
           <section className="carte" aria-labelledby="t-secours" id="secours">
             <div className="carte-tete">

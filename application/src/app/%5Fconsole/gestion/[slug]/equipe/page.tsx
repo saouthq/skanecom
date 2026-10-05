@@ -32,7 +32,7 @@ export default async function EquipeBoutique({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ ok?: string; erreur?: string; email?: string; role?: string }>;
+  searchParams: Promise<{ ok?: string; erreur?: string; email?: string; role?: string; carte?: string; la_votre?: string }>;
 }) {
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
@@ -40,10 +40,15 @@ export default async function EquipeBoutique({
   const gere = boutique.role === "proprietaire";
 
   const sb = await clientSession();
-  const [{ data, error }, { data: dataSupport, error: erreurSupport }] = await Promise.all([
+  const [{ data, error }, { data: dataSupport, error: erreurSupport }, { data: da }] = await Promise.all([
     sb.rpc("gestion_equipe", { p_boutique_id: boutique.boutique_id }),
     sb.rpc("gestion_acces_support", { p_boutique_id: boutique.boutique_id }),
+    sb.rpc("gestion_double_auth", { p_boutique_id: boutique.boutique_id }),
   ]);
+  // La double authentification des propriétaires et administrateurs : exigée ou proposée (réglage du propriétaire).
+  const obligatoire = (da as { obligatoire?: boolean } | null)?.obligatoire === true;
+  // Le retour de ce réglage s'affiche dans sa carte, là où l'on a cliqué.
+  const dansCarte = messages.carte === "double-auth";
   if (error) throw new Error(`Équipe illisible : ${error.message}`);
   if (erreurSupport) throw new Error(`Accès du support illisibles : ${erreurSupport.message}`);
   const equipe = (data ?? []) as MembreBoutique[];
@@ -60,8 +65,8 @@ export default async function EquipeBoutique({
       />
 
       <div className="pile">
-        {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
-        {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
+        {messages.ok && !dansCarte ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
+        {messages.erreur && !dansCarte ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
         {!gere ? <p className="message">Lecture seule : le propriétaire de la boutique gère son équipe.</p> : null}
 
         {lien ? (
@@ -95,7 +100,9 @@ export default async function EquipeBoutique({
             <div className="carte-tete">
               <div>
                 <h2 id="t-membres" className="carte-titre-icone"><Icone nom="equipe" /> Membres</h2>
-                <p>Le propriétaire et l&apos;administrateur se connectent avec une double authentification.</p>
+                <p>{obligatoire
+                  ? "Le propriétaire et l'administrateur se connectent avec une double authentification : la boutique l'exige."
+                  : "La double authentification est proposée au propriétaire et à l'administrateur ; chacun l'active depuis « Mon compte »."}</p>
               </div>
             </div>
             <ul className="equipe" role="list">
@@ -166,6 +173,41 @@ export default async function EquipeBoutique({
               })}
             </ul>
           </section>
+
+          {gere ? (
+            <section className="carte" aria-labelledby="t-double-auth" id="double-auth">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-double-auth" className="carte-titre-icone"><Icone nom="bouclier" /> Double authentification</h2>
+                  <p>Pour le propriétaire et l&apos;administrateur, qui ont la main sur toute la boutique. Qui l&apos;a activée donne toujours son code.</p>
+                </div>
+              </div>
+              {dansCarte && messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
+              {dansCarte && messages.erreur ? (
+                <p className="message message-erreur" role="alert">
+                  <span>
+                    {messages.erreur}
+                    {/* Sans la sienne : le chemin pour l'activer, d'un clic. */}
+                    {messages.la_votre ? <> : <a href={`/gestion/${slug}/compte#double-auth`} className="btn-lien">l&apos;activer maintenant</a>.</> : null}
+                  </span>
+                </p>
+              ) : null}
+              <form action={`${action}/double-auth`} method="post" className="formulaire">
+                <fieldset className="choix">
+                  <legend className="sr-only">Double authentification du propriétaire et de l&apos;administrateur</legend>
+                  <label className="choix-carte">
+                    <input type="radio" name="obligatoire" value="" defaultChecked={!obligatoire} />
+                    <span><b>Proposée</b><span className="aide">À la connexion, avec « Plus tard » ; chacun l&apos;active depuis « Mon compte ».</span></span>
+                  </label>
+                  <label className="choix-carte">
+                    <input type="radio" name="obligatoire" value="1" defaultChecked={obligatoire} />
+                    <span><b>Exigée</b><span className="aide">Plus sûr : un mot de passe volé ne suffit plus pour entrer. Activez d&apos;abord la vôtre.</span></span>
+                  </label>
+                </fieldset>
+                <button type="submit" className="btn btn-second">Enregistrer</button>
+              </form>
+            </section>
+          ) : null}
 
           {gere ? (
             <section className="carte" aria-labelledby="t-inviter">

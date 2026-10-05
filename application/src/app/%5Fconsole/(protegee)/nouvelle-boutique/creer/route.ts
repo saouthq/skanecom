@@ -14,6 +14,8 @@ export async function POST(req: Request) {
       demonstration: formulaire.get("demonstration") === "1" ? "1" : "",
       formule: String(formulaire.get("formule") ?? "").trim(),
       modele: String(formulaire.get("modele") ?? "").trim(),
+      contact_nom: String(formulaire.get("contact_nom") ?? "").trim().slice(0, 120),
+      contact_telephone: String(formulaire.get("contact_telephone") ?? "").trim().slice(0, 20),
     };
     const service = clientService(ip);
     const { data: id, error } = await service.rpc("console_creer_boutique", {
@@ -24,6 +26,15 @@ export async function POST(req: Request) {
       p_theme: valeurs.theme,
     });
     if (error) return versAvecErreur("/nouvelle-boutique", messageBase(error), valeurs);
+    // La personne à appeler, notée dès la création : la carte « Le client » de sa fiche.
+    if (valeurs.contact_nom || valeurs.contact_telephone) {
+      const { error: ec } = await service.rpc("console_enregistrer_contact", {
+        p_acteur: user.id, p_boutique_id: id as string, p_contact: { nom: valeurs.contact_nom, telephone: valeurs.contact_telephone },
+      });
+      if (ec) {
+        return vers(`/boutiques/${valeurs.slug}?${new URLSearchParams({ erreur: `Boutique créée ; la personne à appeler n'a pas été notée : ${ec.message}`, carte: "client" })}#t-client`);
+      }
+    }
     // La formule vendue : avant le métier, qui pose des réglages (éteints, à la lecture, s'ils sont hors formule).
     if (valeurs.formule) {
       const { error: ef } = await service.rpc("console_changer_formule", { p_acteur: user.id, p_boutique_id: id as string, p_formule: valeurs.formule });

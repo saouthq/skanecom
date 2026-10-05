@@ -219,13 +219,15 @@ await etape("bon mot de passe", async () => {
   secret = (await page.locator("[data-secret-totp]").textContent()).trim();
   verifie(await page.getByRole("img", { name: /QR code/ }).isVisible(), "première connexion : le QR code à scanner s'affiche");
   verifie(/^[A-Z2-7]{16,}$/.test(secret), `la clé à saisir à la main s'affiche (${secret.length} caractères)`);
+  // Facultative par défaut (réglage de la plateforme) : conseillée, avec « Plus tard ».
+  verifie((await page.locator(".porte").innerText()).includes("Conseillée"), "elle est conseillée, pas exigée (réglage par défaut)");
+  verifie(await page.getByRole("button", { name: "Plus tard" }).isVisible(), "« Plus tard » permet de la reporter");
   await capture(page, "console-double-authentification-inscription");
 });
 
-await etape("sans le code, la console reste fermée", async () => {
+await etape("proposée, pas exigée : la console s'ouvrirait déjà", async () => {
   const r = await brut(ctx, "GET", "/");
-  verifie(r.status >= 300 && r.status < 400 && r.location.includes("/double-authentification"),
-    `après le seul mot de passe, « / » renvoie vers la double authentification (${r.status})`);
+  verifie(r.status === 200, `sans application enregistrée, « / » répond déjà (${r.status}) : on peut passer et l'activer plus tard`);
 });
 
 await etape("mauvais code : le QR code reste", async () => {
@@ -388,22 +390,51 @@ await etape("la galerie des modèles : chaque structure, sa démonstration en ap
 /* ------------------------------------------------------------------ */
 console.log("\n== 2. Mettre une boutique en place ==");
 
-await etape("créer la boutique", async () => {
+/* L'assistant de création : quatre étapes, une à la fois ; « Continuer »
+   (ou Entrée dans un champ) passe à la suivante, après vérification. */
+const etapeVisible = () => page.locator(".nb-etape:not([hidden]) .nb-etape-titre").innerText();
+const continuer = async (n = 1) => {
+  for (let i = 0; i < n; i++) await clic(page, page.locator(".nb-etape:not([hidden]) [data-suivant]"));
+};
+
+await etape("créer la boutique : l'assistant en quatre étapes", async () => {
   // « Nouvelle boutique » : le bouton de l'accueil (ce n'est plus une rubrique du menu).
   await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
   verifie(await page.locator(".app-cote").getByRole("link", { name: "Nouvelle boutique" }).count() === 0, "le menu ne la répète pas : c'est un bouton de l'accueil");
   await clic(page, page.getByRole("link", { name: "Nouvelle boutique" }).first());
   await page.waitForURL(/nouvelle-boutique/);
+  await page.waitForLoadState("networkidle");
+  verifie((await etapeVisible()) === "1. Le client" && (await page.locator(".nb-tete-etape").count()) === 4, "quatre étapes, la première à l'écran");
+  // « Continuer » sans nom : l'étape ne passe pas.
+  await continuer();
+  verifie((await etapeVisible()) === "1. Le client", "sans nom ni domaine, l'assistant reste sur l'étape");
   await clic(page, page.locator("#nom")); await tape(page, "Outillage Pro Démo");
   verifie((await page.locator("#slug").inputValue()) === "outillage-pro-demo", "l'identifiant suit le nom (sans accents, en tirets)");
   await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, SLUG);
   await clic(page, page.locator("#hote")); await tape(page, HOTE);
-  await clic(page, page.getByLabel(/^Technique/));
+  await clic(page, page.locator("#contact_nom")); await tape(page, "Karim, le gérant");
+  await clic(page, page.locator("#contact_telephone")); await tape(page, "20 123 456");
   await capture(page, "console-nouvelle-boutique");
+  // Entrée dans un champ : l'étape suivante (le formulaire ne part pas).
+  await page.keyboard.press("Enter");
+  verifie((await etapeVisible()) === "2. Le métier" && page.url().includes("/nouvelle-boutique"), "Entrée : l'étape du métier, rien n'est créé");
+  await continuer();
+  verifie((await etapeVisible()) === "3. L'apparence" && await page.locator(".mt-gabarit").isVisible(), "sans métier, la structure se choisit");
+  await clic(page, page.getByLabel(/^Technique/));
+  await continuer();
+  const recap = await page.locator("[data-recap]").innerText();
+  verifie((await etapeVisible()) === "4. L'offre" && recap.includes("Outillage Pro Démo") && recap.includes(HOTE) && recap.includes("Karim, le gérant") && /Technique/.test(recap),
+    `« Avant de créer » récapitule : ${recap.replace(/\s+/g, " ").slice(0, 120)}…`);
+  await capture(page, "console-nouvelle-boutique-recap");
+  await clic(page, page.locator(".nb-tete-etape").nth(0));
+  verifie((await etapeVisible()) === "1. Le client" && (await page.locator("#nom").inputValue()) === "Outillage Pro Démo", "la rangée ramène à une étape, la saisie gardée");
+  await clic(page, page.locator(".nb-tete-etape").nth(3));
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(new RegExp(`/boutiques/${SLUG}`));
   await page.waitForLoadState("networkidle");
   verifie((await page.getByRole("status").innerText()).includes("en préparation"), "la boutique est créée, en préparation");
+  verifie((await page.locator("#client").innerText()).includes("Karim, le gérant") && (await page.locator("#client").innerText()).includes("20 123 456"),
+    "la personne à appeler, notée à la création, est sur sa fiche");
   await capture(page, "console-boutique-creee");
 });
 
@@ -412,22 +443,30 @@ await etape("un identifiant déjà pris est refusé, la saisie gardée", async (
   await clic(page, page.locator("#nom")); await tape(page, "Doublon");
   await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, SLUG);
   await clic(page, page.locator("#hote")); await tape(page, `autre-${SUFFIXE}.localhost`);
+  await continuer(3);
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(/erreur=/);
+  await page.waitForLoadState("networkidle");
   verifie((await page.getByRole("alert").innerText()).includes("Déjà pris"), `message : « ${await page.getByRole("alert").innerText()} »`);
-  verifie((await page.locator("#nom").inputValue()) === "Doublon", "le formulaire garde ce qui a été saisi");
+  verifie((await etapeVisible()) === "1. Le client" && (await page.locator("#nom").inputValue()) === "Doublon",
+    "retour à l'étape du client, avec ce qui a été saisi");
 });
 
 await etape("un métier pose rayons, caractéristiques, palette et accueil d'un geste", async () => {
   // Les préréglages (…_metiers.sql) : une boutique de bijoux.
   await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
-  verifie((await page.locator(".mt-carte").count()) === 9, "neuf choix : aucun, et huit métiers");
-  verifie(await page.locator(".mt-gabarit").isVisible(), "sans métier, le gabarit se choisit");
   await clic(page, page.locator("#nom")); await tape(page, "Bijoux Démo");
   await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, `bijoux-${SUFFIXE}`);
   await clic(page, page.locator("#hote")); await tape(page, `bijoux-${SUFFIXE}.localhost`);
+  await continuer();
+  verifie((await page.locator(".mt-carte").count()) === 9, "neuf choix : aucun, et huit métiers");
   await clic(page, page.getByLabel(/^Bijoux et montres/));
-  verifie(!(await page.locator(".mt-gabarit").isVisible()), "un métier choisi règle le gabarit : son choix s'efface");
+  await capture(page, "console-nouvelle-boutique-metier");
+  await continuer();
+  verifie(!(await page.locator(".mt-gabarit").isVisible()) && (await page.locator("[data-structure-metier]").innerText()).includes("Bijoux et montres"),
+    "un métier choisi règle la structure : l'étape le dit, sans choix à faire");
+  await continuer();
+  verifie((await page.locator("[data-recap]").innerText()).includes("Bijoux et montres"), "le récapitulatif reprend le métier");
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(new RegExp(`/boutiques/bijoux-${SUFFIXE}`));
   await page.waitForLoadState("networkidle");
@@ -468,6 +507,12 @@ await etape("régler la marque, avec aperçu", async () => {
   const apercu = page.locator("[data-apercu]");
   const accentAvant = await apercu.evaluate((e) => getComputedStyle(e).getPropertyValue("--theme-accent").trim());
 
+  // Une palette prête, d'un clic ; puis la couleur exacte, dans « Les treize couleurs, une à une ».
+  const olivier = page.locator(".mq-palette", { hasText: "Olivier" });
+  await clic(page, olivier);
+  verifie(await olivier.getAttribute("aria-pressed") === "true", "une palette prête s'applique d'un clic");
+  verifie((await page.locator(".mq-lisibilite").innerText()).includes("lisible"), "la lisibilité se mesure aussitôt");
+  await clic(page, page.locator(".mq-fins > summary"));
   const champAccent = page.locator("#c-accent");
   await clic(page, champAccent);
   await champAccent.press("ControlOrMeta+a");
@@ -956,10 +1001,12 @@ await etape("un lien qui a servi ne marche plus", async () => {
   await tel.close();
 });
 
-await etape("le propriétaire, lui, passe d'abord par la double authentification", async () => {
+await etape("au propriétaire, la double authentification est proposée d'abord", async () => {
   const { tel, p } = await ouvreLien(lienGerant, "la valise est prête", "bienvenue-gerant");
   await p.waitForURL(/double-authentification/);
-  verifie(await p.locator("[data-secret-totp]").count() === 1, "le propriétaire enregistre son application d'authentification avant d'entrer");
+  verifie(await p.locator("[data-secret-totp]").count() === 1, "le propriétaire peut enregistrer son application d'authentification avant d'entrer");
+  verifie(await p.getByRole("button", { name: "Plus tard" }).isVisible(), "ou la reporter : « Plus tard » (la boutique ne l'exige pas)");
+  await capture(p, "console-bienvenue-double-authentification");
   await tel.close();
 });
 
@@ -1371,6 +1418,98 @@ await etape("le lien remis s'envoie aussi par e-mail, au nom de la boutique", as
 });
 
 /* ------------------------------------------------------------------ */
+console.log("\n== 3 ter (suite). La double authentification : proposée, ou exigée par un réglage ==");
+
+await etape("la boutique : son propriétaire l'exige de qui a la main, puis revient à « proposée »", async () => {
+  const bureau = await navigateur.newContext({ viewport: { width: 1366, height: 860 }, locale: "fr-FR" });
+  const p = await entreAvecApplication(bureau, GERANT, "la valise est partie", secretGerant, "double-auth-boutique");
+  await p.goto(`${CONSOLE}/gestion/${SLUG}/equipe`, { waitUntil: "networkidle" });
+  const carte = p.locator("#double-auth");
+  verifie(await carte.locator('input[name="obligatoire"][value=""]').isChecked(), "par défaut : proposée");
+  // Au clavier : la flèche passe de « Proposée » à « Exigée ».
+  await carte.locator('input[name="obligatoire"][value=""]').focus();
+  await p.keyboard.press("ArrowDown");
+  verifie(await carte.locator('input[name="obligatoire"][value="1"]').isChecked(), "la flèche choisit « Exigée »");
+  await envoie(p, carte.getByRole("button", { name: "Enregistrer" }));
+  verifie((await p.locator("#double-auth [role=status]").innerText()).startsWith("Exigée"), `« ${await p.locator("#double-auth [role=status]").innerText()} », dans la carte`);
+  verifie((await p.locator("section:has(#t-membres)").innerText()).includes("la boutique l'exige"), "la liste des membres le dit");
+  await p.locator("#double-auth").scrollIntoViewIfNeeded();
+  await capture(p, "backoffice-double-auth-exigee");
+  await clic(p, p.locator("#double-auth label.choix-carte", { hasText: "Proposée" }));
+  await envoie(p, p.locator("#double-auth").getByRole("button", { name: "Enregistrer" }));
+  verifie((await p.locator("#double-auth [role=status]").innerText()).startsWith("Proposée"), "revenue à « proposée »");
+  await bureau.close();
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  verifie(journal.filter((l) => l.includes("Double authentification de l'équipe de la boutique")).length === 2,
+    "le journal de la boutique garde les deux changements");
+});
+
+await etape("l'équipe SkanEcom : exigée, une recrue l'enregistre avant d'entrer ; proposée, elle passe, puis l'active depuis « Mon compte »", async () => {
+  const email = `recrue-${SUFFIXE}@skanecom.test`;
+  await page.goto(`${CONSOLE}/equipe-plateforme`, { waitUntil: "networkidle" });
+  await page.locator("#ep-email").fill(email);
+  await envoie(page, page.getByRole("button", { name: "Inviter", exact: true }));
+  const lien = (await page.locator(".ep-lien code").innerText()).trim();
+  verifie(lien.includes("/bienvenue?"), "le lien de la recrue");
+  const securite = page.locator("#securite");
+  verifie(await securite.locator('input[name="obligatoire"][value=""]').isChecked(), "par défaut, la console la propose sans l'exiger");
+  await clic(page, securite.locator("label.choix-carte", { hasText: "Exigée de toute l'équipe" }));
+  await envoie(page, page.locator("#securite").getByRole("button", { name: "Enregistrer" }));
+  verifie((await page.locator("#securite [role=status]").innerText()).startsWith("Exigée"), `« ${await page.locator("#securite [role=status]").innerText()} »`);
+  verifie((await page.locator("header").first().innerText() + await page.locator("main").innerText()).includes("Tous passent par la double authentification"),
+    "l'en-tête de l'équipe le dit");
+  await page.locator("#securite").scrollIntoViewIfNeeded();
+  await capture(page, "console-equipe-double-auth-exigee", true);
+
+  const { tel, p } = await ouvreLien(lien, "recrue du lundi matin", "recrue");
+  await p.waitForURL(/double-authentification/);
+  await p.waitForLoadState("networkidle");
+  verifie((await p.locator(".porte").innerText()).includes("Exigée") && await p.getByRole("button", { name: "Plus tard" }).count() === 0,
+    "exigée : la recrue l'enregistre, sans « Plus tard »");
+  const r = await brut(tel, "GET", "/");
+  verifie(r.status >= 300 && r.status < 400 && r.location.includes("/double-authentification"), `et la console lui reste fermée (${r.status})`);
+  await capture(p, "console-double-auth-exigee-recrue");
+
+  await clic(page, page.locator("#securite label.choix-carte", { hasText: "Proposée" }));
+  await envoie(page, page.locator("#securite").getByRole("button", { name: "Enregistrer" }));
+  verifie((await page.locator("#securite [role=status]").innerText()).startsWith("Proposée"), "revenue à « proposée »");
+
+  await p.reload({ waitUntil: "networkidle" });
+  verifie(await p.getByRole("button", { name: "Plus tard" }).isVisible(), "proposée : « Plus tard » paraît");
+  await capture(p, "console-double-auth-plus-tard");
+  await clic(p, p.getByRole("button", { name: "Plus tard" }));
+  await p.waitForURL((u) => u.pathname === "/");
+  await p.waitForLoadState("networkidle");
+  verifie(await p.locator(".pl-synthese").isVisible(), "« Plus tard » : la recrue est dans la console");
+  const r2 = await brut(tel, "GET", "/double-authentification");
+  verifie(r2.status >= 300 && r2.status < 400 && new URL(r2.location, CONSOLE).pathname === "/", `la proposition se tait ensuite (${r2.status} → ${r2.location})`);
+
+  await p.goto(`${CONSOLE}/compte`, { waitUntil: "networkidle" });
+  verifie((await p.locator("#double-auth").innerText()).includes("Pas encore activée"), "« Mon compte » : pas encore activée, et le bouton pour le faire");
+  await capture(p, "console-mon-compte-activer");
+  await clic(p, p.getByRole("link", { name: "Activer la double authentification" }));
+  await p.waitForURL(/activer=1/);
+  await p.waitForLoadState("networkidle");
+  const secretRecrue = (await p.locator("[data-secret-totp]").textContent()).trim();
+  verifie(await p.getByRole("link", { name: "Annuler" }).isVisible() && await p.getByRole("button", { name: "Plus tard" }).count() === 0,
+    "demandée : « Annuler » ramène à Mon compte (pas de « Plus tard »)");
+  await p.locator("#code").fill(totp(secretRecrue));
+  await p.keyboard.press("Enter");
+  await p.waitForURL(/\/compte\?ok=/);
+  await p.waitForLoadState("networkidle");
+  verifie((await p.locator("#secours").innerText()).includes("Double authentification activée") && await p.locator("#double-auth").count() === 0,
+    "activée : retour à « Mon compte », qui propose aussitôt les codes de secours");
+  await capture(p, "console-mon-compte-active");
+  await tel.close();
+
+  await page.goto(`${CONSOLE}/equipe-plateforme`, { waitUntil: "networkidle" });
+  const ligne = page.locator(".ep-liste > li", { hasText: email });
+  await envoie(page, ligne.getByRole("button", { name: `Retirer ${email} de l'équipe SkanEcom` }));
+  verifie(await page.locator(".ep-liste > li", { hasText: email }).count() === 0, "la recrue retirée de l'équipe");
+});
+
+/* ------------------------------------------------------------------ */
 console.log("\n== 3 quater. La fiche d'une boutique : à faire maintenant, le client, suspendre en le disant ==");
 
 await etape("la fiche : ce qu'il y a à faire maintenant, en une ligne", async () => {
@@ -1639,10 +1778,14 @@ await etape("le cycle de vie : renommer, cloner la configuration, fermer", async
     `renommée : « ${await page.locator("h1").innerText()} », l'adresse reste`);
   await clic(page, page.getByRole("link", { name: "Nouvelle boutique à partir de celle-ci" }));
   await page.waitForURL(/modele=/);
-  verifie((await page.locator(".nb-modele").innerText()).includes("Outillage Pro Démo Sud"), "le formulaire dit de quelle boutique on part");
+  await page.waitForLoadState("networkidle");
   await clic(page, page.locator("#nom")); await tape(page, "Outillage Clone");
   await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, CLONE);
   await clic(page, page.locator("#hote")); await tape(page, `${CLONE}.localhost`);
+  await continuer();
+  verifie((await page.locator(".nb-modele").innerText()).includes("Outillage Pro Démo Sud"), "le formulaire dit de quelle boutique on part");
+  await continuer(2);
+  verifie((await page.locator("[data-recap]").innerText()).includes("celle du modèle"), "le récapitulatif : la structure du modèle");
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(new RegExp(`/boutiques/${CLONE}`));
   await page.waitForLoadState("networkidle");
@@ -1680,6 +1823,7 @@ await etape("le journal de la plateforme : les gestes, filtrés ; les envois", a
   const lignes = await page.locator(".tableau tbody tr").allInnerTexts();
   verifie(lignes.some((l) => l.includes("Entrée dans l'équipe SkanEcom")) && lignes.some((l) => l.includes("Sortie de l'équipe SkanEcom")),
     `filtré sur l'équipe : ${lignes.length} gestes, l'entrée et la sortie`);
+  verifie(lignes.filter((l) => l.includes("Double authentification de l'équipe SkanEcom")).length >= 2, "et les changements du réglage de la double authentification");
   await clic(page, page.getByRole("link", { name: "Envois" }));
   await page.waitForURL(/vue=envois/);
   verifie((await page.locator(".jr-resume").innerText()).startsWith("Sur 7 jours"), `les envois : « ${await page.locator(".jr-resume").innerText()} »`);
@@ -1713,6 +1857,10 @@ await etape("deuxième connexion : seulement le code, plus de QR code", async ()
   await page.keyboard.press("Enter");
   await page.waitForURL(/double-authentification/);
   verifie(await page.locator("[data-secret-totp]").count() === 0, "le facteur existe : aucun QR code, juste le code");
+  verifie(await page.getByRole("button", { name: "Plus tard" }).count() === 0, "et pas de « Plus tard » : qui a une application donne toujours son code");
+  const r = await brut(ctx, "GET", "/");
+  verifie(r.status >= 300 && r.status < 400 && r.location.includes("/double-authentification"),
+    `sans le code, la console reste fermée (« / » → ${r.status} ${r.location})`);
   await capture(page, "console-double-authentification-code");
   // Un nouveau pas de 30 s : un code déjà servi ne doit pas l'être deux fois.
   await pause(((30 - (Math.floor(Date.now() / 1000) % 30)) + 1) * 1000);

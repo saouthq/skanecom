@@ -60,8 +60,13 @@ select is(tests.commandes_vues('B'), 0::bigint, 'et rien de B');
 select throws_ok(format($$ select public.gestion_note(%L, %L, 'Vu par le support') $$, tests.id('A'), :'numero_a'),
   '42501', null, 'en mode « regarder », il ne touche à rien');
 
-reset role; select tests.connecte_admin('aal1');
-select is(tests.commandes_vues('A'), 0::bigint, 'sans double authentification, l''accès n''ouvre rien');
+-- Une application enregistrée, et pas son code (aal1) : rien. (Sans
+-- application, voir 98_double_auth_facultative.sql.)
+reset role;
+insert into auth.mfa_factors (id, user_id, factor_type, status, created_at, updated_at)
+values (gen_random_uuid(), tests.id('admin_plateforme'), 'totp', 'verified', now(), now());
+select tests.connecte_admin('aal1');
+select is(tests.commandes_vues('A'), 0::bigint, 'avec une application enregistrée mais sans son code, l''accès n''ouvre rien');
 select throws_ok(format($$ select public.gestion_liste_commandes(%L) $$, tests.id('A')), '42501', null,
   'pas même la liste des commandes');
 

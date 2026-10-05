@@ -335,7 +335,7 @@ if (section("2")) {
   await etape("connexion, puis double authentification", async () => {
     await connexion(page, "gerant@maymar.test");
     await page.waitForURL(/double-authentification/, { timeout: 15000 });
-    verifie(true, "propriétaire : la double authentification est demandée");
+    verifie(true, "propriétaire : la double authentification lui est proposée, il l'enregistre");
     const secret = (await page.locator("[data-secret-totp]").textContent()).trim();
     await clic(page, page.locator("#code"));
     await tape(page, totp(secret));

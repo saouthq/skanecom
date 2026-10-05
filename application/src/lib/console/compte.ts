@@ -11,6 +11,12 @@ import { clientSession } from "./session";
 export const COOKIE_CODES = "skanecom_codes_secours";
 export const DUREE_COOKIE_CODES = 600;
 
+/** « Plus tard » : la proposition de double authentification se tait un
+ *  mois sur cet appareil, pour ce compte (le cookie porte son identifiant) ;
+ *  elle reste dans « Mon compte ». */
+export const COOKIE_PLUS_TARD = "skanecom_double_auth_plus_tard";
+export const DUREE_PLUS_TARD = 30 * 24 * 3600;
+
 // Ni I, L, O, 0 ni 1 : rien qui se confonde à la lecture.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 

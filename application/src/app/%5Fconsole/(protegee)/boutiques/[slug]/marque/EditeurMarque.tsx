@@ -7,6 +7,9 @@ import { gabaritDe, JETONS_COULEUR, pilePolice, structureDe, themeDeLaBoutique, 
 import { LIBELLES_THEME } from "@/lib/console/libelles";
 import { STRUCTURES_CONSOLE } from "@/lib/console/structures";
 import { GROUPES_COULEURS, POLICES_TEXTE, POLICES_TITRES, TEXTES_MARQUE } from "./champs";
+import { ACCENTS, AMBIANCES, avecAccent, paletteDerivee, rapportLisible, verdicts, type Palette } from "@/lib/apparence";
+
+const majuscules = (p: Palette) => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v.toUpperCase()])) as Palette;
 import { ImagesMarque } from "./ImagesMarque";
 
 /* ============================================================================
@@ -52,6 +55,10 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme, images: imagesInit
   const police = (titres || defauts.polices.titres) as Police;
   const policeTexte = (corps || defauts.polices.texte) as Police;
   const change = (j: JetonCouleur, v: string) => setCouleurs((c) => ({ ...c, [j]: v.toUpperCase() }));
+  // Les treize couleurs en cours (gabarit compris), pour la lisibilité et la couleur principale.
+  const paletteCourante = Object.fromEntries(JETONS_COULEUR.map((j) => [j, couleur(j)])) as Palette;
+  // La couleur principale : l'accent, et son pendant posé sur l'encre.
+  const principale = (hex: string) => setCouleurs(majuscules(avecAccent(paletteCourante, hex)));
   const retire = (j: JetonCouleur) => setCouleurs((c) => { const n = { ...c }; delete n[j]; return n; });
 
   const variables = Object.fromEntries([
@@ -103,7 +110,48 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme, images: imagesInit
 
         <section className="carte formulaire" aria-labelledby="t-couleurs">
           <h2 id="t-couleurs">Couleurs</h2>
-          <p className="aide">Une couleur laissée à la valeur du gabarit n&apos;est pas personnalisée.</p>
+          {/* D'abord une palette prête (les mêmes ambiances que l'écran Apparence
+              du backoffice), puis la couleur principale ; les treize couleurs,
+              une à une, sont repliées dessous. */}
+          <fieldset className="mq-palettes">
+            <legend className="text-petit font-medium text-encre-doux">Une palette prête</legend>
+            <div className="mq-palettes-liste">
+              {AMBIANCES.map((a) => {
+                const choisie = couleur("fond") === a.fond.toUpperCase() && couleur("encre") === a.encre.toUpperCase() && couleur("accent") === a.accent.toUpperCase();
+                return (
+                  <button key={a.id} type="button" className="mq-palette" aria-pressed={choisie}
+                    onClick={() => setCouleurs(majuscules(paletteDerivee(a.fond, a.encre, a.accent, a.mode)))}>
+                    <span className="mq-palette-nuancier" aria-hidden="true">
+                      <span style={{ background: a.fond }} /><span style={{ background: a.encre }} /><span style={{ background: a.accent }} />
+                    </span>
+                    <span>{a.nom}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+          <div className="mq-principale">
+            <span className="mq-nom"><b>Couleur principale</b><span className="aide">Les boutons, les liens, les repères.</span></span>
+            <div className="mq-principale-choix">
+              {ACCENTS.map((x) => (
+                <button key={x.hex} type="button" className="mq-accent" style={{ background: x.hex }} aria-label={x.nom} title={x.nom}
+                  aria-pressed={couleur("accent") === x.hex.toUpperCase()} onClick={() => principale(x.hex)} />
+              ))}
+              <input type="color" aria-label="Une autre couleur principale" value={couleur("accent").toLowerCase()} onChange={(e) => principale(e.target.value)} className="mq-pastille" />
+            </div>
+          </div>
+          <ul className="mq-lisibilite" role="list" aria-label="Lisibilité">
+            {verdicts(paletteCourante).map((v) => (
+              <li key={v.cle} data-ok={v.rapport >= v.seuil ? "" : undefined}>
+                <span>{v.libelle}</span>
+                <b className="tabular-nums">{rapportLisible(v.rapport)}</b>
+                <span className="mq-verdict">{v.rapport >= v.seuil ? "lisible" : `trop pâle (au moins ${rapportLisible(v.seuil)})`}</span>
+              </li>
+            ))}
+          </ul>
+          <details className="mq-fins">
+            <summary>Les treize couleurs, une à une</summary>
+            <p className="aide">Une couleur laissée à la valeur du gabarit n&apos;est pas personnalisée.</p>
           {GROUPES_COULEURS.map((g) => (
             <fieldset key={g.titre} className="mq-groupe">
               <legend className="text-petit font-medium text-encre-doux">{g.titre}</legend>
@@ -135,6 +183,7 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme, images: imagesInit
               })}
             </fieldset>
           ))}
+          </details>
         </section>
 
         <section className="carte formulaire" aria-labelledby="t-textes">

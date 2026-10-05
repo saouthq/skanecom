@@ -16,10 +16,16 @@ export const metadata: Metadata = { title: "Équipe SkanEcom" };
    authentification, sa dernière connexion. Un super-administrateur invite,
    change un rôle, retire ; le support lit cette page sans rien y changer.
    ========================================================================== */
-export default async function EquipePlateforme({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; email?: string; role?: string }> }) {
+export default async function EquipePlateforme({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; email?: string; role?: string; carte?: string }> }) {
   const { user, role: monRole } = await exigeAdmin();
   const v = await searchParams;
-  const { data, error } = await clientService().rpc("console_administrateurs", { p_acteur: user.id });
+  const [{ data, error }, { data: exigee }] = await Promise.all([
+    clientService().rpc("console_administrateurs", { p_acteur: user.id }),
+    clientService().rpc("console_double_auth_exigee"),
+  ]);
+  const obligatoire = exigee === true;
+  // Le retour du réglage de la double authentification s'affiche dans sa carte.
+  const dansSecurite = v.carte === "securite";
   if (error) throw new Error(`Équipe illisible : ${error.message}`);
   const equipe = (data ?? []) as AdministrateurPlateforme[];
   const peutModifier = monRole === "super_admin";
@@ -33,15 +39,15 @@ export default async function EquipePlateforme({ searchParams }: { searchParams:
   const sansDoubleAuth = equipe.filter((a) => !a.double_auth && a.confirme).length;
   const enAttente = equipe.filter((a) => !a.confirme).length;
   const etat = [
-    sansDoubleAuth ? `${sansDoubleAuth} sans double authentification active : elle leur sera demandée à la prochaine connexion` : null,
+    sansDoubleAuth ? `${sansDoubleAuth} sans double authentification active : ${obligatoire ? "elle leur sera demandée à la prochaine connexion" : "elle leur est proposée à chaque connexion"}` : null,
     enAttente ? `${enAttente} invitation${enAttente > 1 ? "s" : ""} en attente` : null,
   ].filter(Boolean).join(" ; ");
 
   return (
     <>
-      <EnTetePage titre="Équipe SkanEcom" description="Qui entre dans la console. Tous passent par la double authentification ; le support aide sans engager les boutiques." />
-      {v.ok ? <p className="message message-succes" role="status">{v.ok}</p> : null}
-      {v.erreur ? <p className="message message-erreur" role="alert">{v.erreur}</p> : null}
+      <EnTetePage titre="Équipe SkanEcom" description={`Qui entre dans la console, et comment. ${obligatoire ? "Tous passent par la double authentification" : "La double authentification est proposée à chacun"} ; le support aide sans engager les boutiques.`} />
+      {v.ok && !dansSecurite ? <p className="message message-succes" role="status">{v.ok}</p> : null}
+      {v.erreur && !dansSecurite ? <p className="message message-erreur" role="alert">{v.erreur}</p> : null}
       {lien ? (
         <section className="carte ep-lien" aria-labelledby="t-lien">
           <h2 id="t-lien" className="carte-titre-icone"><Icone nom="lien" /> Le lien pour {lien.email}</h2>
@@ -107,6 +113,8 @@ export default async function EquipePlateforme({ searchParams }: { searchParams:
           </ul>
         </section>
 
+        {/* La colonne de droite : inviter, puis le réglage de la double authentification. */}
+        <div className="grid gap-5 content-start min-w-0">
         {peutModifier ? (
           <section className="carte" aria-labelledby="t-inviter-plateforme">
             <div className="carte-tete">
@@ -135,6 +143,37 @@ export default async function EquipePlateforme({ searchParams }: { searchParams:
         ) : (
           <p className="message">Votre rôle (support) lit l&apos;équipe sans la changer : un super-administrateur invite et retire.</p>
         )}
+
+        {/* La double authentification de l'équipe : un réglage, coupé par défaut. */}
+        <section className="carte" aria-labelledby="t-securite" id="securite">
+          <div className="carte-tete">
+            <div>
+              <h2 id="t-securite" className="carte-titre-icone"><Icone nom="bouclier" /> Double authentification de l&apos;équipe</h2>
+              <p>{obligatoire
+                ? "Exigée : personne n'entre dans la console sans le code de son application."
+                : "Proposée à la connexion, chacun peut la reporter et l'activer depuis « Mon compte ». Qui l'a activée donne toujours son code."}</p>
+            </div>
+          </div>
+          {dansSecurite && v.ok ? <p className="message message-succes" role="status">{v.ok}</p> : null}
+          {dansSecurite && v.erreur ? <p className="message message-erreur" role="alert">{v.erreur}</p> : null}
+          {peutModifier ? (
+            <form action="/equipe-plateforme/securite" method="post" className="formulaire">
+              <fieldset className="choix">
+                <legend className="sr-only">Double authentification de l&apos;équipe SkanEcom</legend>
+                <label className="choix-carte">
+                  <input type="radio" name="obligatoire" value="" defaultChecked={!obligatoire} />
+                  <span><b>Proposée</b><span className="aide">À la connexion, avec « Plus tard ». Recommandé seulement le temps de mettre l&apos;équipe en place.</span></span>
+                </label>
+                <label className="choix-carte">
+                  <input type="radio" name="obligatoire" value="1" defaultChecked={obligatoire} />
+                  <span><b>Exigée de toute l&apos;équipe</b><span className="aide">Qui n&apos;a pas d&apos;application l&apos;enregistre à sa prochaine page. Le plus sûr : la console touche à toutes les boutiques.</span></span>
+                </label>
+              </fieldset>
+              <div><button type="submit" className="btn btn-primaire">Enregistrer</button></div>
+            </form>
+          ) : <p className="aide">Un super-administrateur règle cela.</p>}
+        </section>
+        </div>
       </div>
     </>
   );

@@ -6,6 +6,7 @@ import { formateMontant } from "@/lib/prix";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { GROUPES_DROITS, SANS_FORMULE, type DonneesFormules, type Formule } from "@/lib/console/formules";
+import { RappelColonnes } from "@/components/console/RappelColonnes";
 
 export const metadata: Metadata = { title: "Formules" };
 
@@ -64,6 +65,8 @@ export default async function Formules({ searchParams }: { searchParams: Promise
       </div>
       <style>{`@media (max-width: 40rem) {${colonnes.map((_, i) =>
         `body:has(#fo-vue-${i}:checked) .fo-tableau tr > :nth-child(n+2):not(:nth-child(${i + 2})) { display: none; }`).join("")}}`}</style>
+      {/* Le tableau est long : une bande redit le nom des formules quand leur en-tête est sorti de l'écran. */}
+      <RappelColonnes tableau=".fo-tableau" />
       <div className="carte carte-plate fo-carte">
         <div className="defile">
           <table className="tableau fo-tableau">
@@ -72,7 +75,7 @@ export default async function Formules({ searchParams }: { searchParams: Promise
               <tr>
                 <th scope="col" className="fo-coin">Ce que la formule ouvre</th>
                 {colonnes.map((f) => (
-                  <th key={f.code || "neuve"} scope="col" className="fo-tete" id={f.neuve ? "f-neuve" : `f-${f.code}`}>
+                  <th key={f.code || "neuve"} scope="col" className="fo-tete" id={f.neuve ? "f-neuve" : `f-${f.code}`} data-rappel={f.neuve ? "Nouvelle" : f.nom}>
                     {peutModifier ? (
                       <div className="fo-tete-champs">
                         {f.neuve ? (
