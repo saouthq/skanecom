@@ -388,6 +388,7 @@ export function FormSaisie({
                       {manquant ? <span className="sc-alerte">Plus que {t.declinaison.stock} en stock</span> : null}
                       {minimum ? <span className="sc-alerte">Vendu par {t.declinaison.quantite_min} au moins</span> : null}
                       {c?.palier ? <span className="sc-palier">Prix par {c.palier} appliqué</span> : null}
+                      {c?.lot ? <span className="sc-palier">Lot « {c.lot} » : −{formatePrix(c.remise_lot_millimes ?? 0)}</span> : null}
                       {c?.prix_public_millimes ? <span className="sc-palier">Prix pro (public : {formatePrix(c.prix_public_millimes)})</span> : null}
                     </span>
                     <span className="sc-quantite">
@@ -527,6 +528,9 @@ export function FormSaisie({
               ) : chiffrage.frais_livraison_millimes === 0 ? "Gratuite" : formatePrix(chiffrage.frais_livraison_millimes)}
             </dd>
           </div>
+          {(chiffrage?.lots ?? []).map((l) => (
+            <div key={l.id} className="sc-remise sc-lot"><dt>dont lot « {l.nom} »{l.fois > 1 ? ` × ${l.fois}` : ""}</dt><dd className="tabular-nums">− {formatePrix(l.economie_millimes)}</dd></div>
+          ))}
           {chiffrage && chiffrage.remise_millimes > 0 ? (
             <div className="sc-remise"><dt>Remise</dt><dd className="tabular-nums">− {formatePrix(chiffrage.remise_millimes)}</dd></div>
           ) : null}

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import type { Lot } from "./lots";
 
 /* ============================================================================
    CATALOGUE — lecture, et tout ce qui se déduit d'une variante.
@@ -161,6 +162,13 @@ export async function achetesEnsemble(boutiqueId: string, slugs: string[], limit
   const { data } = await supabase.from("vitrine_produits").select("*").eq("boutique_id", boutiqueId).in("slug", ordre);
   const parSlug = new Map(((data ?? []) as Produit[]).map((p) => [p.slug, p]));
   return ordre.map((s) => parSlug.get(s)).filter((p): p is Produit => Boolean(p));
+}
+
+/** Les lots en vente qui comptent ces produits (module promotions,
+ *  migration 86). Une erreur ne coûte que l'offre : rien. */
+export async function lotsDesProduits(boutiqueId: string, slugs: string[]): Promise<Lot[]> {
+  const { data, error } = await supabase.rpc("vitrine_lots", { p_boutique_id: boutiqueId, p_slugs: slugs });
+  return error ? [] : ((data ?? []) as Lot[]);
 }
 
 /** Slugs et dates de tous les produits publiés, pour le plan du site. */

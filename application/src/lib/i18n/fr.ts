@@ -488,6 +488,26 @@ export const fr = {
     choisir: (nom: string) => `Choisir la taille ou la couleur de ${nom}`,
   },
 
+  /** Les lots (module promotions) : un prix pour un ensemble de produits. */
+  lots: {
+    titre: "En lot",
+    chapo: "Ces pièces ensemble, à un prix : le panier l'applique dès qu'il les réunit.",
+    auLieuDe: "au lieu de",
+    economie: (montant: string) => `Vous économisez ${montant}.`,
+    ajouter: "Ajouter le lot au panier",
+    ajoute: "Le lot est dans votre panier",
+    ajouteAnnonce: (nom: string) => `${nom} : le lot est dans votre panier.`,
+    choisir: (nom: string) => `Taille ou couleur — ${nom}`,
+    choisirOption: "Choisir…",
+    epuisee: "épuisée",
+    epuise: "Une pièce du lot n'est plus en stock.",
+    ligne: (nom: string, fois: number) => (fois > 1 ? `Lot « ${nom} » × ${fois}` : `Lot « ${nom} »`),
+    /** Le tiroir : un lot entamé, ce qui manque pour l'avoir. */
+    completer: (nom: string) => `Complétez le lot « ${nom} »`,
+    completerTexte: (prix: string, economie: string) => `${prix} les pièces ensemble : vous économisez ${economie}.`,
+    voir: (nom: string) => `Voir ${nom}`,
+  },
+
   vus: {
     titre: "Vus récemment",
     effacer: "Effacer",
@@ -553,6 +573,7 @@ export const fr = {
 
   commande: {
     palier: (n: number) => `Prix par ${n}`,
+    lot: (nom: string) => `Lot « ${nom} »`,
     titre: "Commande",
     rassurance: "Vous ne payez rien en ligne : vous réglez au livreur, à la remise du colis.",
     rassuranceRetrait: "Vous ne payez rien en ligne : vous réglez au livreur, ou au comptoir du magasin.",

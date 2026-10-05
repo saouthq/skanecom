@@ -8,9 +8,11 @@ import { Prix } from "./Prix";
 import { Tiroir } from "./Tiroir";
 import { ConfirmationAjout } from "./ConfirmationAjout";
 import { EnsembleDuPanier } from "./EnsembleDuPanier";
+import { CompleterLots, RemiseLot, useLotsDuPanier } from "./LotsDuPanier";
 import { changeQuantitePanier, retireDuPanier, usePanier, usePanierLu } from "@/lib/panier";
 import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalLigne, totalMillimes, type AjoutAnnonce } from "@/lib/panier-contrat";
 import { envole } from "@/lib/envol";
+import { appliqueLots } from "@/lib/lots";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
@@ -43,6 +45,7 @@ export function BoutonPanier({
   assurances = [],
   devis = false,
   ensemble = false,
+  lots = false,
 }: {
   gabarit: CodeTheme;
   /** Livraison offerte dès ce montant (réglage de la boutique), ou jamais. */
@@ -53,11 +56,16 @@ export function BoutonPanier({
   devis?: boolean;
   /** « Souvent achetés avec votre panier » (réglage catalogue.achetes_ensemble). */
   ensemble?: boolean;
+  /** Les lots (module promotions) : appliqués au total, proposés à compléter. */
+  lots?: boolean;
 }) {
   const panier = usePanier();
   const [ouvert, setOuvert] = useState(false);
   const n = nombreArticles(panier);
-  const total = totalMillimes(panier);
+  // Les lots que le panier réunit : déjà moins chers dans le tiroir, comme à la commande.
+  const lotsLus = useLotsDuPanier(panier.lignes.map((l) => l.produitSlug), lots && ouvert && panier.lignes.length > 0);
+  const remises = appliqueLots(panier.lignes, lotsLus);
+  const total = totalMillimes(panier) - remises.economieMillimes;
 
   // Le rebond : un compteur de bonds, qui sert de clé à la pastille (une clé
   // neuve rejoue l'animation). Compté sur le panier LU (`null` avant
@@ -165,6 +173,7 @@ export function BoutonPanier({
           <>
             {panier.lignes.length > 0 ? (
               <>
+                {remises.lots.map((l) => <RemiseLot key={l.id} nom={l.nom} fois={l.fois} economie={l.economieMillimes} />)}
                 <div className="panier-total">
                   <span>{t.panier.total}</span>
                   <Prix millimes={total} fort />
@@ -258,6 +267,10 @@ export function BoutonPanier({
             })}
           </ul>
         )}
+
+        {lots && panier.lignes.length > 0 ? (
+          <CompleterLots lignes={panier.lignes} lots={lotsLus} onChoix={() => setOuvert(false)} />
+        ) : null}
 
         {ensemble && panier.lignes.length > 0 ? (
           <EnsembleDuPanier slugs={panier.lignes.map((l) => l.produitSlug)} onChoix={() => setOuvert(false)} />

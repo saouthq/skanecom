@@ -2052,3 +2052,36 @@ a.pg-titre:hover { color: var(--ui-accent); }
   .pq-ligne { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
   .pq-unite { grid-column: 1 / -1; margin-block: -.25rem 0; }
 }
+
+/* =========================================================================
+   LES LOTS (Promotions › Lots) — chaque lot : ses pièces en vignettes, son
+   prix face à leur valeur, ce qu'il a vendu ; le formulaire dit, à mesure
+   qu'on choisit, ce que valent les pièces et ce que le client économise.
+   ========================================================================= */
+.lot-nom { margin: 0; font-size: 1rem; font-weight: 600; }
+.lot-vignettes { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+@media (min-width: 600px) { .lot-vignettes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lot-vignette { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); align-items: center; gap: .625rem; }
+.lot-vignette-photo {
+  position: relative; display: grid; place-items: center; aspect-ratio: 1; overflow: hidden;
+  border-radius: 6px; background: var(--ui-doux); color: var(--ui-texte-2);
+}
+.lot-vignette-photo img { object-fit: cover; }
+.lot-vignette-texte { display: grid; min-inline-size: 0; }
+.lot-vignette-nom { font-size: .875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lot-vignette[data-hors-vente] .lot-vignette-nom { text-decoration: line-through; color: var(--ui-texte-2); }
+.lot-valeur { font-size: .9375rem; font-weight: 400; color: var(--ui-texte-2); }
+.lot-pourcent { color: var(--ui-vert); font-weight: 600; }
+.lot-alerte { margin: 0; font-size: .8125rem; }
+.lot-produits { display: grid; gap: .75rem; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+@media (min-width: 600px) { .lot-produits { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lot-produits > legend { grid-column: 1 / -1; padding: 0; margin-block-end: .25rem; font-size: .8125rem; font-weight: 500; }
+.lot-produits select { min-inline-size: 0; inline-size: 100%; }
+.lot-prix-grille { align-items: end; }
+.lot-bilan { display: grid; gap: .25rem; margin: 0; padding: .625rem .75rem; border-radius: 8px; background: var(--ui-doux); font-size: .8125rem; color: var(--ui-texte-2); }
+.lot-bilan b { color: var(--ui-texte); font-weight: 600; }
+.lot-bilan-gain, .lot-bilan-gain b { color: var(--ui-vert); }
+.lot-bilan-refus { color: var(--ui-rouge, #B42318); }
+.bo-article-lot { display: inline-flex; align-items: center; gap: .25rem; color: var(--ui-vert); }
+.sc-lot dt { font-size: .8125rem; color: var(--ui-texte-2); padding-inline-start: .75rem; }
+.sc-lot dd { white-space: nowrap; font-size: .8125rem; }

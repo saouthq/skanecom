@@ -149,6 +149,7 @@ export default async function Merci({ params }: { params: Promise<{ boutique: st
                   </span>
                   <span className="tunnel-ligne-prix">
                     <Prix millimes={ligne.total_ligne_millimes} />
+                    {ligne.lot ? <span className="tunnel-ligne-palier">{t.commande.lot(ligne.lot)}</span> : null}
                   </span>
                 </li>
               ))}

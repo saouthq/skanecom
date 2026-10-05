@@ -1095,12 +1095,15 @@ function Recap({
                 </span>
                 <span className="tunnel-ligne-prix">
                   {d?.total_ligne_millimes != null ? <Prix millimes={d.total_ligne_millimes} /> : null}
-                  {d?.total_sans_palier_millimes ? (
+                  {d?.total_sans_lot_millimes ? (
+                    <s className="tunnel-ligne-public">{formatePrix(d.total_sans_lot_millimes)}</s>
+                  ) : d?.total_sans_palier_millimes ? (
                     <s className="tunnel-ligne-public">{formatePrix(d.total_sans_palier_millimes)}</s>
                   ) : d?.prix_public_millimes ? (
                     <s className="tunnel-ligne-public">{formatePrix(d.prix_public_millimes * ligne.quantite)}</s>
                   ) : null}
                   {d?.palier ? <span className="tunnel-ligne-palier">{t.commande.palier(d.palier)}</span> : null}
+                  {d?.lot ? <span className="tunnel-ligne-palier">{t.commande.lot(d.lot)}</span> : null}
                 </span>
               </li>
             );
@@ -1121,6 +1124,13 @@ function Recap({
                 <dd>{devis.economie_pro_millimes ? <b>{t.pro.economie(formatePrix(devis.economie_pro_millimes))}</b> : null}</dd>
               </div>
             ) : null}
+            {/* Les lots réunis : déjà déduits des lignes, on dit ce qu'ils font gagner. */}
+            {(devis.lots ?? []).map((l) => (
+              <div key={l.id} className="tunnel-tarif-pro tunnel-lot">
+                <dt>{t.lots.ligne(l.nom, l.fois)}</dt>
+                <dd><b>{t.lots.economie(formatePrix(l.economie_millimes))}</b></dd>
+              </div>
+            ))}
             <div>
               <dt>{t.commande.sousTotal}</dt>
               <dd><Prix millimes={devis.sous_total_millimes} /></dd>

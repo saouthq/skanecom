@@ -88,6 +88,9 @@ type Fiche = {
     quantite: number;
     prix_unitaire_millimes: number;
     total_ligne_millimes: number;
+    /** Le lot qui a baissé la ligne (module promotions), et ce qu'il lui a retiré. */
+    lot: string | null;
+    remise_lot_millimes: number;
     stock_restant: number | null;
     image: string | null;
   }[];
@@ -600,6 +603,11 @@ export default async function FicheCommande({
                         {l.sku ? `Réf. ${l.sku}` : "Sans référence"}
                         {l.stock_restant !== null ? ` · reste ${l.stock_restant} en stock` : ""}
                       </span>
+                      {l.lot ? (
+                        <span className="text-petit bo-article-lot">
+                          <Icone nom="etiquette" taille={12} /> Lot « {l.lot} » · −{formatePrix(l.remise_lot_millimes)}
+                        </span>
+                      ) : null}
                     </span>
                     <span className="bo-article-qte">× {l.quantite}</span>
                     <span className="bo-article-prix">

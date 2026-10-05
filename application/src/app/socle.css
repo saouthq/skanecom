@@ -1019,3 +1019,69 @@ html:is([data-cartes="cadre"], [data-cartes="ombre"]) .ed-carte .ajc { inset-blo
 .partage-choix[data-copie] { color: var(--theme-succes); border-color: currentColor; }
 html[data-gabarit=technique] .partage-choix { border-radius: var(--theme-radius-doux); }
 @media (prefers-reduced-motion: reduce) { .partage-menu { animation: none; } }
+
+/* ---------------------------------------------------------------------
+   LES LOTS (module promotions) — l'appel sous le bloc d'achat, l'offre
+   sous la fiche (OffresLot.tsx), le lot réuni et le lot à compléter dans
+   le tiroir (LotsDuPanier.tsx).
+   --------------------------------------------------------------------- */
+.fiche-appel-lot {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .625rem; margin-block-start: 1rem;
+  padding: .75rem .875rem; border: 1px dashed var(--theme-filet-fort); border-radius: var(--theme-radius-doux);
+  color: inherit; text-decoration: none; font-size: .875rem; font-variant-numeric: tabular-nums;
+}
+.fiche-appel-lot s { color: var(--theme-encre-doux); }
+.fiche-appel-lot:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+@media (hover: hover) { .fiche-appel-lot:hover b { text-decoration: underline; text-underline-offset: .2em; } }
+.fiche-lots { scroll-margin-block-start: 6rem; }
+
+.lots { display: grid; gap: 1.25rem; }
+.lot-carte {
+  display: grid; gap: 1.5rem; padding: clamp(1rem, 3vw, 1.75rem);
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+@media (min-width: 900px) {
+  .lot-carte { grid-template-columns: minmax(0, 1.6fr) minmax(16rem, 1fr); align-items: center; gap: 2.5rem; }
+}
+.lot-pieces { list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; gap: 1.5rem; }
+/* Des pièces à la taille d'une vignette : le lot se lit d'un regard, sans écraser la fiche. */
+.lot-piece { position: relative; flex: 0 1 12.5rem; min-inline-size: 0; display: grid; gap: .375rem; align-content: start; }
+/* Le « + » entre deux pièces, au milieu de l'espace qui les sépare. */
+.lot-plus {
+  position: absolute; z-index: 1; inset-block-start: calc(var(--photo-lot, 30%) - .875rem); inset-inline-start: -1.625rem;
+  display: grid; place-items: center; inline-size: 1.75rem; block-size: 1.75rem; border-radius: 999px;
+  background: var(--theme-fond); border: 1px solid var(--theme-filet-fort); color: var(--theme-encre);
+}
+.lot-piece-photo { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; background: var(--theme-surface-2); border-radius: var(--theme-radius-net); }
+html[data-gabarit=technique] .lot-piece-photo { aspect-ratio: 1; background: var(--theme-fond); border: 1px solid var(--theme-filet); }
+.lot-piece-photo img { object-fit: cover; transition: transform .6s var(--theme-courbe); }
+@media (hover: hover) { .lot-piece-photo:hover img { transform: scale(1.03); } }
+.lot-piece-nom { font-size: .875rem; line-height: 1.35; color: inherit; text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lot-piece-nom:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+@media (hover: hover) { .lot-piece-nom:hover { text-decoration: underline; text-underline-offset: .2em; } }
+.lot-piece-choix select {
+  inline-size: 100%; min-block-size: 40px; padding: .375rem .625rem; font: 400 1rem/1.2 var(--theme-font-texte);
+  background: var(--theme-fond); color: var(--theme-encre);
+  border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux);
+}
+.lot-piece-choix select:focus-visible { outline: none; border-color: var(--theme-encre); box-shadow: 0 0 0 1px var(--theme-encre); }
+.lot-piece-choix select[aria-invalid] { border-color: var(--theme-erreur); box-shadow: 0 0 0 1px var(--theme-erreur); }
+.lot-achat { display: grid; gap: .5rem; align-content: start; }
+.lot-achat h3 { font-family: var(--theme-font-display); font-size: clamp(1.25rem, 2.4vw, 1.625rem); line-height: 1.2; }
+.lot-accroche { color: var(--theme-encre-doux); font-size: .9375rem; line-height: 1.5; }
+.lot-prix { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; margin-block-start: .25rem; font-size: 1.25rem; }
+.lot-au-lieu { font-size: .9375rem; color: var(--theme-encre-doux); }
+.lot-economie { color: var(--theme-succes); font-size: .875rem; font-weight: 600; }
+.lot-ajouter { margin-block-start: .5rem; gap: .5rem; }
+.lot-manque { color: var(--theme-erreur); font-size: .8125rem; }
+/* Au téléphone : les pièces défilent sous le doigt, la suivante dépasse. */
+@media (max-width: 639px) {
+  .lot-pieces { overflow-x: auto; scroll-snap-type: x mandatory; padding-block-end: .25rem; margin-inline: calc(-1 * clamp(1rem, 3vw, 1.75rem)); padding-inline: clamp(1rem, 3vw, 1.75rem); scroll-padding-inline: clamp(1rem, 3vw, 1.75rem); }
+  .lot-piece { flex: 0 0 42%; scroll-snap-align: start; }
+}
+
+.panier-lot-remise { display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: .8125rem; font-weight: 500; color: var(--theme-succes); }
+.panier-lot-remise > span:first-child { display: inline-flex; align-items: center; gap: .375rem; }
+.panier-lot { padding: .875rem 1rem .25rem; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-doux); }
+.panier-lot-texte { margin-block-end: .125rem; }
+.tunnel-lot { color: inherit; }

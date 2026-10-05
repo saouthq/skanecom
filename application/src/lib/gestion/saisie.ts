@@ -59,6 +59,9 @@ export type LigneChiffree = {
   prix_unitaire_millimes: number | null;
   prix_public_millimes: number | null;
   palier: number | null;
+  /** Le lot qui baisse la ligne (module promotions), et ce qu'il lui retire. */
+  lot?: string | null;
+  remise_lot_millimes?: number | null;
   total_ligne_millimes: number | null;
 };
 export type Chiffrage = {
@@ -70,6 +73,8 @@ export type Chiffrage = {
   livraison_offerte: boolean | null;
   remise_millimes: number;
   total_millimes: number | null;
+  /** Les lots que la commande réunit, déjà déduits des articles. */
+  lots?: { id: string; nom: string; fois: number; economie_millimes: number }[];
   tarif: "public" | "pro" | "devis";
   zone: { nom_fr: string | null } | null;
   supplement_poids_millimes: number;

@@ -93,7 +93,7 @@ reinit() {
   if [ "${1:-}" != "--vide" ]; then
     # Le jeu de démo, puis sa suite (fichiers à part : l'aperçu en ligne joue
     # chaque jeu une seule fois — supabase/functions/apercu-installer).
-    for f in seed.sql seed-suite.sql seed-promotions.sql seed-reassort.sql seed-paniers.sql seed-favoris.sql seed-ensemble.sql seed-avis-photos.sql seed-visites.sql seed-partage.sql seed-lettre.sql seed-entonnoir.sql seed-objectif.sql seed-accueil.sql seed-avis-filtres.sql seed-pixels.sql seed-beaute.sql seed-maison.sql seed-immersif.sql seed-commerce.sql seed-prix-quantite.sql seed-monoproduit.sql; do
+    for f in seed.sql seed-suite.sql seed-promotions.sql seed-reassort.sql seed-paniers.sql seed-favoris.sql seed-ensemble.sql seed-avis-photos.sql seed-visites.sql seed-partage.sql seed-lettre.sql seed-entonnoir.sql seed-objectif.sql seed-accueil.sql seed-avis-filtres.sql seed-pixels.sql seed-beaute.sql seed-maison.sql seed-immersif.sql seed-commerce.sql seed-prix-quantite.sql seed-monoproduit.sql seed-lots.sql; do
       [ -f "$RACINE/supabase/$f" ] || continue
       echo "  jeu de démo supabase/$f"
       psql_en postgres -d "$BASE" -f "$RACINE/supabase/$f"

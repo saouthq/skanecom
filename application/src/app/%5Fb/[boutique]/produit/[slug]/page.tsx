@@ -10,12 +10,14 @@ import { GalerieEditoriale, GalerieVignettes } from "@/components/Galerie";
 import { FournisseurSelection } from "@/components/SelectionVariante";
 import { SpecsVariante } from "@/components/SpecsVariante";
 import { VusRecemment } from "@/components/VusRecemment";
+import { OffresLot } from "@/components/OffresLot";
 import { AvisProduit, ResumeAvis } from "@/components/AvisProduit";
 import { Bulle } from "@/components/Icones";
 import { rassurances } from "@/components/Rassurances";
 import { contactVente } from "@/components/ContactProduit";
 import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
-import { achetesEnsemble, chargeProduit, listeProduits, prixDepuis, type Produit } from "@/lib/catalogue";
+import { achetesEnsemble, chargeProduit, listeProduits, lotsDesProduits, prixDepuis, type Produit } from "@/lib/catalogue";
+import type { Lot } from "@/lib/lots";
 import { photosProduit } from "@/lib/photos";
 import { chargeAvis, type AvisProduit as Avis } from "@/lib/avis";
 import { formatePrix, prixDecimal } from "@/lib/prix";
@@ -84,10 +86,12 @@ export default async function FicheProduit({ params }: Params) {
      avis) ; les pièces que les commandes réunissent avec celle-ci (réglage
      catalogue.achetes_ensemble) — elles ne se répètent pas dans les voisins. */
   const parRang = gabarit === "technique" ? 5 : 4;
-  const [liste, avis, ensemble] = await Promise.all([
+  const [liste, avis, ensemble, lots] = await Promise.all([
     listeProduits(cadre.boutique.id, rayon ? { rayon: rayon.slug } : {}, "selection", 1, cadre.achetesEnsemble ? 2 * parRang + 1 : parRang + 1),
     cadre.avis ? chargeAvis(cadre.boutique.id, produit.id) : Promise.resolve(null),
     cadre.achetesEnsemble ? achetesEnsemble(cadre.boutique.id, [produit.slug], parRang) : Promise.resolve([]),
+    // Les lots qui la comptent (module promotions) ; un site vitrine ne vend pas en ligne.
+    cadre.promotions && !cadre.siteVitrine ? lotsDesProduits(cadre.boutique.id, [produit.slug]) : Promise.resolve([] as Lot[]),
   ]);
   const dejaProposes = new Set([produit.id, ...ensemble.map((p) => p.id)]);
   const voisins = liste.produits.filter((p) => !dejaProposes.has(p.id)).slice(0, parRang);
@@ -131,10 +135,22 @@ export default async function FicheProduit({ params }: Params) {
   return (
     <Gabarit className={gabarit === "technique" ? "enveloppe flex-1" : "flex-1"}>
       {gabarit === "technique" ? (
-        <FicheTechnique cadre={cadre} produit={produit} fil={fil} avis={avis} />
+        <FicheTechnique cadre={cadre} produit={produit} fil={fil} avis={avis} lots={lots} />
       ) : (
-        <FicheEditoriale cadre={cadre} produit={produit} fil={fil} avis={avis} />
+        <FicheEditoriale cadre={cadre} produit={produit} fil={fil} avis={avis} lots={lots} />
       )}
+
+      {lots.length > 0 ? (
+        <section id="fiche-lots" className={`${gabarit === "technique" ? "te-section" : "enveloppe ed-section"} fiche-lots`} aria-labelledby="fiche-lots-titre">
+          <div className={gabarit === "technique" ? "te-section-tete" : "ed-section-tete"}>
+            <div>
+              <h2 id="fiche-lots-titre">{t.lots.titre}</h2>
+              <p className="fiche-ensemble-chapo">{t.lots.chapo}</p>
+            </div>
+          </div>
+          <OffresLot lots={lots} />
+        </section>
+      ) : null}
 
       <AvisProduit
         avis={avis}
@@ -188,7 +204,7 @@ export default async function FicheProduit({ params }: Params) {
   );
 }
 
-function FicheEditoriale({ cadre, produit, fil, avis }: { cadre: Cadre; produit: Produit; fil: Etape[]; avis: Avis | null }) {
+function FicheEditoriale({ cadre, produit, fil, avis, lots }: { cadre: Cadre; produit: Produit; fil: Etape[]; avis: Avis | null; lots: Lot[] }) {
   const origine = texte(cadre.theme.textes, "origine") || undefined;
   const politiqueRetour = texte(cadre.theme.textes, "politique_retour");
   const description = champ(produit, "description");
@@ -210,6 +226,7 @@ function FicheEditoriale({ cadre, produit, fil, avis }: { cadre: Cadre; produit:
             <ResumeAvis avis={avis} />
             <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour}
             partage={cadre.partage ? { boutique: cadre.boutique.nom } : null} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
+            <AppelLot lots={lots} />
 
             <ul className="ed-rassure">
               {lignes.map((r) => (
@@ -259,7 +276,7 @@ function FicheEditoriale({ cadre, produit, fil, avis }: { cadre: Cadre; produit:
   );
 }
 
-function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: Produit; fil: Etape[]; avis: Avis | null }) {
+function FicheTechnique({ cadre, produit, fil, avis, lots }: { cadre: Cadre; produit: Produit; fil: Etape[]; avis: Avis | null; lots: Lot[] }) {
   const conseil = lienConseil(cadre);
   const description = champ(produit, "description");
   const rayon = produit.categorie ? champ(produit.categorie, "nom") : null;
@@ -279,6 +296,7 @@ function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: 
           <SpecsVariante mode="cles" />
           <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour}
             partage={cadre.partage ? { boutique: cadre.boutique.nom } : null} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
+          <AppelLot lots={lots} />
 
           <ul className="te-rassure">
             {rassurances(cadre).map((r) => (
@@ -317,5 +335,19 @@ function FicheTechnique({ cadre, produit, fil, avis }: { cadre: Cadre; produit: 
         </section>
       </div>
     </FournisseurSelection>
+  );
+}
+
+/** Sous le bloc d'achat : le lot qui compte cette pièce, et le chemin vers lui. */
+function AppelLot({ lots }: { lots: Lot[] }) {
+  const lot = lots[0];
+  if (!lot) return null;
+  return (
+    <a href="#fiche-lots" className="fiche-appel-lot">
+      <span className="etiquette">{t.lots.titre}</span>
+      <span>
+        <b>{lot.nom}</b> · {formatePrix(lot.prix_millimes)} <s>{formatePrix(lot.valeur_millimes)}</s>
+      </span>
+    </a>
   );
 }

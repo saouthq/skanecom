@@ -30,8 +30,16 @@ export type LigneDevis = {
    *  quantité, et ce que la ligne aurait coûté sans lui. */
   palier?: number | null;
   total_sans_palier_millimes?: number | null;
+  /** Le lot qui baisse la ligne (module promotions, migration 86) : son nom,
+   *  ce qu'il lui retire, ce qu'elle aurait coûté sans lui. */
+  lot?: string | null;
+  remise_lot_millimes?: number | null;
+  total_sans_lot_millimes?: number | null;
   total_ligne_millimes: number | null;
 };
+
+/** Un lot appliqué au panier : combien de fois, ce qu'il fait économiser. */
+export type LotDevis = { id: string; nom: string; prix_millimes: number; fois: number; economie_millimes: number };
 
 /** Le magasin où retirer une commande (module retrait_magasin : adresse,
  *  horaires, temps de préparation). */
@@ -58,6 +66,9 @@ export type Devis = {
    *  s'applique, et ce qu'il économise sur le prix public. */
   tarif?: "pro" | "public" | "devis";
   economie_pro_millimes?: number | null;
+  /** Les lots que le panier réunit (déjà déduits des lignes et du sous-total). */
+  lots?: LotDevis[];
+  economie_lots_millimes?: number | null;
   /** Au tunnel d'un devis (module devis) : son numéro, sa validité, la note. */
   devis?: { numero: string; valide_jusqu_au: string; note: string | null };
   /** Le code promo tapé (module promotions) : appliqué, ou pourquoi pas. */
@@ -111,6 +122,8 @@ export type LigneSuivie = {
   quantite: number;
   prix_unitaire_millimes: number;
   total_ligne_millimes: number;
+  /** Le lot qui a baissé la ligne (migration 86). */
+  lot?: string | null;
   image: string | null;
 };
 

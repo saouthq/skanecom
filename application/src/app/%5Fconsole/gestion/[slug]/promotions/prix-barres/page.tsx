@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { OngletsPromotions } from "@/components/console/OngletsPromotions";
@@ -43,7 +43,8 @@ export default async function PrixBarres({
   ]);
   if (error) throw new Error(`Prix barrés illisibles : ${error.message}`);
   const ecran = data as EcranPrixBarres;
-  if (!ecran.actif && ecran.soldes.length === 0) notFound();
+  // Module coupé, sans opération : il reste peut-être des lots à voir.
+  if (!ecran.actif && ecran.soldes.length === 0) redirect(`/gestion/${slug}/promotions/lots`);
   const hote = cadre?.boutique.hote_principal ?? null;
   const vitrine = hote ? adresseVitrine(hote, hoteConsole) : null;
 

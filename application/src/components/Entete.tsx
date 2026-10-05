@@ -130,7 +130,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
               </Link>
             ) : null}
             {cadre.siteVitrine ? null : (
-            <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} />)}
+            <BoutonPanier gabarit="editorial" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} lots={cadre.promotions} />)}
           </div>
         </div>
       </EnteteDefilant>
@@ -211,7 +211,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
               </Link>
             ) : null}
             {cadre.siteVitrine ? null : (
-            <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} />)}
+            <BoutonPanier gabarit="technique" seuilGratuite={cadre.seuilGratuiteMillimes} assurances={assurancesPanier(cadre)} devis={cadre.devis} ensemble={cadre.achetesEnsemble} lots={cadre.promotions} />)}
           </div>
         </div>
         <div className="te-barre-rayons cache-mobile">
