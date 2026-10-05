@@ -33,6 +33,9 @@ import { creeTesteur } from "./testeur.mjs";
       remise et payée d'un geste ; le tableau de bord dit d'où viennent les
       commandes ; puis une commande Instagram saisie au téléphone par
       l'employé des appels, à confirmer.
+   9. Les gestes groupés : le gérant remet tous les colis « À préparer »
+      au livreur d'un geste (à la souris et au clavier), puis fait le
+      point du livreur : livrés, payés, sauf celui qui revient refusé.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -2702,6 +2705,70 @@ if (section("8")) {
       "la commande Instagram attend sa confirmation, saisie par l'employé");
     await tel.close();
   });
+}
+
+if (section("9")) {
+  console.log("\n== 9. Les gestes groupés : remettre au livreur, le point du livreur ==");
+  const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SUPA = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const lit = async (chemin) => (await fetch(`${SUPA}/rest/v1/${chemin}`, { headers: { apikey: cle, authorization: `Bearer ${cle}` } })).json();
+  const MAYMAR = "00000000-0000-4000-8000-000000000001";
+  const statutDe = async (numero) => (await lit(`commandes?select=statut,transporteur,statut_paiement&boutique_id=eq.${MAYMAR}&numero=eq.${numero}`))[0];
+  await sansDoubleAuthentification("gerant@maymar.test");
+  const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "lot");
+
+  await etape("remettre au livreur d'un geste, puis le point du livreur", async () => {
+    await connexion(page, "gerant@maymar.test");
+    await page.waitForURL(/double-authentification/, { timeout: 15000 });
+    await clic(page, page.locator("#code"));
+    await tape(page, totp((await page.locator("[data-secret-totp]").textContent()).trim()));
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    // Deux colis au moins à remettre (les sections d'avant en ont expédié) : des commandes reçues, confirmées.
+    const aPreparer = await lit(`commandes?select=numero&boutique_id=eq.${MAYMAR}&statut=eq.confirmee&mode_livraison=eq.domicile`);
+    if (aPreparer.length < 2) {
+      const recues = await lit(`commandes?select=numero&boutique_id=eq.${MAYMAR}&statut=eq.recue&mode_livraison=eq.domicile&order=numero&limit=${2 - aPreparer.length}`);
+      for (const r of recues) {
+        await fetch(`${SUPA}/rest/v1/commandes?boutique_id=eq.${MAYMAR}&numero=eq.${r.numero}`, {
+          method: "PATCH", body: JSON.stringify({ statut: "confirmee" }),
+          headers: { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json", prefer: "return=minimal" } });
+      }
+    }
+    await page.goto(`${C}/gestion/maymar?etape=a_preparer`, { waitUntil: "networkidle" });
+    const cases = page.locator(".bo-coche input");
+    const n = await cases.count();
+    const remettre = page.getByRole("button", { name: /Remettre au livreur/ });
+    verifie(n >= 2 && await remettre.isDisabled(), `« À préparer » : une case par colis (${n}), le bouton attend`);
+    await clic(page, page.getByLabel("Tout cocher"));
+    await clic(page, cases.nth(0));            // la souris en décoche un
+    await cases.nth(0).focus();
+    await page.keyboard.press("Space");        // le clavier le recoche
+    verifie((await remettre.innerText()).includes(`(${n})`), `« Tout cocher », puis souris et clavier : « ${(await remettre.innerText()).trim()} »`);
+    const numeros = await cases.evaluateAll((l) => l.map((c) => c.value));
+    await clic(page, page.getByLabel("Transporteur"));
+    await tape(page, "Aramex");
+    await capture(page, "gestion-lot-remettre");
+    await t.envoie(page, remettre);
+    verifie(await attend(async () => (await message(page)).includes(`${n} commande${n > 1 ? "s" : ""} remise${n > 1 ? "s" : ""} au livreur.`)), "le bilan : les colis remis au livreur");
+    const apres = await Promise.all(numeros.map(statutDe));
+    verifie(apres.every((c) => c?.statut === "expediee" && c?.transporteur === "Aramex"), "en base : expédiées, avec Aramex");
+    verifie(await page.locator(".bo-coche input").count() === 0, "« À préparer » est vide");
+
+    await page.goto(`${C}/gestion/maymar?etape=expediees`, { waitUntil: "networkidle" });
+    const exp = page.locator(".bo-coche input");
+    const m = await exp.count();
+    await clic(page, page.getByLabel("Tout cocher"));
+    const garde = await exp.nth(m - 1).getAttribute("value");
+    await clic(page, exp.nth(m - 1));           // celui qui est revenu refusé reste à part
+    const livrer = page.getByRole("button", { name: /Marquer livrées, payées/ });
+    await t.envoie(page, livrer);
+    verifie(await attend(async () => (await message(page)).includes(`${m - 1} colis livré`)), `le point du livreur : ${m - 1} colis livrés d'un geste`);
+    verifie((await statutDe(numeros[0]))?.statut_paiement === "paye" && (await statutDe(garde))?.statut === "expediee",
+      "livrés et payés ; le décoché reste chez le livreur, pour son refus");
+  });
+  await ctx.close();
 }
 
 await navigateur.close();

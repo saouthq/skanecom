@@ -5,7 +5,7 @@ import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquill
 import { Icone } from "@/components/console/Icone";
 import { AlertesCommandes } from "@/components/console/Veille";
 import { RaccourciRecherche } from "@/components/console/Raccourcis";
-import { clientSession, exigeMembre } from "@/lib/console/session";
+import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
 import { lieu } from "@/lib/commande";
 import {
   ETAPES,
@@ -17,6 +17,7 @@ import {
   type Etape,
 } from "@/lib/gestion/libelles";
 import { PEUT_SAISIR } from "@/lib/gestion/saisie";
+import { BarreLot } from "@/components/console/BarreLot";
 
 export const metadata: Metadata = { title: "Commandes" };
 
@@ -58,12 +59,30 @@ type Liste = {
 
 const PAR_PAGE = 50;
 
+/* Les gestes groupés (…_gestes_groupes.sql) : remettre au livreur, le point du livreur. */
+const EXPEDIER_LOT: Role[] = ["proprietaire", "admin", "preparateur"];
+const LIVRER_LOT: Role[] = ["proprietaire", "admin", "confirmateur", "preparateur"];
+const FORMULAIRE_LOT = "lot-commandes";
+
+function bilanLot(fait: string | undefined, n: string | undefined, ignorees: string | undefined): string | null {
+  if (fait !== "lot-expedier" && fait !== "lot-livrer") return null;
+  const k = Number(n ?? 0);
+  const s = k > 1 ? "s" : "";
+  const fait_ = fait === "lot-expedier"
+    ? (k ? `${k} commande${s} remise${s} au livreur.` : "Aucune commande remise au livreur.")
+    : (k ? `${k} colis livré${s}, paiement encaissé.` : "Aucun colis marqué livré.");
+  const cote = (ignorees ?? "").split(",").filter(Boolean);
+  return cote.length
+    ? `${fait_} Laissée${cote.length > 1 ? "s" : ""} de côté (elle${cote.length > 1 ? "s avaient" : " avait"} bougé entre-temps, ou ne va pas au livreur) : ${cote.join(", ")}.`
+    : fait_;
+}
+
 export default async function Commandes({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ etape?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ etape?: string; q?: string; page?: string; fait?: string; n?: string; ignorees?: string; erreur?: string }>;
 }) {
   const [{ slug }, recherche] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
@@ -95,6 +114,11 @@ export default async function Commandes({
   const aExpedier = liste.total <= liste.commandes.length
     ? liste.commandes.filter((c) => c.mode_livraison !== "retrait").length
     : liste.compteurs.a_preparer;
+  // Le geste groupé de cette étape, si le rôle le permet.
+  const geste = etape.cle === "a_preparer" && EXPEDIER_LOT.includes(boutique.role) ? "expedier"
+    : etape.cle === "expediees" && LIVRER_LOT.includes(boutique.role) ? "livrer" : null;
+  const statutLot = geste === "expedier" ? "confirmee" : "expediee";
+  const bilan = bilanLot(recherche.fait, recherche.n, recherche.ignorees);
   const lien = (e: string, p = 1) => `/gestion/${slug}?etape=${e}${q ? `&q=${encodeURIComponent(q)}` : ""}${p > 1 ? `&page=${p}` : ""}`;
 
   return (
@@ -139,6 +163,14 @@ export default async function Commandes({
         ))}
       </nav>
 
+      {bilan ? <p className="message message-succes bo-message" role="status">{bilan}</p> : null}
+      {recherche.erreur ? <p className="message message-erreur bo-message" role="alert">{recherche.erreur}</p> : null}
+      {geste ? (
+        <form id={FORMULAIRE_LOT} method="post" action={`/gestion/${slug}/commandes/lot`} hidden>
+          <input type="hidden" name="geste" value={geste} />
+        </form>
+      ) : null}
+
       {q ? (
         <p className="bo-resultat" role="status">
           {liste.total} commande{liste.total > 1 ? "s" : ""} pour « {q} »
@@ -159,6 +191,12 @@ export default async function Commandes({
             const premier = i === 0 && page === 1 && !q && etape.cle === "a_confirmer" && liste.commandes.length > 1;
             return (
               <li key={c.numero} className="bo-ligne" data-statut={c.statut}>
+                {geste && c.statut === statutLot && c.mode_livraison === "domicile" ? (
+                  <label className="bo-coche">
+                    <input type="checkbox" form={FORMULAIRE_LOT} name="n" value={c.numero}
+                           aria-label={`${geste === "expedier" ? "Remettre au livreur" : "Livrée"} : ${c.numero}, ${c.contact_nom}`} />
+                  </label>
+                ) : null}
                 <Link href={`/gestion/${slug}/commandes/${c.numero}`} className="bo-ligne-lien">
                   <span className="bo-ligne-id">
                     <span className="bo-numero">{c.numero}</span>
@@ -211,6 +249,8 @@ export default async function Commandes({
           })}
         </ul>
       )}
+
+      {geste && liste.commandes.length ? <BarreLot formulaire={FORMULAIRE_LOT} geste={geste} /> : null}
 
       {pages > 1 ? (
         <nav className="bo-pages" aria-label="Pages">

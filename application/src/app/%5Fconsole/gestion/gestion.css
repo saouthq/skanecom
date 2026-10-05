@@ -55,6 +55,22 @@
 
 /* --- La liste : une carte par commande, qui répond au survol et au doigt -- */
 .bo-liste { display: grid; gap: .5rem; }
+/* Une case par ligne pour les gestes groupés (remettre au livreur, le point du livreur). */
+.bo-coche { position: relative; z-index: 2; display: grid; place-items: center; flex: none; padding-inline: 1rem .25rem; cursor: pointer; }
+.console .bo-coche input { inline-size: 18px; block-size: 18px; cursor: pointer; }
+@media (pointer: coarse) { .bo-coche { padding-inline: .875rem .125rem; } .console .bo-coche input { inline-size: 22px; block-size: 22px; } }
+.bo-ligne:has(.bo-coche input:checked) { border-color: var(--ui-texte); box-shadow: 0 0 0 1px var(--ui-texte); }
+.bo-lot {
+  position: sticky; inset-block-end: 1rem; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: .625rem 1rem;
+  margin-block-start: .875rem; padding: .625rem .75rem .625rem 1rem; border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l);
+  background: color-mix(in srgb, var(--ui-panneau) 92%, transparent); box-shadow: var(--ui-ombre-l, 0 12px 32px -12px rgb(0 0 0 / .18));
+  backdrop-filter: saturate(1.6) blur(12px);
+}
+.bo-lot-tout { font-weight: 500; }
+.console .entree.bo-lot-transporteur { flex: 1 1 14rem; min-inline-size: 0; inline-size: auto; }
+.bo-lot .btn { margin-inline-start: auto; }
+@media screen and (max-width: 1023px) { .bo-lot { inset-block-end: calc(4.5rem + env(safe-area-inset-bottom)); } }
+@media (max-width: 639px) { .bo-lot .btn { inline-size: 100%; } }
 .bo-ligne {
   position: relative; display: flex; align-items: stretch; overflow: hidden;
   background: var(--ui-panneau); border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r-l);
