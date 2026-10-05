@@ -38,6 +38,7 @@ export const ACTIONS: Record<string, string> = {
   "note.epingler": "Note épinglée",
   "note.detacher": "Note détachée",
   "note.supprimer": "Note retirée",
+  "note.rappel_fait": "Rappel fait",
   "formule.creer": "Formule créée",
   "formule.modifier": "Formule modifiée",
   "formule.supprimer": "Formule supprimée",
@@ -47,7 +48,10 @@ export const ACTIONS: Record<string, string> = {
   "administrateur.nommer": "Entrée dans l'équipe SkanEcom",
   "administrateur.role": "Rôle SkanEcom changé",
   "administrateur.retirer": "Sortie de l'équipe SkanEcom",
+  "administrateur.double_auth": "Double authentification réinitialisée",
   "reglages.modifier": "Réglages modifiés (back-office)",
+  "export.journal": "Journal exporté",
+  "export.tableau": "Tableau de bord exporté",
 };
 
 /** Les genres de gestes, pour filtrer le journal (le préfixe de l'action). */
@@ -66,4 +70,13 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "annonce", titre: "Annonces" },
   { cle: "administrateur", titre: "Équipe SkanEcom" },
   { cle: "mise_en_place", titre: "Mise en place" },
+  { cle: "export", titre: "Exports" },
 ];
+
+/** Un jour « 2026-10-05 » d'un formulaire, ou rien. */
+export function jourValide(v: string | null | undefined): string | null {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+  const d = new Date(`${v}T00:00:00Z`);
+  // (le 30 février n'existe pas : on relit le jour)
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : null;
+}

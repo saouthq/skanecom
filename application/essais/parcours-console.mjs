@@ -776,12 +776,13 @@ await etape("la liste de mise en place", async () => {
   await page.goto(`${CONSOLE}/?vue=liste`, { waitUntil: "networkidle" });
   const ligne = page.locator("tr", { hasText: "Outillage Pro Démo" }).last();
   verifie((await ligne.locator(".mp-mini").innerText()).includes(`${faites + 1}/10`), "la liste aussi");
-  // Chercher une boutique : par une partie de son identifiant, sans majuscules.
-  await clic(page, page.locator("#pl-q")); await tape(page, SUFFIXE.toUpperCase());
+  // Chercher une boutique : par son identifiant, sans tenir compte des majuscules
+  // (le suffixe seul en trouverait deux : la boutique de bijoux le porte aussi).
+  await clic(page, page.locator("#pl-q")); await tape(page, `OUTILLAGE-${SUFFIXE.toUpperCase()}`);
   await envoie(page, () => page.keyboard.press("Enter"));
   const lignesTrouvees = await page.locator(".tableau tbody tr").allInnerTexts();
   verifie(lignesTrouvees.length === 1 && lignesTrouvees[0].includes("Outillage Pro Démo") && (await page.locator(".pl-filtres-compte").innerText()).includes("1 sur"),
-    `la recherche « ${SUFFIXE.toUpperCase()} » ne garde que la boutique d'essai`);
+    `la recherche « OUTILLAGE-${SUFFIXE.toUpperCase()} » ne garde que la boutique d'essai`);
 });
 
 /* ------------------------------------------------------------------ */
@@ -1285,6 +1286,35 @@ await etape("une note de suivi sur la boutique, épinglée", async () => {
     && (await premiere.innerText()).includes(ADMIN.email), "la note est gardée, épinglée, avec son auteur");
   verifie((await page.locator("#notes .bt-retour").innerText()).includes("Note gardée") && (await page.locator("#bt-note").inputValue()) === "",
     "le message dans la carte ; le champ se vide");
+});
+
+await etape("une note avec un rappel : le jour venu, elle passe devant et remonte dans « À surveiller »", async () => {
+  const aujourdhui = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date());
+  await clic(page, page.locator("#bt-note")); await tape(page, "Rappeler le propriétaire pour les photos du catalogue.");
+  await page.locator("#bt-note-rappel").fill(aujourdhui);
+  await envoie(page, page.getByRole("button", { name: "Garder la note" }));
+  const due = page.locator(".bt-notes li[data-rappel]");
+  verifie((await due.count()) === 1 && (await due.innerText()).includes("À rappeler aujourd'hui"), "le rappel du jour est marqué");
+  verifie((await page.locator(".bt-notes li").nth(1).getAttribute("data-rappel")) === "", "il passe devant les autres notes (l'épinglée reste en tête)");
+  await page.goto(`${CONSOLE}/`, { waitUntil: "networkidle" });
+  verifie((await page.locator(".pl-vigilance").innerText()).includes("Rappeler le propriétaire pour les photos"), "« À surveiller » le rappelle");
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await envoie(page, page.locator(".bt-notes li[data-rappel]").getByRole("button", { name: "C'est fait" }));
+  verifie((await page.locator(".bt-notes li[data-rappel]").count()) === 0 && (await page.locator("#notes .bt-retour").innerText()).includes("Rappel fait"),
+    "dit fait, il ne remonte plus");
+});
+
+await etape("le journal : une période, et l'export de ce qu'elle montre", async () => {
+  const aujourdhui = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date());
+  await page.goto(`${CONSOLE}/journal?du=${aujourdhui}&au=${aujourdhui}`, { waitUntil: "networkidle" });
+  verifie((await page.locator(".tableau tbody tr").count()) > 0, "les gestes du jour");
+  // (depuis la page : sa session, et console.localhost que seul le navigateur résout)
+  const r = await page.evaluate(async () => {
+    const reponse = await fetch(document.querySelector(".jr-export").href);
+    return { ok: reponse.ok, type: reponse.headers.get("content-type") ?? "", csv: await reponse.text() };
+  });
+  verifie(r.ok && r.type.startsWith("text/csv") && r.csv.includes("Quand;Geste;Boutique;Détail;Par;IP") && r.csv.includes("Rappel fait"),
+    "l'export : un CSV de ces gestes");
 });
 
 await etape("une annonce aux commerçants : publiée, puis arrêtée", async () => {

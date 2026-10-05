@@ -144,6 +144,11 @@ function cellule(texte: string): string {
   return /[";\r\n]/.test(sure) ? `"${sure.replace(/"/g, '""')}"` : sure;
 }
 
+/** Un tableau quelconque, au même format (la console : journal, tableau de bord). */
+export function tableurCsv(titres: string[], lignes: string[][]): string {
+  return "\uFEFF" + [titres, ...lignes].map((l) => l.map(cellule).join(";")).join("\r\n") + "\r\n";
+}
+
 export function versCsv(quoi: string, lignes: Record<string, unknown>[]): string {
   const { colonnes } = EXPORTS[quoi];
   const tete = colonnes.map((c) => cellule(c.titre)).join(";");

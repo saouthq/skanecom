@@ -278,6 +278,15 @@ export function EnvoiFormulaires() {
         }
       }
 
+      // Une confirmation en popover (Confirmation) se referme, réussie ou
+      // refusée : c'est la page qui dit le résultat. Le focus revient au
+      // bouton qui l'avait ouverte.
+      if (form.isConnected && form.matches("[popover]:popover-open")) {
+        const avaitFocus = form.contains(document.activeElement);
+        form.hidePopover();
+        if (avaitFocus) focus = document.querySelector<HTMLElement>(`[popovertarget="${CSS.escape(form.id)}"]`);
+      }
+
       // Refusé, le formulaire reste où il est. Si le refus s'affiche hors de
       // l'écran (en tête de page, le formulaire plus bas), il est redit près
       // du bouton, là où l'on regarde : au-dessus du pied de carte s'il y en

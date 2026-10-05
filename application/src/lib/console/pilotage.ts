@@ -66,10 +66,16 @@ export const titreEtape = (cle: CleEtape | null) => (cle ? ETAPES_MISE_EN_PLACE[
 export type Vigilance = {
   cle: string;
   niveau: "urgent" | "attention" | "info";
-  boutique: LignePilotage;
+  /** null : la plateforme elle-même (les e-mails refusés). */
+  boutique: LignePilotage | null;
   texte: string;
   href: string;
 };
+
+/** Ce que rend public.console_rappels : les notes de suivi dont le rappel est venu. */
+export type Rappel = { id: number; texte: string; rappel: string; boutique: { id: string; slug: string; nom: string }; auteur: string | null };
+
+const JOUR_RAPPEL = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
 
 const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" });
 
@@ -109,9 +115,33 @@ export const SEUILS = {
  *  une boutique suspendue ; et, quand SkanFact est branché, une facture échue
  *  depuis plus de SEUIL_RETARD_JOURS jours (lue dans SkanFact, comptée depuis
  *  son échéance : le retard grandit sans relecture) ou une boutique ouverte
- *  sans client SkanFact. Jamais pour une démonstration. */
-export function vigilances(lignes: LignePilotage[], maintenant: number, options: { skanfact?: boolean; sante?: Sante[] } = {}): Vigilance[] {
+ *  sans client SkanFact. Jamais pour une démonstration. S'y ajoutent les
+ *  rappels des notes de suivi venus à échéance, et les e-mails refusés de la
+ *  semaine (la plateforme elle-même). */
+export function vigilances(
+  lignes: LignePilotage[],
+  maintenant: number,
+  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number } = {},
+): Vigilance[] {
   const out: Vigilance[] = [];
+  if (options.envoisRefuses) {
+    const n = options.envoisRefuses;
+    out.push({
+      cle: "plateforme:envois", niveau: "attention", boutique: null, href: "/journal?vue=envois&echecs=1",
+      texte: `${n} e-mail${n > 1 ? "s" : ""} refusé${n > 1 ? "s" : ""} sur 7 jours : codes de connexion ou confirmations qui ne sont pas partis`,
+    });
+  }
+  const parId = new Map(lignes.map((b) => [b.id, b]));
+  const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date(maintenant));
+  for (const r of options.rappels ?? []) {
+    const b = parId.get(r.boutique.id);
+    if (!b) continue;
+    const extrait = r.texte.length > 90 ? `${r.texte.slice(0, 88).trimEnd()}…` : r.texte;
+    out.push({
+      cle: `${b.id}:rappel:${r.id}`, niveau: "attention", boutique: b, href: `/boutiques/${b.slug}#t-notes`,
+      texte: `rappel${r.rappel < jour ? ` du ${JOUR_RAPPEL.format(new Date(`${r.rappel}T00:00:00Z`))}` : " du jour"} — « ${extrait} »`,
+    });
+  }
   const santes = new Map((options.sante ?? []).map((x) => [x.id, x]));
   for (const b of lignes) {
     const sa = santes.get(b.id);

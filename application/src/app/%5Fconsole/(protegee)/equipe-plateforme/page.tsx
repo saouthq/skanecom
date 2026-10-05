@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { BoutonCopier } from "@/components/console/BoutonCopier";
 import { Icone } from "@/components/console/Icone";
+import { Confirmation } from "@/components/console/Confirmation";
 import { dateJournal } from "@/lib/console/libelles";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
@@ -86,6 +87,17 @@ export default async function EquipePlateforme({ searchParams }: { searchParams:
                     <button type="submit" name="geste" value="role" className="btn btn-second btn-petit">Changer</button>
                     <button type="submit" name="geste" value="retirer" className="btn btn-danger btn-petit" aria-label={`Retirer ${a.email} de l'équipe SkanEcom`}>Retirer</button>
                   </form>
+                ) : null}
+                {peutModifier && !a.vous && a.double_auth ? (
+                  <Confirmation
+                    id={`double-auth-${a.user_id}`}
+                    declencheur="Réinitialiser la double auth"
+                    titre={`Réinitialiser la double authentification de ${a.email} ?`}
+                    texte="Pour un téléphone perdu : son application d'authentification est oubliée et ses sessions se ferment. La prochaine connexion demandera d'en enregistrer une nouvelle."
+                    action="/equipe-plateforme/double-auth"
+                    champs={{ user_id: a.user_id, email: a.email, retour: "/equipe-plateforme" }}
+                    bouton="Réinitialiser"
+                  />
                 ) : null}
               </li>
             ))}

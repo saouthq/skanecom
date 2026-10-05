@@ -43,6 +43,16 @@ export function deNom(nom: string): string {
   return /^[aeiouyàâäéèêëîïôöùûüœæ]/i.test(nom.trim()) ? `d'${nom}` : `de ${nom}`;
 }
 
+/** Le jour de Tunis (« 2026-10-05 »), décalé de quelques jours au besoin. */
+export function jourTunis(decalage = 0): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date(Date.now() + decalage * 86_400_000));
+}
+
+/** Un jour sans heure (« 2026-10-12 ») dit court : « 12 oct. ». */
+export function jourCourt(jour: string): string {
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${jour.slice(0, 10)}T00:00:00Z`));
+}
+
 /** Une date de journal, à l'heure de Tunis. */
 export function dateJournal(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Africa/Tunis" }).format(new Date(iso));

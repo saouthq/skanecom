@@ -6,7 +6,7 @@ import { Pagination } from "@/components/console/Pagination";
 import { dateJournal } from "@/lib/console/libelles";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
-import { ACTIONS, GENRES_JOURNAL } from "@/lib/console/journal";
+import { ACTIONS, GENRES_JOURNAL, jourValide } from "@/lib/console/journal";
 import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 
 export const metadata: Metadata = { title: "Journal" };
@@ -27,7 +27,7 @@ type Envoi = { id: number; le: string; canal: string; destinataire: string; expe
 
 const PAR_PAGE = 50;
 
-export default async function Journal({ searchParams }: { searchParams: Promise<{ vue?: string; boutique?: string; genre?: string; page?: string; echecs?: string }> }) {
+export default async function Journal({ searchParams }: { searchParams: Promise<{ vue?: string; boutique?: string; genre?: string; page?: string; echecs?: string; du?: string; au?: string }> }) {
   const { user } = await exigeAdmin();
   const p = await searchParams;
   const vue = p.vue === "envois" ? "envois" : "gestes";
@@ -45,6 +45,11 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
   const choisie = boutiques.find((b) => b.slug === p.boutique) ?? null;
   const genre = GENRES_JOURNAL.find((g) => g.cle === p.genre) ?? null;
   const echecs = p.echecs === "1";
+  // La période : deux jours de Tunis, l'un ou l'autre facultatif ; à l'envers, on les remet dans l'ordre.
+  let du = jourValide(p.du);
+  let au = jourValide(p.au);
+  if (du && au && du > au) [du, au] = [au, du];
+  const filtre = Boolean(choisie || genre || du || au);
 
   const lien = (v: { vue?: string; page?: number; boutique?: string | null; genre?: string | null; echecs?: boolean }) => {
     const q = new URLSearchParams();
@@ -54,6 +59,8 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
     const g = v.genre === undefined ? genre?.cle : v.genre;
     if (vv === "gestes" && b) q.set("boutique", b);
     if (vv === "gestes" && g) q.set("genre", g);
+    if (vv === "gestes" && du) q.set("du", du);
+    if (vv === "gestes" && au) q.set("au", au);
     if (vv === "envois" && (v.echecs ?? echecs)) q.set("echecs", "1");
     if ((v.page ?? 1) > 1) q.set("page", String(v.page));
     const s = q.toString();
@@ -112,6 +119,7 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
 
   const { data, error } = await service.rpc("console_journal", {
     p_acteur: user.id, p_boutique_id: choisie?.id ?? null, p_genre: genre?.cle ?? null, p_limite: PAR_PAGE, p_decalage: (page - 1) * PAR_PAGE,
+    p_du: du, p_au: au,
   });
   if (error) throw new Error(`Journal illisible : ${error.message}`);
   const j = data as { total: number; lignes: LigneJournal[] };
@@ -130,11 +138,20 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
           <option value="">Tous les gestes</option>
           {GENRES_JOURNAL.map((g) => <option key={g.cle} value={g.cle}>{g.titre}</option>)}
         </select>
+        <span className="jr-periode">
+          <label htmlFor="jr-du">Du</label>
+          <input id="jr-du" className="entree" type="date" name="du" defaultValue={du ?? ""} />
+          <label htmlFor="jr-au">au</label>
+          <input id="jr-au" className="entree" type="date" name="au" defaultValue={au ?? ""} />
+        </span>
         <button type="submit" className="btn btn-second btn-petit">Filtrer</button>
-        {choisie || genre ? <Link href="/journal" className="btn-lien">Tout voir</Link> : null}
+        {filtre ? <Link href="/journal" className="btn-lien">Tout voir</Link> : null}
+        <a href={lien({ page: 1 }).replace(/^\/journal/, "/journal/export")} className="btn btn-fantome btn-petit jr-export" download>
+          <Icone nom="telecharger" taille={14} /> Exporter (CSV)
+        </a>
       </form>
       <div className="carte carte-plate defile">
-        {j.lignes.length === 0 ? <p className="discret jr-vide">Aucun geste {choisie || genre ? "pour ce filtre" : "pour l'instant"}.</p> : (
+        {j.lignes.length === 0 ? <p className="discret jr-vide">Aucun geste {filtre ? "pour ce filtre" : "pour l'instant"}.</p> : (
           <table className="tableau">
             <thead><tr><th>Quand</th><th>Geste</th><th>Boutique</th><th>Détail</th><th>Par</th></tr></thead>
             <tbody>

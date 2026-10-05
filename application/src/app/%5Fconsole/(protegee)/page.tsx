@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_STATUT } from "@/lib/console/libelles";
-import { couleursDe, depuis, vigilances, type LignePilotage } from "@/lib/console/pilotage";
+import { couleursDe, depuis, vigilances, type LignePilotage, type Rappel } from "@/lib/console/pilotage";
 import { configSkanFact } from "@/lib/console/skanfact";
 import { formateMontant } from "@/lib/prix";
 import { EnTetePage } from "@/components/console/Coquille";
@@ -46,12 +46,15 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
   const statut = STATUTS_FILTRE.find((x) => x.cle === p.statut)?.cle ?? "";
   const type = p.type === "clientes" || p.type === "demos" ? p.type : "";
   const service = clientService();
-  const [{ data, error }, { data: codesApercu }, { data: df }, { data: ds }] = await Promise.all([
+  const [{ data, error }, { data: codesApercu }, { data: df }, { data: ds }, { data: dr }, { data: de }] = await Promise.all([
     service.rpc("console_pilotage"),
     // Absente hors de l'aperçu : l'erreur la cache, rien d'autre.
     service.rpc("console_codes_apercu"),
     service.rpc("console_formules", { p_acteur: user.id }),
     service.rpc("console_sante", { p_acteur: user.id }),
+    service.rpc("console_rappels", { p_acteur: user.id }),
+    // (une ligne suffit : on n'en lit que la semaine)
+    service.rpc("console_envois", { p_acteur: user.id, p_echecs: true, p_limite: 1 }),
   ]);
   const formules = (df ?? { formules: [], droits: [], boutiques: [] }) as DonneesFormules;
   const nomsFormules = new Map(formules.formules.map((f) => [f.code, f.nom]));
@@ -80,7 +83,10 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
   };
   const hoteConsole = (await headers()).get("host");
   const maintenant = new Date().getTime();
-  const aSurveiller = vigilances(boutiques, maintenant, { skanfact: configSkanFact() !== null, sante: (ds ?? []) as Sante[] });
+  const aSurveiller = vigilances(boutiques, maintenant, {
+    skanfact: configSkanFact() !== null, sante: (ds ?? []) as Sante[], rappels: (dr ?? []) as Rappel[],
+    envoisRefuses: (de as { semaine?: { refuses: number } } | null)?.semaine?.refuses ?? 0,
+  });
 
   // La synthèse ne compte que les clientes : les boutiques de démonstration vendent pour de faux.
   const clientes = boutiques.filter((b) => !b.demonstration);
@@ -140,7 +146,7 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
                   <li key={v.cle} data-niveau={v.niveau}>
                     <Link href={v.href}>
                       <span className="pl-point" aria-hidden="true" />
-                      <span><b>{v.boutique.nom}</b> : {v.texte}</span>
+                      <span><b>{v.boutique?.nom ?? "Plateforme"}</b> : {v.texte}</span>
                       <Icone nom="droite" taille={14} />
                     </Link>
                   </li>

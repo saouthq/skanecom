@@ -1320,6 +1320,12 @@ a.sf-numero .icone { color: var(--ui-texte-3); }
 .bt-note-neuve textarea { inline-size: 100%; resize: vertical; }
 .bt-note-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .bt-note-epingle { display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; color: var(--ui-texte-2); }
+.bt-note-rappel { display: inline-flex; align-items: center; gap: .375rem; font-size: .8125rem; color: var(--ui-texte-2); margin-inline-end: auto; }
+.console .bt-note-rappel input { inline-size: auto; padding-block: .25rem; }
+.bt-note-rappel-aide { margin: -.25rem 0 0; }
+.bt-note-actions > .btn { margin-inline-start: auto; }
+.bt-note-meta .ui-etat { display: inline-flex; align-items: center; gap: .25rem; }
+.bt-notes > li[data-rappel] { box-shadow: inset 3px 0 0 var(--ui-ambre); }
 .bt-notes { display: grid; gap: 0; margin: 0 -1.25rem -1.25rem; padding: 0; list-style: none; border-block-start: 1px solid var(--ui-bord-leger); }
 @media (min-width: 700px) { .bt-notes { margin-inline: -1.5rem; } }
 .bt-notes > li { display: grid; gap: .25rem; padding: .75rem 1.25rem; border-block-end: 1px solid var(--ui-bord-leger); }
@@ -1357,6 +1363,8 @@ a.sf-numero .icone { color: var(--ui-texte-3); }
 .bt-vie-ligne input[name="nom"] { flex: 1 1 12rem; min-inline-size: 0; }
 .bt-vie-ligne > .aide { flex-basis: 100%; margin: 0; }
 .bt-vie-fermer .opt { font-size: .875rem; }
+/* Le champ du nouveau domaine prend la place ; trop étroit (téléphone), il passe seul sur sa ligne. */
+.console .carte-pied > .bt-domaine-champ { flex: 1 1 14rem; }
 .bt-domaine-gestes { display: inline-flex; gap: .75rem; justify-content: flex-end; }
 .bt-domaine-gestes .btn-lien { font-size: .8125rem; white-space: nowrap; }
 .console .bt-retirer { color: var(--ui-rouge); }
@@ -1378,6 +1386,18 @@ a.sf-numero .icone { color: var(--ui-texte-3); }
 /* ---- Le journal de la plateforme ---- */
 .jr-filtres { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-block-end: 1rem; }
 .console .jr-filtres select { inline-size: auto; min-inline-size: 12rem; }
+.jr-periode { display: inline-flex; align-items: center; gap: .375rem; color: var(--ui-texte-2); font-size: .875rem; }
+.console .jr-periode input { inline-size: auto; }
+.jr-export { margin-inline-start: auto; }
+@media (max-width: 40rem) {
+  .console .jr-filtres select { flex: 1 1 100%; min-inline-size: 0; }
+  /* Deux champs de date côte à côte ne tiennent pas : l'un sous l'autre. */
+  .jr-periode { flex: 1 1 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .5rem .625rem; }
+  .console .jr-periode input { inline-size: 100%; min-inline-size: 0; }
+  .jr-export { margin-inline-start: 0; }
+}
+.carte-tete > .tbp-gestes { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; flex: none; }
+@media (max-width: 40rem) { .carte-tete > .tbp-gestes { flex: 1 1 100%; justify-content: flex-start; } }
 .jr-barre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-block-end: 1rem; }
 .jr-resume { margin: 0; color: var(--ui-texte-2); }
 .jr-refus { color: var(--ui-rouge); }
@@ -1402,6 +1422,21 @@ a.sf-numero .icone { color: var(--ui-texte-3); }
   box-shadow: var(--ui-ombre-l, 0 12px 32px rgb(0 0 0 / .12)); font-size: .8125rem; color: var(--ui-texte-2);
 }
 .bt-confirmer-panneau p { margin: 0; line-height: 1.45; }
+
+/* ---- Une confirmation en popover (components/console/Confirmation) ----
+   Au-dessus de tout, centrée ; le fond s'assombrit à peine. Sans
+   :popover-open, l'élément reste caché (display: none de la feuille du
+   navigateur) : on ne pose display qu'une fois ouvert. */
+.console .confirmation {
+  inline-size: min(26rem, calc(100vw - 2rem)); max-block-size: calc(100dvh - 2rem);
+  margin: auto; padding: 1.25rem; border: 1px solid var(--ui-bord); border-radius: var(--ui-r-l, 14px);
+  background: var(--ui-panneau); color: var(--ui-texte); box-shadow: 0 24px 64px rgb(0 0 0 / .18);
+}
+.console .confirmation:popover-open { display: grid; gap: .625rem; }
+.console .confirmation::backdrop { background: rgb(15 23 42 / .18); }
+.confirmation-titre { margin: 0; font-weight: 600; font-size: .9375rem; line-height: 1.35; overflow-wrap: anywhere; }
+.confirmation-texte { margin: 0; font-size: .8125rem; line-height: 1.5; color: var(--ui-texte-2); }
+.confirmation-gestes { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin-block-start: .375rem; }
 
 /* ---- La fiche d'une boutique : son activité sur 30 jours, ses signaux ---- */
 .bt-activite { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1rem; margin: 0 0 1rem; }

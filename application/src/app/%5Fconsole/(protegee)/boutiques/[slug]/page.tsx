@@ -7,7 +7,7 @@ import { ETAPES_MISE_EN_PLACE, type CleEtape, type MiseEnPlace as DonneesMiseEnP
 import { clientService } from "@/lib/console/service";
 import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { exigeAdmin } from "@/lib/console/session";
-import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
+import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal, jourCourt, jourTunis } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { formateMontant } from "@/lib/prix";
@@ -77,7 +77,11 @@ export default async function FicheBoutique({ params, searchParams }: {
   const activite = (((dt ?? { boutiques: [] }) as { boutiques: Activite[] }).boutiques).find((x) => x.id === b.id) ?? null;
   const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [] }) : [];
   const clos = activite ? activite.livrees + activite.refusees : 0;
-  const notes = (dn ?? []) as { id: number; texte: string; epinglee: boolean; le: string; auteur: string | null; vous: boolean }[];
+  const notes = (dn ?? []) as { id: number; texte: string; epinglee: boolean; le: string; auteur: string | null; vous: boolean; rappel: string | null; rappel_fait_le: string | null }[];
+  const aujourdhui = jourTunis();
+  // Un rappel venu passe devant (après les épinglées) : c'est ce qu'il y a à faire.
+  const echu = (n: (typeof notes)[number]) => Boolean(n.rappel && !n.rappel_fait_le && n.rappel <= aujourdhui);
+  notes.sort((a, b) => Number(b.epinglee) - Number(a.epinglee) || Number(echu(b)) - Number(echu(a)));
   const formules = (df ?? { formules: [], droits: [], boutiques: [] }) as DonneesFormules;
   const codeFormule = formules.boutiques.find((x) => x.id === b.id)?.formule ?? null;
   const formule = formules.formules.find((x) => x.code === codeFormule) ?? null;
@@ -151,7 +155,7 @@ export default async function FicheBoutique({ params, searchParams }: {
             </div>
             <form action={`/boutiques/${b.slug}/domaines`} method="post" className="carte-pied">
               <input type="hidden" name="boutique_id" value={b.id} />
-              <div className="champ flex-1 min-w-[14rem]">
+              <div className="champ bt-domaine-champ">
                 <label htmlFor="hote" className="sr-only">Ajouter un domaine</label>
                 <input id="hote" name="hote" required placeholder="www.maboutique.tn" />
               </div>
@@ -175,21 +179,33 @@ export default async function FicheBoutique({ params, searchParams }: {
               <textarea id="bt-note" className="entree" name="texte" rows={2} maxLength={2000} required placeholder="Ex. Appelé le 12/10 : veut le retrait en magasin à Sousse." />
               <div className="bt-note-actions">
                 <label className="bt-note-epingle"><input type="checkbox" name="epinglee" value="1" /> Épingler en tête</label>
+                <span className="bt-note-rappel">
+                  <label htmlFor="bt-note-rappel">Me le rappeler le</label>
+                  <input id="bt-note-rappel" className="entree" type="date" name="rappel" min={aujourdhui} max={jourTunis(366)} aria-describedby="bt-note-rappel-aide" />
+                </span>
                 <button type="submit" className="btn btn-second btn-petit">Garder la note</button>
               </div>
+              <p id="bt-note-rappel-aide" className="aide bt-note-rappel-aide">Le jour venu, la note remonte dans « À surveiller » jusqu&apos;à ce qu&apos;elle soit dite faite.</p>
             </form>
             {notes.length ? (
               <ul className="bt-notes" role="list">
                 {notes.map((n) => (
-                  <li key={n.id} data-epinglee={n.epinglee ? "" : undefined}>
+                  <li key={n.id} data-epinglee={n.epinglee ? "" : undefined} data-rappel={echu(n) ? "" : undefined}>
                     <p className="bt-note-texte">{n.texte}</p>
                     <div className="bt-note-meta">
                       {n.epinglee ? <span className="ui-etat">Épinglée</span> : null}
+                      {n.rappel ? (
+                        n.rappel_fait_le ? <span className="ui-etat ui-etat-vert"><Icone nom="coche" taille={12} /> Rappel fait</span>
+                        : n.rappel < aujourdhui ? <span className="ui-etat ui-etat-rouge"><Icone nom="cloche" taille={12} /> À rappeler depuis le {jourCourt(n.rappel)}</span>
+                        : n.rappel === aujourdhui ? <span className="ui-etat ui-etat-ambre"><Icone nom="cloche" taille={12} /> À rappeler aujourd&apos;hui</span>
+                        : <span className="ui-etat"><Icone nom="cloche" taille={12} /> Rappel le {jourCourt(n.rappel)}</span>
+                      ) : null}
                       <span>{n.auteur ?? "—"} · {dateJournal(n.le)}</span>
                       <form action={`/boutiques/${b.slug}/notes`} method="post" className="bt-note-gestes">
                         <input type="hidden" name="note_id" value={n.id} />
+                        {n.rappel && !n.rappel_fait_le ? <button type="submit" name="geste" value="rappel_fait" className="btn-lien">C&apos;est fait</button> : null}
                         <button type="submit" name="geste" value={n.epinglee ? "detacher" : "epingler"} className="btn-lien">{n.epinglee ? "Détacher" : "Épingler"}</button>
-                        {n.vous ? <button type="submit" name="geste" value="supprimer" className="btn-lien" aria-label="Retirer cette note">Retirer</button> : null}
+                        {n.vous || superAdmin ? <button type="submit" name="geste" value="supprimer" className="btn-lien" aria-label="Retirer cette note">Retirer</button> : null}
                       </form>
                     </div>
                   </li>

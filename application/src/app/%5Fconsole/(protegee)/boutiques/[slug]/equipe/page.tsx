@@ -9,6 +9,7 @@ import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { BoutonCopier } from "@/components/console/BoutonCopier";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
+import { Confirmation } from "@/components/console/Confirmation";
 import { titreBoutique } from "@/lib/console/titre-boutique";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -165,6 +166,17 @@ export default async function Equipe({ params, searchParams }: {
                           {m.actif ? "Retirer l'accès" : "Rendre l'accès"}
                         </button>
                       </form>
+                      {superAdmin && m.actif && aal2 && m.double_auth ? (
+                    <Confirmation
+                      id={`double-auth-${m.user_id}`}
+                      declencheur={<><Icone nom="bouclier" taille={14} /> Réinitialiser la double auth</>}
+                      titre={`Réinitialiser la double authentification de ${qui} ?`}
+                      texte="Pour un téléphone perdu : son application d'authentification est oubliée et ses sessions se ferment. La prochaine connexion demandera d'en enregistrer une nouvelle."
+                      action="/equipe-plateforme/double-auth"
+                      champs={{ user_id: m.user_id, email: qui, retour: `/boutiques/${slug}/equipe` }}
+                      bouton="Réinitialiser"
+                    />
+                      ) : null}
                     </div>}
                   </li>
                 );

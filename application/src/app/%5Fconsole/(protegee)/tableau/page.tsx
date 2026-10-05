@@ -135,9 +135,14 @@ export default async function TableauPlateforme({ searchParams }: { searchParams
             <h2 id="t-par-boutique" className="carte-titre-icone"><Icone nom="boutique" /> Par boutique</h2>
             <p>La plus grosse d&apos;abord. Un refus sur quatre ou plus est marqué.</p>
           </div>
-          <Link href={lien({ demos: !avecDemos })} className="btn btn-fantome btn-petit">
-            {avecDemos ? "Sans les démonstrations" : "Avec les démonstrations"}
-          </Link>
+          <div className="tbp-gestes">
+            <Link href={lien({ demos: !avecDemos })} className="btn btn-fantome btn-petit">
+              {avecDemos ? "Sans les démonstrations" : "Avec les démonstrations"}
+            </Link>
+            <a href={lien({}).replace(/^\/tableau/, "/tableau/export")} className="btn btn-second btn-petit" download>
+              <Icone nom="telecharger" taille={14} /> Exporter (CSV)
+            </a>
+          </div>
         </div>
         <div className="defile">
           <table className="tableau tbp-tableau">
