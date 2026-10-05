@@ -7,6 +7,7 @@ import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { courrielChangementEmail, courrielCode, courrielInvitation, courrielLettre, courrielLettreDeja, courrielMotDePasse, marqueDeBoutique, MARQUE_PLATEFORME } from "@/lib/courriels/messages";
 import type { Courriel } from "@/lib/courriels/modele";
+import { courrielCommande, type CourrielDu } from "@/lib/courriels/commandes";
 
 export const metadata: Metadata = { title: "E-mails" };
 
@@ -39,6 +40,7 @@ export default async function Courriels({ searchParams }: { searchParams: Promis
       { cle: "adresse", groupe: "L'acheteur", nom: "Nouvelle adresse e-mail", pour: "Quand il change d'adresse dans son compte", courriel: courrielChangementEmail(marque, "705362") },
       { cle: "lettre", groupe: "La lettre", nom: "Confirmer l'inscription", pour: "Qui s'inscrit, pour confirmer son adresse", courriel: courrielLettre(marque, `${marque.site ?? "https://boutique.tn"}/lettre?j=exemple`) },
       { cle: "lettre-deja", groupe: "La lettre", nom: "Déjà inscrit", pour: "Qui s'inscrit une deuxième fois", courriel: courrielLettreDeja(marque) },
+      ...commandes(choisie, marque, console),
       { cle: "invitation", groupe: "L'équipe", nom: "Invitation", pour: "Invitée depuis la console, au nom de SkanEcom", courriel: courrielInvitation(MARQUE_PLATEFORME, `${console}/bienvenue?jeton=exemple&type=invite`) },
       { cle: "mot-de-passe", groupe: "L'équipe", nom: "Mot de passe oublié", pour: "Au nom de SkanEcom, quelle que soit la boutique", courriel: courrielMotDePasse(MARQUE_PLATEFORME, `${console}/bienvenue?jeton=exemple&type=recovery`) },
     );
@@ -120,4 +122,30 @@ export default async function Courriels({ searchParams }: { searchParams: Promis
       </div>
     </>
   );
+}
+
+/** Les e-mails de commande (réglage de la boutique), sur une commande d'exemple. */
+function commandes(b: Boutique, marque: ReturnType<typeof marqueDeBoutique>, console: string) {
+  const liens = { site: marque.site, console };
+  const exemple = (evenement: CourrielDu["evenement"]): CourrielDu => ({
+    id: 0, evenement, a: [],
+    boutique: { id: "", slug: b.slug, nom: b.nom },
+    commande: {
+      numero: "CMD-2026-00042", statut: evenement, origine: "vitrine", mode_paiement: "cod", mode_livraison: "domicile",
+      contact_nom: "Amel B.", contact_telephone: "+21620123456",
+      livraison: { ligne1: "12 rue de Marseille", ligne2: null, ville: "Tunis", gouvernorat: "Tunis", code_postal: "1000" },
+      sous_total_millimes: 267000, frais_livraison_millimes: 7000, remise_millimes: 0, total_millimes: 274000,
+      code_promo: null, transporteur: "Aramex", numero_suivi: "AR-58201", motif_annulation: null, cree_le: new Date().toISOString(),
+    },
+    lignes: [
+      { nom: "Un article du catalogue", detail: "Noir", quantite: 2, total_millimes: 178000, lot: null, precommande: false },
+      { nom: "Un autre article", detail: null, quantite: 1, total_millimes: 89000, lot: null, precommande: false },
+    ],
+  });
+  return [
+    { cle: "commande-recue", groupe: "La commande", nom: "Commande reçue", pour: "Au client, si la boutique l'a réglé (Réglages → Commandes)", courriel: courrielCommande(marque, exemple("recue"), liens) },
+    { cle: "commande-expediee", groupe: "La commande", nom: "En route", pour: "Au client : le transporteur, le numéro de suivi", courriel: courrielCommande(marque, exemple("expediee"), liens) },
+    { cle: "commande-livree", groupe: "La commande", nom: "Livrée", pour: "Au client, une fois la commande remise", courriel: courrielCommande(marque, exemple("livree"), liens) },
+    { cle: "commande-equipe", groupe: "La commande", nom: "Nouvelle commande (équipe)", pour: "Au propriétaire et aux administrateurs, si la boutique l'a réglé", courriel: courrielCommande(marque, exemple("equipe"), liens) },
+  ];
 }

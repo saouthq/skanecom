@@ -2,6 +2,7 @@ import { getRequestExecutionContext } from "vinext/shims/request-context";
 import { clientService } from "@/lib/console/service";
 import { adresseSkanFact, secretPartenaire } from "@/lib/console/skanfact";
 import { dechiffrer } from "./chiffre";
+import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
 
 /* ============================================================================
    LA FILE DES ENVOIS VERS LE SKANFACT DU COMMERÇANT (module « Facturation
@@ -370,6 +371,8 @@ export function enFond(travail: Promise<unknown>): void {
 
 /** Après un geste sur une commande : ses envois partent tout de suite (quatre secondes au plus d'attente), le reste en fond. */
 export async function envoyerApres(boutiqueId: string, numero?: string): Promise<Bilan | null> {
+  // Les e-mails de commande que le geste a mis dans leur file (au client), en fond.
+  enFond(envoyerCourrielsCommandes(boutiqueId));
   const travail = envoyerFile(boutiqueId, { numero });
   let minuterie: ReturnType<typeof setTimeout> | undefined;
   const bilan = await Promise.race([

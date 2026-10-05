@@ -13,6 +13,7 @@ import { OuvrirPalette, Palette } from "@/components/console/Palette";
 import { BandeauAnnonces } from "@/components/console/BandeauAnnonces";
 import { BandeauSuspension } from "@/components/console/BandeauSuspension";
 import type { AnnonceBoutique } from "@/lib/console/annonces";
+import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
 
 /* ============================================================================
    LE BACKOFFICE D'UNE BOUTIQUE — pour son équipe (PRD §6.2), sur téléphone
@@ -58,6 +59,8 @@ export default async function BackofficeBoutique({
   const etatSkanFact = sf as { actif: boolean; connecte: boolean; coupee: boolean; expire_bientot: boolean; a_regler: boolean;
                                dus: number; refuses: number } | null;
   if (etatSkanFact?.dus) enFond(envoyerFile(boutique.boutique_id));
+  // Les e-mails de commande restés dans leur file (une panne passée) repartent, en fond.
+  enFond(envoyerCourrielsCommandes(boutique.boutique_id));
   const alerteSkanFact = etatSkanFact?.coupee ? "connexion coupée" : etatSkanFact?.a_regler ? "taux de TVA à choisir"
     : etatSkanFact?.expire_bientot ? "connexion à renouveler" : null;
   const lienSkanFact = DIRECTION.includes(boutique.role) && (etatSkanFact?.actif || etatSkanFact?.connecte)
@@ -215,7 +218,7 @@ export default async function BackofficeBoutique({
         : (LIBELLES_ROLE[boutique.role] ?? boutique.role)}
       recherche={<OuvrirPalette />}
       rechercheCompacte={<OuvrirPalette compact />}
-      palette={<Palette slug={slug} pages={pages} />}
+      palette={<Palette source={`/gestion/${slug}/palette`} pages={pages} />}
       bandeau={boutique.support_jusqu_a || annonces.length || suspension ? (
         <>
           {suspension ? <BandeauSuspension s={suspension} /> : null}

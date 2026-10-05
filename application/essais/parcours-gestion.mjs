@@ -2699,6 +2699,44 @@ if (section("8")) {
     await capture(page, "gestion-saisie-fiche");
   });
 
+  await etape("« E-mails au client » allumé : la commande saisie avec son adresse la lui envoie, aux couleurs de Maymar", async () => {
+    await page.goto(`${C}/gestion/maymar/reglages/commandes`, { waitUntil: "networkidle" });
+    const reglage = page.locator("section:has(#t-commandes)");
+    verifie(await reglage.getByLabel(/Pas d'e-mail/).isChecked(), "par défaut : pas d'e-mail au client");
+    await clic(page, reglage.getByText("Un e-mail à chaque étape"));
+    await t.envoie(page, reglage.getByRole("button", { name: "Enregistrer" }));
+    verifie(await reglage.getByLabel(/Un e-mail à chaque étape/).isChecked(), "enregistré : un e-mail à chaque étape");
+
+    const adresse = `sami.${Date.now().toString(36)}@exemple.tn`;
+    await page.goto(`${C}/gestion/maymar/commandes/nouvelle`, { waitUntil: "networkidle" });
+    await clic(page, page.locator(".sc-canal", { hasText: "Téléphone" }));
+    await clic(page, page.getByLabel("Numéro du client"));
+    await tape(page, "50 600 700");
+    await page.locator(".sc-client", { hasText: "Nouveau client" }).waitFor();
+    await clic(page, page.getByLabel("Nom", { exact: true })); await tape(page, "Sami Trabelsi");
+    await clic(page, page.getByLabel(/^E-mail/)); await tape(page, adresse);
+    await clic(page, page.getByRole("combobox", { name: "Chercher un article" }));
+    await tape(page, "cabine business");
+    await page.locator(".sc-resultat").first().waitFor();
+    await page.keyboard.press("Enter");
+    await clic(page, page.getByLabel("Adresse", { exact: true })); await tape(page, "8 rue d'Alger");
+    await clic(page, page.getByLabel("Ville ou délégation")); await tape(page, "Tunis");
+    await page.getByLabel("Gouvernorat").selectOption("tunis");
+    const confirme = page.getByLabel(/Le client a confirmé sa commande/);
+    if (!(await confirme.isChecked())) await clic(page, confirme);
+    await t.envoie(page, page.locator(".sc-recap .sc-envoyer"));
+    await page.getByText("Commande enregistrée.").waitFor({ timeout: 15000 });
+    const numero = new URL(page.url()).pathname.split("/").pop();
+    const lu = async () => (await fetch(`${process.env.RELAIS ?? "http://127.0.0.1:54321"}/email-dev/rendu/dernier?email=${encodeURIComponent(adresse)}`)).json().catch(() => null);
+    let courriel = null;
+    verifie(await attend(async () => { courriel = await lu(); return Boolean(courriel?.sujet?.includes(numero)); }, 15000),
+      `l'e-mail part : « ${courriel?.sujet} »`);
+    verifie(courriel?.nom === "Maymar" && /confirmée/.test(courriel?.sujet ?? ""), "au nom de Maymar : « confirmée »");
+    verifie(/Business/i.test(courriel?.texte ?? "") && /Total : /.test(courriel?.texte ?? "") && /À la livraison, en espèces/.test(courriel?.texte ?? ""),
+      "avec ses lignes, son total et le paiement à la livraison");
+    verifie(/Pour la suivre, gardez son numéro/.test(courriel?.texte ?? ""), "saisie par l'équipe : le suivi par numéro (pas de compte)");
+  });
+
   await etape("une vente au comptoir, remise et payée d'un geste ; d'où viennent les commandes", async () => {
     await page.goto(`${C}/gestion/maymar/commandes/nouvelle`, { waitUntil: "networkidle" });
     await clic(page, page.locator(".sc-canal", { hasText: "Au magasin" }));

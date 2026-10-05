@@ -54,6 +54,8 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
     { cle: "commande.mode_confirmation", genre: "choix" },
     { cle: "commande.achat_express", genre: "booleen" },
     { cle: "commande.relance_paniers", genre: "booleen" },
+    { cle: "commande.courriels_client", genre: "booleen" },
+    { cle: "commande.courriel_equipe", genre: "booleen" },
     { cle: "commande.max_en_attente", genre: "entier" },
   ],
   livraison: [
@@ -201,6 +203,8 @@ const LIBELLES_COURTS: Record<string, string> = {
   "commande.max_en_attente": "Commandes en attente par numéro",
   "commande.achat_express": "Achat express",
   "commande.relance_paniers": "Relance des paniers",
+  "commande.courriels_client": "E-mails au client",
+  "commande.courriel_equipe": "E-mail à l'équipe",
   "livraison.mode_frais": "Frais de livraison",
   "livraison.frais_fixes_millimes": "Tarif de livraison",
   "livraison.seuil_gratuite_millimes": "Livraison offerte dès",

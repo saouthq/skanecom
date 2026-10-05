@@ -50,6 +50,13 @@ export type Contenu = {
   bouton?: { libelle: string; url: string };
   /** Sous le bouton : « le bouton ne s'ouvre pas ? » et l'adresse en clair. */
   lienSecours?: string;
+  /** Sous les paragraphes : un récapitulatif (les lignes d'une commande, puis ses totaux). */
+  recapitulatif?: {
+    lignes: { nom: string; detail?: string | null; quantite: number; montant: string }[];
+    totaux: { libelle: string; montant: string; fort?: boolean }[];
+  };
+  /** Des encarts teintés : la livraison, le paiement, le suivi (un titre, des lignes). */
+  encarts?: { titre: string; lignes: string[] }[];
   /** Sous le code ou le bouton : la consigne, la sécurité. */
   notes: string[];
   raison: string;
@@ -116,6 +123,32 @@ export function rendre(m: Marque, c: Contenu): Courriel {
 
   const paragraphe = (x: string) =>
     `<p style="margin:0 0 16px;font:400 16px/1.65 ${texte};color:${k.encreDoux};">${echappe(x)}</p>`;
+
+  const recap = c.recapitulatif
+    ? `<tr><td class="c-marge" style="padding:4px 44px 8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+          ${c.recapitulatif.lignes.map((l) => `<tr>
+            <td style="padding:12px 0;border-bottom:1px solid ${k.filet};font:500 15px/1.4 ${texte};color:${k.encre};">${echappe(l.nom)}<br><span style="font:400 13px/1.5 ${texte};color:${k.encreDoux};">${echappe([l.detail, `× ${l.quantite}`].filter(Boolean).join(" · "))}</span></td>
+            <td align="right" style="padding:12px 0 12px 16px;border-bottom:1px solid ${k.filet};font:500 15px/1.4 ${texte};color:${k.encre};white-space:nowrap;vertical-align:top;">${echappe(l.montant)}</td>
+          </tr>`).join("")}
+          ${c.recapitulatif.totaux.map((t) => `<tr>
+            <td style="padding:${t.fort ? "12px 0 0" : "8px 0 0"};font:${t.fort ? `700 16px/1.4` : `400 14px/1.4`} ${texte};color:${t.fort ? k.encre : k.encreDoux};">${echappe(t.libelle)}</td>
+            <td align="right" style="padding:${t.fort ? "12px 0 0 16px" : "8px 0 0 16px"};font:${t.fort ? `700 16px/1.4` : `400 14px/1.4`} ${texte};color:${t.fort ? k.encre : k.encreDoux};white-space:nowrap;">${echappe(t.montant)}</td>
+          </tr>`).join("")}
+        </table>
+      </td></tr>`
+    : "";
+
+  const encarts = c.encarts?.length
+    ? c.encarts.map((e) => `<tr><td class="c-marge" style="padding:12px 44px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>
+          <td style="padding:16px 18px;border-radius:${r}px;background:${teinte};">
+            <p style="margin:0 0 6px;font:600 12px/1.4 ${texte};letter-spacing:0.6px;text-transform:uppercase;color:${k.encreDoux};">${echappe(e.titre)}</p>
+            ${e.lignes.map((x) => `<p style="margin:0;font:400 15px/1.55 ${texte};color:${k.encre};">${echappe(x)}</p>`).join("")}
+          </td>
+        </tr></table>
+      </td></tr>`).join("")
+    : "";
 
   const code = c.code
     ? `<tr><td class="c-marge" style="padding:12px 44px 4px;">
@@ -185,7 +218,7 @@ export function rendre(m: Marque, c: Contenu): Courriel {
             <h1 class="c-titre" style="margin:0 0 18px;font:${m.titres === "serif" ? "400 32px/1.15" : "800 26px/1.2"} ${titres};letter-spacing:${m.titres === "serif" ? "-0.3px" : "-0.2px"};color:${k.encre};">${echappe(c.titre)}</h1>
             ${c.paragraphes.map(paragraphe).join("")}
           </td></tr>
-          ${code}${bouton}${secours}${notes}
+          ${recap}${encarts}${code}${bouton}${secours}${notes}
           <tr><td style="padding:0 0 36px;font-size:0;line-height:0;">&nbsp;</td></tr>
         </table>
       </td></tr>
@@ -207,6 +240,14 @@ export function rendre(m: Marque, c: Contenu): Courriel {
     c.titre,
     "",
     ...c.paragraphes.flatMap((x) => [x, ""]),
+    ...(c.recapitulatif
+      ? [
+        ...c.recapitulatif.lignes.map((l) => `${l.quantite} × ${l.nom}${l.detail ? ` (${l.detail})` : ""} — ${l.montant}`),
+        ...c.recapitulatif.totaux.map((t) => `${t.libelle} : ${t.montant}`),
+        "",
+      ]
+      : []),
+    ...(c.encarts ?? []).flatMap((e) => [`${e.titre} :`, ...e.lignes, ""]),
     ...(c.code ? [c.code, ...(c.codeLegende ? [c.codeLegende] : []), ""] : []),
     ...(lien && c.bouton ? [`${c.bouton.libelle} : ${lien}`, ""] : []),
     ...c.notes.flatMap((x) => [x, ""]),

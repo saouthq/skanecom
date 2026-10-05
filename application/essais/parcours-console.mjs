@@ -1830,6 +1830,73 @@ await etape("le journal de la plateforme : les gestes, filtrés ; les envois", a
 });
 
 /* ------------------------------------------------------------------ */
+console.log("\n== 3 quinquies. Les prospects : qui appeler, où l'on en est, gagné ou perdu ==");
+
+await etape("un prospect noté au clavier, à relancer aujourd'hui", async () => {
+  await clic(page, page.locator(".app-cote").getByRole("link", { name: "Prospects" }));
+  await page.waitForURL(/\/prospects$/);
+  await page.waitForLoadState("networkidle");
+  await clic(page, page.locator("#pr-nom-neuf")); await tape(page, `Parfumerie ${SUFFIXE}`);
+  await page.keyboard.press("Tab"); await tape(page, "Yasmine, gérante");
+  await page.keyboard.press("Tab"); await tape(page, "20 555 111");
+  await page.keyboard.press("Tab"); await tape(page, "Sfax");
+  await page.locator("#pr-metier-neuf").selectOption("beaute");
+  await clic(page, page.locator("#pr-action-neuf")); await tape(page, "Montrer la démonstration");
+  const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date());
+  await page.locator("#pr-le-neuf").fill(jour);
+  await envoie(page, page.getByRole("button", { name: "Ajouter le prospect" }));
+  const ligne = page.locator(".pr-ligne", { hasText: `Parfumerie ${SUFFIXE}` });
+  const texte = await ligne.innerText();
+  verifie(texte.includes("À contacter") && texte.includes("+216 20 555 111") && texte.includes("Beauté"), `la ligne : ${texte.replace(/\s+/g, " ").slice(0, 110)}…`);
+  verifie((await ligne.locator(".pr-prochaine").getAttribute("data-echeance")) === "aujourdhui" && texte.includes("(aujourd'hui)"), "la relance du jour, signalée");
+  verifie((await page.locator(".app-cote").getByRole("link", { name: /Prospects/ }).innerText()).includes("1"), "le menu compte les prospects à relancer");
+  verifie(await ligne.getByRole("link", { name: "Appeler" }).getAttribute("href") === "tel:+21620555111", "« Appeler » : le numéro au format international");
+  await capture(page, "console-prospects", true);
+});
+
+await etape("l'étape avance d'un choix ; « Créer sa boutique » ouvre l'assistant déjà rempli, et le prospect passe « gagné »", async () => {
+  const ligne = () => page.locator(".pr-ligne", { hasText: `Parfumerie ${SUFFIXE}` });
+  await clic(page, ligne().getByText("Étape, prochaine action, fiche"));
+  await ligne().locator(".pr-etape select").selectOption("demo");
+  // Choisir suffit : le formulaire part seul (l'adresse porte déjà un « ok= » : on attend le message).
+  await page.getByRole("status").filter({ hasText: "Démonstration montrée" }).waitFor();
+  verifie((await ligne().innerText()).includes("Démonstration montrée"), "« Démonstration montrée »");
+  await clic(page, ligne().getByRole("link", { name: "Créer sa boutique" }));
+  await page.waitForURL(/nouvelle-boutique\?/);
+  await page.waitForLoadState("networkidle");
+  verifie((await page.locator("#nom").inputValue()) === `Parfumerie ${SUFFIXE}` && (await page.locator("#slug").inputValue()) === `parfumerie-${SUFFIXE}`
+    && (await page.locator("#contact_telephone").inputValue()) === "+216 20 555 111", "l'assistant reprend son nom, l'identifiant suit, son téléphone");
+  await clic(page, page.locator("#hote")); await tape(page, `parfumerie-${SUFFIXE}.localhost`);
+  await continuer();
+  verifie(await page.locator('input[name="metier"][value="beaute"]').isChecked(), "son métier, déjà choisi");
+  await continuer(2);
+  await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
+  await page.waitForURL(new RegExp(`/boutiques/parfumerie-${SUFFIXE}`));
+  await page.goto(`${CONSOLE}/prospects?etape=gagne`, { waitUntil: "networkidle" });
+  const gagne = await page.locator(".pr-ligne", { hasText: `Parfumerie ${SUFFIXE}` }).innerText();
+  verifie(gagne.includes("Gagné") && gagne.includes(`Sa boutique : Parfumerie ${SUFFIXE}`), "gagné, sa boutique rattachée");
+});
+
+await etape("perdu : un motif est demandé", async () => {
+  await page.goto(`${CONSOLE}/prospects`, { waitUntil: "networkidle" });
+  await clic(page, page.locator("#pr-nom-neuf")); await tape(page, `Épicerie ${SUFFIXE}`);
+  await envoie(page, page.getByRole("button", { name: "Ajouter le prospect" }));
+  const ligne = page.locator(".pr-ligne", { hasText: `Épicerie ${SUFFIXE}` });
+  verifie((await ligne.innerText()).includes("Rien de prévu"), "sans prochaine action : la ligne invite à la noter");
+  await clic(page, ligne.getByText("Étape, prochaine action, fiche"));
+  await clic(page, ligne.getByRole("button", { name: "Perdu", exact: true }));
+  verifie(page.url().includes("/prospects") && !(page.url().includes("Perdu")), "sans motif, rien ne part");
+  await tape(page, "Déjà sur une autre plateforme");
+  await page.keyboard.press("Enter");
+  await page.getByRole("status").filter({ hasText: "Étape : Perdu" }).waitFor();
+  await page.goto(`${CONSOLE}/prospects?etape=perdu`, { waitUntil: "networkidle" });
+  verifie((await page.locator(".pr-ligne", { hasText: `Épicerie ${SUFFIXE}` }).innerText()).includes("Perdu : Déjà sur une autre plateforme"), "perdu, avec son motif");
+  await page.goto(`${CONSOLE}/journal?genre=prospect`, { waitUntil: "networkidle" });
+  const lignes = await page.locator(".tableau tbody tr").allInnerTexts();
+  verifie(lignes.some((l) => l.includes("Prospect gagné")) && lignes.some((l) => l.includes("Prospect : étape changée")), "le journal garde les gestes des prospects");
+});
+
+/* ------------------------------------------------------------------ */
 console.log("\n== 4. Les portes ==");
 
 await etape("un formulaire posté depuis un autre site est refusé", async () => {

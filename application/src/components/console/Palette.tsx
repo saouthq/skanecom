@@ -9,7 +9,9 @@ import type { ElementPalette } from "@/lib/gestion/palette";
    LA PALETTE (⌘K, ou Ctrl+K) — le réflexe des outils qu'on ouvre vingt fois
    par jour : on tape, on arrive. Les pages du backoffice d'abord (filtrées
    par ce qu'on tape), puis ce que la recherche trouve : commandes (numéro,
-   nom, téléphone), clients, produits (gestion/[slug]/palette).
+   nom, téléphone), clients, produits (gestion/[slug]/palette) ; dans la
+   console, les boutiques, leurs clients, les prospects, les équipes
+   (/recherche). `source` : l'adresse de cette recherche.
 
    Un <dialog> natif (le focus y reste, Échap le ferme) ; le champ est une
    « combobox » : ↓ ↑ parcourent, Entrée ouvre, sans quitter le champ.
@@ -20,7 +22,7 @@ export const PALETTE_OUVRIR = "palette:ouvrir";
 
 const plat = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-export function Palette({ slug, pages }: { slug: string; pages: ElementPalette[] }) {
+export function Palette({ source, pages }: { source: string; pages: ElementPalette[] }) {
   const router = useRouter();
   const chemin = usePathname();
   const liste = useId();
@@ -70,7 +72,7 @@ export function Palette({ slug, pages }: { slug: string; pages: ElementPalette[]
     const minuterie = window.setTimeout(async () => {
       setCherche(true);
       try {
-        const r = await fetch(`/gestion/${slug}/palette?q=${encodeURIComponent(terme)}`, { signal: arret.signal });
+        const r = await fetch(`${source}?q=${encodeURIComponent(terme)}`, { signal: arret.signal });
         if (r.ok) setTrouves({ q: terme, elements: ((await r.json()) as { elements: ElementPalette[] }).elements });
       } catch {
         /* interrompue : une frappe plus récente arrive */
@@ -82,7 +84,7 @@ export function Palette({ slug, pages }: { slug: string; pages: ElementPalette[]
       arret.abort();
       window.clearTimeout(minuterie);
     };
-  }, [terme, slug]);
+  }, [terme, source]);
 
   const pagesVues = terme ? pages.filter((p) => plat(p.titre).includes(plat(terme))) : pages;
   const elements = [...pagesVues, ...(terme.length >= 2 && trouves ? trouves.elements : [])];

@@ -25,7 +25,7 @@ const ETAPES = ["Le client", "Le métier", "L'apparence", "L'offre"];
    métier, on choisit la structure et l'on part de zéro. La personne à
    appeler, notée ici, va dans « Le client » de sa fiche. */
 export default async function NouvelleBoutique({ searchParams }: {
-  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string; demonstration?: string; formule?: string; modele?: string; contact_nom?: string; contact_telephone?: string }>;
+  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string; demonstration?: string; formule?: string; modele?: string; contact_nom?: string; contact_telephone?: string; prospect?: string }>;
 }) {
   const { user, role } = await exigeAdmin();
   const v = await searchParams;
@@ -48,6 +48,8 @@ export default async function NouvelleBoutique({ searchParams }: {
 
       <form action="/nouvelle-boutique/creer" method="post" className="carte formulaire nb-formulaire">
         <IdentifiantDepuisNom />
+        {/* Créée depuis un prospect : il passera « gagné », sa boutique rattachée. */}
+        {v.prospect && /^[0-9a-f-]{36}$/.test(v.prospect) ? <input type="hidden" name="prospect" value={v.prospect} /> : null}
         {/* Quatre étapes, une à la fois (AssistantCreation) ; sans JavaScript, le formulaire entier. */}
         <AssistantCreation etapeInitiale={0} />
         <ol className="nb-tete" aria-label="Les étapes">
@@ -61,6 +63,7 @@ export default async function NouvelleBoutique({ searchParams }: {
           ))}
         </ol>
         {v.erreur ? <p className="message message-erreur" role="alert">{v.erreur}</p> : null}
+        {v.prospect && !v.erreur ? <p className="message">Pour le prospect « {v.nom} » : ce qu&apos;on sait de lui est déjà rempli. Créée, la boutique le fera passer « gagné ».</p> : null}
 
         <fieldset className="nb-etape" data-etape="client">
           <legend className="nb-etape-titre" tabIndex={-1}>1. Le client</legend>

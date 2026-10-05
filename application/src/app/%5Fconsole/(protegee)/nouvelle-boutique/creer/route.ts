@@ -16,6 +16,7 @@ export async function POST(req: Request) {
       modele: String(formulaire.get("modele") ?? "").trim(),
       contact_nom: String(formulaire.get("contact_nom") ?? "").trim().slice(0, 120),
       contact_telephone: String(formulaire.get("contact_telephone") ?? "").trim().slice(0, 20),
+      prospect: /^[0-9a-f-]{36}$/.test(String(formulaire.get("prospect") ?? "")) ? String(formulaire.get("prospect")) : "",
     };
     const service = clientService(ip);
     const { data: id, error } = await service.rpc("console_creer_boutique", {
@@ -34,6 +35,10 @@ export async function POST(req: Request) {
       if (ec) {
         return vers(`/boutiques/${valeurs.slug}?${new URLSearchParams({ erreur: `Boutique créée ; la personne à appeler n'a pas été notée : ${ec.message}`, carte: "client" })}#t-client`);
       }
+    }
+    // Créée pour un prospect : il passe « gagné », sa boutique rattachée (un échec ne défait pas la création).
+    if (valeurs.prospect) {
+      await service.rpc("console_lier_prospect", { p_acteur: user.id, p_id: valeurs.prospect, p_boutique_id: id as string });
     }
     // La formule vendue : avant le métier, qui pose des réglages (éteints, à la lecture, s'ils sont hors formule).
     if (valeurs.formule) {

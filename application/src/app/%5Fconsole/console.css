@@ -1681,3 +1681,39 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .mq-lisibilite li[data-ok] .mq-verdict { color: var(--ui-vert); }
 .mq-fins > summary { cursor: pointer; font-size: .875rem; font-weight: 500; color: var(--ui-texte-2); padding-block: .25rem; }
 .mq-fins[open] > summary { margin-block-end: .75rem; }
+
+/* ---- Les prospects (console) ---- */
+.pr-chiffres { margin-block-end: 1.25rem; }
+.pr-chiffres .carte[data-niveau="attention"] .tbp-valeur { color: var(--ui-ambre); }
+.pr-onglets { padding-inline: 1.25rem; margin-block-end: 0; }
+.pr-liste > .pr-ligne:first-child { border-block-start-color: transparent; }
+.pr-vide { padding: 1.25rem; margin: 0; }
+.pr-liste { display: grid; margin: 0; padding: 0; list-style: none; }
+.pr-ligne {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: .625rem; align-items: start;
+  padding: 1rem 1.25rem; border-block-start: 1px solid var(--ui-bord-leger); scroll-margin-block-start: 5rem;
+}
+.pr-ligne[data-vu] { background: var(--ui-survol); }
+.pr-qui { display: grid; gap: .25rem; min-inline-size: 0; }
+.pr-qui > p { margin: 0; }
+.pr-nom { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.pr-nom b { font-size: .9375rem; }
+.pr-motif { color: var(--ui-texte-2); }
+.pr-prochaine { display: flex; align-items: center; gap: .375rem; font-size: .8125rem; color: var(--ui-texte-2); }
+.pr-prochaine[data-echeance="retard"] { color: var(--ui-rouge); }
+.pr-prochaine[data-echeance="aujourdhui"] { color: var(--ui-ambre); }
+.pr-gestes { display: flex; flex-wrap: wrap; gap: .375rem; }
+.pr-detail > summary { list-style: none; }
+.pr-detail > summary::-webkit-details-marker { display: none; }
+.pr-detail[open] > summary { margin-block-end: .75rem; }
+.pr-detail-corps { display: grid; gap: 1rem; padding: 1rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r); background: var(--ui-panneau); }
+.pr-detail-corps > .aide { margin: 0; }
+.pr-etapes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: .75rem 1rem; align-items: end; }
+.pr-etape, .pr-perdu { display: grid; gap: .25rem; margin: 0; }
+.pr-etape label, .pr-perdu label { font-size: .8125rem; font-weight: 500; }
+.pr-perdu-ligne { display: flex; gap: .375rem; }
+.pr-perdu-ligne .entree { flex: 1 1 auto; min-inline-size: 0; }
+.pr-plus > summary { cursor: pointer; padding-block: .25rem; }
+.pr-plus[open] > summary { margin-block-end: .5rem; }
+.pr-retirer { justify-self: start; color: var(--ui-rouge); }
+@media (max-width: 40rem) { .pr-ligne { padding-inline: 1rem; } }

@@ -29,6 +29,8 @@ export function IdentifiantDepuisNom({ nom = "nom", slug = "slug", hote = "hote"
       if (champHote) champHote.placeholder = id ? `${id}.tn` : "maymar.tn";
     };
     const ecrit = () => { libre = champSlug.value === "" || champSlug.value === identifiantDe(champNom.value); };
+    // Un nom déjà donné (« Créer sa boutique » depuis un prospect) : l'identifiant le suit dès l'ouverture.
+    if (champSlug.value === "" && champNom.value) suit();
     champNom.addEventListener("input", suit);
     champSlug.addEventListener("input", ecrit);
     return () => {

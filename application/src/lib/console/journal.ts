@@ -60,6 +60,11 @@ export const ACTIONS: Record<string, string> = {
   "boutique.contact": "Coordonnées du client",
   "administrateur.double_auth_exigee": "Double authentification de l'équipe SkanEcom : réglage changé",
   "boutique.double_auth_exigee": "Double authentification de l'équipe de la boutique : réglage changé",
+  "prospect.creer": "Prospect ajouté",
+  "prospect.modifier": "Prospect modifié",
+  "prospect.etape": "Prospect : étape changée",
+  "prospect.gagne": "Prospect gagné (boutique créée)",
+  "prospect.retirer": "Prospect retiré",
   "vigilance.reportee": "Signal mis à plus tard",
   "vigilance.reprise": "Signal repris",
 };
@@ -83,6 +88,7 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "compte", titre: "Comptes (mot de passe, codes de secours)" },
   { cle: "export", titre: "Exports" },
   { cle: "vigilance", titre: "À surveiller (mis à plus tard)" },
+  { cle: "prospect", titre: "Prospects" },
 ];
 
 /** Un jour « 2026-10-05 » d'un formulaire, ou rien. */

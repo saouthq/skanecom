@@ -3,6 +3,8 @@ import { chargeCadre } from "@/lib/boutique";
 import { clientAcheteur } from "@/lib/supabase-acheteur";
 import { memeOrigine } from "@/lib/origine";
 import { COOKIE_COMMANDE, NUMERO_DEVIS, SAISIE_CODE, raisonDe, type Raison, type ReponsePasser } from "@/lib/commande";
+import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
+import { enFond } from "@/lib/gestion/skanfact";
 
 /* ============================================================================
    PASSER COMMANDE — la page envoie le panier, le contact, l'adresse et le
@@ -86,7 +88,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
     return reponse({ ok: false, raison, message: error.message }, STATUTS[raison] ?? 422);
   }
 
-  const resultat = data as { numero: string; jeton: string };
+  const resultat = data as { numero: string; jeton: string; rejouee?: boolean };
+  // Les e-mails de la commande (au client, à l'équipe), si la boutique les a réglés : en fond.
+  if (!resultat.rejouee && cadre) enFond(envoyerCourrielsCommandes(cadre.boutique.id));
   const securise = (req.headers.get("origin") ?? "").startsWith("https:");
   const origine = devis ? ".devis" : corps.origine === "express" ? ".express" : "";
   magasin.set(COOKIE_COMMANDE, `${resultat.numero}.${resultat.jeton}${origine}`, {

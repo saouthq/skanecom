@@ -6,7 +6,8 @@ import { useEffect } from "react";
    les étapes des commandes…) estompe le bord derrière lequel il en reste
    (data-suite) : au téléphone, on devine qu'il y en a d'autres à faire
    glisser. Une seule écoute pour la page ; les rangées qu'une navigation
-   apporte sont reprises au passage (MutationObserver). */
+   apporte sont reprises au passage (MutationObserver). L'onglet de la page
+   (aria-current) est ramené en vue une fois, s'il était derrière le bord. */
 export function BordsOnglets() {
   useEffect(() => {
     let image = 0;
@@ -14,6 +15,15 @@ export function BordsOnglets() {
       cancelAnimationFrame(image);
       image = requestAnimationFrame(() => {
         for (const nav of document.querySelectorAll<HTMLElement>(".onglets")) {
+          const actif = nav.querySelector<HTMLElement>('[aria-current="page"]');
+          const cle = actif?.getAttribute("href") ?? "";
+          if (actif && nav.dataset.centre !== cle && nav.scrollWidth > nav.clientWidth) {
+            nav.dataset.centre = cle;
+            const debut = actif.offsetLeft - nav.offsetLeft;
+            if (debut < nav.scrollLeft || debut + actif.offsetWidth > nav.scrollLeft + nav.clientWidth) {
+              nav.scrollLeft = Math.max(0, debut - (nav.clientWidth - actif.offsetWidth) / 2);
+            }
+          }
           const fin = nav.scrollWidth - nav.clientWidth;
           const gauche = nav.scrollLeft > 4;
           const droite = nav.scrollLeft < fin - 4;

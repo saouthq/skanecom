@@ -241,7 +241,8 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
     commandes: v("vitrine.site_vitrine") ? "Site vitrine : sans commande en ligne"
       : [v("compte.obligatoire") ? "Compte obligatoire" : "Commande en invité",
         v("commande.mode_confirmation") === "automatique" ? "confirmées d'office" : "confirmées par téléphone",
-        v("commande.achat_express") ? "achat express" : null].filter(Boolean).join(" · "),
+        v("commande.achat_express") ? "achat express" : null,
+        v("commande.courriels_client") ? "e-mails au client" : null].filter(Boolean).join(" · "),
     livraison: [
       parZone ? `${e.zones.filter((z) => z.actif).length} zone${e.zones.length > 1 ? "s" : ""} de tarif` : `${formateMontant(Number(v("livraison.frais_fixes_millimes") ?? 0))} TND partout`,
       Number(v("livraison.seuil_gratuite_millimes") ?? 0) ? `offerte dès ${formateMontant(Number(v("livraison.seuil_gratuite_millimes")))} TND` : null,
@@ -411,6 +412,20 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                       { valeur: "1", titre: "Une relance possible", aide: "Le panier d'un acheteur connecté s'affiche une heure plus tard (Paniers) : l'équipe le relance une fois, message prêt. Il faut un compte pour commander ; le tunnel et la confidentialité le disent." },
                     ]}
                   />}
+                  <Alternative
+                    nom="commande.courriels_client" legende="Les e-mails au client" valeur={v("commande.courriels_client") ? "1" : "0"}
+                    options={[
+                      { valeur: "0", titre: "Pas d'e-mail", aide: "Le client suit sa commande sur la vitrine (« Mes commandes », « Suivre ma commande ») ; l'équipe l'appelle." },
+                      { valeur: "1", titre: "Un e-mail à chaque étape", aide: "Reçue, confirmée, expédiée (le transporteur, le numéro de suivi), livrée, annulée : aux couleurs de la boutique, s'il a une adresse — celle de son compte, ou celle que l'équipe a notée. Jamais pour une vente au comptoir." },
+                    ]}
+                  />
+                  <Alternative
+                    nom="commande.courriel_equipe" legende="Prévenir l'équipe" valeur={v("commande.courriel_equipe") ? "1" : "0"}
+                    options={[
+                      { valeur: "0", titre: "Dans le backoffice", aide: "Les nouvelles commandes attendent dans « Aujourd'hui » et « Commandes »." },
+                      { valeur: "1", titre: "Aussi par e-mail", aide: "Chaque commande passée sur la vitrine part au propriétaire et aux administrateurs, avec son contenu et le lien pour l'ouvrir." },
+                    ]}
+                  />
                   <div className="champ rg-court">
                     <label htmlFor="max_en_attente">Commandes en attente par numéro</label>
                     <input id="max_en_attente" name="commande.max_en_attente" type="number" min={0} max={50} defaultValue={Number(v("commande.max_en_attente") ?? 3)} />
