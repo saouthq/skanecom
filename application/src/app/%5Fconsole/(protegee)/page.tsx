@@ -10,6 +10,8 @@ import { formateMontant } from "@/lib/prix";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { Semaine, TuileBoutique } from "@/components/console/TuileBoutique";
+import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
+import type { Sante } from "@/lib/console/pilotage";
 
 export const metadata: Metadata = { title: "Boutiques" };
 
@@ -24,21 +26,26 @@ const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-dig
    ligne seulement (supabase/apercu/codes-demo.sql), les codes de connexion
    que Supabase aurait envoyés par SMS ou par e-mail. */
 export default async function Tableau({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
-  await exigeAdmin();
+  const { user } = await exigeAdmin();
   const { vue } = await searchParams;
   const enListe = vue === "liste";
   const service = clientService();
-  const [{ data, error }, { data: codesApercu }] = await Promise.all([
+  const [{ data, error }, { data: codesApercu }, { data: df }, { data: ds }] = await Promise.all([
     service.rpc("console_pilotage"),
     // Absente hors de l'aperçu : l'erreur la cache, rien d'autre.
     service.rpc("console_codes_apercu"),
+    service.rpc("console_formules", { p_acteur: user.id }),
+    service.rpc("console_sante", { p_acteur: user.id }),
   ]);
+  const formules = (df ?? { formules: [], droits: [], boutiques: [] }) as DonneesFormules;
+  const nomsFormules = new Map(formules.formules.map((f) => [f.code, f.nom]));
+  const formuleDe = new Map(formules.boutiques.map((x) => [x.id, x.formule ? nomsFormules.get(x.formule) ?? x.formule : null]));
   const codes = Array.isArray(codesApercu) ? (codesApercu as CodeApercu[]) : null;
   if (error) throw new Error(`Boutiques illisibles : ${error.message}`);
   const boutiques = (data ?? []) as LignePilotage[];
   const hoteConsole = (await headers()).get("host");
   const maintenant = new Date().getTime();
-  const aSurveiller = vigilances(boutiques, maintenant, { skanfact: configSkanFact() !== null });
+  const aSurveiller = vigilances(boutiques, maintenant, { skanfact: configSkanFact() !== null, sante: (ds ?? []) as Sante[] });
 
   // La synthèse ne compte que les clientes : les boutiques de démonstration vendent pour de faux.
   const clientes = boutiques.filter((b) => !b.demonstration);
@@ -111,7 +118,7 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
             <div className="carte carte-plate defile">
               <table className="tableau">
                 <thead>
-                  <tr><th>Boutique</th><th>Domaine</th><th>Statut</th><th>Mise en place</th><th className="text-end">À confirmer</th><th>7 jours</th><th className="text-end">Produits</th><th aria-label="Ouvrir" /></tr>
+                  <tr><th>Boutique</th><th>Domaine</th><th>Statut</th><th>Formule</th><th>Mise en place</th><th className="text-end">À confirmer</th><th>7 jours</th><th className="text-end">Produits</th><th aria-label="Ouvrir" /></tr>
                 </thead>
                 <tbody>
                   {boutiques.map((b) => (
@@ -127,6 +134,7 @@ export default async function Tableau({ searchParams }: { searchParams: Promise<
                       </td>
                       <td className="discret">{b.hote ?? "—"}</td>
                       <td><span className={`statut statut-${b.statut}`}>{LIBELLES_STATUT[b.statut] ?? b.statut}</span></td>
+                      <td className={formuleDe.get(b.id) ? undefined : "discret"}>{formuleDe.get(b.id) ?? SANS_FORMULE}</td>
                       <td>
                         <span className="mp-mini" title={`${b.mise_en_place.faites} étapes faites sur ${b.mise_en_place.total}`}>
                           <span className="mp-barre" aria-hidden="true">

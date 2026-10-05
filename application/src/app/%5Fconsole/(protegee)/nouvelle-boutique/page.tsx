@@ -8,6 +8,8 @@ import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
 import { LIBELLES_THEME } from "@/lib/console/libelles";
 import { STRUCTURES_CONSOLE } from "@/lib/console/structures";
+import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
+import { formateMontant } from "@/lib/prix";
 
 export const metadata: Metadata = { title: "Nouvelle boutique" };
 
@@ -17,12 +19,19 @@ export const metadata: Metadata = { title: "Nouvelle boutique" };
    palette et sa structure (…_metiers.sql) ; sans métier, on choisit la
    structure et l'on part de zéro. */
 export default async function NouvelleBoutique({ searchParams }: {
-  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string; demonstration?: string }>;
+  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string; demonstration?: string; formule?: string; modele?: string }>;
 }) {
-  const { user } = await exigeAdmin();
+  const { user, role } = await exigeAdmin();
   const v = await searchParams;
-  const { data } = await clientService().rpc("console_metiers", { p_acteur: user.id });
+  const [{ data }, { data: df }] = await Promise.all([
+    clientService().rpc("console_metiers", { p_acteur: user.id }),
+    clientService().rpc("console_formules", { p_acteur: user.id }),
+  ]);
   const metiers = (data ?? []) as Metier[];
+  // « À partir de » une boutique : sa configuration, à la place d'un métier et d'une structure.
+  const { data: dmodele } = v.modele ? await clientService().rpc("console_boutique", { p_slug: v.modele }) : { data: null };
+  const modele = dmodele ? (dmodele as { boutique: { slug: string; nom: string }; theme: { code: string } | null }) : null;
+  const formules = ((df ?? { formules: [] }) as DonneesFormules).formules;
   return (
     <div className="max-w-[48rem]">
       <EnTetePage
@@ -50,8 +59,17 @@ export default async function NouvelleBoutique({ searchParams }: {
             <p id="aide-hote" className="aide">Sans « https:// ». Les autres s&apos;ajoutent ensuite.</p>
           </div>
         </div>
-        <ChoixMetier metiers={metiers} choisi={v.metier} />
-        <fieldset className="choix choix-2 mt-gabarit">
+        {modele ? (
+          <div className="message nb-modele">
+            <input type="hidden" name="modele" value={modele.boutique.slug} />
+            <p>
+              <b>À partir de {modele.boutique.nom}</b> : son apparence ({LIBELLES_THEME[modele.theme?.code ?? "editorial"] ?? modele.theme?.code}), ses réglages, sa livraison, ses rayons
+              et leurs caractéristiques. Ni ses images, ni son catalogue, ni ses clients, ni ses informations légales.{" "}
+              <Link href="/nouvelle-boutique" className="btn-lien whitespace-nowrap">Partir de zéro plutôt</Link>
+            </p>
+          </div>
+        ) : <ChoixMetier metiers={metiers} choisi={v.metier} />}
+        {modele ? null : <fieldset className="choix choix-2 mt-gabarit">
           <legend>Structure</legend>
           {STRUCTURES_CONSOLE.map((x) => (
             <label key={x.code} className="choix-carte">
@@ -62,7 +80,29 @@ export default async function NouvelleBoutique({ searchParams }: {
               </span>
             </label>
           ))}
-        </fieldset>
+        </fieldset>}
+        {/* La formule vendue engage le client : le super-administrateur la pose (le support crée « sur mesure »). */}
+        {role !== "super_admin" ? (
+          <p className="aide">Elle naîtra « sur mesure » (tout ouvert) : un super-administrateur posera sa formule.</p>
+        ) : <fieldset className="choix choix-2 nb-formules">
+          <legend>Formule vendue</legend>
+          {formules.map((f) => (
+            <label key={f.code} className="choix-carte">
+              <input type="radio" name="formule" value={f.code} defaultChecked={v.formule === f.code} />
+              <span>
+                <b>{f.nom}{f.prix !== null ? <span className="discret"> · {formateMontant(f.prix)} TND / mois</span> : null}</b>
+                {f.description ? <span className="aide">{f.description}</span> : null}
+              </span>
+            </label>
+          ))}
+          <label className="choix-carte">
+            <input type="radio" name="formule" value="" defaultChecked={!v.formule} />
+            <span>
+              <b>{SANS_FORMULE}</b>
+              <span className="aide">Tout est ouvert. Pour une démonstration, ou un client dont l&apos;offre n&apos;est pas encore arrêtée.</span>
+            </span>
+          </label>
+        </fieldset>}
         <label className="choix-carte">
           <input type="checkbox" name="demonstration" value="1" defaultChecked={v.demonstration === "1"} />
           <span>

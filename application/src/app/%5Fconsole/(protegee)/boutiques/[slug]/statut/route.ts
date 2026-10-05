@@ -11,7 +11,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       p_statut: statut,
     });
     if (error) return versAvecErreur(`/boutiques/${slug}`, messageBase(error));
-    const message = statut === "active" ? "La boutique est ouverte : sa vitrine est servie d'ici quelques secondes." : "La boutique est suspendue : sa vitrine n'est plus servie.";
+    if (statut === "fermee" && formulaire.get("confirme") !== "1") {
+      return versAvecErreur(`/boutiques/${slug}`, "Cochez la confirmation pour fermer la boutique.");
+    }
+    const message = statut === "active" ? "La boutique est ouverte : sa vitrine est servie d'ici quelques secondes."
+      : statut === "fermee" ? "La boutique est fermée : sa vitrine n'est plus servie, ses données sont gardées. Elle peut rouvrir."
+      : "La boutique est suspendue : sa vitrine n'est plus servie.";
     return vers(`/boutiques/${slug}?${new URLSearchParams({ ok: message })}`);
   });
 }

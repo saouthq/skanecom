@@ -24,6 +24,14 @@ export function versAvecErreur(chemin: string, message: string, valeurs: Record<
   return vers(`${chemin}?${params}`);
 }
 
+/** `/chemin?ok=…&carte=x#t-x` : le message s'affiche dans la carte du geste,
+    là où le navigateur ramène, et non en haut de la page. `ancre` porte le
+    fragment au geste fait sans rechargement (un fetch ne voit pas celui
+    d'une redirection). */
+export function versCarte(chemin: string, carte: string, message: { ok: string } | { erreur: string }): Response {
+  return vers(`${chemin}?${new URLSearchParams({ ...message, carte, ancre: `t-${carte}` })}#t-${carte}`);
+}
+
 export { memeOrigine };
 
 export function ipDe(req: Request): string | null {
@@ -51,9 +59,12 @@ export function messageBase(erreur: { code?: string; message?: string; hint?: st
       return "Déjà pris : cet identifiant ou ce domaine appartient à une autre boutique.";
     case "23514":
     case "22P02":
+      // Une phrase écrite pour être lue (formule, module) : telle quelle.
+      if (erreur.hint === "formule" || erreur.hint === "utilisee") return erreur.message ?? "";
       return `Valeur refusée par la base : ${erreur.message ?? ""}`;
     case "42501":
-      return "Action refusée : vous n'êtes pas administrateur de la plateforme.";
+      // « Seul un super-administrateur… » : la base dit déjà pourquoi.
+      return erreur.message?.startsWith("Seul ") ? erreur.message : "Action refusée : vous n'êtes pas administrateur de la plateforme.";
     default:
       return erreur.message ?? "Erreur inconnue";
   }

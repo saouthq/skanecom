@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import type { ImagesMarque as Images } from "@/lib/console/images-marque";
 import { urlFichier } from "@/lib/photos";
-import { gabaritDe, GABARITS, JETONS_COULEUR, pilePolice, themeDeLaBoutique, type CodeTheme, type JetonCouleur, type Police } from "@/lib/theme";
+import { gabaritDe, JETONS_COULEUR, pilePolice, structureDe, themeDeLaBoutique, type CodeTheme, type JetonCouleur, type Police, type Structure } from "@/lib/theme";
+import { LIBELLES_THEME } from "@/lib/console/libelles";
+import { STRUCTURES_CONSOLE } from "@/lib/console/structures";
 import { GROUPES_COULEURS, POLICES_TEXTE, POLICES_TITRES, TEXTES_MARQUE } from "./champs";
 import { ImagesMarque } from "./ImagesMarque";
 
@@ -31,19 +33,16 @@ export type ThemeEdite = {
   logo_chemin: string | null;
 };
 
-const LIBELLES_GABARITS: Record<CodeTheme, string> = {
-  editorial: "Éditorial — grandes images, typographie de magazine (mode, bagages)",
-  technique: "Technique — recherche, références, stock chiffré (outillage, quincaillerie)",
-};
-
-const defautsDe = (code: CodeTheme) => themeDeLaBoutique({ code });
+const defautsDe = (code: Structure) => themeDeLaBoutique({ code });
 
 export function EditeurMarque({ slug, boutiqueId, nom, theme, images: imagesInitiales }: {
   slug: string; boutiqueId: string; nom: string; theme: ThemeEdite; images: Images;
 }) {
-  const [code, setCode] = useState<CodeTheme>(gabaritDe(theme.code));
+  // La structure (six) ; l'aperçu, lui, suit son gabarit (éditorial ou technique).
+  const [structure, setStructure] = useState<Structure>(structureDe(theme.code));
+  const code: CodeTheme = gabaritDe(structure);
   const [images, setImages] = useState<Images>(imagesInitiales);
-  const defauts = useMemo(() => defautsDe(code), [code]);
+  const defauts = useMemo(() => defautsDe(structure), [structure]);
   const [couleurs, setCouleurs] = useState<Partial<Record<JetonCouleur, string>>>(theme.couleurs ?? {});
   const [titres, setTitres] = useState<Police | "">(theme.polices?.titres ?? "");
   const [corps, setCorps] = useState<Police | "">(theme.polices?.texte ?? "");
@@ -73,15 +72,16 @@ export function EditeurMarque({ slug, boutiqueId, nom, theme, images: imagesInit
 
       <div className="grid gap-5">
         <section className="carte formulaire" aria-labelledby="t-theme">
-          <h2 id="t-theme">Gabarit</h2>
-          <div className="grid gap-1">
-            {GABARITS.map((c) => (
-              <label key={c} className="opt">
-                <input type="radio" name="code" value={c} checked={code === c} onChange={() => setCode(c)} />
-                {LIBELLES_GABARITS[c]}
+          <h2 id="t-theme">Structure</h2>
+          <fieldset className="choix choix-2 mq-structures">
+            <legend className="sr-only">Structure de la vitrine</legend>
+            {STRUCTURES_CONSOLE.map((x) => (
+              <label key={x.code} className="choix-carte">
+                <input type="radio" name="code" value={x.code} checked={structure === x.code} onChange={() => setStructure(x.code)} />
+                <span><b>{LIBELLES_THEME[x.code] ?? x.code}</b><span className="aide">{x.aide}</span></span>
               </label>
             ))}
-          </div>
+          </fieldset>
           <div className="champ">
             <label htmlFor="polices_titres">Police des titres</label>
             <select id="polices_titres" name="polices_titres" value={titres} onChange={(e) => setTitres(e.target.value as Police | "")}>

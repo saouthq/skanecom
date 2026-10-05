@@ -23,7 +23,21 @@ export function lireEnvoi(valeur: string): { fournisseur: string; cle: string; e
   return { fournisseur, cle, expediteur: reste.join(":") };
 }
 
+/** Envoie, puis note l'envoi au journal (l'adresse masquée par la base) :
+ *  la console voit ce qui part et ce qui casse. Le journal ne bloque jamais l'envoi. */
 export async function envoyer(e: Envoi): Promise<Resultat> {
+  const resultat = await envoyerSansJournal(e);
+  try {
+    await clientService().rpc("console_noter_envoi", {
+      p_canal: "email", p_destinataire: e.a, p_expediteur: e.nom, p_sujet: e.sujet,
+      p_fournisseur: lireEnvoi(process.env.COURRIELS_ENVOI ?? "").fournisseur || "aucun",
+      p_ok: resultat.ok, p_raison: resultat.ok ? null : resultat.raison,
+    });
+  } catch { /* un journal indisponible n'empêche pas l'e-mail */ }
+  return resultat;
+}
+
+async function envoyerSansJournal(e: Envoi): Promise<Resultat> {
   const { fournisseur, cle, expediteur } = lireEnvoi(process.env.COURRIELS_ENVOI ?? "");
   try {
     switch (fournisseur) {

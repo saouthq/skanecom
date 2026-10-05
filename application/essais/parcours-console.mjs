@@ -1230,6 +1230,130 @@ await etape("facturation : délier, et le journal le garde", async () => {
 });
 
 /* ------------------------------------------------------------------ */
+console.log("\n== 3 bis. Ce que la console vend, et comment elle suit ses clients ==");
+
+const CLONE = `clone-${SUFFIXE}`;
+
+await etape("les formules : la matrice, et ce qu'une formule ferme à la boutique", async () => {
+  await clic(page, page.getByRole("link", { name: "Formules" }).first());
+  await page.waitForURL(/\/formules$/);
+  const noms = await page.locator(".fo-tete .fo-nom").evaluateAll((l) => l.map((e) => e.value));
+  verifie(["Essentiel", "Pro", "Complète"].every((n) => noms.includes(n)), `trois formules de départ : ${noms.join(", ")}`);
+  const prix = await page.locator('.fo-tete input[name="prix"]').evaluateAll((l) => l.map((e) => e.value));
+  verifie(prix.length === 3 && prix.every((p) => p === ""), "aucun prix inventé : chacune « Prix à fixer »");
+  await capture(page, "console-formules", true);
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await page.locator("#bt-formule").selectOption("essentiel");
+  await envoie(page, page.locator("#formule").getByRole("button", { name: "Changer" }));
+  const retour = await page.locator("#formule .bt-retour").innerText();
+  verifie(retour.includes("Essentiel") && (await page.locator("#bt-formule").inputValue()) === "essentiel",
+    `dans la carte : « ${retour} », et le choix reste affiché`);
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}/modules`, { waitUntil: "networkidle" });
+  verifie((await page.locator(".md-hors-formule").count()) > 0, "les modules hors formule le disent, avec la formule qui les ouvre");
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await page.locator("#bt-formule").selectOption("");
+  await envoie(page, page.locator("#formule").getByRole("button", { name: "Changer" }));
+  verifie((await page.locator("#bt-formule").inputValue()) === "", "de retour « sur mesure » : tout est ouvert");
+});
+
+await etape("le tableau de bord de la plateforme, sur 30 puis 7 jours", async () => {
+  await clic(page, page.getByRole("link", { name: "Tableau de bord" }).first());
+  await page.waitForURL(/\/tableau/);
+  verifie((await page.locator(".tbp-chiffres > li").count()) === 4 && (await page.locator(".tbp-graphe > li").count()) === 30,
+    "quatre chiffres, et la courbe des 30 derniers jours");
+  await clic(page, page.getByRole("link", { name: "7 jours" }));
+  await page.waitForURL(/jours=7/);
+  await page.waitForLoadState("networkidle");
+  verifie((await page.locator(".tbp-graphe > li").count()) === 7, "sur 7 jours : sept barres");
+  verifie(await page.locator(".tbp-tableau").getByRole("link", { name: "Outillage Pro Démo" }).isVisible(), "la boutique d'essai dans le tableau par boutique");
+  await capture(page, "console-tableau", true);
+});
+
+await etape("une note de suivi sur la boutique, épinglée", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await clic(page, page.locator("#bt-note")); await tape(page, "Appelé : le propriétaire veut le retrait en magasin.");
+  await clic(page, page.getByLabel("Épingler en tête"));
+  await envoie(page, page.getByRole("button", { name: "Garder la note" }));
+  const premiere = page.locator(".bt-notes li").first();
+  verifie((await premiere.innerText()).includes("retrait en magasin") && (await premiere.getAttribute("data-epinglee")) === ""
+    && (await premiere.innerText()).includes(ADMIN.email), "la note est gardée, épinglée, avec son auteur");
+  verifie((await page.locator("#notes .bt-retour").innerText()).includes("Note gardée") && (await page.locator("#bt-note").inputValue()) === "",
+    "le message dans la carte ; le champ se vide");
+});
+
+await etape("une annonce aux commerçants : publiée, puis arrêtée", async () => {
+  await clic(page, page.getByRole("link", { name: "Annonces" }).first());
+  await page.waitForURL(/\/annonces/);
+  await clic(page, page.getByLabel(/^Nouveauté/));
+  await clic(page, page.locator("#an-titre")); await tape(page, `Essai ${SUFFIXE}`);
+  await clic(page, page.locator("#an-texte")); await tape(page, "Une fonction arrive : voici où la trouver.");
+  await envoie(page, page.getByRole("button", { name: "Publier" }));
+  const enCours = page.locator("section:has(#t-an-en_cours) .an-liste > li", { hasText: `Essai ${SUFFIXE}` });
+  verifie((await enCours.count()) === 1 && (await enCours.innerText()).includes("toutes les boutiques"), "en cours, pour toutes les boutiques");
+  await capture(page, "console-annonces", true);
+  await envoie(page, enCours.getByRole("button", { name: "Arrêter" }));
+  await page.waitForFunction((t) => [...document.querySelectorAll("section:has(#t-an-finie) .an-liste > li")].some((l) => l.textContent.includes(t)),
+    `Essai ${SUFFIXE}`, { timeout: 10_000 }).catch(() => {});
+  verifie((await page.locator("section:has(#t-an-finie) .an-liste > li", { hasText: `Essai ${SUFFIXE}` }).count()) === 1, "arrêtée : elle passe dans les finies");
+});
+
+await etape("le cycle de vie : renommer, cloner la configuration, fermer", async () => {
+  await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
+  await clic(page, page.locator("#bt-nom"));
+  await page.keyboard.press("ControlOrMeta+a");
+  await tape(page, "Outillage Pro Démo Sud");
+  await envoie(page, page.getByRole("button", { name: "Renommer", exact: true }));
+  verifie((await page.locator("h1").innerText()).includes("Outillage Pro Démo Sud") && (await page.locator("#vie .bt-retour").innerText()).includes("ne change pas"),
+    `renommée : « ${await page.locator("h1").innerText()} », l'adresse reste`);
+  await clic(page, page.getByRole("link", { name: "Nouvelle boutique à partir de celle-ci" }));
+  await page.waitForURL(/modele=/);
+  verifie((await page.locator(".nb-modele").innerText()).includes("Outillage Pro Démo Sud"), "le formulaire dit de quelle boutique on part");
+  await clic(page, page.locator("#nom")); await tape(page, "Outillage Clone");
+  await clic(page, page.locator("#slug")); await tape(page, CLONE);
+  await clic(page, page.locator("#hote")); await tape(page, `${CLONE}.localhost`);
+  await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
+  await page.waitForURL(new RegExp(`/boutiques/${CLONE}`));
+  await page.waitForLoadState("networkidle");
+  verifie((await page.getByRole("status").first().innerText()).includes("avec l'apparence, les réglages, la livraison et les rayons"),
+    "le clone naît avec la configuration de sa source");
+  await clic(page, page.getByRole("button", { name: "Fermer la boutique" }));
+  verifie(page.url().includes(`/boutiques/${CLONE}`) && !page.url().includes("ok="), "sans la case cochée, rien ne part");
+  await clic(page, page.getByLabel("Le contrat est fini : fermer la boutique"));
+  await envoie(page, page.getByRole("button", { name: "Fermer la boutique" }));
+  verifie((await page.locator(".ui-etat", { hasText: "Fermée" }).count()) > 0, "fermée : son statut le dit");
+  await capture(page, "console-boutique-fermee");
+});
+
+await etape("l'équipe SkanEcom : inviter au support, puis retirer", async () => {
+  const email = `support-${SUFFIXE}@skanecom.test`;
+  await clic(page, page.getByRole("link", { name: "Équipe SkanEcom" }));
+  await page.waitForURL(/equipe-plateforme/);
+  await clic(page, page.locator("#ep-email")); await tape(page, email);
+  verifie(await page.getByLabel(/^Support/).isChecked(), "le rôle proposé d'abord : support");
+  await envoie(page, page.getByRole("button", { name: "Inviter", exact: true }));
+  verifie((await page.locator(".ep-lien code").innerText()).includes("/bienvenue?"), "la console rend le lien à envoyer");
+  const ligne = page.locator(".ep-liste > li", { hasText: email });
+  verifie((await ligne.innerText()).includes("invitation en attente"), "la personne est listée, invitation en attente");
+  await capture(page, "console-equipe-plateforme", true);
+  await envoie(page, ligne.getByRole("button", { name: `Retirer ${email} de l'équipe SkanEcom` }));
+  verifie((await page.locator(".ep-liste > li", { hasText: email }).count()) === 0 && (await page.locator(".ep-lien").count()) === 0,
+    "retirée : plus dans la liste, et son lien n'est plus montré");
+});
+
+await etape("le journal de la plateforme : les gestes, filtrés ; les envois", async () => {
+  await clic(page, page.getByRole("link", { name: "Journal" }).first());
+  await page.waitForURL(/\/journal/);
+  await page.locator("#jr-genre").selectOption("administrateur");
+  await envoie(page, page.getByRole("button", { name: "Filtrer" }));
+  const lignes = await page.locator(".tableau tbody tr").allInnerTexts();
+  verifie(lignes.some((l) => l.includes("Entrée dans l'équipe SkanEcom")) && lignes.some((l) => l.includes("Sortie de l'équipe SkanEcom")),
+    `filtré sur l'équipe : ${lignes.length} gestes, l'entrée et la sortie`);
+  await clic(page, page.getByRole("link", { name: "Envois" }));
+  await page.waitForURL(/vue=envois/);
+  verifie((await page.locator(".jr-resume").innerText()).startsWith("Sur 7 jours"), `les envois : « ${await page.locator(".jr-resume").innerText()} »`);
+});
+
+/* ------------------------------------------------------------------ */
 console.log("\n== 4. Les portes ==");
 
 await etape("un formulaire posté depuis un autre site est refusé", async () => {

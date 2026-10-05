@@ -5,6 +5,8 @@
    la console ; les autres se constatent dans la base.
    ========================================================================== */
 
+import { LIBELLES_THEME } from "./libelles";
+
 export type CleEtape =
   | "recueil" | "marque" | "catalogue" | "domaine" | "branchements"
   | "legal" | "equipe" | "commande_test" | "formation" | "mise_en_ligne";
@@ -46,7 +48,7 @@ export function detailEtape(e: EtapeBrute): string | null {
   const d = (e.detail ?? {}) as Record<string, unknown>;
   switch (e.cle) {
     case "marque":
-      return e.fait ? `Gabarit ${d.gabarit === "technique" ? "technique" : "éditorial"}${d.logo ? ", avec son logo" : ", sans logo"}.` : null;
+      return e.fait ? `Gabarit ${(LIBELLES_THEME[String(d.gabarit)] ?? "Éditorial").toLowerCase()}${d.logo ? ", avec son logo" : ", sans logo"}.` : null;
     case "catalogue": {
       const publies = Number(d.publies ?? 0);
       const sansPhoto = Number(d.sans_photo ?? 0);

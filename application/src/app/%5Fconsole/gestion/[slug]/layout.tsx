@@ -10,6 +10,8 @@ import { PEUT_MODIFIER, PEUT_STOCKER } from "@/lib/gestion/catalogue";
 import { PEUT_ECRIRE } from "@/lib/gestion/pages";
 import type { ElementPalette } from "@/lib/gestion/palette";
 import { OuvrirPalette, Palette } from "@/components/console/Palette";
+import { BandeauAnnonces } from "@/components/console/BandeauAnnonces";
+import type { AnnonceBoutique } from "@/lib/console/annonces";
 
 /* ============================================================================
    LE BACKOFFICE D'UNE BOUTIQUE — pour son équipe (PRD §6.2), sur téléphone
@@ -34,7 +36,7 @@ export default async function BackofficeBoutique({
   // pas l'un après l'autre : chaque page du backoffice les attend.
   const sb = await clientSession();
   const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }] = await Promise.all([
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }, { data: an }] = await Promise.all([
     sb.rpc("gestion_sav_etat", etat),
     sb.rpc("gestion_pro_etat", etat),
     sb.rpc("gestion_devis_etat", etat),
@@ -45,7 +47,9 @@ export default async function BackofficeBoutique({
     sb.rpc("gestion_visites_etat", etat),
     sb.rpc("gestion_lettre_etat", etat),
     sb.rpc("gestion_skanfact_etat", etat),
+    sb.rpc("gestion_annonces", etat),
   ]);
+  const annonces = (Array.isArray(an) ? an : []) as AnnonceBoutique[];
   // La facturation SkanFact, si la boutique a le module (ou y reste connectée) : ce que SkanFact a
   // refusé, une connexion coupée ou bientôt expirée. Ce qui attendait une panne repart, en fond.
   const etatSkanFact = sf as { actif: boolean; connecte: boolean; coupee: boolean; expire_bientot: boolean; a_regler: boolean;
@@ -208,8 +212,13 @@ export default async function BackofficeBoutique({
       recherche={<OuvrirPalette />}
       rechercheCompacte={<OuvrirPalette compact />}
       palette={<Palette slug={slug} pages={pages} />}
-      bandeau={boutique.support_jusqu_a ? (
-        <BandeauSupport slug={slug} mode={boutique.role as ModeSupport} jusqua={boutique.support_jusqu_a} motif={boutique.support_motif} />
+      bandeau={boutique.support_jusqu_a || annonces.length ? (
+        <>
+          {boutique.support_jusqu_a ? (
+            <BandeauSupport slug={slug} mode={boutique.role as ModeSupport} jusqua={boutique.support_jusqu_a} motif={boutique.support_motif} />
+          ) : null}
+          <BandeauAnnonces slug={slug} annonces={annonces} />
+        </>
       ) : undefined}
     >
       {children}

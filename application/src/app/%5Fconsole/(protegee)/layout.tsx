@@ -19,12 +19,22 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
       logo={<LogoSkanEcom />}
       groupes={[
         {
-          titre: "Plateforme",
+          titre: "Boutiques",
           liens: [
             { href: "/", libelle: "Boutiques", icone: "boutique", exact: true, aussi: ["/boutiques/"] },
+            { href: "/tableau", libelle: "Tableau de bord", icone: "graphique" },
             { href: "/nouvelle-boutique", libelle: "Nouvelle boutique", icone: "plus", exact: true },
+            { href: "/annonces", libelle: "Annonces", icone: "cloche" },
+          ],
+        },
+        {
+          titre: "Plateforme",
+          liens: [
+            { href: "/formules", libelle: "Formules", icone: "billet" },
             { href: "/modeles", libelle: "Modèles", icone: "ecran" },
             { href: "/courriels", libelle: "E-mails", icone: "courriel" },
+            { href: "/equipe-plateforme", libelle: "Équipe SkanEcom", icone: "equipe" },
+            { href: "/journal", libelle: "Journal", icone: "journal" },
           ],
         },
       ]}

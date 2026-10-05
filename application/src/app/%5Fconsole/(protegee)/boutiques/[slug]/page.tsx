@@ -10,6 +10,9 @@ import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
+import { formateMontant } from "@/lib/prix";
+import { ACTIONS } from "@/lib/console/journal";
+import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { MiseEnPlace } from "@/components/console/MiseEnPlace";
@@ -25,34 +28,6 @@ type Fiche = {
   journal: { at: string; action: string; cible: string | null; acteur: string | null }[];
 };
 
-const ACTIONS: Record<string, string> = {
-  "boutique.creer": "Boutique créée",
-  "boutique.metier": "Préréglage du métier posé",
-  "boutique.statut": "Statut changé",
-  "boutique.demonstration": "Cliente ou démonstration",
-  "domaine.ajouter": "Domaine ajouté",
-  "theme.modifier": "Marque modifiée",
-  "theme.image": "Image de la marque",
-  "module.activer": "Module activé",
-  "module.couper": "Module coupé",
-  "mise_en_place.faite": "Étape de mise en place faite",
-  "mise_en_place.a_faire": "Étape de mise en place à refaire",
-  "catalogue.importer": "Catalogue importé",
-  "catalogue.photos": "Photos importées",
-  "catalogue.photos_retirees": "Photos d'un import retirées",
-  "equipe.ajouter": "Membre invité",
-  "equipe.modifier": "Accès modifié",
-  "equipe.lien": "Lien d'accès remis",
-  "support.ouvert": "Accès support ouvert",
-  "support.ferme": "Accès support fermé",
-  "facturation.lier": "Reliée à son client SkanFact",
-  "facturation.delier": "Déliée de son client SkanFact",
-  "facturation.abonnement": "Abonnement suivi",
-  "facturation.abonnement_oublie": "Abonnement plus suivi",
-  "facturation.abonnement_suspendu": "Abonnement suspendu",
-  "facturation.abonnement_repris": "Abonnement repris",
-};
-
 const CERTIFICAT: Record<string, { texte: string; classe: string }> = {
   actif: { texte: "Actif", classe: "ui-etat ui-etat-point ui-etat-vert" },
   erreur: { texte: "En erreur", classe: "ui-etat ui-etat-point ui-etat-rouge" },
@@ -66,9 +41,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
    son catalogue et le journal de tout ce que la console y a fait. */
 export default async function FicheBoutique({ params, searchParams }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ erreur?: string; cree?: string; ok?: string; metier?: string }>;
+  searchParams: Promise<{ erreur?: string; cree?: string; ok?: string; metier?: string; modele?: string; carte?: string }>;
 }) {
-  const { user } = await exigeAdmin();
+  const { user, role } = await exigeAdmin();
+  // Le support aide sans engager : formule, statut, retrait d'un domaine restent au super-administrateur.
+  const superAdmin = role === "super_admin";
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const { data, error } = await clientService().rpc("console_boutique", { p_slug: slug });
   if (error) throw new Error(`Boutique illisible : ${error.message}`);
@@ -78,26 +55,38 @@ export default async function FicheBoutique({ params, searchParams }: {
   const hoteConsole = (await headers()).get("host");
   // Une boutique vide peut recevoir le préréglage d'un métier.
   const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
-  const [equipe, { data: miseEnPlace }, { data: dm }] = await Promise.all([
+  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     vide ? clientService().rpc("console_metiers", { p_acteur: user.id }) : Promise.resolve({ data: null }),
+    clientService().rpc("console_formules", { p_acteur: user.id }),
+    clientService().rpc("console_notes", { p_acteur: user.id, p_boutique_id: b.id }),
   ]);
+  const notes = (dn ?? []) as { id: number; texte: string; epinglee: boolean; le: string; auteur: string | null; vous: boolean }[];
+  const formules = (df ?? { formules: [], droits: [], boutiques: [] }) as DonneesFormules;
+  const codeFormule = formules.boutiques.find((x) => x.id === b.id)?.formule ?? null;
+  const formule = formules.formules.find((x) => x.code === codeFormule) ?? null;
   const metiers = (dm ?? []) as Metier[];
   const actifs = equipe.filter((m) => m.actif);
   const enAttente = actifs.filter((m) => m.en_attente).length;
+  // Le retour d'un geste fait dans une carte s'affiche dans cette carte.
+  const retour = (carte: string) => messages.carte !== carte ? null : messages.erreur
+    ? <p className="message message-erreur bt-retour" role="alert">{messages.erreur}</p>
+    : messages.ok ? <p className="message message-succes bt-retour" role="status">{messages.ok}</p> : null;
 
   return (
     <div className="pile">
       {messages.cree ? (
         <p className="message message-succes" role="status">
-          {messages.metier
+          {messages.modele
+            ? `Boutique créée, en préparation, avec l'apparence, les réglages, la livraison et les rayons de ${messages.modele}. Posez son logo et ses images, importez son catalogue, invitez son propriétaire, puis ouvrez-la.`
+            : messages.metier
             ? "Boutique créée, en préparation, avec les rayons, les caractéristiques, la palette et l'accueil de son métier. Réglez sa marque, importez son catalogue, invitez son propriétaire, puis ouvrez-la."
             : "Boutique créée, en préparation. Réglez sa marque, importez son catalogue, invitez son propriétaire, puis ouvrez-la."}
         </p>
       ) : null}
-      {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
-      {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
+      {messages.ok && !messages.carte ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
+      {messages.erreur && !messages.carte ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
 
       {miseEnPlace ? <MiseEnPlace slug={b.slug} boutiqueId={b.id} donnees={miseEnPlace as DonneesMiseEnPlace} /> : null}
 
@@ -110,9 +99,10 @@ export default async function FicheBoutique({ params, searchParams }: {
                 <p>Les adresses qui mènent à la vitrine. Le principal sert aux liens et au référencement.</p>
               </div>
             </div>
+            {retour("domaines")}
             <div className="defile">
               <table className="tableau">
-                <thead><tr><th>Domaine</th><th>Rôle</th><th>Certificat</th></tr></thead>
+                <thead><tr><th>Domaine</th><th>Rôle</th><th>Certificat</th><th aria-label="Gestes" /></tr></thead>
                 <tbody>
                   {f.domaines.map((d) => (
                     <tr key={d.hote}>
@@ -126,6 +116,18 @@ export default async function FicheBoutique({ params, searchParams }: {
                         <span className={CERTIFICAT[d.statut_certificat]?.classe ?? "ui-etat ui-etat-point ui-etat-ambre"}>
                           {CERTIFICAT[d.statut_certificat]?.texte ?? "En attente"}
                         </span>
+                      </td>
+                      <td className="text-end">
+                        {d.principal ? null : (
+                          <form action={`/boutiques/${b.slug}/domaines`} method="post" className="bt-domaine-gestes">
+                            <input type="hidden" name="boutique_id" value={b.id} />
+                            <input type="hidden" name="hote" value={d.hote} />
+                            <button type="submit" name="geste" value="principal" className="btn-lien" aria-label={`Rendre ${d.hote} principal`}>Rendre principal</button>
+                            {d.type === "personnalise" && superAdmin ? (
+                              <button type="submit" name="geste" value="retirer" className="btn-lien bt-retirer" aria-label={`Retirer le domaine ${d.hote}`}>Retirer</button>
+                            ) : null}
+                          </form>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -141,6 +143,44 @@ export default async function FicheBoutique({ params, searchParams }: {
               <label className="opt"><input type="checkbox" name="principal" value="1" /> Principal</label>
               <button type="submit" className="btn btn-second"><Icone nom="plus" /> Ajouter un domaine</button>
             </form>
+          </section>
+
+          <section className="carte" aria-labelledby="t-notes" id="notes">
+            <div className="carte-tete">
+              <div>
+                <h2 id="t-notes" className="carte-titre-icone"><Icone nom="note" /> Suivi</h2>
+                <p>Ce que SkanEcom retient de ce client : appels, demandes, promesses. Visible de la seule console.</p>
+              </div>
+            </div>
+            {retour("notes")}
+            <form action={`/boutiques/${b.slug}/notes`} method="post" className="bt-note-neuve">
+              <input type="hidden" name="boutique_id" value={b.id} />
+              <input type="hidden" name="geste" value="ajouter" />
+              <label className="sr-only" htmlFor="bt-note">Une note sur {b.nom}</label>
+              <textarea id="bt-note" className="entree" name="texte" rows={2} maxLength={2000} required placeholder="Ex. Appelé le 12/10 : veut le retrait en magasin à Sousse." />
+              <div className="bt-note-actions">
+                <label className="bt-note-epingle"><input type="checkbox" name="epinglee" value="1" /> Épingler en tête</label>
+                <button type="submit" className="btn btn-second btn-petit">Garder la note</button>
+              </div>
+            </form>
+            {notes.length ? (
+              <ul className="bt-notes" role="list">
+                {notes.map((n) => (
+                  <li key={n.id} data-epinglee={n.epinglee ? "" : undefined}>
+                    <p className="bt-note-texte">{n.texte}</p>
+                    <div className="bt-note-meta">
+                      {n.epinglee ? <span className="ui-etat">Épinglée</span> : null}
+                      <span>{n.auteur ?? "—"} · {dateJournal(n.le)}</span>
+                      <form action={`/boutiques/${b.slug}/notes`} method="post" className="bt-note-gestes">
+                        <input type="hidden" name="note_id" value={n.id} />
+                        <button type="submit" name="geste" value={n.epinglee ? "detacher" : "epingler"} className="btn-lien">{n.epinglee ? "Détacher" : "Épingler"}</button>
+                        {n.vous ? <button type="submit" name="geste" value="supprimer" className="btn-lien" aria-label="Retirer cette note">Retirer</button> : null}
+                      </form>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="discret bt-notes-vide">Aucune note pour l&apos;instant.</p>}
           </section>
 
           <section className="carte" aria-labelledby="t-journal">
@@ -165,7 +205,8 @@ export default async function FicheBoutique({ params, searchParams }: {
                           : j.action.startsWith("module.") && j.cible ? (LIBELLES_MODULES[j.cible] ?? j.cible)
                           : j.action.startsWith("mise_en_place.") && j.cible ? (ETAPES_MISE_EN_PLACE[j.cible as CleEtape]?.titre ?? j.cible)
                           : j.action.startsWith("support.") && j.cible ? (MODES_SUPPORT[j.cible as ModeSupport]?.titre ?? j.cible)
-                          : j.action.startsWith("catalogue.photos") ? "" : (j.cible ?? "")}</td>
+                          : j.action === "boutique.formule" ? (formules.formules.find((x) => x.code === j.cible)?.nom ?? j.cible ?? SANS_FORMULE)
+                          : j.action.startsWith("catalogue.photos") || j.action.startsWith("note.") ? "" : (j.cible ?? "")}</td>
                         <td>
                           {j.acteur ? (
                             <span className="inline-flex items-center gap-2 whitespace-nowrap">
@@ -182,9 +223,76 @@ export default async function FicheBoutique({ params, searchParams }: {
               </div>
             )}
           </section>
+
+          <section className="carte" aria-labelledby="t-vie" id="vie">
+            <div className="carte-tete">
+              <div>
+                <h2 id="t-vie" className="carte-titre-icone"><Icone nom="reglages" /> Cycle de vie</h2>
+                <p>Renommer, partir de cette boutique pour une autre, la fermer à la fin du contrat.</p>
+              </div>
+            </div>
+            {retour("vie")}
+            <div className="bt-vie">
+              <form action={`/boutiques/${b.slug}/renommer`} method="post" className="bt-vie-ligne">
+                <input type="hidden" name="boutique_id" value={b.id} />
+                <label htmlFor="bt-nom">Nom</label>
+                <input id="bt-nom" className="entree" name="nom" defaultValue={b.nom} required minLength={2} maxLength={80} />
+                <button type="submit" className="btn btn-second btn-petit">Renommer</button>
+                <span className="aide">L&apos;adresse ({b.slug}) ne change pas : les liens déjà partagés marchent toujours.</span>
+              </form>
+              <div className="bt-vie-ligne">
+                <span className="bt-vie-titre">Cloner</span>
+                <Link href={`/nouvelle-boutique?modele=${b.slug}`} className="btn btn-second btn-petit"><Icone nom="copier" taille={14} /> Nouvelle boutique à partir de celle-ci</Link>
+                <span className="aide">Son apparence, ses réglages, sa livraison, ses rayons. Ni ses images, ni son catalogue, ni ses clients.</span>
+              </div>
+              {b.statut !== "fermee" && !superAdmin ? (
+                <p className="aide">La fermer, à la fin du contrat : un super-administrateur.</p>
+              ) : b.statut !== "fermee" ? (
+                <form action={`/boutiques/${b.slug}/statut`} method="post" className="bt-vie-ligne bt-vie-fermer">
+                  <input type="hidden" name="boutique_id" value={b.id} />
+                  <span className="bt-vie-titre">Fermer</span>
+                  <label className="opt"><input type="checkbox" name="confirme" value="1" required /> Le contrat est fini : fermer la boutique</label>
+                  <button type="submit" name="statut" value="fermee" className="btn btn-danger btn-petit">Fermer la boutique</button>
+                  <span className="aide">
+                    La vitrine n&apos;est plus servie ; commandes et clients sont gardés. Pour remettre ses données au client, ouvrez un
+                    accès support : Réglages → Vos données. Elle peut rouvrir.
+                  </span>
+                </form>
+              ) : (
+                <p className="aide">Fermée : sa vitrine n&apos;est plus servie. « Ouvrir la boutique », en haut, la rouvre.</p>
+              )}
+            </div>
+          </section>
         </div>
 
         <div className="pile">
+          <section className="carte" aria-labelledby="t-formule" id="formule">
+            <div className="carte-tete">
+              <div>
+                <h2 id="t-formule" className="carte-titre-icone"><Icone nom="billet" /> Formule</h2>
+                <p>
+                  {formule
+                    ? <>{formule.nom}{formule.prix !== null ? <> · {formateMontant(formule.prix)} TND / mois</> : null} · {formule.droits.length} droit{formule.droits.length > 1 ? "s" : ""} sur {formules.droits.length}</>
+                    : <>{SANS_FORMULE} : tout est ouvert, rien n&apos;est limité.</>}
+                </p>
+              </div>
+            </div>
+            {/* Ce que le changement a coupé ou éteint, dit dans la carte, là où l'on vient de cliquer. */}
+            {retour("formule")}
+            {!superAdmin ? (
+              <p className="carte-pied aide">Seul un super-administrateur change la formule. <Link href="/formules">Voir ce que chacune ouvre</Link></p>
+            ) : <form action={`/boutiques/${b.slug}/formule`} method="post" className="carte-pied bt-formule">
+              <input type="hidden" name="boutique_id" value={b.id} />
+              <label className="sr-only" htmlFor="bt-formule">Formule de {b.nom}</label>
+              <select id="bt-formule" className="entree" key={codeFormule ?? "sur-mesure"} name="formule" defaultValue={codeFormule ?? ""}>
+                <option value="">{SANS_FORMULE} (tout ouvert)</option>
+                {formules.formules.map((x) => <option key={x.code} value={x.code}>{x.nom}{x.prix !== null ? ` · ${formateMontant(x.prix)} TND` : ""}</option>)}
+              </select>
+              <button type="submit" className="btn btn-second">Changer</button>
+              <Link href="/formules" className="aide bt-formule-lien">Voir ce que chacune ouvre</Link>
+            </form>}
+          </section>
+
           <section className="carte" aria-labelledby="t-equipe">
             <div className="carte-tete">
               <div>

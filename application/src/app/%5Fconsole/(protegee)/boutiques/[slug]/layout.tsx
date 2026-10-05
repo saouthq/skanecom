@@ -16,7 +16,7 @@ export default async function Boutique({ children, params }: {
   children: React.ReactNode;
   params: Promise<{ slug: string }>;
 }) {
-  await exigeAdmin();
+  const { role } = await exigeAdmin();
   const { slug } = await params;
   const { data } = await clientService().rpc("console_boutique", { p_slug: slug });
   if (!data) notFound();
@@ -61,7 +61,8 @@ export default async function Boutique({ children, params }: {
                 Voir la vitrine <Icone nom="externe" taille={14} />
               </a>
             ) : null}
-            <form action={`${base}/statut`} method="post">
+            {/* Ouvrir ou suspendre engage la boutique : le super-administrateur seul (la base le redit). */}
+            {role === "super_admin" ? <form action={`${base}/statut`} method="post">
               <input type="hidden" name="boutique_id" value={b.id} />
               {b.statut === "active" ? (
                 <button type="submit" name="statut" value="suspendue" className="btn btn-second">
@@ -72,7 +73,7 @@ export default async function Boutique({ children, params }: {
                   <Icone nom="alimentation" taille={16} /> Ouvrir la boutique
                 </button>
               )}
-            </form>
+            </form> : null}
           </div>
         </div>
       </div>

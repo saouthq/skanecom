@@ -73,6 +73,35 @@ export type Vigilance = {
 
 const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Tunis" });
 
+/** Ce que rend public.console_sante pour une boutique (migration …_console_sante_tableau). */
+export type Sante = {
+  id: string;
+  livrees_30j: number;
+  refusees_30j: number;
+  derniere_commande: string | null;
+  sav: { n: number; depuis: string | null };
+  devis: { n: number; depuis: string | null };
+  avis: { n: number; depuis: string | null };
+  certificats_erreur: string[];
+  epuises: number;
+  publies: number;
+  formule: string | null;
+};
+
+/* Les seuils : un refus sur quatre à la livraison coûte déjà plus que la
+   marge (aller, retour, colis immobilisé) ; on en parle à partir de cinq
+   colis clos sur trente jours, pour ne pas crier sur deux commandes. */
+export const SEUILS = {
+  refusAttention: 0.25,
+  refusUrgent: 0.4,
+  refusMinimum: 5,
+  joursSansCommande: 14,
+  heuresSav: 48,
+  heuresDevis: 24,
+  joursAvis: 3,
+  partEpuises: 0.5,
+} as const;
+
 /** Ce qui demande un regard, toutes boutiques confondues, le plus pressant d'abord :
  *  des commandes qui attendent (plus de 2 h : à surveiller ; plus d'un jour : urgent ;
  *  jamais celles d'une boutique de démonstration, que personne n'a à confirmer),
@@ -81,9 +110,12 @@ const HEURE = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-dig
  *  depuis plus de SEUIL_RETARD_JOURS jours (lue dans SkanFact, comptée depuis
  *  son échéance : le retard grandit sans relecture) ou une boutique ouverte
  *  sans client SkanFact. Jamais pour une démonstration. */
-export function vigilances(lignes: LignePilotage[], maintenant: number, options: { skanfact?: boolean } = {}): Vigilance[] {
+export function vigilances(lignes: LignePilotage[], maintenant: number, options: { skanfact?: boolean; sante?: Sante[] } = {}): Vigilance[] {
   const out: Vigilance[] = [];
+  const santes = new Map((options.sante ?? []).map((x) => [x.id, x]));
   for (const b of lignes) {
+    const sa = santes.get(b.id);
+    if (sa && !b.demonstration) out.push(...signesDeSante(b, sa, maintenant));
     const fa = b.facturation;
     if (fa?.echeance && !b.demonstration) {
       const jours = joursDepuis(fa.echeance, maintenant);
@@ -128,4 +160,47 @@ export function vigilances(lignes: LignePilotage[], maintenant: number, options:
   }
   const rang = { urgent: 0, attention: 1, info: 2 } as const;
   return out.sort((a, b) => rang[a.niveau] - rang[b.niveau]);
+}
+
+
+/** La santé d'une boutique cliente : refus, silence, demandes qui attendent,
+ *  certificat, vitrine vidée par les ruptures, formule à poser. */
+function signesDeSante(b: LignePilotage, sa: Sante, maintenant: number): Vigilance[] {
+  const out: Vigilance[] = [];
+  const pousse = (cle: string, niveau: Vigilance["niveau"], texte: string, href = `/boutiques/${b.slug}`) =>
+    out.push({ cle: `${b.id}:${cle}`, niveau, boutique: b, texte, href });
+  const clos = sa.livrees_30j + sa.refusees_30j;
+  if (clos >= SEUILS.refusMinimum) {
+    const taux = sa.refusees_30j / clos;
+    if (taux >= SEUILS.refusAttention) {
+      pousse("refus", taux >= SEUILS.refusUrgent ? "urgent" : "attention",
+        `${Math.round(taux * 100)} % de refus à la livraison sur 30 jours (${sa.refusees_30j} sur ${clos} colis)`, `/tableau?boutique=${b.slug}`);
+    }
+  }
+  if (b.statut === "active") {
+    const derniere = sa.derniere_commande ? new Date(sa.derniere_commande).getTime() : null;
+    const jours = derniere === null ? null : Math.floor((maintenant - derniere) / 86_400_000);
+    const ouverteDepuis = Math.floor((maintenant - new Date(b.creee_le).getTime()) / 86_400_000);
+    if (jours !== null && jours >= SEUILS.joursSansCommande) pousse("silence", "attention", `aucune commande depuis ${jours} jours`);
+    else if (jours === null && ouverteDepuis >= SEUILS.joursSansCommande) pousse("silence", "attention", `ouverte depuis ${ouverteDepuis} jours, aucune commande encore`);
+    if (sa.formule === null) pousse("formule", "info", "ouverte sans formule : tout lui est ouvert", `/boutiques/${b.slug}#t-formule`);
+  }
+  const attend = (x: { n: number; depuis: string | null }, heures: number) =>
+    x.n > 0 && x.depuis !== null && (maintenant - new Date(x.depuis).getTime()) / 3_600_000 >= heures;
+  if (attend(sa.sav, SEUILS.heuresSav)) {
+    pousse("sav", "attention", `${sa.sav.n} demande${sa.sav.n > 1 ? "s" : ""} de SAV sans réponse, la plus ancienne depuis ${depuis(sa.sav.depuis!, maintenant)}`);
+  }
+  if (attend(sa.devis, SEUILS.heuresDevis)) {
+    pousse("devis", "attention", `${sa.devis.n} devis à chiffrer, le plus ancien depuis ${depuis(sa.devis.depuis!, maintenant)}`);
+  }
+  if (attend(sa.avis, SEUILS.joursAvis * 24)) {
+    pousse("avis", "info", `${sa.avis.n} avis à relire avant publication, le plus ancien depuis ${depuis(sa.avis.depuis!, maintenant)}`);
+  }
+  for (const hote of sa.certificats_erreur) {
+    pousse(`certificat:${hote}`, "urgent", `certificat en erreur sur ${hote} : les visiteurs voient un avertissement`, `/boutiques/${b.slug}#t-domaines`);
+  }
+  if (sa.publies > 0 && sa.epuises > 0 && sa.epuises / sa.publies >= SEUILS.partEpuises) {
+    pousse("epuises", "attention", `${sa.epuises} produit${sa.epuises > 1 ? "s" : ""} épuisé${sa.epuises > 1 ? "s" : ""} sur ${sa.publies} en vitrine`);
+  }
+  return out;
 }

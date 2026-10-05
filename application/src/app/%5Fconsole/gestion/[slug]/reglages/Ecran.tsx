@@ -88,7 +88,13 @@ function Alternative({ nom, valeur, options, legende }: {
 
 /** Un réglage qui s'allume ou se coupe : son nom, ce qu'il fait, l'interrupteur
  *  à droite. `champ.<cle>` dit au serveur que la case était là (décochée = non). */
-function Interrupteur({ cle, valeur, titre, aide, children }: { cle: string; valeur: boolean; titre: string; aide: string; children?: React.ReactNode }) {
+function Interrupteur({ cle, valeur, titre, aide, ferme, children }: {
+  cle: string; valeur: boolean; titre: string; aide: string;
+  /** Hors formule : le nom de la formule qui l'ouvre (« » si aucune). */
+  ferme?: string;
+  children?: React.ReactNode;
+}) {
+  if (ferme !== undefined) return <Verrou titre={titre} aide={aide} formule={ferme} />;
   return (
     <li className="rg-inter">
       <label className="rg-inter-rang">
@@ -101,6 +107,29 @@ function Interrupteur({ cle, valeur, titre, aide, children }: { cle: string; val
       </label>
       {children}
     </li>
+  );
+}
+
+/** Une fonction que la formule de la boutique n'ouvre pas : rien à poster,
+ *  la formule qui l'ouvre, et à qui la demander. */
+function Verrou({ titre, aide, formule, element = "li" }: { titre: string; aide: string; formule: string; element?: "li" | "div" }) {
+  const Balise = element;
+  return (
+    <Balise className="rg-inter rg-verrou">
+      <div className="rg-inter-rang">
+        <span className="rg-inter-texte">
+          <b>{titre} <span className="ui-etat rg-verrou-etat"><Icone nom="cle" taille={12} /> {formule ? `Formule ${formule}` : "Hors formule"}</span></b>
+          <span className="aide">{aide}</span>
+          <span className="aide rg-verrou-aide">
+            {formule ? `Vient avec la formule ${formule} : demandez-la à SkanEcom.` : "Pas dans votre formule : demandez-la à SkanEcom."}
+          </span>
+        </span>
+        <span className="rg-bascule" aria-hidden="true">
+          <input type="checkbox" disabled tabIndex={-1} />
+          <span className="rg-piste" />
+        </span>
+      </div>
+    </Balise>
   );
 }
 
@@ -153,15 +182,21 @@ function Journal({ lignes, titre, lienTout, vide, max, zones, gouvernorats, main
 export async function EcranReglages({ slug, groupe, messages }: { slug: string; groupe: Groupe | null; messages: MessagesReglages }) {
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const { data, error } = await sb.rpc("gestion_reglages", { p_boutique_id: boutique.boutique_id });
+  const [{ data, error }, { data: df }] = await Promise.all([
+    sb.rpc("gestion_reglages", { p_boutique_id: boutique.boutique_id }),
+    sb.rpc("gestion_formule", { p_boutique_id: boutique.boutique_id }),
+  ]);
   if (error) throw new Error(`Réglages illisibles : ${error.message}`);
   const e = data as EtatReglages;
+  // La formule : une fonction qu'elle n'ouvre pas est éteinte sur la vitrine (la base rend son défaut).
+  const formule = (df ?? { formule: null, fermes: {} }) as { formule: { code: string; nom: string } | null; fermes: Record<string, { nom: string } | null> };
+  const ferme = (cle: string): string | undefined => (cle in formule.fermes ? (formule.fermes[cle]?.nom ?? "") : undefined);
 
   const modifie = PEUT_MODIFIER.includes(boutique.role);
   const base = `/gestion/${slug}/reglages`;
   const action = `${base}/enregistrer`;
   const r = new Map<string, Reglage>(e.reglages.map((x) => [x.cle, x]));
-  const v = (cle: string) => r.get(cle)?.valeur;
+  const v = (cle: string) => (ferme(cle) !== undefined ? r.get(cle)?.defaut : r.get(cle)?.valeur);
   const texteDe = (cle: string) => String(v(cle) ?? "").trim();
   const parZone = v("livraison.mode_frais") === "zone";
   const zonesParId = new Map(e.zones.map((z) => [z.id, z.nom]));
@@ -237,6 +272,14 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
   const lecture = !modifie ? (
     <p className="message">Lecture seule : le propriétaire ou l&apos;administrateur de la boutique change les réglages.</p>
   ) : null;
+  // La formule, dite là où elle limite : l'accueil, les fonctions de la vitrine, la publicité.
+  const nbFermes = Object.keys(formule.fermes).filter((c) => !c.startsWith("module.")).length;
+  const bandeauFormule = formule.formule && nbFermes > 0 ? (
+    <p className="rg-formule">
+      <Icone nom="cle" taille={15} />
+      <span>Formule <b>{formule.formule.nom}</b> : {nbFermes} fonction{nbFermes > 1 ? "s" : ""} viennent avec une formule supérieure, marquées d&apos;une clé. SkanEcom vous l&apos;ouvre sur demande.</span>
+    </p>
+  ) : null;
 
   /* ---------------- L'accueil des réglages ---------------- */
   if (!groupe) {
@@ -247,6 +290,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
           {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
           {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
           {lecture}
+          {bandeauFormule}
           {attentions.length ? (
             <section className="rg-attention" aria-labelledby="t-attention">
               <h2 id="t-attention"><Icone nom="alerte" /> À régler avant d&apos;ouvrir</h2>
@@ -310,6 +354,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
           {messages.ok && !dansIci ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
           {messages.erreur && !dansIci ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
           {lecture}
+          {groupe === "vitrine" || groupe === "publicite" || groupe === "commandes" ? bandeauFormule : null}
 
           {/* ---------------- Commandes ---------------- */}
           {groupe === "commandes" ? (
@@ -346,20 +391,26 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                       { valeur: "automatique", titre: "Confirmée d'office", aide: "La commande passe seule en « à préparer ». Pour une clientèle connue." },
                     ]}
                   />
-                  <Alternative
+                  {ferme("commande.achat_express") !== undefined ? (
+                    <Verrou element="div" titre="Achat express" formule={ferme("commande.achat_express")!}
+                      aide="« Commander maintenant » à côté de « Ajouter au panier », depuis la fiche d'un produit." />
+                  ) : <Alternative
                     nom="commande.achat_express" legende="Depuis la fiche d'un produit" valeur={v("commande.achat_express") ? "1" : "0"}
                     options={[
                       { valeur: "0", titre: "Par le panier", aide: "L'acheteur ajoute au panier, puis commande. Plusieurs articles, un seul colis." },
                       { valeur: "1", titre: "Achat express en plus", aide: "« Commander maintenant » à côté de « Ajouter au panier » : cet article seul, droit à la commande. Plus rapide sur téléphone." },
                     ]}
-                  />
-                  <Alternative
+                  />}
+                  {ferme("commande.relance_paniers") !== undefined ? (
+                    <Verrou element="div" titre="Relance des paniers abandonnés" formule={ferme("commande.relance_paniers")!}
+                      aide="Le panier d'un acheteur connecté, relancé une fois par l'équipe, message prêt." />
+                  ) : <Alternative
                     nom="commande.relance_paniers" legende="Un panier laissé sans commande" valeur={v("commande.relance_paniers") ? "1" : "0"}
                     options={[
                       { valeur: "0", titre: "Rien n'est gardé", aide: "Un panier non commandé reste dans le navigateur de l'acheteur, et nulle part ailleurs. Couper efface les paniers gardés." },
                       { valeur: "1", titre: "Une relance possible", aide: "Le panier d'un acheteur connecté s'affiche une heure plus tard (Paniers) : l'équipe le relance une fois, message prêt. Il faut un compte pour commander ; le tunnel et la confidentialité le disent." },
                     ]}
-                  />
+                  />}
                   <div className="champ rg-court">
                     <label htmlFor="max_en_attente">Commandes en attente par numéro</label>
                     <input id="max_en_attente" name="commande.max_en_attente" type="number" min={0} max={50} defaultValue={Number(v("commande.max_en_attente") ?? 3)} />
@@ -715,27 +766,27 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                 <fieldset className="pile rg-corps" disabled={!modifie}>
                   <h3 className="rg-sous-titre">Sur les fiches et les cartes</h3>
                   <ul className="rg-inters" role="list">
-                    <Interrupteur cle="catalogue.afficher_prix_barres" valeur={Boolean(v("catalogue.afficher_prix_barres"))} titre="Afficher les prix barrés"
+                    <Interrupteur cle="catalogue.afficher_prix_barres" ferme={ferme("catalogue.afficher_prix_barres")} valeur={Boolean(v("catalogue.afficher_prix_barres"))} titre="Afficher les prix barrés"
                       aide="L'ancien prix, barré, à côté du prix payé — pour les déclinaisons qui en ont un." />
-                    <Interrupteur cle="catalogue.ajout_carte" valeur={Boolean(v("catalogue.ajout_carte"))} titre="Ajouter au panier depuis la carte"
+                    <Interrupteur cle="catalogue.ajout_carte" ferme={ferme("catalogue.ajout_carte")} valeur={Boolean(v("catalogue.ajout_carte"))} titre="Ajouter au panier depuis la carte"
                       aide="Un « + » sur la photo de chaque carte met la pièce au panier sans ouvrir sa fiche ; s'il y a un choix (taille, couleur, format : huit au plus), il se fait sur la photo." />
-                    <Interrupteur cle="catalogue.achetes_ensemble" valeur={Boolean(v("catalogue.achetes_ensemble"))} titre="Souvent achetés ensemble"
+                    <Interrupteur cle="catalogue.achetes_ensemble" ferme={ferme("catalogue.achetes_ensemble")} valeur={Boolean(v("catalogue.achetes_ensemble"))} titre="Souvent achetés ensemble"
                       aide="Sous la fiche et dans le tiroir du panier, les pièces que vos clients prennent avec celle-ci, d'après les commandes des six derniers mois." />
-                    <Interrupteur cle="catalogue.favoris" valeur={Boolean(v("catalogue.favoris"))} titre="Les favoris"
+                    <Interrupteur cle="catalogue.favoris" ferme={ferme("catalogue.favoris")} valeur={Boolean(v("catalogue.favoris"))} titre="Les favoris"
                       aide="Un cœur sur les cartes et les fiches, et « Mes favoris » ; un client connecté les retrouve partout. Le catalogue dit combien aiment chaque pièce, jamais qui." />
-                    <Interrupteur cle="vitrine.partage" valeur={Boolean(v("vitrine.partage"))} titre="Partager une fiche"
+                    <Interrupteur cle="vitrine.partage" ferme={ferme("vitrine.partage")} valeur={Boolean(v("vitrine.partage"))} titre="Partager une fiche"
                       aide="Un bouton « Partager » : au téléphone, la feuille de partage (WhatsApp, Messenger…) ; sur ordinateur, WhatsApp, Facebook ou le lien à copier." />
                   </ul>
                   <h3 className="rg-sous-titre">Quand une pièce est épuisée</h3>
                   <ul className="rg-inters" role="list">
-                    <Interrupteur cle="catalogue.prevenir_retour" valeur={Boolean(v("catalogue.prevenir_retour"))} titre="Prévenir du retour d'une pièce épuisée"
+                    <Interrupteur cle="catalogue.prevenir_retour" ferme={ferme("catalogue.prevenir_retour")} valeur={Boolean(v("catalogue.prevenir_retour"))} titre="Prévenir du retour d'une pièce épuisée"
                       aide="La fiche propose « Prévenez-moi de son retour » ; quand le stock revient, l'écran Réassort dit qui prévenir, message prêt." />
-                    <Interrupteur cle="catalogue.precommandes" valeur={Boolean(v("catalogue.precommandes"))} titre="Précommandes sur arrivage"
+                    <Interrupteur cle="catalogue.precommandes" ferme={ferme("catalogue.precommandes")} valeur={Boolean(v("catalogue.precommandes"))} titre="Précommandes sur arrivage"
                       aide="Une pièce épuisée qu'un arrivage annoncé apporte (Catalogue → Arrivages) se commande déjà, avec sa date prévue. Rien n'est encaissé avant : la commande part à la réception." />
                   </ul>
                   <h3 className="rg-sous-titre">Faire revenir les visiteurs</h3>
                   <ul className="rg-inters" role="list">
-                    <Interrupteur cle="vitrine.lettre" valeur={Boolean(v("vitrine.lettre"))} titre="Lettre d'information"
+                    <Interrupteur cle="vitrine.lettre" ferme={ferme("vitrine.lettre")} valeur={Boolean(v("vitrine.lettre"))} titre="Lettre d'information"
                       aide="Au pied de chaque page, l'inscription : la personne coche son accord, puis le confirme par le lien reçu par e-mail. Il faut un expéditeur d'e-mails branché.">
                       <div className="champ rg-inter-suite">
                         <label htmlFor="lettre-accroche">Accroche de la lettre <span className="discret">(facultatif)</span></label>
@@ -743,7 +794,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                           placeholder="Les nouveautés et les arrivages, dans votre boîte." />
                       </div>
                     </Interrupteur>
-                    <Interrupteur cle="vitrine.statistiques" valeur={Boolean(v("vitrine.statistiques"))} titre="Mesure d'audience"
+                    <Interrupteur cle="vitrine.statistiques" ferme={ferme("vitrine.statistiques")} valeur={Boolean(v("vitrine.statistiques"))} titre="Mesure d'audience"
                       aide="Les visites dans l'écran Visites : combien, d'où, sur quel appareil, et combien commandent. Sans cookie ni donnée personnelle : rien à faire accepter." />
                   </ul>
                   <h3 className="rg-sous-titre">En tête du site</h3>
@@ -782,7 +833,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                     </div>
                   </div>
                   <ul className="rg-inters" role="list">
-                    <Interrupteur cle="vitrine.whatsapp_flottant" valeur={Boolean(v("vitrine.whatsapp_flottant"))} titre="Bouton WhatsApp sur toutes les pages"
+                    <Interrupteur cle="vitrine.whatsapp_flottant" ferme={ferme("vitrine.whatsapp_flottant")} valeur={Boolean(v("vitrine.whatsapp_flottant"))} titre="Bouton WhatsApp sur toutes les pages"
                       aide="Un rond vert en bas de l'écran ouvre la conversation avec votre numéro WhatsApp (jamais pendant la commande)." />
                   </ul>
                   <div className="champ">
@@ -876,18 +927,22 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                 <input type="hidden" name="section" value="publicite" />
                 <fieldset className="pile rg-corps" disabled={!modifie}>
                   <div className="grille-champs">
-                    <div className="champ">
+                    {ferme("pub.pixel_meta") !== undefined ? (
+                      <Verrou element="div" titre="Pixel Meta" formule={ferme("pub.pixel_meta")!} aide="Facebook et Instagram : ce que rapportent vos publicités." />
+                    ) : <div className="champ">
                       <label htmlFor="pixel-meta">Pixel Meta <span className="discret">(facultatif)</span></label>
                       <input id="pixel-meta" name="pub.pixel_meta" inputMode="numeric" autoComplete="off" spellCheck={false}
                         defaultValue={texteDe("pub.pixel_meta")} maxLength={40} placeholder="Ex. 1234567890123456" aria-describedby="pixel-meta-aide" />
                       <span className="aide" id="pixel-meta-aide">Gestionnaire d&apos;événements de Meta → Sources de données : le numéro sous le nom du pixel. Pour Facebook et Instagram.</span>
-                    </div>
-                    <div className="champ">
+                    </div>}
+                    {ferme("pub.pixel_tiktok") !== undefined ? (
+                      <Verrou element="div" titre="Pixel TikTok" formule={ferme("pub.pixel_tiktok")!} aide="Ce que rapportent vos publicités TikTok." />
+                    ) : <div className="champ">
                       <label htmlFor="pixel-tiktok">Pixel TikTok <span className="discret">(facultatif)</span></label>
                       <input id="pixel-tiktok" name="pub.pixel_tiktok" autoComplete="off" spellCheck={false} autoCapitalize="characters"
                         defaultValue={texteDe("pub.pixel_tiktok")} maxLength={40} placeholder="Ex. C4ABCDEFGHIJ12345678" aria-describedby="pixel-tiktok-aide" />
                       <span className="aide" id="pixel-tiktok-aide">TikTok Ads Manager → Gestionnaire d&apos;événements : l&apos;identifiant du pixel (« ID »).</span>
-                    </div>
+                    </div>}
                   </div>
                   <p className="aide rg-pixels-accord">
                     Rien n&apos;est envoyé sans l&apos;accord du visiteur : un bandeau le lui demande, « Refuser » aussi visible qu&apos;« Accepter », et il change d&apos;avis depuis le pied de page. La politique de confidentialité le dit. Vide : aucun pixel, aucun bandeau.

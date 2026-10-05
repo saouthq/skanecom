@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Icone, type NomIcone } from "@/components/console/Icone";
 import { dateJournal } from "@/lib/console/libelles";
@@ -7,6 +8,7 @@ import { exigeAdmin } from "@/lib/console/session";
 import { adresseRetourSkanFact, adresseSkanFact, empreinteSecret } from "@/lib/console/skanfact";
 import { chiffrementPret } from "@/lib/gestion/chiffre";
 import { titreBoutique } from "@/lib/console/titre-boutique";
+import type { DonneesFormules } from "@/lib/console/formules";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   return { title: await titreBoutique(params, "Modules") };
@@ -41,7 +43,9 @@ export default async function Modules({ params, searchParams }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ erreur?: string; ok?: string }>;
 }) {
-  await exigeAdmin();
+  const { user, role } = await exigeAdmin();
+  // Un module fait partie de l'offre vendue : le super-administrateur seul l'active (la base le redit).
+  const peutChanger = role === "super_admin";
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const service = clientService();
   const { data: fiche } = await service.rpc("console_boutique", { p_slug: slug });
@@ -51,6 +55,13 @@ export default async function Modules({ params, searchParams }: {
   if (error) throw new Error(`Modules illisibles : ${error.message}`);
   const modules = data as Module[];
   const actifs = modules.filter((m) => m.actif).length;
+  // La formule de la boutique : un module qu'elle n'ouvre pas ne s'active pas.
+  const { data: df } = await service.rpc("console_formules", { p_acteur: user.id });
+  const formules = (df ?? { formules: [], droits: [], boutiques: [] }) as DonneesFormules;
+  const codeFormule = formules.boutiques.find((x) => x.id === boutique.id)?.formule ?? null;
+  const formule = formules.formules.find((f) => f.code === codeFormule) ?? null;
+  const horsFormule = (code: string) => formule !== null && !formule.droits.includes(`module.${code}`);
+  const formuleQuiOuvre = (code: string) => formules.formules.find((f) => f.droits.includes(`module.${code}`))?.nom ?? null;
   // SkanEcom, partenaire déclaré de SkanFact (« Connecter SkanFact ») : ce que SkanFact doit déclarer.
   const partenaire = modules.some((m) => m.code === "skanfact")
     ? { url: adresseSkanFact(), retour: adresseRetourSkanFact(), empreinte: await empreinteSecret(), chiffre: await chiffrementPret() }
@@ -63,6 +74,8 @@ export default async function Modules({ params, searchParams }: {
         <p>
           Ce que {boutique.nom} propose en plus du socle. Un module fait partie de l&apos;offre vendue : il s&apos;active ici,
           jamais depuis le backoffice de la boutique. Visible sur la vitrine d&apos;ici cinq minutes.
+          {peutChanger ? null : <> Un super-administrateur les active et les coupe.</>}
+          {" "}{formule ? <>Formule <Link href={`/boutiques/${slug}#t-formule`}>{formule.nom}</Link> : seuls ses modules s&apos;activent.</> : <>Sans formule : tous s&apos;activent.</>}
         </p>
       </div>
       <div className="grid gap-5">
@@ -108,9 +121,14 @@ export default async function Modules({ params, searchParams }: {
                   <form action={`/boutiques/${slug}/modules/changer`} method="post" className="md-action">
                     <input type="hidden" name="boutique_id" value={boutique.id} />
                     <input type="hidden" name="module" value={m.code} />
-                    {m.actif ? (
+                    {m.actif ? (peutChanger ? (
                       <button type="submit" name="actif" value="false" className="btn btn-second btn-petit" aria-label={`Couper : ${m.libelle}`}>Couper</button>
-                    ) : m.disponible ? (
+                    ) : null) : m.disponible && horsFormule(m.code) ? (
+                      <span className="md-hors-formule">
+                        <span className="ui-etat">Hors formule</span>
+                        {formuleQuiOuvre(m.code) ? <span className="aide">Vient avec {formuleQuiOuvre(m.code)}</span> : null}
+                      </span>
+                    ) : m.disponible && peutChanger ? (
                       <button type="submit" name="actif" value="true" className="btn btn-second btn-petit" aria-label={`Activer : ${m.libelle}`}>Activer</button>
                     ) : null}
                   </form>
