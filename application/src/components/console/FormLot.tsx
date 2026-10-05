@@ -5,7 +5,7 @@ import { formateMontant } from "@/lib/prix";
 import { pourcentage, type LotGestion, type ProduitAuCatalogue } from "@/lib/gestion/lots";
 
 /* ============================================================================
-   COMPOSER OU CHANGER UN LOT — un formulaire HTML ordinaire (il part sans
+   COMPOSER OU CHANGER UN PACK — un formulaire HTML ordinaire (il part sans
    script) que le navigateur aide : à mesure qu'on choisit les produits, il
    dit ce qu'ils valent achetés un à un (au plus bas) et ce que le prix tapé
    fait économiser. La base revérifie tout : deux à quatre produits en vente,
@@ -46,7 +46,7 @@ export function FormLot({ action, produits, lot, suffixe }: {
 
       <div className="pm-grille">
         <div className="champ">
-          <label htmlFor={id("nom")}>Le nom du lot</label>
+          <label htmlFor={id("nom")}>Le nom du pack</label>
           <input id={id("nom")} name="nom" required minLength={2} maxLength={60} defaultValue={lot?.nom ?? ""} placeholder="Ex. La tenue du week-end" />
         </div>
         <div className="champ">
@@ -77,7 +77,7 @@ export function FormLot({ action, produits, lot, suffixe }: {
 
       <div className="pm-grille lot-prix-grille">
         <div className="champ">
-          <label htmlFor={id("prix")}>Le prix du lot</label>
+          <label htmlFor={id("prix")}>Le prix du pack</label>
           <span className="pm-unite">
             <input id={id("prix")} name="prix" required inputMode="decimal" className="tabular-nums" value={prix}
                    onChange={(e) => setPrix(e.target.value)} placeholder="359" aria-describedby={id("bilan")} />
@@ -95,7 +95,7 @@ export function FormLot({ action, produits, lot, suffixe }: {
               {economie === null ? null : economie > 0 ? (
                 <span className="lot-bilan-gain">Le client économise <b className="tabular-nums">{montant(economie)} TND</b> ({pourcentage(valeur, prixLu!)})</span>
               ) : (
-                <span className="lot-bilan-refus">Le lot doit coûter moins que {montant(valeur)} TND.</span>
+                <span className="lot-bilan-refus">Le pack doit coûter moins que {montant(valeur)} TND.</span>
               )}
             </>
           )}
@@ -103,7 +103,7 @@ export function FormLot({ action, produits, lot, suffixe }: {
       </div>
 
       <div className="carte-pied">
-        <button className="btn btn-primaire">{lot ? "Enregistrer le lot" : "Mettre le lot en vente"}</button>
+        <button className="btn btn-primaire">{lot ? "Enregistrer le pack" : "Mettre le pack en vente"}</button>
         {lot ? <button type="reset" className="btn btn-second">Annuler</button> : null}
       </div>
     </form>

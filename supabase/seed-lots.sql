@@ -1,7 +1,7 @@
 -- =====================================================================
--- SkanEcom · jeu de démonstration : LES LOTS (migration 86)
+-- SkanEcom · jeu de démonstration : LES PACKS (« lots » dans la base, migrations 86 et 87)
 -- =====================================================================
--- Maison Selma a le module « promotions » (seed-promotions.sql) : deux lots
+-- Maison Selma a le module « promotions » (seed-promotions.sql) : deux packs
 -- pour la démonstration, à des prix plus bas que leurs pièces une à une —
 --   · « La tenue du week-end » : la chemise ample en lin (159) et les
 --     mocassins en cuir (249) — 359,000 au lieu de 408,000 ;

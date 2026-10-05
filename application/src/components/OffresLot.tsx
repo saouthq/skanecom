@@ -13,7 +13,7 @@ import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
-   LES LOTS DE LA FICHE (module promotions) — « La tenue du week-end : la
+   LES PACKS DE LA FICHE (module promotions ; « lots » dans le code, lib/lots.ts) — « La tenue du week-end : la
    chemise et les mocassins, 359,000 au lieu de 408,000 ». Chaque pièce du
    lot, sa photo, sa taille à choisir quand elle en a plusieurs ; le prix du
    lot face aux pièces achetées une à une (celles choisies, sinon au plus

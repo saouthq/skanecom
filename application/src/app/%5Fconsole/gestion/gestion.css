@@ -2054,7 +2054,7 @@ a.pg-titre:hover { color: var(--ui-accent); }
 }
 
 /* =========================================================================
-   LES LOTS (Promotions › Lots) — chaque lot : ses pièces en vignettes, son
+   LES PACKS (Promotions › Packs ; « lot-* » dans les classes) — chaque pack : ses pièces en vignettes, son
    prix face à leur valeur, ce qu'il a vendu ; le formulaire dit, à mesure
    qu'on choisit, ce que valent les pièces et ce que le client économise.
    ========================================================================= */

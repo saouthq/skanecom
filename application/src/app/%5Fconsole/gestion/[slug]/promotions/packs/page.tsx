@@ -11,13 +11,15 @@ import { urlFichier } from "@/lib/photos";
 import { PEUT_PROMOUVOIR } from "@/lib/gestion/promotions";
 import { pourcentage, valeurDu, type EcranLots, type LotGestion } from "@/lib/gestion/lots";
 
-export const metadata: Metadata = { title: "Lots" };
+export const metadata: Metadata = { title: "Packs" };
 
 /* ============================================================================
-   LES LOTS (module promotions) — « la chemise et les mocassins, 359 TND au
-   lieu de 408 » : deux à quatre produits vendus ensemble à un prix. La
+   LES PACKS (module promotions ; « lots » dans la base et le code, le mot
+   « lot » étant pris par SkanFact pour ses numéros de lot) — « la chemise
+   et les mocassins, 359 TND au lieu de 408 » : deux à quatre produits
+   vendus ensemble à un prix. La
    vitrine les propose sur la fiche de chacun, le panier les applique dès
-   qu'il les réunit, la commande les garde. Chaque lot dit ce qu'il vaut
+   qu'il les réunit, la commande les garde. Chaque pack dit ce qu'il vaut
    acheté pièce à pièce, ce qu'il fait économiser et ce qu'il a vendu. On en
    compose, on les change, on les coupe, on les retire (les commandes
    gardent leur nom). Propriétaire et administrateur ; la lecture regarde.
@@ -33,11 +35,11 @@ export default async function Lots({
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
   const { data, error } = await sb.rpc("gestion_lots", { p_boutique_id: boutique.boutique_id });
-  if (error) throw new Error(`Lots illisibles : ${error.message}`);
+  if (error) throw new Error(`Packs illisibles : ${error.message}`);
   const ecran = data as EcranLots;
   if (!ecran.actif && ecran.lots.length === 0) notFound();
 
-  const action = `/gestion/${slug}/promotions/lots/action`;
+  const action = `/gestion/${slug}/promotions/packs/action`;
   const regle = PEUT_PROMOUVOIR.includes(boutique.role) && ecran.actif;
   const enVente = ecran.lots.filter((l) => l.actif);
   const coupes = ecran.lots.filter((l) => !l.actif);
@@ -49,12 +51,12 @@ export default async function Lots({
         titre="Promotions"
         description={
           ecran.actif
-            ? "Des produits vendus ensemble à un prix : la tenue complète, le coffret, la paire de valises. La fiche de chacun propose le lot, le panier l'applique dès qu'il réunit les pièces, le client choisit sa taille."
-            : "Le module est coupé : aucun lot ne s'applique plus. Ils restent ici, avec ce qu'ils ont vendu."
+            ? "Des produits vendus ensemble à un prix : la tenue complète, le coffret, la paire de valises. La fiche de chacun propose le pack, le panier l'applique dès qu'il réunit les pièces, le client choisit sa taille."
+            : "Le module est coupé : aucun pack ne s'applique plus. Ils restent ici, avec ce qu'ils ont vendu."
         }
-        actions={regle ? <a className="btn btn-primaire" href="#nouveau"><Icone nom="etiquette" /> Nouveau lot</a> : undefined}
+        actions={regle ? <a className="btn btn-primaire" href="#nouveau"><Icone nom="etiquette" /> Nouveau pack</a> : undefined}
       />
-      <OngletsPromotions slug={slug} courant="lots" />
+      <OngletsPromotions slug={slug} courant="packs" />
 
       {recherche.ok ? <p className="message message-succes mb-4" role="status">{recherche.ok}</p> : null}
       {recherche.erreur ? <p className="message message-erreur mb-4" role="alert">{recherche.erreur}</p> : null}
@@ -64,7 +66,7 @@ export default async function Lots({
         {enVente.length === 0 ? (
           <div className="vide cat-vide">
             <span className="vide-icone"><Icone nom="etiquette" taille={20} /></span>
-            <strong>Aucun lot en vente</strong>
+            <strong>Aucun pack en vente</strong>
             <p>{regle ? "Composez-en un ci-dessous : il paraît sur la vitrine d'ici cinq minutes, le panier l'applique aussitôt." : "La direction de la boutique les compose."}</p>
           </div>
         ) : (
@@ -78,8 +80,8 @@ export default async function Lots({
         <section id="nouveau" className="carte pm-nouveau" aria-labelledby="t-nouveau">
           <div className="carte-tete">
             <div>
-              <h2 id="t-nouveau" className="carte-titre-icone"><Icone nom="etiquette" /> Nouveau lot</h2>
-              <p>Le panier prend, pour chaque produit, la taille ou la couleur la moins chère qu&apos;il contient. Le lot ne se cumule pas avec un prix par quantité, ni avec un devis ; un code promo s&apos;applique ensuite.</p>
+              <h2 id="t-nouveau" className="carte-titre-icone"><Icone nom="etiquette" /> Nouveau pack</h2>
+              <p>Le panier prend, pour chaque produit, la taille ou la couleur la moins chère qu&apos;il contient. Le pack ne se cumule pas avec un prix par quantité, ni avec un devis ; un code promo s&apos;applique ensuite.</p>
             </div>
           </div>
           <FormLot action={action} produits={ecran.produits} suffixe="nouveau" />
@@ -98,7 +100,7 @@ export default async function Lots({
   );
 }
 
-/** Un lot : ses pièces, son prix face à leur valeur, ce qu'il a vendu, ses gestes. */
+/** Un pack : ses pièces, son prix face à leur valeur, ce qu'il a vendu, ses gestes. */
 function CarteLot({ lot, regle, action, produits }: {
   lot: LotGestion; regle: boolean; action: string; produits: EcranLots["produits"];
 }) {
@@ -132,11 +134,11 @@ function CarteLot({ lot, regle, action, produits }: {
       {lot.accroche ? <p className="pm-conditions">« {lot.accroche} »</p> : null}
       {incomplet ? (
         <p className="message message-alerte lot-alerte">
-          Un produit du lot n&apos;est plus en vente : le panier ne l&apos;applique plus. Changez ses produits, ou coupez-le.
+          Un produit du pack n&apos;est plus en vente : le panier ne l&apos;applique plus. Changez ses produits, ou coupez-le.
         </p>
       ) : valeur !== null && valeur <= lot.prix_millimes ? (
         <p className="message message-alerte lot-alerte">
-          Les prix ont baissé : ses produits coûtent maintenant moins que le lot, le panier ne l&apos;applique plus. Baissez son prix.
+          Les prix ont baissé : ses produits coûtent maintenant moins que le pack, le panier ne l&apos;applique plus. Baissez son prix.
         </p>
       ) : null}
 

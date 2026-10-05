@@ -497,40 +497,40 @@ console.log("\n== 2 bis. Maison Selma : un code promo, au clavier ==");
 }
 
 /* ------------------------------------------------------------------ */
-console.log("\n== 2 ter. Maison Selma : un lot, commandé ==");
+console.log("\n== 2 ter. Maison Selma : un pack, commandé ==");
 {
-  // Selma a ses lots (supabase/seed-lots.sql) : « La tenue du week-end », la
+  // Selma a ses packs (supabase/seed-lots.sql) : « La tenue du week-end », la
   // chemise en lin et les mocassins, 359,000 au lieu de 408,000.
   const ctx = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
   const page = await ctx.newPage();
-  t.espion(page, "selma-lot");
+  t.espion(page, "selma-pack");
   const sansEspaces = (s) => s.replace(/[\s  ]/g, "");
 
-  await etape("la fiche propose le lot ; les tailles se choisissent dans sa carte", async () => {
+  await etape("la fiche propose le pack ; les tailles se choisissent dans sa carte", async () => {
     await page.goto(S + "/produit/chemise-lin-ample", { waitUntil: "networkidle" });
     const appel = page.locator(".fiche-appel-lot");
-    verifie(sansEspaces(await appel.innerText()).includes("359,000"), "sous le bloc d'achat : « En lot · La tenue du week-end · 359,000 »");
+    verifie(sansEspaces(await appel.innerText()).includes("359,000"), "sous le bloc d'achat : « En pack · La tenue du week-end · 359,000 »");
     await clic(page, appel);
     const carte = page.locator(".lot-carte", { hasText: "La tenue du week-end" });
     await carte.waitFor();
-    verifie(sansEspaces(await carte.innerText()).includes("Vouséconomisez49,000"), "la carte du lot : « Vous économisez 49,000 TND »");
-    await clic(page, carte.getByRole("button", { name: "Ajouter le lot au panier" }));
+    verifie(sansEspaces(await carte.innerText()).includes("Vouséconomisez49,000"), "la carte du pack : « Vous économisez 49,000 TND »");
+    await clic(page, carte.getByRole("button", { name: "Ajouter le pack au panier" }));
     verifie(await carte.locator(".lot-manque").isVisible(), "sans taille choisie, la carte le demande au lieu d'ajouter");
     for (let i = 0; i < 2; i++) await carte.locator("select").nth(i).selectOption({ index: 1 });
-    await clic(page, carte.getByRole("button", { name: "Ajouter le lot au panier" }));
+    await clic(page, carte.getByRole("button", { name: "Ajouter le pack au panier" }));
     await page.locator(".confirmation-ajout").waitFor({ timeout: 5000 });
-    await capture(page, "selma-lot-fiche");
+    await capture(page, "selma-pack-fiche");
   });
 
   await etape("le tiroir l'applique, la commande le garde", async () => {
     await clic(page, page.locator(".confirmation-ajout").getByRole("button", { name: /Voir le panier/ }));
     await page.locator(".panier-lot-remise").waitFor({ timeout: 8000 });
     const tiroir = sansEspaces(await page.locator(".tiroir-panier").innerText());
-    verifie(tiroir.includes("−49,000") && tiroir.includes("Totaldesarticles359,000"), "le tiroir : le lot, −49,000 ; le total 359,000");
+    verifie(tiroir.includes("−49,000") && tiroir.includes("Totaldesarticles359,000"), "le tiroir : le pack, −49,000 ; le total 359,000");
     await clic(page, page.locator(".panier-commander"));
     await page.waitForURL(/\/commande$/);
     await page.locator(".tunnel-lot").waitFor({ timeout: 8000 });
-    verifie(sansEspaces(await page.locator(".tunnel-recap").innerText()).includes("Vouséconomisez49,000"), "la page de commande relit le lot en base");
+    verifie(sansEspaces(await page.locator(".tunnel-recap").innerText()).includes("Vouséconomisez49,000"), "la page de commande relit le pack en base");
     await confirmeNumero(page, "20555444", "20 555 444");
     await remplitAdresse(page, { nom: "Sonia Mejri", adresse: "4 rue de Palestine", ville: "Tunis", gouvernorat: "Tunis" });
     await page.locator(".tunnel-conditions input[type=checkbox]").check();
@@ -538,14 +538,14 @@ console.log("\n== 2 ter. Maison Selma : un lot, commandé ==");
     await page.waitForURL(/\/commande\/merci$/, { timeout: 15000 });
     await page.locator(".merci").waitFor();
     const merci = await page.locator(".merci").innerText();
-    verifie(merci.includes("Lot « La tenue du week-end »") && sansEspaces(merci).includes("359,000"), "la page de fin : chaque pièce dit son lot, 359,000 TND");
+    verifie(merci.includes("Pack « La tenue du week-end »") && sansEspaces(merci).includes("359,000"), "la page de fin : chaque pièce dit son pack, 359,000 TND");
     const cle = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
     const lignes = await (await fetch(`${RELAIS}/rest/v1/commande_lignes?boutique_id=eq.00000000-0000-4000-8000-000000000003&lot_nom=eq.${encodeURIComponent("La tenue du week-end")}&select=sku,remise_lot_millimes`, {
       headers: { apikey: cle, authorization: `Bearer ${cle}` },
     })).json();
     verifie(Array.isArray(lignes) && lignes.length === 2 && lignes.reduce((s, l) => s + l.remise_lot_millimes, 0) === 49000,
-      `en base : deux lignes, le lot leur retire 49,000 en tout (${JSON.stringify(lignes)})`);
-    await capture(page, "selma-lot-merci");
+      `en base : deux lignes, le pack leur retire 49,000 en tout (${JSON.stringify(lignes)})`);
+    await capture(page, "selma-pack-merci");
   });
   await ctx.close();
 }

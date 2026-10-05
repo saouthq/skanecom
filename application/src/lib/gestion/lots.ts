@@ -1,5 +1,6 @@
 /* ============================================================================
-   LES LOTS AU BACKOFFICE (module promotions, …_lots.sql) — deux à quatre
+   LES PACKS AU BACKOFFICE (module promotions, …_lots.sql : « lots » dans la
+   base et le code, le mot « lot » étant pris par SkanFact) — deux à quatre
    produits vendus ensemble à un prix : types et phrases de l'écran.
    ========================================================================== */
 
@@ -43,13 +44,13 @@ export function pourcentage(valeur: number, prix: number): string {
 export function messageLots(indice: string | undefined, message: string): string {
   switch (indice) {
     case "role":
-      return "Votre rôle dans l'équipe ne permet pas ce geste : un lot est un prix, il revient à la direction.";
+      return "Votre rôle dans l'équipe ne permet pas ce geste : un pack est un prix, il revient à la direction.";
     case "module":
       return "Les promotions ne sont pas ouvertes pour cette boutique : elles s'activent depuis la console SkanEcom.";
     case "introuvable":
-      return "Ce lot n'existe plus dans cette boutique.";
+      return "Ce pack n'existe plus dans cette boutique.";
     case "produits":
-      return "Un lot réunit de 2 à 4 produits différents, chacun en vente dans la boutique.";
+      return "Un pack réunit de 2 à 4 produits différents, chacun en vente dans la boutique.";
     default:
       return message;
   }

@@ -4,9 +4,9 @@ import { millimes } from "@/lib/console/import";
 import { messageLots } from "@/lib/gestion/lots";
 
 /* ============================================================================
-   LES GESTES SUR LES LOTS — composer ou changer (public.gestion_enregistrer_lot),
+   LES GESTES SUR LES PACKS (« lots » dans la base) — composer ou changer (public.gestion_enregistrer_lot),
    couper, remettre en vente, retirer (public.gestion_geste_lot). Formulaires
-   HTML ordinaires, réponse par une redirection 303 vers l'écran, sur le lot
+   HTML ordinaires, réponse par une redirection 303 vers l'écran, sur le pack
    concerné. La base revérifie le rôle, le module, les produits et le prix.
    ========================================================================== */
 
@@ -39,15 +39,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   // L'ancre deux fois : en fragment (le navigateur y va, sans script) et en
   // paramètre (le geste en place la lit : fetch perd le fragment).
   const retour = (m: string, ok = false, ancre = "") =>
-    vers(`/gestion/${slug}/promotions/lots?${new URLSearchParams({ ...(ok ? { ok: m } : { erreur: m }), ...(ancre ? { ancre: ancre.slice(1) } : {}) })}${ancre}`);
-  if (lotId && !UUID.test(lotId)) return retour("Lot inconnu.");
+    vers(`/gestion/${slug}/promotions/packs?${new URLSearchParams({ ...(ok ? { ok: m } : { erreur: m }), ...(ancre ? { ancre: ancre.slice(1) } : {}) })}${ancre}`);
+  if (lotId && !UUID.test(lotId)) return retour("Pack inconnu.");
   const sb = await clientSession();
 
   if (geste === "enregistrer") {
     const produits = f.getAll("produit").map((x) => String(x).trim()).filter(Boolean);
     if (produits.some((x) => !UUID.test(x))) return retour("Un des produits choisis n'existe pas dans la boutique.", false, lotId ? `#lot-${lotId}` : "#nouveau");
     const prix = millimes(texte("prix"));
-    if (prix === null || Number.isNaN(prix)) return retour("Le prix du lot est illisible (ex. 359 ou 359,500).", false, lotId ? `#lot-${lotId}` : "#nouveau");
+    if (prix === null || Number.isNaN(prix)) return retour("Le prix du pack est illisible (ex. 359 ou 359,500).", false, lotId ? `#lot-${lotId}` : "#nouveau");
     const { data, error } = await sb.rpc("gestion_enregistrer_lot", {
       p_boutique_id: boutique.boutique_id,
       p_lot_id: lotId || null,

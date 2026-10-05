@@ -13,7 +13,7 @@ import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
-   LES LOTS DANS LE TIROIR DU PANIER (module promotions) — le tiroir lit les
+   LES PACKS DANS LE TIROIR DU PANIER (module promotions ; « lots » dans le code) — le tiroir lit les
    lots qui comptent ses pièces (/recherche/lots), les applique (lib/lots.ts,
    le calcul de la base) et propose de compléter un lot entamé : la pièce qui
    manque s'ajoute d'un geste si elle n'a qu'une déclinaison, sinon sa fiche

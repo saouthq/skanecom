@@ -90,7 +90,7 @@ export default async function FicheProduit({ params }: Params) {
     listeProduits(cadre.boutique.id, rayon ? { rayon: rayon.slug } : {}, "selection", 1, cadre.achetesEnsemble ? 2 * parRang + 1 : parRang + 1),
     cadre.avis ? chargeAvis(cadre.boutique.id, produit.id) : Promise.resolve(null),
     cadre.achetesEnsemble ? achetesEnsemble(cadre.boutique.id, [produit.slug], parRang) : Promise.resolve([]),
-    // Les lots qui la comptent (module promotions) ; un site vitrine ne vend pas en ligne.
+    // Les packs qui la comptent (module promotions ; « lots » dans la base) ; un site vitrine ne vend pas en ligne.
     cadre.promotions && !cadre.siteVitrine ? lotsDesProduits(cadre.boutique.id, [produit.slug]) : Promise.resolve([] as Lot[]),
   ]);
   const dejaProposes = new Set([produit.id, ...ensemble.map((p) => p.id)]);
@@ -141,7 +141,7 @@ export default async function FicheProduit({ params }: Params) {
       )}
 
       {lots.length > 0 ? (
-        <section id="fiche-lots" className={`${gabarit === "technique" ? "te-section" : "enveloppe ed-section"} fiche-lots`} aria-labelledby="fiche-lots-titre">
+        <section id="fiche-packs" className={`${gabarit === "technique" ? "te-section" : "enveloppe ed-section"} fiche-lots`} aria-labelledby="fiche-lots-titre">
           <div className={gabarit === "technique" ? "te-section-tete" : "ed-section-tete"}>
             <div>
               <h2 id="fiche-lots-titre">{t.lots.titre}</h2>
@@ -338,12 +338,12 @@ function FicheTechnique({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pro
   );
 }
 
-/** Sous le bloc d'achat : le lot qui compte cette pièce, et le chemin vers lui. */
+/** Sous le bloc d'achat : le pack qui compte cette pièce, et le chemin vers lui. */
 function AppelLot({ lots }: { lots: Lot[] }) {
   const lot = lots[0];
   if (!lot) return null;
   return (
-    <a href="#fiche-lots" className="fiche-appel-lot">
+    <a href="#fiche-packs" className="fiche-appel-lot">
       <span className="etiquette">{t.lots.titre}</span>
       <span>
         <b>{lot.nom}</b> · {formatePrix(lot.prix_millimes)} <s>{formatePrix(lot.valeur_millimes)}</s>

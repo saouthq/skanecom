@@ -1,7 +1,10 @@
 import { totalLigne, type LignePanier } from "./panier-contrat";
 
 /* ============================================================================
-   LES LOTS (module promotions, migration 86) — « la chemise et les
+   LES PACKS (module promotions, migrations 86 et 87). À l'écran, « pack » ;
+   dans la base et le code, « lot » (public.lots) : chez SkanFact, un lot est
+   un numéro de lot et sa péremption, le même mot ne dit pas deux choses à
+   un commerçant qui a les deux outils. — « la chemise et les
    mocassins, 359 DT au lieu de 408 ». Ce que la vitrine en lit
    (public.vitrine_lots : la fiche, le tiroir), et leur calcul dans le
    tiroir, le même que celui de la base (private.chiffre_commande) : pour

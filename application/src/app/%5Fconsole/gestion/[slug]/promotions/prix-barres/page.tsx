@@ -43,8 +43,8 @@ export default async function PrixBarres({
   ]);
   if (error) throw new Error(`Prix barrés illisibles : ${error.message}`);
   const ecran = data as EcranPrixBarres;
-  // Module coupé, sans opération : il reste peut-être des lots à voir.
-  if (!ecran.actif && ecran.soldes.length === 0) redirect(`/gestion/${slug}/promotions/lots`);
+  // Module coupé, sans opération : il reste peut-être des packs à voir.
+  if (!ecran.actif && ecran.soldes.length === 0) redirect(`/gestion/${slug}/promotions/packs`);
   const hote = cadre?.boutique.hote_principal ?? null;
   const vitrine = hote ? adresseVitrine(hote, hoteConsole) : null;
 

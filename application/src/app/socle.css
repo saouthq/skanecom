@@ -1021,7 +1021,7 @@ html[data-gabarit=technique] .partage-choix { border-radius: var(--theme-radius-
 @media (prefers-reduced-motion: reduce) { .partage-menu { animation: none; } }
 
 /* ---------------------------------------------------------------------
-   LES LOTS (module promotions) — l'appel sous le bloc d'achat, l'offre
+   LES PACKS (module promotions ; « lot-* » dans les classes) — l'appel sous le bloc d'achat, l'offre
    sous la fiche (OffresLot.tsx), le lot réuni et le lot à compléter dans
    le tiroir (LotsDuPanier.tsx).
    --------------------------------------------------------------------- */
