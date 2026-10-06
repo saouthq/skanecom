@@ -533,6 +533,9 @@ export const fr = {
     /** Le seuil de la livraison offerte atteint : le pied le dit comme la jauge. */
     livraisonComprise: "Livraison offerte.",
     continuer: "Continuer mes achats",
+    /** L'adresse /panier : le tiroir s'y ouvre, la page le propose encore. */
+    ouvrirLePanier: "Ouvrir mon panier",
+    pageChapo: "Il s'ouvre sur le côté : vos pièces, leur total, puis « Commander ».",
     fermer: "Fermer le panier",
     ajoute: "Ajouté au panier",
     /** La confirmation légère qui suit un ajout (au lieu du tiroir). */
@@ -912,6 +915,7 @@ export const fr = {
         : "Il est rattaché au compte qui l'a demandé : connectez-vous de la même façon, et il s'ouvre ici, prêt à accepter.",
   },
   compte: {
+    payeeEnLigne: "payée en ligne",
     titre: "Mes commandes",
     lien: "Mes commandes",
     meta: "Mes commandes",

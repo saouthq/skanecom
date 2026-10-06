@@ -65,6 +65,8 @@ export type CommandeMienne = {
   numero_suivi: string | null;
   /** Elle attend un arrivage (précommande, migration 88) : sa date prévue. */
   arrivage_prevu?: string | null;
+  /** Payée en ligne, montant reçu (Konnect ; migration …_mes_commandes_acheteur). */
+  payee_en_ligne?: boolean;
   lignes: LigneMienne[];
 };
 
@@ -285,7 +287,7 @@ export function ResumeCommande({ c }: { c: CommandeMienne }) {
         </span>
         <span className="compte-resume">
           <span>{c.lignes.map((l) => l.produit_nom).join(", ")}</span>
-          <span className="legende">{t.compte.articles(articles)} · <Prix millimes={c.total_millimes} /></span>
+          <span className="legende">{t.compte.articles(articles)} · <Prix millimes={c.total_millimes} />{c.payee_en_ligne ? ` · ${t.compte.payeeEnLigne}` : null}</span>
         </span>
       </div>
       {destination || suivi ? (
