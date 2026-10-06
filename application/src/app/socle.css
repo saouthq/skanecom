@@ -385,6 +385,18 @@ input[type="search"]::-webkit-search-cancel-button:hover { background: var(--the
 .suggestion-tout:hover .icone-fleche, .suggestion-tout[aria-selected="true"] .icone-fleche { transform: translateX(3px); }
 .suggestion-rien { margin: 0; padding: .875rem .75rem; font-size: .875rem; color: var(--theme-encre-doux); }
 .recherche-bilan { margin-block: 1rem 0; font-size: .875rem; color: var(--theme-encre-doux); }
+/* La phrase comprise (réglage catalogue.recherche_phrase) : ce qui est devenu
+   un filtre, en pastilles ; puis de quoi chercher la phrase telle quelle. */
+.recherche-comprise { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-block-start: .875rem; font-size: .875rem; }
+.recherche-comprise-titre { color: var(--theme-encre-doux); }
+.recherche-comprise ul { display: flex; flex-wrap: wrap; gap: .375rem; list-style: none; margin: 0; padding: 0; }
+.recherche-comprise li {
+  display: inline-flex; align-items: center; min-block-size: 2rem; padding-inline: .75rem; border-radius: 999px;
+  background: var(--theme-surface-2); color: var(--theme-encre); font-weight: 500;
+}
+.recherche-comprise-ignore { flex-basis: 100%; margin: 0; color: var(--theme-encre-doux); }
+.recherche-comprise li[data-genre="texte"] { background: transparent; box-shadow: inset 0 0 0 1px var(--theme-filet-fort); font-weight: 400; }
+html[data-gabarit="editorial"]:not([data-allure="contemporaine"]) .ed-entete-liste .recherche-comprise { justify-content: center; }
 .recherche-resultats { margin-block: 1rem 3rem; }
 
 /* --- Formulaire de filtres ------------------------------------------------- */

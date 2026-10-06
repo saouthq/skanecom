@@ -57,6 +57,10 @@ html[data-allure="contemporaine"] .tunnel-tel:focus-within {
   background-color: var(--theme-surface); border-color: var(--theme-encre);
 }
 html[data-allure="contemporaine"] .champ .tunnel-tel input { background: transparent !important; }
+/* Le champ de la page de recherche : le même aplat, en pilule comme celui du menu. */
+html[data-allure="contemporaine"] .recherche-page input { background-color: var(--al-plein); border-color: transparent; border-radius: 999px; padding-inline: 1.25rem; }
+html[data-allure="contemporaine"] .recherche-page input:hover { background-color: var(--al-plein-survol); }
+html[data-allure="contemporaine"] .recherche-page input:focus-visible { background-color: var(--theme-surface); border-color: var(--theme-encre); }
 html[data-allure="contemporaine"] .tunnel-tel > span { border-inline-end-color: color-mix(in srgb, var(--theme-encre) 12%, transparent); }
 html[data-allure="contemporaine"] .tunnel-recap { border-color: transparent; border-radius: var(--al-rayon-feuille); }
 html[data-allure="contemporaine"] .identification-choix { border-color: transparent; border-radius: calc(var(--al-rayon) + 3px); }

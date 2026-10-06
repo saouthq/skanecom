@@ -230,7 +230,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
   // Ce qui manque avant d'ouvrir : en tête de l'accueil, et sur sa tuile.
   const fonctions = [
     "catalogue.afficher_prix_barres", "catalogue.prevenir_retour", "catalogue.precommandes", "catalogue.favoris", "vitrine.partage",
-    "vitrine.lettre", "vitrine.statistiques", "catalogue.achetes_ensemble", "catalogue.ajout_carte",
+    "vitrine.lettre", "vitrine.statistiques", "catalogue.achetes_ensemble", "catalogue.ajout_carte", "catalogue.recherche_phrase",
   ];
   const allumees = fonctions.filter((c) => Boolean(v(c))).length;
   const reseaux = ["contact.instagram", "contact.facebook", "contact.tiktok"].filter((c) => texteDe(c)).length;
@@ -830,6 +830,11 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
               <form action={action} method="post">
                 <input type="hidden" name="section" value="vitrine" />
                 <fieldset className="pile rg-corps" disabled={!modifie}>
+                  <h3 className="rg-sous-titre">Pour trouver une pièce</h3>
+                  <ul className="rg-inters" role="list">
+                    <Interrupteur cle="catalogue.recherche_phrase" ferme={ferme("catalogue.recherche_phrase")} valeur={Boolean(v("catalogue.recherche_phrase"))} titre="Recherche en phrase"
+                      aide="« Valise cabine noire à moins de 200 dinars » : la recherche en tire le rayon, la taille, la couleur et le prix, les montre au client et filtre d'après eux. Elle ne comprend que vos rayons et vos déclinaisons ; le client peut toujours chercher mot pour mot." />
+                  </ul>
                   <h3 className="rg-sous-titre">Sur les fiches et les cartes</h3>
                   <ul className="rg-inters" role="list">
                     <Interrupteur cle="catalogue.afficher_prix_barres" ferme={ferme("catalogue.afficher_prix_barres")} valeur={Boolean(v("catalogue.afficher_prix_barres"))} titre="Afficher les prix barrés"

@@ -2571,6 +2571,30 @@ if (section("6")) {
     await t.envoie(page, page.locator("section:has(#t-vitrine)").getByRole("button", { name: "Enregistrer" }));
     verifie((await plusDeLaVitrine()) === 18, "rallumé : les « + » reviennent");
   });
+
+  await etape("la recherche en phrase : allumée puis coupée au backoffice, la vitrine suit aussitôt", async () => {
+    await page.goto(`${C}/gestion/dar-alia/reglages/vitrine`, { waitUntil: "networkidle" });
+    const vitrine = page.locator("section:has(#t-vitrine)");
+    const statut = () => page.getByRole("status").first().innerText().catch(() => "");
+    const casePhrase = vitrine.getByRole("checkbox", { name: /Recherche en phrase/ });
+    verifie(!(await casePhrase.isChecked()), "« Recherche en phrase » : coupée par défaut chez Dar Alia");
+    const compris = async () => {
+      const v = await ctx.newPage();
+      await v.goto(V + "/recherche?q=" + encodeURIComponent("luminaires en stock"), { waitUntil: "networkidle" });
+      const morceaux = await v.locator(".recherche-comprise li").allInnerTexts();
+      await v.close();
+      return morceaux.join(" · ");
+    };
+    verifie((await compris()) === "", "coupée : « luminaires en stock » est cherché mot pour mot");
+    await clic(page, vitrine.getByText("Recherche en phrase"));
+    await t.envoie(page, vitrine.getByRole("button", { name: "Enregistrer" }));
+    verifie((await statut()).includes("Réglages enregistrés"), `allumée : « ${await statut()} »`);
+    const allumee = await compris();
+    verifie(allumee === "Luminaires · En stock", `aussitôt, la vitrine comprend : ${allumee}`);
+    await clic(page, page.locator("section:has(#t-vitrine)").getByText("Recherche en phrase"));
+    await t.envoie(page, page.locator("section:has(#t-vitrine)").getByRole("button", { name: "Enregistrer" }));
+    verifie((await compris()) === "", "recoupée : mot pour mot, comme avant");
+  });
   await ctx.close();
 }
 

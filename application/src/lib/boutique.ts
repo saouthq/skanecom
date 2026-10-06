@@ -65,6 +65,8 @@ export type Cadre = {
   konnectActif: boolean;
   /** Réglage `commande.facture_societe` : l'acheteur peut demander une facture au nom de sa société. */
   factureSociete: boolean;
+  /** Réglage `catalogue.recherche_phrase` : la recherche comprend rayon, déclinaisons et prix dans une phrase. */
+  recherchePhrase: boolean;
   prixBarres: boolean;
   whatsapp: string | null;
   /** Le téléphone et l'e-mail de la boutique (réglages contact.telephone, legal.email). */
@@ -248,6 +250,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     },
     konnectActif: reglage(reglages, "paiement.konnect_actif", false),
     factureSociete: reglage(reglages, "commande.facture_societe", false),
+    recherchePhrase: reglage<boolean>(reglages, "catalogue.recherche_phrase", false) === true,
     prixBarres: reglage(reglages, "catalogue.afficher_prix_barres", false),
     whatsapp: whatsapp.length >= 8 ? whatsapp : null,
     telephone: texteDe("contact.telephone") || null,

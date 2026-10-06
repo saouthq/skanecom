@@ -44,6 +44,8 @@ insert into plateforme.modules_actifs (boutique_id, module) values
 
 insert into public.reglages (boutique_id, cle, valeur) values
   ('00000000-0000-4000-8000-000000000001', 'commande.prefixe_numero',          '"MAY"'),
+  -- Maymar comprend une phrase : « valise cabine noire à moins de 200 dinars ».
+  ('00000000-0000-4000-8000-000000000001', 'catalogue.recherche_phrase',       'true'),
   ('00000000-0000-4000-8000-000000000002', 'commande.prefixe_numero',          '"QDS"'),
   ('00000000-0000-4000-8000-000000000002', 'livraison.seuil_gratuite_millimes', '500000'),
   ('00000000-0000-4000-8000-000000000002', 'catalogue.afficher_prix_barres',   'true'),

@@ -760,6 +760,30 @@ if (section("3")) {
     await page.waitForLoadState("networkidle");
     await capture(page, "mobile-quinca-recherche");
     verifie(await page.locator(".te-carte").count() >= 1, `recherche « casque » : ${(await page.locator(".recherche-bilan").innerText()).trim()}`);
+    verifie((await page.locator(".recherche-comprise").count()) === 0, "la quincaillerie n'a pas le réglage : la recherche ne comprend rien, elle cherche les mots");
+  });
+
+  // Recherche en phrase (réglage allumé sur Maymar) : le rayon, la taille, la
+  // couleur, le prix deviennent des filtres, montrés comme compris.
+  await etape("Maymar : une phrase dans la recherche", async () => {
+    await page.goto(M + "/recherche", { waitUntil: "networkidle" });
+    await page.locator("#q").tap();
+    await tape(page, "valise cabine noire à moins de 200 dinars");
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/recherche\?q=valise/);
+    await page.waitForLoadState("networkidle");
+    await capture(page, "mobile-maymar-recherche-phrase");
+    const compris = await page.locator(".recherche-comprise li").allInnerTexts();
+    verifie(["Valises", "200 TND au plus", "Taille Cabine 55 cm", "Couleur Noir"].every((c) => compris.includes(c)),
+      `compris : ${compris.join(" · ")}`);
+    const prix = await page.locator(".ed-carte-prix").allInnerTexts();
+    const n = await page.locator(".ed-carte").count();
+    verifie(n >= 1 && prix.every((p) => Number((p.match(/(\d+)[,.]\d{3}/) ?? [])[1]) <= 200),
+      `${n} pièce(s), toutes à 200 TND au plus : ${prix.join(" · ")}`);
+    await page.locator(".recherche-comprise a").tap();
+    await page.waitForURL(/mot=1/);
+    await page.waitForLoadState("networkidle");
+    verifie((await page.locator(".recherche-comprise").count()) === 0, `« mot pour mot » : la phrase telle quelle (${(await page.locator(".recherche-bilan").innerText()).trim()})`);
   });
   await ctx.close();
 }

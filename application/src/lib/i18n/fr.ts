@@ -344,6 +344,11 @@ export const fr = {
           : `Aucune pièce trouvée pour « ${q} »`,
     videTexte:
       "Essayez un mot plus court, ou parcourez le catalogue rayon par rayon.",
+    /** La recherche en phrase (réglage catalogue.recherche_phrase). */
+    compris: "Compris :",
+    reste: (mots: string) => `et « ${mots} » dans le texte`,
+    ignores: (mots: string) => `Rien ne correspond à « ${mots} » : voici le reste de ce que vous cherchez.`,
+    motPourMot: (q: string) => `Chercher « ${q} » mot pour mot`,
     /** Les suggestions pendant la frappe (components/ChampRecherche.tsx). */
     suggestionsAria: "Suggestions",
     voirTout: (n: number, q: string) => (n > 1 ? `Voir les ${n} résultats pour « ${q} »` : `Voir le résultat pour « ${q} »`),
