@@ -56,7 +56,8 @@ const MDP = "equipe-locale-skanecom";
 const FICHIERS = process.env.NEXT_PUBLIC_FICHIERS_URL ?? `${process.env.RELAIS ?? "http://127.0.0.1:54321"}/fichiers`;
 const annee = new Date().getFullYear();
 const num = (n) => `MAY-${annee}-${String(n).padStart(5, "0")}`;
-const attendue = (url) => url.includes("/gestion/maison-selma");
+// Les 404 voulues : le backoffice d'une autre boutique, un écran coupé, une adresse inconnue.
+const attendue = (url) => /\/gestion\/(maison-selma|maymar\/(reassort|une-adresse-inconnue))/.test(url);
 await sansDoubleAuthentification("gerant@maymar.test");
 await sansDoubleAuthentification("gerant@quincaillerie.test");
 await sansDoubleAuthentification("gerant@selma.test");
@@ -272,6 +273,22 @@ if (section("1")) {
   await etape("la boutique d'un autre : introuvable", async () => {
     const r = await page.goto(`${C}/gestion/maison-selma`);
     verifie(r.status() === 404, `le backoffice de Maison Selma n'existe pas pour lui (HTTP ${r.status()})`);
+    verifie((await page.locator("h1").innerText()) === "Page introuvable", "la page introuvable de la console, en français (pas celle du framework)");
+  });
+
+  await etape("un écran coupé, une adresse inconnue : en français, dans le backoffice", async () => {
+    // Maymar n'a pas « Prévenir du retour » : l'écran Réassort dit quoi allumer, et où.
+    const r = await page.goto(`${C}/gestion/maymar/reassort`, { waitUntil: "networkidle" });
+    verifie(r.status() === 404 && (await page.locator("main h1").innerText()) === "Réassort : fonction coupée",
+      `Réassort sans sa fonction : « ${await page.locator("main h1").innerText()} » (HTTP ${r.status()})`);
+    const allumer = page.locator(".introuvable-bo a", { hasText: "Fonctions de la vitrine" });
+    verifie((await allumer.getAttribute("href")) === "/gestion/maymar/reglages/vitrine", "le lien mène au réglage qui l'allume");
+    verifie((await page.locator(".coquille-nav, nav").count()) > 0, "la coquille reste : le menu est là");
+    await page.goto(`${C}/gestion/maymar/une-adresse-inconnue`, { waitUntil: "networkidle" });
+    verifie((await page.locator("main h1").innerText()) === "Cet écran n'existe pas ici", "une adresse inconnue : la même page, dans le backoffice");
+    await clic(page, page.getByRole("link", { name: "Revenir à Aujourd'hui" }));
+    await page.waitForURL(/\/gestion\/maymar\/aujourdhui/);
+    verifie(true, "« Revenir à Aujourd'hui » y ramène");
   });
 
   await etape("deux écrans, un seul geste", async () => {

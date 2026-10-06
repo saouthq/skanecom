@@ -512,6 +512,9 @@ a[aria-current="page"] .compte-onglet { background: var(--ui-texte); color: #fff
 }
 .vide strong { color: var(--ui-texte); font-weight: 600; font-size: .9375rem; }
 .vide p { max-inline-size: 26rem; }
+/* L'écran introuvable du backoffice (gestion/[slug]/not-found.tsx) : où allumer la fonction, ou revenir. */
+.introuvable-bo { padding-block: 3.5rem; }
+.introuvable-bo-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-block-start: .875rem; }
 
 .console .code-secret {
   font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; font-size: .8125rem; letter-spacing: .02em; word-break: break-all;
