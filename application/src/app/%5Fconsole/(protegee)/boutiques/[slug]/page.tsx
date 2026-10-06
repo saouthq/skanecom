@@ -22,7 +22,7 @@ import { MOTIFS_SUSPENSION } from "@/lib/console/libelles";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
 import { titreBoutique } from "@/lib/console/titre-boutique";
-import { depuis, vigilances, type LignePilotage, type Quotas, type Sante } from "@/lib/console/pilotage";
+import { depuis, vigilances, type LignePilotage, type Quotas, type Sante, type SurveillanceLue } from "@/lib/console/pilotage";
 import { CANAUX, nomMois, type DonneesConsommation } from "@/lib/console/consommation";
 import { Mesure } from "@/components/console/JaugeEnvois";
 import { resumeEcarts, type DonneesDroits } from "@/lib/console/droits";
@@ -66,7 +66,7 @@ export default async function FicheBoutique({ params, searchParams }: {
   const hoteConsole = (await headers()).get("host");
   // Une boutique vide peut recevoir le préréglage d'un métier.
   const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
-  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }, { data: ddr }] = await Promise.all([
+  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }, { data: ddr }, { data: dsv }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     // Les métiers : le choix d'une boutique vide, et leur nom au journal.
@@ -83,6 +83,8 @@ export default async function FicheBoutique({ params, searchParams }: {
     clientService().rpc("console_consommation", { p_acteur: user.id }),
     // Ses écarts à sa formule (onglet Formule) et son prix propre.
     clientService().rpc("console_droits_boutique", { p_acteur: user.id, p_boutique_id: b.id }),
+    // Ce que la surveillance horaire a relevé sur sa vitrine, ses files, son domaine d'envoi.
+    clientService().rpc("console_surveillance", { p_acteur: user.id }),
   ]);
   const droitsBoutique = (ddr ?? null) as DonneesDroits | null;
   const ecarts = droitsBoutique ? resumeEcarts(droitsBoutique) : { ajoutes: 0, retires: 0 };
@@ -97,7 +99,9 @@ export default async function FicheBoutique({ params, searchParams }: {
     boutiques: CANAUX.flatMap(({ cle }) => (envois[cle].quota === null ? [] : [{ id: b.id, canal: cle, envoyes: envois[cle].envoyes, quota: envois[cle].quota! }])),
     forfaits: { email: null, sms: null }, mois: { email: 0, sms: 0 }, jour: { email: 0, sms: 0 },
   } : null;
-  const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [], quotas }) : [];
+  // (la surveillance elle-même, si elle ne tourne plus, se dit à l'accueil, pas sur chaque boutique)
+  const surveillance = dsv ? { ...(dsv as SurveillanceLue), derniere_heure: null } : null;
+  const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [], quotas, surveillance }) : [];
   const clos = activite ? activite.livrees + activite.refusees : 0;
   const suspension = (dsu ?? null) as { motif: string | null; message: string | null; le: string } | null;
   // « À faire maintenant » : le signal le plus pressant ; sinon, en préparation, l'étape suivante.

@@ -1,4 +1,4 @@
-import { Billets, Bouclier, Camion, Magasin, Retour, Telephone } from "./Icones";
+import { Billets, Bouclier, Camion, CarteBancaire, Magasin, Retour, Telephone } from "./Icones";
 import type { Cadre } from "@/lib/boutique";
 import { t } from "@/lib/i18n";
 
@@ -15,7 +15,12 @@ export function rassurances(cadre: Cadre) {
       : null,
     cadre.livraison.delai ? { cle: "livraison", icone: <Camion />, titre: cadre.livraison.delai, texte: cadre.livraison.frais ?? "" } : null,
     cadre.livraison.cod
-      ? { cle: "cod", icone: <Billets />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte }
+      ? { cle: "cod", icone: <Billets />, titre: t.produit.payezALaLivraison,
+          texte: cadre.konnectActif ? t.produit.payezALaLivraisonTexteCourt : t.produit.payezALaLivraisonTexte }
+      : null,
+    cadre.konnectActif
+      ? { cle: "konnect", icone: <CarteBancaire />, titre: cadre.livraison.cod ? t.produit.payezEnLigne : t.produit.payezEnLigneSeul,
+          texte: t.produit.payezEnLigneTexte }
       : null,
     cadre.livraison.cod && cadre.livraison.rappel
       ? { cle: "rappel", icone: <Telephone />, titre: t.produit.confirmationTelephonique, texte: t.produit.confirmationTelephoniqueTexte }

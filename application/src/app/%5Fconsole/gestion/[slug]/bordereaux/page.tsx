@@ -92,7 +92,8 @@ export default async function Bordereaux({
 
       <div className="bdx-feuilles">
         {d.commandes.map((c) => {
-          const aEncaisser = c.paiement === "cod" && c.statut_paiement !== "paye";
+          // « Déjà payé » seulement si l'argent est reçu : un paiement en ligne non abouti reste à encaisser.
+          const aEncaisser = c.statut_paiement !== "paye";
           const pieces = c.lignes.reduce((s, l) => s + l.quantite, 0);
           return (
             <article key={c.numero} className="bdx" aria-label={`Bordereau ${c.numero}`}>
@@ -137,8 +138,8 @@ export default async function Bordereaux({
                 </section>
                 <section className={aEncaisser ? "bdx-montant" : "bdx-montant bdx-paye"}>
                   <p className="bdx-etiquette">{aEncaisser ? "À encaisser" : "Déjà payé"}</p>
-                  <p className="bdx-somme">{aEncaisser ? <Prix millimes={c.total} /> : "0,000 TND"}</p>
-                  {aEncaisser ? <p>En espèces, à la remise. Refus : ne rien encaisser.</p> : null}
+                  <p className="bdx-somme">{aEncaisser ? <Prix millimes={c.total} /> : "Rien à encaisser"}</p>
+                  <p>{aEncaisser ? "En espèces, à la remise. Refus : ne rien encaisser." : "Payé en ligne : ne rien demander au client."}</p>
                 </section>
               </div>
 

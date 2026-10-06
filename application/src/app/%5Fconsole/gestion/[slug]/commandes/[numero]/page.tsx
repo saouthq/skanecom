@@ -128,7 +128,97 @@ const FAIT: Record<string, string> = {
   skanfact: "C'est fait dans SkanFact.",
   refuser: "Refus enregistré. Le stock est rendu.",
   note: "Note interne enregistrée.",
+  "a-la-livraison": "Noté : le client paiera à la livraison.",
+  facturation: "Facture enregistrée : au nom de la société.",
+  "facturation-retirer": "Facture au nom de la personne qui commande.",
 };
+
+const REMBOURSER = "Payée en ligne : le remboursement du client se fait depuis votre espace Konnect, l'argent n'est jamais passé par SkanEcom.";
+
+type Facturation = { raison_sociale: string; matricule_fiscal: string; adresse: { ligne1: string; ville: string; code_postal: string | null } | null };
+type EtatFacturation = {
+  facturation: Facturation | null;
+  reglage: boolean;
+  compte_pro: { raison_sociale: string; matricule_fiscal: string | null } | null;
+  facturee: boolean;
+};
+
+/** La facture au nom d'une société : ce qui est demandé, et le geste pour la
+ *  noter (une demande au téléphone), la corriger ou la retirer — tant que
+ *  SkanFact ne l'a pas émise. */
+function CarteFacture({ fact, action, peutModifier }: { fact: EtatFacturation; action: string; peutModifier: boolean }) {
+  const f = fact.facturation;
+  const depart = f ?? (fact.compte_pro ? { raison_sociale: fact.compte_pro.raison_sociale, matricule_fiscal: fact.compte_pro.matricule_fiscal ?? "", adresse: null } : null);
+  const formulaire = (
+    <form action={action} method="post" className="bo-formulaire bo-facture-form">
+      <input type="hidden" name="action" value="facturation" />
+      <div className="champ">
+        <label htmlFor="fa-raison">Raison sociale</label>
+        <input id="fa-raison" name="raison_sociale" required minLength={2} maxLength={120} defaultValue={depart?.raison_sociale ?? ""} autoComplete="organization" />
+      </div>
+      <div className="champ">
+        <label htmlFor="fa-matricule">Matricule fiscal</label>
+        <input id="fa-matricule" name="matricule_fiscal" required maxLength={30} defaultValue={depart?.matricule_fiscal ?? ""} placeholder="1234567A/M/000"
+          aria-describedby="fa-matricule-aide" />
+        <p id="fa-matricule-aide" className="aide">Sept chiffres et une lettre, puis le reste.</p>
+      </div>
+      <fieldset className="bo-facture-adresse">
+        <legend>Adresse de facturation <span className="facultatif">(vide : celle de la livraison)</span></legend>
+        <div className="champ">
+          <label htmlFor="fa-ligne1">Rue</label>
+          <input id="fa-ligne1" name="ligne1" maxLength={200} defaultValue={depart?.adresse?.ligne1 ?? ""} />
+        </div>
+        <div className="bo-facture-ligne">
+          <div className="champ">
+            <label htmlFor="fa-ville">Ville</label>
+            <input id="fa-ville" name="ville" maxLength={80} defaultValue={depart?.adresse?.ville ?? ""} />
+          </div>
+          <div className="champ">
+            <label htmlFor="fa-cp">Code postal</label>
+            <input id="fa-cp" name="code_postal" inputMode="numeric" maxLength={4} defaultValue={depart?.adresse?.code_postal ?? ""} />
+          </div>
+        </div>
+      </fieldset>
+      <div className="bo-boutons">
+        <button type="submit" className="btn btn-second btn-petit">{f ? "Enregistrer la facture" : "Noter la facture"}</button>
+      </div>
+    </form>
+  );
+  return (
+    <section className="carte" aria-labelledby="facture-titre">
+      <h2 id="facture-titre" className="carte-titre-icone"><Icone nom="fichier" /> Facture</h2>
+      {f ? (
+        <address className="bo-adresse">
+          <strong>{f.raison_sociale}</strong>
+          <br />
+          MF {f.matricule_fiscal}
+          <br />
+          {f.adresse ? <>{f.adresse.ligne1}<br />{f.adresse.code_postal ? `${f.adresse.code_postal} ` : ""}{f.adresse.ville}</> : <span className="discret">Adresse : celle de la livraison</span>}
+        </address>
+      ) : (
+        <p className="text-petit discret mt-2">
+          Au nom de la personne qui commande.{fact.compte_pro ? ` Son compte pro : ${fact.compte_pro.raison_sociale}.` : ""}
+        </p>
+      )}
+      {fact.facturee ? (
+        <p className="aide mt-2">Émise dans SkanFact : elle se corrige dans SkanFact.</p>
+      ) : peutModifier ? (
+        <>
+          <details className="bo-pli mt-2">
+            <summary>{f ? <><Icone nom="crayon" /> Corriger</> : <><Icone nom="plus" /> Au nom d&apos;une société</>} <Icone nom="bas" className="bo-pli-chevron" /></summary>
+            {formulaire}
+          </details>
+          {f ? (
+            <form action={action} method="post" className="mt-2">
+              <input type="hidden" name="action" value="facturation-retirer" />
+              <button type="submit" className="btn btn-fantome btn-petit"><Icone nom="retirer" taille={14} /> Revenir au nom de la personne</button>
+            </form>
+          ) : null}
+        </>
+      ) : null}
+    </section>
+  );
+}
 
 const FAIT_RETRAIT: Record<string, string> = {
   expedier: "Commande prête au retrait : prévenez le client.",
@@ -221,6 +311,9 @@ export default async function FicheCommande({
     : { data: null };
   const transporteurParDefaut = typeof transporteurRegle?.valeur === "string" ? transporteurRegle.valeur : "";
   const etatSkanFact = sf as EtatFactureSkanFact | null;
+  // La facture au nom d'une société (migration …_facturation_commande) : demandée au tunnel, ou notée ici.
+  const { data: fa } = await sb.rpc("gestion_facturation", { p_boutique_id: boutique.boutique_id, p_numero: f.numero });
+  const fact = fa as EtatFacturation | null;
 
   const role = boutique.role;
   const maintenant = new Date();
@@ -232,10 +325,14 @@ export default async function FicheCommande({
   const prenom = f.contact.nom.trim().split(/\s+/)[0] ?? f.contact.nom;
   const annulable = aConfirmer || f.statut === "confirmee";
   const retrait = f.mode_livraison === "retrait";
+  // Payée en ligne (Konnect) : rien à encaisser, et un remboursement se fait chez Konnect.
+  const enLigne = f.mode_paiement !== "cod" && !f.sur_place;
+  const payeeEnLigne = enLigne && f.statut_paiement === "paye";
   const statut = libelleStatut(f.statut, f.mode_livraison);
   const saisie = f.origine === "manuelle" ? canalDe(f.canal) ?? canalDe("autre") : undefined;
   const fait = messages.fait === "appel-confirmee" && attendArrivage
     ? "Commande confirmée : elle attend son arrivage, puis passe à la préparation."
+    : messages.fait === "livrer" && payeeEnLigne ? (retrait ? "Retrait enregistré (payée en ligne)." : "Livraison enregistrée (payée en ligne).")
     : messages.fait ? ((retrait ? FAIT_RETRAIT[messages.fait] : undefined) ?? FAIT[messages.fait]) : undefined;
 
   const journal = [
@@ -279,12 +376,20 @@ export default async function FicheCommande({
             {f.sur_place ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> Vendue au comptoir</span>
               : retrait ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> Retrait en magasin</span> : null}
             {saisie && !f.sur_place ? <span className="ui-etat"><Icone nom={saisie.icone} taille={12} /> {saisie.libelle}</span> : null}
+            {/* Payer en ligne (Konnect, migration …_konnect) : payée, rien à encaisser ; sinon, pas encore. */}
+            {f.mode_paiement === "konnect" ? (
+              f.statut_paiement === "paye"
+                ? <span className="ui-etat ui-etat-vert"><Icone nom="coche" taille={12} /> Payée en ligne</span>
+                : f.statut_paiement === "echoue"
+                  ? <span className="ui-etat ui-etat-rouge">Paiement en ligne non abouti</span>
+                  : <span className="ui-etat ui-etat-ambre">Paiement en ligne en attente</span>
+            ) : null}
           </span>
         }
         description={
           <>
             {f.sur_place ? `Vendue au comptoir${f.saisie_par ? ` par ${f.saisie_par}` : ""}` : saisie ? `Reçue ${saisie.par}, saisie${f.saisie_par ? ` par ${f.saisie_par}` : ""}` : "Passée"} {quand(f.cree_le, maintenant)} · {age(f.cree_le, maintenant)} · {articles} article{articles > 1 ? "s" : ""} ·{" "}
-            <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> {f.sur_place ? "payés au comptoir" : retrait ? "au retrait" : "à la livraison"}
+            <strong className="text-encre">{formatePrix(f.total_millimes)}</strong> {f.sur_place ? "payés au comptoir" : payeeEnLigne ? "payés en ligne" : enLigne ? "à payer en ligne" : retrait ? "au retrait" : "à la livraison"}
           </>
         }
         actions={
@@ -329,6 +434,21 @@ export default async function FicheCommande({
               {peut(role, EXPEDIER) ? <Link href={`/gestion/${slug}/produits/arrivages`}>Arrivages</Link> : null}
             </span>
           </p>
+        ) : null}
+
+        {enLigne && !payeeEnLigne && ["a_arbitrer", "recue", "confirmee"].includes(f.statut) ? (
+          <div className="message message-attention bo-message bo-paiement-attente">
+            <span>
+              {f.statut_paiement === "echoue" ? "Le paiement en ligne n'a pas abouti." : "Le paiement en ligne n'est pas encore reçu."}{" "}
+              Au téléphone, le client peut choisir de payer à la livraison.
+            </span>
+            {peut(role, CONFIRMER) ? (
+              <form action={action} method="post">
+                <input type="hidden" name="action" value="a-la-livraison" />
+                <button type="submit" className="btn btn-second btn-petit">Il paiera à la livraison</button>
+              </form>
+            ) : null}
+          </div>
         ) : null}
 
         <div className="grille-2 bo-fiche">
@@ -550,7 +670,7 @@ export default async function FicheCommande({
                       <input type="hidden" name="action" value="livrer" />
                       <input type="hidden" name="statut" value={f.statut} />
                       <button type="submit" className="btn btn-succes">
-                        <Icone nom="coche" /> Livrée, paiement encaissé
+                        <Icone nom="coche" /> {payeeEnLigne ? "Livrée" : "Livrée, paiement encaissé"}
                       </button>
                     </form>
                     <details className="bo-pli">
@@ -573,6 +693,7 @@ export default async function FicheCommande({
                           <input id="commentaire" name="commentaire" maxLength={500} placeholder="Absent deux fois, colis revenu" />
                         </div>
                         <p className="aide">Le stock revient automatiquement. Un refus du client ou un client injoignable compte sur sa fiche.</p>
+                        {payeeEnLigne ? <p className="aide">{REMBOURSER}</p> : null}
                         <div className="bo-boutons">
                           <button type="submit" className="btn btn-danger bo-danger">Enregistrer le refus</button>
                         </div>
@@ -594,11 +715,12 @@ export default async function FicheCommande({
                 </div>
                 <p className="bo-action-aide">
                   {f.statut === "livree"
-                    ? `${retrait ? "Retirée" : "Livrée"} ${f.livree_le ? quand(f.livree_le, maintenant) : ""} : ${formatePrix(f.total_millimes)} encaissés.`
+                    ? `${retrait ? "Retirée" : "Livrée"} ${f.livree_le ? quand(f.livree_le, maintenant) : ""} : ${formatePrix(f.total_millimes)} ${payeeEnLigne ? "payés en ligne" : "encaissés"}.`
                     : f.statut === "refusee"
                       ? `${(retrait ? LIBELLES_ORIGINE_NON_RETRAIT : LIBELLES_ORIGINE_REFUS)[f.refus_origine ?? ""] ?? statut}${f.refus_commentaire ? ` : ${f.refus_commentaire}` : ""}. Le stock est revenu.`
                       : `Motif : ${f.motif_annulation ?? "non précisé"}. Le stock est revenu.`}
                 </p>
+                {payeeEnLigne && f.statut !== "livree" ? <p className="bo-action-aide">{REMBOURSER}</p> : null}
               </section>
             )}
 
@@ -619,6 +741,7 @@ export default async function FicheCommande({
                     <label htmlFor="motif">Motif de l&apos;annulation</label>
                     <input id="motif" name="motif" required minLength={3} maxLength={500} placeholder="Doublon, rupture, demande du client…" />
                   </div>
+                  {payeeEnLigne ? <p className="aide">{REMBOURSER}</p> : null}
                   <div className="bo-boutons">
                     <button type="submit" className="btn btn-danger bo-danger">Annuler la commande</button>
                   </div>
@@ -684,6 +807,8 @@ export default async function FicheCommande({
                 <div className="bo-total">
                   <dt>
                     {f.sur_place ? "Payé au comptoir"
+                      : payeeEnLigne ? "Payé en ligne"
+                      : enLigne && !["refusee", "annulee"].includes(f.statut) ? "À payer en ligne"
                       : f.statut === "livree" ? (retrait ? "Encaissé au retrait" : "Encaissé à la livraison")
                       : f.statut === "refusee" || f.statut === "annulee" ? "Non encaissé"
                       : retrait ? "À encaisser au retrait" : "À encaisser à la livraison"}
@@ -816,6 +941,11 @@ export default async function FicheCommande({
                 </p>
               ) : null}
             </section>
+
+            {/* ---------------- La facture au nom d'une société ---------------- */}
+            {fact && (fact.facturation || fact.reglage || fact.compte_pro) ? (
+              <CarteFacture fact={fact} action={action} peutModifier={peut(role, CONFIRMER)} />
+            ) : null}
 
             {/* ---------------- La note interne ---------------- */}
             <section className="carte" aria-labelledby="note-titre">

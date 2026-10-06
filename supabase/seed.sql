@@ -819,6 +819,11 @@ begin
 end
 $$;
 
+-- La facture au nom d'une société (migration …_facturation_commande) : la
+-- quincaillerie, qui vend aux artisans, la propose au tunnel.
+insert into public.reglages (boutique_id, cle, valeur) values
+  ('00000000-0000-4000-8000-000000000002', 'commande.facture_societe', 'true');
+
 -- ---------------------------------------------------------------------
 -- Les devis (migration 37) : la quincaillerie a le module. Le plombier
 -- demande un devis pour un chantier (à chiffrer) ; l'électricienne a reçu

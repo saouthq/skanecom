@@ -6,6 +6,7 @@ import { dateJournal } from "@/lib/console/libelles";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { chronometre, configuration, hoteLocal, LIBELLES_FOURNISSEUR, taille, type DonneesEtat } from "@/lib/console/etat";
+import { LIBELLES_GENRE, surveillanceMuette, type DonneesSurveillance } from "@/lib/console/surveillance";
 
 export const metadata: Metadata = { title: "État technique" };
 
@@ -29,6 +30,7 @@ const PASTILLE: Record<Niveau, string> = {
 };
 
 const pluriel = (n: number, un: string, plusieurs: string) => `${n.toLocaleString("fr-FR")} ${n > 1 ? plusieurs : un}`;
+const secondes = (ms: number) => (ms < 1000 ? `${ms.toLocaleString("fr-FR")} ms` : `${(ms / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} s`);
 const pose = (oui: boolean) => (oui ? <span className="et-pose">posé</span> : <span className="et-manque">manque</span>);
 const pire = (points: Point[], sinon: Niveau): Niveau =>
   points.some((p) => p.niveau === "panne") ? "panne" : points.length ? "attention" : sinon;
@@ -37,10 +39,30 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const { user } = await exigeAdmin();
   const v = await searchParams;
   const service = clientService();
-  const [{ data, error }, duree] = await chronometre(() => service.rpc("console_etat_technique", { p_acteur: user.id }));
+  const [[{ data, error }, duree], { data: dataSurv, error: errSurv }] = await Promise.all([
+    chronometre(() => service.rpc("console_etat_technique", { p_acteur: user.id })),
+    service.rpc("console_surveillance", { p_acteur: user.id }),
+  ]);
   if (error) throw new Error(`État technique illisible : ${error.message}`);
+  if (errSurv) throw new Error(`Surveillance illisible : ${errSurv.message}`);
   const e = data as DonneesEtat;
+  const sv = dataSurv as DonneesSurveillance;
   const c = await configuration();
+
+  // ---- La surveillance (chaque heure) --------------------------------------
+  const dernier = sv.dernier;
+  const muette = surveillanceMuette(sv);
+  const defauts = (dernier?.releves ?? []).filter((r) => !r.ok || r.lent);
+  const pointsSurveillance: Point[] = defauts.map((r) => ({
+    niveau: !r.ok && r.genre === "page" ? "panne" : "attention",
+    texte: <><b>{LIBELLES_GENRE[r.genre]}</b>{r.slug ? <> · <Link href={`/boutiques/${r.slug}`}>{r.boutique}</Link></> : null}
+      {r.genre === "page" || r.genre === "domaine_envoi" ? <> · <span className="et-cible">{r.cible}</span></> : null} — {r.detail ?? "ne répond pas"}</>,
+  }));
+  if (muette) pointsSurveillance.push({ niveau: "attention", texte: <>Le passage de l&apos;heure ne tourne plus : le dernier date du {dateJournal(sv.derniere_heure!)}. Le déclencheur planifié du Worker est à regarder.</> });
+  const niveauSurveillance = pire(pointsSurveillance, dernier ? "ok" : "neutre");
+  const etatSurveillance = !dernier ? "Pas encore passée" : pointsSurveillance.some((p) => p.niveau === "panne") ? "En panne"
+    : pointsSurveillance.length ? "À regarder" : "Tout répond";
+  const dispo = sv.disponibilite;
 
   // ---- La base -------------------------------------------------------------
   const partConnexions = e.base.connexions_max ? e.base.connexions / e.base.connexions_max : 0;
@@ -153,7 +175,7 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const etatDomaines = enErreur.length ? "En panne" : aVerifier.length ? "À vérifier" : enLigne.length ? "Valables" : "Local";
 
   const cartes = [base, courriels, skanfact, fichiers];
-  const aRegarder = [...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
+  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
   // Le verdict renvoie à chaque carte concernée, une fois, avec son nombre de points.
   const parCarte = [...new Set(aRegarder.map((p) => p.carte))].map((id) => {
     const points = aRegarder.filter((p) => p.carte === id);
@@ -187,6 +209,80 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="et-grille">
+        <section className="carte et-carte et-large" aria-labelledby="t-surveillance" data-niveau={niveauSurveillance}>
+          <header className="et-tete">
+            <h2 id="t-surveillance" className="carte-titre-icone"><Icone nom="jauge" /> Surveillance des vitrines</h2>
+            <span className={PASTILLE[niveauSurveillance]}>{etatSurveillance}</span>
+          </header>
+          {message("surveillance")}
+          <dl className="et-faits">
+            <div>
+              <dt>Dernier passage</dt>
+              <dd>{dernier ? <>{dateJournal(dernier.debut)} <span className="discret">· {dernier.declencheur === "heure" ? "celui de l'heure" : "demandé depuis la console"}</span></> : <span className="discret">aucun</span>}</dd>
+            </div>
+            {dernier ? (
+              <div>
+                <dt>Vérifié</dt>
+                <dd>{pluriel(dernier.verifies, "point", "points")}, {defauts.length ? <b className="et-manque">{pluriel(defauts.length, "défaut", "défauts")}</b> : "aucun défaut"}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt>Chaque heure</dt>
+              <dd>{!sv.derniere_heure ? <span className="discret">pas encore passée : le Worker en ligne la lance</span>
+                : muette ? <span className="et-manque">muette depuis le {dateJournal(sv.derniere_heure)}</span>
+                : <span className="et-pose">en marche</span>}</dd>
+            </div>
+          </dl>
+          {pointsSurveillance.length ? (
+            <ul className="et-points">
+              {pointsSurveillance.map((p, i) => <li key={i} data-niveau={p.niveau}><Icone nom="alerte" taille={14} /> <span>{p.texte}</span></li>)}
+            </ul>
+          ) : null}
+          {sv.passages.length > 1 ? (
+            <div className="et-passages">
+              <p className="aide">Les {sv.passages.length} derniers passages, du plus ancien au plus récent</p>
+              <ol aria-label={`${pluriel(sv.passages.filter((p) => p.defauts === 0).length, "passage sans défaut", "passages sans défaut")} sur ${sv.passages.length}`}>
+                {[...sv.passages].reverse().map((p) => (
+                  <li key={p.debut} data-niveau={p.pannes ? "panne" : p.defauts ? "attention" : "ok"}
+                    title={`${dateJournal(p.debut)} : ${p.pannes ? pluriel(p.pannes, "vitrine en panne", "vitrines en panne") : p.defauts ? pluriel(p.defauts, "défaut", "défauts") : "tout répond"}`} />
+                ))}
+              </ol>
+            </div>
+          ) : null}
+          {dispo.length ? (
+            <>
+              <h3 className="et-sous-titre">Disponibilité sur 24 heures</h3>
+              <ul className="et-domaines">
+                {dispo.map((d) => {
+                  const part = d.releves ? d.ok / d.releves : 0;
+                  const n: Niveau = part === 1 ? "ok" : part >= 0.9 ? "attention" : "panne";
+                  return (
+                    <li key={d.cible}>
+                      <div className="et-domaine">
+                        <span className="et-hote">{d.cible}</span>
+                        <span className="discret"><Link href={`/boutiques/${d.slug}`}>{d.boutique}</Link> · {pluriel(d.releves, "relevé", "relevés")}</span>
+                      </div>
+                      <div className="et-domaine-etat">
+                        <span className={PASTILLE[n]}>{(part * 100).toLocaleString("fr-FR", { maximumFractionDigits: part === 1 ? 0 : 1 })} %</span>
+                        {d.duree_mediane !== null ? <span className="aide">répond en {secondes(d.duree_mediane)}</span> : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : null}
+          <div className="et-pied">
+            <form action="/etat/surveillance" method="post">
+              <button type="submit" className="btn btn-second btn-petit">Vérifier maintenant</button>
+            </form>
+            <p className="aide">
+              Chaque heure, d&apos;elle-même : l&apos;accueil de chaque vitrine ouverte (et son certificat), les files d&apos;e-mails
+              et de SkanFact, et une fois par jour le domaine d&apos;envoi propre à une boutique. Gardé 14 jours.
+            </p>
+          </div>
+        </section>
+
         {cartes.map((x) => (
           <section key={x.id} className="carte et-carte" aria-labelledby={`t-${x.id}`} data-niveau={x.niveau}>
             <header className="et-tete">

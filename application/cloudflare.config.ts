@@ -1,4 +1,4 @@
-import { bindings, defineConfig, defineWorker } from "cf/config";
+import { bindings, defineConfig, defineWorker, triggers } from "cf/config";
 import { createWorkersResponseStoreServiceBindingConfig } from "@vinext/cloudflare/cache/config";
 
 const responseStore = await createWorkersResponseStoreServiceBindingConfig({
@@ -16,7 +16,10 @@ export default defineConfig({
   worker: defineWorker({
     ...responseStore.applicationWorker,
     name: "skanecom-application",
-    entrypoint: "vinext/server/fetch-handler",
+    // vinext, plus le déclencheur planifié de la surveillance (src/worker.ts).
+    entrypoint: "./src/worker.ts",
+    // Chaque heure : la surveillance des vitrines ouvertes (État technique).
+    triggers: [triggers.scheduled({ schedule: "0 * * * *" })],
     compatibilityDate: "2026-09-28",
     // global_fetch_strictly_public : sans lui, la vitrine ne peut pas appeler le
     // faux Supabase, qui est un autre Worker du même sous-domaine workers.dev

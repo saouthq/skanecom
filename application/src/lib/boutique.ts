@@ -63,6 +63,8 @@ export type Cadre = {
   seuilGratuiteMillimes: number | null;
   livraison: { frais: string | null; delai: string | null; delaiJours: { min: number; max: number } | null; cod: boolean; rappel: boolean };
   konnectActif: boolean;
+  /** Réglage `commande.facture_societe` : l'acheteur peut demander une facture au nom de sa société. */
+  factureSociete: boolean;
   prixBarres: boolean;
   whatsapp: string | null;
   /** Le téléphone et l'e-mail de la boutique (réglages contact.telephone, legal.email). */
@@ -245,6 +247,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
       rappel: reglage(reglages, "commande.mode_confirmation", "telephonique") === "telephonique",
     },
     konnectActif: reglage(reglages, "paiement.konnect_actif", false),
+    factureSociete: reglage(reglages, "commande.facture_societe", false),
     prixBarres: reglage(reglages, "catalogue.afficher_prix_barres", false),
     whatsapp: whatsapp.length >= 8 ? whatsapp : null,
     telephone: texteDe("contact.telephone") || null,

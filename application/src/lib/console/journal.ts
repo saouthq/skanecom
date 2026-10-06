@@ -74,6 +74,8 @@ export const ACTIONS: Record<string, string> = {
   "boutique.courriels": "E-mails de la boutique : nom affiché, réponses",
   "boutique.domaine_envoi": "Domaine d'envoi des e-mails",
   "plateforme.courriels": "E-mails de l'équipe : adresse de réponse",
+  "konnect.brancher": "Compte Konnect branché (paiement en ligne)",
+  "konnect.retirer": "Compte Konnect retiré",
   // Les gestes des back-offices (tracés par la boutique elle-même)
   "accueil.modifier": "Accueil de la vitrine modifié",
   "apparence.publier": "Apparence de la vitrine publiée",
@@ -127,6 +129,7 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "clients", titre: "Clients" },
   { cle: "objectif", titre: "Objectif du mois" },
   { cle: "lettre", titre: "Lettre d'information" },
+  { cle: "konnect", titre: "Paiement en ligne (Konnect)" },
 ];
 
 /** Le canal d'un geste sur les envois (crédit, forfait du fournisseur), au journal. */

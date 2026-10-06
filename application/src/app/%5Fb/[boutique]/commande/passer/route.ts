@@ -5,6 +5,7 @@ import { memeOrigine } from "@/lib/origine";
 import { COOKIE_COMMANDE, NUMERO_DEVIS, SAISIE_CODE, raisonDe, type Raison, type ReponsePasser } from "@/lib/commande";
 import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
 import { enFond } from "@/lib/gestion/skanfact";
+import { ouvrirPourCommande } from "@/lib/paiement/commande";
 
 /* ============================================================================
    PASSER COMMANDE — la page envoie le panier, le contact, l'adresse et le
@@ -42,6 +43,10 @@ type Corps = {
   origine?: unknown;
   /** Le code promo tapé (module promotions). */
   code?: unknown;
+  /** « konnect » : payer en ligne (module paiement_en_ligne, migration …_konnect). */
+  paiement?: unknown;
+  /** La facture au nom d'une société (réglage commande.facture_societe, migration …_facturation_commande). */
+  facturation?: unknown;
 };
 
 export async function POST(req: Request, { params }: { params: Promise<{ boutique: string }> }) {
@@ -59,6 +64,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   const sb = await clientAcheteur();
 
   const devis = typeof corps.devis === "string" && NUMERO_DEVIS.test(corps.devis) ? corps.devis : null;
+  // La facture demandée : relue par la base avant la commande (un champ mal
+  // rempli se corrige sans qu'une commande soit déjà passée).
+  const facturation = cadre.factureSociete && corps.facturation && typeof corps.facturation === "object" ? corps.facturation : null;
+  if (facturation) {
+    const { error: illisible } = await sb.rpc("facturation_lisible", { p_facturation: facturation });
+    if (illisible) return reponse({ ok: false, raison: "facturation", message: illisible.message }, 422);
+  }
   const { data, error } = devis
     ? await sb.rpc("accepter_devis", {
         p_boutique_id: cadre.boutique.id,
@@ -89,6 +101,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   }
 
   const resultat = data as { numero: string; jeton: string; rejouee?: boolean };
+  if (facturation && !resultat.rejouee) {
+    const { error: refus } = await sb.rpc("vitrine_demander_facture", {
+      p_boutique_id: cadre.boutique.id, p_numero: resultat.numero, p_jeton: resultat.jeton, p_facturation: facturation,
+    });
+    // Relue juste avant : un refus ici ne défait pas la commande, l'équipe peut la noter.
+    if (refus) console.error(`vitrine_demander_facture (${boutique}, ${resultat.numero}) : ${refus.message}`);
+  }
   // Les e-mails de la commande (au client, à l'équipe), si la boutique les a réglés : en fond.
   if (!resultat.rejouee && cadre) enFond(envoyerCourrielsCommandes(cadre.boutique.id));
   const securise = (req.headers.get("origin") ?? "").startsWith("https:");
@@ -100,5 +119,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
     path: "/commande",
     maxAge: 60 * 60 * 24 * 30,
   });
+  // Payer en ligne : le paiement s'ouvre chez Konnect, l'acheteur y part.
+  // Konnect muet : la commande reste passée, à la livraison (D14). Une
+  // boutique sans paiement à la livraison ouvre toujours le paiement en ligne.
+  if (cadre.konnectActif && ((corps.paiement === "konnect" && !devis) || !cadre.livraison.cod)) {
+    const origineVitrine = req.headers.get("origin") ?? new URL(req.url).origin;
+    const o = await ouvrirPourCommande({
+      boutiqueId: cadre.boutique.id, nomBoutique: cadre.boutique.nom, numero: resultat.numero, jeton: resultat.jeton, origine: origineVitrine,
+    });
+    return reponse(o.ok ? { ok: true, numero: resultat.numero, payer: o.adresse } : { ok: true, numero: resultat.numero, paiement: "indisponible" });
+  }
   return reponse({ ok: true, numero: resultat.numero });
 }

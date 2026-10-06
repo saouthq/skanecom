@@ -36,6 +36,12 @@ import { creeTesteur } from "./testeur.mjs";
    9. Les gestes groupés : le gérant remet tous les colis « À préparer »
       au livreur d'un geste (à la souris et au clavier), puis fait le
       point du livreur : livrés, payés, sauf celui qui revient refusé.
+  10. Le paiement en ligne de Maymar (module paiement_en_ligne, Konnect
+      simulé par le relais) : le gérant branche son compte (une clé
+      refusée, puis la bonne), l'allume ; un acheteur au téléphone voit sa
+      carte refusée, renonce, réessaie avec une autre, paie ; la fiche dit
+      « Payée en ligne », le bordereau « Rien à encaisser » ; puis le
+      compte se retire.
 
      cd application && bun run parcours:gestion
      (base fraîche avec le jeu de démo : les onze commandes de Maymar ; API
@@ -2873,6 +2879,163 @@ if (section("9")) {
     verifie(await attend(async () => (await message(page)).includes(`${m - 1} colis livré`)), `le point du livreur : ${m - 1} colis livrés d'un geste`);
     verifie((await statutDe(numeros[0]))?.statut_paiement === "paye" && (await statutDe(garde))?.statut === "expediee",
       "livrés et payés ; le décoché reste chez le livreur, pour son refus");
+  });
+  await ctx.close();
+}
+
+if (section("10")) {
+  console.log("\n== 10. Le paiement en ligne de Maymar (Konnect, sur le compte de la boutique) ==");
+  const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SUPA = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const RELAIS = process.env.RELAIS ?? "http://127.0.0.1:54321";
+  const V = t.adresse("maymar.localhost");
+  const rpc = async (nom, corps) => {
+    const texte = await (await fetch(`${SUPA}/rest/v1/rpc/${nom}`, {
+      method: "POST", headers: { apikey: cle, authorization: `Bearer ${cle}`, "content-type": "application/json" }, body: JSON.stringify(corps) })).text();
+    return texte ? JSON.parse(texte) : null;
+  };
+  const lit = async (chemin) => (await fetch(`${SUPA}/rest/v1/${chemin}`, { headers: { apikey: cle, authorization: `Bearer ${cle}` } })).json();
+  const codeRecu = async (numero) => {
+    for (let i = 0; i < 40; i++) {
+      const r = await fetch(`${RELAIS}/sms-dev/dernier?telephone=216${numero}`).catch(() => null);
+      if (r?.ok) return (await r.json()).code;
+      await pause(250);
+    }
+    throw new Error(`aucun SMS pour le ${numero}`);
+  };
+  // La console allume le module pour Maymar (le geste de son administrateur).
+  const { users } = await (await fetch(`${SUPA}/auth/v1/admin/users?per_page=1000`, { headers: { apikey: cle, authorization: `Bearer ${cle}` } })).json();
+  const admin = users.find((u) => u.email === "admin@skanecom.test");
+  const maymar = (await rpc("console_boutique", { p_slug: "maymar" })).boutique;
+  await rpc("console_changer_module", { p_acteur: admin.id, p_boutique_id: maymar.id, p_module: "paiement_en_ligne", p_actif: true });
+  await sansDoubleAuthentification("gerant@maymar.test");
+  const ctx = await navigateur.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" });
+  const page = await ctx.newPage();
+  t.espion(page, "konnect");
+  const carte = page.locator("section:has(#t-konnect)");
+  const moyens = page.locator("section:has(#t-paiement)");
+  let numero = "";
+
+  await etape("connexion du gérant de Maymar", async () => {
+    await connexion(page, "gerant@maymar.test");
+    await page.waitForURL(/double-authentification/, { timeout: 15000 });
+    const secret = (await page.locator("[data-secret-totp]").textContent()).trim();
+    await clic(page, page.locator("#code"));
+    await tape(page, totp(secret));
+    await page.keyboard.press("Enter");
+    await entre(page, "maymar");
+    verifie(true, "le gérant entre dans son backoffice");
+  });
+
+  await etape("Réglages → Paiement : le compte Konnect, une clé refusée puis la bonne", async () => {
+    await page.goto(`${C}/gestion/maymar/reglages/paiement`, { waitUntil: "networkidle" });
+    verifie(await moyens.getByLabel("Paiement en ligne (Konnect), compte à brancher").isDisabled(),
+      "sans compte, l'interrupteur du paiement en ligne reste grisé");
+    await clic(page, carte.getByLabel("Identifiant du portefeuille"));
+    await tape(page, "5f7a209aeb3f76490ac4a3d1");
+    await clic(page, carte.getByLabel("Clé d'API"));
+    await tape(page, "sk_cle_refusee_par_konnect");
+    await t.envoie(page, carte.getByRole("button", { name: "Brancher mon compte Konnect" }));
+    verifie(await attend(async () => (await carte.innerText()).includes("Konnect refuse cette clé en mode essai")),
+      "une clé que Konnect refuse : la carte le dit, rien n'est gardé");
+    verifie(await carte.getByLabel("Identifiant du portefeuille").inputValue() === "5f7a209aeb3f76490ac4a3d1", "le portefeuille tapé reste là, pour corriger la clé");
+    await clic(page, carte.getByLabel("Clé d'API"));
+    await page.keyboard.press("ControlOrMeta+A");   // la clé refusée est restée dans le champ : on la remplace
+    await tape(page, "sk_essai_maymar_0001");
+    await t.envoie(page, carte.getByRole("button", { name: "Brancher mon compte Konnect" }));
+    verifie(await attend(async () => (await carte.innerText()).includes("Compte Konnect branché, en mode essai")), "la bonne clé : le compte est branché, en essai");
+    verifie((await carte.innerText()).includes("…0001") && !(await page.content()).includes("sk_essai_maymar_0001"),
+      "la clé ne revient jamais à l'écran : ses quatre derniers caractères");
+    await capture(page, "gestion-konnect-branche");
+  });
+
+  await etape("le paiement en ligne s'allume", async () => {
+    const inter = moyens.getByRole("checkbox", { name: /Paiement en ligne \(Konnect\)/ });
+    verifie(!(await inter.isDisabled()) && !(await inter.isChecked()), "branché : l'interrupteur se libère, encore éteint");
+    await clic(page, inter);
+    await t.envoie(page, moyens.getByRole("button", { name: "Enregistrer" }));
+    await page.reload({ waitUntil: "networkidle" });
+    verifie(await moyens.getByRole("checkbox", { name: /Paiement en ligne \(Konnect\)/ }).isChecked(), "enregistré : le paiement en ligne est allumé");
+  });
+
+  await etape("l'acheteur, au téléphone : carte refusée chez Konnect, réessayé, payé", async () => {
+    const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: "fr-FR" });
+    const p = await tel.newPage();
+    t.espion(p, "konnect-acheteur");
+    await p.goto(V + "/produit/valise-cabine-business", { waitUntil: "networkidle" });
+    verifie((await p.locator("main").innerText()).includes("Ou en ligne, par carte"), "la fiche dit les deux moyens de payer");
+    await p.locator(".achat .btn-ajout").tap();
+    await p.goto(V + "/commande", { waitUntil: "networkidle" });
+    verifie((await p.locator(".tunnel-tete").innerText()).includes("Payez en ligne par carte ou e-dinar, ou au livreur"), "le chapeau de la commande le dit aussi");
+    // Un numéro neuf à chaque passage : un même numéro n'a qu'un SMS par minute.
+    const telephone = `29${String(Date.now() % 1_000_000).padStart(6, "0")}`;
+    await p.getByLabel("Téléphone").fill(telephone);
+    await p.getByRole("button", { name: "Recevoir le code" }).tap();
+    await p.getByLabel("Code reçu par SMS").fill(await codeRecu(telephone));
+    await p.locator(".tunnel-identite").waitFor({ timeout: 8000 });
+    await p.getByLabel("Nom et prénom").fill("Ines Gharbi");
+    await p.getByLabel(/^Adresse/).fill("8 rue d'Alger");
+    await p.getByLabel("Ville ou délégation").fill("Sousse");
+    await p.getByLabel("Gouvernorat", { exact: true }).selectOption({ label: "Sousse" });
+    await p.locator(".tunnel-livraison").waitFor({ timeout: 8000 });
+    await p.getByText("Payer en ligne", { exact: true }).tap();
+    verifie((await p.locator(".tunnel-mode:has(input:checked)").innerText()).includes("Payer en ligne"), "la carte choisie se voit : « Payer en ligne »");
+    await p.locator("input[type=checkbox]").last().tap();
+    const bouton = p.locator("button.tunnel-bouton");
+    verifie((await bouton.innerText()).includes("Confirmer et payer en ligne"), "le bouton dit ce qui va se passer");
+    await bouton.tap();
+    await p.waitForURL(/\/konnect-dev\/payer\//, { timeout: 15000 });
+    verifie((await p.locator("body").innerText()).includes("Maymar"), "la page de paiement de Konnect (simulée) : la commande de Maymar");
+    // La carte se saisit chez Konnect, jamais chez SkanEcom : une carte que la banque refuse, puis on renonce.
+    const carte = async (numero) => {
+      await p.getByLabel("Nom sur la carte").fill("INES GHARBI");
+      await p.getByLabel("Numéro de carte").fill(numero);
+      await p.getByLabel("Expiration").fill("12/29");
+      await p.getByLabel("Code de sécurité").fill("123");
+      await p.getByRole("button", { name: /^Payer \d/ }).tap();
+    };
+    await carte("4000 0000 0000 0002");
+    await p.locator(".refus").waitFor({ timeout: 8000 });
+    verifie((await p.locator(".refus").innerText()).includes("refusé par votre banque"), "une carte refusée : la page de paiement le dit, rien n'est prélevé");
+    await p.getByRole("button", { name: "Annuler et revenir à la boutique" }).tap();
+    await p.waitForURL(/\/commande\/merci\?paiement=retour/, { timeout: 15000 });
+    const bloc = p.locator(".merci-paiement");
+    verifie((await bloc.innerText()).includes("aucun montant n'a été prélevé"), "refusé : rien n'est prélevé, la page le dit");
+    await capture(p, "vitrine-konnect-refuse");
+    numero = (await p.locator(".merci-tete .chapo").innerText()).match(/MAY-\d{4}-\d{5}/)?.[0] ?? "";
+    await bloc.getByRole("button", { name: "Réessayer le paiement" }).tap();
+    await p.waitForURL(/\/konnect-dev\/payer\//, { timeout: 15000 });
+    await carte("4242 4242 4242 4242");
+    await p.waitForURL(/\/commande\/merci\?paiement=retour/, { timeout: 15000 });
+    verifie((await p.locator(".merci-paiement").innerText()).includes("est reçu"), "réessayé, payé : « Votre paiement … est reçu »");
+    verifie((await p.locator(".merci-suite").innerText()).includes("réglés en ligne, par Konnect"), "la suite : l'étape payée est cochée, rien à régler au livreur");
+    await capture(p, "vitrine-konnect-paye");
+    const [c] = await lit(`commandes?select=mode_paiement,statut_paiement&boutique_id=eq.${maymar.id}&numero=eq.${numero}`);
+    verifie(c?.mode_paiement === "konnect" && c?.statut_paiement === "paye", `en base : ${numero} payée en ligne`);
+    await tel.close();
+  });
+
+  await etape("la fiche : « Payée en ligne » ; le bordereau : rien à encaisser", async () => {
+    await page.goto(`${C}/gestion/maymar/commandes/${numero}`, { waitUntil: "networkidle" });
+    verifie((await page.locator(".bo-fiche-tete").innerText()).includes("Payée en ligne"), "la fiche porte « Payée en ligne »");
+    verifie((await page.locator("main").innerText()).includes("payés en ligne"), "et la somme est dite payée en ligne, pas « à la livraison »");
+    await clic(page, page.getByRole("button", { name: "Confirmée", exact: true }));
+    await page.getByText("Commande confirmée", { exact: false }).first().waitFor();
+    await page.goto(`${C}/gestion/maymar/bordereaux?n=${encodeURIComponent(numero)}`, { waitUntil: "networkidle" });
+    const montant = page.locator(".bdx-montant");
+    verifie((await montant.innerText()).includes("Rien à encaisser"), "le bordereau du livreur : « Rien à encaisser »");
+    await capture(page, "gestion-konnect-bordereau");
+  });
+
+  await etape("retirer le compte : le paiement à la livraison revient", async () => {
+    await page.goto(`${C}/gestion/maymar/reglages/paiement`, { waitUntil: "networkidle" });
+    verifie(/[1-9]\d* paiements? reçus?/.test(await carte.innerText()), "le mois : le paiement reçu est compté");
+    await t.envoie(page, carte.getByRole("button", { name: "Retirer le compte" }));
+    verifie(await attend(async () => (await carte.innerText()).includes("Compte Konnect retiré")), "retiré : la carte le dit");
+    await page.reload({ waitUntil: "networkidle" });
+    verifie(await moyens.getByLabel("Paiement à la livraison").isChecked()
+      && await moyens.getByLabel("Paiement en ligne (Konnect), compte à brancher").isDisabled(),
+      "le paiement à la livraison est allumé, le paiement en ligne éteint");
   });
   await ctx.close();
 }

@@ -101,15 +101,6 @@ export function MenuMobile({
         etiquetteFermer={t.commun.fermerMenu}
         retour={bouton}
         className="tiroir-menu"
-        pied={
-          faits.length > 0 ? (
-            <ul className="menu-faits">
-              {faits.map((f) => (
-                <li key={f}>{f}</li>
-              ))}
-            </ul>
-          ) : undefined
-        }
       >
         <nav aria-label={t.commun.navigationPrincipale}>
           <ul className="menu-liste">
@@ -144,6 +135,15 @@ export function MenuMobile({
               ))}
             </ul>
           </nav>
+        ) : null}
+        {/* Ce qui rassure, à la fin du menu : il défile d'un seul tenant (au
+            pied, il prenait la moitié d'un petit écran et cachait les liens). */}
+        {faits.length > 0 ? (
+          <ul className="menu-faits">
+            {faits.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
         ) : null}
       </Tiroir>
     </>

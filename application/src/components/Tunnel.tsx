@@ -5,7 +5,7 @@ import { evenementPub, lignesPub } from "@/lib/pixels";
 import { signaleEtape } from "@/lib/etapes-visite";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Billets, Calendrier, Camion, Coche, Etiquette, Magasin as IconeMagasin } from "./Icones";
+import { Billets, Calendrier, Camion, CarteBancaire, Coche, Etiquette, Magasin as IconeMagasin } from "./Icones";
 import { jourPrevu } from "@/lib/catalogue";
 import { Prix } from "./Prix";
 import { Connexion, Identification } from "./Connexion";
@@ -83,6 +83,12 @@ type Champs = {
 
 type Erreurs = Partial<Record<keyof Champs | "code", string>>;
 
+type Facture = { raison: string; matricule: string; identique: boolean; ligne1: string; ville: string; codePostal: string };
+const FACTURE_VIDE: Facture = { raison: "", matricule: "", identique: true, ligne1: "", ville: "", codePostal: "" };
+const ORDRE_FACTURE: (keyof Facture)[] = ["raison", "matricule", "ligne1", "ville", "codePostal"];
+/** Le matricule fiscal tunisien : sept chiffres (huit pour les récents), la lettre de contrôle, le reste (1234567A/M/000). */
+const MATRICULE = /^\d{7,8}[A-Z][A-Z0-9]{0,8}$/;
+
 const CHAMPS_VIDES: Champs = { telephone: "", nom: "", ligne1: "", ligne2: "", ville: "", gouvernorat: "", codePostal: "", note: "" };
 const ORDRE: (keyof Champs)[] = ["telephone", "nom", "ligne1", "ville", "gouvernorat", "codePostal"];
 const JOUR_DEVIS = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone: "Africa/Tunis" });
@@ -112,6 +118,7 @@ export function Tunnel({
   verification,
   rappel,
   cod,
+  konnect = false,
   gouvernorats,
   retractationJours,
   retrait,
@@ -119,6 +126,7 @@ export function Tunnel({
   express = null,
   codesPromo = false,
   relancePaniers = false,
+  factureSociete = false,
   integre = false,
 }: {
   gabarit: CodeTheme;
@@ -129,6 +137,8 @@ export function Tunnel({
   verification: Verification;
   rappel: boolean;
   cod: boolean;
+  /** Le paiement en ligne Konnect, si la boutique l'a branché et allumé. */
+  konnect?: boolean;
   gouvernorats: Gouvernorat[];
   retractationJours: number;
   /** Le magasin, si la boutique propose le retrait ; null sinon. */
@@ -142,6 +152,8 @@ export function Tunnel({
   codesPromo?: boolean;
   /** Réglage `commande.relance_paniers` : le tunnel prévient qu'un panier laissé peut être rappelé, une fois. */
   relancePaniers?: boolean;
+  /** Réglage `commande.facture_societe` : la facture au nom d'une société (raison sociale, matricule, adresse). */
+  factureSociete?: boolean;
   /** Posé sur la page de vente : « la commande ouverte » (le pixel, l'étape
    *  de l'entonnoir) part au premier geste dans le formulaire, pas à chaque
    *  visite de la page. */
@@ -155,7 +167,15 @@ export function Tunnel({
   const [tentee, setTentee] = useState(false);
   const [alerte, setAlerte] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
+  // Le moyen de paiement choisi : à la livraison d'abord, quand la boutique le prend.
+  const [paiement, setPaiement] = useState<"cod" | "konnect">(cod || !konnect ? "cod" : "konnect");
+  const enLigne = konnect && (paiement === "konnect" || !cod);
+  const peutPayer = cod || konnect;
   const [recapOuvert, setRecapOuvert] = useState(false);
+  // La facture au nom d'une société : demandée d'une case, ses champs dessous.
+  const [facture, setFacture] = useState(false);
+  const [fact, setFact] = useState<Facture>(FACTURE_VIDE);
+  const refsFacture = useRef<Partial<Record<keyof Facture, HTMLElement | null>>>({});
   const [accepte, setAccepte] = useState(false);
   const refConditions = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<ModeLivraison>("domicile");
@@ -352,6 +372,27 @@ export function Tunnel({
     return e;
   }, [champs, compteObligatoire, session, enRetrait, verification]);
 
+  // La facture : ce qui manque, seulement quand elle est demandée.
+  const adresseFacture = facture && (enRetrait || !fact.identique);
+  const erreursFacture = useMemo<Partial<Record<keyof Facture, string>>>(() => {
+    const e: Partial<Record<keyof Facture, string>> = {};
+    if (!factureSociete || !facture) return e;
+    const raison = fact.raison.trim();
+    if (raison.length < 2 || raison.length > 120) e.raison = t.facture.raisonInvalide;
+    if (!MATRICULE.test(fact.matricule.toUpperCase().replace(/[^A-Z0-9]/g, ""))) e.matricule = t.facture.matriculeInvalide;
+    if (adresseFacture) {
+      const rempli = fact.ligne1.trim() || fact.ville.trim() || fact.codePostal.trim();
+      // Au retrait, l'adresse est facultative ; à domicile, « une autre adresse » la demande.
+      if (rempli || !enRetrait) {
+        if (fact.ligne1.trim().length < 3) e.ligne1 = t.commande.adresseInvalide;
+        if (fact.ville.trim().length < 2) e.ville = t.commande.villeInvalide;
+      }
+      if (fact.codePostal.trim() && !/^\d{4}$/.test(fact.codePostal.trim())) e.codePostal = t.commande.codePostalInvalide;
+    }
+    return e;
+  }, [factureSociete, facture, fact, adresseFacture, enRetrait]);
+  const changeFacture = (cle: keyof Facture) => (valeur: string) => setFact((f) => ({ ...f, [cle]: valeur }));
+
   // Une étape remplie se coche (le numéro devient une coche) : on voit où l'on en est.
   const etapeUneFaite = !erreurs.telephone;
   const etapeDeuxFaite = !erreurs.nom && !erreurs.ligne1 && !erreurs.ville && !erreurs.gouvernorat && !erreurs.codePostal;
@@ -392,6 +433,11 @@ export function Tunnel({
         // La boutique a cessé de proposer le retrait entre-temps.
         setMode("domicile");
         return setAlerte(t.commande.retraitIndisponible);
+      case "facturation":
+        // La base a relu la facture autrement : son message, et le premier champ.
+        focusAlerte.current = false;
+        amene(refsFacture.current.raison);
+        return setAlerte(message);
       case "code":
         // Vu appliqué, refusé à la commande : il tombe, le total se recalcule.
         changeCode(null);
@@ -410,6 +456,12 @@ export function Tunnel({
     if (premiere) {
       setAlerte(t.commande.aCorriger);
       amene(refs.current[premiere]);
+      return;
+    }
+    const premiereFacture = ORDRE_FACTURE.find((c) => erreursFacture[c]);
+    if (premiereFacture) {
+      setAlerte(t.commande.aCorriger);
+      amene(refsFacture.current[premiereFacture]);
       return;
     }
     // L'accord explicite aux conditions de vente : la base le revérifie.
@@ -454,6 +506,18 @@ export function Tunnel({
           note: champs.note.trim() || null,
           // Le code, s'il s'applique : un code refusé ne part pas.
           ...(avecCodes && code && devis.code?.applique ? { code } : {}),
+          ...(enLigne ? { paiement: "konnect" } : {}),
+          ...(factureSociete && facture
+            ? {
+                facturation: {
+                  raison_sociale: fact.raison.trim(),
+                  matricule_fiscal: fact.matricule.trim(),
+                  adresse: adresseFacture
+                    ? { ligne1: fact.ligne1.trim(), ville: fact.ville.trim(), code_postal: fact.codePostal.trim() || null }
+                    : null,
+                },
+              }
+            : {}),
         }),
       });
       const rep = (await r.json()) as ReponsePasser;
@@ -461,7 +525,12 @@ export function Tunnel({
         // La page de fin vide le panier et oublie la clé : d'ici là, un
         // nouvel envoi du même panier rendrait la même commande.
         gardeCode(boutique, null);
-        router.push("/commande/merci");
+        // Payer en ligne : la page de Konnect, puis le retour sur la page de fin.
+        if (rep.payer) {
+          window.location.assign(rep.payer);
+          return;
+        }
+        router.push(rep.paiement === "indisponible" ? "/commande/merci?paiement=indisponible" : "/commande/merci");
         return; // le bouton reste en « envoi » jusqu'à la page suivante
       }
       refus(rep.raison, rep.message);
@@ -564,7 +633,7 @@ export function Tunnel({
           </div>
         ) : null}
 
-        {!cod ? <p className="tunnel-alerte">{t.commande.fermee}</p> : null}
+        {!peutPayer ? <p className="tunnel-alerte">{t.commande.fermee}</p> : null}
 
         {/* 1 — Vos coordonnées */}
         <fieldset className="tunnel-etape" data-faite={etapeUneFaite ? "" : undefined}>
@@ -751,16 +820,121 @@ export function Tunnel({
             <span className="tunnel-num" aria-hidden="true">3</span>
             {t.commande.etapePaiement}
           </legend>
-          <label className="tunnel-mode">
-            <input type="radio" name="paiement" value="cod" checked readOnly disabled={!cod} />
-            <span className="tunnel-mode-corps">
-              <strong>{enRetrait ? t.commande.codRetrait : t.commande.cod}</strong>
-              <span className="legende">{enRetrait ? t.commande.codTexteRetrait : t.commande.codTexte}</span>
-            </span>
-            <Billets taille={22} />
-          </label>
+          <div className={cod && konnect ? "tunnel-choix tunnel-choix-paiement" : "tunnel-choix-paiement"}>
+          {cod || !konnect ? (
+            <label className="tunnel-mode">
+              <input type="radio" name="paiement" value="cod" checked={!enLigne} onChange={() => setPaiement("cod")} disabled={!cod} />
+              <span className="tunnel-mode-corps">
+                <strong>{enRetrait ? t.commande.codRetrait : t.commande.cod}</strong>
+                <span className="legende">{enRetrait ? t.commande.codTexteRetrait : t.commande.codTexte}</span>
+              </span>
+              <Billets taille={22} />
+            </label>
+          ) : null}
+          {konnect ? (
+            <label className="tunnel-mode">
+              <input type="radio" name="paiement" value="konnect" checked={enLigne} onChange={() => setPaiement("konnect")} />
+              <span className="tunnel-mode-corps">
+                <strong>{t.commande.konnect}</strong>
+                <span className="legende">{t.commande.konnectTexte}</span>
+              </span>
+              <CarteBancaire taille={22} />
+            </label>
+          ) : null}
+          </div>
           {rappel ? <p className="legende tunnel-rappel">{enRetrait ? t.commande.appelConfirmationRetrait : t.commande.appelConfirmation}</p> : null}
           {avecCodes ? <ChampCode id={id} code={code} devis={devis} onAppliquer={changeCode} onRetirer={() => changeCode(null)} /> : null}
+          {factureSociete ? (
+            <div className="tunnel-facture" data-ouverte={facture ? "" : undefined}>
+              <label className="tunnel-case">
+                <input type="checkbox" checked={facture} onChange={(e) => setFacture(e.target.checked)} />
+                <span>
+                  <strong>{t.facture.demander}</strong>
+                  <span className="legende">{t.facture.demanderAide}</span>
+                </span>
+              </label>
+              {facture ? (
+                <div className="tunnel-grille tunnel-facture-champs">
+                  <Champ
+                    id={`${id}-raison`}
+                    libelle={t.facture.raison}
+                    erreur={tentee ? erreursFacture.raison : undefined}
+                    refChamp={(el) => {
+                      refsFacture.current.raison = el;
+                    }}
+                    valeur={fact.raison}
+                    onChange={changeFacture("raison")}
+                    autoComplete="organization"
+                    longueur={120}
+                    large
+                  />
+                  <Champ
+                    id={`${id}-matricule`}
+                    libelle={t.facture.matricule}
+                    aide={t.facture.matriculeAide}
+                    erreur={tentee ? erreursFacture.matricule : undefined}
+                    refChamp={(el) => {
+                      refsFacture.current.matricule = el;
+                    }}
+                    valeur={fact.matricule}
+                    onChange={(v) => changeFacture("matricule")(v.toUpperCase())}
+                    longueur={30}
+                    large
+                  />
+                  {!enRetrait ? (
+                    <label className="tunnel-case" data-large="">
+                      <input type="checkbox" checked={fact.identique} onChange={(e) => setFact((f) => ({ ...f, identique: e.target.checked }))} />
+                      <span>{t.facture.identique}</span>
+                    </label>
+                  ) : null}
+                  {adresseFacture ? (
+                    <>
+                      <Champ
+                        id={`${id}-fact-ligne1`}
+                        libelle={t.facture.adresse}
+                        facultatif={enRetrait}
+                        erreur={tentee ? erreursFacture.ligne1 : undefined}
+                        refChamp={(el) => {
+                          refsFacture.current.ligne1 = el;
+                        }}
+                        valeur={fact.ligne1}
+                        onChange={changeFacture("ligne1")}
+                        autoComplete="billing street-address"
+                        longueur={200}
+                        large
+                      />
+                      <Champ
+                        id={`${id}-fact-ville`}
+                        libelle={t.commande.ville}
+                        facultatif={enRetrait}
+                        erreur={tentee ? erreursFacture.ville : undefined}
+                        refChamp={(el) => {
+                          refsFacture.current.ville = el;
+                        }}
+                        valeur={fact.ville}
+                        onChange={changeFacture("ville")}
+                        autoComplete="billing address-level2"
+                        longueur={80}
+                      />
+                      <Champ
+                        id={`${id}-fact-cp`}
+                        libelle={t.commande.codePostal}
+                        facultatif
+                        erreur={tentee ? erreursFacture.codePostal : undefined}
+                        refChamp={(el) => {
+                          refsFacture.current.codePostal = el;
+                        }}
+                        valeur={fact.codePostal}
+                        onChange={(v) => changeFacture("codePostal")(valeurNumerique(v, 4))}
+                        autoComplete="billing postal-code"
+                        inputMode="numeric"
+                      />
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <div className="champ">
             <label htmlFor={`${id}-note`}>
               {enRetrait ? t.commande.noteRetrait : t.commande.note} <span className="facultatif">({t.commande.facultatif})</span>
@@ -801,8 +975,8 @@ export function Tunnel({
               {tentee ? t.commande.conditionsManquantes : ""}
             </p>
           </div>
-          <button type="submit" className="btn btn-primaire btn-bloc tunnel-bouton" disabled={envoi || !cod} aria-busy={envoi || undefined}>
-            <span>{envoi ? t.commande.envoi : t.commande.confirmer}</span>
+          <button type="submit" className="btn btn-primaire btn-bloc tunnel-bouton" disabled={envoi || !peutPayer} aria-busy={envoi || undefined}>
+            <span>{envoi ? (enLigne ? t.commande.konnectVers : t.commande.envoi) : enLigne ? t.commande.confirmerEtPayer : t.commande.confirmer}</span>
             {devis?.total_millimes != null && !envoi ? <Prix millimes={devis.total_millimes} /> : null}
           </button>
           <p className="legende">{t.commande.donnees}</p>

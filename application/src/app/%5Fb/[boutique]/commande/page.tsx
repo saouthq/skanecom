@@ -56,12 +56,17 @@ export default async function Commande({
       : null;
   const { data: gouvernorats } = await supabase.from("gouvernorats").select("code, nom_fr").order("position");
 
+  const chapo = !cadre.konnectActif
+    ? (cadre.retrait ? t.commande.rassuranceRetrait : t.commande.rassurance)
+    : !cadre.livraison.cod ? t.commande.rassuranceKonnectSeul
+    : cadre.retrait ? t.commande.rassuranceKonnectRetrait : t.commande.rassuranceKonnect;
+
   return (
     <Gabarit className="enveloppe flex-1 tunnel-page">
       <header className="tunnel-tete">
         <h1>{devis ? t.devis.tunnelTitre(devis) : t.commande.titre}</h1>
         <p className="legende">
-          {devis ? t.devis.tunnelChapo : express ? t.commande.expressChapo : cadre.retrait ? t.commande.rassuranceRetrait : t.commande.rassurance}
+          {devis ? t.devis.tunnelChapo : express ? (cadre.konnectActif ? t.commande.expressChapoEnLigne : t.commande.expressChapo) : chapo}
         </p>
       </header>
       <Tunnel
@@ -72,6 +77,8 @@ export default async function Commande({
         verification={await verificationVitrine(cadre)}
         rappel={cadre.livraison.rappel}
         cod={cadre.livraison.cod}
+        konnect={cadre.konnectActif}
+        factureSociete={cadre.factureSociete}
         gouvernorats={(gouvernorats ?? []).map((g) => ({ code: g.code as string, nom: g.nom_fr as string }))}
         retractationJours={identiteLegale(cadre).retractationJours}
         retrait={cadre.retrait}

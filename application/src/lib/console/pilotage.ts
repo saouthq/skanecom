@@ -112,6 +112,13 @@ export type Quotas = {
   jour: Record<"email" | "sms", number>;
 };
 
+/** Ce que la surveillance horaire a relevé (public.console_surveillance) :
+ *  le dernier passage et ses défauts, et le dernier passage de l'heure. */
+export type SurveillanceLue = {
+  dernier: { debut: string; releves: { boutique_id: string | null; genre: string; cible: string; ok: boolean; lent: boolean; detail: string | null }[] } | null;
+  derniere_heure: string | null;
+};
+
 /* Les seuils : un refus sur quatre à la livraison coûte déjà plus que la
    marge (aller, retour, colis immobilisé) ; on en parle à partir de cinq
    colis clos sur trente jours, pour ne pas crier sur deux commandes. */
@@ -141,9 +148,10 @@ export const SEUILS = {
 export function vigilances(
   lignes: LignePilotage[],
   maintenant: number,
-  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null } = {},
+  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null; surveillance?: SurveillanceLue | null } = {},
 ): Vigilance[] {
   const out: Omit<Vigilance, "type">[] = [];
+  if (options.surveillance) out.push(...signesDeSurveillance(options.surveillance, lignes, options.sante ?? [], maintenant));
   if (options.envoisRefuses) {
     const n = options.envoisRefuses;
     out.push({
@@ -256,6 +264,50 @@ function signesDeSante(b: LignePilotage, sa: Sante, maintenant: number): Omit<Vi
   }
   if (sa.publies > 0 && sa.epuises > 0 && sa.epuises / sa.publies >= SEUILS.partEpuises) {
     pousse("epuises", "attention", `${sa.epuises} produit${sa.epuises > 1 ? "s" : ""} épuisé${sa.epuises > 1 ? "s" : ""} sur ${sa.publies} en vitrine`);
+  }
+  return out;
+}
+
+/** La surveillance horaire : une vitrine qui ne s'ouvre pas (urgent), lente,
+ *  une file d'e-mails ou de factures coincée, un domaine d'envoi éteint ; et
+ *  la surveillance elle-même, si le passage de l'heure ne tourne plus. Une
+ *  vitrine en erreur de certificat a déjà son signal (signesDeSante). */
+function signesDeSurveillance(sv: SurveillanceLue, lignes: LignePilotage[], santes: Sante[], maintenant: number): Omit<Vigilance, "type">[] {
+  const out: Omit<Vigilance, "type">[] = [];
+  const parId = new Map(lignes.map((b) => [b.id, b]));
+  const certificats = new Set(santes.flatMap((x) => x.certificats_erreur));
+  const ici = "/etat#t-surveillance";
+  for (const r of sv.dernier?.releves ?? []) {
+    if (r.ok && !r.lent) continue;
+    const b = r.boutique_id ? parId.get(r.boutique_id) : undefined;
+    if (!b) continue;
+    const detail = r.detail ? ` — ${r.detail.charAt(0).toLowerCase()}${r.detail.slice(1)}` : "";
+    if (r.genre === "page") {
+      if (r.ok) out.push({ cle: `${b.id}:lente:${r.cible}`, niveau: "attention", boutique: b, href: ici, texte: `vitrine lente sur ${r.cible}${detail}` });
+      else if (!certificats.has(r.cible)) {
+        // (« Injoignable : le nom ne répond pas… » : le titre le dit déjà)
+        const raison = (r.detail ?? "").replace(/^injoignable\s*:\s*/i, "");
+        out.push({
+          cle: `${b.id}:panne:${r.cible}`, niveau: "urgent", boutique: b, href: ici,
+          texte: `la vitrine ne s'ouvre pas sur ${r.cible}${raison ? ` — ${raison.charAt(0).toLowerCase()}${raison.slice(1)}` : ""}`,
+        });
+      }
+    } else if (r.genre === "courriels") {
+      out.push({ cle: `${b.id}:courriels-coinces`, niveau: "attention", boutique: b, href: ici, texte: `e-mails de commande qui ne partent pas${detail}` });
+    } else if (r.genre === "skanfact") {
+      out.push({ cle: `${b.id}:skanfact-coince`, niveau: "attention", boutique: b, href: ici, texte: `factures qui n'arrivent pas dans SkanFact${detail}` });
+    } else if (r.genre === "domaine_envoi") {
+      out.push({
+        cle: `${b.id}:domaine-envoi`, niveau: "attention", boutique: b, href: `/boutiques/${b.slug}/courriels`,
+        texte: `domaine d'envoi ${r.cible} éteint${detail} : ses e-mails repartent de l'adresse de la plateforme`,
+      });
+    }
+  }
+  if (sv.derniere_heure && maintenant - new Date(sv.derniere_heure).getTime() > 2 * 3_600_000) {
+    out.push({
+      cle: "plateforme:surveillance", niveau: "attention", boutique: null, href: ici,
+      texte: `la surveillance horaire ne tourne plus : dernier passage il y a ${depuis(sv.derniere_heure, maintenant)}`,
+    });
   }
   return out;
 }

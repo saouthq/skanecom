@@ -1796,6 +1796,15 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .et-domaine .discret { font-size: .8125rem; }
 .et-domaine-etat { display: grid; justify-items: end; gap: .125rem; }
 .et-note { margin-block-start: 1.25rem; }
+.et-cible { font-weight: 500; overflow-wrap: anywhere; }
+.et-sous-titre { margin: 0; font-size: .8125rem; font-weight: 600; color: var(--ui-texte-2); }
+/* Les derniers passages de la surveillance : une case chacun, verte ou rouge. */
+.et-passages { display: grid; gap: .375rem; }
+.et-passages .aide { margin: 0; }
+.et-passages ol { display: flex; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.et-passages li { flex: 1 1 0; max-inline-size: 1.5rem; block-size: 1.25rem; border-radius: 3px; background: var(--ui-vert-bord); }
+.et-passages li[data-niveau="attention"] { background: var(--ui-ambre); }
+.et-passages li[data-niveau="panne"] { background: var(--ui-rouge); }
 
 /* ---------------------------------------------------------------------------
    LES REVENUS (/revenus) — quatre chiffres, puis par formule et par boutique.

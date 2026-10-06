@@ -73,7 +73,7 @@ export async function chronometre<T>(f: () => PromiseLike<T>): Promise<[T, numbe
 export const hoteLocal = (h: string) => h === "localhost" || h.endsWith(".localhost");
 
 /** La phrase d'une requête qui n'aboutit pas, lisible par l'équipe. */
-function phraseErreur(e: unknown): string {
+export function phraseErreur(e: unknown): string {
   const err = e as { name?: string; message?: string; cause?: { code?: string; message?: string } };
   if (err?.name === "TimeoutError" || err?.name === "AbortError") return "Pas de réponse en 8 secondes";
   const code = err?.cause?.code ?? "";

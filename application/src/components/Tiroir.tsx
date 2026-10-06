@@ -112,11 +112,31 @@ export function Tiroir({
     const avant = { overflow: racine.style.overflow, marge: racine.style.paddingInlineEnd };
     racine.style.overflow = "hidden";
     if (largeurBarre > 0) racine.style.paddingInlineEnd = `${largeurBarre}px`;
+    // Au doigt (Safari d'iPhone ignore « overflow: hidden » sur la racine) :
+    // la page est épinglée là où elle était, le doigt ne fait défiler que le
+    // tiroir ; à la fermeture, elle revient au même endroit.
+    const corps = document.body;
+    const auDoigt = window.matchMedia("(pointer: coarse)").matches;
+    const y = window.scrollY;
+    const avantCorps = { position: corps.style.position, top: corps.style.top, gauche: corps.style.left, droite: corps.style.right };
+    if (auDoigt) {
+      corps.style.position = "fixed";
+      corps.style.top = `-${y}px`;
+      corps.style.left = "0";
+      corps.style.right = "0";
+    }
 
     return () => {
       document.removeEventListener("keydown", auClavier);
       racine.style.overflow = avant.overflow;
       racine.style.paddingInlineEnd = avant.marge;
+      if (auDoigt) {
+        corps.style.position = avantCorps.position;
+        corps.style.top = avantCorps.top;
+        corps.style.left = avantCorps.gauche;
+        corps.style.right = avantCorps.droite;
+        window.scrollTo({ top: y, behavior: "instant" });
+      }
       const retourFocus = cible?.isConnected ? cible : precedent?.isConnected ? precedent : null;
       retourFocus?.focus({ preventScroll: true });
     };

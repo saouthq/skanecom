@@ -61,6 +61,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     case "note":
       ({ error: erreur } = await sb.rpc("gestion_note", { ...base, p_note: String(f.get("note") ?? "") }));
       break;
+    case "a-la-livraison":
+      ({ error: erreur } = await sb.rpc("gestion_payer_a_la_livraison", base));
+      break;
+    case "facturation": {
+      const adresse = { ligne1: texte("ligne1") ?? "", ville: texte("ville") ?? "", code_postal: texte("code_postal") };
+      ({ error: erreur } = await sb.rpc("gestion_regler_facturation", {
+        ...base,
+        p_facturation: { raison_sociale: texte("raison_sociale") ?? "", matricule_fiscal: texte("matricule_fiscal") ?? "", adresse },
+      }));
+      break;
+    }
+    case "facturation-retirer":
+      ({ error: erreur } = await sb.rpc("gestion_regler_facturation", { ...base, p_facturation: null }));
+      break;
     default:
       return versAvecErreur(fiche, "Geste inconnu.");
   }
@@ -69,6 +83,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   // Confirmée, livrée, refusée, annulée : ce que la base a mis dans la file du SkanFact
   // du commerçant (module skanfact) part tout de suite — une facture, un paiement, un
   // retour. Ce qui l'empêche reste dans la file ; le geste, lui, est fait.
-  if (geste !== "note") await envoyerApres(boutique.boutique_id, numero);
+  if (!["note", "a-la-livraison", "facturation", "facturation-retirer"].includes(geste)) await envoyerApres(boutique.boutique_id, numero);
   return vers(`${fiche}?fait=${encodeURIComponent(fait)}`);
 }

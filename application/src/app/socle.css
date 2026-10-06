@@ -163,7 +163,9 @@
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   padding: 1rem var(--theme-marge); border-block-end: 1px solid var(--theme-filet);
 }
-.tiroir-corps { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 1rem var(--theme-marge); }
+.tiroir-corps { flex: 1; min-block-size: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 1rem var(--theme-marge); }
+/* Glisser sur le voile, l'en-tête ou le pied du tiroir ne fait rien défiler. */
+.tiroir-voile, .tiroir-tete, .tiroir-pied { touch-action: none; }
 .tiroir-pied { padding: 1rem var(--theme-marge) 1.25rem; border-block-start: 1px solid var(--theme-filet); background: var(--theme-fond); }
 @keyframes tiroir-voile { from { opacity: 0; } }
 @keyframes tiroir-droite { from { transform: translateX(100%); } }
@@ -429,7 +431,7 @@ input[type="search"]::-webkit-search-cancel-button:hover { background: var(--the
 .menu-aide ul { list-style: none; margin: 0; padding: 0; display: grid; }
 .menu-aide a { display: block; padding-block: .625rem; font-size: 1rem; }
 .menu-aide a[aria-current] { text-decoration: underline; text-underline-offset: .2em; }
-.menu-faits { list-style: none; margin: 0; padding: 0; display: grid; gap: .375rem; font-size: .8125rem; color: var(--theme-encre-doux); }
+.menu-faits { list-style: none; margin: 1.75rem 0 0; padding: 1.25rem 0 .5rem; border-block-start: 1px solid var(--theme-filet); display: grid; gap: .375rem; font-size: .8125rem; color: var(--theme-encre-doux); }
 
 .panier-vide { padding-block: 2.5rem; display: grid; gap: .5rem; justify-items: center; text-align: center; }
 .panier-vide-icone {

@@ -693,9 +693,11 @@ await etape("les modules de la boutique", async () => {
   const lignes = page.locator(".md-module");
   verifie((await lignes.count()) === 9 && (await page.locator(".md-module[data-actif]").count()) === 0,
     `${await lignes.count()} modules, aucun actif pour une boutique neuve`);
-  const aVenir = page.locator('.md-module[data-module="paiement_en_ligne"]');
-  verifie((await aVenir.innerText()).includes("À venir") && (await aVenir.getByRole("button").count()) === 0,
-    "un module pas encore construit est « à venir », sans bouton");
+  // Le paiement en ligne est construit (migration …_konnect) : il s'active, sur le compte Konnect de la boutique.
+  const enLigne = page.locator('.md-module[data-module="paiement_en_ligne"]');
+  verifie((await enLigne.innerText()).includes("Konnect") && !(await enLigne.innerText()).includes("À venir")
+    && (await enLigne.getByRole("button").count()) === 1,
+    "le paiement en ligne n'est plus « à venir » : il s'active (Konnect, sur le compte de la boutique)");
   await envoie(page, page.getByRole("button", { name: "Activer : Demander conseil (WhatsApp)" }));
   await page.waitForURL(/ok=/);
   const conseil = page.locator('.md-module[data-module="conseil_whatsapp"]');
@@ -704,12 +706,12 @@ await etape("les modules de la boutique", async () => {
     `« ${await page.getByRole("status").innerText()} » — avec qui l'a activé`);
   verifie((await page.locator(".onglets a", { hasText: "Modules" }).innerText()).includes("1"), "l'onglet compte le module actif");
   await capture(page, "console-modules", true);
-  // Une activation postée à la main pour un module à venir : la base refuse.
+  // Une activation postée à la main pour un module qui n'existe pas : la base refuse.
   const refus = await brut(ctx, "POST", `/boutiques/${SLUG}/modules/changer`, {
     entetes: { origin: CONSOLE },
-    formulaire: { boutique_id: await page.locator('input[name="boutique_id"]').first().inputValue(), module: "paiement_en_ligne", actif: "true" },
+    formulaire: { boutique_id: await page.locator('input[name="boutique_id"]').first().inputValue(), module: "teleportation", actif: "true" },
   });
-  verifie(refus.status === 303 && decodeURIComponent(refus.location.replace(/\+/g, " ")).includes("à venir"), "un module à venir, posté à la main : la base refuse");
+  verifie(refus.status === 303 && decodeURIComponent(refus.location.replace(/\+/g, " ")).includes("Module inconnu"), "un module inconnu, posté à la main : la base refuse");
   await envoie(page, page.getByRole("button", { name: "Couper : Demander conseil (WhatsApp)" }));
   await page.waitForURL(/ok=/);
   verifie((await page.getByRole("status").innerText()).includes("coupé") && (await page.locator(".md-module[data-actif]").count()) === 0,
@@ -1937,6 +1939,24 @@ await etape("l'état technique : la base répond, les e-mails et les fichiers pa
     .map(([k, v]) => (k === "COURRIELS_ENVOI" ? v.split(":")[1] ?? "" : v)).filter((v) => v.length >= 12);
   verifie(secrets.length >= 5 && secrets.every((s) => !html.includes(s)), `aucune des ${secrets.length} valeurs de secret dans la page`);
   await capture(page, "console-etat", true);
+});
+
+await etape("la surveillance : chaque heure (le déclencheur du Worker), et d'un geste « Vérifier maintenant »", async () => {
+  const carte = page.locator('section[aria-labelledby="t-surveillance"]');
+  // Le déclencheur planifié, comme Cloudflare le lance à l'heure pile.
+  // (depuis Node, « console.localhost » ne se résout pas : l'adresse du poste suffit, le déclencheur n'a pas d'hôte)
+  const r = await fetch(`http://127.0.0.1:${process.env.PORT_VITRINE ?? "4200"}/cdn-cgi/local/scheduled?cron=${encodeURIComponent("0 * * * *")}&format=json`);
+  verifie(r.ok && (await r.json()).outcome === "ok", "le déclencheur planifié du Worker tourne : le passage de l'heure");
+  await page.reload({ waitUntil: "networkidle" });
+  verifie((await carte.innerText()).includes("celui de l'heure") && (await carte.locator(".et-pose").innerText()) === "en marche",
+    "la carte : le dernier passage, celui de l'heure, « en marche »");
+  verifie((await carte.locator(".et-domaines li").count()) >= 5 && (await carte.innerText()).includes("maymar.localhost"),
+    "la disponibilité de chaque vitrine ouverte, sur 24 heures");
+  await clic(page, carte.getByRole("button", { name: "Vérifier maintenant" }));
+  await page.waitForURL(/carte=surveillance/);
+  verifie(/Vérifié : \d+ points?/.test(await carte.locator(".message").innerText()), "« Vérifier maintenant » : le passage refait, son bilan dans la carte");
+  verifie((await carte.innerText()).includes("demandé depuis la console"), "le dernier passage : demandé depuis la console");
+  await capture(page, "console-surveillance", true);
 });
 
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {

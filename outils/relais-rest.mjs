@@ -27,6 +27,13 @@
 // Et il tient lieu de l'API des domaines de Resend (le domaine d'envoi d'une
 // boutique, outils/resend-dev.mjs) :
 //   http://127.0.0.1:54321/email-dev/resend/domains
+// Et il tient lieu de Konnect, le paiement en ligne des boutiques (sa page
+// de paiement, carte ou e-Dinar, outils/konnect-dev.mjs) :
+//   http://127.0.0.1:54321/konnect-dev/api/v2/payments/init-payment
+// Et il ouvre une vitrine locale pour la surveillance (src/lib/console/
+// surveillance.ts) : depuis le Worker local, « mode.localhost » ne se résout
+// pas et l'en-tête Host ne se force pas ; ici, si (GET seul, « .localhost » seul) :
+//   http://127.0.0.1:54321/vitrine-locale/mode.localhost/
 // Lancé par outils/api-locale.sh. Jamais en production.
 import http from "node:http";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -34,6 +41,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PREFIXE as SKANFACT, skanfactDev } from "./skanfact-dev.mjs";
 import { PREFIXE as RESEND, resendDev } from "./resend-dev.mjs";
+import { PREFIXE as KONNECT, konnectDev } from "./konnect-dev.mjs";
 
 const PORT = Number(process.env.RELAIS_PORT ?? 54321);
 const AMONTS = [
@@ -51,6 +59,24 @@ const SMS = new Map(); // numéro (chiffres seuls) → dernier code
 const JOURNAL_EMAILS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.outils/emails.log");
 const EMAILS = new Map(); // adresse (minuscules) → { code, type }
 const RENDUS = new Map(); // adresse (minuscules) → { nom, sujet, html, texte, code }
+
+const VITRINE_LOCALE = new URL(process.env.VITRINE_LOCALE ?? "http://127.0.0.1:4200");
+
+/* GET /vitrine-locale/<hôte>/<chemin> → la vitrine du poste, sous cet hôte. */
+function vitrineLocale(req, res) {
+  const [, , hote, ...reste] = req.url.split("/");
+  if (req.method !== "GET" || !/^[a-z0-9-]+(\.[a-z0-9-]+)*\.localhost$/.test(hote ?? "")) return res.writeHead(404).end();
+  const amont = http.request(
+    { host: VITRINE_LOCALE.hostname, port: VITRINE_LOCALE.port, method: "GET", path: "/" + reste.join("/"),
+      headers: { host: `${hote}:${VITRINE_LOCALE.port}`, "user-agent": req.headers["user-agent"] ?? "" } },
+    (reponse) => {
+      res.writeHead(reponse.statusCode ?? 502, { "content-type": reponse.headers["content-type"] ?? "text/plain", ...(reponse.headers.location ? { location: reponse.headers.location } : {}) });
+      reponse.pipe(res);
+    },
+  );
+  amont.on("error", (e) => res.writeHead(502, { "content-type": "text/plain" }).end(`vitrine locale injoignable : ${e.message}\n`));
+  amont.end();
+}
 
 const chiffres = (texte) => String(texte ?? "").replace(/\D/g, "");
 
@@ -192,6 +218,8 @@ http
     // formulaire de la console qui le suivrait par fetch échoue ici aussi.
     if (req.url.startsWith(SKANFACT + "/")) return skanfactDev(req, res);
     if (req.url.startsWith(RESEND + "/")) return resendDev(req, res);
+    if (req.url.startsWith(KONNECT + "/")) return konnectDev(req, res, `http://127.0.0.1:${PORT}`);
+    if (req.url.startsWith("/vitrine-locale/")) return vitrineLocale(req, res);
     // L'application lit la vitrine côté serveur ; le CORS ouvert ne sert qu'aux
     // essais depuis un navigateur en local.
     res.setHeader("Access-Control-Allow-Origin", "*");

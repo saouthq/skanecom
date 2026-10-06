@@ -734,6 +734,8 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .bdx-somme .prix, .bdx-somme .prix * { color: inherit !important; }
 .bdx-paye { background: #fff; color: #111; border: 1.5px solid #111; }
 .bdx-paye .bdx-etiquette { color: #555; }
+.bdx-paye p:last-child { color: #555; }
+.bdx-paye .bdx-somme { font-size: 14pt; }
 .bdx-pied { display: flex; flex-wrap: wrap; gap: 1mm 6mm; padding-block-start: 2.5mm; border-block-start: 1px dashed #999; font-size: 8.5pt; color: #333; }
 
 @page { size: A4; margin: 8mm; }
@@ -1746,6 +1748,10 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .ar-recevoir > .btn, .ar-annuler > .btn { justify-self: start; }
 .console .message.ar-attente { background: #FFFBEB; border-color: #FDE68A; color: #78350F; }
 .console .message.ar-attente::before { color: #B45309; }
+/* Un paiement en ligne non reçu : le dire, et le geste « à la livraison » au bout de la ligne. */
+.bo-paiement-attente { align-items: center; flex-wrap: wrap; }
+.bo-paiement-attente > span { flex: 1 1 18rem; }
+.bo-paiement-attente form { margin: 0; }
 .bo-article-pre { display: inline-flex; align-items: center; gap: .25rem; color: #1D4ED8; font-weight: 500; }
 .bo-article-pre[data-servie] { color: #15803D; }
 .jd-stock-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
@@ -2280,3 +2286,24 @@ div.rg-verrou { border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-
 .ann-texte b { color: var(--ui-texte); margin-inline-end: .25rem; }
 .ann-fermer { flex: none; display: inline-grid; place-items: center; min-inline-size: 2rem; min-block-size: 2rem; padding: 0; margin: -.25rem -.25rem -.25rem 0; }
 @media (pointer: coarse) { .ann-fermer { min-inline-size: 2.75rem; min-block-size: 2.75rem; margin-block: -.625rem; } }
+
+/* ---- Le compte Konnect de la boutique (Réglages → Paiement) ---- */
+.rg-konnect { display: grid; gap: 1rem; max-inline-size: 40rem; }
+.rg-konnect-etat { display: grid; gap: .5rem; margin: 0 0 1rem; }
+.rg-konnect-etat > div { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: .75rem; align-items: baseline; }
+.rg-konnect-etat dt { font-size: .8125rem; color: var(--ui-texte-3); }
+.rg-konnect-etat dd { margin: 0; font-size: .875rem; overflow-wrap: anywhere; }
+.rg-konnect-etat code { font-size: .8125rem; }
+.rg-konnect-changer { margin-block-end: 1rem; }
+.rg-konnect-changer > summary { list-style: none; cursor: pointer; }
+.rg-konnect-changer > summary::-webkit-details-marker { display: none; }
+.rg-konnect-changer[open] > summary { margin-block-end: 1rem; }
+.rg-konnect-retirer { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .75rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord-leger); }
+@media (max-width: 47.99rem) { .rg-konnect-etat > div { grid-template-columns: 1fr; gap: .125rem; } }
+
+/* La facture au nom d'une société (fiche d'une commande). */
+.bo-facture-form { margin-block-start: .75rem; }
+.bo-facture-adresse { border: 0; margin: 0; padding: 0; display: grid; gap: .5rem; min-inline-size: 0; }
+.bo-facture-adresse legend { padding: 0; margin-block-end: .25rem; font-size: .8125rem; font-weight: 600; color: var(--ui-texte); }
+.bo-facture-adresse .facultatif { font-weight: 400; color: var(--ui-texte-3); }
+.bo-facture-ligne { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; gap: .5rem; }

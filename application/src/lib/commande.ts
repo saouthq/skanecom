@@ -107,11 +107,13 @@ export type Raison =
   // Le devis accepté (module devis) : introuvable, expiré, déjà accepté, module coupé.
   | "devis" | "expire" | "deja" | "module"
   // Le code promo, refusé à la commande alors que l'acheteur l'avait vu appliqué.
-  | "code";
+  | "code"
+  // La facture au nom d'une société, illisible pour la base.
+  | "facturation";
 
 const RAISONS: Raison[] = [
   "boutique", "cle", "panier", "contact", "adresse", "compte", "stock", "total", "en_attente", "bloque", "paiement", "conditions", "retrait",
-  "devis", "expire", "deja", "module", "code",
+  "devis", "expire", "deja", "module", "code", "facturation",
 ];
 
 export function raisonDe(indice: string | null | undefined): Raison {
@@ -119,7 +121,9 @@ export function raisonDe(indice: string | null | undefined): Raison {
 }
 
 export type ReponseDevis = { ok: true; devis: Devis } | { ok: false; raison: Raison; message: string };
-export type ReponsePasser = { ok: true; numero: string } | { ok: false; raison: Raison; message: string };
+export type ReponsePasser =
+  | { ok: true; numero: string; /** Payer en ligne : la page de Konnect. */ payer?: string; paiement?: "indisponible" }
+  | { ok: false; raison: Raison; message: string };
 
 export type LigneSuivie = {
   produit_nom: string;

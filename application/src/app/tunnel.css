@@ -169,6 +169,19 @@ html:has(.tunnel-page, .compte-page, .pv-commande) { scroll-padding-block: calc(
 .tunnel-mode svg { color: var(--theme-encre-doux); }
 .tunnel-rappel { margin: -.25rem 0 0; }
 
+/* --- La facture au nom d'une société (réglage commande.facture_societe) ----
+   Une case, comme les conditions ; cochée, les champs s'ouvrent dessous,
+   dans un cadre léger qui les rattache à la case. */
+.tunnel-case { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: .75rem; font-size: .9375rem; line-height: 1.45; cursor: pointer; }
+.tunnel-case input { inline-size: 20px; block-size: 20px; margin: .0625rem 0 0; accent-color: var(--theme-encre); cursor: pointer; }
+.tunnel-case > span { display: grid; gap: .125rem; }
+.tunnel-case strong { font-weight: 500; }
+.tunnel-case .legende { margin: 0; }
+.tunnel-facture { display: grid; gap: 1rem; }
+.tunnel-facture[data-ouverte] { padding: 1rem 1.125rem 1.25rem; border: 1px solid var(--theme-filet-fort); border-radius: var(--theme-radius-doux); background: var(--theme-surface); }
+.tunnel-facture-champs { padding-inline-start: 2rem; }
+@media (max-width: 36rem) { .tunnel-facture-champs { padding-inline-start: 0; } }
+
 /* --- Le code promo (module promotions) --------------------------------------
    Replié par défaut : un lien discret, pas un champ vide qui enverrait
    chercher un code ailleurs. Appliqué : une pastille, le code et ce qu'il
@@ -364,6 +377,8 @@ html[data-gabarit="technique"] .merci-suite li[data-fait] .merci-puce { backgrou
 .tunnel-choix .tunnel-mode:has(input:checked) { border-color: var(--theme-encre); box-shadow: inset 0 0 0 1px var(--theme-encre); }
 .tunnel-choix .tunnel-mode:has(input:focus-visible) { outline: 2px solid var(--theme-encre); outline-offset: 2px; }
 .tunnel-choix input { cursor: pointer; }
+/* Le paiement : les deux moyens, comme les deux modes de livraison. */
+.tunnel-choix-paiement { display: grid; gap: .625rem; margin: 0; }
 .tunnel-gratuit { margin-inline-start: .375rem; font-size: .8125rem; font-weight: 600; color: var(--theme-succes); }
 /* Le magasin, à la place de l'adresse. */
 .tunnel-magasin {
@@ -375,6 +390,19 @@ html[data-gabarit="technique"] .merci-suite li[data-fait] .merci-puce { backgrou
 .tunnel-magasin p { margin: 0; }
 .tunnel-magasin-delai { font-weight: 600; }
 .tunnel-magasin .legende { margin-block-start: .25rem; }
+
+/* Le paiement en ligne (Konnect) : reçu, ou à reprendre (réessayer, à la livraison). */
+.merci-paiement { display: grid; gap: .75rem; margin: 0 0 1.75rem; padding: 1rem 1.125rem; border-radius: var(--theme-radius-doux);
+  background: var(--theme-surface-2); border: 1px solid var(--theme-filet); }
+.merci-paiement p { margin: 0; }
+.merci-paiement-ok { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+.merci-paiement-ok svg { flex: none; }
+.merci-paiement-gestes { display: flex; flex-wrap: wrap; gap: .5rem .75rem; }
+.merci-paiement-gestes form { margin: 0; }
+@media (max-width: 36rem) {
+  .merci-paiement-gestes { display: grid; }
+  .merci-paiement-gestes .btn { inline-size: 100%; justify-content: center; }
+}
 
 /* Continuer ses achats, ou suivre ses commandes (compte). */
 .merci-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.5rem; margin: 0; }

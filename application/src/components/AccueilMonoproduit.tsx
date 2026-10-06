@@ -134,6 +134,8 @@ function PageVente({ rang, section, produit, cadre, donnees, premiere }: {
             verification: verificationDe(cadre.reglages),
             rappel: cadre.livraison.rappel,
             cod: cadre.livraison.cod,
+            konnect: cadre.konnectActif,
+            factureSociete: cadre.factureSociete,
             gouvernorats: donnees.vente?.gouvernorats ?? [],
             retractationJours: identiteLegale(cadre).retractationJours,
             retrait: cadre.retrait,

@@ -29,7 +29,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const nom = LIBELLES_MODULES[code] ?? code;
     const ouvert = actif && new URL(req.url).searchParams.get("ouvrir") === "1" ? " Il lui est ouvert en plus de sa formule (onglet Formule)." : "";
     return vers(`${retour}?${new URLSearchParams({
-      ok: actif ? `« ${nom} » activé : la vitrine le propose dès maintenant.${ouvert}` : `« ${nom} » coupé : la vitrine ne le propose plus.`,
+      // Le paiement en ligne attend encore le compte Konnect de la boutique (migration …_konnect).
+      ok: actif
+        ? code === "paiement_en_ligne"
+          ? `« ${nom} » activé : la boutique branche maintenant son compte Konnect (Réglages → Paiement), puis l'allume.${ouvert}`
+          : `« ${nom} » activé : la vitrine le propose dès maintenant.${ouvert}`
+        : `« ${nom} » coupé : la vitrine ne le propose plus.`,
     })}`);
   });
 }

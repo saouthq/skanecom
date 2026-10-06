@@ -203,6 +203,10 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
   const gouvParCode = new Map(e.gouvernorats.map((g) => [g.code, g.nom]));
   const sansZone = e.gouvernorats.filter((g) => !g.zone_id).length;
   const konnect = r.get("paiement.konnect_actif");
+  // Le compte Konnect de la boutique (migration …_konnect) : lu par qui peut le brancher.
+  const k = groupe === "paiement" && konnect?.module_actif
+    ? ((await sb.rpc("gestion_konnect", { p_boutique_id: boutique.boutique_id })).data as EtatKonnect | null)
+    : null;
   const retraitActif = Boolean(r.get("retrait.adresse")?.module_actif);
   const savActif = Boolean(r.get("sav.garantie_mois")?.module_actif);
   const avisActif = Boolean(r.get("avis.moderation")?.module_actif);
@@ -242,6 +246,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
       : [v("compte.obligatoire") ? "Compte obligatoire" : "Commande en invité",
         v("commande.mode_confirmation") === "automatique" ? "confirmées d'office" : "confirmées par téléphone",
         v("commande.achat_express") ? "achat express" : null,
+        v("commande.facture_societe") ? "facture société" : null,
         v("commande.courriels_client") ? "e-mails au client" : null].filter(Boolean).join(" · "),
     livraison: [
       parZone ? `${e.zones.filter((z) => z.actif).length} zone${e.zones.length > 1 ? "s" : ""} de tarif` : `${formateMontant(Number(v("livraison.frais_fixes_millimes") ?? 0))} TND partout`,
@@ -400,6 +405,16 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                     options={[
                       { valeur: "0", titre: "Par le panier", aide: "L'acheteur ajoute au panier, puis commande. Plusieurs articles, un seul colis." },
                       { valeur: "1", titre: "Achat express en plus", aide: "« Commander maintenant » à côté de « Ajouter au panier » : cet article seul, droit à la commande. Plus rapide sur téléphone." },
+                    ]}
+                  />}
+                  {ferme("commande.facture_societe") !== undefined ? (
+                    <Verrou element="div" titre="Facture au nom d'une société" formule={ferme("commande.facture_societe")!}
+                      aide="L'acheteur demande, en commandant, une facture au nom de sa société." />
+                  ) : <Alternative
+                    nom="commande.facture_societe" legende="La facture" valeur={v("commande.facture_societe") ? "1" : "0"}
+                    options={[
+                      { valeur: "0", titre: "Au nom de la personne", aide: "La facture porte le nom de la personne qui commande. Une demande au téléphone se note quand même sur la fiche de la commande." },
+                      { valeur: "1", titre: "Au nom d'une société, sur demande", aide: "En commandant, l'acheteur peut demander une facture au nom de sa société : raison sociale, matricule fiscal, adresse de facturation. SkanFact la reçoit telle quelle." },
                     ]}
                   />}
                   {ferme("commande.relance_paniers") !== undefined ? (
@@ -748,9 +763,22 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                   <ul className="rg-inters" role="list">
                     <Interrupteur cle="paiement.cod_actif" valeur={Boolean(v("paiement.cod_actif"))} titre="Paiement à la livraison"
                       aide="L'acheteur paie le livreur en espèces." />
-                    {konnect?.module_actif ? (
+                    {konnect?.module_actif && k?.compte ? (
                       <Interrupteur cle="paiement.konnect_actif" valeur={Boolean(konnect.valeur)} titre="Paiement en ligne (Konnect)"
-                        aide="Carte bancaire ou e-dinar, sur le compte marchand de la boutique." />
+                        aide={`Carte bancaire, e-dinar ou portefeuille, sur votre compte Konnect${k.compte.mode === "essai" ? " (mode essai : aucun argent réel)" : ""}.`} />
+                    ) : konnect?.module_actif ? (
+                      <li className="rg-inter rg-indispo">
+                        <span className="rg-inter-rang">
+                          <span className="rg-inter-texte">
+                            <b>Paiement en ligne (Konnect)</b>
+                            <span className="aide">{k ? "Branchez d'abord votre compte Konnect, ci-dessous." : "Le propriétaire ou un administrateur branche le compte Konnect de la boutique."}</span>
+                          </span>
+                          <span className="rg-bascule">
+                            <input type="checkbox" disabled aria-label="Paiement en ligne (Konnect), compte à brancher" />
+                            <span className="rg-piste" aria-hidden="true" />
+                          </span>
+                        </span>
+                      </li>
                     ) : (
                       <li className="rg-inter rg-indispo">
                         <span className="rg-inter-rang">
@@ -769,6 +797,13 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                 </fieldset>
                 <Pied modifie={modifie} retour={retourDe("paiement")} />
               </form>
+            </Section>
+          ) : null}
+          {groupe === "paiement" && k ? (
+            <Section id="konnect" titre="Votre compte Konnect" retour={retourDe("konnect")}
+              etat={k.compte ? <span className={k.compte.mode === "reel" ? "ui-etat ui-etat-point ui-etat-vert" : "ui-etat ui-etat-point ui-etat-ambre"}>{k.compte.mode === "reel" ? "Réel" : "Essai"}</span> : null}
+              description="Votre compte, votre argent : l'acheteur paie directement sur votre compte Konnect, SkanEcom ne voit jamais l'argent passer.">
+              <CompteKonnect k={k} action={`/gestion/${slug}/reglages/konnect`} />
             </Section>
           ) : null}
 
@@ -1083,4 +1118,81 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
 function compteAllumees(n: number, total: number): string {
   if (n === 0) return `Aucune fonction allumée sur ${total}`;
   return `${n} fonction${n > 1 ? "s" : ""} allumée${n > 1 ? "s" : ""} sur ${total}`;
+}
+
+/** Le compte Konnect de la boutique (public.gestion_konnect). */
+type EtatKonnect = {
+  module_actif: boolean; actif: boolean; cod_actif: boolean;
+  compte: { wallet_id: string; cle_fin: string; mode: "essai" | "reel"; branche_le: string } | null;
+  mois: { payes: number; encaisse_millimes: number; en_attente: number; echoues: number };
+};
+
+/** Brancher (ou remplacer) le compte : le portefeuille, la clé, le mode ; le retirer. */
+function CompteKonnect({ k, action }: { k: EtatKonnect; action: string }) {
+  const c = k.compte;
+  const champs = (
+    <div className="rg-corps rg-konnect">
+      <div className="champ">
+        <label htmlFor="kn-wallet">Identifiant du portefeuille</label>
+        <input id="kn-wallet" name="wallet" className="entree" required autoComplete="off" spellCheck={false}
+          defaultValue={c?.wallet_id ?? ""} placeholder="5f7a209aeb3f76490ac4a3d1" aria-describedby="kn-wallet-aide" />
+        <span className="aide" id="kn-wallet-aide">Dans votre tableau de bord Konnect : le portefeuille qui reçoit les paiements.</span>
+      </div>
+      <div className="champ">
+        <label htmlFor="kn-cle">Clé d&apos;API</label>
+        <input id="kn-cle" name="cle" type="password" className="entree" required autoComplete="off" spellCheck={false}
+          placeholder={c ? `…${c.cle_fin} (gardée ; pour la changer, collez la nouvelle)` : "Collez la clé d'API"} aria-describedby="kn-cle-aide" />
+        <span className="aide" id="kn-cle-aide">Gardée chiffrée : elle ne s&apos;affiche plus jamais en entier.</span>
+      </div>
+      <fieldset className="choix choix-2 rg-alternative">
+        <legend>Mode</legend>
+        <label className="choix-carte"><input type="radio" name="mode" value="essai" defaultChecked={(c?.mode ?? "essai") === "essai"} />
+          <span><b>Essai<span className="rg-conseil">Pour commencer</span></b><span className="aide">Le bac à sable de Konnect : des paiements pour de faux, pour vérifier que tout marche.</span></span></label>
+        <label className="choix-carte"><input type="radio" name="mode" value="reel" defaultChecked={c?.mode === "reel"} />
+          <span><b>Réel</b><span className="aide">Les vrais paiements de vos clients, sur votre compte.</span></span></label>
+      </fieldset>
+    </div>
+  );
+  return (
+    <>
+      {c ? (
+        <dl className="rg-konnect-etat">
+          <div><dt>Portefeuille</dt><dd><code>{c.wallet_id}</code></dd></div>
+          <div><dt>Clé</dt><dd>…{c.cle_fin}</dd></div>
+          <div><dt>Branché</dt><dd>{quand(c.branche_le)}</dd></div>
+          <div>
+            <dt>Ce mois-ci</dt>
+            <dd>
+              {k.mois.payes ? <>{k.mois.payes} paiement{k.mois.payes > 1 ? "s" : ""} reçu{k.mois.payes > 1 ? "s" : ""}, {formateMontant(k.mois.encaisse_millimes)} TND</> : "Aucun paiement en ligne encore"}
+              {k.mois.en_attente ? <> · {k.mois.en_attente} en attente</> : null}
+              {k.mois.echoues ? <> · {k.mois.echoues} commande{k.mois.echoues > 1 ? "s" : ""} sans paiement abouti</> : null}
+            </dd>
+          </div>
+        </dl>
+      ) : null}
+      {c ? (
+        <details className="rg-konnect-changer">
+          <summary className="btn btn-second btn-petit">Changer la clé ou le mode</summary>
+          <form action={action} method="post">
+            <input type="hidden" name="geste" value="brancher" />
+            {champs}
+            <div className="carte-pied"><span className="aide">La clé est essayée chez Konnect avant d&apos;être gardée.</span><button type="submit" className="btn btn-primaire">Enregistrer le compte</button></div>
+          </form>
+        </details>
+      ) : (
+        <form action={action} method="post">
+          <input type="hidden" name="geste" value="brancher" />
+          {champs}
+          <div className="carte-pied"><span className="aide">La clé est essayée chez Konnect avant d&apos;être gardée.</span><button type="submit" className="btn btn-primaire">Brancher mon compte Konnect</button></div>
+        </form>
+      )}
+      {c ? (
+        <form action={action} method="post" className="rg-konnect-retirer">
+          <input type="hidden" name="geste" value="retirer" />
+          <button type="submit" className="btn btn-fantome btn-petit"><Icone nom="corbeille" taille={14} /> Retirer le compte</button>
+          <span className="aide">Le paiement en ligne s&apos;éteint ; le paiement à la livraison se rallume.</span>
+        </form>
+      ) : null}
+    </>
+  );
 }

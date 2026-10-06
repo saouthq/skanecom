@@ -29,7 +29,7 @@ export const GROUPES: { cle: Groupe; titre: string; icone: NomIcone; description
 const SECTION_GROUPE: Record<string, Groupe> = {
   commandes: "commandes",
   livraison: "livraison", zones: "livraison", gouvernorats: "livraison", poids: "livraison", retrait: "livraison",
-  paiement: "paiement",
+  paiement: "paiement", konnect: "paiement",
   vitrine: "vitrine",
   contact: "contact",
   sav: "service", avis: "service",
