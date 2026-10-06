@@ -71,6 +71,9 @@ export const ACTIONS: Record<string, string> = {
   "boutique.credit_envois_retire": "Crédit d'envois retiré",
   "formule.quotas": "Quotas d'envoi de la formule",
   "plateforme.forfait_envoi": "Forfait du fournisseur d'envois",
+  "boutique.courriels": "E-mails de la boutique : nom affiché, réponses",
+  "boutique.domaine_envoi": "Domaine d'envoi des e-mails",
+  "plateforme.courriels": "E-mails de l'équipe : adresse de réponse",
   // Les gestes des back-offices (tracés par la boutique elle-même)
   "accueil.modifier": "Accueil de la vitrine modifié",
   "apparence.publier": "Apparence de la vitrine publiée",
@@ -111,7 +114,7 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "export", titre: "Exports" },
   { cle: "vigilance", titre: "À surveiller (mis à plus tard)" },
   { cle: "prospect", titre: "Prospects" },
-  { cle: "plateforme", titre: "Plateforme (forfaits des fournisseurs)" },
+  { cle: "plateforme", titre: "Plateforme (fournisseurs, e-mails)" },
   { cle: "page", titre: "Pages de la vitrine" },
   { cle: "apparence", titre: "Apparence de la vitrine" },
   { cle: "accueil", titre: "Accueil de la vitrine" },

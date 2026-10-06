@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EnTetePage } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
+import { OngletsCourriels } from "@/components/console/OngletsCourriels";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { courrielChangementEmail, courrielCode, courrielInvitation, courrielLettre, courrielLettreDeja, courrielMotDePasse, marqueDeBoutique, MARQUE_PLATEFORME } from "@/lib/courriels/messages";
 import type { Courriel } from "@/lib/courriels/modele";
 import { courrielCommande, type CourrielDu } from "@/lib/courriels/commandes";
+import { commandeExemple } from "@/lib/courriels/essai";
 
 export const metadata: Metadata = { title: "E-mails" };
 
@@ -63,6 +65,7 @@ export default async function Courriels({ searchParams }: { searchParams: Promis
       <EnTetePage
         titre="E-mails"
         description="Ce que reçoivent l'acheteur et l'équipe, tels qu'ils partent. Des exemples : rien n'est envoyé d'ici."
+        actions={<OngletsCourriels actif="modeles" />}
       />
       <div className="crl-barre">
         {/* Une liste, pas une rangée d'onglets : elle tient à trente boutiques comme à trois. */}
@@ -127,21 +130,7 @@ export default async function Courriels({ searchParams }: { searchParams: Promis
 /** Les e-mails de commande (réglage de la boutique), sur une commande d'exemple. */
 function commandes(b: Boutique, marque: ReturnType<typeof marqueDeBoutique>, console: string) {
   const liens = { site: marque.site, console };
-  const exemple = (evenement: CourrielDu["evenement"]): CourrielDu => ({
-    id: 0, evenement, a: [],
-    boutique: { id: "", slug: b.slug, nom: b.nom },
-    commande: {
-      numero: "CMD-2026-00042", statut: evenement, origine: "vitrine", mode_paiement: "cod", mode_livraison: "domicile",
-      contact_nom: "Amel B.", contact_telephone: "+21620123456",
-      livraison: { ligne1: "12 rue de Marseille", ligne2: null, ville: "Tunis", gouvernorat: "Tunis", code_postal: "1000" },
-      sous_total_millimes: 267000, frais_livraison_millimes: 7000, remise_millimes: 0, total_millimes: 274000,
-      code_promo: null, transporteur: "Aramex", numero_suivi: "AR-58201", motif_annulation: null, cree_le: new Date().toISOString(),
-    },
-    lignes: [
-      { nom: "Un article du catalogue", detail: "Noir", quantite: 2, total_millimes: 178000, lot: null, precommande: false },
-      { nom: "Un autre article", detail: null, quantite: 1, total_millimes: 89000, lot: null, precommande: false },
-    ],
-  });
+  const exemple = (evenement: CourrielDu["evenement"]) => commandeExemple(b, evenement);
   return [
     { cle: "commande-recue", groupe: "La commande", nom: "Commande reçue", pour: "Au client, si la boutique l'a réglé (Réglages → Commandes)", courriel: courrielCommande(marque, exemple("recue"), liens) },
     { cle: "commande-expediee", groupe: "La commande", nom: "En route", pour: "Au client : le transporteur, le numéro de suivi", courriel: courrielCommande(marque, exemple("expediee"), liens) },

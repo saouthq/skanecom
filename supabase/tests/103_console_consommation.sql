@@ -92,7 +92,9 @@ select is(public.console_boutique_du_sms('21620123456') ->> 'nom', (select nom f
   'le crochet des SMS retrouve la boutique du numéro (chiffres seuls, comme Supabase les donne)');
 select is(public.console_boutique_du_sms('21620123456'), null, 'l''annonce ne sert qu''une fois');
 reset role;
-select is((select count(*)::int from plateforme.sms_annonces), 0, 'et le numéro n''est gardé nulle part');
+-- (seulement ce numéro : la base locale garde les annonces récentes des parcours)
+select is((select count(*)::int from plateforme.sms_annonces where empreinte = private.empreinte_telephone('21620123456')), 0,
+  'et le numéro n''est gardé nulle part');
 
 -- Au dépassement : les codes par e-mail, si la boutique l'a choisi
 set local role anon;

@@ -6,7 +6,7 @@
    ========================================================================== */
 
 export type Canal = "email" | "sms";
-export type Nature = "code" | "commande" | "equipe" | "lettre" | "autre";
+export type Nature = "code" | "commande" | "equipe" | "lettre" | "essai" | "autre";
 
 export type ConsoCanal = {
   envoyes: number;
@@ -60,6 +60,7 @@ export const NATURES: { cle: Nature; libelle: string; aide: string }[] = [
   { cle: "commande", libelle: "Suivi des commandes", aide: "Confirmée, remise au livreur, livrée…" },
   { cle: "equipe", libelle: "Accès des équipes", aide: "Invitations, mots de passe" },
   { cle: "lettre", libelle: "Lettre d'information", aide: "Les confirmations d'inscription" },
+  { cle: "essai", libelle: "Essais", aide: "Envoyés depuis la console, comptés à SkanEcom" },
   { cle: "autre", libelle: "Autres", aide: "Avant le comptage par boutique" },
 ];
 

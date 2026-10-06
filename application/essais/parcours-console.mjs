@@ -2079,7 +2079,7 @@ await etape("la galerie des e-mails, aux couleurs de la boutique choisie", async
   // signale jamais son chargement à Playwright, qui attendrait sans fin.
   await page.locator(".crl-cadre").waitFor({ timeout: 15_000 }).catch(() => {});
   await pause(600);
-  const liste = page.getByRole("navigation", { name: "E-mails" });
+  const liste = page.getByRole("navigation", { name: "E-mails", exact: true });
   const noms = await liste.getByRole("link").allInnerTexts();
   verifie(noms.length === 10 && ["Commande reçue", "En route", "Livrée", "Nouvelle commande (équipe)"].every((n) => noms.some((x) => x.includes(n))),
     "dix e-mails dans la liste : le code, la nouvelle adresse, la lettre (confirmer, déjà inscrit), l'invitation, le mot de passe, et les quatre de la commande");
@@ -2128,6 +2128,55 @@ await etape("le crochet de Supabase : l'e-mail de la boutique, signé ou rien", 
   await vue.close();
   const inconnu = await crochetCourriel({ user: { email: adresse }, email_data: { email_action_type: "inconnu" } });
   verifie(inconnu.status === 400, `un type d'e-mail inconnu : rien ne part (HTTP ${inconnu.status})`);
+});
+
+await etape("l'envoi d'une boutique : ses réponses, son domaine (ajouté, vérifié, allumé), l'essai qui en part, puis tout retiré", async () => {
+  const domaine = `selma-${SUFFIXE}.tn`;
+  const texte = (sel) => page.locator(sel).innerText();
+  const attend = (fn, arg) => page.waitForFunction(fn, arg, { timeout: 10_000 }).then(() => true, () => false);
+  await page.goto(CONSOLE + "/boutiques/maison-selma", { waitUntil: "networkidle" });
+  await clic(page, page.getByRole("navigation", { name: /^Pages/ }).getByRole("link", { name: "E-mails" }));
+  await page.waitForURL(/\/boutiques\/maison-selma\/courriels$/);
+  verifie((await texte(".ce-vu")).includes("Depuis SkanEcom"), "par défaut : rien de réglé, au nom de la boutique, depuis l'adresse de SkanEcom");
+
+  await page.locator("#ce-reponse").fill("contact@maison-selma.tn");
+  await clic(page, page.locator("#t-expediteur").getByRole("button", { name: "Enregistrer", exact: true }));
+  verifie(await attend(() => document.querySelector("#t-expediteur .message-succes")?.textContent?.includes("contact@maison-selma.tn")),
+    "l'adresse de réponse enregistrée, dite dans sa carte");
+
+  await page.locator("#cd-domaine").fill(`https://www.${domaine}/`);
+  await clic(page, page.getByRole("button", { name: /^Ajouter chez/ }));
+  verifie(await attend(() => document.querySelectorAll(".ce-dns tbody tr").length >= 4), "ajouté : ses enregistrements DNS à poser (SPF, DKIM) et le DMARC conseillé");
+  verifie((await texte("#t-domaine .ce-etats")).includes("En attente") && await page.getByRole("button", { name: /^Envoyer depuis/ }).count() === 0,
+    "pas encore vérifié : en attente, et rien pour l'allumer");
+  verifie((await texte(".ce-dns")).includes(`resend._domainkey.${domaine}`), "le domaine se lit sans https:// ni www.");
+
+  await clic(page, page.getByRole("button", { name: "Vérifier maintenant" }));
+  verifie(await attend(() => document.querySelector("#t-domaine .ce-etats")?.textContent?.includes("Vérifié")), "vérifié chez le fournisseur");
+  await clic(page, page.getByRole("button", { name: `Envoyer depuis commandes@${domaine}` }));
+  verifie(await attend(() => document.querySelector(".ce-vu")?.textContent?.includes("Depuis son domaine")), "allumé : ses e-mails partent de son domaine");
+
+  const adresse = `essai-${SUFFIXE}@exemple.tn`;
+  await page.locator("#ce-a").fill(adresse);
+  await page.locator("#ce-modele").selectOption("commande");
+  await clic(page, page.getByRole("button", { name: "Envoyer l'essai" }));
+  verifie(await attend(() => document.querySelector("#t-essai .message-succes")?.textContent?.includes("Essai envoyé")), "l'essai est parti");
+  const rendu = await (await fetch(`${RELAIS}/email-dev/rendu/dernier?email=${encodeURIComponent(adresse)}`)).json();
+  verifie(rendu.de === `commandes@${domaine}` && rendu.reponse_a === "contact@maison-selma.tn" && rendu.sujet.startsWith("[Essai] Commande"),
+    `l'essai part de commandes@${domaine}, les réponses vers contact@maison-selma.tn : « ${rendu.de} », « ${rendu.reponse_a} »`);
+  await capture(page, "console-courriels-boutique", true);
+
+  await clic(page, page.locator(".ce-retirer > summary"));
+  await clic(page, page.getByRole("button", { name: `Retirer ${domaine}` }));
+  verifie(await attend(() => document.querySelector(".ce-vu")?.textContent?.includes("Depuis SkanEcom")), "retiré : ses e-mails repartent de SkanEcom");
+  await page.locator("#ce-reponse").fill("");
+  await clic(page, page.locator("#t-expediteur").getByRole("button", { name: "Enregistrer", exact: true }));
+  verifie(await attend(() => document.querySelector("#t-expediteur .message-succes")?.textContent?.includes("pas d'adresse de réponse")), "et plus d'adresse de réponse");
+
+  await page.goto(CONSOLE + "/courriels/envoi", { waitUntil: "networkidle" });
+  verifie((await texte("#t-expediteur")).includes("Relais local") && (await texte("#t-boutiques")).includes("Maymar"),
+    "la page Envoi : l'expéditeur de la plateforme, et chaque boutique");
+  await capture(page, "console-courriels-envoi", true);
 });
 await ctx.close();
 

@@ -481,6 +481,8 @@ html:has(.app-menu[open]) { overflow: hidden; }
   position: relative; display: inline-flex; align-items: center; gap: .5rem; flex: none;
   padding: .625rem .625rem .75rem; color: var(--ui-texte-2); font-weight: 500; white-space: nowrap;
 }
+/* Neuf onglets pour une boutique : resserrés sous 1 500 px, ils tiennent encore sur un écran de 1 366 px. */
+@media (max-width: 93.74rem) { .onglets a { gap: .375rem; padding-inline: .5rem; } .onglets a[aria-current="page"]::after { inset-inline: .25rem; } }
 .onglets a .icone { color: var(--ui-texte-3); }
 .onglets a:hover { color: var(--ui-texte); }
 .onglets a[aria-current="page"] { color: var(--ui-texte); }
@@ -2027,3 +2029,80 @@ summary.cs-resume:hover .cs-chevron { background: var(--ui-doux); color: var(--u
 /* L'assistant « Nouvelle boutique » : les modules à activer dès la création. */
 .nb-modules > legend .aide { display: block; font-weight: 400; margin-block-start: .125rem; }
 .nb-hors { display: none; margin-block-start: .375rem; justify-self: start; }
+
+/* ---- Les e-mails : l'envoi de la plateforme, l'onglet E-mails d'une boutique (ce-) ---- */
+.ce-vu { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding-block: 1rem; }
+.ce-vu-boite { display: grid; place-items: center; flex: none; inline-size: 2.5rem; block-size: 2.5rem; border-radius: var(--ui-r); background: var(--ui-accent-doux); color: var(--ui-accent); }
+.ce-vu-lignes { display: grid; gap: .25rem; flex: 1 1 18rem; min-inline-size: 0; margin: 0; }
+.ce-vu-lignes > div, .ce-fiche > div { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: .75rem; align-items: baseline; }
+.ce-vu-lignes dt, .ce-fiche dt { font-size: .8125rem; color: var(--ui-texte-3); }
+.ce-vu-lignes dd, .ce-fiche dd { margin: 0; font-size: .875rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.ce-adresse { font-variant-numeric: tabular-nums; color: var(--ui-texte-2); overflow-wrap: anywhere; }
+.ce-fiche { display: grid; gap: .625rem; margin: 0; }
+.ce-fiche dd .ui-etat { margin-inline-start: .25rem; }
+.ce-raison { display: block; margin-block-start: .25rem; }
+.ce-refus { color: var(--ui-rouge); }
+.ce-form { display: grid; gap: 1rem; max-inline-size: 40rem; }
+.carte > .ce-retour { margin-block-end: 1rem; }
+.ce-ligne { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.console .ce-ligne > .entree { flex: 1 1 16rem; min-inline-size: 0; }
+.ce-essai { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); max-inline-size: none; align-items: end; }
+.ce-essai .ce-gestes { grid-column: 1 / -1; }
+.ce-gestes { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.ce-etats { display: inline-flex; flex-wrap: wrap; gap: .375rem; }
+.ce-adresse-saisie { display: flex; align-items: center; gap: .375rem; }
+.ce-adresse-saisie > span { color: var(--ui-texte-3); font-weight: 500; }
+.console .ce-adresse-saisie input.entree:first-child { flex: 0 1 9.5rem; min-inline-size: 6rem; }
+.console .ce-adresse-saisie input.entree:last-child { flex: 1 1 14rem; min-inline-size: 0; }
+.ce-note { display: flex; align-items: flex-start; gap: .375rem; margin: 0; }
+.ce-note .icone { flex: none; margin-block-start: .125rem; color: var(--ui-ambre); }
+.ce-domaine { display: grid; gap: 1rem; }
+.ce-etapes { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin: 0; padding: 0; list-style: none; font-size: .8125rem; color: var(--ui-texte-2); }
+.ce-etapes > li { display: inline-flex; align-items: center; gap: .5rem; }
+.ce-etapes > li[data-fait] { color: var(--ui-texte); font-weight: 500; }
+.ce-puce { display: inline-grid; flex: none; place-items: center; inline-size: 1.25rem; block-size: 1.25rem; border-radius: 50%; border: 1px solid var(--ui-bord-fort); font-size: .6875rem; font-weight: 600; color: var(--ui-texte-3); font-variant-numeric: tabular-nums; }
+li[data-fait] > .ce-puce { background: var(--ui-vert); border-color: var(--ui-vert); color: #fff; }
+.ce-dns-cadre { margin-inline: -1.25rem; overflow-x: auto; border-block: 1px solid var(--ui-bord-leger); }
+@media (min-width: 700px) { .ce-dns-cadre { margin-inline: -1.5rem; } }
+.ce-dns { inline-size: 100%; border-collapse: collapse; font-size: .8125rem; }
+.ce-dns th { padding: .5rem .75rem; text-align: start; font-weight: 500; font-size: .75rem; color: var(--ui-texte-2); background: var(--ui-doux); border-block-end: 1px solid var(--ui-bord-leger); white-space: nowrap; }
+.ce-dns td { padding: .625rem .75rem; vertical-align: top; border-block-end: 1px solid var(--ui-bord-leger); }
+.ce-dns tr:last-child td { border-block-end: 0; }
+.ce-dns th:first-child, .ce-dns td:first-child { padding-inline-start: 1.25rem; }
+.ce-dns th:last-child, .ce-dns td:last-child { padding-inline-end: 1.25rem; }
+@media (min-width: 700px) { .ce-dns th:first-child, .ce-dns td:first-child { padding-inline-start: 1.5rem; } .ce-dns th:last-child, .ce-dns td:last-child { padding-inline-end: 1.5rem; } }
+.ce-dns td[data-titre="Type"] { white-space: nowrap; }
+.ce-dns td[data-titre="Valeur"] { inline-size: 45%; }
+.ce-type { font-weight: 600; }
+.ce-role, .ce-complet { display: block; margin-block-start: .125rem; font-size: .75rem; color: var(--ui-texte-3); overflow-wrap: anywhere; }
+.ce-code { display: block; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .75rem; line-height: 1.5; color: var(--ui-texte); overflow-wrap: anywhere; word-break: break-all; }
+.ce-valeur { max-block-size: 4.5em; overflow: auto; }
+.console .ce-copier { margin-block-start: .25rem; margin-inline-start: -.5rem; min-block-size: 1.75rem; }
+.ce-retirer { margin-inline-start: auto; }
+.ce-boutiques { margin: 0; padding: 0; list-style: none; }
+.ce-boutiques > li + li { border-block-start: 1px solid var(--ui-bord-leger); }
+.ce-boutique { display: grid; grid-template-columns: minmax(9rem, 1fr) minmax(0, 2fr) minmax(0, 1.5fr) 15rem; gap: .25rem 1rem; align-items: center; padding: .75rem 1.25rem; color: var(--ui-texte); text-decoration: none; font-size: .8125rem; }
+@media (min-width: 700px) { .ce-boutique { padding-inline: 1.5rem; } }
+.ce-boutique:hover { background: var(--ui-survol); }
+.ce-boutique:focus-visible { outline: 2px solid var(--ui-anneau); outline-offset: -2px; }
+.ce-boutique-nom { font-weight: 600; font-size: .875rem; }
+.ce-boutique-de, .ce-boutique-rep { min-inline-size: 0; overflow-wrap: anywhere; }
+.ce-boutique-etat { display: inline-flex; align-items: center; gap: .5rem; justify-self: end; color: var(--ui-texte-3); }
+@media (max-width: 59.99rem) {
+  .ce-boutique { grid-template-columns: minmax(0, 1fr) auto; }
+  .ce-boutique-nom { grid-column: 1; }
+  .ce-boutique-etat { grid-column: 2; grid-row: 1; }
+  .ce-boutique-de, .ce-boutique-rep { grid-column: 1 / -1; }
+}
+@media (max-width: 47.99rem) {
+  /* Au téléphone, chaque enregistrement DNS devient une petite fiche. */
+  .ce-dns thead { display: none; }
+  .ce-dns, .ce-dns tbody, .ce-dns tr, .ce-dns td { display: block; inline-size: auto; }
+  .ce-dns tr { padding: .75rem 1.25rem; border-block-end: 1px solid var(--ui-bord-leger); }
+  .ce-dns tr:last-child { border-block-end: 0; }
+  .ce-dns td, .ce-dns td:first-child, .ce-dns td:last-child { padding: .25rem 0; border: 0; }
+  .ce-dns td[data-titre="Valeur"] { inline-size: auto; }
+  .ce-dns td[data-titre="Nom"]::before, .ce-dns td[data-titre="Valeur"]::before { content: attr(data-titre); display: block; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--ui-texte-3); }
+  .ce-vu-lignes > div, .ce-fiche > div { grid-template-columns: 1fr; gap: .125rem; }
+  .ce-retirer { margin-inline-start: 0; }
+}

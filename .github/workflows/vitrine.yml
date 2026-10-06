@@ -51,6 +51,10 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q postgresql-16 postgresql-16-pgtap
           sudo systemctl stop postgresql || true
+          # Les ports de l'API locale sont dans la plage éphémère de Linux :
+          # réservés, aucune connexion de passage ne les prend (PostgREST
+          # s'arrêtait sur « Address in use », le 05/10).
+          sudo sysctl -q -w net.ipv4.ip_local_reserved_ports=54321-54340
 
       - name: Base locale et API locale
         env:
@@ -140,6 +144,10 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q postgresql-16 postgresql-16-pgtap
           sudo systemctl stop postgresql || true
+          # Les ports de l'API locale sont dans la plage éphémère de Linux :
+          # réservés, aucune connexion de passage ne les prend (PostgREST
+          # s'arrêtait sur « Address in use », le 05/10).
+          sudo sysctl -q -w net.ipv4.ip_local_reserved_ports=54321-54340
 
       - name: Base locale et API locale (fraîches, pour ce parcours seul)
         env:

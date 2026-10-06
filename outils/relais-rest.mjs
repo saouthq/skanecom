@@ -24,12 +24,16 @@
 // Et il tient lieu de SkanFact (la facturation des clients, cadrage 06) :
 // l'API que la console lit et les avis qu'elle reçoit (outils/skanfact-dev.mjs) :
 //   http://127.0.0.1:54321/skanfact-dev/v1/entreprises/<e>/clients?identifiant=…
+// Et il tient lieu de l'API des domaines de Resend (le domaine d'envoi d'une
+// boutique, outils/resend-dev.mjs) :
+//   http://127.0.0.1:54321/email-dev/resend/domains
 // Lancé par outils/api-locale.sh. Jamais en production.
 import http from "node:http";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PREFIXE as SKANFACT, skanfactDev } from "./skanfact-dev.mjs";
+import { PREFIXE as RESEND, resendDev } from "./resend-dev.mjs";
 
 const PORT = Number(process.env.RELAIS_PORT ?? 54321);
 const AMONTS = [
@@ -101,7 +105,14 @@ function recoitRendu(req, res) {
       const e = JSON.parse(corps);
       const adresse = String(e.a ?? "").toLowerCase();
       if (!adresse) throw new Error("adresse absente");
-      RENDUS.set(adresse, { nom: e.nom, sujet: e.sujet, html: e.html, texte: e.texte, code: e.code ?? null });
+      // Un domaine d'envoi dont le nom contient « refus » est refusé, comme un
+      // fournisseur le ferait d'un domaine qui n'est plus vérifié : l'essai de
+      // la reprise par l'adresse de la plateforme (src/lib/courriels/envoi.ts).
+      if (e.de && /refus/.test(String(e.de))) {
+        return res.writeHead(403, { "content-type": "application/json" }).end('{"erreur":"domaine non vérifié"}');
+      }
+      // De qui (l'adresse d'expédition) et où vont les réponses : ce que la console règle.
+      RENDUS.set(adresse, { nom: e.nom, sujet: e.sujet, html: e.html, texte: e.texte, code: e.code ?? null, de: e.de ?? null, reponse_a: e.reponse_a ?? null });
       await appendFile(JOURNAL_EMAILS, `${new Date().toISOString()}  ${adresse}  rendu  « ${e.sujet} » de ${e.nom}\n`);
       res.writeHead(200, { "content-type": "application/json" }).end("{}");
     } catch {
@@ -180,6 +191,7 @@ http
     // (« Relier SkanEcom à SkanFact »), son API s'appelle depuis le serveur. Un
     // formulaire de la console qui le suivrait par fetch échoue ici aussi.
     if (req.url.startsWith(SKANFACT + "/")) return skanfactDev(req, res);
+    if (req.url.startsWith(RESEND + "/")) return resendDev(req, res);
     // L'application lit la vitrine côté serveur ; le CORS ouvert ne sert qu'aux
     // essais depuis un navigateur en local.
     res.setHeader("Access-Control-Allow-Origin", "*");

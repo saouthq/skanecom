@@ -112,6 +112,7 @@ export default async function Boutique({ children, params }: {
           { href: `${base}/marque`, libelle: "Marque", icone: "marque" },
           { href: `${base}/droits`, libelle: "Formule", icone: "etiquette" },
           { href: `${base}/modules`, libelle: "Modules", icone: "modules", compte: modulesActifs },
+          { href: `${base}/courriels`, libelle: "E-mails", icone: "courriel" },
           { href: `${base}/import`, libelle: "Catalogue", icone: "importer" },
           { href: `${base}/facturation`, libelle: "Facturation", icone: "billet" },
           { href: `${base}/support`, libelle: "Support", icone: "support" },

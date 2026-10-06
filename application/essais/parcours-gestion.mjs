@@ -88,6 +88,14 @@ async function sansDoubleAuthentification(email) {
   for (const f of facteurs ?? []) await fetch(`${api}/admin/users/${compte.id}/factors/${f.id}`, { method: "DELETE", headers: entetes });
 }
 
+/** Après le code : le backoffice — ou « Mon compte » d'abord, quand la double
+ *  authentification vient d'être activée (noter ses codes de secours) ; on
+ *  revient alors au backoffice. */
+async function entre(p, slug) {
+  await p.waitForURL(new RegExp(`/gestion/${slug}(/compte)?([?#]|$)`), { timeout: 15000 });
+  if (new URL(p.url()).pathname.endsWith("/compte")) await p.goto(`${C}/gestion/${slug}`, { waitUntil: "networkidle" });
+}
+
 async function connexion(page, email, mobile = false) {
   await page.goto(C + "/connexion", { waitUntil: "networkidle" });
   const champ = async (loc, texte) => {
@@ -169,7 +177,7 @@ if (section("1")) {
 
   await etape("connexion sans double authentification", async () => {
     await connexion(page, "appels@maymar.test");
-    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await entre(page, "maymar");
     verifie(true, "l'employé des appels entre directement dans le backoffice de Maymar");
     verifie((await page.locator(".app-cote .app-compte-role").innerText()).includes("Confirmation"), "son rôle est affiché");
     verifie(await page.locator(".app-cote").getByRole("link", { name: "Tableau de bord" }).count() === 0,
@@ -1216,7 +1224,7 @@ if (section("2")) {
     await p.locator("#mot_de_passe").fill("le colis part demain");
     await p.locator("#confirmation").fill("le colis part demain");
     await p.getByRole("button", { name: "Enregistrer et entrer" }).tap();
-    await p.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await entre(p, "maymar");
     verifie(true, "son mot de passe choisi, il entre dans le backoffice de Maymar");
     await p.goto(`${C}/gestion/maymar/equipe`, { waitUntil: "networkidle" });
     verifie(/\/gestion\/maymar$/.test(p.url()), "la page de l'équipe n'est pas pour la préparation");
@@ -1259,7 +1267,7 @@ if (section("3")) {
 
   await etape("la liste au doigt, l'appel en un geste", async () => {
     await connexion(page, "appels@maymar.test", true);
-    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await entre(page, "maymar");
     const deborde = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     verifie(!deborde, "pas de défilement horizontal");
     const appel = await page.locator(".bo-ligne", { hasText: num(9) }).locator(".bo-appel").getAttribute("href");
@@ -1448,7 +1456,7 @@ if (section("4bis")) {
     await clic(page, page.locator("#code"));
     await tape(page, totp(secret));
     await page.keyboard.press("Enter");
-    await page.waitForURL(/\/gestion\/maison-selma$/, { timeout: 15000 });
+    await entre(page, "maison-selma");
     verifie(true, "la gérante de Maison Selma entre dans son backoffice");
   });
 
@@ -2036,7 +2044,7 @@ if (section("5")) {
 
   await etape("sa boutique, et ce que son rôle permet", async () => {
     await connexion(page, "prepa@quincaillerie.test");
-    await page.waitForURL(/\/gestion\/quincaillerie-demo$/, { timeout: 15000 });
+    await entre(page, "quincaillerie-demo");
     verifie(true, "le préparateur entre dans le backoffice de la quincaillerie");
     verifie((await page.locator(".bo-etapes [aria-current=page]").innerText()).includes("À préparer"),
       "il arrive sur « À préparer » : son travail d'abord");
@@ -2203,7 +2211,7 @@ if (section("6")) {
     await clic(page, page.locator("#code"));
     await tape(page, totp(secret));
     await page.keyboard.press("Enter");
-    await page.waitForURL(/\/gestion\/dar-alia$/, { timeout: 15000 });
+    await entre(page, "dar-alia");
     verifie(true, "la gérante de Dar Alia entre dans son backoffice");
   });
 
@@ -2547,7 +2555,7 @@ if (section("7")) {
     await clic(page, page.locator("#code"));
     await tape(page, totp(secret));
     await page.keyboard.press("Enter");
-    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await entre(page, "maymar");
     verifie(true, "le gérant entre dans son backoffice");
   });
 
@@ -2658,7 +2666,7 @@ if (section("8")) {
     await clic(page, page.locator("#code"));
     await tape(page, totp((await page.locator("[data-secret-totp]").textContent()).trim()));
     await page.keyboard.press("Enter");
-    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await entre(page, "maymar");
     await clic(page, page.getByRole("link", { name: "Saisir une commande" }));
     await page.getByRole("heading", { name: "Saisir une commande" }).waitFor();
     verifie(/Il manque d'où vient la commande/.test(await recap()) && await page.locator(".sc-recap .sc-envoyer").isDisabled(),
@@ -2774,7 +2782,7 @@ if (section("8")) {
     const m = await tel.newPage();
     t.espion(m, "saisie-telephone");
     await connexion(m, "appels@maymar.test", true);
-    await m.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await entre(m, "maymar");
     await m.goto(`${C}/gestion/maymar/commandes/nouvelle`, { waitUntil: "networkidle" });
     verifie(await m.getByLabel(/Remise accordée/).count() === 0, "l'employé des appels ne voit ni remise ni livraison offerte");
     await m.locator(".sc-canal", { hasText: "Instagram" }).tap();
@@ -2823,7 +2831,7 @@ if (section("9")) {
     await clic(page, page.locator("#code"));
     await tape(page, totp((await page.locator("[data-secret-totp]").textContent()).trim()));
     await page.keyboard.press("Enter");
-    await page.waitForURL(/\/gestion\/maymar$/, { timeout: 15000 });
+    await entre(page, "maymar");
     // Deux colis au moins à remettre (les sections d'avant en ont expédié) : des commandes reçues, confirmées.
     const aPreparer = await lit(`commandes?select=numero&boutique_id=eq.${MAYMAR}&statut=eq.confirmee&mode_livraison=eq.domicile`);
     if (aPreparer.length < 2) {

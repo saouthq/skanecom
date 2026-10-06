@@ -104,6 +104,11 @@ ports_libres() {
   done
 }
 
+lancer_postgrest() {
+  setsid "$OUTILS/postgrest" "$OUTILS/postgrest.conf" > "$OUTILS/postgrest.log" 2>&1 < /dev/null &
+  echo $! > "$OUTILS/postgrest.pid"
+}
+
 demarrer() {
   telecharger
   arreter
@@ -117,8 +122,7 @@ jwt-secret = "$SECRET_DEV"
 server-host = "127.0.0.1"
 server-port = 54330
 CONF
-  setsid "$OUTILS/postgrest" "$OUTILS/postgrest.conf" > "$OUTILS/postgrest.log" 2>&1 < /dev/null &
-  echo $! > "$OUTILS/postgrest.pid"
+  lancer_postgrest
   telecharger_gotrue
   (
     gotrue_env "$PORT_BASE" "$BASE"
@@ -188,10 +192,23 @@ ENV
   # Jusqu'à une minute : au premier démarrage, GoTrue passe ses propres
   # migrations sur la base — sur une machine de CI froide, plus de vingt
   # secondes (un parcours de la CI en est tombé, le 01/10).
-  local anon fin
+  local anon fin relances=0
   anon="$(jeton anon)"
   fin=$((SECONDS + 60))
   while [ "$SECONDS" -lt "$fin" ]; do
+    # 54330 est dans la plage des ports éphémères de Linux : une connexion
+    # locale de passage (les jeux de démo en ouvrent beaucoup) peut l'avoir
+    # pris ; PostgREST, qui ne réutilise pas un port en TIME_WAIT, s'arrête
+    # alors sur « Address in use » jusqu'à une minute (un parcours de la CI
+    # en est tombé, le 05/10 ; la CI réserve désormais ces ports). On le
+    # relance, en laissant à ce port le temps de se libérer.
+    if ! kill -0 "$(cat "$OUTILS/postgrest.pid")" 2> /dev/null && [ "$relances" -lt 45 ] &&
+       grep -q "Address in use" "$OUTILS/postgrest.log" 2> /dev/null; then
+      [ "$relances" -eq 0 ] && fin=$((SECONDS + 100)) && echo "PostgREST : le port 54330 est pris un instant, nouveaux essais." >&2
+      relances=$((relances + 1))
+      sleep 2
+      lancer_postgrest
+    fi
     if curl -sf -o /dev/null "http://127.0.0.1:54321/rest/v1/gouvernorats?select=code&limit=1" -H "apikey: $anon" &&
        curl -sf -o /dev/null "http://127.0.0.1:54321/auth/v1/health"; then
       admin_de_developpement

@@ -10,12 +10,17 @@ import { clientService } from "@/lib/console/service";
      gardé en base et la console le montre (supabase/apercu/codes-demo.sql) ;
    · « relais » : en local, le relais de l'API le garde (outils/relais-rest.mjs).
    Le nom affiché est celui de la boutique : l'acheteur reçoit « Maymar ».
+   La console règle, par boutique, un autre nom affiché, l'adresse où vont
+   les réponses, et son propre domaine d'envoi une fois vérifié
+   (commandes@maymar.tn ; migration …_courriels_expediteur). Si le
+   fournisseur refuse ce domaine, l'e-mail repart de l'adresse de la
+   plateforme : il arrive quand même.
    ========================================================================== */
 
 /** Ce qu'est l'envoi, pour le compter (la consommation de chaque boutique,
  *  migration …_console_consommation) : un code de connexion, le suivi d'une
  *  commande, un accès de l'équipe (invitation, mot de passe), la lettre. */
-export type NatureEnvoi = "code" | "commande" | "equipe" | "lettre";
+export type NatureEnvoi = "code" | "commande" | "equipe" | "lettre" | "essai";
 
 export type Envoi = {
   a: string; nom: string; sujet: string; html: string; texte: string; code?: string | null;
@@ -23,7 +28,7 @@ export type Envoi = {
   boutique?: string | null;
   nature?: NatureEnvoi;
 };
-export type Resultat = { ok: true } | { ok: false; raison: string };
+export type Resultat = { ok: true; note?: string } | { ok: false; raison: string };
 
 const guillemets = (x: string) => `"${x.replace(/["\\\r\n]/g, "")}"`;
 
@@ -33,24 +38,58 @@ export function lireEnvoi(valeur: string): { fournisseur: string; cle: string; e
   return { fournisseur, cle, expediteur: reste.join(":") };
 }
 
+/** Ce que la console a réglé pour cette boutique (ou, sans boutique, pour la
+ *  plateforme) ; illisible : rien de changé, l'e-mail part comme avant. */
+type Expediteur = { nom: string | null; reponse_a: string | null; adresse: string | null; reponse_plateforme: string | null };
+async function expediteurDe(boutique: string | null | undefined): Promise<Expediteur | null> {
+  try {
+    const { data } = await clientService().rpc("courriels_expediteur", { p_boutique_id: boutique ?? null });
+    return (data as Expediteur | null) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Ce qui part, une fois les réglages appliqués : de qui, où vont les réponses. */
+export type Pret = Envoi & { de?: string | null; reponse_a?: string | null };
+
 /** Envoie, puis note l'envoi au journal (l'adresse masquée par la base) et
  *  le compte au mois de sa boutique : la console voit ce qui part, ce qui
  *  casse, et ce que chaque boutique consomme. Le journal ne bloque jamais l'envoi. */
 export async function envoyer(e: Envoi): Promise<Resultat> {
-  const resultat = await envoyerSansJournal(e);
+  const x = await expediteurDe(e.boutique);
+  const pret: Pret = {
+    ...e,
+    nom: (e.boutique ? x?.nom : null) || e.nom,
+    de: e.boutique ? x?.adresse ?? null : null,
+    reponse_a: (e.boutique ? x?.reponse_a : x?.reponse_plateforme) ?? null,
+  };
+  let resultat = await envoyerSansJournal(pret);
+  let parti = pret.de;
+  // Le domaine de la boutique refusé (vérification perdue, clé…) : l'e-mail
+  // repart de l'adresse de la plateforme, la raison reste au journal.
+  if (!resultat.ok && pret.de) {
+    const premier = resultat.raison;
+    resultat = await envoyerSansJournal({ ...pret, de: null });
+    if (resultat.ok) {
+      resultat = { ok: true, note: `${pret.de} refusé (${premier}) : reparti de la plateforme` };
+      parti = null;
+    }
+  }
   try {
     await clientService().rpc("console_noter_envoi", {
-      p_canal: "email", p_destinataire: e.a, p_expediteur: e.nom, p_sujet: e.sujet,
+      p_canal: "email", p_destinataire: e.a, p_expediteur: parti ? `${pret.nom} <${parti}>` : pret.nom, p_sujet: e.sujet,
       p_fournisseur: lireEnvoi(process.env.COURRIELS_ENVOI ?? "").fournisseur || "aucun",
-      p_ok: resultat.ok, p_raison: resultat.ok ? null : resultat.raison,
+      p_ok: resultat.ok, p_raison: resultat.ok ? resultat.note ?? null : resultat.raison,
       p_boutique_id: e.boutique ?? null, p_nature: e.nature ?? null,
     });
   } catch { /* un journal indisponible n'empêche pas l'e-mail */ }
   return resultat;
 }
 
-async function envoyerSansJournal(e: Envoi): Promise<Resultat> {
-  const { fournisseur, cle, expediteur } = lireEnvoi(process.env.COURRIELS_ENVOI ?? "");
+async function envoyerSansJournal(e: Pret): Promise<Resultat> {
+  const { fournisseur, cle, expediteur: plateforme } = lireEnvoi(process.env.COURRIELS_ENVOI ?? "");
+  const expediteur = e.de || plateforme;
   try {
     switch (fournisseur) {
       case "resend": {
@@ -58,7 +97,10 @@ async function envoyerSansJournal(e: Envoi): Promise<Resultat> {
         const r = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: { authorization: `Bearer ${cle}`, "content-type": "application/json" },
-          body: JSON.stringify({ from: `${guillemets(e.nom)} <${expediteur}>`, to: [e.a], subject: e.sujet, html: e.html, text: e.texte }),
+          body: JSON.stringify({
+            from: `${guillemets(e.nom)} <${expediteur}>`, to: [e.a], subject: e.sujet, html: e.html, text: e.texte,
+            ...(e.reponse_a ? { reply_to: e.reponse_a } : {}),
+          }),
         });
         return r.ok ? { ok: true } : { ok: false, raison: `Resend : HTTP ${r.status}` };
       }
@@ -70,6 +112,7 @@ async function envoyerSansJournal(e: Envoi): Promise<Resultat> {
           body: JSON.stringify({
             sender: { name: e.nom, email: expediteur }, to: [{ email: e.a }],
             subject: e.sujet, htmlContent: e.html, textContent: e.texte,
+            ...(e.reponse_a ? { replyTo: { email: e.reponse_a } } : {}),
           }),
         });
         return r.ok ? { ok: true } : { ok: false, raison: `Brevo : HTTP ${r.status}` };
