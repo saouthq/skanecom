@@ -312,6 +312,10 @@ jobs:
           for s in SKANFACT_URL SKANFACT_ENTREPRISE SKANFACT_CLE SKANFACT_AVIS_SECRET; do
             printf '%s' "$deja" | grep -q "\"$s\"" || printf '%s' "aucune" | $WRANGLER secret put "$s" --name skanecom-application
           done
+          # Les domaines chez Cloudflare (brancher, acheter) : pas sur l'aperçu, sauf jeton posé à la main.
+          for s in CLOUDFLARE_DOMAINES CLOUDFLARE_REGISTRAR; do
+            printf '%s' "$deja" | grep -q "\"$s\"" || printf '%s' "aucun" | $WRANGLER secret put "$s" --name skanecom-application
+          done
           # Le chiffrement des clés que les commerçants confient : tiré une fois,
           # jamais remplacé (les clés gardées ne se reliraient plus).
           printf '%s' "$deja" | grep -q '"SKANFACT_CHIFFRE"' || openssl rand -base64 32 | tr -d '\n' | $WRANGLER secret put SKANFACT_CHIFFRE --name skanecom-application

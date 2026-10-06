@@ -30,6 +30,9 @@
 // Et il tient lieu de Konnect, le paiement en ligne des boutiques (sa page
 // de paiement, carte ou e-Dinar, outils/konnect-dev.mjs) :
 //   http://127.0.0.1:54321/konnect-dev/api/v2/payments/init-payment
+// Et il tient lieu de l'API de Cloudflare pour les domaines des boutiques
+// (brancher un domaine, en acheter un : outils/cloudflare-dev.mjs) :
+//   http://127.0.0.1:54321/cloudflare-dev/client/v4/zones/<zone>/custom_hostnames
 // Et il ouvre une vitrine locale pour la surveillance (src/lib/console/
 // surveillance.ts) : depuis le Worker local, « mode.localhost » ne se résout
 // pas et l'en-tête Host ne se force pas ; ici, si (GET seul, « .localhost » seul) :
@@ -42,6 +45,7 @@ import { fileURLToPath } from "node:url";
 import { PREFIXE as SKANFACT, skanfactDev } from "./skanfact-dev.mjs";
 import { PREFIXE as RESEND, resendDev } from "./resend-dev.mjs";
 import { PREFIXE as KONNECT, konnectDev } from "./konnect-dev.mjs";
+import { PREFIXE as CLOUDFLARE, cloudflareDev } from "./cloudflare-dev.mjs";
 
 const PORT = Number(process.env.RELAIS_PORT ?? 54321);
 const AMONTS = [
@@ -62,10 +66,12 @@ const RENDUS = new Map(); // adresse (minuscules) → { nom, sujet, html, texte,
 
 const VITRINE_LOCALE = new URL(process.env.VITRINE_LOCALE ?? "http://127.0.0.1:4200");
 
-/* GET /vitrine-locale/<hôte>/<chemin> → la vitrine du poste, sous cet hôte. */
+/* GET /vitrine-locale/<hôte>/<chemin> → la vitrine du poste, sous cet hôte
+   (« .localhost », ou un vrai domaine noté en base : acheté ou branché par
+   les simulateurs, il ne mène pas au poste). */
 function vitrineLocale(req, res) {
   const [, , hote, ...reste] = req.url.split("/");
-  if (req.method !== "GET" || !/^[a-z0-9-]+(\.[a-z0-9-]+)*\.localhost$/.test(hote ?? "")) return res.writeHead(404).end();
+  if (req.method !== "GET" || !/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(hote ?? "")) return res.writeHead(404).end();
   const amont = http.request(
     { host: VITRINE_LOCALE.hostname, port: VITRINE_LOCALE.port, method: "GET", path: "/" + reste.join("/"),
       headers: { host: `${hote}:${VITRINE_LOCALE.port}`, "user-agent": req.headers["user-agent"] ?? "" } },
@@ -220,6 +226,7 @@ http
     if (req.url.startsWith(RESEND + "/")) return resendDev(req, res);
     if (req.url.startsWith(KONNECT + "/")) return konnectDev(req, res, `http://127.0.0.1:${PORT}`);
     if (req.url.startsWith("/vitrine-locale/")) return vitrineLocale(req, res);
+    if (req.url.startsWith(CLOUDFLARE + "/")) return cloudflareDev(req, res);
     // L'application lit la vitrine côté serveur ; le CORS ouvert ne sert qu'aux
     // essais depuis un navigateur en local.
     res.setHeader("Access-Control-Allow-Origin", "*");

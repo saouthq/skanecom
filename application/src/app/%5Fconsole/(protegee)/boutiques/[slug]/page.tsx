@@ -22,6 +22,8 @@ import { MOTIFS_SUSPENSION } from "@/lib/console/libelles";
 import { ChoixMetier } from "@/components/console/ChoixMetier";
 import type { Metier } from "@/lib/console/metiers";
 import { titreBoutique } from "@/lib/console/titre-boutique";
+import { BranchementDomaine } from "@/components/console/BranchementDomaine";
+import { configDomaines, hotePlateforme, type Branchement } from "@/lib/console/domaines-cloudflare";
 import { depuis, vigilances, type LignePilotage, type Quotas, type Sante, type SurveillanceLue } from "@/lib/console/pilotage";
 import { CANAUX, nomMois, type DonneesConsommation } from "@/lib/console/consommation";
 import { Mesure } from "@/components/console/JaugeEnvois";
@@ -66,7 +68,7 @@ export default async function FicheBoutique({ params, searchParams }: {
   const hoteConsole = (await headers()).get("host");
   // Une boutique vide peut recevoir le préréglage d'un métier.
   const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
-  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }, { data: ddr }, { data: dsv }] = await Promise.all([
+  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }, { data: ddr }, { data: dsv }, { data: dbr }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     // Les métiers : le choix d'une boutique vide, et leur nom au journal.
@@ -85,7 +87,12 @@ export default async function FicheBoutique({ params, searchParams }: {
     clientService().rpc("console_droits_boutique", { p_acteur: user.id, p_boutique_id: b.id }),
     // Ce que la surveillance horaire a relevé sur sa vitrine, ses files, son domaine d'envoi.
     clientService().rpc("console_surveillance", { p_acteur: user.id }),
+    // Ses domaines à lui, chez Cloudflare : branchés, ou ce qu'il reste à poser.
+    clientService().rpc("console_branchements", { p_acteur: user.id, p_boutique_id: b.id }),
   ]);
+  const dom = configDomaines();
+  const branchements = ((dbr ?? []) as { hote: string; type: string; branchement: Branchement | null }[])
+    .filter((x) => x.type === "personnalise" && !hotePlateforme(x.hote) && x.branchement?.statut !== "actif");
   const droitsBoutique = (ddr ?? null) as DonneesDroits | null;
   const ecarts = droitsBoutique ? resumeEcarts(droitsBoutique) : { ajoutes: 0, retires: 0 };
   const ouvertsBoutique = droitsBoutique ? droitsBoutique.droits.filter((x) => x.effectif).length : 0;
@@ -243,6 +250,14 @@ export default async function FicheBoutique({ params, searchParams }: {
                 </tbody>
               </table>
             </div>
+            {branchements.length ? (
+              <div className="bt-branchements">
+                {branchements.map((x) => (
+                  <BranchementDomaine key={x.hote} hote={x.hote} slug={b.slug} boutiqueId={b.id} branchement={x.branchement}
+                    cible={dom.cible} saas={dom.saas.mode !== "aucun"} />
+                ))}
+              </div>
+            ) : null}
             <form action={`/boutiques/${b.slug}/domaines`} method="post" className="carte-pied">
               <input type="hidden" name="boutique_id" value={b.id} />
               <div className="champ bt-domaine-champ">

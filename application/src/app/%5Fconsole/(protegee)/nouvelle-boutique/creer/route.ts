@@ -2,9 +2,12 @@ import { STRUCTURES } from "@/lib/theme";
 import { clientService } from "@/lib/console/service";
 import { ecriture, messageBase, vers, versAvecErreur } from "@/lib/console/http";
 import { messageMetier } from "@/lib/console/metiers";
+import { acheterDomaine, adresseProvisoire, brancherDomaine, hotePlateforme, verifierAchat } from "@/lib/console/domaines-cloudflare";
+
+const NOM_DOMAINE = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 
 export async function POST(req: Request) {
-  return ecriture(req, async ({ user, formulaire, ip }) => {
+  return ecriture(req, async ({ user, formulaire, ip, roleAdmin }) => {
     const valeurs = {
       nom: String(formulaire.get("nom") ?? "").trim(),
       slug: String(formulaire.get("slug") ?? "").trim().toLowerCase(),
@@ -17,16 +20,61 @@ export async function POST(req: Request) {
       contact_nom: String(formulaire.get("contact_nom") ?? "").trim().slice(0, 120),
       contact_telephone: String(formulaire.get("contact_telephone") ?? "").trim().slice(0, 20),
       prospect: /^[0-9a-f-]{36}$/.test(String(formulaire.get("prospect") ?? "")) ? String(formulaire.get("prospect")) : "",
+      domaine_mode: ["sien", "provisoire", "acheter"].includes(String(formulaire.get("domaine_mode"))) ? String(formulaire.get("domaine_mode")) : "sien",
+      achat: String(formulaire.get("achat") ?? "").trim().toLowerCase(),
     };
+    // Un refus qui tient au domaine ramène à son étape, la saisie gardée.
+    const auDomaine = (message: string) => versAvecErreur("/nouvelle-boutique", message, { ...valeurs, etape: "domaine" });
+    // Le domaine : le sien, l'adresse provisoire de la plateforme, ou un achat.
+    let hote = valeurs.hote;
+    let type: "personnalise" | "sous_domaine" = "personnalise";
+    if (valeurs.domaine_mode === "provisoire") {
+      const a = adresseProvisoire(valeurs.slug);
+      if (!a) return auDomaine("Aucune adresse provisoire n'est réglée sur la plateforme : donnez son domaine.");
+      hote = a;
+      type = "sous_domaine";
+    }
+    if (valeurs.domaine_mode === "acheter") {
+      if (roleAdmin !== "super_admin") return auDomaine("Un achat de domaine est réservé au super-administrateur.");
+      if (!NOM_DOMAINE.test(valeurs.achat)) return auDomaine("Le domaine à acheter est illisible.");
+      if (formulaire.get("achat_confirme") !== "1") return auDomaine(`Confirmez l'achat de ${valeurs.achat}, avec son prix.`);
+      // Juste avant : toujours libre, au prix confirmé.
+      const v = await verifierAchat([valeurs.achat]);
+      const d = v.ok ? v.valeur[0] : null;
+      if (!v.ok) return auDomaine(`La vérification de ${valeurs.achat} n'a pas abouti : ${v.raison}. Rien n'est acheté.`);
+      if (!d?.achetable) return auDomaine(`${valeurs.achat} : ${d?.raison ?? "pas à vendre"}. Rien n'est acheté.`);
+      const prix = `${d.prix ?? ""} ${d.devise ?? ""}`.trim();
+      if (prix !== String(formulaire.get("achat_prix") ?? "").trim()) {
+        return auDomaine(`Le prix de ${valeurs.achat} a changé (${prix} au lieu de ${formulaire.get("achat_prix")}) : vérifiez-le de nouveau. Rien n'est acheté.`);
+      }
+      hote = valeurs.achat;
+    }
     const service = clientService(ip);
     const { data: id, error } = await service.rpc("console_creer_boutique", {
       p_acteur: user.id,
       p_slug: valeurs.slug,
       p_nom: valeurs.nom,
-      p_hote: valeurs.hote,
+      p_hote: hote,
       p_theme: valeurs.theme,
+      p_type: type,
     });
-    if (error) return versAvecErreur("/nouvelle-boutique", messageBase(error), valeurs);
+    if (error) return error.hint === "hote" ? auDomaine(messageBase(error)) : versAvecErreur("/nouvelle-boutique", messageBase(error), valeurs);
+    // L'achat, une fois la boutique créée (un identifiant pris n'achète rien) ;
+    // puis le branchement chez Cloudflare. Un échec ne défait pas la boutique : sa fiche le dit.
+    if (valeurs.domaine_mode === "acheter") {
+      const a = await acheterDomaine(hote);
+      if (!a.ok) {
+        return vers(`/boutiques/${valeurs.slug}?${new URLSearchParams({ erreur: `Boutique créée ; l'achat de ${hote} n'a pas abouti : ${a.raison}. Le domaine reste noté : achetez-le ou retirez-le.`, carte: "domaines" })}#t-domaines`);
+      }
+      const { error: en } = await service.rpc("console_noter_achat", { p_acteur: user.id, p_boutique_id: id as string, p_nom: hote, p_prix: String(formulaire.get("achat_prix") ?? "") });
+      if (en) {
+        return vers(`/boutiques/${valeurs.slug}?${new URLSearchParams({ erreur: `Boutique créée et ${hote} acheté ; l'achat n'a pas pu être noté au journal : ${messageBase(en)}`, carte: "domaines" })}#t-domaines`);
+      }
+    }
+    if (type === "personnalise" && !hotePlateforme(hote)) {
+      const b = await brancherDomaine(hote);
+      if (b.ok) await service.rpc("console_noter_branchement", { p_acteur: user.id, p_hote: hote, p_branchement: b.valeur });
+    }
     // La personne à appeler, notée dès la création : la carte « Le client » de sa fiche.
     if (valeurs.contact_nom || valeurs.contact_telephone) {
       const { error: ec } = await service.rpc("console_enregistrer_contact", {

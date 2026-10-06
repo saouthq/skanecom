@@ -1644,7 +1644,7 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .ds-plus-tard { display: grid; gap: .5rem; margin-block-start: .75rem; }
 .ds-plus-tard .aide { margin: 0; text-align: center; }
 
-/* ---- Nouvelle boutique : l'assistant en quatre étapes (AssistantCreation) ----
+/* ---- Nouvelle boutique : l'assistant en cinq étapes (AssistantCreation) ----
    Sans JavaScript, les étapes s'enchaînent sur la page, sans rangée ni boutons de navigation. */
 .nb-tete, .nb-nav, .nb-recap { display: none; }
 .nb-formulaire[data-assistant] .nb-tete { display: flex; gap: .25rem; margin: 0 0 .25rem; padding: 0; list-style: none; border-block-end: 1px solid var(--ui-bord-leger); }
@@ -2038,6 +2038,26 @@ summary.cs-resume:hover .cs-chevron { background: var(--ui-doux); color: var(--u
 /* L'assistant « Nouvelle boutique » : les modules à activer dès la création. */
 .nb-modules > legend .aide { display: block; font-weight: 400; margin-block-start: .125rem; }
 .nb-hors { display: none; margin-block-start: .375rem; justify-self: start; }
+
+/* L'étape « Le domaine » : trois cas, les champs du cas choisi. */
+.nb-domaines { display: grid; gap: .625rem; }
+@media (min-width: 48rem) { .nb-domaines { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); } }
+.nb-domaines [data-indisponible] { opacity: .6; cursor: not-allowed; }
+.nb-domaine-champs { display: grid; gap: .75rem; }
+.nb-domaine-champs[hidden] { display: none; }
+.nb-achat-ligne { display: flex; gap: .5rem; }
+.nb-achat-ligne input { flex: 1 1 auto; min-inline-size: 0; }
+.nb-achat-confirme[hidden] { display: none; }
+[data-achat-etat] { margin: .375rem 0 0; }
+
+/* La carte Domaines d'une boutique : un domaine à brancher, ce qu'il reste à poser. */
+.bt-branchements { display: grid; gap: .75rem; margin-block: .75rem; }
+.bt-branchement { display: grid; gap: .625rem; padding: .875rem 1.25rem; border: 1px solid var(--ui-ambre-bord); border-radius: var(--ui-r); background: var(--ui-ambre-fond); }
+.bt-branchement[data-statut="refuse"] { border-color: var(--ui-rouge-bord); background: var(--ui-rouge-fond); }
+.bt-branchement .ce-dns-cadre { margin-inline: -1.25rem; background: var(--ui-panneau); }
+.bt-branchement-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.bt-branchement-tete p, .bt-branchement > .aide { margin: 0; overflow-wrap: anywhere; }
+.bt-branchement-gestes { margin: 0; }
 
 /* ---- Les e-mails : l'envoi de la plateforme, l'onglet E-mails d'une boutique (ce-) ---- */
 .ce-vu { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding-block: 1rem; }

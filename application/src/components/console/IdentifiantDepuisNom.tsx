@@ -12,7 +12,7 @@ export function identifiantDe(nom: string): string {
 }
 
 /* Nouvelle boutique : tant qu'on n'a pas écrit soi-même l'identifiant, il
-   suit le nom ; le domaine propose « identifiant.tn » en exemple. Sans
+   suit le nom ; le domaine propose « www.identifiant.tn » en exemple. Sans
    JavaScript, les champs restent à remplir à la main. */
 export function IdentifiantDepuisNom({ nom = "nom", slug = "slug", hote = "hote" }: { nom?: string; slug?: string; hote?: string }) {
   useEffect(() => {
@@ -26,7 +26,7 @@ export function IdentifiantDepuisNom({ nom = "nom", slug = "slug", hote = "hote"
       if (!libre) return;
       const id = identifiantDe(champNom.value);
       champSlug.value = id;
-      if (champHote) champHote.placeholder = id ? `${id}.tn` : "maymar.tn";
+      if (champHote) champHote.placeholder = id ? `www.${id}.tn` : "www.maymar.tn";
     };
     const ecrit = () => { libre = champSlug.value === "" || champSlug.value === identifiantDe(champNom.value); };
     // Un nom déjà donné (« Créer sa boutique » depuis un prospect) : l'identifiant le suit dès l'ouverture.

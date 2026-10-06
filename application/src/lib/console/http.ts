@@ -56,6 +56,8 @@ export function messageBase(erreur: { code?: string; message?: string; hint?: st
   if (erreur.hint === "version") return "Quelqu'un a enregistré entre-temps : rechargez la page avant de recommencer.";
   switch (erreur.code) {
     case "23505":
+      // Un domaine pris : la base dit lequel, en une phrase.
+      if (erreur.hint === "hote" && erreur.message) return `${erreur.message}.`;
       return "Déjà pris : cet identifiant ou ce domaine appartient à une autre boutique.";
     case "23514":
     case "22P02":

@@ -43,15 +43,17 @@ export type Releve = {
 export type Bilan = { passage: number; verifies: number; defauts: number; pannes: number };
 
 /** La vitrine d'un hôte : son accueil, sans suivre de redirection (une
- *  redirection est une réponse : l'hôte secondaire vers le principal). En
- *  local (« .localhost », qui ne se résout pas depuis le Worker), par le
- *  relais de développement, qui ouvre la vitrine du poste sous cet hôte. */
+ *  redirection est une réponse : l'hôte secondaire vers le principal). Sur
+ *  le poste de développement, par le relais, qui ouvre la vitrine du poste
+ *  sous cet hôte : « .localhost » ne se résout pas depuis le Worker, et un
+ *  vrai domaine (acheté ou branché par les simulateurs) ne mène pas au poste. */
 async function verifierPage(h: AVerifier["hotes"][number]): Promise<Releve | null> {
   const local = hoteLocal(h.hote);
   const relais = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "");
+  const poste = /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(relais);
   // Un hôte « .localhost » hors du poste (l'aperçu en ligne) : rien à ouvrir.
-  if (local && !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(relais)) return null;
-  const url = local ? `${relais}/vitrine-locale/${h.hote}/` : `https://${h.hote}/`;
+  if (local && !poste) return null;
+  const url = poste ? `${relais}/vitrine-locale/${h.hote}/` : `https://${h.hote}/`;
   const debut = Date.now();
   try {
     const r = await fetch(url, {

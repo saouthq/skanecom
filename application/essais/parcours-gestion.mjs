@@ -129,6 +129,18 @@ async function posteBrut(contexte, chemin, formulaire) {
   });
 }
 
+/* Une page lue à la main, avec la session du contexte, hors de la page (l'espion ne la voit pas) : son code HTTP. */
+async function litBrut(contexte, chemin) {
+  const { request } = await import("node:http");
+  const cookies = (await contexte.cookies(C)).map((c) => `${c.name}=${c.value}`).join("; ");
+  return new Promise((ok, ko) => {
+    const req = request({ host: "127.0.0.1", port: Number(t.port), method: "GET", path: chemin, headers: { host: new URL(C).host, cookie: cookies } },
+      (r) => { r.resume(); r.on("end", () => ok(r.statusCode)); });
+    req.on("error", ko);
+    req.end();
+  });
+}
+
 /* Les frais de livraison qu'annonce la base à un acheteur (API publique). */
 async function fraisPour(gouvernorat, sousTotal = 1000, poids = null) {
   const r = await fetch("http://127.0.0.1:54321/rest/v1/rpc/frais_livraison_millimes", {
@@ -831,6 +843,24 @@ if (section("2")) {
     verifie(await section("commandes").getByLabel("Compte obligatoire").isChecked(), "au départ : compte obligatoire");
     verifie((await section("commandes").innerText()).includes("MAY-"), "le préfixe des numéros est affiché, réglé par SkanEcom");
     verifie((await page.locator(".rg-nav [aria-current=page]").innerText()).includes("Commandes"), "la liste des thèmes, à gauche, dit où l'on est");
+  });
+
+  await etape("l'abonnement : sa formule, ses factures SkanEcom, ses envois du mois", async () => {
+    await page.goto(`${C}/gestion/maymar/reglages`, { waitUntil: "networkidle" });
+    const tuile = page.locator(".rg-tuile").filter({ has: page.locator("b", { hasText: /^Abonnement$/ }) });
+    verifie(await tuile.count() === 1 && (await tuile.innerText()).includes("Sur mesure"), "une tuile « Abonnement », à côté des réglages : « Sur mesure »");
+    await clic(page, tuile);
+    await page.waitForURL(/\/gestion\/maymar\/abonnement$/);
+    await page.waitForLoadState("networkidle");
+    const texte = await page.locator("main").innerText();
+    verifie(texte.includes("Votre formule") && (await page.locator(".ab-formule-nom b").innerText()) === "Sur mesure", "sa formule : sur mesure");
+    verifie(await page.locator(".ab-droit:not([data-ouvert])").count() === 0, "sur mesure : toutes les fonctions sont ouvertes, cochées");
+    verifie(texte.includes("Aucune carte bancaire n'est demandée sur SkanEcom"), "aucune carte n'est demandée ici : c'est dit");
+    verifie(texte.includes("Vos factures SkanEcom paraîtront ici"), "pas encore reliée à la facturation de SkanEcom : dit tel quel, rien d'inventé");
+    verifie(await page.locator(".ab-envoi").count() === 2, "ses e-mails et ses SMS du mois");
+    await capture(page, "gestion-abonnement", true);
+    // L'étape suivante reprend sur les réglages des commandes.
+    await page.goto(`${C}/gestion/maymar/reglages/commandes`, { waitUntil: "networkidle" });
   });
 
   await etape("ouvrir aux invités, confirmer d'office, le code par e-mail", async () => {
@@ -2137,6 +2167,13 @@ if (section("5")) {
     const r = await posteBrut(ctx, "/gestion/quincaillerie-demo/reglages/enregistrer", { section: "commandes", "compte.obligatoire": "0" });
     verifie(r.status === 303 && decodeURIComponent(r.location.replace(/\+/g, " ")).includes("propriétaire"),
       `même en postant le formulaire à la main, la base refuse (${r.status})`);
+  });
+
+  await etape("l'abonnement, pas pour lui", async () => {
+    await page.goto(`${C}/gestion/quincaillerie-demo/reglages`, { waitUntil: "networkidle" });
+    verifie(await page.locator(".rg-tuile", { hasText: "Abonnement" }).count() === 0, "pas de tuile « Abonnement »");
+    const r = await litBrut(ctx, "/gestion/quincaillerie-demo/abonnement");
+    verifie(r === 404, `l'adresse tapée à la main n'existe pas pour le préparateur (HTTP ${r})`);
   });
 
   await etape("l'export des données, pas pour lui", async () => {

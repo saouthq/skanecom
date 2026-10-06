@@ -12,20 +12,24 @@ import { LIBELLES_THEME } from "@/lib/console/libelles";
 import { STRUCTURES_CONSOLE } from "@/lib/console/structures";
 import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 import { formateMontant } from "@/lib/prix";
+import { configDomaines } from "@/lib/console/domaines-cloudflare";
 
 export const metadata: Metadata = { title: "Nouvelle boutique" };
 
-const ETAPES = ["Le client", "Le métier", "L'apparence", "L'offre"];
+const ETAPES = ["Le client", "Le domaine", "Le métier", "L'apparence", "L'offre"];
 
-/* C1 · Créer une boutique et lui attribuer son domaine, en quatre étapes
-   (le client, le métier, l'apparence, l'offre) et un récapitulatif. Elle
+/* C1 · Créer une boutique et lui attribuer son domaine, en cinq étapes
+   (le client, le domaine, le métier, l'apparence, l'offre) et un
+   récapitulatif. Le domaine : le sien (branché chez Cloudflare, les
+   enregistrements à poser dits sur sa fiche), une adresse provisoire de la
+   plateforme, ou un domaine acheté d'un geste (super-administrateur). Elle
    naît « en préparation » : rien n'est visible tant qu'on ne l'ouvre pas.
    Son métier, s'il est choisi, pose d'un geste ses rayons, ses
    caractéristiques, sa palette et sa structure (…_metiers.sql) ; sans
    métier, on choisit la structure et l'on part de zéro. La personne à
    appeler, notée ici, va dans « Le client » de sa fiche. */
 export default async function NouvelleBoutique({ searchParams }: {
-  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; theme?: string; metier?: string; demonstration?: string; formule?: string; modele?: string; contact_nom?: string; contact_telephone?: string; prospect?: string }>;
+  searchParams: Promise<{ erreur?: string; nom?: string; slug?: string; hote?: string; domaine_mode?: string; achat?: string; etape?: string; theme?: string; metier?: string; demonstration?: string; formule?: string; modele?: string; contact_nom?: string; contact_telephone?: string; prospect?: string }>;
 }) {
   const { user, role } = await exigeAdmin();
   const v = await searchParams;
@@ -41,6 +45,9 @@ export default async function NouvelleBoutique({ searchParams }: {
   const formules = donneesFormules.formules;
   // Les modules construits, et les formules qui ouvrent chacun (pour dire, en direct, ceux qui seront un ajout).
   const modules = donneesFormules.droits.filter((d) => d.genre === "module" && d.disponible);
+  const dom = configDomaines();
+  const achatPossible = role === "super_admin" && dom.registrar.mode !== "aucun";
+  const mode = ["sien", "provisoire", "acheter"].includes(v.domaine_mode ?? "") ? v.domaine_mode! : "sien";
   return (
     <div className="max-w-[48rem]">
       <EnTetePage
@@ -54,7 +61,7 @@ export default async function NouvelleBoutique({ searchParams }: {
         {/* Créée depuis un prospect : il passera « gagné », sa boutique rattachée. */}
         {v.prospect && /^[0-9a-f-]{36}$/.test(v.prospect) ? <input type="hidden" name="prospect" value={v.prospect} /> : null}
         {/* Quatre étapes, une à la fois (AssistantCreation) ; sans JavaScript, le formulaire entier. */}
-        <AssistantCreation etapeInitiale={0} />
+        <AssistantCreation etapeInitiale={v.etape === "domaine" ? 1 : 0} />
         <ol className="nb-tete" aria-label="Les étapes">
           {ETAPES.map((e, i) => (
             <li key={e}>
@@ -74,18 +81,11 @@ export default async function NouvelleBoutique({ searchParams }: {
             <label htmlFor="nom">Nom de la boutique</label>
             <input id="nom" name="nom" required maxLength={80} defaultValue={v.nom ?? ""} autoFocus placeholder="Maymar" />
           </div>
-          <div className="deux-colonnes">
-            <div className="champ">
-              <label htmlFor="slug">Identifiant</label>
-              <input id="slug" name="slug" required pattern="[a-z0-9]([a-z0-9\-]{0,46}[a-z0-9])?" maxLength={48} defaultValue={v.slug ?? ""}
-                aria-describedby="aide-slug" placeholder="maymar" />
-              <p id="aide-slug" className="aide">Tiré du nom ; minuscules, chiffres et tirets. Il ne change plus ensuite.</p>
-            </div>
-            <div className="champ">
-              <label htmlFor="hote">Domaine principal</label>
-              <input id="hote" name="hote" required placeholder="maymar.tn" defaultValue={v.hote ?? ""} aria-describedby="aide-hote" />
-              <p id="aide-hote" className="aide">Sans « https:// ». Les autres s&apos;ajoutent ensuite.</p>
-            </div>
+          <div className="champ">
+            <label htmlFor="slug">Identifiant</label>
+            <input id="slug" name="slug" required pattern="[a-z0-9]([a-z0-9\-]{0,46}[a-z0-9])?" maxLength={48} defaultValue={v.slug ?? ""}
+              aria-describedby="aide-slug" placeholder="maymar" />
+            <p id="aide-slug" className="aide">Tiré du nom ; minuscules, chiffres et tirets. Il ne change plus ensuite.</p>
           </div>
           <div className="deux-colonnes">
             <div className="champ">
@@ -101,8 +101,81 @@ export default async function NouvelleBoutique({ searchParams }: {
           <div className="nb-nav"><span /><button type="button" data-suivant className="btn btn-primaire">Continuer <Icone nom="droite" taille={14} /></button></div>
         </fieldset>
 
+        <fieldset className="nb-etape" data-etape="domaine">
+          <legend className="nb-etape-titre" tabIndex={-1}>2. Le domaine</legend>
+          <fieldset className="choix nb-domaines">
+            <legend className="sr-only">D&apos;où vient son adresse</legend>
+            <label className="choix-carte">
+              <input type="radio" name="domaine_mode" value="sien" defaultChecked={mode === "sien"} />
+              <span>
+                <b>Il a déjà son domaine</b>
+                <span className="aide">Un .tn ou un .com acheté chez un registrar. Il y posera deux enregistrements ; sa fiche les donnera, tout prêts.</span>
+              </span>
+            </label>
+            {dom.racine ? (
+              <label className="choix-carte">
+                <input type="radio" name="domaine_mode" value="provisoire" defaultChecked={mode === "provisoire"} />
+                <span>
+                  <b>Une adresse pour commencer</b>
+                  <span className="aide">
+                    <span data-adresse-provisoire data-racine={dom.racine}>{v.slug ? `${v.slug}.${dom.racine}` : `l'identifiant.${dom.racine}`}</span>, tout de suite,
+                    le temps d&apos;avoir le sien (il s&apos;ajoute ensuite et devient principal).
+                  </span>
+                </span>
+              </label>
+            ) : null}
+            <label className="choix-carte" data-indisponible={achatPossible ? undefined : ""}>
+              <input type="radio" name="domaine_mode" value="acheter" defaultChecked={mode === "acheter" && achatPossible} disabled={!achatPossible} />
+              <span>
+                <b>En acheter un</b>
+                <span className="aide">
+                  {achatPossible ? "Un .com, .shop, .store… par Cloudflare, d'un geste, au prix du registre. Un .tn s'achète chez un registrar tunisien agréé."
+                    : role !== "super_admin" ? "Réservé au super-administrateur (un achat engage SkanEcom)."
+                    : "Non branché : le jeton Cloudflare aux droits « Registrar » (secret CLOUDFLARE_REGISTRAR) manque."}
+                </span>
+              </span>
+            </label>
+          </fieldset>
+          <div className="nb-domaine-champs" data-pour="sien">
+            <div className="champ">
+              <label htmlFor="hote">Son domaine</label>
+              <input id="hote" name="hote" required placeholder="www.maymar.tn" defaultValue={mode === "sien" ? v.hote ?? "" : ""}
+                aria-describedby="aide-hote" autoComplete="off" spellCheck={false} />
+              <p id="aide-hote" className="aide">
+                Sans « https:// ». Conseillé : <b>www.</b> devant (la racine seule ne prend pas de CNAME chez la plupart des registrars ; elle s&apos;y redirige vers www).
+                {dom.saas.mode === "aucun" ? " Le branchement chez Cloudflare n'est pas réglé : sa fiche dira quoi poser, à la main." : ""}
+              </p>
+            </div>
+          </div>
+          {achatPossible ? (
+            <div className="nb-domaine-champs" data-pour="acheter" data-achat>
+              <div className="champ">
+                <label htmlFor="achat">Le domaine à acheter</label>
+                <div className="nb-achat-ligne">
+                  <input id="achat" name="achat" required placeholder="maymar-shop.com" defaultValue={v.achat ?? ""} autoComplete="off" spellCheck={false}
+                    pattern="([a-z0-9]([a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}" title="Un nom de domaine, par exemple maymar-shop.com" aria-describedby="nb-achat-etat" />
+                  <button type="button" className="btn btn-second" data-verifier-achat>Vérifier</button>
+                </div>
+                <p id="nb-achat-etat" className="aide" data-achat-etat role="status">Vérifiez qu&apos;il est libre, et son prix, avant de continuer.</p>
+              </div>
+              <input type="hidden" name="achat_prix" data-achat-prix />
+              <label className="choix-carte nb-achat-confirme" hidden data-achat-confirme>
+                <input type="checkbox" name="achat_confirme" value="1" required />
+                <span>
+                  <b data-achat-phrase>Je confirme l&apos;achat.</b>
+                  <span className="aide">Facturé au compte Cloudflare de SkanEcom à la création de la boutique ; un achat ne se rembourse pas. Renouvellement à régler chaque année.</span>
+                </span>
+              </label>
+            </div>
+          ) : null}
+          <div className="nb-nav">
+            <button type="button" data-precedent className="btn btn-fantome"><Icone nom="gauche" taille={14} /> Retour</button>
+            <button type="button" data-suivant className="btn btn-primaire">Continuer <Icone nom="droite" taille={14} /></button>
+          </div>
+        </fieldset>
+
         <fieldset className="nb-etape" data-etape="metier">
-          <legend className="nb-etape-titre" tabIndex={-1}>2. Le métier</legend>
+          <legend className="nb-etape-titre" tabIndex={-1}>3. Le métier</legend>
           {modele ? (
             <div className="message nb-modele">
               <input type="hidden" name="modele" value={modele.boutique.slug} />
@@ -120,7 +193,7 @@ export default async function NouvelleBoutique({ searchParams }: {
         </fieldset>
 
         <fieldset className="nb-etape" data-etape="apparence">
-          <legend className="nb-etape-titre" tabIndex={-1}>3. L&apos;apparence</legend>
+          <legend className="nb-etape-titre" tabIndex={-1}>4. L&apos;apparence</legend>
           {modele ? <p className="aide">Celle de {modele.boutique.nom}, reprise telle quelle ; elle se change ensuite dans Marque.</p> : (
             <>
               {/* Un métier pose sa structure : le choix ne sert que pour « partir de zéro ». */}
@@ -147,7 +220,7 @@ export default async function NouvelleBoutique({ searchParams }: {
         </fieldset>
 
         <fieldset className="nb-etape" data-etape="offre">
-          <legend className="nb-etape-titre" tabIndex={-1}>4. L&apos;offre</legend>
+          <legend className="nb-etape-titre" tabIndex={-1}>5. L&apos;offre</legend>
           {/* La formule vendue engage le client : le super-administrateur la pose (le support crée « sur mesure »). */}
           {role !== "super_admin" ? (
             <p className="aide">Elle naîtra « sur mesure » (tout ouvert) : un super-administrateur posera sa formule.</p>

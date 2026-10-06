@@ -167,6 +167,8 @@ NEXT_PUBLIC_FICHIERS_URL=http://127.0.0.1:54321/fichiers
 NEXT_PUBLIC_SUPABASE_ANON_KEY=$(jeton anon)
 SUPABASE_SERVICE_ROLE_KEY=$(jeton service_role)
 NEXT_PUBLIC_CONSOLE_HOTE=console.localhost
+NEXT_PUBLIC_DOMAINE_BOUTIQUES=localhost
+NEXT_PUBLIC_CIBLE_DNS=vitrines.skanecom.localhost
 ENV
   # Le secret de la console, tel que le Worker le lit (bindings.secret()) :
   # en local, workerd le prend dans application/.dev.vars (hors dépôt).
@@ -187,6 +189,9 @@ ENV
     printf 'SKANFACT_CHIFFRE=%s\n' "$(printf '%s' "$SECRET_DEV" | openssl dgst -sha256 -binary | base64 -w0)"
     # Le secret de SkanEcom chez SkanFact (B0), de développement.
     printf 'SKANFACT_SECRET=%s\n' "$SKANFACT_SECRET_DEV"
+    # Les domaines des boutiques chez Cloudflare (brancher, acheter) : simulés par le relais.
+    printf 'CLOUDFLARE_DOMAINES=relais\n'
+    printf 'CLOUDFLARE_REGISTRAR=relais\n'
   } > "$RACINE/application/.dev.vars"
 
   # Jusqu'à une minute : au premier démarrage, GoTrue passe ses propres

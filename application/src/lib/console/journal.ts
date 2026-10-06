@@ -73,6 +73,8 @@ export const ACTIONS: Record<string, string> = {
   "plateforme.forfait_envoi": "Forfait du fournisseur d'envois",
   "boutique.courriels": "E-mails de la boutique : nom affiché, réponses",
   "boutique.domaine_envoi": "Domaine d'envoi des e-mails",
+  "boutique.domaine_branche": "Domaine branché chez Cloudflare",
+  "boutique.domaine_achete": "Domaine acheté",
   "plateforme.courriels": "E-mails de l'équipe : adresse de réponse",
   "konnect.brancher": "Compte Konnect branché (paiement en ligne)",
   "konnect.retirer": "Compte Konnect retiré",

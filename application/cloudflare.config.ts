@@ -66,6 +66,13 @@ export default defineConfig({
       // SkanFact », B0) : 32 octets tirés au hasard, posé une fois ; SkanFact
       // n'en connaît que l'empreinte SHA-256 (src/lib/console/skanfact.ts).
       SKANFACT_SECRET: bindings.secret(),
+      // Les domaines des boutiques chez Cloudflare (src/lib/console/domaines-cloudflare.ts) :
+      // brancher le domaine qu'un commerçant possède (Cloudflare for SaaS,
+      // « zone:<id de zone>:<jeton> », droits « SSL and Certificates: Edit »),
+      // en acheter un (Registrar, « compte:<id de compte>:<jeton> », droits
+      // Registrar). « aucun » : non branché, dit tel quel ; « relais » en local.
+      CLOUDFLARE_DOMAINES: bindings.secret(),
+      CLOUDFLARE_REGISTRAR: bindings.secret(),
     },
   }),
 });

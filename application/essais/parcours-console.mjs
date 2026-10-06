@@ -415,38 +415,43 @@ const continuer = async (n = 1) => {
   for (let i = 0; i < n; i++) await clic(page, page.locator(".nb-etape:not([hidden]) [data-suivant]"));
 };
 
-await etape("créer la boutique : l'assistant en quatre étapes", async () => {
+await etape("créer la boutique : l'assistant en cinq étapes", async () => {
   // « Nouvelle boutique » : le bouton de l'accueil (ce n'est plus une rubrique du menu).
   await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
   verifie(await page.locator(".app-cote").getByRole("link", { name: "Nouvelle boutique" }).count() === 0, "le menu ne la répète pas : c'est un bouton de l'accueil");
   await clic(page, page.getByRole("link", { name: "Nouvelle boutique" }).first());
   await page.waitForURL(/nouvelle-boutique/);
   await page.waitForLoadState("networkidle");
-  verifie((await etapeVisible()) === "1. Le client" && (await page.locator(".nb-tete-etape").count()) === 4, "quatre étapes, la première à l'écran");
+  verifie((await etapeVisible()) === "1. Le client" && (await page.locator(".nb-tete-etape").count()) === 5, "cinq étapes, la première à l'écran");
   // « Continuer » sans nom : l'étape ne passe pas.
   await continuer();
-  verifie((await etapeVisible()) === "1. Le client", "sans nom ni domaine, l'assistant reste sur l'étape");
+  verifie((await etapeVisible()) === "1. Le client", "sans nom, l'assistant reste sur l'étape");
   await clic(page, page.locator("#nom")); await tape(page, "Outillage Pro Démo");
   verifie((await page.locator("#slug").inputValue()) === "outillage-pro-demo", "l'identifiant suit le nom (sans accents, en tirets)");
   await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, SLUG);
-  await clic(page, page.locator("#hote")); await tape(page, HOTE);
   await clic(page, page.locator("#contact_nom")); await tape(page, "Karim, le gérant");
   await clic(page, page.locator("#contact_telephone")); await tape(page, "20 123 456");
   await capture(page, "console-nouvelle-boutique");
   // Entrée dans un champ : l'étape suivante (le formulaire ne part pas).
   await page.keyboard.press("Enter");
-  verifie((await etapeVisible()) === "2. Le métier" && page.url().includes("/nouvelle-boutique"), "Entrée : l'étape du métier, rien n'est créé");
+  verifie((await etapeVisible()) === "2. Le domaine" && page.url().includes("/nouvelle-boutique"), "Entrée : l'étape du domaine, rien n'est créé");
+  verifie(await page.getByLabel(/Il a déjà son domaine/).isChecked(), "par défaut : il a déjà son domaine");
   await continuer();
-  verifie((await etapeVisible()) === "3. L'apparence" && await page.locator(".mt-gabarit").isVisible(), "sans métier, la structure se choisit");
+  verifie((await etapeVisible()) === "2. Le domaine", "sans son domaine, l'étape ne passe pas");
+  await clic(page, page.locator("#hote")); await tape(page, HOTE);
+  await page.keyboard.press("Enter");
+  verifie((await etapeVisible()) === "3. Le métier", "son domaine donné : l'étape du métier");
+  await continuer();
+  verifie((await etapeVisible()) === "4. L'apparence" && await page.locator(".mt-gabarit").isVisible(), "sans métier, la structure se choisit");
   await clic(page, page.getByLabel(/^Technique/));
   await continuer();
   const recap = await page.locator("[data-recap]").innerText();
-  verifie((await etapeVisible()) === "4. L'offre" && recap.includes("Outillage Pro Démo") && recap.includes(HOTE) && recap.includes("Karim, le gérant") && /Technique/.test(recap),
+  verifie((await etapeVisible()) === "5. L'offre" && recap.includes("Outillage Pro Démo") && recap.includes(HOTE) && recap.includes("Karim, le gérant") && /Technique/.test(recap),
     `« Avant de créer » récapitule : ${recap.replace(/\s+/g, " ").slice(0, 120)}…`);
   await capture(page, "console-nouvelle-boutique-recap");
   await clic(page, page.locator(".nb-tete-etape").nth(0));
   verifie((await etapeVisible()) === "1. Le client" && (await page.locator("#nom").inputValue()) === "Outillage Pro Démo", "la rangée ramène à une étape, la saisie gardée");
-  await clic(page, page.locator(".nb-tete-etape").nth(3));
+  await clic(page, page.locator(".nb-tete-etape").nth(4));
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
   await page.waitForURL(new RegExp(`/boutiques/${SLUG}`));
   await page.waitForLoadState("networkidle");
@@ -460,6 +465,7 @@ await etape("un identifiant déjà pris est refusé, la saisie gardée", async (
   await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
   await clic(page, page.locator("#nom")); await tape(page, "Doublon");
   await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, SLUG);
+  await continuer();
   await clic(page, page.locator("#hote")); await tape(page, `autre-${SUFFIXE}.localhost`);
   await continuer(3);
   await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
@@ -470,12 +476,32 @@ await etape("un identifiant déjà pris est refusé, la saisie gardée", async (
     "retour à l'étape du client, avec ce qui a été saisi");
 });
 
+await etape("un domaine qui mène déjà à une boutique ramène à l'étape du domaine, la saisie gardée", async () => {
+  await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
+  await clic(page, page.locator("#nom")); await tape(page, `Doublon de domaine ${SUFFIXE}`);
+  await continuer();
+  await clic(page, page.locator("#hote")); await tape(page, "maymar.localhost");
+  await continuer(3);
+  await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
+  await page.waitForURL(/erreur=/);
+  await page.waitForLoadState("networkidle");
+  const alerte = await page.getByRole("alert").innerText();
+  verifie(alerte.includes("Le domaine maymar.localhost mène déjà à une autre boutique"), `la base dit lequel : « ${alerte} »`);
+  verifie((await etapeVisible()) === "2. Le domaine" && (await page.locator("#hote").inputValue()) === "maymar.localhost",
+    "retour à l'étape du domaine, avec ce qui a été saisi");
+});
+
 await etape("un métier pose rayons, caractéristiques, palette et accueil d'un geste", async () => {
   // Les préréglages (…_metiers.sql) : une boutique de bijoux.
   await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
   await clic(page, page.locator("#nom")); await tape(page, "Bijoux Démo");
   await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, `bijoux-${SUFFIXE}`);
-  await clic(page, page.locator("#hote")); await tape(page, `bijoux-${SUFFIXE}.localhost`);
+  await continuer();
+  // Pas encore de domaine : l'adresse provisoire de la plateforme (en local, <identifiant>.localhost).
+  await clic(page, page.getByLabel(/Une adresse pour commencer/));
+  verifie((await page.locator("[data-adresse-provisoire]").innerText()) === `bijoux-${SUFFIXE}.localhost` && await page.locator("#hote").isDisabled(),
+    "une adresse pour commencer : elle suit l'identifiant, son domaine n'est plus demandé");
+  await capture(page, "console-nouvelle-boutique-domaine");
   await continuer();
   verifie((await page.locator(".mt-carte").count()) === 9, "neuf choix : aucun, et huit métiers");
   await clic(page, page.getByLabel(/^Bijoux et montres/));
@@ -494,6 +520,51 @@ await etape("un métier pose rayons, caractéristiques, palette et accueil d'un 
   verifie(rayons === "5", `ses cinq rayons sont posés (${rayons})`);
   verifie((await page.getByText("Partir du préréglage d'un métier").count()) === 0, "une boutique qui a des rayons ne reçoit plus de préréglage");
   await capture(page, "console-boutique-metier");
+});
+
+await etape("le domaine : en acheter un d'un geste (vérifié au registre, confirmé avec son prix), puis le brancher", async () => {
+  const CUIR = `cuir-${SUFFIXE}`;
+  await page.goto(CONSOLE + "/nouvelle-boutique", { waitUntil: "networkidle" });
+  await clic(page, page.locator("#nom")); await tape(page, "Maroquinerie Démo");
+  await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, CUIR);
+  await continuer();
+  await clic(page, page.getByLabel(/En acheter un/));
+  const etat = page.locator("[data-achat-etat]");
+  // Un .tn : Cloudflare ne le vend pas, l'écran dit où l'acheter.
+  await clic(page, page.locator("#achat")); await tape(page, `${CUIR}.tn`); await page.keyboard.press("Enter");
+  await page.waitForFunction(() => /registrar tunisien/.test(document.querySelector("[data-achat-etat]")?.textContent ?? ""));
+  verifie(!(await page.locator("[data-achat-confirme]").isVisible()), `un .tn : « ${await etat.innerText()} », rien à confirmer`);
+  // Déjà pris.
+  await clic(page, page.locator("#achat")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, `${CUIR}-pris.com`);
+  await clic(page, page.getByRole("button", { name: "Vérifier" }));
+  await page.waitForFunction(() => /déjà pris/.test(document.querySelector("[data-achat-etat]")?.textContent ?? ""));
+  verifie(true, `pris : « ${await etat.innerText()} »`);
+  // Libre : son prix, puis la confirmation en toutes lettres.
+  await clic(page, page.locator("#achat")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, `${CUIR}.com`); await page.keyboard.press("Enter");
+  await page.waitForFunction(() => /est libre/.test(document.querySelector("[data-achat-etat]")?.textContent ?? ""));
+  const confirme = page.locator("[data-achat-confirme]");
+  verifie((await etat.innerText()).includes("10,44 $") && (await confirme.innerText()).includes(`J'achète ${CUIR}.com pour 10,44 $ par an.`),
+    `libre : « ${await etat.innerText()} », l'achat se confirme avec son prix`);
+  await continuer();
+  verifie((await etapeVisible()) === "2. Le domaine", "sans la case cochée, l'étape ne passe pas");
+  await clic(page, confirme.locator("input"));
+  await capture(page, "console-nouvelle-boutique-achat");
+  await continuer(3);
+  verifie((await page.locator("[data-recap]").innerText()).includes(`${CUIR}.com, acheté à la création (10,44 $ par an)`), "le récapitulatif dit l'achat et son prix");
+  await clic(page, page.getByRole("button", { name: "Créer la boutique" }));
+  await page.waitForURL(new RegExp(`/boutiques/${CUIR}`));
+  await page.waitForLoadState("networkidle");
+  const bloc = page.locator(".bt-branchement", { hasText: `${CUIR}.com` });
+  verifie((await bloc.innerText()).includes("À poser chez le registrar") && (await bloc.locator(".ce-dns tbody tr").count()) === 2,
+    "acheté puis branché chez Cloudflare : le CNAME et le TXT à poser, prêts à copier");
+  await capture(page, "console-domaine-a-poser");
+  await clic(page, bloc.getByRole("button", { name: "Relire chez Cloudflare" }));
+  await page.waitForURL(/carte=domaines/);
+  verifie((await page.locator("section[aria-labelledby='t-domaines'] .message").innerText()).includes("est branché") && (await page.locator(".bt-branchement").count()) === 0,
+    "relu : branché, certificat émis — il quitte la liste à poser");
+  await page.goto(`${CONSOLE}/journal?boutique=${CUIR}`, { waitUntil: "networkidle" });
+  const journal = await page.locator(".tableau tbody").innerText();
+  verifie(journal.includes("10.44 USD") || /achet/i.test(journal), "l'achat est au journal, avec son prix");
 });
 
 await etape("la vitrine de la boutique en préparation est fermée", async () => {
@@ -1801,6 +1872,7 @@ await etape("le cycle de vie : renommer, cloner la configuration, fermer", async
   await page.waitForLoadState("networkidle");
   await clic(page, page.locator("#nom")); await tape(page, "Outillage Clone");
   await clic(page, page.locator("#slug")); await page.keyboard.press("ControlOrMeta+a"); await tape(page, CLONE);
+  await continuer();
   await clic(page, page.locator("#hote")); await tape(page, `${CLONE}.localhost`);
   await continuer();
   verifie((await page.locator(".nb-modele").innerText()).includes("Outillage Pro Démo Sud"), "le formulaire dit de quelle boutique on part");
@@ -1886,6 +1958,7 @@ await etape("l'étape avance d'un choix ; « Créer sa boutique » ouvre l'assis
   await page.waitForLoadState("networkidle");
   verifie((await page.locator("#nom").inputValue()) === `Parfumerie ${SUFFIXE}` && (await page.locator("#slug").inputValue()) === `parfumerie-${SUFFIXE}`
     && (await page.locator("#contact_telephone").inputValue()) === "+216 20 555 111", "l'assistant reprend son nom, l'identifiant suit, son téléphone");
+  await continuer();
   await clic(page, page.locator("#hote")); await tape(page, `parfumerie-${SUFFIXE}.localhost`);
   await continuer();
   verifie(await page.locator('input[name="metier"][value="beaute"]').isChecked(), "son métier, déjà choisi");
@@ -1929,7 +2002,10 @@ await etape("l'état technique : la base répond, les e-mails et les fichiers pa
     "les e-mails : le relais local, le crochet de Supabase Auth posé");
   verifie((await carte("skanfact").locator(".et-tete .ui-etat").innerText()) === "Branché", "SkanFact : branché (le relais le simule)");
   verifie((await carte("fichiers").innerText()).includes("Relais local"), "les fichiers : le relais local");
-  verifie((await carte("domaines").innerText()).includes("ne se vérifient pas"), "des domaines « .localhost » seulement : rien à vérifier, et c'est dit");
+  // Le domaine acheté à la création (plus haut) est un vrai domaine : il se vérifie d'un geste ; les « .localhost », non.
+  verifie((await carte("domaines").innerText()).includes(`cuir-${SUFFIXE}.com`)
+    && await carte("domaines").getByRole("button", { name: /^Vérifier (le domaine|les \d+ domaines) maintenant$/ }).count() === 1,
+  "le domaine acheté plus haut se vérifie d'un geste ; les « .localhost » ne se vérifient pas");
   // Les secrets posés sont dits « posés » : aucune valeur ne passe dans la page.
   const html = await page.content();
   const vars = readFileSync(new URL("../.dev.vars", import.meta.url), "utf8").split("\n").filter((l) => l.includes("="))

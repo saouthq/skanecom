@@ -171,7 +171,8 @@ export default async function BackofficeBoutique({
     ...(boutique.role === "proprietaire" || boutique.role === "admin"
       ? [{ href: `/gestion/${slug}/equipe`, libelle: "Équipe", icone: "equipe" as const }]
       : []),
-    { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
+    // L'abonnement s'ouvre depuis les réglages (sa tuile) : « Réglages » reste allumé.
+    { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages", aussi: [`/gestion/${slug}/abonnement`] },
   ];
   // La palette (⌘K) : les pages, puis ce que la recherche trouve.
   const pages: ElementPalette[] = [
@@ -184,6 +185,9 @@ export default async function BackofficeBoutique({
       : []),
     ...(PEUT_MODIFIER.includes(boutique.role)
       ? [{ groupe: "Aller à", icone: "colis" as const, href: `/gestion/${slug}/produits/nouveau`, titre: "Nouveau produit" }]
+      : []),
+    ...(DIRECTION.includes(boutique.role)
+      ? [{ groupe: "Aller à", icone: "cle" as const, href: `/gestion/${slug}/abonnement`, titre: "Abonnement SkanEcom" }]
       : []),
     ...(etatPro?.actif
       ? [{ groupe: "Aller à", icone: "etoile" as const, href: `/gestion/${slug}/clients/pros`, titre: "Comptes professionnels" }]
@@ -209,7 +213,7 @@ export default async function BackofficeBoutique({
         { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
         ...(etatSav?.actif ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }] : []),
         { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
-        { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages" },
+        { href: `/gestion/${slug}/reglages`, libelle: "Réglages", icone: "reglages", aussi: [`/gestion/${slug}/abonnement`] },
       ]}
       email={user.email ?? ""}
       compte={boutique.support_jusqu_a ? undefined : `/gestion/${slug}/compte`}

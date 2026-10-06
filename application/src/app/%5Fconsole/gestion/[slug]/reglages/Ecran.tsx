@@ -5,6 +5,7 @@ import { clientSession, exigeMembre } from "@/lib/console/session";
 import { formateMontant } from "@/lib/prix";
 import { quand } from "@/lib/gestion/libelles";
 import { PEUT_MODIFIER } from "@/lib/gestion/catalogue";
+import { DIRECTION } from "@/lib/gestion/tableau";
 import { SECTIONS, kilos, kilosChamp, libelleTranche, lignesJournal, montantChamp, type EtatReglages, type Reglage } from "@/lib/gestion/reglages";
 import { GROUPES, groupeDe, type Groupe } from "@/lib/gestion/reglages-ecrans";
 import { CHAMPS_LEGAUX } from "@/lib/legal";
@@ -283,7 +284,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
   const bandeauFormule = formule.formule && nbFermes > 0 ? (
     <p className="rg-formule">
       <Icone nom="cle" taille={15} />
-      <span>Formule <b>{formule.formule.nom}</b> : {nbFermes} fonction{nbFermes > 1 ? "s" : ""} viennent avec une formule supérieure, marquées d&apos;une clé. SkanEcom vous l&apos;ouvre sur demande.</span>
+      <span>Formule <b>{formule.formule.nom}</b> : {nbFermes} fonction{nbFermes > 1 ? "s" : ""} viennent avec une formule supérieure, marquées d&apos;une clé. SkanEcom vous l&apos;ouvre sur demande.{DIRECTION.includes(boutique.role) ? <> <Link href={`/gestion/${slug}/abonnement`}>Voir votre abonnement</Link></> : null}</span>
     </p>
   ) : null;
 
@@ -321,6 +322,20 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                 </Link>
               </li>
             ))}
+            {/* L'abonnement SkanEcom : pas un réglage, mais sa place est ici, à côté (la direction). */}
+            {DIRECTION.includes(boutique.role) ? (
+              <li>
+                <Link href={`/gestion/${slug}/abonnement`} className="rg-tuile">
+                  <span className="rg-tuile-icone" aria-hidden="true"><Icone nom="cle" taille={18} /></span>
+                  <span className="rg-tuile-texte">
+                    <b>Abonnement</b>
+                    <span className="rg-tuile-desc">Votre formule SkanEcom, ce qu&apos;elle ouvre, vos factures à payer.</span>
+                    <span className="rg-tuile-etat">{formule.formule ? `Formule ${formule.formule.nom}` : "Sur mesure"}</span>
+                  </span>
+                  <Icone nom="droite" taille={16} className="rg-tuile-fleche" />
+                </Link>
+              </li>
+            ) : null}
           </ul>
           <Journal lignes={journalDe(null)} titre="Derniers changements" lienTout={lien("journal")} max={5}
             vide="Aucun changement : la boutique suit les réglages de départ de SkanEcom." zones={zonesParId} gouvernorats={gouvParCode} maintenant={maintenant} />
