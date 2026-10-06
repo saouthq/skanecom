@@ -70,6 +70,10 @@ on:
         description: "Renvoyer l'invitation de l'administrateur (lien périmé)"
         type: boolean
         default: false
+      deux_temps:
+        description: "Déployer en deux temps : version déposée à 0 %, chaque boutique préchauffée, puis en service (docs/DEPLOIEMENT.md)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -296,6 +300,8 @@ jobs:
       - name: Déployer l'application
         if: env.PRET == '1'
         working-directory: application
+        env:
+          DEUX_TEMPS: ${{ inputs.deux_temps }}
         run: |
           printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | $WRANGLER secret put SUPABASE_SERVICE_ROLE_KEY --name skanecom-application
           # Les e-mails : rédigés par l'application, gardés pour la console (rien ne part de l'aperçu).
@@ -332,7 +338,15 @@ jobs:
           fi
           echo "Adresse de retour de SkanEcom chez SkanFact : https://$NEXT_PUBLIC_CONSOLE_HOTE/skanfact/retour" | tee -a "$GITHUB_STEP_SUMMARY"
           bun run deploy:response-store
-          bun run deploy -- --skip-build
+          # À la main (workflow_dispatch, « deux_temps ») : le déploiement en deux
+          # temps de la production, essayé ici sur les adresses de l'aperçu.
+          if [ "$DEUX_TEMPS" = "true" ]; then
+            CIBLES=""
+            for nom in maymar selma quincaillerie beaute maison; do CIBLES="$CIBLES https://skanecom-apercu-$nom.$SOUS.workers.dev"; done
+            CIBLES="$CIBLES" bash ../outils/deployer-deux-temps.sh
+          else
+            bun run deploy -- --skip-build
+          fi
 
       - name: Déployer les routeurs (une adresse par boutique, une pour la console)
         if: env.PRET == '1'
