@@ -628,8 +628,19 @@ if (section("3")) {
     await page.getByRole("button", { name: /ouvrir le menu/i }).tap();
     await pause(500);
     verifie(await tiroirOuvert(page, "tiroir-menu"), "le bouton menu ouvre le tiroir des rayons");
+    // Plein écran : la recherche d'abord, les rayons avec leur photo et leurs
+    // pièces, les raccourcis (commandes, WhatsApp).
+    const menu = page.locator(".tiroir-menu");
+    const largeurMenu = (await menu.locator(".tiroir-panneau").boundingBox())?.width ?? 0;
+    verifie(largeurMenu >= (page.viewportSize()?.width ?? 390) - 1, `le menu prend toute la largeur (${Math.round(largeurMenu)} px)`);
+    verifie(await menu.getByRole("searchbox", { name: "Rechercher une pièce" }).isVisible(), "la recherche est en tête du menu");
+    const maille = menu.locator('.menu-rayon[href="/categorie/maille"]');
+    verifie(/\d+ pièces?/.test(await maille.innerText()) && (await maille.locator("img").count()) === 1,
+      "un rayon dit ses pièces et montre sa photo");
+    verifie(await menu.locator('[data-raccourci="compte"]').isVisible() && await menu.locator('[data-raccourci="whatsapp"]').isVisible(),
+      "les raccourcis : mes commandes, WhatsApp");
     await capture(page, "mobile-selma-menu");
-    await page.locator(".tiroir-menu").getByRole("link", { name: "Maille" }).tap();
+    await maille.tap();
     await page.waitForURL(/\/categorie\/maille/);
     await page.waitForLoadState("networkidle");
     await pause(300);

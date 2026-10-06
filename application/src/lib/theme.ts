@@ -151,9 +151,10 @@ type Angles = { net: string; doux: string; carte: string; bloc: string; arc: str
 
 /* Les angles de chaque choix de coins : `net` (vignettes, pastilles
    carrées), `doux` (boutons, champs), `carte`, `bloc` (feuilles, tiroirs),
-   `arc` (bandeaux). */
+   `arc` (bandeaux). Toujours avec leur unité : « 0 » nu rendait invalides
+   les `max(var(--theme-radius-…), 3px)` des menus et suggestions. */
 const ANGLES: Record<Style["coins"], Angles> = {
-  droits: { net: "0", doux: "0", carte: "0", bloc: "0", arc: "0" },
+  droits: { net: "0px", doux: "0px", carte: "0px", bloc: "0px", arc: "0px" },
   doux: { net: "2px", doux: "4px", carte: "4px", bloc: "6px", arc: "4px" },
   arrondis: { net: "6px", doux: "10px", carte: "16px", bloc: "22px", arc: "14px" },
   ronds: { net: "10px", doux: "14px", carte: "24px", bloc: "32px", arc: "22px" },

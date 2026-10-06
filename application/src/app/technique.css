@@ -25,9 +25,9 @@ html[data-gabarit="technique"] .btn-second { background: var(--theme-surface); b
 html[data-gabarit="technique"] .btn-second:hover { background: var(--theme-surface); color: var(--theme-encre); border-color: var(--theme-encre); }
 html[data-gabarit="technique"] .etiquette { font-weight: 700; letter-spacing: .06em; }
 html[data-gabarit="technique"] .tiroir-titre { font-size: 1.125rem; text-transform: uppercase; letter-spacing: .02em; }
-/* Les rayons ont déjà leur filet : l'aide n'en ajoute pas un second (une ligne vide). */
-html[data-gabarit="technique"] .menu-aide { border-block-start: 0; margin-block-start: 1rem; padding-block-start: .5rem; }
-html[data-gabarit="technique"] .menu-liste > li > a { font-family: var(--theme-font-texte); font-size: 1.0625rem; font-weight: 700; padding-block: .625rem; border-block-end: 1px solid var(--theme-filet); }
+/* Au menu du téléphone, les rayons en police de texte, en gras : on cherche, on ne flâne pas. */
+html[data-gabarit="technique"] .menu-rayon-nom { font-family: var(--theme-font-texte); font-size: 1.375rem; font-weight: 700; letter-spacing: -.015em; }
+html[data-gabarit="technique"] .menu-marque .marque-texte { font-weight: 800; font-stretch: 72%; font-size: 1.25rem; text-transform: uppercase; letter-spacing: .01em; }
 html[data-gabarit="technique"] .jauge > span { background: var(--theme-succes); }
 html[data-gabarit="technique"] .btn-filtrer-n { background: var(--theme-accent); color: var(--theme-encre); font-weight: 700; }
 

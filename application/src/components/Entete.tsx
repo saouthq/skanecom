@@ -5,7 +5,7 @@ import { LienFavoris } from "./LienFavoris";
 import { ChampRecherche } from "./ChampRecherche";
 import { NavRayons } from "./NavRayons";
 import { BandeauDefilant } from "./BandeauDefilant";
-import { EnteteDefilant, MenuMobile, type EntreeMenu } from "./EnteteClient";
+import { EnteteDefilant, MenuMobile, type EntreeMenu, type RaccourciMenu } from "./EnteteClient";
 import { GrandMenu, type RayonMenu } from "./GrandMenu";
 import { champ, t } from "@/lib/i18n";
 import { urlFichier } from "@/lib/photos";
@@ -58,29 +58,51 @@ function avecComptes(cadre: Cadre): boolean {
   return cadre.reglages["compte.obligatoire"] !== false && !cadre.siteVitrine;
 }
 
+/** Les pièces d'un rayon, sous-rayons compris. */
+function piecesDuRayon(cadre: Cadre, slug: string): number {
+  return descendance(cadre.categories, slug).reduce((n, c) => n + (c.nb_produits ?? 0), 0);
+}
+
+/** Les rayons du menu du téléphone : ceux qui ont des pièces (tous, si le
+ *  catalogue est encore vide), avec leur photo — celle du rayon, sinon d'un
+ *  sous-rayon — et leurs sous-rayons garnis. */
 function entreesMenu(cadre: Cadre): EntreeMenu[] {
+  const entrees = cadre.racines.map((c) => ({
+    cle: c.slug,
+    href: `/categorie/${c.slug}`,
+    nom: champ(c, "nom"),
+    compte: piecesDuRayon(cadre, c.slug),
+    image: c.image_chemin ?? cadre.categories.find((s) => s.parent_id === c.id && s.image_chemin)?.image_chemin ?? null,
+    enfants: cadre.categories
+      .filter((s) => s.parent_id === c.id && piecesDuRayon(cadre, s.slug) > 0)
+      .map((s) => ({ cle: s.slug, href: `/categorie/${s.slug}`, nom: champ(s, "nom") })),
+  }));
+  const garnis = entrees.filter((e) => e.compte > 0);
+  return garnis.length > 0 ? garnis : entrees;
+}
+
+/** Les raccourcis du menu du téléphone : ses commandes (ou le suivi, sans
+ *  compte), ses favoris, et la boutique au bout du fil (WhatsApp, sinon
+ *  le téléphone). */
+function raccourcisMenu(cadre: Cadre): RaccourciMenu[] {
+  const contact = contactDe(cadre, t.contact.messageWhatsapp(cadre.boutique.nom));
   return [
-    ...cadre.racines.map((c) => ({
-      cle: c.slug,
-      href: `/categorie/${c.slug}`,
-      nom: champ(c, "nom"),
-      enfants: cadre.categories
-        .filter((s) => s.parent_id === c.id)
-        .map((s) => ({ cle: s.slug, href: `/categorie/${s.slug}`, nom: champ(s, "nom") })),
-    })),
-    { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue },
-    { cle: "recherche", href: "/recherche", nom: t.commun.rechercher },
-    ...(cadre.favoris ? [{ cle: "favoris", href: "/favoris", nom: t.favoris.titre }] : []),
-    ...(avecComptes(cadre) ? [{ cle: "compte", href: "/compte", nom: t.compte.lien }] : []),
+    ...(avecComptes(cadre) ? [{ cle: "compte", href: "/compte", nom: t.compte.lien, icone: "compte" as const }] : []),
+    ...(!avecComptes(cadre) && !cadre.siteVitrine ? [{ cle: "suivi", href: "/suivi", nom: t.menu.suivre, icone: "suivi" as const }] : []),
+    ...(cadre.favoris ? [{ cle: "favoris", href: "/favoris", nom: t.favoris.titre, icone: "favoris" as const }] : []),
+    ...(contact.whatsapp
+      ? [{ cle: "whatsapp", href: contact.whatsapp.href, nom: t.contact.ecrireWhatsapp, icone: "whatsapp" as const, externe: true }]
+      : contact.telephone
+        ? [{ cle: "contact", href: contact.telephone.href, nom: t.menu.contact, icone: "contact" as const, externe: true }]
+        : []),
   ];
 }
 
 /** « Besoin d'aide ? » au bas du menu du téléphone : ce que le pied de page
- *  offre déjà — le suivi d'une commande, les pages de la boutique (questions,
- *  livraison…), le contact, la garantie. */
+ *  offre déjà — les pages de la boutique (questions, livraison…), le
+ *  contact, la garantie. Le suivi d'une commande est dans les raccourcis. */
 function aideMenu(cadre: Cadre): { href: string; nom: string }[] {
   return [
-    { href: "/suivi", nom: t.pied.suivreCommande },
     ...cadre.pages.filter((p) => p.dans_pied).map((p) => ({ href: `/${p.slug}`, nom: champ(p, "titre") })),
     ...(aUnContact(contactDe(cadre)) ? [{ href: "/contact", nom: t.pied.contact }] : []),
     ...(cadre.sav ? [{ href: "/garantie-et-sav", nom: t.sav.lienPied }] : []),
@@ -125,7 +147,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
       <EnteteDefilant className="ed-entete" surImage={ouvertureSurPhoto(cadre)}>
         <div className="enveloppe ed-entete-rang" data-zone="entete">
           <div className="ed-entete-debut">
-            <MenuMobile entrees={entreesMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="cache-desktop" />
+            <MenuMobile marque={<Logo cadre={cadre} />} entrees={entreesMenu(cadre)} raccourcis={raccourcisMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="cache-desktop" />
             <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="ed-nav cache-mobile"
               replier={liens.some((l) => l.cle === "catalogue") ? undefined : { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue }} />
           </div>
@@ -154,7 +176,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
 /** Les rayons du grand menu (structure Commerce) : ceux qui ont des pièces,
  *  avec leurs sous-rayons garnis, leurs comptes et leur photo. */
 function rayonsDuMenu(cadre: Cadre): RayonMenu[] {
-  const compte = (slug: string) => descendance(cadre.categories, slug).reduce((n, c) => n + (c.nb_produits ?? 0), 0);
+  const compte = (slug: string) => piecesDuRayon(cadre, slug);
   return cadre.racines
     .map((r) => ({
       cle: r.slug,
@@ -196,7 +218,7 @@ function EnteteTechnique({ cadre }: { cadre: Cadre }) {
       ) : null}
       <header className="te-entete" data-zone="entete">
         <div className="enveloppe te-entete-rang">
-          <MenuMobile entrees={entreesMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="te-menu cache-desktop" />
+          <MenuMobile marque={<Logo cadre={cadre} />} entrees={entreesMenu(cadre)} raccourcis={raccourcisMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="te-menu cache-desktop" />
           <Link href="/" className="te-logo" aria-label={t.marque.accueilAria(cadre.boutique.nom)}>
             <Logo cadre={cadre} />
           </Link>

@@ -914,6 +914,14 @@ export const fr = {
         ? "Il est rattaché au numéro qui l'a demandé : un code par SMS, et il s'ouvre ici, prêt à accepter."
         : "Il est rattaché au compte qui l'a demandé : connectez-vous de la même façon, et il s'ouvre ici, prêt à accepter.",
   },
+  /** Le menu du téléphone (EnteteClient.tsx). */
+  menu: {
+    rayons: "Rayons",
+    rechercher: "Rechercher une pièce",
+    pieces: (n: number) => (n > 1 ? `${n} pièces` : "1 pièce"),
+    suivre: "Suivre une commande",
+    contact: "Nous appeler",
+  },
   compte: {
     payeeEnLigne: "payée en ligne",
     titre: "Mes commandes",

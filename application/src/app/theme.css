@@ -37,11 +37,11 @@
   --theme-erreur:        #A33A2B;
   --theme-alerte:        #8A6112;
 
-  --theme-radius-net:   0;
-  --theme-radius-doux:  0;
-  --theme-radius-carte: 0;
-  --theme-radius-bloc:  0;
-  --theme-radius-arc:   0;
+  --theme-radius-net:   0px;
+  --theme-radius-doux:  0px;
+  --theme-radius-carte: 0px;
+  --theme-radius-bloc:  0px;
+  --theme-radius-arc:   0px;
 
   /* Ombres teintées à l'encre, jamais du noir pur. */
   --theme-shadow-pose:    0 1px 2px color-mix(in srgb, var(--theme-encre) 6%, transparent);
