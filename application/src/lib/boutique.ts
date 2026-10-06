@@ -307,6 +307,14 @@ export function paiementsDe(cadre: Pick<Cadre, "konnectActif" | "livraison">): "
   return !cadre.konnectActif ? "livraison" : cadre.livraison.cod ? "les-deux" : "en-ligne";
 }
 
+/** La marque d'une pièce à afficher en tête de sa fiche : aucune quand elle
+ *  porte le nom de la boutique (« MAYMAR » au-dessus de chaque valise Maymar
+ *  ne dit rien de plus). Les données structurées la gardent. */
+export function marqueAffichee(marque: string | null, cadre: Pick<Cadre, "boutique">): string | null {
+  const m = marque?.trim();
+  return m && m.toLocaleLowerCase("fr") !== cadre.boutique.nom.trim().toLocaleLowerCase("fr") ? m : null;
+}
+
 export function racinesGarnies(cadre: Pick<Cadre, "racines" | "categories">): Categorie[] {
   return cadre.racines.filter((r) => descendance(cadre.categories, r.slug).some((c) => (c.nb_produits ?? 0) > 0));
 }

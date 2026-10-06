@@ -15,7 +15,7 @@ import { AvisProduit, ResumeAvis } from "@/components/AvisProduit";
 import { Bulle } from "@/components/Icones";
 import { rassurances } from "@/components/Rassurances";
 import { contactVente } from "@/components/ContactProduit";
-import { cadre as chargeCadre, paiementsDe, type Cadre } from "@/lib/boutique";
+import { cadre as chargeCadre, marqueAffichee, paiementsDe, type Cadre } from "@/lib/boutique";
 import { achetesEnsemble, chargeProduit, listeProduits, lotsDesProduits, prixDepuis, type Produit } from "@/lib/catalogue";
 import type { Lot } from "@/lib/lots";
 import { photosProduit } from "@/lib/photos";
@@ -222,7 +222,7 @@ function FicheEditoriale({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pr
         <div className="ed-fiche-panneau">
           <div className="ed-fiche-collant">
             <FilAriane etapes={fil} />
-            {produit.marque ? <p className="etiquette">{produit.marque}</p> : null}
+            {marqueAffichee(produit.marque, cadre) ? <p className="etiquette">{marqueAffichee(produit.marque, cadre)}</p> : null}
             <h1>{champ(produit, "nom")}</h1>
             <ResumeAvis avis={avis} />
             <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} paiement={paiementsDe(cadre)}
@@ -290,7 +290,7 @@ function FicheTechnique({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pro
         <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="carte-favori fiche-favori-photo" />
 
         <div className="te-fiche-achat">
-          {produit.marque ? <p className="te-fiche-marque">{produit.marque}</p> : null}
+          {marqueAffichee(produit.marque, cadre) ? <p className="te-fiche-marque">{marqueAffichee(produit.marque, cadre)}</p> : null}
           <h1>{champ(produit, "nom")}</h1>
           <ResumeAvis avis={avis} />
           <SpecsVariante mode="ref" />
