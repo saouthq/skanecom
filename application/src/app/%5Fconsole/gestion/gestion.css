@@ -505,6 +505,13 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 /* Le studio photo : le geste, puis ce qu'il fait, en une ligne d'aide. */
 .ph-studio { display: grid; gap: .375rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord-leger); }
 .ph-studio .btn .icone { color: var(--ui-accent, currentColor); }
+/* La rédaction de la description (module redaction) : sous le champ, le geste, puis ce qu'il fait. */
+.redaction { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .5rem; margin-block-start: .5rem; }
+.redaction .btn-second .icone { color: var(--ui-accent, currentColor); }
+.redaction .aide { flex: 1 1 100%; margin: 0; }
+.redaction[data-etat="redaction"] .btn-second { cursor: progress; }
+.redaction[data-etat="pose"] .aide { color: var(--ui-vert, var(--ui-texte-2)); }
+.redaction-erreur { color: var(--ui-rouge); }
 .ph-feuille-pied { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord-leger); }
 .ph-retirer { color: var(--ui-rouge); }
 .ph-retirer:hover { background: var(--ui-rouge-fond); color: var(--ui-rouge); }

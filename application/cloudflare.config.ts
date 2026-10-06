@@ -30,6 +30,13 @@ export default defineConfig({
       ...responseStore.applicationWorker.env,
       ASSETS: bindings.assets(),
       IMAGES: bindings.images(),
+      // La rédaction des descriptions (module redaction, src/lib/gestion/redaction.ts) :
+      // un modèle de Workers AI. La liaison n'a pas de simulateur : déclarée, elle
+      // fait ouvrir au serveur local une session distante, qui exige un jeton
+      // Cloudflare. Elle n'est donc déclarée que là où le jeton est (la
+      // construction et le déploiement, .github/workflows/apercu.yml) ; en local
+      // et dans les parcours de la CI, la rédaction rend un brouillon d'essai.
+      ...(process.env.CLOUDFLARE_API_TOKEN ? { AI: bindings.ai() } : {}),
       // Photos des produits déposées par le backoffice (src/lib/gestion/fichiers.ts),
       // servies au public par le domaine du bucket (NEXT_PUBLIC_FICHIERS_URL).
       // En local, c'est le relais qui en tient lieu.

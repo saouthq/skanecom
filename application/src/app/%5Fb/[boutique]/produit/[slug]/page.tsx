@@ -24,6 +24,7 @@ import { formatePrix, prixDecimal } from "@/lib/prix";
 import { lienConseil } from "@/lib/faits";
 import { texte } from "@/lib/theme";
 import { champ, t } from "@/lib/i18n";
+import { TexteDescription } from "@/components/TexteDescription";
 
 /* ============================================================================
    LA FICHE PRODUIT — une par gabarit.
@@ -244,7 +245,7 @@ function FicheEditoriale({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pr
                 <details className="pli" open>
                   <summary>{t.produit.description}</summary>
                   <div>
-                    <p>{description}</p>
+                    <TexteDescription texte={description} />
                   </div>
                 </details>
               ) : null}
@@ -326,7 +327,7 @@ function FicheTechnique({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pro
         {description ? (
           <section>
             <h2>{t.produit.description}</h2>
-            <p>{description}</p>
+            <TexteDescription texte={description} />
           </section>
         ) : null}
         <section id="caracteristiques">

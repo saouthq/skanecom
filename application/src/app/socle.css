@@ -195,6 +195,12 @@
 .pli[open] > summary::after { transform: rotate(45deg); }
 .pli > div { padding-block-end: 1.25rem; color: var(--theme-encre-doux); font-size: .9375rem; }
 
+/* La description d'un produit (components/TexteDescription.tsx) : ses paragraphes, ses listes. */
+.texte-description > * + * { margin-block-start: .75em; }
+.texte-description ul { padding-inline-start: 1.15em; list-style: disc; color: var(--theme-encre-doux); max-inline-size: 65ch; }
+.texte-description li + li { margin-block-start: .25em; }
+.texte-description li::marker { color: var(--theme-encre-doux); }
+
 /* --- Barre d'achat collante (mobile) ------------------------------------- */
 .achat-mobile {
   position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 45;

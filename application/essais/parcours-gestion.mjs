@@ -777,6 +777,43 @@ if (section("2")) {
     verifie(await vignettes().count() === 1, "retirée, il reste l'originale");
   });
 
+  // La rédaction (module redaction, allumée sur Maymar par les données de
+  // démonstration). En local, Workers AI n'existe pas : un brouillon d'essai,
+  // composé des seuls faits de la fiche et dit tel — le geste entier se
+  // vérifie, pas le modèle.
+  await etape("rédiger la description : un brouillon à relire, puis la vitrine", async () => {
+    const champ = page.locator("#description");
+    const avant = await champ.inputValue();
+    const notes = "Coque rigide, fermeture à code.";
+    await champ.fill(notes);
+    await clic(page, page.getByRole("button", { name: "Rédiger la description" }));
+    await page.locator(".redaction[data-etat=pose]").waitFor({ timeout: 15000 });
+    const brouillon = await champ.inputValue();
+    const nom = await page.locator("#nom").inputValue();
+    verifie(brouillon.includes(nom) && brouillon.includes(notes), `le brouillon reprend la fiche et les notes : « ${brouillon.replace(/\s+/g, " ").slice(0, 110)}… »`);
+    verifie((await page.locator(".redaction [role=status]").innerText()).includes("Enregistrer la fiche"), "il dit que rien n'est enregistré sans vous");
+    await capture(page, "gestion-redaction");
+    await clic(page, page.getByRole("button", { name: "Revenir à mon texte" }));
+    verifie(await champ.inputValue() === notes, "« Revenir à mon texte » remet ce qu'il y avait");
+    // Un brouillon enregistré : la vitrine en montre les paragraphes et la liste.
+    await clic(page, page.getByRole("button", { name: "Rédiger la description" }));
+    await page.locator(".redaction[data-etat=pose]").waitFor({ timeout: 15000 });
+    await envoie(page.getByRole("button", { name: "Enregistrer la fiche" }));
+    const lien = await page.getByRole("link", { name: /Voir sur la vitrine/ }).getAttribute("href").catch(() => null);
+    if (lien) {
+      const v = await ctx.newPage();
+      await v.goto(lien, { waitUntil: "networkidle" });
+      const description = v.locator(".texte-description").first();
+      verifie((await description.locator("p").count()) >= 2 && (await description.locator("li").count()) >= 1,
+        `sur la vitrine : ${await description.locator("p").count()} paragraphe(s), ${await description.locator("li").count()} ligne(s) de liste`);
+      await v.close();
+    }
+    // La fiche reprend sa description d'avant, pour la suite du parcours.
+    await page.locator("#description").fill(avant);
+    await envoie(page.getByRole("button", { name: "Enregistrer la fiche" }));
+    verifie(await page.locator("#description").inputValue() === avant, "la description d'avant est remise");
+  });
+
   /* ---------------- Les fiches techniques (B9) ---------------- */
   const nouvelleCaracteristique = async ({ nom, unite = "", type, rayon }) => {
     const form = page.locator("section:has(#t-nouvel-attribut) form");

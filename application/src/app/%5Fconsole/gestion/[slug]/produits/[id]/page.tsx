@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";
 import { EnTetePage } from "@/components/console/Coquille";
 import { DepotPhotos } from "@/components/console/DepotPhotos";
+import { RedigerDescription } from "@/components/console/RedigerDescription";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { urlFichier } from "@/lib/photos";
@@ -53,7 +54,7 @@ export default async function FicheProduitBackoffice({
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }, { data: lusPaliers }, cadre, hoteConsole, { data: studio }] = await Promise.all([
+  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }, { data: lusPaliers }, cadre, hoteConsole, { data: studio }, { data: redaction }] = await Promise.all([
     sb.rpc("gestion_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_fiche_technique", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id }),
@@ -62,9 +63,12 @@ export default async function FicheProduitBackoffice({
     cadreDeGestion(sb, boutique.boutique_id),
     headers().then((h) => h.get("host")),
     sb.rpc("gestion_studio_etat", { p_boutique_id: boutique.boutique_id }),
+    sb.rpc("gestion_redaction_etat", { p_boutique_id: boutique.boutique_id }),
   ]);
   // Le studio photo (module studio_photo) : une photo du téléphone devient une photo de catalogue.
   const avecStudio = Boolean((studio as { actif?: boolean } | null)?.actif);
+  // La rédaction (module redaction) : un brouillon de description, à relire avant d'enregistrer.
+  const avecRedaction = Boolean((redaction as { actif?: boolean } | null)?.actif);
   // Les prix par quantité (« 2 pour 99 », migration 71) : trois lignes à remplir.
   const paliers = paliersDe(lusPaliers);
   const reglePrix = ["proprietaire", "admin"].includes(boutique.role);
@@ -504,6 +508,7 @@ export default async function FicheProduitBackoffice({
                     <label htmlFor="description">Description</label>
                     <textarea id="description" name="description" maxLength={5000} rows={5} defaultValue={f.description ?? ""}
                       placeholder="Matière, dimensions, entretien, garantie…" />
+                    {modifie && avecRedaction ? <RedigerDescription action={`/gestion/${slug}/produits/${f.id}/rediger`} champ="description" /> : null}
                   </div>
                   <div className="deux-colonnes">
                     <div className="champ">
