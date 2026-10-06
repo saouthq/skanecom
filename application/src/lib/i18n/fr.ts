@@ -1149,7 +1149,7 @@ export const fr = {
     commandeTitre: "Votre commande",
     commandeChapo: "Remplissez ce formulaire : vous payez à la livraison.",
     commandeChapoRappel: "Remplissez ce formulaire : nous vous appelons pour confirmer, vous payez à la livraison.",
-    offreChoisie: (offre: string) => `Votre offre : ${offre}`,
+    offreChoisie: (offre: string) => `Votre offre : ${offre}.`,
     barre: "Commander ce produit",
     indisponible: "Ce produit n'est plus disponible pour l'instant.",
     autresProduits: "Voir nos autres produits",
