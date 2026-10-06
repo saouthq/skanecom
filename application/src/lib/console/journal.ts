@@ -30,6 +30,7 @@ export const ACTIONS: Record<string, string> = {
   "facturation.abonnement_suspendu": "Abonnement suspendu",
   "facturation.abonnement_repris": "Abonnement repris",
   "boutique.formule": "Formule changée",
+  "boutique.droits": "Droits ajustés (formule sur mesure)",
   "boutique.renommer": "Boutique renommée",
   "boutique.cloner": "Configuration clonée",
   "domaine.principal": "Domaine principal changé",

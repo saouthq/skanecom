@@ -102,17 +102,17 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
         </div>
         <div className="carte carte-plate defile">
           {e.lignes.length === 0 ? <p className="discret jr-vide">{echecs ? "Aucun refus." : "Aucun envoi pour l'instant."}</p> : (
-            <table className="tableau">
+            <table className="tableau jr-tableau jr-envois">
               <thead><tr><th>Quand</th><th>À</th><th>De</th><th>Sujet</th><th>Par</th><th>Résultat</th></tr></thead>
               <tbody>
                 {e.lignes.map((x) => (
                   <tr key={x.id}>
-                    <td className="tabular-nums whitespace-nowrap discret">{dateJournal(x.le)}</td>
-                    <td className="whitespace-nowrap">{x.destinataire}</td>
-                    <td>{x.expediteur ?? "—"}</td>
-                    <td>{x.sujet ?? "—"}</td>
-                    <td className="discret">{x.fournisseur}</td>
-                    <td>{x.ok ? <span className="ui-etat ui-etat-point ui-etat-vert">Parti</span> : <span className="ui-etat ui-etat-point ui-etat-rouge" title={x.raison ?? undefined}>Refusé</span>}
+                    <td className="tabular-nums whitespace-nowrap discret jr-quand">{dateJournal(x.le)}</td>
+                    <td className="whitespace-nowrap jr-a">{x.destinataire}</td>
+                    <td className="jr-de" data-titre="De">{x.expediteur ?? "—"}</td>
+                    <td className="jr-sujet">{x.sujet ?? "—"}</td>
+                    <td className="discret jr-par" data-titre="Par">{x.fournisseur}</td>
+                    <td className="jr-resultat">{x.ok ? <span className="ui-etat ui-etat-point ui-etat-vert">Parti</span> : <span className="ui-etat ui-etat-point ui-etat-rouge" title={x.raison ?? undefined}>Refusé</span>}
                       {!x.ok && x.raison ? <span className="aide jr-raison">{x.raison}</span> : null}</td>
                   </tr>
                 ))}
@@ -160,16 +160,16 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
       </form>
       <div className="carte carte-plate defile">
         {j.lignes.length === 0 ? <p className="discret jr-vide">Aucun geste {filtre ? "pour ce filtre" : "pour l'instant"}.</p> : (
-          <table className="tableau">
+          <table className="tableau jr-tableau jr-gestes">
             <thead><tr><th>Quand</th><th>Geste</th><th>Boutique</th><th>Détail</th><th>Par</th></tr></thead>
             <tbody>
               {j.lignes.map((x) => (
                 <tr key={x.id}>
-                  <td className="tabular-nums whitespace-nowrap discret">{dateJournal(x.at)}</td>
-                  <td className="font-medium">{ACTIONS[x.action] ?? x.action}</td>
-                  <td>{x.boutique ? <Link href={`/boutiques/${x.boutique.slug}`}>{x.boutique.nom}</Link> : <span className="discret">Plateforme</span>}</td>
+                  <td className="tabular-nums whitespace-nowrap discret jr-quand">{dateJournal(x.at)}</td>
+                  <td className="font-medium jr-geste">{ACTIONS[x.action] ?? x.action}</td>
+                  <td className="jr-boutique">{x.boutique ? <Link href={`/boutiques/${x.boutique.slug}`}>{x.boutique.nom}</Link> : <span className="discret">Plateforme</span>}</td>
                   <td className="discret jr-cible">{detail(x)}</td>
-                  <td className="whitespace-nowrap">{x.acteur ?? <span className="discret">—</span>}{x.ip ? <span className="aide jr-ip">{x.ip}</span> : null}</td>
+                  <td className="whitespace-nowrap jr-par">{x.acteur ?? <span className="discret">—</span>}{x.ip ? <span className="aide jr-ip">{x.ip}</span> : null}</td>
                 </tr>
               ))}
             </tbody>

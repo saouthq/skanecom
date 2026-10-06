@@ -1556,6 +1556,34 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .jr-vide { padding: 1.25rem; margin: 0; }
 .jr-cible { max-inline-size: 22rem; overflow-wrap: anywhere; }
 .jr-ip, .jr-raison { display: block; }
+@media (max-width: 47.99rem) {
+  /* Au téléphone, cinq colonnes ne tiennent pas (le geste s'écrasait sur
+     quatre lignes) : chaque ligne du journal devient une fiche. Le geste en
+     tête, sur toute la largeur ; la boutique, le détail ; en pied, l'auteur
+     et l'heure. */
+  .console .jr-tableau thead { display: none; }
+  .console .jr-tableau, .console .jr-tableau tbody { display: block; inline-size: auto; }
+  .console .jr-tableau tr {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .75rem; row-gap: .1875rem;
+    padding: .875rem 1.25rem; border-block-end: 1px solid var(--ui-bord-leger);
+  }
+  .console .jr-tableau tr:last-child { border-block-end: 0; }
+  .console .jr-tableau td, .console .jr-tableau td:first-child, .console .jr-tableau td:last-child {
+    display: block; grid-column: 1 / -1; padding: 0; border: 0; min-inline-size: 0; max-inline-size: none; white-space: normal; overflow-wrap: anywhere;
+  }
+  /* Le survol teinte la fiche entière, pas chaque cellule. */
+  .console .jr-tableau tr:hover td { background: none; }
+  .console .jr-tableau tr:hover { background: var(--ui-survol); }
+  .console .jr-gestes .jr-geste, .console .jr-envois .jr-a { order: 1; font-weight: 600; }
+  .console .jr-tableau .jr-boutique, .console .jr-envois .jr-sujet { order: 2; }
+  .console .jr-tableau .jr-cible, .console .jr-envois .jr-de { order: 3; font-size: .8125rem; }
+  .console .jr-envois .jr-resultat { order: 4; margin-block-start: .25rem; }
+  .console .jr-tableau td.jr-par { order: 8; grid-column: 1; margin-block-start: .25rem; font-size: .8125rem; color: var(--ui-texte-2); }
+  .console .jr-tableau td.jr-quand { order: 9; grid-column: 2; align-self: end; font-size: .75rem; white-space: nowrap; }
+  .console .jr-tableau .jr-par .jr-ip { display: inline; margin-inline-start: .375rem; }
+  .console .jr-tableau td[data-titre]::before { content: attr(data-titre) " "; color: var(--ui-texte-3); }
+  .console .jr-tableau .jr-cible:empty { display: none; }
+}
 .console .fo-tableau tbody th { background: var(--ui-panneau); padding-inline-start: 1.25rem; font-size: .875rem; text-transform: none; letter-spacing: 0; color: var(--ui-texte); }
 .console .fo-tableau tbody tr.fo-groupe th { background: var(--ui-doux); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ui-texte-2); }
 .bt-retour { margin: 0 0 .75rem; }

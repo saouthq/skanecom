@@ -1280,6 +1280,16 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .pro-ligne-qui .discret { font-size: .8125rem; }
 .pro-ligne-qui a { color: inherit; text-decoration: underline; text-decoration-color: var(--ui-bord); text-underline-offset: 2px; }
 .pro-ligne-qui a:hover { text-decoration-color: currentColor; }
+@media (max-width: 40rem) {
+  /* Au téléphone, l'état passe sous le nom : il ne lui vole plus sa colonne
+     (« Plomberie Ben… », coordonnées sur quatre lignes). */
+  .pro-ligne-tete { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: .375rem .75rem; }
+  /* .cl-initiale porte grid-area: img (la liste des clients) : on la place ici. */
+  .pro-ligne-tete .initiale { grid-area: auto; grid-column: 1; grid-row: 1 / span 2; }
+  .pro-ligne-tete .pro-ligne-qui { grid-column: 2; grid-row: 1; }
+  .pro-ligne-tete .ui-etat { grid-column: 2; grid-row: 2; margin-inline-start: 0; justify-self: start; }
+  .pro-ligne-qui strong { white-space: normal; }
+}
 .pro-ligne-faits { display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; margin: 0; }
 .pro-ligne-faits dt { font-size: .75rem; color: var(--ui-texte-3); }
 .pro-ligne-faits dd { margin: 0; font-size: .875rem; font-weight: 500; }
@@ -1326,9 +1336,16 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
    Les devis (module devis) : la liste, la fiche, le chiffrage ligne par
    ligne (prix saisi, total qui suit), la barre des totaux collée en bas.
    --------------------------------------------------------------------------- */
-.dv-ligne-lien { grid-template-areas: "img nom prix" "img etat date"; }
+/* Au téléphone, le numéro et le client sur toute la largeur (le montant « au
+   catalogue » les coupait en « DEV- / 00001 ·… ») ; puis l'état et le
+   montant ; puis la date. */
+.dv-ligne-lien { grid-template-areas: "img nom nom" "img etat prix" "img date date"; }
 .dv-ligne-etat { grid-area: etat; display: flex; flex-wrap: wrap; gap: .375rem; }
-.dv-ligne-date { grid-area: date; justify-self: end; font-size: .8125rem; color: var(--ui-texte-3); white-space: nowrap; }
+.dv-ligne-date { grid-area: date; justify-self: start; font-size: .8125rem; color: var(--ui-texte-3); white-space: nowrap; }
+@media (max-width: 899.98px) {
+  .dv-ligne-lien .cat-ligne-nom strong { white-space: normal; overflow-wrap: anywhere; }
+  .dv-ligne-lien .cat-ligne-prix .discret { font-size: .8125rem; }
+}
 .dv-ligne-detail { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (min-width: 900px) {
   .dv-ligne-lien {
