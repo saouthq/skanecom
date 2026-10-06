@@ -992,6 +992,7 @@ export function Tunnel({
         zone={zone}
         retrait={enRetrait}
         fige={fige}
+        enLigne={enLigne}
       />
     </div>
   );
@@ -1185,6 +1186,7 @@ function Recap({
   zone,
   retrait,
   fige = false,
+  enLigne = false,
 }: {
   panier: LignePanier[];
   devis: Devis | null;
@@ -1195,6 +1197,8 @@ function Recap({
   retrait: boolean;
   /** Les lignes d'un devis : ni retirer, ni ajuster, ni revenir au panier. */
   fige?: boolean;
+  /** Payée en ligne : une précommande se paie en commandant, pas à la livraison. */
+  enLigne?: boolean;
 }) {
   const parId = new Map<string, LigneDevis>((devis?.lignes ?? []).map((l) => [l.variante_id, l]));
   // Sans gouvernorat, pas de frais : le total des articles (remise déduite).
@@ -1296,7 +1300,7 @@ function Recap({
         {/* Une précommande : la commande part à l'arrivage, on le dit avant qu'elle soit passée. */}
         {devis?.precommande ? (
           <p className="tunnel-precommande legende" data-precommande={devis.precommande.date_prevue}>
-            {t.precommande.tunnel(jourPrevu(devis.precommande.date_prevue))}
+            {t.precommande.tunnel(jourPrevu(devis.precommande.date_prevue), enLigne)}
           </p>
         ) : null}
 

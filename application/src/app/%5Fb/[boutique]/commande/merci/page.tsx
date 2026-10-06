@@ -118,19 +118,21 @@ export default async function Merci({ params, searchParams }: {
       : []),
     // Une précommande : elle attend son arrivage avant de partir (migration 88).
     ...(commande.arrivage_prevu
-      ? [{ titre: t.precommande.suiteTitre, texte: t.precommande.merci(jourPrevu(commande.arrivage_prevu)), fait: false }]
+      ? [{ titre: t.precommande.suiteTitre, texte: t.precommande.merci(jourPrevu(commande.arrivage_prevu), enLigne), fait: false }]
       : []),
     // Pas encore payée en ligne : le paiement attend, ou a échoué.
     ...(enLigne && !payee ? [{ titre: t.commande.suitePaiement, texte: enAttente ? t.commande.paiementAttente : t.commande.paiementEchoue, fait: false }] : []),
     ...(retrait
       ? [
-          { titre: t.commande.suitePreparation, texte: t.commande.suitePreparationTexte(t.commande.pretSous(magasin?.delai_heures ?? 24)), fait: false },
+          { titre: t.commande.suitePreparation,
+            texte: (commande.arrivage_prevu ? t.commande.suitePreparationTexteArrivage : t.commande.suitePreparationTexte)(t.commande.pretSous(magasin?.delai_heures ?? 24)), fait: false },
           payee
             ? { titre: t.commande.suiteRemiseRetrait, texte: t.commande.suitePayeeTexteRetrait, fait: false }
             : { titre: t.commande.suiteRetrait, texte: t.commande.suiteRetraitTexte(formatePrix(commande.total_millimes)), fait: false },
         ]
       : ([
-          { titre: t.commande.suiteExpedition, texte: t.commande.suiteExpeditionTexte(delai), fait: false },
+          { titre: t.commande.suiteExpedition,
+            texte: commande.arrivage_prevu ? t.commande.suiteExpeditionTexteArrivage(delai) : t.commande.suiteExpeditionTexte(delai), fait: false },
           payee
             ? { titre: t.commande.suiteRemise, texte: t.commande.suitePayeeTexte, fait: false }
             : enLigne ? null

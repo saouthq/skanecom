@@ -299,6 +299,11 @@ export async function cadre(slug: string): Promise<Cadre> {
 /** Les sous-rayons (tous niveaux) d'un rayon, lui compris. */
 /** Les rayons de premier niveau qui ont au moins une pièce publiée
  *  (sous-rayons compris) : l'accueil ne montre pas une vignette vide. */
+/** Les moyens de paiement de la boutique, pour les phrases qui en dépendent (FicheAchat). */
+export function paiementsDe(cadre: Pick<Cadre, "konnectActif" | "livraison">): "livraison" | "les-deux" | "en-ligne" {
+  return !cadre.konnectActif ? "livraison" : cadre.livraison.cod ? "les-deux" : "en-ligne";
+}
+
 export function racinesGarnies(cadre: Pick<Cadre, "racines" | "categories">): Categorie[] {
   return cadre.racines.filter((r) => descendance(cadre.categories, r.slug).some((c) => (c.nb_produits ?? 0) > 0));
 }

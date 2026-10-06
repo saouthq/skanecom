@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
@@ -119,7 +120,9 @@ export type AccesEquipe =
   | { etat: "aal1"; user: User; boutiques: Membre[] }
   | { etat: "ok"; user: User; boutiques: Membre[] };
 
-export async function accesEquipe(): Promise<AccesEquipe> {
+/** Mis en cache pour le temps d'un rendu : le layout du backoffice, son titre
+ *  d'onglet et la page la lisent sans refaire la requête. */
+export const accesEquipe = cache(async function accesEquipe(): Promise<AccesEquipe> {
   const sb = await clientSession();
   const { data } = await sb.auth.getUser();
   const user = data.user;
@@ -141,7 +144,7 @@ export async function accesEquipe(): Promise<AccesEquipe> {
     }
   }
   return { etat: "ok", user, boutiques };
-}
+});
 
 /** Pour les pages et les gestionnaires du backoffice d'UNE boutique : le
  *  membre et son rôle, ou la bonne porte. Une boutique dont on n'est pas

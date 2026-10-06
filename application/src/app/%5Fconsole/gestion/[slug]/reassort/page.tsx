@@ -73,7 +73,7 @@ export default async function Reassort({
         <p className="pm-synthese-ligne">
           <span className="ligne-points">
             <span><b className="tabular-nums">{c.a_prevenir}</b> {c.a_prevenir > 1 ? "personnes" : "personne"} à prévenir</span>
-            <span><b className="tabular-nums">{c.attend}</b> en attente d&apos;un arrivage</span>
+            <span><b className="tabular-nums">{c.attend}</b> {c.attend > 1 ? "personnes attendent" : "personne attend"} une pièce épuisée</span>
             <span><b className="tabular-nums">{c.prevenues_30j}</b> {c.prevenues_30j > 1 ? "prévenues" : "prévenue"} ces 30 jours</span>
           </span>
         </p>

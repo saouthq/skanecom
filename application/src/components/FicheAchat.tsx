@@ -23,6 +23,9 @@ import { OffresQuantite } from "./OffresQuantite";
 import { paliersDe, totalAvecPaliers } from "@/lib/paliers";
 import type { CodeTheme } from "@/lib/theme";
 
+/** À la livraison seulement, les deux, ou en ligne seulement (paiement.cod_actif, paiement.konnect_actif). */
+export type Paiements = "livraison" | "les-deux" | "en-ligne";
+
 /* ============================================================================
    LE BLOC DE DÉCISION — prix, choix des déclinaisons, quantité, mise au
    panier, et la barre d'achat collante du mobile. Réglage de la boutique
@@ -57,8 +60,11 @@ export function FicheAchat({
   prevenirRetour = false,
   partage = null,
   contact = null,
+  paiement = "livraison",
 }: {
   produit: Produit;
+  /** Les moyens de paiement de la boutique (paiementsDe) : la phrase d'une précommande en dépend. */
+  paiement?: Paiements;
   gabarit: CodeTheme;
   /** Réglage `commande.achat_express` : le bouton « Commander maintenant ». */
   achatExpress?: boolean;
@@ -233,7 +239,7 @@ export function FicheAchat({
             <Calendrier taille={16} />
             <span>{t.precommande.titre(jourPrevu(precommande.date_prevue))}</span>
           </p>
-          <p className="legende">{t.precommande.texte}</p>
+          <p className="legende">{t.precommande.texte(paiement)}</p>
           {precommande.reste <= 5 ? <p className="legende fiche-precommande-reste">{t.precommande.reste(precommande.reste)}</p> : null}
         </div>
       ) : variante && sousMinimum ? (

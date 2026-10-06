@@ -234,9 +234,9 @@ export const fr = {
     ajouterLot: (n: number) => `Ajouter ${n} pièces au panier`,
     sousMinimumTitre: "Pas assez de pièces en stock pour une commande",
     sousMinimumTexte: (reste: number, minimum: number) =>
-      `Il en reste ${reste}, pour un minimum de ${minimum} par commande. Elle revient après le prochain arrivage.`,
+      `Il en reste ${reste}, pour un minimum de ${minimum} par commande : pas assez pour l'instant.`,
     ruptureExpliquee: (valeurs: string) =>
-      `${valeurs} : en rupture. Cette déclinaison revient en stock après le prochain arrivage.`,
+      `${valeurs} : plus en stock pour le moment.`,
     poids: "Poids",
     poidsSelonTaille: (min: string, max: string) => `${min} à ${max}`,
     declinaisons: "Déclinaisons",
@@ -675,7 +675,7 @@ export const fr = {
     paiementAuRetraitNote: (montant: string) => `C'est noté : vous réglerez ${montant} au comptoir, en retirant votre commande.`,
     suiteRemise: "Livraison",
     suiteRemiseRetrait: "Retrait au magasin",
-    suitePayeeTexte: "Rien à régler au livreur : présentez-vous simplement à la remise du colis.",
+    suitePayeeTexte: "Rien à régler au livreur : il vous remet simplement le colis.",
     suitePayeeTexteRetrait: "Rien à régler au comptoir : donnez votre nom en la retirant.",
     appelConfirmation: "Avant l'expédition, la boutique vous appelle pour confirmer la commande.",
     appelConfirmationRetrait: "Avant de préparer la commande, la boutique vous appelle pour la confirmer.",
@@ -737,12 +737,16 @@ export const fr = {
     suiteExpedition: "Expédition",
     suiteExpeditionTexte: (delai?: string) =>
       delai ? `Le colis part après confirmation : comptez ${delai}.` : "Le colis part après confirmation.",
+    /** Une précommande : le colis attend l'arrivage, le délai court ensuite. */
+    suiteExpeditionTexteArrivage: (delai?: string) =>
+      delai ? `Le colis part à l'arrivage : comptez ensuite ${delai}.` : "Le colis part à l'arrivage.",
     suiteLivraison: "Livraison et paiement",
     suiteLivraisonTexte: (montant: string) => `Vous réglez ${montant} en espèces au livreur. Vous pouvez refuser le colis à la remise.`,
     livreeA: "Livraison à",
     aRetirerA: "À retirer au magasin",
     suitePreparation: "Préparation",
     suitePreparationTexte: (pret: string) => `La boutique prépare la commande après confirmation. ${pret}.`,
+    suitePreparationTexteArrivage: (pret: string) => `La boutique prépare la commande dès l'arrivage. ${pret}.`,
     suiteRetrait: "Retrait et paiement",
     suiteRetraitTexte: (montant: string) => `Au comptoir, à votre nom : vous réglez ${montant} en espèces en la retirant.`,
     articles: "Articles",
@@ -1170,17 +1174,25 @@ export const fr = {
   precommande: {
     etat: "En précommande",
     titre: (jour: string) => `En précommande · arrivée prévue vers le ${jour}`,
-    texte: "Elle n'est pas encore en stock : commandez-la maintenant, nous l'expédions dès son arrivée. Vous ne payez qu'à la livraison.",
+    /** Ce que dit la fiche, selon les moyens de paiement de la boutique : une
+     *  précommande payée en ligne se paie en commandant, pas à la livraison. */
+    texte: (paiement: "livraison" | "les-deux" | "en-ligne") =>
+      "Elle n'est pas encore en stock : commandez-la maintenant, nous l'expédions dès son arrivée. " +
+      (paiement === "livraison" ? "Vous ne payez qu'à la livraison."
+        : paiement === "les-deux" ? "Vous pouvez la payer à la livraison."
+        : "Vous la payez en ligne en commandant."),
     reste: (n: number) => (n > 1 ? `Encore ${n} à précommander sur cet arrivage.` : "Plus qu'une à précommander sur cet arrivage."),
     bouton: "Précommander",
     valeurs: (valeurs: string, jour: string) => `${valeurs} : en précommande, arrivée prévue vers le ${jour}.`,
     ligne: (jour: string) => `Précommande · arrivée vers le ${jour}`,
     ligneCourte: "Précommande",
     suiteTitre: "L'arrivage",
-    tunnel: (jour: string) =>
-      `Votre commande comprend une précommande : elle part dès l'arrivage, prévu vers le ${jour}. Vous payez à la livraison, rien avant.`,
-    merci: (jour: string) =>
-      `Elle comprend une précommande : nous l'expédions dès l'arrivage, prévu vers le ${jour}. Rien n'est à payer avant.`,
+    tunnel: (jour: string, enLigne: boolean) =>
+      `Votre commande comprend une précommande : elle part dès l'arrivage, prévu vers le ${jour}. ` +
+      (enLigne ? "Vous la payez maintenant, en ligne." : "Vous payez à la livraison, rien avant."),
+    merci: (jour: string, enLigne: boolean) =>
+      `Elle comprend une précommande : nous l'expédions dès l'arrivage, prévu vers le ${jour}.` +
+      (enLigne ? "" : " Rien n'est à payer avant."),
     suivi: (jour: string) => `Elle attend son arrivage, prévu vers le ${jour} : elle part dès qu'il est là.`,
   },
   alerte: {

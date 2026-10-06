@@ -7,7 +7,7 @@ import { Fleche } from "./Icones";
 import { photosProduit } from "@/lib/photos";
 import { champ, t } from "@/lib/i18n";
 import { texte, type CodeTheme, type Section } from "@/lib/theme";
-import type { Cadre } from "@/lib/boutique";
+import { paiementsDe, type Cadre } from "@/lib/boutique";
 import type { Produit } from "@/lib/catalogue";
 
 /* ============================================================================
@@ -47,7 +47,7 @@ export function PieceSaison({ rang, section, produit, cadre, gabarit = "editoria
             <h2 key={titre} data-texte="titre">{titre}</h2>
             {corps ? <p className="ps-corps" key={corps} data-texte="texte">{corps}</p> : null}
             <FicheAchat produit={produit} gabarit={gabarit} prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours}
-              achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
+              achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} paiement={paiementsDe(cadre)} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
             <Link className="lien-souligne ps-fiche" href={`/produit/${produit.slug}`}>
               {t.accueil.voirLaFiche} <Fleche taille={14} className="rtl:-scale-x-100" />
             </Link>

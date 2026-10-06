@@ -44,9 +44,15 @@ export function AxesDeclinaison({ produit, choix, setChoix, prixPros, prevenirRe
 
     /* Le prix par valeur, quand c'est CET axe qui le fait varier (une
        valise de 75 cm ne coûte pas celui d'une 55). Sur un axe qui ne
-       change rien au prix (la couleur), on n'affiche rien. */
+       change rien au prix (la couleur), on n'affiche rien. Le prix dit est
+       celui de la déclinaison qu'on obtiendrait avec les autres choix
+       gardés (la cabine noire, si le noir est choisi) — sinon le plus bas
+       de la valeur : jamais un prix qu'on ne paiera pas. */
     const prixParValeur = new Map<string, number>();
     for (const valeur of valeurs) {
+      const cible: Record<string, string | undefined> = { ...choix, [axe.cle]: valeur };
+      const exacte = produit.variantes.find((v) => produit.options.every((o) => v.options?.[o.cle] === cible[o.cle]));
+      if (exacte) { prixParValeur.set(valeur, prixDe(prixPros, exacte)); continue; }
       const prix = produit.variantes.filter((v) => v.options?.[axe.cle] === valeur).map((v) => prixDe(prixPros, v));
       if (prix.length > 0) prixParValeur.set(valeur, Math.min(...prix));
     }

@@ -15,7 +15,7 @@ import { AvisProduit, ResumeAvis } from "@/components/AvisProduit";
 import { Bulle } from "@/components/Icones";
 import { rassurances } from "@/components/Rassurances";
 import { contactVente } from "@/components/ContactProduit";
-import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
+import { cadre as chargeCadre, paiementsDe, type Cadre } from "@/lib/boutique";
 import { achetesEnsemble, chargeProduit, listeProduits, lotsDesProduits, prixDepuis, type Produit } from "@/lib/catalogue";
 import type { Lot } from "@/lib/lots";
 import { photosProduit } from "@/lib/photos";
@@ -224,7 +224,7 @@ function FicheEditoriale({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pr
             {produit.marque ? <p className="etiquette">{produit.marque}</p> : null}
             <h1>{champ(produit, "nom")}</h1>
             <ResumeAvis avis={avis} />
-            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour}
+            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} paiement={paiementsDe(cadre)}
             partage={cadre.partage ? { boutique: cadre.boutique.nom } : null} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
             <AppelLot lots={lots} />
 
@@ -294,7 +294,7 @@ function FicheTechnique({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pro
           <ResumeAvis avis={avis} />
           <SpecsVariante mode="ref" />
           <SpecsVariante mode="cles" />
-          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour}
+          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} paiement={paiementsDe(cadre)}
             partage={cadre.partage ? { boutique: cadre.boutique.nom } : null} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
           <AppelLot lots={lots} />
 

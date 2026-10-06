@@ -85,7 +85,7 @@ export default async function FicheDevisBackoffice({
             <Icone nom="note" />
             <blockquote>« {d.message} »</blockquote>
             <span className="aide">
-              {d.client.commandes} commande{d.client.commandes > 1 ? "s" : ""}
+              {d.client.commandes ? `Déjà ${d.client.commandes} commande${d.client.commandes > 1 ? "s" : ""} chez vous` : "Aucune commande encore chez vous"}
               {d.client.refus > 0 ? <span className="pro-refus"> · {d.client.refus} refus</span> : null}
             </span>
           </section>

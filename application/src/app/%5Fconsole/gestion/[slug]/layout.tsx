@@ -1,4 +1,5 @@
-import { clientSession, exigeMembre } from "@/lib/console/session";
+import type { Metadata } from "next";
+import { accesEquipe, clientSession, exigeMembre } from "@/lib/console/session";
 import { Coquille, type LienCoquille } from "@/components/console/Coquille";
 import { CompteurCommandes } from "@/components/console/Veille";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
@@ -25,6 +26,15 @@ import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
    que la page), et la base, elle, revérifie le rôle à chaque geste.
    Pendant un accès support (C7), un bandeau le rappelle en tête de page.
    ========================================================================== */
+/** L'onglet du navigateur porte le nom de la boutique (« Commandes · Maison Selma ») :
+ *  c'est son backoffice, pas la console de SkanEcom. */
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const a = await accesEquipe();
+  const nom = a.etat === "ok" ? a.boutiques.find((b) => b.slug === slug)?.nom : undefined;
+  return nom ? { title: { template: `%s · ${nom}`, default: nom } } : {};
+}
+
 export default async function BackofficeBoutique({
   children,
   params,
