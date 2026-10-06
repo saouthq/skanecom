@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { Gabarit } from "@/components/Gabarit";
 import { Listing } from "@/components/Listing";
 import { EnteteListe } from "@/components/EnteteListe";
 import { cadre as chargeCadre, descendance } from "@/lib/boutique";
-import { listeProduits } from "@/lib/catalogue";
+import { listeProduits, rayonDeplace } from "@/lib/catalogue";
 import { cheminFiltres, estCanonique, litSegments, nombreFiltresActifs, versCriteres } from "@/lib/filtres";
 import { champ, t } from "@/lib/i18n";
 
@@ -40,7 +40,12 @@ export default async function Rayon({ params }: Params) {
 
   const cadre = await chargeCadre(boutique);
   const categorie = cadre.categories.find((c) => c.slug === slug);
-  if (!categorie) notFound();
+  if (!categorie) {
+    // Un rayon renommé au backoffice : son ancienne adresse mène à la nouvelle (filtres gardés).
+    const nouvelle = await rayonDeplace(cadre.boutique.id, slug);
+    if (nouvelle && nouvelle !== slug) permanentRedirect(cheminFiltres(`/categorie/${nouvelle}`, f));
+    notFound();
+  }
 
   const famille = descendance(cadre.categories, slug);
   const sousRayons = cadre.categories.filter((c) => c.parent_id === categorie.id);
@@ -63,7 +68,7 @@ export default async function Rayon({ params }: Params) {
           slug: c.slug,
           nom: champ(c, "nom"),
           compte: descendance(cadre.categories, c.slug).reduce((n, d) => n + (d.nb_produits ?? 0), 0),
-        }))}
+        })).filter((r) => r.compte > 0) /* un sous-rayon encore vide (créé au backoffice) n'est pas une impasse pour le client */}
       />
       <Listing
         liste={liste}

@@ -50,7 +50,7 @@ export type Cadre = {
   modules: string[];
   theme: Theme;
   categories: Categorie[];
-  /** Les rayons de premier niveau, pour la navigation. */
+  /** Les rayons de premier niveau garnis (tous si le catalogue est vide), pour la navigation. */
   racines: Categorie[];
   zones: Zone[];
   /** Le supplément selon le poids du colis, par tranche (jusqu'à N grammes ;
@@ -227,13 +227,19 @@ export function cadreDe(brut: CadreBrut): Cadre {
   const modules = brut.configuration?.modules ?? [];
   const auPoids = Boolean(brut.tranches_poids?.some((x) => x.supplement_millimes > 0));
 
+  // La navigation (en-têtes, menu, pied, puces du catalogue) ne mène pas à un
+  // rayon vide — un rayon tout juste créé au backoffice y entre avec sa
+  // première pièce. Tous les rayons tant que le catalogue est vide.
+  const premiers = brut.categories.filter((c) => c.parent_id === null);
+  const garnis = premiers.filter((r) => descendance(brut.categories, r.slug).some((c) => (c.nb_produits ?? 0) > 0));
+
   return {
     boutique: brut.boutique,
     reglages,
     modules,
     theme: themeDeLaBoutique(brut.theme),
     categories: brut.categories,
-    racines: brut.categories.filter((c) => c.parent_id === null),
+    racines: garnis.length > 0 || brut.boutique.nb_produits > 0 ? garnis : premiers,
     zones: brut.zones,
     tranchesPoids: auPoids ? brut.tranches_poids : null,
     fraisMillimes: modeFrais === "fixe" ? fraisMillimes : null,

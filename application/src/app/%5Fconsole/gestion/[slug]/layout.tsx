@@ -196,6 +196,7 @@ export default async function BackofficeBoutique({
     ...(PEUT_MODIFIER.includes(boutique.role)
       ? [{ groupe: "Aller à", icone: "colis" as const, href: `/gestion/${slug}/produits/nouveau`, titre: "Nouveau produit" }]
       : []),
+    { groupe: "Aller à", icone: "boutique" as const, href: `/gestion/${slug}/produits/rayons`, titre: "Rayons et sous-rayons" },
     ...(DIRECTION.includes(boutique.role)
       ? [{ groupe: "Aller à", icone: "cle" as const, href: `/gestion/${slug}/abonnement`, titre: "Abonnement SkanEcom" }]
       : []),

@@ -866,14 +866,63 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .ft-ordre { display: flex; gap: .125rem; flex: none; }
 .ft-haut { transform: rotate(180deg); }
 .ft-gestes { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; }
+/* Une flèche sans effet (le premier ne monte pas, le dernier ne descend pas) se voit éteinte. */
+.ft-ordre .btn-icone:disabled { opacity: .3; cursor: default; }
+.ft-ordre .btn-icone:disabled:hover { background: none; }
 .ft-gestes > details > summary { list-style: none; }
 .ft-gestes > details > summary::-webkit-details-marker { display: none; }
 .ft-modifier[open] { flex-basis: 100%; }
 .ft-modifier[open] > summary { display: none; }
 .ft-formulaire { margin-block-start: .25rem; padding: 1rem; border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-r-l); background: var(--ui-survol); }
+/* Le pied d'un formulaire de ligne reste dans son encadré (celui d'une carte déborde de ses marges). */
+.ft-formulaire .carte-pied { margin: 1rem 0 0; padding: .875rem 0 0; background: none; border-radius: 0; }
 .ft-retirer[open] > summary { display: none; }
 .ft-confirmer { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; font-size: .8125rem; color: var(--ui-texte-2); }
 .ft-rayons { display: grid; gap: .375rem; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); }
+
+/* ---- Les rayons (produits/rayons) : l'arbre du menu, chaque niveau en retrait ---- */
+.ry-rayon[data-niveau="2"] { padding-inline-start: 2.75rem; }
+.ry-rayon[data-niveau="3"] { padding-inline-start: 4.25rem; }
+@media (min-width: 700px) {
+  .ry-rayon[data-niveau="2"] { padding-inline-start: 3.25rem; }
+  .ry-rayon[data-niveau="3"] { padding-inline-start: 5rem; }
+}
+.ry-rayon[data-niveau="2"], .ry-rayon[data-niveau="3"] { position: relative; }
+.ry-rayon[data-niveau="2"]::before, .ry-rayon[data-niveau="3"]::before {
+  content: ""; position: absolute; inset-block: 0; inset-inline-start: calc(var(--ry-retrait, 1.75rem)); border-inline-start: 1px solid var(--ui-bord-leger);
+}
+.ry-rayon[data-niveau="3"] { --ry-retrait: 3.25rem; }
+.ry-rayon[data-masque] .ft-attribut-nom, .ry-rayon[data-masque] .ry-image { opacity: .55; }
+.ry-rayon .ft-attribut-tete { align-items: center; }
+.ry-rayon .ft-attribut-texte { flex: 1; }
+.ry-image {
+  display: grid; place-items: center; flex: none; inline-size: 44px; block-size: 44px; overflow: hidden;
+  border-radius: 10px; background: var(--ui-doux); color: var(--ui-texte-3); box-shadow: inset 0 0 0 1px var(--ui-bord-leger);
+}
+.ry-image img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.ry-adresse { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .6875rem; color: var(--ui-texte-3); overflow-wrap: anywhere; }
+.ry-prefixe { display: flex; align-items: stretch; }
+.ry-prefixe > span {
+  display: inline-flex; align-items: center; padding-inline: .625rem; border: 1px solid var(--ui-champ); border-inline-end: 0;
+  border-start-start-radius: var(--ui-r); border-end-start-radius: var(--ui-r); background: var(--ui-doux);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .8125rem; color: var(--ui-texte-2);
+}
+.console .ry-prefixe > input { flex: 1; min-inline-size: 0; border-start-start-radius: 0; border-end-start-radius: 0; }
+.ry-fiche { display: grid; gap: 1rem; }
+.ry-image-gestes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem .75rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.ry-image-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; flex: 1 1 18rem; }
+.ry-image-form .champ { flex: 1 1 14rem; }
+.ry-retirer { display: grid; gap: .625rem; padding: .875rem 1rem; border: 1px solid var(--ui-rouge-bord); border-radius: var(--ui-r-l); background: var(--ui-rouge-fond); }
+.ry-retirer p { margin: 0; }
+.ry-retirer .btn { justify-self: start; }
+/* Ouvert, le pli garde son bouton : « Annuler » le referme sans rien retirer. */
+.ry-rayon .ft-retirer { display: grid; gap: .5rem; justify-items: start; }
+.ry-rayon .ft-retirer[open] > summary { display: inline-flex; color: var(--ui-texte-2); background: transparent; border-color: var(--ui-bord); }
+.ry-quand-ferme { display: inline-flex; align-items: center; gap: inherit; }
+.ft-retirer:not([open]) .ry-quand-ouvert, .ft-retirer[open] .ry-quand-ferme { display: none; }
+.ry-arbre > .message, .ry-nouveau > .message { margin-block-end: 1rem; }
+/* La carte « Nouveau rayon » reste sous les yeux pendant qu'on parcourt l'arbre (ordinateur). */
+@media (min-width: 1100px) { .ry-nouveau { position: sticky; inset-block-start: 1.5rem; align-self: start; } }
 .ft-rayons .opt[data-sous] { padding-inline-start: 1.25rem; }
 /* Les champs d'une caractéristique : sur une colonne dans une carte étroite. */
 .ft-champs { container-type: inline-size; display: grid; gap: 1rem; }

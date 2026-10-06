@@ -890,6 +890,74 @@ if (section("2")) {
     await autre.close();
   });
 
+  await etape("les rayons : créer, un sous-rayon, changer l'adresse, ranger, masquer, retirer", async () => {
+    const V = t.adresse("maymar.localhost");
+    const ligne = (nom) => page.locator("li.ry-rayon", { has: page.locator(".ft-attribut-nom", { hasText: nom }) });
+    const statut = (cle) => page.locator(`#${cle} [role=status]`).first().innerText();
+    await page.goto(`${C}/gestion/maymar/produits`, { waitUntil: "networkidle" });
+    await clic(page, page.getByRole("link", { name: "Rayons" }));
+    await page.waitForURL(/produits\/rayons$/);
+    await page.waitForLoadState("networkidle");
+    // Un rayon à la racine, son adresse tirée du nom.
+    await page.locator("#nouveau-nom").fill("Sacs de voyage");
+    await envoie(page.getByRole("button", { name: "Créer le rayon" }));
+    verifie((await ligne("Sacs de voyage").innerText()).includes("/categorie/sacs-de-voyage"), "l'adresse est tirée du nom");
+    verifie((await ligne("Sacs de voyage").getByRole("status").innerText()).includes("créé"), "le message paraît dans la ligne du rayon créé");
+    // Un sous-rayon, depuis la ligne de son parent : le parent est déjà choisi.
+    await clic(page, ligne("Valises").getByRole("link", { name: "Sous-rayon" }));
+    await page.waitForURL(/parent=/);
+    verifie(await page.locator("#nouveau-parent option:checked").innerText() === "Valises", "« Sous-rayon » choisit le rayon parent");
+    await page.locator("#nouveau-nom").fill("Cabine");
+    await envoie(page.getByRole("button", { name: "Créer le rayon" }));
+    verifie(await ligne("Cabine").getAttribute("data-niveau") === "2", "Cabine est rangé sous Valises");
+    // Une adresse changée : l'ancienne mène toujours au rayon.
+    const cabine = ligne("Cabine");
+    await clic(page, cabine.locator("summary", { hasText: "Modifier" }));
+    await cabine.locator("input[name=slug]").fill("petites-valises");
+    await envoie(cabine.getByRole("button", { name: "Enregistrer" }));
+    verifie((await ligne("Cabine").innerText()).includes("/categorie/petites-valises"), "la nouvelle adresse est enregistrée");
+    const vitrine = await ctx.newPage();
+    await vitrine.goto(`${V}/categorie/cabine`, { waitUntil: "networkidle" });
+    verifie(new URL(vitrine.url()).pathname === "/categorie/petites-valises", `l'ancienne adresse redirige (${vitrine.url()})`);
+    // Un rayon vide n'est ni dans le menu ni dans les puces du rayon parent.
+    await vitrine.goto(`${V}/categorie/valises`, { waitUntil: "networkidle" });
+    const liens = await vitrine.locator("a[href^='/categorie/']").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+    verifie(!liens.includes("/categorie/sacs-de-voyage") && !liens.includes("/categorie/petites-valises"), "un rayon encore vide n'est pas proposé au client");
+    // Ranger : monter Sacs de voyage devant Valises (le menu suit).
+    await envoie(ligne("Sacs de voyage").getByRole("button", { name: "Sacs de voyage : monter" }));
+    const ordre = await page.locator("li.ry-rayon[data-niveau='1'] .ft-attribut-nom").allInnerTexts();
+    verifie(ordre[0].startsWith("Sacs de voyage"), `l'ordre est changé : ${ordre.join(", ")}`);
+    verifie(await ligne("Sacs de voyage").getByRole("button", { name: "Sacs de voyage : monter" }).isDisabled(), "le premier ne monte plus");
+    await envoie(ligne("Sacs de voyage").getByRole("button", { name: "Sacs de voyage : descendre" }));
+    // Masquer Valises : il quitte le menu, son sous-rayon avec lui ; on le remet.
+    const valises = ligne("Valises");
+    await clic(page, valises.locator("summary", { hasText: "Modifier" }));
+    await clic(page, valises.locator("input[name=actif]"));
+    await envoie(valises.getByRole("button", { name: "Enregistrer" }));
+    verifie((await ligne("Valises").innerText()).includes("Masqué") && (await ligne("Cabine").innerText()).includes("Masqué avec son rayon"),
+      "masqué, et son sous-rayon avec lui");
+    await vitrine.goto(`${V}/`, { waitUntil: "networkidle" });
+    // (les sections de l'accueil gardent leurs liens écrits à la main : c'est la navigation qui compte)
+    verifie(await vitrine.locator("header a[href='/categorie/valises']").count() === 0, "Valises masqué quitte la navigation");
+    await clic(page, ligne("Valises").locator("summary", { hasText: "Modifier" }));
+    await clic(page, ligne("Valises").locator("input[name=actif]"));
+    await envoie(ligne("Valises").getByRole("button", { name: "Enregistrer" }));
+    await vitrine.goto(`${V}/`, { waitUntil: "networkidle" });
+    verifie(await vitrine.locator("header a[href='/categorie/valises']").count() > 0, "rendu visible, il revient");
+    // Retirer : « Annuler » referme sans rien faire ; puis les deux rayons d'essai partent.
+    await clic(page, ligne("Cabine").locator("summary", { hasText: "Retirer" }));
+    await clic(page, ligne("Cabine").locator("summary", { hasText: "Annuler" }));
+    verifie(!(await ligne("Cabine").locator(".ft-retirer").evaluate((d) => d.open)), "« Annuler » referme le retrait");
+    for (const nom of ["Cabine", "Sacs de voyage"]) {
+      await clic(page, ligne(nom).locator("summary", { hasText: "Retirer" }));
+      await envoie(ligne(nom).getByRole("button", { name: `Oui, retirer « ${nom} »` }));
+      verifie((await statut("rayons")).includes(`« ${nom} » retiré`), `« ${nom} » retiré`);
+    }
+    verifie(await ligne("Cabine").count() === 0 && await ligne("Sacs de voyage").count() === 0, "la liste revient comme au départ");
+    await capture(page, "gestion-rayons");
+    await vitrine.close();
+  });
+
   /* ---------------- Les réglages ---------------- */
   const section = (id) => page.locator(`section:has(#t-${id})`);
   const journal = () => page.locator("section:has(#t-journal)").innerText();

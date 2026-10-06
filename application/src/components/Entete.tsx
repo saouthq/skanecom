@@ -78,7 +78,9 @@ function entreesMenu(cadre: Cadre): EntreeMenu[] {
       .map((s) => ({ cle: s.slug, href: `/categorie/${s.slug}`, nom: champ(s, "nom") })),
   }));
   const garnis = entrees.filter((e) => e.compte > 0);
-  return garnis.length > 0 ? garnis : entrees;
+  // Tous les rayons tant que le catalogue est vide ; pas quand ses pièces sont
+  // seulement dans un rayon masqué (le menu montrerait des rayons vides).
+  return garnis.length > 0 || cadre.boutique.nb_produits > 0 ? garnis : entrees;
 }
 
 /** Les raccourcis du menu du téléphone : ses commandes (ou le suivi, sans

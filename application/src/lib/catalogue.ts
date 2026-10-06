@@ -129,6 +129,17 @@ export type CriteresSql = {
 
 export type TriSql = "nouveautes" | "selection" | "prix-asc" | "prix-desc" | "nom" | "pertinence";
 
+/** L'adresse d'aujourd'hui d'un rayon, à partir d'une adresse qu'il a quittée
+ *  (renommé au backoffice) : les liens déjà posés y mènent toujours. */
+export async function rayonDeplace(boutiqueId: string, slug: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc("rayon_par_ancienne_adresse", { p_boutique_id: boutiqueId, p_slug: slug });
+  if (error) {
+    console.error("rayon_par_ancienne_adresse", error.message);
+    return null;
+  }
+  return typeof data === "string" && data ? data : null;
+}
+
 export async function listeProduits(
   boutiqueId: string,
   criteres: CriteresSql = {},

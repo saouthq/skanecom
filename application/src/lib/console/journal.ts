@@ -81,6 +81,8 @@ export const ACTIONS: Record<string, string> = {
   "konnect.retirer": "Compte Konnect retiré",
   // Les gestes des back-offices (tracés par la boutique elle-même)
   "accueil.modifier": "Accueil de la vitrine modifié",
+  "rayon.creer": "Rayon créé", "rayon.modifier": "Rayon modifié", "rayon.ordonner": "Rayons réordonnés",
+  "rayon.image": "Image d'un rayon", "rayon.retirer": "Rayon retiré",
   "apparence.publier": "Apparence de la vitrine publiée",
   "page.creer": "Page créée", "page.modifier": "Page modifiée", "page.ordonner": "Pages réordonnées", "page.retirer": "Page retirée",
   "arrivage.annoncer": "Arrivage annoncé", "arrivage.modifier": "Arrivage modifié", "arrivage.annuler": "Arrivage annulé", "arrivage.recevoir": "Arrivage reçu",
@@ -107,6 +109,7 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "domaine", titre: "Domaines" },
   { cle: "theme", titre: "Marque" },
   { cle: "catalogue", titre: "Catalogue" },
+  { cle: "rayon", titre: "Rayons" },
   { cle: "equipe", titre: "Équipes des boutiques" },
   { cle: "support", titre: "Accès support" },
   { cle: "facturation", titre: "Facturation" },

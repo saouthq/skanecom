@@ -73,6 +73,7 @@ export default async function Catalogue({
             </form>
             {peutRecevoir ? <Link href={`${base}/reception`} className="btn btn-second"><Icone nom="colis" /> Réception</Link> : null}
             {peutRecevoir ? <Link href={`${base}/arrivages`} className="btn btn-second"><Icone nom="calendrier" /> Arrivages</Link> : null}
+            <Link href={`${base}/rayons`} className="btn btn-second"><Icone nom="boutique" /> Rayons</Link>
             <Link href={`${base}/caracteristiques`} className="btn btn-second"><Icone nom="modules" /> Caractéristiques</Link>
             {peutCreer ? (
               <Link href={`${base}/nouveau`} className="btn btn-primaire"><Icone nom="plus" /> Nouveau produit</Link>
