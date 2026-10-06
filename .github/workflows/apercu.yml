@@ -175,6 +175,13 @@ jobs:
           echo "COURRIELS_CROCHET_SECRET=$CROCHET" >> "$GITHUB_ENV"
           echo "ANNUAIRE_EN_PLUS={\"skanecom-apercu-maymar.$SOUS.workers.dev\":\"maymar\",\"skanecom-apercu-selma.$SOUS.workers.dev\":\"maison-selma\",\"skanecom-apercu-quincaillerie.$SOUS.workers.dev\":\"quincaillerie-demo\",\"skanecom-apercu-beaute.$SOUS.workers.dev\":\"yasmine-beaute\",\"skanecom-apercu-maison.$SOUS.workers.dev\":\"dar-alia\"}" >> "$GITHUB_ENV"
 
+      - name: Les adresses workers.dev, domaines principaux des boutiques (« Voir la vitrine », e-mails, partage)
+        if: env.PRET == '1'
+        run: |
+          . outils/apercu/installe.sh
+          sed "s/__SOUS__/$SOUS/g" supabase/apercu/domaines.sql > /tmp/domaines.sql
+          installe script domaines.sql /tmp/domaines.sql
+
       - name: L'authentification (crochets des codes, téléphone, adresses, administrateur)
         if: env.PRET == '1' && env.SUPABASE_ACCESS_TOKEN != ''
         run: |
