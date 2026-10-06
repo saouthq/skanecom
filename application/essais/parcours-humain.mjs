@@ -731,8 +731,12 @@ if (section("3")) {
     await feuille.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
     const boite = await feuille.boundingBox();
     const ecran = page.viewportSize();
-    verifie(Boolean(boite && ecran && Math.abs(boite.y + boite.height - ecran.height) < 2 && boite.width >= ecran.width - 1),
-      "sur téléphone, la confirmation est une feuille posée en bas de l'écran");
+    // En allure contemporaine (Maymar), elle flotte à quelques pixels du bord.
+    const flotte = (await page.evaluate(() => document.documentElement.dataset.allure)) === "contemporaine";
+    const ecart = boite && ecran ? ecran.height - (boite.y + boite.height) : -1;
+    verifie(Boolean(boite && ecran && (flotte ? ecart >= 4 && ecart <= 16 && boite.width >= ecran.width - 20
+      : Math.abs(ecart) < 2 && boite.width >= ecran.width - 1)),
+      flotte ? "sur téléphone, la confirmation est une carte posée juste au-dessus du bord" : "sur téléphone, la confirmation est une feuille posée en bas de l'écran");
     verifie(!(await tiroirOuvert(page, "tiroir-panier")), "le tiroir ne s'ouvre pas de lui-même");
     await capture(page, "mobile-confirmation");
     await feuille.getByRole("button", { name: /^Voir le panier/ }).tap();

@@ -36,6 +36,7 @@
 @import "./offres.css";
 @import "./monoproduit.css";
 @import "./apparence.css";
+@import "./allure.css";
 
 :root {
   --theme-marge: 1rem;      /* gouttière mobile : 16 px */

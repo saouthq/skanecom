@@ -1,0 +1,194 @@
+/* ============================================================================
+   L'ALLURE CONTEMPORAINE — le réglage « Allure de l'interface » de l'écran
+   Apparence (lib/theme.ts, REGLAGES_STYLE.allure ; migration 20260929115600).
+
+   « Classique » (le défaut) garde les filets et les cases du gabarit.
+   « Contemporaine » change la façon dont l'interface se tient, pas la
+   marque : les couleurs, les polices et les coins restent ceux du thème.
+
+   · Des commandes PLEINES : boutons secondaires, champs, tailles, quantité,
+     filtres et tri sur un aplat doux, sans filet ; le choix fait s'inverse
+     (encre sur fond). Arrondies quels que soient les coins du thème.
+   · Des titres de page ALIGNÉS, plus grands, sans fil d'Ariane au téléphone.
+   · Des barres d'outils EN VERRE (le tri et les filtres, la barre d'achat).
+   · Des feuilles qui FLOTTENT : le panier, les filtres, la confirmation
+     d'ajout se posent à quelques pixels du bord, arrondies, au lieu de s'y
+     coller.
+   · La galerie de la fiche dit sa photo par des points, pas « 1 / 3 ».
+
+   Chargée la dernière : à spécificité égale, elle l'emporte.
+   ========================================================================== */
+
+html[data-allure="contemporaine"] {
+  /* Commandes et champs : au moins 12 px, même sur un thème à angles droits. */
+  --al-rayon: max(var(--theme-radius-doux), 12px);
+  --al-rayon-feuille: max(var(--theme-radius-bloc), 20px);
+  --al-plein: var(--theme-surface-2);
+  --al-plein-survol: color-mix(in srgb, var(--theme-surface-2) 78%, var(--theme-filet-fort));
+  --al-verre: color-mix(in srgb, var(--theme-fond) 78%, transparent);
+}
+
+/* ---- Boutons ----------------------------------------------------------------- */
+
+html[data-allure="contemporaine"] .btn { font-weight: 600; letter-spacing: -.005em; }
+html[data-allure="contemporaine"][data-gabarit] .btn-second {
+  background: var(--al-plein); color: var(--theme-encre); border-color: transparent; box-shadow: none;
+}
+html[data-allure="contemporaine"][data-gabarit] .btn-second:hover { background: var(--al-plein-survol); color: var(--theme-encre); border-color: transparent; }
+html[data-allure="contemporaine"]:not([data-boutons="pilule"]) .btn { border-radius: var(--al-rayon); }
+html[data-allure="contemporaine"] .btn:active:not(:disabled) { transform: scale(.985); }
+html[data-allure="contemporaine"] .btn { transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe), transform .15s var(--theme-courbe); }
+
+/* ---- Champs ------------------------------------------------------------------ */
+
+html[data-allure="contemporaine"] .champ input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+html[data-allure="contemporaine"] .champ select, html[data-allure="contemporaine"] .champ textarea,
+html[data-allure="contemporaine"] .tunnel-tel {
+  background-color: var(--al-plein); border-color: transparent; border-radius: var(--al-rayon);
+}
+html[data-allure="contemporaine"] .champ input:hover, html[data-allure="contemporaine"] .champ select:hover,
+html[data-allure="contemporaine"] .champ textarea:hover, html[data-allure="contemporaine"] .tunnel-tel:hover {
+  border-color: transparent; background-color: var(--al-plein-survol);
+}
+/* Où l'on écrit : le champ s'éclaire (la surface) et prend le trait de l'encre. */
+html[data-allure="contemporaine"] .champ input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):focus-visible,
+html[data-allure="contemporaine"] .champ select:focus-visible, html[data-allure="contemporaine"] .champ textarea:focus-visible,
+html[data-allure="contemporaine"] .tunnel-tel:focus-within {
+  background-color: var(--theme-surface); border-color: var(--theme-encre);
+}
+html[data-allure="contemporaine"] .champ .tunnel-tel input { background: transparent !important; }
+html[data-allure="contemporaine"] .tunnel-tel > span { border-inline-end-color: color-mix(in srgb, var(--theme-encre) 12%, transparent); }
+html[data-allure="contemporaine"] .tunnel-recap { border-color: transparent; border-radius: var(--al-rayon-feuille); }
+html[data-allure="contemporaine"] .identification-choix { border-color: transparent; border-radius: calc(var(--al-rayon) + 3px); }
+html[data-allure="contemporaine"] .identification-canal span { border-radius: var(--al-rayon); }
+
+/* ---- Choix de déclinaison, quantité ------------------------------------------ */
+
+html[data-allure="contemporaine"][data-gabarit] .valeur:not(.valeur-couleur) {
+  background: var(--al-plein); border-color: transparent; border-radius: var(--al-rayon); box-shadow: none;
+  transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe), transform .15s var(--theme-courbe);
+}
+html[data-allure="contemporaine"][data-gabarit] .valeur:not(.valeur-couleur):hover:not(:disabled) { background: var(--al-plein-survol); border-color: transparent; }
+html[data-allure="contemporaine"][data-gabarit] .valeur:not(.valeur-couleur)[aria-pressed="true"] {
+  background: var(--theme-encre); color: var(--theme-fond); border-color: transparent; box-shadow: none;
+}
+html[data-allure="contemporaine"][data-gabarit] .valeur:not(.valeur-couleur)[aria-pressed="true"] .prix-option { color: color-mix(in srgb, var(--theme-fond) 72%, transparent); }
+html[data-allure="contemporaine"][data-gabarit] .valeur:not(.valeur-couleur):active:not(:disabled) { transform: scale(.97); }
+html[data-allure="contemporaine"][data-boutons="pilule"][data-gabarit] .valeur:not(.valeur-couleur) { border-radius: 999px; }
+html[data-allure="contemporaine"][data-gabarit] .qte { background: var(--al-plein); border-color: transparent; border-radius: 999px; }
+
+/* ---- Filtres, tri, pastilles ---------------------------------------------------- */
+
+html[data-allure="contemporaine"][data-gabarit] .btn-filtrer {
+  background: var(--al-plein); border-color: transparent; border-radius: 999px; font-weight: 600;
+}
+html[data-allure="contemporaine"][data-gabarit] .btn-filtrer:hover { background: var(--al-plein-survol); border-color: transparent; }
+html[data-allure="contemporaine"][data-gabarit] .listing-outils select {
+  background-color: var(--al-plein); border-color: transparent; border-radius: 999px; padding-inline: 1rem 2rem; font-weight: 500;
+}
+html[data-allure="contemporaine"] .puce { background: var(--al-plein); border-color: transparent; }
+html[data-allure="contemporaine"] .puce:hover { background: var(--al-plein-survol); }
+html[data-allure="contemporaine"] :is(.ed-entete-liste, .te-entete-liste) .sous-rayons a {
+  background: var(--al-plein); border-color: transparent;
+}
+html[data-allure="contemporaine"] :is(.ed-entete-liste, .te-entete-liste) .sous-rayons a:hover { background: var(--al-plein-survol); border-color: transparent; }
+html[data-allure="contemporaine"] :is(.ed-entete-liste, .te-entete-liste) .sous-rayons a[aria-current="page"] { background: var(--theme-encre); color: var(--theme-fond); }
+
+@media (max-width: 699px) {
+  /* Le tri se lit en entier (« Nouveautés d'abord ») : la barre a la place. */
+  html[data-allure="contemporaine"] .ed-listing .listing-outils select { max-inline-size: 13.5rem; }
+}
+/* La barre d'outils de la liste : en verre, sans filets. */
+html[data-allure="contemporaine"] .ed-listing .listing-outils {
+  background: var(--al-verre); -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px);
+  border-block: 0; box-shadow: 0 1px 0 color-mix(in srgb, var(--theme-filet) 70%, transparent);
+}
+
+/* ---- L'en-tête d'une liste : aligné, grand -------------------------------------- */
+
+html[data-allure="contemporaine"] .ed-entete-liste { padding-block: 1.5rem 1.75rem; text-align: start; }
+html[data-allure="contemporaine"] .ed-entete-liste .fil ol { justify-content: flex-start; }
+html[data-allure="contemporaine"] .ed-entete-liste h1 {
+  margin-block-start: 1rem; font-size: calc(clamp(3.25rem, 11vw, 6.5rem) * var(--echelle-titres, 1)); line-height: .9; text-wrap: balance;
+}
+html[data-allure="contemporaine"] .ed-entete-liste .chapo { margin-inline: 0; max-inline-size: 46ch; }
+html[data-allure="contemporaine"] .ed-entete-liste .sous-rayons { justify-content: flex-start; }
+html[data-allure="contemporaine"] .ed-entete-liste .recherche-page { margin-inline: 0; }
+@media (max-width: 699px) {
+  /* Au téléphone, le menu et le titre disent où l'on est : le fil se tait. */
+  html[data-allure="contemporaine"] .ed-entete-liste .fil { display: none; }
+  html[data-allure="contemporaine"] .ed-entete-liste h1 { margin-block-start: .25rem; }
+}
+
+/* ---- Les sections de l'accueil ---------------------------------------------------- */
+
+/* « Tout voir », « Voir les valises » : une pastille, pas un lien souligné. */
+html[data-allure="contemporaine"] :is(.ed-section-tete, .ed-recit-texte) .lien-souligne {
+  display: inline-flex; align-items: center; gap: .375rem; padding: .5625rem 1rem; margin-block-end: .25rem;
+  border-radius: 999px; background: var(--al-plein); text-decoration: none; font-weight: 600;
+  transition: background-color .2s var(--theme-courbe);
+}
+html[data-allure="contemporaine"] :is(.ed-section-tete, .ed-recit-texte) .lien-souligne:hover { background: var(--al-plein-survol); }
+html[data-allure="contemporaine"] .ed-recit-texte .lien-souligne { background: var(--theme-surface); }
+
+/* Le récit : une carte posée dans la marge, arrondie, plutôt qu'un bandeau
+   bord à bord. */
+html[data-allure="contemporaine"] .ed-recit {
+  /* Aligné sur le contenu de la page (l'enveloppe), même sur un très grand écran. */
+  margin-inline: max(var(--theme-marge), calc((100% - var(--theme-large)) / 2 + var(--theme-marge)));
+  border-radius: var(--al-rayon-feuille); overflow: hidden;
+}
+
+/* ---- Les cartes ------------------------------------------------------------------- */
+
+@media (max-width: 699px) {
+  html[data-allure="contemporaine"] .ed-grille { gap: 2rem .5rem; }
+}
+html[data-allure="contemporaine"] .ed-carte-lien { gap: .75rem; }
+html[data-allure="contemporaine"] .ed-carte-nom { font-weight: 500; }
+html[data-allure="contemporaine"] .ed-carte-prix { font-weight: 600; }
+html[data-allure="contemporaine"] .ed-carte-prix .dès { font-weight: 400; }
+html[data-allure="contemporaine"] .ed-tuile-fin { border-radius: var(--theme-radius-carte); }
+
+/* ---- La fiche ----------------------------------------------------------------------- */
+
+html[data-allure="contemporaine"] .ed-galerie-compteur { display: none; }
+@media (max-width: 899px) { html[data-allure="contemporaine"] .ed-fiche-collant > .fil { display: none; } }
+html[data-allure="contemporaine"] .ed-galerie-points { display: flex; }
+html[data-allure="contemporaine"][data-gabarit="editorial"] .fiche-prix .prix-fort { font-size: 1.5rem; font-weight: 500; }
+html[data-allure="contemporaine"] .ed-rassure { border-radius: max(var(--theme-radius-carte), 16px); }
+html[data-allure="contemporaine"] .ed-fiche-collant .etiquette { margin-block-start: .25rem; }
+
+/* La barre d'achat : du verre, posée au-dessus du bord. */
+html[data-allure="contemporaine"] .achat-mobile {
+  inset-inline: .5rem; inset-block-end: calc(.5rem + env(safe-area-inset-bottom)); padding: .5rem .5rem .5rem 1.125rem;
+  background: var(--al-verre); -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px);
+  border: 1px solid color-mix(in srgb, var(--theme-filet) 80%, transparent); border-radius: calc(var(--al-rayon) + 8px);
+}
+html[data-allure="contemporaine"][dir="rtl"] .achat-mobile { padding: .5rem 1.125rem .5rem .5rem; }
+
+/* ---- Feuilles qui flottent -------------------------------------------------------- */
+
+/* Le panier et les filtres : à quelques pixels du bord, arrondis (le menu du
+   téléphone, lui, reste plein écran). */
+html[data-allure="contemporaine"] .tiroir:not(.tiroir-menu) .tiroir-panneau {
+  margin: .5rem; block-size: calc(100% - 1rem); inline-size: min(28rem, calc(100% - 1rem));
+  border-radius: var(--al-rayon-feuille); overflow: hidden;
+}
+html[data-allure="contemporaine"] .tiroir:not(.tiroir-menu) .tiroir-tete { border-block-end-color: transparent; }
+html[data-allure="contemporaine"] .tiroir:not(.tiroir-menu) .tiroir-pied { border-block-start-color: color-mix(in srgb, var(--theme-filet) 70%, transparent); }
+
+/* La confirmation d'ajout : au téléphone, une carte posée au-dessus du bord. */
+@media (max-width: 699px) {
+  html[data-allure="contemporaine"] .confirmation-ajout {
+    inset-inline: .5rem; inset-block-end: calc(.5rem + env(safe-area-inset-bottom)); padding: 1rem 1rem 1.125rem;
+    border: 1px solid color-mix(in srgb, var(--theme-filet) 80%, transparent); border-radius: var(--al-rayon-feuille);
+  }
+}
+html[data-allure="contemporaine"] .confirmation-ajout { border-radius: var(--al-rayon-feuille); }
+html[data-allure="contemporaine"] .confirmation-vignette { border-radius: max(var(--theme-radius-net), 8px); }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-allure="contemporaine"] :is(.btn, .valeur) { transition: none; }
+  html[data-allure="contemporaine"] :is(.btn, .valeur):active:not(:disabled) { transform: none; }
+}

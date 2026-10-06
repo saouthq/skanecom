@@ -511,6 +511,12 @@ insert into public.themes (boutique_id, code, logo_chemin, logo_ratio, monogramm
       "image": {"chemin": "maymar/accueil/depart-portrait-1200.webp"}},
      {"type": "engagements"}]');
 
+-- Maymar montre l'allure contemporaine (réglage de l'écran Apparence, coupé
+-- par défaut) : commandes pleines et arrondies, coins arrondis, boutons en
+-- pilule — la direction proposée pour les vitrines, à valider sur elle.
+update public.themes set style = '{"allure": "contemporaine", "coins": "arrondis", "boutons": "pilule"}'
+ where boutique_id = '00000000-0000-4000-8000-000000000001';
+
 -- Quincaillerie : gabarit technique, jaune et noir par défaut, sans logo (le
 -- nom s'affiche).
 insert into public.themes (boutique_id, code, textes, sections) values

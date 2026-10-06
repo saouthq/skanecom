@@ -63,6 +63,7 @@ const LIBELLES: { [K in CleStyle]: { titre: string; choix: Record<Style[K], stri
   densite: { titre: "Espace entre les sections", choix: { serree: "Serré", normale: "Normal", aeree: "Aéré" } },
   mode: { titre: "Mode", choix: { clair: "Clair", sombre: "Sombre" } },
   animations: { titre: "Animations", choix: { oui: "Au défilement", non: "Aucune" } },
+  allure: { titre: "Allure de l'interface", choix: { classique: "Classique", contemporaine: "Contemporaine" } },
 };
 
 const PAGES_FIXES: { chemin: string; nom: string }[] = [
@@ -1106,6 +1107,7 @@ export function EditeurApparence({
           {/* 4. Les formes */}
           <section className="carte ap-groupe" aria-labelledby="ap-t-formes">
             <h2 id="ap-t-formes">Formes</h2>
+            <Groupe cle="allure" valeur={contenu.style.allure} regler={reglerStyle} />
             <Groupe cle="coins" valeur={contenu.style.coins} regler={reglerStyle} />
             <Groupe cle="boutons" valeur={contenu.style.boutons} regler={reglerStyle} />
             <Groupe cle="teinte" valeur={contenu.style.teinte} regler={reglerStyle} couleurs={c} />

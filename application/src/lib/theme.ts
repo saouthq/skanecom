@@ -142,6 +142,10 @@ export const REGLAGES_STYLE = {
   densite: ["serree", "normale", "aeree"],
   mode: ["clair", "sombre"],
   animations: ["oui", "non"],
+  // L'allure de l'interface (app/allure.css) : « classique », les filets et
+  // les cases du gabarit ; « contemporaine », des commandes pleines et
+  // arrondies, des titres de page alignés, des barres d'outils en verre.
+  allure: ["classique", "contemporaine"],
 } as const;
 export type CleStyle = keyof typeof REGLAGES_STYLE;
 export type Style = { [K in CleStyle]: (typeof REGLAGES_STYLE)[K][number] };
@@ -182,7 +186,7 @@ const DEFINITIONS: Record<CodeTheme, Definition> = {
     },
     angles: ANGLES.droits,
     polices: { titres: "instrument-serif", texte: "instrument-sans" },
-    style: { coins: "droits", boutons: "pleins", teinte: "encre", cartes: "nues", photos: "4-5", titres: "ample", casse: "normale", densite: "normale", mode: "clair", animations: "oui" },
+    style: { coins: "droits", boutons: "pleins", teinte: "encre", cartes: "nues", photos: "4-5", titres: "ample", casse: "normale", densite: "normale", mode: "clair", animations: "oui", allure: "classique" },
     sections: [
       { type: "hero", textes: {} },
       { type: "rayons", textes: {} },
@@ -201,7 +205,7 @@ const DEFINITIONS: Record<CodeTheme, Definition> = {
     },
     angles: ANGLES.doux,
     polices: { titres: "archivo", texte: "archivo" },
-    style: { coins: "doux", boutons: "pleins", teinte: "accent", cartes: "cadre", photos: "1-1", titres: "ample", casse: "majuscules", densite: "normale", mode: "clair", animations: "oui" },
+    style: { coins: "doux", boutons: "pleins", teinte: "accent", cartes: "cadre", photos: "1-1", titres: "ample", casse: "majuscules", densite: "normale", mode: "clair", animations: "oui", allure: "classique" },
     sections: [
       { type: "hero", textes: {} },
       { type: "rayons", textes: {} },

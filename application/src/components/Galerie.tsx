@@ -11,7 +11,8 @@ import { t } from "@/lib/i18n";
    · ÉDITORIALE — sur grand écran, les photos en pleine hauteur, les unes sous
      les autres (deux par rang, la première seule si leur nombre est impair) :
      on descend dans le produit pendant que le bloc d'achat reste à côté. Sur
-     téléphone, une bande qu'on fait glisser au doigt, avec son compteur.
+     téléphone, une bande qu'on fait glisser au doigt, avec son compteur (ou
+     ses points, en allure contemporaine).
    · TECHNIQUE — une grande vue sur fond blanc et ses vignettes : on compare
      des détails (mandrin, embout, boîtier), on ne feuillette pas un magazine.
    ========================================================================== */
@@ -55,6 +56,14 @@ export function GalerieEditoriale({ photos, nom }: { photos: PhotoAffichable[]; 
       {photos.length > 1 ? (
         <p className="ed-galerie-compteur cache-desktop" aria-hidden="true">
           {vue + 1} / {photos.length}
+        </p>
+      ) : null}
+      {/* L'allure contemporaine dit la photo par des points (app/allure.css). */}
+      {photos.length > 1 ? (
+        <p className="ed-galerie-points cache-desktop" aria-hidden="true">
+          {photos.map((p, i) => (
+            <i key={p.src} data-actif={i === vue ? "" : undefined} />
+          ))}
         </p>
       ) : null}
       <Visionneuse photos={photos} depart={agrandie} onFermer={() => setAgrandie(null)} />

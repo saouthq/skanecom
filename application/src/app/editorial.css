@@ -392,6 +392,17 @@ html[data-gabarit="editorial"] .listing-outils select { border-color: transparen
   background: color-mix(in srgb, var(--theme-fond) 88%, transparent); backdrop-filter: blur(6px);
   font-size: .75rem; font-variant-numeric: tabular-nums;
 }
+/* Les points (allure contemporaine) : celui de la photo vue s'allonge. */
+.ed-galerie-points {
+  position: absolute; inset-block-end: .875rem; inset-inline: 0; margin: 0 auto; inline-size: max-content;
+  display: none; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-fond) 70%, transparent); backdrop-filter: blur(8px);
+}
+.ed-galerie-points i {
+  display: block; inline-size: 6px; block-size: 6px; border-radius: 999px; background: color-mix(in srgb, var(--theme-encre) 30%, transparent);
+  transition: inline-size .3s var(--theme-courbe), background-color .3s var(--theme-courbe);
+}
+.ed-galerie-points i[data-actif] { inline-size: 18px; background: var(--theme-encre); }
 @media (min-width: 900px) {
   .ed-galerie-piste { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; overflow: visible; }
   .ed-galerie-piste[data-impair] > :first-child { grid-column: 1 / -1; }
