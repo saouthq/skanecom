@@ -53,7 +53,7 @@ export default async function FicheProduitBackoffice({
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
-  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }, { data: lusPaliers }, cadre, hoteConsole] = await Promise.all([
+  const [{ data, error }, { data: technique }, { data: pro }, { data: remises }, { data: lusPaliers }, cadre, hoteConsole, { data: studio }] = await Promise.all([
     sb.rpc("gestion_produit", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_fiche_technique", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     sb.rpc("gestion_pro_etat", { p_boutique_id: boutique.boutique_id }),
@@ -61,7 +61,10 @@ export default async function FicheProduitBackoffice({
     sb.rpc("gestion_paliers", { p_boutique_id: boutique.boutique_id, p_produit_id: id }),
     cadreDeGestion(sb, boutique.boutique_id),
     headers().then((h) => h.get("host")),
+    sb.rpc("gestion_studio_etat", { p_boutique_id: boutique.boutique_id }),
   ]);
+  // Le studio photo (module studio_photo) : une photo du téléphone devient une photo de catalogue.
+  const avecStudio = Boolean((studio as { actif?: boolean } | null)?.actif);
   // Les prix par quantité (« 2 pour 99 », migration 71) : trois lignes à remplir.
   const paliers = paliersDe(lusPaliers);
   const reglePrix = ["proprietaire", "admin"].includes(boutique.role);
@@ -218,6 +221,16 @@ export default async function FicheProduitBackoffice({
                                   ) : null}
                                   <div><button className="btn btn-primaire">Enregistrer</button></div>
                                 </form>
+                                {avecStudio && f.images.length < 12 ? (
+                                  <form action={actionPhotos} method="post" className="ph-studio">
+                                    <input type="hidden" name="action" value="studio" />
+                                    <input type="hidden" name="image_id" value={img.id} />
+                                    <button className="btn btn-second btn-bloc">
+                                      <Icone nom="magie" taille={15} /> Passer au studio
+                                    </button>
+                                    <p className="aide">L&apos;objet est détouré et posé sur le fond de votre vitrine, au format des cartes. Une nouvelle photo s&apos;ajoute : celle-ci reste.</p>
+                                  </form>
+                                ) : null}
                                 <div className="ph-feuille-pied">
                                   {i > 0 ? (
                                     <form action={actionPhotos} method="post">

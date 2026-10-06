@@ -25,6 +25,7 @@ export const LIBELLES_MODULES: Record<string, string> = {
   avis: "Avis clients",
   promotions: "Promotions",
   skanfact: "Facturation SkanFact",
+  studio_photo: "Studio photo",
 };
 
 export const LIBELLES_THEME: Record<string, string> = {

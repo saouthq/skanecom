@@ -38,6 +38,7 @@ const ICONES: Record<string, NomIcone> = {
   avis: "etoile",
   promotions: "etiquette",
   skanfact: "fichier",
+  studio_photo: "magie",
 };
 
 export default async function Modules({ params, searchParams }: {

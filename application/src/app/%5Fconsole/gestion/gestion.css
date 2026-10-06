@@ -502,6 +502,9 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .ph-feuille-corps { display: grid; align-content: start; gap: 1rem; padding: 1.25rem; }
 .ph-feuille-tete { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .ph-feuille-tete h3 { font-size: .9375rem; font-weight: 600; }
+/* Le studio photo : le geste, puis ce qu'il fait, en une ligne d'aide. */
+.ph-studio { display: grid; gap: .375rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.ph-studio .btn .icone { color: var(--ui-accent, currentColor); }
 .ph-feuille-pied { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord-leger); }
 .ph-retirer { color: var(--ui-rouge); }
 .ph-retirer:hover { background: var(--ui-rouge-fond); color: var(--ui-rouge); }

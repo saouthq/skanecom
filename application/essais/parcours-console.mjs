@@ -762,7 +762,7 @@ await etape("les modules de la boutique", async () => {
   await clic(page, page.getByRole("link", { name: /^Modules/ }));
   await page.waitForURL(/\/modules$/);
   const lignes = page.locator(".md-module");
-  verifie((await lignes.count()) === 9 && (await page.locator(".md-module[data-actif]").count()) === 0,
+  verifie((await lignes.count()) === 10 && (await page.locator(".md-module[data-actif]").count()) === 0,
     `${await lignes.count()} modules, aucun actif pour une boutique neuve`);
   // Le paiement en ligne est construit (migration …_konnect) : il s'active, sur le compte Konnect de la boutique.
   const enLigne = page.locator('.md-module[data-module="paiement_en_ligne"]');

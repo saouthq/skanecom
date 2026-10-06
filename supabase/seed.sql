@@ -517,6 +517,11 @@ insert into public.themes (boutique_id, code, logo_chemin, logo_ratio, monogramm
 update public.themes set style = '{"allure": "contemporaine", "coins": "arrondis", "boutons": "pilule"}'
  where boutique_id = '00000000-0000-4000-8000-000000000001';
 
+-- Et le studio photo (module coupé par défaut) : ses valises attendent leurs
+-- photos, prises au téléphone par la boutique.
+insert into plateforme.modules_actifs (boutique_id, module) values
+  ('00000000-0000-4000-8000-000000000001', 'studio_photo');
+
 -- Quincaillerie : gabarit technique, jaune et noir par défaut, sans logo (le
 -- nom s'affiche).
 insert into public.themes (boutique_id, code, textes, sections) values

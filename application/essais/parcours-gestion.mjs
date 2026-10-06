@@ -733,6 +733,33 @@ if (section("2")) {
     cheminsRetires.push(chemin);
   });
 
+  // Le studio photo (module studio_photo, allumé sur Maymar par les données de
+  // démonstration). En local, Cloudflare Images est simulé : le détourage n'y
+  // est pas, la mise au format et le fond, si.
+  await etape("passer une photo au studio", async () => {
+    const originale = await cheminDe(vignettes().first());
+    await clic(page, vignettes().first().locator(".ph-image"));
+    const feuille = page.locator(".ph-feuille:popover-open");
+    await feuille.waitFor();
+    verifie((await feuille.innerText()).includes("L'objet est détouré"), "la feuille dit ce que fait le studio, et que l'originale reste");
+    await envoie(feuille.getByRole("button", { name: "Passer au studio" }));
+    verifie((await ok()).includes("Photo studio ajoutée"), `« ${await ok()} »`);
+    verifie(await vignettes().count() === 2 && await cheminDe(vignettes().first()) === originale,
+      "une photo de plus, à la fin : l'originale reste la principale");
+    const studio = await cheminDe(vignettes().nth(1));
+    const f = await fichierLocal(studio);
+    const [l, h] = f.status === 200 ? tailleWebp(f.octets) : [0, 0];
+    verifie(f.status === 200 && f.type === "image/webp" && l === 1200 && h === 1500, `au format des cartes, en WebP : ${l} × ${h}`);
+    await page.evaluate(() => window.scrollBy(0, -96));
+    await capture(page, "gestion-photo-studio");
+    // La fiche revient à une photo, pour la suite du parcours.
+    await clic(page, vignettes().nth(1).locator(".ph-image"));
+    const deuxieme = page.locator(".ph-feuille:popover-open");
+    await deuxieme.waitFor();
+    await envoie(deuxieme.getByRole("button", { name: "Retirer la photo" }));
+    verifie(await vignettes().count() === 1, "retirée, il reste l'originale");
+  });
+
   /* ---------------- Les fiches techniques (B9) ---------------- */
   const nouvelleCaracteristique = async ({ nom, unite = "", type, rayon }) => {
     const form = page.locator("section:has(#t-nouvel-attribut) form");

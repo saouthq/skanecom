@@ -2,11 +2,14 @@ import { accesEquipe, clientSession } from "@/lib/console/session";
 import { memeOrigine, vers, versAvecErreur } from "@/lib/console/http";
 import { messageCatalogue } from "@/lib/gestion/catalogue";
 import { POIDS_MAX, deposerFichier, retirerFichier, typeImage } from "@/lib/gestion/fichiers";
+import { cadreDeGestion } from "@/lib/gestion/pages";
+import { poserEnStudio } from "@/lib/gestion/studio";
 
 /* ============================================================================
    LES PHOTOS D'UN PRODUIT — ajouter (formulaire multipart ; le navigateur
    les a d'ordinaire réduites, voir DepotPhotos), légender, déplacer,
-   retirer. Réponse par une redirection 303 vers la fiche, à la hauteur des
+   retirer, passer au studio (module studio_photo : une nouvelle photo,
+   l'objet détouré sur le fond de la vitrine ; l'originale reste). Réponse par une redirection 303 vers la fiche, à la hauteur des
    photos. Le fichier est déposé AVANT d'être inscrit en base ; si la base le
    refuse, il est retiré aussitôt.
    ========================================================================== */
@@ -90,6 +93,41 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       const { error } = await sb.rpc("gestion_deplacer_photo", { p_boutique_id: b, p_image_id: texte("image_id"), p_vers: texte("vers") });
       if (error) return retour(messageCatalogue(error.hint, error.message));
       return retour(texte("vers") === "premiere" ? "Photo mise en premier : c'est elle que montrent les listes." : "Ordre des photos enregistré.", true);
+    }
+
+    case "studio": {
+      const { data: etat } = await sb.rpc("gestion_studio_etat", { p_boutique_id: b });
+      if (!(etat as { actif?: boolean } | null)?.actif) return retour("Le studio photo n'est pas ouvert pour cette boutique.");
+      const [{ data: produit, error }, cadre] = await Promise.all([
+        sb.rpc("gestion_produit", { p_boutique_id: b, p_produit_id: id }),
+        cadreDeGestion(sb, b),
+      ]);
+      if (error) return retour(messageCatalogue(error.hint, error.message));
+      const images = ((produit as { images?: { id: string; chemin: string; alt: string | null }[] } | null)?.images ?? []);
+      const origine = images.find((i) => i.id === texte("image_id"));
+      if (!origine) return retour("Photo introuvable : rechargez la page.");
+      if (images.length >= 12) return retour("Douze photos au plus : retirez-en une avant de passer celle-ci au studio.");
+
+      let corps: ArrayBuffer;
+      try {
+        corps = await poserEnStudio(origine.chemin, cadre?.theme.couleurs.surface_2);
+      } catch (e) {
+        console.error("photos : studio en échec", e);
+        return retour("Le studio n'a pas pu traiter cette photo : recommencez dans un instant, ou essayez une photo plus nette.");
+      }
+      const chemin = `${slug}/produits/${id}/${nomAuHasard()}.webp`;
+      try {
+        await deposerFichier(chemin, corps, "image/webp");
+      } catch (e) {
+        console.error("photos : dépôt du studio en échec", e);
+        return retour("Le dépôt de la photo a échoué : recommencez dans un instant.");
+      }
+      const { error: ajout } = await sb.rpc("gestion_ajouter_photo", { p_boutique_id: b, p_produit_id: id, p_chemin: chemin, p_alt: origine.alt });
+      if (ajout) {
+        await retirerFichier(chemin).catch(() => {});
+        return retour(messageCatalogue(ajout.hint, ajout.message));
+      }
+      return retour("Photo studio ajoutée à la fin : comparez-la, mettez-la en premier si elle vous plaît, l'originale reste.", true);
     }
 
     case "retirer": {
