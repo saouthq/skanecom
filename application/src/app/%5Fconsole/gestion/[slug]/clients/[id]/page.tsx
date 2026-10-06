@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { lieu } from "@/lib/commande";
 import { notFound, redirect } from "next/navigation";
 import { Prix } from "@/components/Prix";
 import { EnTetePage } from "@/components/console/Coquille";
@@ -192,14 +193,14 @@ export default async function FicheClientBackoffice({
                     <li key={`a-${i}`}>
                       <span className="font-medium">{a.nom}{a.par_defaut ? <span className="ui-etat cl-defaut">Par défaut</span> : null}</span>
                       <span>{a.ligne1}{a.ligne2 ? `, ${a.ligne2}` : ""}</span>
-                      <span className="discret">{[a.code_postal, a.ville, a.gouvernorat].filter(Boolean).join(" ")}</span>
+                      <span className="discret">{[a.code_postal, lieu(a.ville, a.gouvernorat)].filter(Boolean).join(" ")}</span>
                     </li>
                   ))}
                   {c.adresses.length === 0
                     ? c.livraisons.map((l, i) => (
                         <li key={`l-${i}`}>
                           <span>{l.ligne1}</span>
-                          <span className="discret">{[l.ville, l.gouvernorat].filter(Boolean).join(", ")} · livré{l.fois > 1 ? ` ${l.fois} fois` : " une fois"}</span>
+                          <span className="discret">{lieu(l.ville, l.gouvernorat)} · {l.fois > 1 ? `${l.fois} commandes` : "1 commande"} à cette adresse</span>
                         </li>
                       ))
                     : null}

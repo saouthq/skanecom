@@ -106,7 +106,7 @@ export default async function ServiceApresVente({
                       <strong>{d.client_nom}</strong>
                       <span className="bo-ligne-coord">
                         <span>{telephoneLisible(d.client_telephone)}</span>
-                        <span>{d.commande}</span>
+                        <span className="bo-ligne-lieu"><Icone nom="commandes" taille={12} />{d.commande}</span>
                       </span>
                     </span>
                   </span>

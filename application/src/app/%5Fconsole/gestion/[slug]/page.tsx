@@ -217,7 +217,10 @@ export default async function Commandes({
                       <strong>{c.contact_nom}</strong>
                       <span className="bo-ligne-coord">
                         <span>{telephoneLisible(c.contact_telephone)}</span>
-                        <span>{c.mode_livraison === "retrait" ? "retrait en magasin" : lieu(c.ville, c.gouvernorat)}</span>
+                        <span className="bo-ligne-lieu">
+                          <Icone nom={c.mode_livraison === "retrait" ? "boutique" : "lieu"} taille={12} />
+                          {c.mode_livraison === "retrait" ? "retrait en magasin" : lieu(c.ville, c.gouvernorat)}
+                        </span>
                       </span>
                     </span>
                   </span>

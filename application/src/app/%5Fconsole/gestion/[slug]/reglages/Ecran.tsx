@@ -10,6 +10,7 @@ import { SECTIONS, kilos, kilosChamp, libelleTranche, lignesJournal, montantCham
 import { GROUPES, groupeDe, type Groupe } from "@/lib/gestion/reglages-ecrans";
 import { CHAMPS_LEGAUX } from "@/lib/legal";
 import { EXPORTS } from "@/lib/gestion/export";
+import { typographie } from "@/lib/typographie";
 
 /* ============================================================================
    LES RÉGLAGES DE LA BOUTIQUE — « quand t'as un doute, fais les deux et
@@ -56,7 +57,7 @@ function Section({ id, titre, description, etat, retour, children }: {
       <div className="carte-tete">
         <div>
           <h2 id={`t-${id}`} className="rg-section-titre">{titre}{etat}</h2>
-          <p>{description}</p>
+          <p>{typeof description === "string" ? typographie(description) : description}</p>
         </div>
       </div>
       <MessageRetour retour={retour} />
@@ -79,7 +80,7 @@ function Alternative({ nom, valeur, options, legende }: {
           <input type="radio" name={nom} value={o.valeur} defaultChecked={valeur === o.valeur} />
           <span>
             <b>{o.titre}{o.conseil ? <span className="rg-conseil">{o.conseil}</span> : null}</b>
-            <span className="aide">{o.aide}</span>
+            <span className="aide">{typographie(o.aide)}</span>
           </span>
         </label>
       ))}
@@ -100,7 +101,7 @@ function Interrupteur({ cle, valeur, titre, aide, ferme, children }: {
     <li className="rg-inter">
       <label className="rg-inter-rang">
         <input type="hidden" name={`champ.${cle}`} value="1" />
-        <span className="rg-inter-texte"><b>{titre}</b><span className="aide">{aide}</span></span>
+        <span className="rg-inter-texte"><b>{titre}</b><span className="aide">{typographie(aide)}</span></span>
         <span className="rg-bascule">
           <input type="checkbox" name={cle} value="1" defaultChecked={valeur} />
           <span className="rg-piste" aria-hidden="true" />
@@ -120,7 +121,7 @@ function Verrou({ titre, aide, formule, element = "li" }: { titre: string; aide:
       <div className="rg-inter-rang">
         <span className="rg-inter-texte">
           <b>{titre} <span className="ui-etat rg-verrou-etat"><Icone nom="cle" taille={12} /> {formule ? `Formule ${formule}` : "Hors formule"}</span></b>
-          <span className="aide">{aide}</span>
+          <span className="aide">{typographie(aide)}</span>
           <span className="aide rg-verrou-aide">
             {formule ? `Vient avec la formule ${formule} : demandez-la à SkanEcom.` : "Pas dans votre formule : demandez-la à SkanEcom."}
           </span>
@@ -315,7 +316,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                   <span className="rg-tuile-icone" aria-hidden="true"><Icone nom={g.icone} taille={18} /></span>
                   <span className="rg-tuile-texte">
                     <b>{g.titre}</b>
-                    <span className="rg-tuile-desc">{g.description}</span>
+                    <span className="rg-tuile-desc">{typographie(g.description)}</span>
                     <span className="rg-tuile-etat">{alerte(g.cle) ? <Icone nom="alerte" taille={13} /> : null}{resumes[g.cle]}</span>
                   </span>
                   <Icone nom="droite" taille={16} className="rg-tuile-fleche" />
@@ -798,8 +799,8 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                       <li className="rg-inter rg-indispo">
                         <span className="rg-inter-rang">
                           <span className="rg-inter-texte">
-                            <b>Paiement en ligne (Konnect) <span className="ui-etat">Bientôt</span></b>
-                            <span className="aide">Prévu, mais à activer par SkanEcom une fois le compte marchand de la boutique ouvert.</span>
+                            <b>Paiement en ligne (Konnect) <span className="ui-etat">Sur demande</span></b>
+                            <span className="aide">SkanEcom l&apos;allume pour votre boutique ; vous branchez ensuite ici votre propre compte Konnect.</span>
                           </span>
                           <span className="rg-bascule">
                             <input type="checkbox" disabled aria-label="Paiement en ligne (Konnect), non disponible" />
@@ -946,7 +947,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                           <input id="garantie" name="sav.garantie_mois" type="number" min={0} max={120} inputMode="numeric" defaultValue={Number(v("sav.garantie_mois") ?? 0)} />
                           <span>mois</span>
                         </span>
-                        <span className="aide">Sur la vitrine (« Garantie 12 mois ») et sur chaque demande : encore couverte ou non. 0 = la garantie légale et celle du fabricant, sans durée annoncée.</span>
+                        <span className="aide">{typographie(`Sur la vitrine (« Garantie ${Number(v("sav.garantie_mois") ?? 0) || 12} mois ») et sur chaque demande : encore couverte ou non. 0 = la garantie légale et celle du fabricant, sans durée annoncée.`)}</span>
                       </div>
                       <p className="aide rg-fixe">
                         <Icone nom="outil" taille={14} /> <span><a href={`/gestion/${slug}/sav`}>Les demandes des clients</a> : à rappeler, en cours, closes.</span>
@@ -1049,11 +1050,11 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                   <div className="grille-champs">
                     <div className="champ">
                       <label htmlFor="rne">Identifiant unique (RNE)</label>
-                      <input id="rne" name="legal.identifiant_rne" defaultValue={texteDe("legal.identifiant_rne")} maxLength={300} />
+                      <input id="rne" name="legal.identifiant_rne" defaultValue={texteDe("legal.identifiant_rne")} maxLength={300} placeholder="Ex. 1234567A" autoComplete="off" />
                     </div>
                     <div className="champ">
                       <label htmlFor="matricule">Matricule fiscal</label>
-                      <input id="matricule" name="legal.matricule_fiscal" defaultValue={texteDe("legal.matricule_fiscal")} maxLength={300} />
+                      <input id="matricule" name="legal.matricule_fiscal" defaultValue={texteDe("legal.matricule_fiscal")} maxLength={300} placeholder="Ex. 1234567/A/M/000" autoComplete="off" />
                     </div>
                   </div>
                   <div className="champ">
@@ -1098,7 +1099,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                   <li key={cle} className="rg-export">
                     <span className="rg-export-texte">
                       <b>{x.titre}</b>
-                      <span className="aide">{x.aide}</span>
+                      <span className="aide">{typographie(x.aide)}</span>
                     </span>
                     <a className="btn btn-second btn-petit" href={`/gestion/${slug}/export/${cle}`} download>
                       <Icone nom="fichier" taille={14} /> Télécharger (CSV)
@@ -1115,8 +1116,8 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
             <p className="message">Le propriétaire ou l&apos;administrateur de la boutique télécharge ses données.</p>
           ) : null}
 
-          {/* Le journal : celui de la page, ou tout entier. */}
-          {groupe === "journal" ? (
+          {/* Le journal : celui de la page, ou tout entier (« Vos données » n'a pas de réglage : pas de journal). */}
+          {groupe === "donnees" ? null : groupe === "journal" ? (
             <Journal lignes={journalDe(null)} titre="Tous les changements"
               vide="Aucun changement : la boutique suit les réglages de départ de SkanEcom." zones={zonesParId} gouvernorats={gouvParCode} maintenant={maintenant} />
           ) : (

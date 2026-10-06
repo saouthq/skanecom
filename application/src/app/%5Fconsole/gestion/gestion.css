@@ -109,7 +109,9 @@
    (« Hammam-Sousse, Sousse » ne tenait pas sur une colonne étroite). */
 .bo-ligne-client-texte > .bo-ligne-coord { display: flex; flex-wrap: wrap; column-gap: .375rem; white-space: normal; }
 .bo-ligne-coord > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-inline-size: 100%; }
-.bo-ligne-coord > span + span::before { content: "· "; }
+/* Le lieu, précédé de son icône (pas d'un « · », qui commencerait la ligne une fois repliée). */
+.bo-ligne-lieu { display: inline-flex; align-items: center; gap: .1875rem; }
+.bo-ligne-lieu > .icone { flex: none; color: var(--ui-texte-3); }
 .bo-ligne-articles { grid-area: articles; font-size: .8125rem; color: var(--ui-texte-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bo-ligne-articles span { color: var(--ui-texte-3); }
 .bo-badges { grid-area: badges; flex-wrap: wrap; min-inline-size: 0; }
@@ -336,8 +338,10 @@ a[aria-current="page"] .compte-alerte { background: var(--ui-ambre); color: #fff
 .cat-ligne:last-child { border-block-end: 0; }
 .cat-ligne-lien {
   display: grid; align-items: center; gap: .25rem .875rem; padding: .75rem 1rem;
+  /* Au téléphone : le nom sur toute la largeur (deux lignes au plus), puis l'état et
+     le prix, puis le stock et ses alertes — la colonne du stock n'écrase plus le nom. */
   grid-template-columns: 48px minmax(0, 1fr) auto;
-  grid-template-areas: "img nom prix" "img etat stock";
+  grid-template-areas: "img nom nom" "img etat prix" "img stock stock";
   transition: background-color .12s;
 }
 .cat-ligne-lien:hover { background: var(--ui-survol); }
@@ -371,7 +375,11 @@ a[aria-current="page"] .compte-alerte { background: var(--ui-ambre); color: #fff
 .mvt-plus-anciens > summary::-webkit-details-marker { display: none; }
 .mvt-plus-anciens[open] > summary { margin-block-end: .75rem; }
 .cat-stock-bas { display: grid; gap: .25rem; justify-items: start; }
-.cat-ligne-stock { grid-area: stock; justify-self: end; font-size: .8125rem; color: var(--ui-texte-2); }
+.cat-ligne-stock { grid-area: stock; justify-self: start; font-size: .8125rem; color: var(--ui-texte-2); }
+@media (max-width: 899.98px) {
+  .cat-ligne-nom strong { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .cat-stock-bas { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; }
+}
 .cat-ligne-prix { grid-area: prix; justify-self: end; font-weight: 500; white-space: nowrap; }
 @media (min-width: 900px) {
   .cat-ligne-lien {
@@ -870,7 +878,7 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .sav-statut-refusee { color: var(--ui-rouge); background: var(--ui-rouge-fond); box-shadow: inset 0 0 0 1px var(--ui-rouge-bord); }
 .sav-cloture-resolue .bo-action-icone { background: var(--ui-vert-fond); color: var(--ui-vert); box-shadow: inset 0 0 0 1px var(--ui-vert-bord); }
 .sav-cloture-refusee .bo-action-icone { background: var(--ui-rouge-fond); color: var(--ui-rouge); box-shadow: inset 0 0 0 1px var(--ui-rouge-bord); }
-.sav-ligne-article { display: grid; gap: .125rem; min-inline-size: 0; }
+.sav-ligne-article { display: grid; gap: .125rem; min-inline-size: 0; white-space: normal; }
 .sav-produit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-texte); font-weight: 500; }
 .sav-produit span { color: var(--ui-texte-2); font-weight: 400; }
 /* Le problème du client : deux lignes lisibles plutôt qu'une coupée au tiers. */
@@ -1968,7 +1976,7 @@ a.pg-titre:hover { color: var(--ui-accent); }
 .ob-form .champ { display: contents; }
 .ob-form .champ > label, .ob-form .champ > .aide { grid-column: 1 / -1; }
 .ob-form .champ > input { grid-column: 1; grid-row: 2; }
-.ob-form > .btn { grid-column: 2; grid-row: 2; }
+.ob-form > .btn { grid-column: 2; grid-row: 2; justify-self: start; }
 .ob-vide .ob-fixer { margin-block-start: .25rem; }
 @media (max-width: 699px) {
   .ob-part { margin-inline-start: 0; }

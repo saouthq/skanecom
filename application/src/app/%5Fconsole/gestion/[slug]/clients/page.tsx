@@ -55,7 +55,9 @@ export default async function Clients({
     <>
       <EnTetePage
         titre="Clients"
-        description={`${liste.compteurs.tous} client${liste.compteurs.tous > 1 ? "s" : ""}, dont ${liste.compteurs.fideles} fidèle${liste.compteurs.fideles > 1 ? "s" : ""} (livrés au moins deux fois).`}
+        description={`${liste.compteurs.tous} client${liste.compteurs.tous > 1 ? "s" : ""}, ${liste.compteurs.fideles
+          ? `dont ${liste.compteurs.fideles} fidèle${liste.compteurs.fideles > 1 ? "s" : ""}`
+          : "aucun fidèle encore"} (livré${liste.compteurs.fideles > 1 ? "s" : ""} au moins deux fois).`}
         actions={
           <form role="search" method="get" action={base} className="bo-recherche">
             <input type="hidden" name="filtre" value={filtre.cle} />

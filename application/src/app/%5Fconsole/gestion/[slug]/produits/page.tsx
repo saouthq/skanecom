@@ -133,12 +133,19 @@ export default async function Catalogue({
                 <span className="cat-ligne-stock">
                   {p.stock_total === 0 ? (
                     <span className="ui-etat ui-etat-point ui-etat-rouge">Rupture</span>
-                  ) : p.variantes_bas > 0 ? (
+                  ) : p.variantes_bas > 0 || (p.variantes_epuisees ?? 0) > 0 ? (
                     <span className="cat-stock-bas">
                       <span className="tabular-nums">{p.stock_total} en stock</span>
-                      <span className="ui-etat ui-etat-point ui-etat-ambre" title="Sous le seuil d'alerte de la déclinaison">
-                        {p.variantes_bas} déclinaison{p.variantes_bas > 1 ? "s" : ""} en stock bas
-                      </span>
+                      {(p.variantes_epuisees ?? 0) > 0 ? (
+                        <span className="ui-etat ui-etat-point ui-etat-rouge" title="Plus rien en stock pour cette déclinaison">
+                          {p.variantes_epuisees} déclinaison{(p.variantes_epuisees ?? 0) > 1 ? "s" : ""} épuisée{(p.variantes_epuisees ?? 0) > 1 ? "s" : ""}
+                        </span>
+                      ) : null}
+                      {p.variantes_bas > 0 ? (
+                        <span className="ui-etat ui-etat-point ui-etat-ambre" title="Sous le seuil d'alerte de la déclinaison">
+                          {p.variantes_bas} déclinaison{p.variantes_bas > 1 ? "s" : ""} en stock bas
+                        </span>
+                      ) : null}
                     </span>
                   ) : (
                     <span className="tabular-nums">{p.stock_total} en stock</span>

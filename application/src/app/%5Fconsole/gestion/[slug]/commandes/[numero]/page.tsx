@@ -15,7 +15,6 @@ import {
   LIBELLES_ORIGINE_NON_RETRAIT,
   LIBELLES_ORIGINE_REFUS,
   LIBELLES_RESULTAT,
-  LIBELLES_ROLE,
   age,
   libelleStatut,
   lienAppel,
@@ -868,7 +867,7 @@ export default async function FicheCommande({
                     ) : null}
                   </p>
                   <p className="text-petit discret mt-3 bo-client-depuis">
-                    Client depuis le {new Date(f.client.depuis).toLocaleDateString("fr-FR", { timeZone: "Africa/Tunis" })}
+                    Client depuis le {new Date(f.client.depuis).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" })}
                     <Link href={`/gestion/${slug}/clients/${f.client.telephone.replace(/\D/g, "")}`} className="lien">Voir sa fiche <Icone nom="droite" taille={12} /></Link>
                   </p>
                 </>
@@ -965,7 +964,6 @@ export default async function FicheCommande({
               ) : (
                 <p className="text-petit discret mt-2">{f.note_interne ?? "Aucune note."}</p>
               )}
-              <p className="text-petit discret bo-role">Vous êtes : {LIBELLES_ROLE[role] ?? role}.</p>
             </section>
           </aside>
         </div>

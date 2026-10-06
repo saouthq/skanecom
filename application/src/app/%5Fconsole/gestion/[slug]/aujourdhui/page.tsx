@@ -183,7 +183,9 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const aFaire = taches.filter((x) => x.nombre > 0);
   const aJour = taches.filter((x) => x.nombre === 0);
   const stockAlerte = e.stock.ruptures + e.stock.bas;
-  const total = aFaire.reduce((n, x) => n + x.nombre, 0);
+  // Ce qui attend un geste : pas ce qui suit son cours (les colis en route, les
+  // précommandes) — seulement les colis en retard, qui demandent un appel.
+  const total = aFaire.reduce((n, x) => n + (x.enCours ? 0 : x.nombre), 0) + c.en_retard;
 
   return (
     <>
@@ -241,7 +243,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
                       <span className="ui-etat ui-etat-bleu"><Icone nom="calendrier" taille={12} /> Arrive le {jourArrivageCourt(arrivePar.get(p.sku)!)}</span>
                     ) : null}
                     <span className={p.stock <= 0 ? "ui-etat ui-etat-rouge" : "ui-etat ui-etat-ambre"}>
-                      {p.stock <= 0 ? "Épuisé" : `${p.stock} en stock`}
+                      {p.stock <= 0 ? "Épuisée" : `${p.stock} en stock`}
                     </span>
                   </span>
                 </Link>

@@ -5,10 +5,10 @@ import { BoutonCopier } from "@/components/console/BoutonCopier";
 import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
-import { dateJournal, deNom } from "@/lib/console/libelles";
+import { deNom } from "@/lib/console/libelles";
 import { COOKIE_LIEN, ROLES_EQUIPE, VALIDITE_LIEN, lienWhatsAppPartage, messageLien } from "@/lib/console/equipe";
 import { cheminEquipeBoutique, lienEncoreUtile, lienRemis, type MembreBoutique } from "@/lib/gestion/equipe";
-import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
+import { LIBELLES_ROLE, quand } from "@/lib/gestion/libelles";
 import type { AccesSupport } from "@/lib/console/support";
 import { ListeAcces } from "@/components/console/AccesSupport";
 
@@ -27,6 +27,12 @@ function etatDe(m: MembreBoutique): { texte: string; classe: string } {
    autres rôles n'ont pas cette page. En bas, les accès du support SkanEcom
    (C7) : qui est entré, quand, dans quel mode et pourquoi.
    ========================================================================== */
+/** « vu aujourd'hui à 05:02 », « vu hier à 23:51 », « vu le 27 sept. à 18:40 ». */
+function vuLe(iso: string): string {
+  const q = quand(iso);
+  return /^(aujourd|hier)/.test(q) ? `vu ${q}` : `vu le ${q}`;
+}
+
 export default async function EquipeBoutique({
   params,
   searchParams,
@@ -95,7 +101,9 @@ export default async function EquipeBoutique({
           </section>
         ) : null}
 
+        {/* La colonne de gauche : les membres, puis l'invitation, sans attendre la carte de droite. */}
         <div className="grille-2">
+          <div className="pile">
           <section className="carte" aria-labelledby="t-membres">
             <div className="carte-tete">
               <div>
@@ -120,7 +128,7 @@ export default async function EquipeBoutique({
                           <span className={etat.classe}>{etat.texte}</span>
                           {!gere || !m.actif ? <span>{LIBELLES_ROLE[m.role] ?? m.role}</span> : null}
                           {m.actif && !m.en_attente
-                            ? <span>{m.derniere_connexion ? `vu le ${dateJournal(m.derniere_connexion)}` : "jamais connecté"}</span>
+                            ? <span>{m.derniere_connexion ? vuLe(m.derniere_connexion) : "jamais connecté"}</span>
                             : null}
                           {m.actif && aal2 ? (
                             <span className="inline-flex items-center gap-1">
@@ -173,6 +181,37 @@ export default async function EquipeBoutique({
               })}
             </ul>
           </section>
+          {gere ? (
+            <section className="carte" aria-labelledby="t-inviter">
+              <div className="carte-tete">
+                <div>
+                  <h2 id="t-inviter" className="carte-titre-icone"><Icone nom="plus" /> Inviter une personne</h2>
+                  <p>Son compte est créé et vous recevez un lien à lui envoyer : elle y choisit son mot de passe, puis arrive dans le backoffice.</p>
+                </div>
+              </div>
+              <form action={`${action}/inviter`} method="post" className="formulaire">
+                <div className="champ">
+                  <label htmlFor="email">Adresse e-mail</label>
+                  <input id="email" name="email" type="email" required autoComplete="off" defaultValue={messages.email ?? ""} placeholder="prenom@exemple.tn" />
+                  <p className="aide">Son identifiant. Le lien d&apos;invitation s&apos;affiche ensuite : vous l&apos;envoyez par e-mail d&apos;un clic, ou le transmettez vous-même (WhatsApp, SMS).</p>
+                </div>
+                <fieldset className="choix">
+                  <legend>Rôle</legend>
+                  {ROLES_EQUIPE.map((r) => (
+                    <label key={r.code} className="choix-carte role-choix">
+                      <input type="radio" name="role" value={r.code} required defaultChecked={(messages.role ?? "confirmateur") === r.code} />
+                      <span>
+                        <b>{LIBELLES_ROLE[r.code]}</b>
+                        <span className="aide">{r.aide}</span>
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+                <button type="submit" className="btn btn-primaire btn-bloc">Inviter</button>
+              </form>
+            </section>
+          ) : null}
+          </div>
 
           {gere ? (
             <section className="carte" aria-labelledby="t-double-auth" id="double-auth">
@@ -209,36 +248,6 @@ export default async function EquipeBoutique({
             </section>
           ) : null}
 
-          {gere ? (
-            <section className="carte" aria-labelledby="t-inviter">
-              <div className="carte-tete">
-                <div>
-                  <h2 id="t-inviter" className="carte-titre-icone"><Icone nom="plus" /> Inviter une personne</h2>
-                  <p>Son compte est créé et vous recevez un lien à lui envoyer : elle y choisit son mot de passe, puis arrive dans le backoffice.</p>
-                </div>
-              </div>
-              <form action={`${action}/inviter`} method="post" className="formulaire">
-                <div className="champ">
-                  <label htmlFor="email">Adresse e-mail</label>
-                  <input id="email" name="email" type="email" required autoComplete="off" defaultValue={messages.email ?? ""} placeholder="prenom@exemple.tn" />
-                  <p className="aide">Son identifiant. Le lien d&apos;invitation s&apos;affiche ensuite : vous l&apos;envoyez par e-mail d&apos;un clic, ou le transmettez vous-même (WhatsApp, SMS).</p>
-                </div>
-                <fieldset className="choix">
-                  <legend>Rôle</legend>
-                  {ROLES_EQUIPE.map((r) => (
-                    <label key={r.code} className="choix-carte role-choix">
-                      <input type="radio" name="role" value={r.code} required defaultChecked={(messages.role ?? "confirmateur") === r.code} />
-                      <span>
-                        <b>{LIBELLES_ROLE[r.code]}</b>
-                        <span className="aide">{r.aide}</span>
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
-                <button type="submit" className="btn btn-primaire btn-bloc">Inviter</button>
-              </form>
-            </section>
-          ) : null}
         </div>
 
         <section className="carte" aria-labelledby="t-support">

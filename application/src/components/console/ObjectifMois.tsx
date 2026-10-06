@@ -17,7 +17,11 @@ const PART = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionD
 /** « 1 500 000 » millimes → « 1500 » : le champ s'écrit en dinars. */
 const enDinars = (m: number | null) => (m ? String(Math.round(m / 1000)) : "");
 
-function Fixer({ slug, mois, valeur, libelle, ouvert }: { slug: string; mois: string; valeur: number | null; libelle: string; ouvert?: boolean }) {
+function Fixer({ slug, mois, valeur, libelle, ouvert, propose }: {
+  slug: string; mois: string; valeur: number | null; libelle: string; ouvert?: boolean;
+  /** La valeur est une proposition (le mois dernier, plus 10 %), pas un objectif posé. */
+  propose?: boolean;
+}) {
   return (
     <details className="ob-fixer" open={ouvert || undefined}>
       <summary className="btn btn-second btn-petit"><Icone nom="crayon" taille={14} /> {libelle}</summary>
@@ -26,7 +30,11 @@ function Fixer({ slug, mois, valeur, libelle, ouvert }: { slug: string; mois: st
         <div className="champ">
           <label htmlFor={`objectif-${mois}`}>Objectif {duMois(mois)} (TND livrés)</label>
           <input id={`objectif-${mois}`} name="montant" inputMode="numeric" defaultValue={enDinars(valeur)} placeholder="Ex. 20000" autoComplete="off" />
-          <span className="aide">Ce qui doit être livré — donc encaissé — dans le mois. Vide : pas d&apos;objectif.</span>
+          <span className="aide">
+            {propose && valeur
+              ? "Proposé : le mois dernier, plus 10 %. À changer à votre main ; vide, pas d'objectif."
+              : "Ce qui doit être livré — donc encaissé — dans le mois. Vide : pas d'objectif."}
+          </span>
         </div>
         <button type="submit" className="btn btn-primaire btn-petit">Enregistrer</button>
       </form>
@@ -54,7 +62,7 @@ export function ObjectifMois({ o, slug, peutFixer }: { o: Objectif; slug: string
           </div>
         </div>
         {peutFixer ? (
-          <Fixer slug={slug} mois={o.mois} valeur={propose} libelle={`Fixer l'objectif ${duMois(o.mois)}`} ouvert />
+          <Fixer slug={slug} mois={o.mois} valeur={propose} libelle={`Fixer l'objectif ${duMois(o.mois)}`} ouvert propose />
         ) : (
           <p className="discret">La direction fixe l&apos;objectif du mois.</p>
         )}

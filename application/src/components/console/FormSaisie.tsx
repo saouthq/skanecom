@@ -359,7 +359,7 @@ export function FormSaisie({
                         <span className="discret">{t.declinaison.libelle ? `${t.declinaison.libelle} · ` : ""}<span className="sc-sku">{t.declinaison.sku}</span></span>
                       </span>
                       <span className={`sc-stock${epuise ? " sc-stock-epuise" : t.declinaison.stock <= 2 ? " sc-stock-bas" : ""}`}>
-                        {epuise ? "Épuisé" : `${t.declinaison.stock} en stock`}
+                        {epuise ? "Épuisée" : `${t.declinaison.stock} en stock`}
                       </span>
                       <span className="sc-prix tabular-nums">{formatePrix(t.declinaison.prix_millimes)}</span>
                     </li>

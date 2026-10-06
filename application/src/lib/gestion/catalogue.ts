@@ -27,6 +27,8 @@ export type LigneProduit = {
   nb_variantes: number;
   stock_total: number;
   variantes_bas: number;
+  /** Déclinaisons actives à zéro (le produit garde du stock ailleurs). */
+  variantes_epuisees?: number;
   prix_min: number | null;
   prix_max: number | null;
   modifie_le: string;
@@ -105,7 +107,7 @@ export const PEUT_STOCKER: Role[] = ["proprietaire", "admin", "preparateur"];
 
 /** L'état du stock d'une déclinaison, pour sa pastille. */
 export function etatStock(stock: number, seuil: number): { texte: string; classe: string } {
-  if (stock <= 0) return { texte: "Rupture", classe: "ui-etat ui-etat-point ui-etat-rouge" };
+  if (stock <= 0) return { texte: "Épuisée", classe: "ui-etat ui-etat-point ui-etat-rouge" };
   if (stock <= seuil) return { texte: `Stock bas · ${stock}`, classe: "ui-etat ui-etat-point ui-etat-ambre" };
   return { texte: `${stock} en stock`, classe: "ui-etat ui-etat-point ui-etat-vert" };
 }

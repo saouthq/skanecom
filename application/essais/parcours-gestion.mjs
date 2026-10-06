@@ -551,7 +551,7 @@ if (section("2")) {
     }
     await envoie(page.getByRole("button", { name: "Ajouter la déclinaison" }));
     verifie((await ok()).includes("Déclinaison ajoutée"), `« ${await ok()} »`);
-    verifie((await page.locator(".var", { hasText: "Vert sauge" }).innerText()).includes("Rupture"), "la nouvelle couleur arrive sans stock");
+    verifie((await page.locator(".var", { hasText: "Vert sauge" }).innerText()).includes("Épuisée"), "la nouvelle couleur arrive sans stock");
   });
 
   let nouveau = "";
@@ -963,7 +963,7 @@ if (section("2")) {
     verifie(!(await section("paiement").getByLabel("Paiement à la livraison").isChecked()), "la case reste comme on l'a mise, sous le refus");
     await page.reload({ waitUntil: "networkidle" });
     verifie(await section("paiement").getByLabel("Paiement à la livraison").isChecked(), "rechargée, la page le confirme : il reste coché");
-    verifie((await section("paiement").innerText()).includes("Bientôt"), "Konnect : prévu, à activer par SkanEcom");
+    verifie((await section("paiement").innerText()).includes("Sur demande"), "Konnect : sur demande, SkanEcom l’allume");
     await theme("Contact et réseaux", "contact");
     await section("contact").locator("#whatsapp").fill("20 123 456");
     await envoie(section("contact").getByRole("button", { name: "Enregistrer" }));
