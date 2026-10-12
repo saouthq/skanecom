@@ -2463,14 +2463,15 @@ div.rg-verrou { border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-
   padding-block-start: .75rem; border-block-start: 1px solid var(--ui-bord-leger);
 }
 .dm-gestes > form { display: contents; }
-.dm-pli { display: contents; }
+/* Ajouter une note, Effacer : ouverts, ils prennent la rangée entière, leur formulaire dessous. */
 .dm-pli > summary { list-style: none; cursor: pointer; }
 .dm-pli > summary::-webkit-details-marker { display: none; }
+.dm-pli[open] { flex-basis: 100%; }
 .dm-pli[open] > summary { color: var(--ui-texte); }
-.dm-pli > form { flex-basis: 100%; display: grid; gap: .5rem; margin: 0; }
+.dm-pli > form { display: grid; gap: .5rem; margin: .625rem 0 0; max-inline-size: 36rem; }
 .dm-note-form .champ { margin: 0; }
-.dm-note-form .btn { justify-self: start; }
-.dm-effacer > summary { margin-inline-start: auto; }
+.dm-pli > form .btn { justify-self: start; }
+.dm-effacer:not([open]) { margin-inline-start: auto; }
 .dm-gestes .dm-effacer > summary { color: var(--ui-rouge); }
 @media (max-width: 640px) {
   .dm-carte { padding: 1rem; }

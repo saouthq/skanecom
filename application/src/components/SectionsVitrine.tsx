@@ -130,9 +130,10 @@ export function SectionContact({
   principal?: boolean;
 }) {
   const textes = section?.textes ?? {};
-  const etiquette = texte(textes, "etiquette", produit ? t.studio.projetSimilaire : t.studio.contactEtiquette);
+  // Sur une fiche, l'encart « Un projet similaire ? » pose déjà la question : la section garde ses mots.
+  const etiquette = texte(textes, "etiquette", t.studio.contactEtiquette);
   const titre = texte(textes, "titre", t.studio.contactTitre);
-  const chapo = texte(textes, "chapo", produit ? t.studio.projetSimilaireTexte : t.studio.contactChapo);
+  const chapo = texte(textes, "chapo", t.studio.contactChapo);
   const c = contactDe(cadre, produit ? t.siteVitrine.message(cadre.boutique.nom, produit.nom, null) : t.contact.messageWhatsapp(cadre.boutique.nom));
   const lieu = c.magasin ? `${c.magasin.adresse}, ${c.magasin.ville}` : c.adresse;
   const directs = Boolean(c.whatsapp || c.telephone || c.email || lieu);

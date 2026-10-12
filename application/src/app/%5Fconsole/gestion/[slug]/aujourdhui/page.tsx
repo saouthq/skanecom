@@ -197,7 +197,8 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const montrees = vitrineSeule ? taches.filter((x) => x.nombre > 0 || !COMMANDES.has(x.cle)) : taches;
   const aFaire = montrees.filter((x) => x.nombre > 0);
   const aJour = montrees.filter((x) => x.nombre === 0);
-  const stockAlerte = e.stock.ruptures + e.stock.bas;
+  // Un site vitrine ne vend ni ne livre : ni stock à réassortir, ni chiffres de commandes.
+  const stockAlerte = vitrineSeule ? 0 : e.stock.ruptures + e.stock.bas;
   // Ce qui attend un geste : pas ce qui suit son cours (les colis en route, les
   // précommandes) — seulement les colis en retard, qui demandent un appel.
   const total = aFaire.reduce((n, x) => n + (x.enCours ? 0 : x.nombre), 0) + c.en_retard;
@@ -282,7 +283,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
         </section>
       ) : null}
 
-      {e.direction ? (
+      {e.direction && !vitrineSeule ? (
         <section className="carte jd-journee" aria-labelledby="jd-journee">
           <h2 id="jd-journee" className="carte-titre-icone"><Icone nom="graphique" /> La journée</h2>
           <dl className="jd-chiffres">
