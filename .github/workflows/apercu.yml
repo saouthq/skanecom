@@ -305,6 +305,14 @@ jobs:
         run: |
           bun install --frozen-lockfile
           node ../outils/annuaire.mjs
+          # La version (État technique → Version en ligne, Chronologie) : le commit, son titre, l'heure,
+          # la dernière migration ; gardée pour l'étape suivante, qui note la mise en ligne.
+          export SKANECOM_VERSION="${GITHUB_SHA::7}"
+          export SKANECOM_TITRE="$(git log -1 --format=%s | cut -c1-300)"
+          export SKANECOM_CONSTRUITE_LE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export SKANECOM_MIGRATION="$(ls ../supabase/migrations/*.sql | sort | tail -1 | xargs basename | cut -d_ -f1)"
+          for v in SKANECOM_VERSION SKANECOM_TITRE SKANECOM_CONSTRUITE_LE SKANECOM_MIGRATION; do printf '%s=%s
+' "$v" "${!v}" >> "$GITHUB_ENV"; done
           bun run build
 
       - name: Déployer l'application
@@ -357,6 +365,11 @@ jobs:
           else
             bun run deploy -- --skip-build
           fi
+          # La mise en ligne, notée à l'instant (sans gravité si elle échoue : l'application la note d'elle-même).
+          node -e 'const e = process.env; process.stdout.write(JSON.stringify({ p_version: e.SKANECOM_VERSION, p_titre: e.SKANECOM_TITRE, p_construite_le: e.SKANECOM_CONSTRUITE_LE, p_migration: e.SKANECOM_MIGRATION }))' \
+            | curl -fsS -X POST "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/rpc/versions_noter" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+                -H "authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "content-type: application/json" --data-binary @- > /dev/null \
+            || echo "::notice::Mise en ligne non notée : l'application la notera à son prochain passage."
 
       - name: Déployer les routeurs (une adresse par boutique, une pour la console)
         if: env.PRET == '1'

@@ -89,6 +89,8 @@ reinit() {
   for f in "$RACINE"/supabase/migrations/*.sql; do
     echo "  migration $(basename "$f")"
     psql_en postgres -d "$BASE" -f "$f"
+    n="$(basename "$f" .sql)"
+    psql_en postgres -d "$BASE" -c "insert into supabase_migrations.schema_migrations (version, name) values ('${n%%_*}', '${n#*_}') on conflict do nothing" > /dev/null
   done
   if [ "${1:-}" != "--vide" ]; then
     # Le jeu de démo, puis sa suite (fichiers à part : l'aperçu en ligne joue

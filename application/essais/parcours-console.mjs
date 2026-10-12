@@ -2151,6 +2151,23 @@ await etape("le dépannage : une vitrine en maintenance, sa page d'attente, l'ap
   await visiteur.close();
 });
 
+await etape("la version en ligne et la chronologie : la base suit le code, le fil de ce qui a changé", async () => {
+  await page.goto(`${CONSOLE}/etat`, { waitUntil: "networkidle" });
+  const version = page.locator('section[aria-labelledby="t-version"]');
+  verifie(/Version\s+([0-9a-f]{7}|locale)/.test(await version.innerText()), "la version en ligne : son commit");
+  verifie((await version.locator(".et-tete .ui-etat").innerText()) === "Base à jour", "la base a joué la dernière migration que le code attend : « Base à jour »");
+  const chrono = page.locator('section[aria-labelledby="t-chronologie"]');
+  const fil = await chrono.innerText();
+  verifie(/Mise en ligne/i.test(fil), "la chronologie : la mise en ligne de cette version");
+  verifie(fil.includes("Maintenance de la vitrine"), "et, plus haut, la maintenance de Maymar posée puis levée par la console");
+  // Autour d'une boutique, à la souris : ses changements, et ce qui touche toute la plateforme.
+  await chrono.locator("#ch-pour").selectOption({ label: "Maymar" });
+  await clic(page, chrono.getByRole("button", { name: "Afficher" }));
+  await page.waitForURL(/pour=maymar/);
+  verifie((await chrono.innerText()).includes("Autour de Maymar") && page.url().includes("#t-chronologie"), "autour de Maymar : le fil filtré, la page revient sur la carte");
+  await capture(page, "console-chronologie", true);
+});
+
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {
   await clic(page, page.locator(".app-cote").getByRole("link", { name: "Revenus" }));
   await page.waitForURL(/\/revenus$/);

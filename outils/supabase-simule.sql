@@ -20,6 +20,12 @@
 -- apparaît aussitôt.
 -- =====================================================================
 
+-- Les migrations jouées, notées comme chez Supabase : l'État technique compare
+-- la base au code (la version attend sa dernière migration).
+create schema if not exists supabase_migrations authorization postgres;
+create table if not exists supabase_migrations.schema_migrations (version text primary key, statements text[], name text);
+alter table supabase_migrations.schema_migrations owner to postgres;
+
 do $$
 begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then

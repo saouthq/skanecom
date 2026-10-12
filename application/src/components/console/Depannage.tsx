@@ -131,6 +131,7 @@ export function DepannageBoutique({ b, pause, superAdmin, message }: {
         <div>
           <h2 id="t-depannage" className="carte-titre-icone"><Icone nom="outil" /> Dépannage</h2>
           <p>Quand sa vitrine casse : la mettre en pause derrière une page d&apos;attente, vider son cache, relancer ses envois coincés.</p>
+          <p className="aide">Ce qui a changé autour d&apos;elle — mises en ligne, réglages, pannes, erreurs : <Link href={`/etat?pour=${b.slug}&periode=7#t-chronologie`}>sa chronologie technique</Link>.</p>
         </div>
         {pause ? <span className="ui-etat ui-etat-point ui-etat-ambre">En maintenance</span> : null}
       </div>

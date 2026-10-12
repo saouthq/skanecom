@@ -11,6 +11,8 @@ import { duree } from "@/lib/courriels/alertes";
 import { chargeAccueil } from "@/lib/console/accueil-serveur";
 import { ilYa } from "@/lib/console/pilotage";
 import { DepannagePlateforme, type DonneesMaintenance } from "@/components/console/Depannage";
+import { CarteChronologie, CarteVersion, etatBase, type DonneesChronologie } from "@/components/console/Chronologie";
+import { VERSION, noterVersion } from "@/lib/version";
 
 export const metadata: Metadata = { title: "État technique" };
 
@@ -48,19 +50,25 @@ const SURFACES: Record<string, string> = { vitrine: "Vitrine", backoffice: "Back
 const pire = (points: Point[], sinon: Niveau): Niveau =>
   points.some((p) => p.niveau === "panne") ? "panne" : points.length ? "attention" : sinon;
 
-export default async function EtatTechnique({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; carte?: string; erreurs?: string; reglees?: string; boutique?: string }> }) {
+export default async function EtatTechnique({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; carte?: string; erreurs?: string; reglees?: string; periode?: string; pour?: string; boutique?: string }> }) {
   const { user, role } = await exigeAdmin();
   const v = await searchParams;
   const service = clientService();
   // Les erreurs d'une boutique seulement (?erreurs=<boutique>) : la liste des boutiques est déjà lue pour la navigation.
   const { boutiques: toutes } = await chargeAccueil(user.id);
   const filtreErreurs = v.erreurs ? toutes.find((b) => b.slug === v.erreurs) ?? null : null;
-  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }, { data: dataErreurs, error: errErreurs }, { data: dataPause }] = await Promise.all([
+  // La chronologie : sa période (1, 7 ou 30 jours), et une boutique (?pour=<boutique>).
+  const pour = v.pour ? toutes.find((b) => b.slug === v.pour) ?? null : null;
+  const jours = [1, 7, 30].includes(Number(v.periode)) ? Number(v.periode) : 7;
+  // La version qui répond se note d'abord : la chronologie la montre déjà.
+  await noterVersion(service);
+  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }, { data: dataErreurs, error: errErreurs }, { data: dataPause }, { data: dataChrono, error: errChrono }] = await Promise.all([
     chronometre(() => service.rpc("console_etat_technique", { p_acteur: user.id })),
     service.rpc("console_surveillance", { p_acteur: user.id }),
     service.rpc("console_alertes", { p_acteur: user.id }),
     service.rpc("console_erreurs", { p_acteur: user.id, p_boutique_id: filtreErreurs?.id ?? null, p_reglees: v.reglees === "1" }),
     service.rpc("console_maintenance", { p_acteur: user.id }),
+    service.rpc("console_chronologie", { p_acteur: user.id, p_jours: jours, p_boutique_id: pour?.id ?? null }),
   ]);
   if (error) throw new Error(`État technique illisible : ${error.message}`);
   if (errSurv) throw new Error(`Surveillance illisible : ${errSurv.message}`);
@@ -71,6 +79,8 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   if (errErreurs) throw new Error(`Erreurs de l'application illisibles : ${errErreurs.message}`);
   const er = dataErreurs as DonneesErreurs;
   const pause = (dataPause ?? { plateforme: null, boutiques: [] }) as DonneesMaintenance;
+  if (errChrono) throw new Error(`Chronologie illisible : ${errChrono.message}`);
+  const chrono = dataChrono as DonneesChronologie;
   const maintenant = new Date().getTime();
   const superAdmin = role === "super_admin";
   const c = await configuration();
@@ -110,6 +120,11 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
     ...(pause.plateforme ? [{ niveau: "panne" as const, texte: `Toute la plateforme est en maintenance depuis le ${dateJournal(pause.plateforme.depuis)} : chaque vitrine montre la page d'attente.` }] : []),
     ...pause.boutiques.map((b) => ({ niveau: "attention" as const, texte: `${b.nom} est en maintenance depuis le ${dateJournal(b.depuis)}.` })),
   ];
+
+  // ---- La version en ligne ---------------------------------------------------
+  const suitBase = etatBase(VERSION.migration, chrono.migration_base);
+  const pointsVersion: Point[] = suitBase.niveau === "panne" ? [{ niveau: "panne", texte: `La base est en retard sur le code : ${suitBase.texte}.` }]
+    : suitBase.niveau === "attention" ? [{ niveau: "attention", texte: `La base est en avance sur le code : ${suitBase.texte}.` }] : [];
 
   // ---- La base -------------------------------------------------------------
   const partConnexions = e.base.connexions_max ? e.base.connexions / e.base.connexions_max : 0;
@@ -222,7 +237,7 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const etatDomaines = enErreur.length ? "En panne" : aVerifier.length ? "À vérifier" : enLigne.length ? "Valables" : "Local";
 
   const cartes = [base, courriels, skanfact, fichiers];
-  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, { id: "erreurs", titre: "Erreurs", points: pointsErreurs }, { id: "depannage", titre: "Dépannage", points: pointsDepannage }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
+  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, { id: "erreurs", titre: "Erreurs", points: pointsErreurs }, { id: "depannage", titre: "Dépannage", points: pointsDepannage }, { id: "version", titre: "Version", points: pointsVersion }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
   // Le verdict renvoie à chaque carte concernée, une fois, avec son nombre de points.
   const parCarte = [...new Set(aRegarder.map((p) => p.carte))].map((id) => {
     const points = aRegarder.filter((p) => p.carte === id);
@@ -236,7 +251,10 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
       <EnTetePage
         titre="État technique"
         description="Ce qui fait tourner la plateforme : ce qui répond, ce qui est branché, ce qui attend. Relu à chaque ouverture."
-        actions={<Link href="/etat" className="btn btn-second btn-petit"><Icone nom="horloge" taille={14} /> Relire</Link>}
+        actions={<>
+          <a href="#t-chronologie" className="btn btn-fantome btn-petit"><Icone nom="journal" taille={14} /> Chronologie</a>
+          <Link href="/etat" className="btn btn-second btn-petit"><Icone nom="horloge" taille={14} /> Relire</Link>
+        </>}
       />
       <div className="et-verdict carte" data-niveau={aRegarder.some((p) => p.niveau === "panne") ? "panne" : aRegarder.length ? "attention" : "ok"} role="status">
         <Icone nom={aRegarder.length ? "alerte" : "succes"} taille={20} />
@@ -468,6 +486,8 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
           </div>
         </section>
 
+        <CarteVersion d={chrono} />
+
         {cartes.map((x) => (
           <section key={x.id} className="carte et-carte" aria-labelledby={`t-${x.id}`} data-niveau={x.niveau}>
             <header className="et-tete">
@@ -535,6 +555,9 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
             ) : <p className="aide">Les domaines en « .localhost » ne se vérifient pas : il n&apos;y a pas de certificat en local.</p>}
           </div>
         </section>
+
+        <CarteChronologie d={chrono} maintenant={maintenant} pour={pour}
+          boutiques={toutes.filter((b) => b.statut !== "fermee").map((b) => ({ slug: b.slug, nom: b.nom, demonstration: b.demonstration }))} />
       </div>
       <p className="aide et-note">
         Les SMS de connexion partent par Supabase Auth : leur fournisseur se règle dans Supabase, et le journal des envois ne les voit pas encore.

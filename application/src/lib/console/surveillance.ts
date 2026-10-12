@@ -1,3 +1,4 @@
+import { noterVersion } from "@/lib/version";
 import { clientService } from "@/lib/console/service";
 import { hoteLocal, phraseErreur } from "@/lib/console/etat";
 import { verifierDomaine } from "@/lib/courriels/domaines";
@@ -120,6 +121,7 @@ export async function lancerSurveillance(declencheur: "heure" | "console", acteu
   });
   if (e2) return { ok: false, raison: e2.message };
   const b = bilan as Bilan;
+  await noterVersion(service);
   // Les incidents, puis l'alerte : une panne d'e-mail n'empêche jamais le passage d'être noté.
   let alertes: Annonce = null;
   try {

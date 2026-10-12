@@ -358,7 +358,8 @@ export default async function FicheBoutique({ params, searchParams }: {
                     );
                   })}
                 </ol>
-                <p className="bt-journal-tout"><Link href={`/journal?boutique=${b.slug}`} className="btn-lien aide inline-flex items-center gap-1">Tout son journal <Icone nom="droite" taille={12} /></Link></p>
+                <p className="bt-journal-tout"><Link href={`/journal?boutique=${b.slug}`} className="btn-lien aide inline-flex items-center gap-1">Tout son journal <Icone nom="droite" taille={12} /></Link>
+                  <Link href={`/etat?pour=${b.slug}&periode=7#t-chronologie`} className="btn-lien aide inline-flex items-center gap-1">Sa chronologie technique <Icone nom="droite" taille={12} /></Link></p>
               </>
             )}
           </section>
