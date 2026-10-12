@@ -1057,6 +1057,8 @@ export const fr = {
     enLigne: "Paiement en ligne avec Konnect",
     livrePar: (transporteur: string) => `Livré par ${transporteur}`,
     retraitA: (ville: string) => `Retrait au magasin, à ${ville}`,
+    nousJoindre: "Nous joindre",
+    toutesLesRealisations: "Toutes les réalisations",
   },
 
   contact: {
@@ -1394,5 +1396,76 @@ export const fr = {
     titre: "La boutique revient dans quelques minutes.",
     texte: "En attendant, vous pouvez commander par WhatsApp : le message est déjà prêt avec votre panier.",
     whatsapp: "Commander par WhatsApp",
+  },
+
+  /** La structure Studio (le site vitrine qui se fait contacter) et les
+   *  sections qu'elle apporte à toutes : services, méthode, contact. */
+  studio: {
+    realisations: "Réalisations",
+    realisationsEtiquette: "Sélection",
+    realisationsChapo: "Des lieux pensés pour ceux qui les habitent.",
+    toutesLesRealisations: "Toutes les réalisations",
+    toutes: "Toutes",
+    domainesTitre: "Nos domaines",
+    /** Le titre des domaines, dans le menu du téléphone. */
+    domaines: "Domaines",
+    domaine: (n: number) => (n > 1 ? `${n} projets` : "1 projet"),
+    servicesTitre: "Ce que nous faisons",
+    etapesTitre: "Notre méthode",
+    etapesEtiquette: "Comment nous travaillons",
+    etape: (n: number) => `Étape ${n}`,
+    contactEtiquette: "Un projet ?",
+    contactTitre: "Parlons de\nvotre projet.",
+    contactChapo: "Racontez-nous votre lieu et vos envies : nous vous rappelons pour en parler.",
+    parlonsEn: "Parlons-en",
+    voir: "Voir",
+    voirLeProjet: (nom: string) => `Voir le projet : ${nom}`,
+    projetSuivant: "Projet suivant",
+    projetSimilaire: "Un projet similaire ?",
+    projetSimilaireTexte: "Écrivez-nous : nous vous rappelons pour en parler, sans engagement.",
+    ecrireAuSujet: "Écrire à propos de ce projet",
+    leProjet: "Le projet",
+    enImages: "En images",
+    menuOuvrir: "Le menu",
+    retourHaut: "Revenir en haut",
+    surDemande: "Sur demande",
+  },
+
+  /** Le formulaire de contact (réglage vitrine.formulaire_contact). */
+  formulaire: {
+    titre: "Écrivez-nous",
+    nom: "Votre nom",
+    telephone: "Téléphone",
+    telephoneAide: "Huit chiffres en Tunisie, ou +33…, +49… depuis l'étranger.",
+    email: "E-mail",
+    unDesDeux: "Un numéro ou une adresse e-mail : c'est par là que nous vous répondrons.",
+    sujet: "Votre demande concerne",
+    sujetChoisir: "Choisir…",
+    message: "Votre message",
+    messageAide: "Le lieu, la surface, ce que vous aimeriez : tout aide à préparer l'appel.",
+    aPropos: (nom: string) => `À propos de : ${nom}`,
+    envoyer: "Envoyer ma demande",
+    envoi: "Envoi…",
+    mention: (boutique: string) => `Vos coordonnées ne servent qu'à ${boutique} pour vous répondre.`,
+    confidentialite: "Confidentialité",
+    merciTitre: "Merci, votre demande est partie.",
+    merciTexte: (boutique: string, numero: string | null) =>
+      numero ? `${boutique} l'a reçue (n° ${numero}) et vous répond au plus vite.` : `${boutique} l'a reçue et vous répond au plus vite.`,
+    autre: "Écrire une autre demande",
+    erreur: "La demande n'est pas partie. Réessayez dans un instant, ou écrivez-nous sur WhatsApp.",
+    ouDirectement: "Ou directement",
+  },
+
+  /** L'e-mail que l'équipe reçoit pour chaque demande du formulaire. */
+  courrielDemande: {
+    sujet: (numero: string, nom: string) => `Nouvelle demande ${numero} — ${nom}`,
+    apercu: (sujet: string | null) => (sujet ? `${sujet} : à rappeler.` : "Une demande à rappeler."),
+    titre: "Une nouvelle demande",
+    texte: (nom: string) => `${nom} a écrit depuis le formulaire de la vitrine.`,
+    encartContact: "Pour répondre",
+    encartMessage: "Le message",
+    aPropos: (nom: string) => `À propos de : ${nom}`,
+    bouton: "Ouvrir les demandes",
+    raison: "Vous recevez cet e-mail parce que le formulaire de contact de la boutique est ouvert.",
   },
 } as const;

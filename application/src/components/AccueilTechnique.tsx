@@ -14,6 +14,7 @@ import { texte, type Section } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 import { lienConseil } from "@/lib/faits";
 import { champ, t } from "@/lib/i18n";
+import { SectionContact, SectionEtapes, SectionServices } from "./SectionsVitrine";
 
 /* ============================================================================
    L'ACCUEIL TECHNIQUE — outillage, quincaillerie, matériel pro.
@@ -52,6 +53,12 @@ export function AccueilTechnique({ cadre, donnees }: Props) {
             return <SectionLookbook key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
           case "bannieres":
             return <SectionBannieres key={i} rang={i} section={s} cadre={cadre} />;
+          case "services":
+            return <SectionServices key={i} rang={i} section={s} />;
+          case "etapes":
+            return <SectionEtapes key={i} rang={i} section={s} />;
+          case "contact":
+            return <SectionContact key={i} rang={i} section={s} cadre={cadre} />;
           case "piece":
             return <SectionPiece key={i} rang={i} section={s} donnees={donnees} cadre={cadre} gabarit="technique" />;
           case "avis":
@@ -174,7 +181,7 @@ function Selection({ rang, section, cadre, produits }: { rang: number; section: 
       {produits.length > 0 ? (
         <div className="te-grille te-grille-rang rail-mobile">
           {produits.map((p) => (
-            <CarteProduit key={p.id} produit={p} gabarit="technique" prixBarres={cadre.prixBarres} />
+            <CarteProduit key={p.id} produit={p} gabarit="technique" prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} />
           ))}
           <TuileFin href={lien} titre={titre} compte={total ? t.catalogue.references(total) : null} gabarit="technique" />
         </div>

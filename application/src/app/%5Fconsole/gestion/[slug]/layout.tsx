@@ -49,7 +49,7 @@ export default async function BackofficeBoutique({
   // pas l'un après l'autre : chaque page du backoffice les attend.
   const sb = await clientSession();
   const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }, { data: an }, { data: su }] = await Promise.all([
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }, { data: an }, { data: su }, { data: dc }] = await Promise.all([
     sb.rpc("gestion_sav_etat", etat),
     sb.rpc("gestion_pro_etat", etat),
     sb.rpc("gestion_devis_etat", etat),
@@ -62,6 +62,7 @@ export default async function BackofficeBoutique({
     sb.rpc("gestion_skanfact_etat", etat),
     sb.rpc("gestion_annonces", etat),
     boutique.statut === "suspendue" ? sb.rpc("gestion_suspension", etat) : Promise.resolve({ data: null }),
+    sb.rpc("gestion_demandes_etat", etat),
   ]);
   // Pas encore ouverte : le bandeau le dit, en tête de chaque page.
   const enPreparation = boutique.statut === "en_preparation";
@@ -144,6 +145,20 @@ export default async function BackofficeBoutique({
   const badgeSav = etatSav?.nouvelles
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
     : undefined;
+  // Les demandes du formulaire de contact de la vitrine, s'il est ouvert (ou
+  // en a reçu) : celles à rappeler. Sur un site vitrine, c'est le premier
+  // travail de l'équipe — l'entrée passe devant les commandes, et prend leur
+  // place dans la barre du téléphone.
+  const etatDemandes = dc as { actif: boolean; site_vitrine: boolean; nouvelles: number; total: number } | null;
+  const lienDemandes = etatDemandes?.actif || etatDemandes?.total
+    ? [{
+        href: `/gestion/${slug}/demandes`, libelle: "Demandes", icone: "message" as const,
+        extra: etatDemandes.nouvelles
+          ? <span className="app-nav-compte" aria-label={`${etatDemandes.nouvelles} nouvelle${etatDemandes.nouvelles > 1 ? "s" : ""} demande${etatDemandes.nouvelles > 1 ? "s" : ""}`}>{etatDemandes.nouvelles}</span>
+          : undefined,
+      }]
+    : [];
+  const vitrineSeule = Boolean(etatDemandes?.site_vitrine && lienDemandes.length);
   const lienCommandes = {
     href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes" as const, exact: true, aussi: [`/gestion/${slug}/commandes/`],
     extra: <CompteurCommandes slug={slug} />,
@@ -151,6 +166,7 @@ export default async function BackofficeBoutique({
 
   const liens: LienCoquille[] = [
     { href: `/gestion/${slug}/aujourdhui`, libelle: "Aujourd'hui", icone: "horloge" },
+    ...(vitrineSeule ? lienDemandes : []),
     lienCommandes,
     ...(DIRECTION.includes(boutique.role)
       ? [
@@ -168,6 +184,7 @@ export default async function BackofficeBoutique({
         ]
       : []),
     ...lienDevis,
+    ...(vitrineSeule ? [] : lienDemandes),
     { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
     ...lienReassort,
     { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },
@@ -223,7 +240,7 @@ export default async function BackofficeBoutique({
       changer={boutiques.length > 1 ? { href: "/gestion", libelle: "Changer de boutique" } : undefined}
       groupes={[{ titre: "Boutique", liens }]}
       onglets={[
-        lienCommandes,
+        ...(vitrineSeule ? lienDemandes : [lienCommandes]),
         { href: `/gestion/${slug}/produits`, libelle: "Catalogue", icone: "colis" },
         ...(etatSav?.actif ? [{ href: `/gestion/${slug}/sav`, libelle: "SAV", icone: "outil" as const, extra: badgeSav }] : []),
         { href: `/gestion/${slug}/clients`, libelle: "Clients", icone: "personne", extra: badgePro },

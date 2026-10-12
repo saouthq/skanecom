@@ -89,7 +89,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
   const confirme = CONFIRMER.includes(boutique.role);
-  const [{ data, error }, { data: file }, { data: alertes }, { data: paniers }, { data: dob }, { data: arr }] = await Promise.all([
+  const [{ data, error }, { data: file }, { data: alertes }, { data: paniers }, { data: dob }, { data: arr }, { data: dem }] = await Promise.all([
     sb.rpc("gestion_aujourdhui", { p_boutique_id: boutique.boutique_id }),
     // La première de la file « à confirmer » : la plus ancienne (gestion_liste_commandes).
     confirme
@@ -105,6 +105,8 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
       : Promise.resolve({ data: null }),
     // Les arrivages annoncés : une pièce épuisée qui arrive ne se recommande pas.
     sb.rpc("gestion_arrivages", { p_boutique_id: boutique.boutique_id }),
+    // Les demandes du formulaire de contact de la vitrine (réglage vitrine.formulaire_contact).
+    sb.rpc("gestion_demandes_etat", { p_boutique_id: boutique.boutique_id }),
   ]);
   // Référence → la date du premier arrivage attendu qui l'apporte (recette du 05/10).
   const arrivePar = new Map<string, string>();
@@ -121,7 +123,17 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
   const maintenant = new Date();
   const c = e.commandes;
 
+  const demandes = dem as { actif: boolean; site_vitrine: boolean; nouvelles: number; total: number } | null;
+  const tacheDemandes: Tache[] = demandes?.actif || demandes?.total
+    ? [{ cle: "demandes", nombre: demandes.nouvelles, icone: "message", href: `${base}/demandes`,
+        titre: demandes.nouvelles > 1 ? "Demandes de contact" : "Demande de contact",
+        detail: demandes.nouvelles ? "Écrites par le formulaire de la vitrine : rappelez, puis « Je m'en occupe »." : "Aucune nouvelle demande." }]
+    : [];
+  // Un site vitrine ne prend pas de commande : ses demandes passent devant, et
+  // les étapes de commande vides ne se montrent pas.
+  const vitrineSeule = Boolean(demandes?.site_vitrine);
   const taches: Tache[] = [
+    ...(vitrineSeule ? tacheDemandes : []),
     {
       cle: "a_confirmer", nombre: c.a_confirmer, icone: "telephone", href: `${base}?etape=a_confirmer`,
       titre: c.a_confirmer > 1 ? "Commandes à confirmer" : "Commande à confirmer",
@@ -153,6 +165,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
       ? [{ cle: "retraits", nombre: c.retraits_prets, icone: "boutique" as const, href: `${base}?etape=expediees`,
           titre: "Prêtes au comptoir", detail: "Le client vient la retirer : la commande l'attend au magasin." }]
       : []),
+    ...(vitrineSeule ? [] : tacheDemandes),
     ...(e.modules.sav !== null
       ? [{ cle: "sav", nombre: e.modules.sav, icone: "outil" as const, href: `${base}/sav`,
           titre: "Demandes de SAV", detail: e.modules.sav ? "Nouvelles : le client attend votre appel." : "Aucune nouvelle demande." }]
@@ -180,8 +193,10 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
           titre: "Comptes pro à valider", detail: e.modules.comptes_pro ? "Des professionnels demandent leurs prix." : "Aucune demande de compte pro." }]
       : []),
   ];
-  const aFaire = taches.filter((x) => x.nombre > 0);
-  const aJour = taches.filter((x) => x.nombre === 0);
+  const COMMANDES = new Set(["a_confirmer", "a_preparer", "en_livraison"]);
+  const montrees = vitrineSeule ? taches.filter((x) => x.nombre > 0 || !COMMANDES.has(x.cle)) : taches;
+  const aFaire = montrees.filter((x) => x.nombre > 0);
+  const aJour = montrees.filter((x) => x.nombre === 0);
   const stockAlerte = e.stock.ruptures + e.stock.bas;
   // Ce qui attend un geste : pas ce qui suit son cours (les colis en route, les
   // précommandes) — seulement les colis en retard, qui demandent un appel.

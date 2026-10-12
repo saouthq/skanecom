@@ -75,6 +75,13 @@ export type Cadre = {
   /** Réglage `vitrine.site_vitrine` (migration 73) : un site vitrine, sans
    *  panier ni commande en ligne ; la fiche propose d'écrire ou d'appeler. */
   siteVitrine: boolean;
+  /** Réglage `vitrine.prix_masques`, en site vitrine seulement : ni prix ni
+   *  stock sur les cartes et les fiches (« sur demande »). */
+  prixMasques: boolean;
+  /** Réglage `vitrine.formulaire_contact` : le formulaire de la page Contact
+   *  et de la section « Contact », et ses objets (`vitrine.contact_sujets`) ;
+   *  `null` sans formulaire. */
+  formulaire: { sujets: string[] } | null;
   /** Le magasin où retirer ses commandes, si la boutique le propose (module
    *  retrait_magasin, adresse et ville renseignées) ; `null` sinon. */
   retrait: Magasin | null;
@@ -262,6 +269,10 @@ export function cadreDe(brut: CadreBrut): Cadre {
     telephone: texteDe("contact.telephone") || null,
     email: texteDe("legal.email") || null,
     siteVitrine: reglage<boolean>(reglages, "vitrine.site_vitrine", false) === true,
+    prixMasques: reglage<boolean>(reglages, "vitrine.site_vitrine", false) === true && reglage<boolean>(reglages, "vitrine.prix_masques", false) === true,
+    formulaire: reglage<boolean>(reglages, "vitrine.formulaire_contact", false) === true
+      ? { sujets: texteDe("vitrine.contact_sujets").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 6) }
+      : null,
     retrait: modules.includes("retrait_magasin") && texteDe("retrait.adresse") && texteDe("retrait.ville")
       ? {
           adresse: texteDe("retrait.adresse"),

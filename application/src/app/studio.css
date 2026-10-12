@@ -1,0 +1,496 @@
+/* ============================================================================
+   LE SITE VITRINE — la structure Studio (components/AccueilStudio.tsx,
+   Projets.tsx) et les sections qu'elle apporte à toutes les structures
+   (components/SectionsVitrine.tsx, FormulaireContact.tsx).
+
+   · .vi-*  les sections communes : services, méthode, contact, le titre en
+            lignes, le lien fléché ; habillées sobrement partout, en grand
+            sous html[data-structure="studio"] ;
+   · .fc-*  le formulaire de contact ;
+   · .st-*  la structure Studio : l'ouverture, le manifeste, les
+            réalisations, les domaines, le récit, la liste et la fiche d'un
+            projet.
+
+   LES ANIMATIONS EXPRESSIVES (style « animations : expressives », que le
+   Studio conseille) — html[data-animations="expressives"] :
+   · à l'arrivée, le titre d'ouverture monte ligne après ligne (CSS seul :
+     sans JavaScript aussi) ; les autres titres font de même en entrant à
+     l'écran (Apparitions.tsx les marque data-vu) ;
+   · liées au défilement (animation-timeline, là où le navigateur le sait ;
+     ailleurs, tout est simplement posé) : la photo d'ouverture s'ouvre
+     jusqu'à prendre la largeur, chaque photo glisse doucement dans son
+     cadre, le manifeste s'allume mot à mot, la méthode défile de côté
+     pendant que sa section reste épinglée (sur ordinateur) ;
+   · d'une page à l'autre, le contenu arrive d'un léger élan (MouvementStudio.tsx).
+   « Réduire les animations » : rien ne bouge. Seules les propriétés que la
+   carte graphique compose (transform, opacity, clip-path) sont animées.
+   ========================================================================== */
+
+html { --st-courbe: cubic-bezier(.16, 1, .3, 1); }
+html[data-structure="studio"] {
+  --st-section: calc(clamp(5rem, 11vw, 10rem) * var(--echelle-espace, 1));
+}
+
+/* ---- Le titre en lignes, le lien fléché (communs) ---------------------------- */
+.vi-titre {
+  margin: 0; font-family: var(--theme-font-display); font-weight: 400; text-wrap: balance;
+  font-size: calc(clamp(2.25rem, 5vw, 4rem) * var(--echelle-titres, 1)); line-height: 1; letter-spacing: -.02em;
+}
+.vi-ligne { display: block; }
+.vi-ligne > span { display: inline-block; }
+.vi-lien-fleche {
+  display: inline-flex; align-items: center; gap: .625rem; padding-block-end: .375rem;
+  border-block-end: 1px solid currentColor; color: inherit; font-size: .9375rem; font-weight: 500; text-decoration: none;
+}
+.vi-lien-fleche svg { transition: transform .35s var(--st-courbe); }
+.vi-lien-fleche:hover svg { transform: translateX(4px); }
+
+/* ---- Les services (communs) ------------------------------------------------- */
+.vi-services { padding-block: calc(clamp(3rem, 7vw, 6.5rem) * var(--echelle-espace, 1)); }
+.vi-services-grille { display: grid; gap: 2.5rem; }
+.vi-services-tete { display: grid; gap: 1.25rem; align-content: start; justify-items: start; }
+.vi-services-tete .chapo { margin: 0; }
+.vi-services-image { inline-size: 100%; max-inline-size: 22rem; margin-block-start: .5rem; }
+.vi-services-image .cadre-image { border-radius: var(--theme-radius-carte); }
+.vi-services-liste { margin: 0; padding: 0; list-style: none; border-block-start: 1px solid var(--theme-filet-fort); }
+.vi-service {
+  display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem;
+  padding-block: clamp(1.25rem, 2.5vw, 2rem); border-block-end: 1px solid var(--theme-filet-fort);
+}
+.vi-service-num { padding-block-start: .5rem; font-size: .8125rem; font-variant-numeric: tabular-nums; letter-spacing: .08em; color: var(--theme-encre-doux); }
+.vi-service h3 {
+  margin: 0; font-family: var(--theme-font-display); font-weight: 400; line-height: 1.08; letter-spacing: -.01em;
+  font-size: calc(clamp(1.5rem, 2.6vw, 2.25rem) * var(--echelle-titres, 1)); transition: translate .5s var(--st-courbe);
+}
+.vi-service p { margin: .75rem 0 0; max-inline-size: 54ch; line-height: 1.6; color: var(--theme-encre-doux); }
+@media (min-width: 900px) {
+  .vi-services-grille { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(3rem, 6vw, 6rem); align-items: start; }
+  .vi-services-tete { position: sticky; inset-block-start: calc(var(--entete-h, 4rem) + 2rem); }
+  .vi-service { grid-template-columns: 4.5rem minmax(0, 1fr); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .vi-service:hover h3 { translate: .5rem 0; }
+}
+
+/* ---- La méthode (commune) --------------------------------------------------- */
+.vi-etapes { padding-block: calc(clamp(3rem, 7vw, 6.5rem) * var(--echelle-espace, 1)); }
+.vi-etapes-collant { display: grid; gap: clamp(2rem, 4vw, 3rem); }
+.vi-etapes-tete { display: grid; gap: 1rem; justify-items: start; }
+.vi-etapes-piste {
+  display: grid; gap: 1rem; inline-size: 100%; max-inline-size: var(--theme-large); margin: 0 auto; padding: 0 var(--theme-marge);
+  list-style: none; counter-reset: etape;
+}
+@media (min-width: 700px) { .vi-etapes-piste { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); } }
+.vi-etape {
+  display: grid; gap: .75rem; align-content: start; min-block-size: 15rem; padding: clamp(1.5rem, 2.5vw, 2rem);
+  background: var(--theme-surface-2); border-radius: var(--theme-radius-carte);
+}
+.vi-etape-num { font-family: var(--theme-font-display); font-size: clamp(3rem, 6vw, 4.75rem); line-height: .9; color: var(--theme-accent); }
+.vi-etape-rang { margin: auto 0 0; font-size: .75rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.vi-etape h3 { margin: 0; font-family: var(--theme-font-display); font-weight: 400; font-size: clamp(1.375rem, 2vw, 1.75rem); line-height: 1.1; }
+.vi-etape p { margin: 0; line-height: 1.6; color: var(--theme-encre-doux); }
+.vi-etapes-jauge { display: none; }
+
+/* ---- Contact (commun) ------------------------------------------------------- */
+.vi-contact {
+  padding-block: calc(clamp(3.5rem, 8vw, 7rem) * var(--echelle-espace, 1));
+  background: var(--theme-surface-2); color: var(--theme-encre); scroll-margin-block-start: var(--entete-h, 4rem);
+}
+.vi-contact-grille { display: grid; gap: 2.5rem; }
+.vi-contact-tete { display: grid; gap: 1.25rem; align-content: start; justify-items: start; }
+.vi-contact-tete .chapo { margin: 0; }
+html[data-structure] .vi-contact-titre.vi-titre { font-size: calc(clamp(2.75rem, 7vw, 6.25rem) * var(--echelle-titres, 1)); line-height: .95; letter-spacing: -.03em; }
+.vi-contact-directs { inline-size: 100%; display: grid; gap: .25rem; margin-block-start: .75rem; }
+.vi-contact-ou { margin: 0 0 .25rem; font-size: .75rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
+.vi-contact-directs ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.vi-contact-directs a {
+  display: flex; align-items: center; gap: .875rem; min-block-size: 3.25rem; padding-block: .75rem;
+  border-block-end: 1px solid color-mix(in srgb, currentColor 16%, transparent); color: inherit; text-decoration: none;
+  transition: padding .35s var(--st-courbe);
+}
+.vi-contact-directs a svg { flex: none; }
+.vi-contact-directs a span { display: grid; gap: .125rem; font-size: .9375rem; }
+.vi-contact-directs a b { font-weight: 500; }
+.vi-contact-directs a:hover { padding-inline-start: .375rem; }
+.vi-contact-horaires { margin: .75rem 0 0; }
+.vi-contact-formulaire { min-inline-size: 0; }
+@media (min-width: 960px) {
+  .vi-contact-grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(3rem, 7vw, 7rem); align-items: start; }
+}
+
+/* ---- Le formulaire de contact ---------------------------------------------- */
+.fc-formulaire { position: relative; display: grid; gap: 1.125rem; }
+.fc-rang { display: grid; gap: 1.125rem; }
+@media (min-width: 560px) { .fc-rang { grid-template-columns: 1fr 1fr; } }
+.fc-champ { display: grid; gap: .375rem; min-inline-size: 0; }
+.fc-champ label { font-size: .8125rem; font-weight: 500; }
+.fc-champ :is(input, select, textarea) {
+  inline-size: 100%; min-block-size: 3.25rem; padding: .75rem .875rem;
+  font: inherit; font-size: 1rem; color: var(--theme-encre);
+  background: var(--theme-surface); border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux);
+  transition: border-color .2s var(--theme-courbe), box-shadow .2s var(--theme-courbe);
+}
+.fc-champ textarea { min-block-size: 9rem; resize: vertical; line-height: 1.55; }
+.fc-champ :is(input, select, textarea):hover { border-color: var(--theme-encre); }
+.fc-champ :is(input, select, textarea):focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 2px; border-color: var(--theme-encre); }
+.fc-champ [aria-invalid="true"] { border-color: var(--theme-erreur); box-shadow: 0 0 0 1px var(--theme-erreur); }
+.fc-aide { margin: 0; font-size: .8125rem; line-height: 1.5; color: var(--theme-encre-doux); }
+.fc-erreur { margin: 0; font-size: .8125rem; font-weight: 500; color: var(--theme-erreur); }
+.fc-erreur-generale { padding: .75rem .875rem; border-radius: var(--theme-radius-doux); background: color-mix(in srgb, var(--theme-erreur) 10%, var(--theme-surface)); }
+.fc-a-propos {
+  justify-self: start; margin: 0; padding: .5rem .875rem; font-size: .875rem;
+  background: var(--theme-surface); border: 1px solid var(--theme-filet-fort); border-radius: 999px;
+}
+.fc-piege { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.fc-pied { display: grid; gap: .875rem; justify-items: start; margin-block-start: .25rem; }
+.fc-envoyer { min-block-size: 3.5rem; padding-inline: 2rem; }
+.fc-envoyer .icone-fleche { transition: transform .35s var(--st-courbe); }
+.fc-envoyer:hover:not(:disabled) .icone-fleche { transform: translateX(4px); }
+.fc-formulaire[aria-busy] .fc-envoyer { opacity: .7; cursor: progress; }
+.fc-mention { margin: 0; font-size: .75rem; line-height: 1.5; color: var(--theme-encre-doux); }
+.fc-mention .lien-souligne { font-size: inherit; letter-spacing: inherit; color: inherit; }
+.fc-merci {
+  display: grid; gap: .75rem; justify-items: start; padding: clamp(1.5rem, 3vw, 2.25rem);
+  background: var(--theme-surface); color: var(--theme-encre); border-radius: var(--theme-radius-carte);
+  animation: fc-merci .6s var(--st-courbe) backwards;
+}
+.fc-merci h3 { margin: 0; font-family: var(--theme-font-display); font-weight: 400; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.1; }
+.fc-merci h3:focus { outline: none; }
+.fc-merci p { margin: 0; color: var(--theme-encre-doux); }
+.fc-merci-icone {
+  display: grid; place-items: center; inline-size: 3rem; block-size: 3rem; border-radius: 50%;
+  background: color-mix(in srgb, var(--theme-succes) 14%, var(--theme-surface)); color: var(--theme-succes);
+}
+@keyframes fc-merci { from { opacity: 0; transform: translateY(12px); } }
+
+/* La page Contact des autres structures : le formulaire, en tête ; le retour
+   d'une demande envoyée sans JavaScript. */
+.contact-formulaire {
+  display: grid; gap: 1.25rem; max-inline-size: 46rem; margin-block-end: clamp(2rem, 5vw, 3.5rem); padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
+}
+.contact-formulaire h2 { margin: 0; font-size: 1.5rem; }
+.contact-retour {
+  margin: 0 0 1.5rem; padding: .875rem 1rem; border-radius: var(--theme-radius-doux);
+  background: color-mix(in srgb, var(--theme-succes) 12%, var(--theme-surface));
+}
+.contact-retour[role="alert"] { background: color-mix(in srgb, var(--theme-erreur) 10%, var(--theme-surface)); }
+html[data-structure="studio"] .contact-retour { margin-block-start: 1.5rem; }
+
+/* ============================================================================
+   LA STRUCTURE STUDIO
+   ========================================================================== */
+
+/* ---- L'en-tête : le nom à gauche, les pages, « Parlons-en » ----------------- */
+html[data-structure="studio"] .st-entete-cta {
+  display: inline-flex; align-items: center; justify-content: center; min-block-size: 2.75rem; padding: .5rem 1.25rem; border-radius: 999px; font-size: .875rem; font-weight: 500;
+  background: var(--theme-encre); color: var(--theme-fond); text-decoration: none; white-space: nowrap;
+  transition: background-color .25s var(--theme-courbe), transform .25s var(--st-courbe);
+}
+html[data-structure="studio"] .st-entete-cta:hover { background: var(--theme-accent); }
+html[data-structure="studio"] .st-entete-cta:active { transform: scale(.97); }
+@media (min-width: 900px) {
+  html[data-structure="studio"] .ed-entete-rang { grid-template-columns: auto minmax(0, 1fr) auto; }
+  html[data-structure="studio"] .ed-logo { order: -1; justify-self: start; }
+  html[data-structure="studio"] .ed-entete-debut { justify-content: flex-end; }
+  html[data-structure="studio"] .ed-nav { justify-content: flex-end; gap: 2.25rem; padding-inline-end: 2rem; }
+}
+@media (max-width: 899px) {
+  html[data-structure="studio"] .st-entete-cta { display: none; }
+}
+
+/* ---- Les sections du Studio ------------------------------------------------- */
+html[data-structure="studio"] :is(.vi-services, .vi-etapes, .st-realisations, .st-domaines-section, .st-recit, .st-manifeste) {
+  padding-block: var(--st-section);
+}
+html[data-structure="studio"] .vi-titre { font-size: calc(clamp(2.5rem, 6.4vw, 5.75rem) * var(--echelle-titres, 1)); line-height: .95; letter-spacing: -.03em; }
+
+/* L'ouverture : le titre d'abord, la photo dessous qui s'ouvre au défilement. */
+.st-ouverture { padding-block-start: clamp(2.5rem, 7vw, 6.5rem); }
+.st-ouverture-tete { display: grid; gap: clamp(1.25rem, 3vw, 2.25rem); }
+.st-ouverture-etiquette { margin: 0; }
+html[data-structure] .st-ouverture-titre.vi-titre {
+  font-size: calc(clamp(3.25rem, 10.4vw, 11rem) * var(--echelle-titres, 1)); line-height: .9; letter-spacing: -.045em;
+}
+.st-ouverture-pied { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1.5rem 3rem; }
+.st-ouverture-chapo { margin: 0; max-inline-size: 36ch; font-size: clamp(1.0625rem, 1.35vw, 1.25rem); line-height: 1.55; }
+.st-cta { display: inline-flex; align-items: center; gap: 1rem; color: inherit; font-size: .9375rem; font-weight: 500; text-decoration: none; }
+.st-cta-rond {
+  display: grid; place-items: center; inline-size: 3.5rem; block-size: 3.5rem; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--theme-encre) 30%, transparent);
+  transition: background-color .35s var(--st-courbe), color .35s var(--st-courbe), transform .5s var(--st-courbe), border-color .35s;
+}
+.st-cta:hover .st-cta-rond { background: var(--theme-encre); border-color: var(--theme-encre); color: var(--theme-fond); transform: rotate(-45deg); }
+.st-ouverture-media { margin-block-start: clamp(2.5rem, 6vw, 5rem); }
+.st-ouverture-cadre { position: relative; overflow: hidden; aspect-ratio: 4 / 5; }
+@media (min-width: 700px) { .st-ouverture-cadre { aspect-ratio: 16 / 9; } }
+.st-ouverture-image { position: absolute; inset: 0; }
+.st-ouverture-image img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.st-ouverture[data-sans-image] { padding-block-end: var(--st-section); }
+
+/* Le manifeste : de grands caractères, qui s'allument mot à mot. */
+.st-manifeste { display: grid; gap: 1.5rem; }
+.st-manifeste .etiquette { margin: 0; }
+.st-manifeste-titre { margin: 0; font-size: 1rem; font-weight: 500; }
+.st-manifeste-texte {
+  margin: 0; max-inline-size: 26ch; font-family: var(--theme-font-display); font-weight: 400; text-wrap: pretty;
+  font-size: calc(clamp(1.875rem, 4.6vw, 4.25rem) * var(--echelle-titres, 1)); line-height: 1.1; letter-spacing: -.02em;
+}
+
+/* Les réalisations : deux colonnes décalées. */
+.st-realisations-tete { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1.5rem 2rem; margin-block-end: clamp(2.5rem, 5vw, 4.5rem); }
+.st-realisations-tete > div { display: grid; gap: 1rem; justify-items: start; }
+.st-realisations-tete .etiquette { margin: 0; }
+.st-grille-projets { display: grid; gap: clamp(3rem, 6vw, 5rem) clamp(1.25rem, 3vw, 2.5rem); }
+@media (min-width: 900px) {
+  .st-grille-projets { grid-template-columns: 1fr 1fr; }
+  .st-grille-projets > :nth-child(even) { margin-block-start: clamp(5rem, 13vw, 13rem); }
+}
+
+/* Une carte de projet : la photo, puis son numéro, son nom, sa ligne. */
+.st-projet-lien { display: grid; gap: 1.125rem; color: inherit; text-decoration: none; }
+.st-projet-media { position: relative; display: block; }
+.st-projet-media .cadre-image { border-radius: var(--theme-radius-carte); }
+.st-projet-media .cadre-image img { transition: scale 1.4s var(--st-courbe); }
+.st-projet-voir {
+  position: absolute; inset-block-end: 1rem; inset-inline-start: 1rem; z-index: 1;
+  padding: .5rem 1rem; border-radius: 999px; font-size: .8125rem; font-weight: 500;
+  background: var(--theme-fond); color: var(--theme-encre);
+  opacity: 0; translate: 0 .5rem; transition: opacity .3s var(--theme-courbe), translate .45s var(--st-courbe);
+}
+.st-projet-legende { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 1rem; align-items: start; }
+.st-projet-num { padding-block-start: .45rem; font-size: .75rem; font-variant-numeric: tabular-nums; letter-spacing: .1em; color: var(--theme-encre-doux); }
+.st-projet-textes { display: grid; gap: .375rem; min-inline-size: 0; }
+.st-projet-nom { margin: 0; font-family: var(--theme-font-display); font-weight: 400; font-size: clamp(1.375rem, 2.3vw, 2.125rem); line-height: 1.08; letter-spacing: -.01em; }
+.st-projet-ligne { font-size: .875rem; color: var(--theme-encre-doux); }
+.st-projet-fleche { margin-block-start: .5rem; transition: transform .45s var(--st-courbe); }
+@media (hover: hover) and (pointer: fine) {
+  .st-projet-lien:hover .cadre-image img { scale: 1.045; }
+  .st-projet-lien:hover .st-projet-voir { opacity: 1; translate: 0 0; }
+  .st-projet-lien:hover .st-projet-fleche { transform: translate(3px, -3px) rotate(-45deg); }
+}
+.st-projet-lien:focus-visible { outline: none; }
+.st-projet-lien:focus-visible .cadre-image { outline: 2px solid var(--theme-encre); outline-offset: 4px; }
+
+/* Les domaines : une liste typographique ; au survol, la photo du domaine. */
+.st-domaines-tete { display: grid; gap: 1rem; justify-items: start; }
+.st-domaines-tete .etiquette { margin: 0; }
+.st-domaines-liste { margin: clamp(2rem, 4vw, 3rem) 0 0; padding: 0; list-style: none; border-block-start: 1px solid var(--theme-filet-fort); }
+.st-domaine {
+  position: relative; display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) auto; align-items: center; gap: .25rem 1rem;
+  padding-block: clamp(1.25rem, 2.6vw, 2.25rem); border-block-end: 1px solid var(--theme-filet-fort); color: inherit; text-decoration: none;
+}
+.st-domaine-num { display: none; font-size: .8125rem; font-variant-numeric: tabular-nums; letter-spacing: .08em; color: var(--theme-encre-doux); }
+.st-domaine-nom {
+  grid-column: 2; font-family: var(--theme-font-display); font-weight: 400; line-height: 1; letter-spacing: -.025em;
+  font-size: calc(clamp(1.875rem, 5.4vw, 5rem) * var(--echelle-titres, 1)); transition: translate .6s var(--st-courbe);
+}
+.st-domaine-compte { grid-column: 2; font-size: .875rem; color: var(--theme-encre-doux); white-space: nowrap; }
+.st-domaine-fleche { grid-column: 3; grid-row: 1 / span 2; transition: transform .45s var(--st-courbe); }
+.st-domaine-photo { grid-column: 1; grid-row: 1 / span 2; inline-size: 4.5rem; pointer-events: none; }
+.st-domaine-photo .cadre-image { border-radius: var(--theme-radius-carte); }
+.st-domaine:not(:has(.st-domaine-photo)) { grid-template-columns: minmax(0, 1fr) auto; }
+.st-domaine:not(:has(.st-domaine-photo)) :is(.st-domaine-nom, .st-domaine-compte) { grid-column: 1; }
+.st-domaine:not(:has(.st-domaine-photo)) .st-domaine-fleche { grid-column: 2; }
+/* Sur ordinateur, à la souris : le numéro, le nom immense, le nombre ; la
+   photo du domaine apparaît au survol, inclinée, à côté du nom. */
+@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
+  .st-domaine, .st-domaine:not(:has(.st-domaine-photo)) { grid-template-columns: 3.5rem minmax(0, 1fr) auto auto; gap: 1.25rem; }
+  .st-domaine-num { display: block; }
+  .st-domaine :is(.st-domaine-nom, .st-domaine-compte, .st-domaine-fleche),
+  .st-domaine:not(:has(.st-domaine-photo)) :is(.st-domaine-nom, .st-domaine-compte, .st-domaine-fleche) { grid-column: auto; grid-row: auto; }
+  .st-domaine-photo {
+    position: absolute; z-index: 2; inset-block-start: 50%; inset-inline-end: 16%; inline-size: clamp(9rem, 15vw, 14rem);
+    opacity: 0; translate: 0 -50%; rotate: -4deg; scale: .88;
+    transition: opacity .35s var(--theme-courbe), scale .6s var(--st-courbe), rotate .6s var(--st-courbe);
+  }
+  .st-domaine:hover .st-domaine-photo { opacity: 1; scale: 1; rotate: 2deg; }
+  .st-domaine:hover .st-domaine-nom { translate: 1.25rem 0; }
+  .st-domaine:hover .st-domaine-fleche { transform: translateX(6px); }
+}
+
+/* Le récit : la photo et le texte côte à côte. */
+.st-recit-grille { display: grid; gap: 2.5rem; align-items: center; }
+.st-recit-image .cadre-image { border-radius: var(--theme-radius-carte); }
+.st-recit-texte { display: grid; gap: 1.5rem; justify-items: start; }
+.st-recit-texte .etiquette, .st-recit-texte .chapo { margin: 0; }
+.st-recit-texte .chapo { font-size: clamp(1.0625rem, 1.3vw, 1.1875rem); max-inline-size: 44ch; }
+@media (min-width: 900px) { .st-recit-grille { grid-template-columns: 1fr 1fr; gap: clamp(3rem, 7vw, 8rem); } }
+
+/* Les services, la méthode, le contact, à la manière du Studio. */
+html[data-structure="studio"] .vi-services .vi-titre { font-size: calc(clamp(2.25rem, 4.4vw, 4.25rem) * var(--echelle-titres, 1)); }
+html[data-structure="studio"] .vi-etape h3 { font-size: clamp(1.5rem, 2.2vw, 2rem); }
+html[data-structure="studio"] .vi-etape p { font-size: 1rem; }
+html[data-structure="studio"] .vi-service h3 { font-size: calc(clamp(1.625rem, 3vw, 2.75rem) * var(--echelle-titres, 1)); }
+html[data-structure="studio"] .vi-etape { background: var(--theme-surface); box-shadow: inset 0 0 0 1px var(--theme-filet); }
+html[data-structure="studio"] .vi-contact { background: var(--theme-encre); color: var(--theme-fond); }
+html[data-structure="studio"] .vi-contact :is(.etiquette, .chapo, .legende, .fc-aide, .fc-mention) { color: color-mix(in srgb, var(--theme-fond) 72%, transparent); }
+html[data-structure="studio"] .vi-contact .fc-champ :is(input, select, textarea) {
+  color: var(--theme-fond); background: color-mix(in srgb, var(--theme-fond) 7%, transparent);
+  border-color: color-mix(in srgb, var(--theme-fond) 30%, transparent);
+}
+html[data-structure="studio"] .vi-contact .fc-champ select option { color: var(--theme-encre); background: var(--theme-surface); }
+html[data-structure="studio"] .vi-contact .fc-champ :is(input, select, textarea):hover { border-color: color-mix(in srgb, var(--theme-fond) 60%, transparent); }
+html[data-structure="studio"] .vi-contact .fc-champ :is(input, select, textarea):focus-visible { outline-color: var(--theme-fond); border-color: var(--theme-fond); }
+html[data-structure="studio"] .vi-contact .fc-champ [aria-invalid="true"] { border-color: var(--theme-accent-clair); box-shadow: 0 0 0 1px var(--theme-accent-clair); }
+html[data-structure="studio"] .vi-contact .fc-erreur { color: var(--theme-accent-clair); }
+html[data-structure="studio"] .vi-contact .fc-erreur-generale { background: color-mix(in srgb, var(--theme-fond) 10%, transparent); }
+html[data-structure="studio"] .vi-contact .fc-a-propos { background: transparent; color: var(--theme-fond); border-color: color-mix(in srgb, var(--theme-fond) 30%, transparent); }
+html[data-structure="studio"] .vi-contact .fc-envoyer { background: var(--theme-fond); color: var(--theme-encre); }
+html[data-structure="studio"] .vi-contact .fc-envoyer:hover:not(:disabled) { background: var(--theme-accent-clair); }
+/* Le remerciement, sur le fond sombre : un filet clair, pas une carte claire posée dessus. */
+html[data-structure="studio"] .vi-contact .fc-merci {
+  background: color-mix(in srgb, var(--theme-fond) 6%, transparent); color: var(--theme-fond);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-fond) 22%, transparent);
+}
+html[data-structure="studio"] .vi-contact .fc-merci p { color: color-mix(in srgb, var(--theme-fond) 72%, transparent); }
+html[data-structure="studio"] .vi-contact .fc-merci-icone { background: var(--theme-accent-clair); color: var(--theme-encre); }
+html[data-structure="studio"] .vi-contact .fc-merci .btn-lien { color: var(--theme-fond); }
+html[data-structure="studio"] .vi-contact .lien-souligne:focus-visible,
+html[data-structure="studio"] .vi-contact a:focus-visible,
+html[data-structure="studio"] .vi-contact button:focus-visible { outline: 2px solid var(--theme-fond); outline-offset: 3px; }
+
+/* ---- Les réalisations (le catalogue) ----------------------------------------- */
+.st-liste-tete { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; justify-items: start; padding-block: clamp(2rem, 5vw, 4.5rem) clamp(2.5rem, 5vw, 4.5rem); }
+html[data-structure] .st-liste-titre.vi-titre { font-size: calc(clamp(3rem, 9vw, 9rem) * var(--echelle-titres, 1)); line-height: .92; letter-spacing: -.04em; }
+.st-liste-tete .chapo { margin: 0; }
+.st-domaines { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .75rem; }
+.st-domaines a {
+  display: inline-flex; align-items: baseline; gap: .375rem; min-block-size: 2.75rem; padding: .6875rem 1.125rem;
+  border: 1px solid var(--theme-filet-fort); border-radius: 999px; color: inherit; font-size: .9375rem; text-decoration: none;
+  transition: background-color .25s var(--theme-courbe), color .25s var(--theme-courbe), border-color .25s var(--theme-courbe);
+}
+.st-domaines a:hover { border-color: var(--theme-encre); }
+.st-domaines a[aria-current] { background: var(--theme-encre); border-color: var(--theme-encre); color: var(--theme-fond); }
+.st-domaines sup { font-size: .6875rem; opacity: .65; }
+.st-liste .st-grille-projets { padding-block-end: var(--st-section, 5rem); }
+.st-pagination { padding-block-end: var(--st-section, 5rem); }
+
+/* ---- La fiche d'un projet ---------------------------------------------------- */
+.st-fiche-tete { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; justify-items: start; padding-block: clamp(1.5rem, 4vw, 3.5rem) clamp(2rem, 4vw, 3.5rem); }
+.st-fiche-tete .etiquette { margin: 0; }
+/* Le fil d'Ariane prend la largeur, pas plus : au téléphone, le nom d'un long projet finit en « … ». */
+:is(.st-fiche-tete, .st-liste-tete) > .fil { justify-self: stretch; min-inline-size: 0; }
+html[data-structure] .st-fiche-titre.vi-titre { max-inline-size: 15ch; font-size: calc(clamp(2.75rem, 8vw, 8rem) * var(--echelle-titres, 1)); line-height: .92; letter-spacing: -.04em; }
+.st-faits {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 1.25rem 2rem; inline-size: 100%;
+  margin: .75rem 0 0; padding-block-start: 1.5rem; border-block-start: 1px solid var(--theme-filet-fort);
+}
+.st-faits dt { font-size: .75rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--theme-encre-doux); }
+.st-faits dd { margin: .375rem 0 0; font-size: 1.0625rem; }
+.st-fiche-ouverture .cadre-image { inline-size: 100%; max-block-size: 88svh; }
+.st-fiche-corps { display: grid; gap: 2.5rem; padding-block: var(--st-section, 5rem); }
+.st-fiche-texte { display: grid; gap: 1.25rem; align-content: start; }
+.st-fiche-texte .etiquette { margin: 0; }
+.st-fiche-texte :is(p, li) { max-inline-size: 60ch; font-size: clamp(1.0625rem, 1.4vw, 1.25rem); line-height: 1.65; }
+.st-fiche-texte p:first-of-type { font-family: var(--theme-font-display); font-size: clamp(1.5rem, 2.6vw, 2.25rem); line-height: 1.25; letter-spacing: -.01em; }
+.st-fiche-appel {
+  display: grid; gap: .875rem; justify-items: start; align-self: start; padding: clamp(1.5rem, 2.5vw, 2rem);
+  background: var(--theme-surface-2); border-radius: var(--theme-radius-carte);
+}
+.st-fiche-appel-titre { margin: 0; font-family: var(--theme-font-display); font-size: 1.625rem; line-height: 1.1; }
+.st-fiche-appel .legende { margin: 0; font-size: .9375rem; line-height: 1.55; }
+@media (min-width: 900px) {
+  .st-fiche-corps { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: clamp(3rem, 7vw, 7rem); }
+  .st-fiche-appel { position: sticky; inset-block-start: calc(var(--entete-h, 4rem) + 1.5rem); }
+}
+.st-galerie { padding-block-end: var(--st-section, 5rem); }
+.st-galerie-liste { display: grid; gap: clamp(1rem, 2vw, 1.5rem); margin: 0; padding: 0; list-style: none; }
+@media (min-width: 900px) { .st-galerie-liste { grid-template-columns: 1fr 1fr; } .st-galerie-vue[data-large] { grid-column: 1 / -1; } }
+.st-galerie .galerie-agrandir { display: block; inline-size: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.st-galerie .cadre-image { border-radius: var(--theme-radius-carte); }
+.st-galerie .galerie-agrandir:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 4px; }
+.st-suivant { border-block-start: 1px solid var(--theme-filet-fort); }
+.st-suivant-lien { display: block; color: inherit; text-decoration: none; }
+.st-suivant-textes { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: .75rem 2rem; padding-block: clamp(3rem, 7vw, 6rem) clamp(1.5rem, 3vw, 2.5rem); }
+.st-suivant-textes .etiquette { grid-column: 1 / -1; margin: 0; }
+html[data-structure] .st-suivant-nom.vi-titre { font-size: calc(clamp(2.25rem, 6.5vw, 6.5rem) * var(--echelle-titres, 1)); line-height: .95; }
+.st-suivant-textes svg { margin-block-end: .5em; transition: transform .5s var(--st-courbe); }
+.st-suivant-media .cadre-image img { transition: scale 1.4s var(--st-courbe); }
+@media (hover: hover) and (pointer: fine) {
+  .st-suivant-lien:hover .st-suivant-textes svg { transform: translateX(10px); }
+  .st-suivant-lien:hover .st-suivant-media .cadre-image img { scale: 1.035; }
+}
+
+/* ============================================================================
+   LES ANIMATIONS EXPRESSIVES
+   ========================================================================== */
+@keyframes st-ligne { from { transform: translateY(108%); } }
+@keyframes st-entree { from { opacity: 0; transform: translateY(1.25rem); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Les lignes d'un titre montent de sous leur ligne de base : elles sont rognées. */
+  html[data-animations="expressives"] .vi-ligne { overflow: clip; padding-block-end: .08em; margin-block-end: -.08em; }
+
+  /* L'ouverture, dès l'arrivée (CSS seul : sans JavaScript aussi). */
+  html[data-animations="expressives"] .st-ouverture-titre .vi-ligne > span {
+    animation: st-ligne 1.15s var(--st-courbe) both; animation-delay: calc(120ms + var(--l, 0) * 110ms);
+  }
+  html[data-animations="expressives"] :is(.st-ouverture-etiquette, .st-ouverture-pied) {
+    animation: st-entree 1s var(--st-courbe) both; animation-delay: .45s;
+  }
+
+  /* Les autres titres, en entrant à l'écran (Apparitions.tsx pose data-vu). */
+  html.js-apparitions[data-animations="expressives"] .vi-titre:not(.st-ouverture-titre):not([data-vu]) .vi-ligne > span { transform: translateY(108%); }
+  html.js-apparitions[data-animations="expressives"] .vi-titre:not(.st-ouverture-titre)[data-vu] .vi-ligne > span {
+    animation: st-ligne 1s var(--st-courbe) both; animation-delay: calc(var(--delai, 0ms) + var(--l, 0) * 100ms);
+  }
+
+  /* D'une page à l'autre : le contenu arrive d'un léger élan (MouvementStudio.tsx). */
+  html[data-animations="expressives"][data-navigue] #principal { animation: st-entree .7s var(--st-courbe) both; }
+}
+
+/* Liées au défilement : là où le navigateur sait les lier. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* La photo d'ouverture, posée en retrait, s'ouvre jusqu'à prendre la largeur. */
+    html[data-animations="expressives"] .st-ouverture-cadre {
+      animation: st-deplie linear both; animation-timeline: view(); animation-range: entry 0% cover 45%;
+    }
+    html[data-animations="expressives"] .st-ouverture-image img {
+      animation: st-recul linear both; animation-timeline: view(); animation-range: cover 0% cover 100%;
+    }
+    /* Chaque photo glisse doucement dans son cadre. */
+    html[data-animations="expressives"] :is(.st-projet-media, .st-recit-image, .st-fiche-ouverture, .st-galerie-vue, .vi-services-image) .cadre-image img {
+      scale: 1.12; animation: st-glisse-photo linear both; animation-timeline: view(); animation-range: cover 0% cover 100%;
+    }
+    html[data-animations="expressives"] .st-projet-lien:hover .cadre-image img { scale: 1.16; }
+    /* Le manifeste s'allume mot à mot, à mesure qu'on le lit. */
+    html[data-animations="expressives"] .st-mot {
+      animation: st-allume linear both; animation-timeline: view(); animation-range: cover 12% cover 42%;
+    }
+  }
+
+  /* La méthode, sur ordinateur : épinglée, ses étapes défilent de côté. */
+  @media (prefers-reduced-motion: no-preference) and (min-width: 900px) {
+    html[data-animations="expressives"][data-structure="studio"] .vi-etapes {
+      block-size: calc(100svh + max(0px, var(--n, 4) * 30vw - 82vw)); padding-block: 0; view-timeline: --st-etapes block;
+    }
+    html[data-animations="expressives"][data-structure="studio"] .vi-etapes-collant {
+      position: sticky; inset-block-start: 0; block-size: 100svh; overflow: clip; align-content: center;
+    }
+    html[data-animations="expressives"][data-structure="studio"] .vi-etapes-piste {
+      display: flex; inline-size: max-content; max-inline-size: none; margin: 0; padding-inline: var(--theme-marge) 12vw;
+      animation: st-glisse linear both; animation-timeline: --st-etapes; animation-range: contain 0% contain 100%;
+    }
+    html[data-animations="expressives"][data-structure="studio"] .vi-etape { inline-size: clamp(19rem, 28vw, 27rem); min-block-size: min(24rem, 52svh); }
+    html[data-animations="expressives"][data-structure="studio"] .vi-etapes-jauge {
+      display: block; inline-size: min(var(--theme-large), calc(100% - 2 * var(--theme-marge))); margin-inline: auto;
+      block-size: 2px; background: var(--theme-filet);
+    }
+    html[data-animations="expressives"][data-structure="studio"] .vi-etapes-jauge span {
+      display: block; block-size: 100%; background: var(--theme-encre); transform-origin: left;
+      animation: st-jauge linear both; animation-timeline: --st-etapes; animation-range: contain 0% contain 100%;
+    }
+    html[dir="rtl"][data-animations="expressives"][data-structure="studio"] .vi-etapes-jauge span { transform-origin: right; }
+  }
+}
+@keyframes st-deplie {
+  from { clip-path: inset(0 var(--theme-marge) round var(--theme-radius-bloc)); }
+  to { clip-path: inset(0 0 round 0); }
+}
+@keyframes st-recul { from { transform: scale(1.14); } to { transform: scale(1); } }
+@keyframes st-glisse-photo { from { translate: 0 -5%; } to { translate: 0 5%; } }
+@keyframes st-allume { from { opacity: .18; } to { opacity: 1; } }
+@keyframes st-glisse { from { translate: 0 0; } to { translate: min(0px, calc(-100% + 100vw)) 0; } }
+@keyframes st-jauge { from { transform: scaleX(0); } to { transform: scaleX(1); } }

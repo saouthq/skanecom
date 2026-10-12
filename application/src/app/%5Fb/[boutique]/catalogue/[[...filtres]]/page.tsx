@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Gabarit } from "@/components/Gabarit";
 import { Listing } from "@/components/Listing";
+import { ListeProjets } from "@/components/Projets";
 import { EnteteListe } from "@/components/EnteteListe";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { listeProduits } from "@/lib/catalogue";
 import { cheminFiltres, estCanonique, litSegments, nombreFiltresActifs, versCriteres } from "@/lib/filtres";
 import { champ, t } from "@/lib/i18n";
+import { texte } from "@/lib/theme";
 
 /* Tout le catalogue, filtres dans le chemin (lib/filtres.ts) : chaque liste
    filtrée est une page mise en cache, servie même pendant une panne de la base. */
@@ -23,7 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const cadre = await chargeCadre(boutique);
   const f = litSegments(filtres);
   return {
-    title: t.catalogue.titre,
+    title: cadre.theme.structure === "studio" ? texte(cadre.theme.textes, "catalogue_titre", t.studio.realisations) : t.catalogue.titre,
     description: t.seo.catalogueDescription(cadre.boutique.nom),
     alternates: { canonical: cheminFiltres("/catalogue", f) },
     // Une liste filtrée se partage, elle ne s'indexe pas : Google n'a besoin
@@ -39,6 +41,16 @@ export default async function Catalogue({ params }: Params) {
 
   const cadre = await chargeCadre(boutique);
   const liste = await listeProduits(cadre.boutique.id, versCriteres(f), f.tri, f.page);
+
+  // Le Studio : les réalisations, en grand (components/Projets.tsx).
+  if (cadre.theme.structure === "studio") {
+    return (
+      <Gabarit>
+        <ListeProjets cadre={cadre} liste={liste} filtres={f} base="/catalogue" titre={texte(cadre.theme.textes, "catalogue_titre", t.studio.realisations)}
+          chapo={texte(cadre.theme.textes, "catalogue_chapo") || null} fil={null} rayonActif={null} />
+      </Gabarit>
+    );
+  }
 
   return (
     <Gabarit>
@@ -57,6 +69,7 @@ export default async function Catalogue({ params }: Params) {
         avecRayons
         gabarit={cadre.theme.code}
         prixBarres={cadre.prixBarres}
+        prixMasques={cadre.prixMasques}
       />
     </Gabarit>
   );

@@ -1937,7 +1937,7 @@ if (section("4bis")) {
     const avant = await plan();
     verifie(avant.includes("Avis clients") && avant.includes("Questions fréquentes"), `l'accueil de haut en bas (${avant.join(" > ")})`);
     await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
-    verifie((await page.locator(".pa-modeles .ac-modele").count()) === 12, "« Ajouter une section » : la bibliothèque, douze sections (bannières, lookbook et pièce de la saison compris)");
+    verifie((await page.locator(".pa-modeles .ac-modele").count()) === 15, "« Ajouter une section » : la bibliothèque, quinze sections (bannières, lookbook, pièce de la saison, services, méthode et contact compris)");
     verifie(await page.locator(".pa-modeles .ac-modele", { hasText: "Avis clients" }).isDisabled(), "une section déjà posée ne s'ajoute pas deux fois");
     await clic(page, page.getByRole("button", { name: "Ajouter une section" }));
     await page.getByRole("button", { name: "Monter « Avis clients »" }).focus();

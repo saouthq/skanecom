@@ -6,6 +6,8 @@ import { Enveloppe, Facebook, Fleche, Instagram, LogoWhatsApp, Magasin, Telephon
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { aUnContact, contactDe, lienItineraire } from "@/lib/contact";
 import { t } from "@/lib/i18n";
+import { FormulaireContact } from "@/components/FormulaireContact";
+import { SectionContact } from "@/components/SectionsVitrine";
 
 /* ============================================================================
    CONTACT — les moyens de joindre la boutique, en grand et au doigt :
@@ -22,12 +24,33 @@ export const metadata: Metadata = { title: t.contact.titre };
 const ICONES_RESEAU = { instagram: Instagram, facebook: Facebook, tiktok: TikTok };
 const NOMS_RESEAU = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok" };
 
-export default async function Contact({ params }: { params: Promise<{ boutique: string }> }) {
+type Params = { params: Promise<{ boutique: string }>; searchParams: Promise<{ demande?: string; erreur?: string }> };
+
+/** Le retour d'une demande envoyée sans JavaScript (contact/envoyer) : partie, ou non. */
+function RetourDemande({ demande, erreur, boutique }: { demande?: string; erreur?: string; boutique: string }) {
+  if (demande && (/^DEM-\d{5}$/.test(demande) || demande === "envoyee")) {
+    return <p className="message message-succes contact-retour" role="status">{t.formulaire.merciTitre} {t.formulaire.merciTexte(boutique, demande === "envoyee" ? null : demande)}</p>;
+  }
+  return erreur ? <p className="message message-erreur contact-retour" role="alert">{t.formulaire.erreur}</p> : null;
+}
+
+export default async function Contact({ params, searchParams }: Params) {
   const { boutique } = await params;
+  const { demande, erreur } = await searchParams;
   const cadre = await chargeCadre(boutique);
   const c = contactDe(cadre, t.contact.messageWhatsapp(cadre.boutique.nom));
-  if (!aUnContact(c)) notFound();
+  if (!aUnContact(c) && !cadre.formulaire) notFound();
   const lieu = c.magasin ? `${c.magasin.adresse}, ${c.magasin.ville}` : c.adresse;
+
+  // Le Studio : la page Contact est son appel, en grand — le titre, les moyens directs, le formulaire.
+  if (cadre.theme.structure === "studio") {
+    return (
+      <Gabarit className="flex-1">
+        <div className="enveloppe"><RetourDemande demande={demande} erreur={erreur} boutique={cadre.boutique.nom} /></div>
+        <SectionContact rang={-1} section={null} cadre={cadre} principal />
+      </Gabarit>
+    );
+  }
 
   return (
     <Gabarit className="enveloppe flex-1 contact-page">
@@ -36,6 +59,13 @@ export default async function Contact({ params }: { params: Promise<{ boutique: 
         <h1>{t.contact.titre}</h1>
         <p className="chapo">{t.contact.chapo(cadre.boutique.nom)}</p>
       </header>
+      <RetourDemande demande={demande} erreur={erreur} boutique={cadre.boutique.nom} />
+      {cadre.formulaire ? (
+        <section className="contact-formulaire" id="contact" aria-labelledby="contact-formulaire-titre">
+          <h2 id="contact-formulaire-titre">{t.formulaire.titre}</h2>
+          <FormulaireContact boutique={cadre.boutique.nom} sujets={cadre.formulaire.sujets} apercu={cadre.apercu === true} />
+        </section>
+      ) : null}
 
       <div className="contact-grille">
         <ul className="contact-canaux" role="list">

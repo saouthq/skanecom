@@ -7,7 +7,7 @@ import { OuvrirConsentementPub } from "./PixelsPub";
 import { champ, t } from "@/lib/i18n";
 import { texte } from "@/lib/theme";
 import { lienConseil } from "@/lib/faits";
-import { aUnContact, contactDe } from "@/lib/contact";
+import { aUnContact, contactDe, lienItineraire } from "@/lib/contact";
 import { PAGES_LEGALES } from "@/lib/legal";
 import type { Cadre } from "@/lib/boutique";
 
@@ -30,9 +30,12 @@ function ListeBoutique({ cadre }: { cadre: Cadre }) {
           <Link href="/contact">{t.pied.contact}</Link>
         </li>
       ) : null}
-      <li>
-        <Link href="/suivi">{t.pied.suivreCommande}</Link>
-      </li>
+      {/* Un site vitrine ne prend pas de commande : rien à suivre. */}
+      {cadre.siteVitrine ? null : (
+        <li>
+          <Link href="/suivi">{t.pied.suivreCommande}</Link>
+        </li>
+      )}
       {cadre.sav ? (
         <li>
           <Link href="/garantie-et-sav">{t.sav.lienPied}</Link>
@@ -128,6 +131,8 @@ export function Pied({ cadre }: { cadre: Cadre }) {
 }
 
 function ListeRayons({ cadre }: { cadre: Cadre }) {
+  // Le Studio : ses domaines et toutes ses réalisations ; on y regarde, on n'y cherche pas.
+  const studio = cadre.theme.structure === "studio";
   return (
     <ul>
       {cadre.racines.map((c) => (
@@ -136,13 +141,35 @@ function ListeRayons({ cadre }: { cadre: Cadre }) {
         </li>
       ))}
       <li>
-        <Link href="/catalogue">{t.commun.toutLeCatalogue}</Link>
+        <Link href="/catalogue">{studio ? t.pied.toutesLesRealisations : t.commun.toutLeCatalogue}</Link>
       </li>
-      <li>
-        <Link href="/recherche">{t.commun.rechercher}</Link>
-      </li>
+      {studio ? null : (
+        <li>
+          <Link href="/recherche">{t.commun.rechercher}</Link>
+        </li>
+      )}
     </ul>
   );
+}
+
+/** Un site vitrine : au lieu de « Commander », comment le joindre — ses
+ *  horaires, son téléphone, son e-mail, son adresse (et l'itinéraire). */
+function NousJoindre({ cadre }: { cadre: Cadre }) {
+  const c = contactDe(cadre);
+  const lieu = c.magasin ? `${c.magasin.adresse}, ${c.magasin.ville}` : c.adresse;
+  return (
+    <ul className="ed-pied-faits pied-joindre">
+      {c.horaires ? <li>{c.horaires}</li> : null}
+      {c.telephone ? <li><a href={c.telephone.href}>{c.telephone.lisible}</a></li> : null}
+      {c.email ? <li><a href={c.email.href}>{c.email.lisible}</a></li> : null}
+      {lieu ? <li><a href={lienItineraire(lieu)} target="_blank" rel="noopener noreferrer">{lieu}</a></li> : null}
+    </ul>
+  );
+}
+
+/** Le titre de la colonne du catalogue : au Studio, celui de ses réalisations. */
+function titreCatalogue(cadre: Cadre): string {
+  return cadre.theme.structure === "studio" ? texte(cadre.theme.textes, "catalogue_titre", t.studio.realisations) : t.pied.catalogue;
 }
 
 function Droits({ cadre }: { cadre: Cadre }) {
@@ -150,13 +177,15 @@ function Droits({ cadre }: { cadre: Cadre }) {
     <>
       <span>{t.pied.droits(new Date().getFullYear(), cadre.boutique.nom, texte(cadre.theme.textes, "origine") || undefined)}</span>
       <nav className="pied-legal" aria-label={t.pied.legal}>
-        {PAGES_LEGALES.map((p) => (
+        {/* Un site vitrine ne vend pas : pas de conditions de vente à lire. */}
+        {PAGES_LEGALES.filter((p) => !cadre.siteVitrine || p.chemin !== "/conditions-de-vente").map((p) => (
           <Link key={p.chemin} href={p.chemin}>{p.titre}</Link>
         ))}
         {/* Changer d'avis sur les pixels publicitaires, à tout moment. */}
         {cadre.pixels ? <OuvrirConsentementPub className="pied-legal-bouton" /> : null}
       </nav>
-      <span>{t.pied.devise}</span>
+      {/* Des prix masqués : aucune devise à annoncer. */}
+      {cadre.prixMasques ? null : <span>{t.pied.devise}</span>}
     </>
   );
 }
@@ -174,22 +203,29 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
           <Reseaux cadre={cadre} classe="pied-reseaux" />
         </div>
         <div>
-          <p className="ed-pied-titre">{t.pied.catalogue}</p>
+          <p className="ed-pied-titre">{titreCatalogue(cadre)}</p>
           <ListeRayons cadre={cadre} />
         </div>
         <div>
-          <p className="ed-pied-titre">{t.pied.laBoutique}</p>
+          <p className="ed-pied-titre">{cadre.siteVitrine ? t.pied.laMaison : t.pied.laBoutique}</p>
           <ListeBoutique cadre={cadre} />
         </div>
-        <div>
-          <p className="ed-pied-titre">{t.pied.commander}</p>
-          <ul className="ed-pied-faits">
-            {livraison.cod ? <li>{t.pied.paiementLivraison}</li> : null}
-            {livraison.delai ? <li>{livraison.delai}</li> : null}
-            <li>{t.produit.refusPossible}</li>
-            {retour ? <li>{retour}</li> : null}
-          </ul>
-        </div>
+        {cadre.siteVitrine ? (
+          <div>
+            <p className="ed-pied-titre">{t.pied.nousJoindre}</p>
+            <NousJoindre cadre={cadre} />
+          </div>
+        ) : (
+          <div>
+            <p className="ed-pied-titre">{t.pied.commander}</p>
+            <ul className="ed-pied-faits">
+              {livraison.cod ? <li>{t.pied.paiementLivraison}</li> : null}
+              {livraison.delai ? <li>{livraison.delai}</li> : null}
+              <li>{t.produit.refusPossible}</li>
+              {retour ? <li>{retour}</li> : null}
+            </ul>
+          </div>
+        )}
       </div>
       <div className="enveloppe ed-pied-marque" aria-hidden="true">
         {cadre.theme.logo ? <Logo cadre={cadre} className="marque-geante" /> : <MarqueGeante nom={cadre.boutique.nom} />}
@@ -212,10 +248,13 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
     cadre.retrait ? { icone: <Magasin taille={22} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) } : null,
     cadre.sav?.garantieMois ? { icone: <Bouclier taille={22} />, titre: t.annonce.garantie(cadre.sav.garantieMois), texte: t.sav.garantieTexte } : null,
     { icone: <Retour taille={22} />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
-  ].filter((s) => s !== null);
+  ].filter((s) => s !== null)
+    // Un site vitrine ne livre ni ne vend : il reste la garantie.
+    .filter((s) => !cadre.siteVitrine || s.titre === (cadre.sav?.garantieMois ? t.annonce.garantie(cadre.sav.garantieMois) : null));
 
   return (
     <footer className="te-pied mt-auto" data-zone="pied">
+      {services.length ? (
       <div className="te-pied-services">
         <ul className="enveloppe">
           {services.map((s) => (
@@ -229,6 +268,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
           ))}
         </ul>
       </div>
+      ) : null}
       <Lettre cadre={cadre} classe="te-lettre" />
       <div className="enveloppe te-pied-grille">
         <div>
@@ -243,21 +283,28 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
           <Reseaux cadre={cadre} classe="pied-reseaux te-pied-reseaux" />
         </div>
         <div>
-          <p className="te-pied-titre">{t.pied.catalogue}</p>
+          <p className="te-pied-titre">{titreCatalogue(cadre)}</p>
           <ListeRayons cadre={cadre} />
         </div>
         <div>
-          <p className="te-pied-titre">{t.pied.laBoutique}</p>
+          <p className="te-pied-titre">{cadre.siteVitrine ? t.pied.laMaison : t.pied.laBoutique}</p>
           <ListeBoutique cadre={cadre} />
         </div>
-        <div>
-          <p className="te-pied-titre">{t.pied.services}</p>
-          <ul>
-            {livraison.cod ? <li>{t.pied.paiementLivraison}</li> : null}
-            {livraison.delai ? <li>{livraison.delai}</li> : null}
-            {cadre.retrait ? <li>{t.produit.retraitMagasin}</li> : null}
-          </ul>
-        </div>
+        {cadre.siteVitrine ? (
+          <div>
+            <p className="te-pied-titre">{t.pied.nousJoindre}</p>
+            <NousJoindre cadre={cadre} />
+          </div>
+        ) : (
+          <div>
+            <p className="te-pied-titre">{t.pied.services}</p>
+            <ul>
+              {livraison.cod ? <li>{t.pied.paiementLivraison}</li> : null}
+              {livraison.delai ? <li>{livraison.delai}</li> : null}
+              {cadre.retrait ? <li>{t.produit.retraitMagasin}</li> : null}
+            </ul>
+          </div>
+        )}
       </div>
       <Moyens cadre={cadre} />
       <div className="enveloppe te-pied-bas">

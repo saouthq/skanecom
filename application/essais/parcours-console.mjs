@@ -364,10 +364,10 @@ await etape("la galerie des modèles : chaque structure, sa démonstration en ap
   await page.waitForURL(/\/modeles$/);
   await page.waitForLoadState("networkidle");
   const titres = await page.locator(".mo-modele h2").allInnerTexts();
-  verifie(titres.length === 6 && titres.slice(0, 4).every((x) => ["Bento", "Immersif", "Commerce", "Monoproduit"].includes(x)),
-    `six structures, celles qui ont leur démonstration d'abord : ${titres.join(", ")}`);
-  verifie((await page.locator(".mo-cadre iframe").count()) === 4 && (await page.locator(".mo-sans-demo").count()) === 2,
-    "quatre aperçus vivants ; l'Éditorial et la Technique disent qu'ils n'ont pas encore de démonstration");
+  verifie(titres.length === 7 && titres.slice(0, 5).every((x) => ["Bento", "Immersif", "Commerce", "Monoproduit", "Studio"].includes(x)),
+    `sept structures, celles qui ont leur démonstration d'abord : ${titres.join(", ")}`);
+  verifie((await page.locator(".mo-cadre iframe").count()) === 5 && (await page.locator(".mo-sans-demo").count()) === 2,
+    "cinq aperçus vivants (le Studio d'Atelier Ocre compris) ; l'Éditorial et la Technique disent qu'ils n'ont pas encore de démonstration");
   const bento = page.locator(".mo-modele", { has: page.locator("h2", { hasText: /^Bento$/ }) });
   await bento.scrollIntoViewIfNeeded();
   // Les aperçus se chargent à l'approche (loading="lazy") : on attend que chacun ait son titre.

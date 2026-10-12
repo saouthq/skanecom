@@ -12,6 +12,7 @@ import { urlFichier } from "@/lib/photos";
 import { assurancesPanier, bandeau, faitsDeService, lienConseil } from "@/lib/faits";
 import { descendance, type Cadre } from "@/lib/boutique";
 import { aUnContact, contactDe } from "@/lib/contact";
+import { texte } from "@/lib/theme";
 
 /* ============================================================================
    L'EN-TÊTE — un par gabarit, parce que les deux métiers ne cherchent pas de
@@ -113,8 +114,8 @@ function aideMenu(cadre: Cadre): { href: string; nom: string }[] {
 
 /** L'accueil s'ouvre-t-il par une photo pleine page (et pas détourée) ? */
 function ouvertureSurPhoto(cadre: Cadre): boolean {
-  // Le Bento ouvre sur une tuile, pas sur une photo pleine page.
-  if (cadre.theme.structure === "bento") return false;
+  // Le Bento ouvre sur une tuile, le Studio sur son titre : pas sur une photo pleine page.
+  if (cadre.theme.structure === "bento" || cadre.theme.structure === "studio") return false;
   const premiere = cadre.theme.sections[0];
   return premiere?.type === "hero" && Boolean(premiere.image) && !premiere.image?.detouree;
 }
@@ -126,12 +127,22 @@ export function Entete({ cadre }: { cadre: Cadre }) {
 function EnteteEditorial({ cadre }: { cadre: Cadre }) {
   const faits = faitsDeService(cadre);
   const annonces = bandeau(cadre);
+  // Le Studio (un site vitrine) : ses réalisations, ses pages, le contact ;
+  // « Parlons-en » au bout. Pas de recherche : on y regarde, on n'y cherche pas.
+  const studio = cadre.theme.structure === "studio";
+  const contact = aUnContact(contactDe(cadre)) || Boolean(cadre.formulaire);
   // Cinq rayons au plus à côté du logo ; « Tout le catalogue » s'il reste
   // de la place (sinon, il est dans le menu, les sections et le pied).
-  const liens = [
-    ...cadre.racines.slice(0, 5).map((c) => ({ cle: c.slug, href: `/categorie/${c.slug}`, nom: champ(c, "nom") })),
-    ...(cadre.racines.length <= 3 ? [{ cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue }] : []),
-  ];
+  const liens = studio
+    ? [
+        { cle: "catalogue", href: "/catalogue", nom: texte(cadre.theme.textes, "catalogue_titre", t.studio.realisations) },
+        ...cadre.pages.filter((p) => p.genre === "texte" && p.dans_pied).slice(0, 2).map((p) => ({ cle: `page-${p.slug}`, href: `/${p.slug}`, nom: champ(p, "titre") })),
+        ...(contact ? [{ cle: "contact", href: "/contact", nom: t.pied.contact }] : []),
+      ]
+    : [
+        ...cadre.racines.slice(0, 5).map((c) => ({ cle: c.slug, href: `/categorie/${c.slug}`, nom: champ(c, "nom") })),
+        ...(cadre.racines.length <= 3 ? [{ cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue }] : []),
+      ];
   return (
     <>
       {annonces.length > 0 ? (
@@ -149,17 +160,24 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
       <EnteteDefilant className="ed-entete" surImage={ouvertureSurPhoto(cadre)}>
         <div className="enveloppe ed-entete-rang" data-zone="entete">
           <div className="ed-entete-debut">
-            <MenuMobile marque={<Logo cadre={cadre} />} entrees={entreesMenu(cadre)} raccourcis={raccourcisMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="cache-desktop" />
-            <NavRayons liens={liens} racineDe={racines(cadre)} libelle={t.commun.navigationPrincipale} className="ed-nav cache-mobile"
-              replier={liens.some((l) => l.cle === "catalogue") ? undefined : { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue }} />
+            <MenuMobile marque={<Logo cadre={cadre} />} entrees={entreesMenu(cadre)} raccourcis={raccourcisMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="cache-desktop"
+              {...(studio ? { studio: true, tout: t.studio.toutesLesRealisations } : {})} />
+            <NavRayons liens={liens} libelle={t.commun.navigationPrincipale} className="ed-nav cache-mobile"
+              // Au Studio, un domaine (un rayon) allume « Réalisations ».
+              racineDe={studio ? Object.fromEntries(cadre.categories.map((c) => [c.slug, "catalogue"])) : racines(cadre)}
+              replier={studio || liens.some((l) => l.cle === "catalogue") ? undefined : { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue }} />
           </div>
           <Link href="/" className="ed-logo" aria-label={t.marque.accueilAria(cadre.boutique.nom)}>
             <Logo cadre={cadre} />
           </Link>
           <div className="ed-entete-fin">
-            <Link className="icone-btn" href="/recherche" aria-label={t.commun.rechercher}>
-              <Loupe />
-            </Link>
+            {studio ? (
+              contact ? <Link className="st-entete-cta" href="/contact">{t.studio.parlonsEn}</Link> : null
+            ) : (
+              <Link className="icone-btn" href="/recherche" aria-label={t.commun.rechercher}>
+                <Loupe />
+              </Link>
+            )}
             {cadre.favoris ? <LienFavoris className="icone-btn cache-mobile lien-favoris" /> : null}
             {avecComptes(cadre) ? (
               <Link className="icone-btn cache-mobile" href="/compte" aria-label={t.compte.lien}>

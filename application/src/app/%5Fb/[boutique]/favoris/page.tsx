@@ -50,7 +50,7 @@ export default async function Favoris({
         {produits.length ? (
           <div className={technique ? "te-grille" : "ed-grille"}>
             {produits.map((p, i) => (
-              <CarteProduit key={p.id} produit={p} gabarit={cadre.theme.code} prixBarres={cadre.prixBarres} prioritaire={i < 4} />
+              <CarteProduit key={p.id} produit={p} gabarit={cadre.theme.code} prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} prioritaire={i < 4} />
             ))}
           </div>
         ) : null}

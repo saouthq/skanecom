@@ -14,6 +14,7 @@ import { texte, type Section } from "@/lib/theme";
 import { urlFichier, urlPhoto } from "@/lib/photos";
 import { champ, t } from "@/lib/i18n";
 import { formatePrix } from "@/lib/prix";
+import { SectionContact, SectionEtapes, SectionServices } from "./SectionsVitrine";
 
 /* ============================================================================
    L'ACCUEIL BENTO — maison, beauté, high-tech, marques jeunes.
@@ -58,6 +59,12 @@ export function AccueilBento({ cadre, donnees }: Props) {
             return <SectionLookbook key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
           case "bannieres":
             return <SectionBannieres key={i} rang={i} section={s} cadre={cadre} />;
+          case "services":
+            return <SectionServices key={i} rang={i} section={s} />;
+          case "etapes":
+            return <SectionEtapes key={i} rang={i} section={s} />;
+          case "contact":
+            return <SectionContact key={i} rang={i} section={s} cadre={cadre} />;
           case "piece":
             return <SectionPiece key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
           case "texte": {
@@ -254,7 +261,7 @@ function Selection({ rang, section, cadre, produits }: { rang: number; section: 
       <Tete titre={titre} etiquette={texte(section.textes, "etiquette") || undefined} lien={lien} />
       {produits.length > 0 ? (
         <div className="bn-grille rail-mobile">
-          {produits.map((p) => <CarteProduit key={p.id} produit={p} gabarit="editorial" prixBarres={cadre.prixBarres} />)}
+          {produits.map((p) => <CarteProduit key={p.id} produit={p} gabarit="editorial" prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} />)}
           <TuileFin href={lien} titre={titre} compte={total ? t.catalogue.modeles(total) : null} gabarit="editorial" />
         </div>
       ) : (

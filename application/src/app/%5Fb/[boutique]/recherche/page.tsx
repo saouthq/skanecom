@@ -107,7 +107,7 @@ export default async function Recherche({
       {liste && liste.produits.length > 0 ? (
         <div className={`${gabarit === "technique" ? "te-grille" : "ed-grille"} recherche-resultats`}>
           {liste.produits.map((p, i) => (
-            <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} prioritaire={i < 4} />
+            <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} prioritaire={i < 4} />
           ))}
         </div>
       ) : liste ? (

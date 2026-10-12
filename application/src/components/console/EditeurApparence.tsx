@@ -50,6 +50,7 @@ const NOMS_STRUCTURES: Record<Structure, { nom: string; aide: string }> = {
   technique: { nom: "Technique", aide: "Grille dense, fiches techniques, recherche par référence. Outillage, matériel pro." },
   commerce: { nom: "Commerce", aide: "La recherche d'abord, le grand menu des rayons, la comparaison, une barre d'onglets au téléphone. High-tech, électroménager, outillage." },
   monoproduit: { nom: "Monoproduit", aide: "Une page de vente pour un produit : ses photos, ses offres par quantité, la commande sur la page. Les boutiques qui vendent par la publicité." },
+  studio: { nom: "Studio", aide: "Le site vitrine qui se fait contacter : titres immenses, réalisations en grand, services, méthode, formulaire. Architectes, agences, artisans, restaurants." },
 };
 
 const LIBELLES: { [K in CleStyle]: { titre: string; choix: Record<Style[K], string> } } = {
@@ -62,7 +63,7 @@ const LIBELLES: { [K in CleStyle]: { titre: string; choix: Record<Style[K], stri
   casse: { titre: "Écriture des titres", choix: { normale: "Bas de casse", majuscules: "Capitales" } },
   densite: { titre: "Espace entre les sections", choix: { serree: "Serré", normale: "Normal", aeree: "Aéré" } },
   mode: { titre: "Mode", choix: { clair: "Clair", sombre: "Sombre" } },
-  animations: { titre: "Animations", choix: { oui: "Au défilement", non: "Aucune" } },
+  animations: { titre: "Animations", choix: { oui: "Sobres", expressives: "Expressives", non: "Aucune" } },
   allure: { titre: "Allure de l'interface", choix: { classique: "Classique", contemporaine: "Contemporaine" } },
 };
 

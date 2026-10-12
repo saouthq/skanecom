@@ -244,7 +244,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
   ];
 
   const resumes: Record<Groupe, string> = {
-    commandes: v("vitrine.site_vitrine") ? "Site vitrine : sans commande en ligne"
+    commandes: v("vitrine.site_vitrine") ? `Site vitrine : sans commande en ligne${v("vitrine.prix_masques") ? ", prix masqués" : ""}`
       : [v("compte.obligatoire") ? "Compte obligatoire" : "Commande en invité",
         v("commande.mode_confirmation") === "automatique" ? "confirmées d'office" : "confirmées par téléphone",
         v("commande.achat_express") ? "achat express" : null,
@@ -259,7 +259,8 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
     ].filter(Boolean).join(" · "),
     paiement: [v("paiement.cod_actif") ? "À la livraison" : null, konnect?.module_actif && konnect.valeur ? "en ligne (Konnect)" : null].filter(Boolean).join(" · ") || "Aucun moyen actif",
     vitrine: `${compteAllumees(allumees, fonctions.length)}${texteDe("vitrine.annonce") ? " · une annonce en tête" : ""}`,
-    contact: sansContact ? "Aucun numéro" : [texteDe("contact.whatsapp") ? "WhatsApp" : null, texteDe("contact.telephone") ? "téléphone" : null,
+    contact: sansContact && !v("vitrine.formulaire_contact") ? "Aucun numéro" : [texteDe("contact.whatsapp") ? "WhatsApp" : null, texteDe("contact.telephone") ? "téléphone" : null,
+      v("vitrine.formulaire_contact") ? "formulaire" : null,
       reseaux ? `${reseaux} réseau${reseaux > 1 ? "x" : ""}` : null].filter(Boolean).join(" · "),
     service: [savActif ? (Number(v("sav.garantie_mois") ?? 0) ? `Garantie ${v("sav.garantie_mois")} mois` : "Garantie légale") : null,
       avisActif ? (v("avis.moderation") === "automatique" ? "avis publiés aussitôt" : "avis relus avant publication") : null].filter(Boolean).join(" · "),
@@ -391,6 +392,10 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                       { valeur: "1", titre: "Un site vitrine", aide: "Le catalogue, ses prix et son stock, sans panier ni commande : chaque fiche propose WhatsApp, l'appel ou l'e-mail. Les réglages ci-dessous attendent votre retour à la boutique." },
                     ]}
                   />
+                  <ul className="rg-inters" role="list">
+                    <Interrupteur cle="vitrine.prix_masques" ferme={ferme("vitrine.prix_masques")} valeur={Boolean(v("vitrine.prix_masques"))} titre="Masquer les prix"
+                      aide="Sur un site vitrine seulement : ni prix ni stock, ni sur les cartes ni sur les fiches. Pour des réalisations, du sur-mesure, des services : chaque fiche invite à vous écrire." />
+                  </ul>
                   <Alternative
                     nom="compte.obligatoire" legende="Pour commander" valeur={v("compte.obligatoire") ? "1" : "0"}
                     options={[
@@ -906,6 +911,15 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                   <ul className="rg-inters" role="list">
                     <Interrupteur cle="vitrine.whatsapp_flottant" ferme={ferme("vitrine.whatsapp_flottant")} valeur={Boolean(v("vitrine.whatsapp_flottant"))} titre="Bouton WhatsApp sur toutes les pages"
                       aide="Un rond vert en bas de l'écran ouvre la conversation avec votre numéro WhatsApp (jamais pendant la commande)." />
+                    <Interrupteur cle="vitrine.formulaire_contact" ferme={ferme("vitrine.formulaire_contact")} valeur={Boolean(v("vitrine.formulaire_contact"))} titre="Formulaire de contact"
+                      aide="Sur la page Contact, dans la section « Contact » de l'accueil et sur chaque fiche d'un site vitrine : nom, téléphone ou e-mail, le message. Chaque demande arrive dans Demandes, et par e-mail au propriétaire et aux administrateurs.">
+                      <div className="champ rg-inter-suite">
+                        <label htmlFor="contact-sujets">Objets proposés <span className="discret">(facultatif)</span></label>
+                        <textarea id="contact-sujets" name="vitrine.contact_sujets" rows={4} defaultValue={texteDe("vitrine.contact_sujets")}
+                          placeholder={"Appartement\nVilla\nCafé ou restaurant"} aria-describedby="contact-sujets-aide" />
+                        <span className="aide" id="contact-sujets-aide">Un par ligne, six au plus : le visiteur choisit l&apos;objet de sa demande. Vide : le message seul.</span>
+                      </div>
+                    </Interrupteur>
                   </ul>
                   <div className="champ">
                     <label htmlFor="horaires">Horaires du service client <span className="discret">(facultatif)</span></label>

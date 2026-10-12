@@ -27,6 +27,8 @@ export const CIBLES_APPARITION = [
   ".te-pied-services li", ".ed-pied-grille > *", ".te-pied-grille > *", ".sav-grille > section",
   // Le récit de l'Immersif : marqué seulement — il se dévoile par morceaux (app/immersif.css).
   ".im-recit",
+  // Les titres en lignes (app/studio.css) : marqués seulement — leurs lignes montent.
+  ".vi-titre",
 ].join(", ");
 
 export function Apparitions() {

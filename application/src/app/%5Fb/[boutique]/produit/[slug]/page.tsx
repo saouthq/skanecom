@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Gabarit } from "@/components/Gabarit";
 import { CarteProduit } from "@/components/CarteProduit";
 import { FicheAchat } from "@/components/FicheAchat";
+import { FicheProjet } from "@/components/Projets";
 import { FilAriane, type Etape } from "@/components/FilAriane";
 import { GalerieEditoriale, GalerieVignettes } from "@/components/Galerie";
 import { FournisseurSelection } from "@/components/SelectionVariante";
@@ -60,7 +61,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const prix = prixDepuis(produit);
   const description =
     produit.meta_description_fr ??
-    (prix !== null ? t.seo.produitDescription(nom, formatePrix(prix)) : champ(produit, "description"));
+    (prix !== null && !cadre.prixMasques ? t.seo.produitDescription(nom, formatePrix(prix)) : champ(produit, "description"));
   const image = photosProduit(produit)[0];
 
   return {
@@ -82,6 +83,31 @@ export default async function FicheProduit({ params }: Params) {
   const nom = champ(produit, "nom");
   const rayon = produit.categorie;
   const gabarit = cadre.theme.code;
+
+  /* Le Studio : la page d'une réalisation (components/Projets.tsx), et la
+     suivante dans l'ordre du catalogue — la dernière mène à la première. */
+  if (cadre.theme.structure === "studio") {
+    const tous = await listeProduits(cadre.boutique.id, {}, "selection", 1, 48);
+    const ici = tous.produits.findIndex((p) => p.id === produit.id);
+    const suivant = tous.produits.length > 1 ? tous.produits[(ici + 1) % tous.produits.length] : null;
+    const oeuvre = {
+      "@context": "https://schema.org",
+      "@type": "CreativeWork",
+      name: nom,
+      description: champ(produit, "description"),
+      image: photosProduit(produit).map((p) => p.src),
+      ...(rayon ? { genre: champ(rayon, "nom") } : {}),
+      creator: { "@type": "Organization", name: cadre.boutique.nom },
+    };
+    return (
+      <Gabarit className="flex-1">
+        <FicheProjet cadre={cadre} produit={produit} suivant={suivant && suivant.id !== produit.id ? suivant : null}
+          fil={[{ nom: texte(cadre.theme.textes, "catalogue_titre", t.studio.realisations), href: "/catalogue" },
+                ...(rayon ? [{ nom: champ(rayon, "nom"), href: `/categorie/${rayon.slug}` }] : []), { nom }]} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(oeuvre).replace(/</g, "\\u003c") }} />
+      </Gabarit>
+    );
+  }
 
   /* Des voisins du même rayon, pris par la base ; les avis publiés (module
      avis) ; les pièces que les commandes réunissent avec celle-ci (réglage
@@ -170,7 +196,7 @@ export default async function FicheProduit({ params }: Params) {
           </div>
           <div className={gabarit === "technique" ? "te-grille te-grille-rang" : "ed-grille"}>
             {ensemble.map((p) => (
-              <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} />
+              <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} />
             ))}
           </div>
         </section>
@@ -188,7 +214,7 @@ export default async function FicheProduit({ params }: Params) {
           </div>
           <div className={gabarit === "technique" ? "te-grille te-grille-rang" : "ed-grille"}>
             {voisins.map((p) => (
-              <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} />
+              <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} />
             ))}
           </div>
         </section>
@@ -225,7 +251,7 @@ function FicheEditoriale({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pr
             {marqueAffichee(produit.marque, cadre) ? <p className="etiquette">{marqueAffichee(produit.marque, cadre)}</p> : null}
             <h1>{champ(produit, "nom")}</h1>
             <ResumeAvis avis={avis} />
-            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} paiement={paiementsDe(cadre)}
+            <FicheAchat produit={produit} gabarit="editorial" prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} paiement={paiementsDe(cadre)}
             partage={cadre.partage ? { boutique: cadre.boutique.nom } : null} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
             <AppelLot lots={lots} />
 
@@ -295,7 +321,7 @@ function FicheTechnique({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pro
           <ResumeAvis avis={avis} />
           <SpecsVariante mode="ref" />
           <SpecsVariante mode="cles" />
-          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} paiement={paiementsDe(cadre)}
+          <FicheAchat produit={produit} gabarit="technique" prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} delaiJours={cadre.livraison.delaiJours} achatExpress={cadre.achatExpress} prevenirRetour={cadre.prevenirRetour} paiement={paiementsDe(cadre)}
             partage={cadre.partage ? { boutique: cadre.boutique.nom } : null} contact={cadre.siteVitrine ? contactVente(cadre) : null} />
           <AppelLot lots={lots} />
 

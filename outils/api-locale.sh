@@ -52,7 +52,7 @@ ADMIN_EMAIL=admin@skanecom.test
 ADMIN_MDP=console-locale-skanecom
 EQUIPE_MDP=equipe-locale-skanecom
 # courriel:boutique:rôle — l'équipe de développement des boutiques de démo.
-EQUIPE="gerant@maymar.test:maymar:proprietaire appels@maymar.test:maymar:confirmateur prepa@quincaillerie.test:quincaillerie-demo:preparateur gerant@quincaillerie.test:quincaillerie-demo:proprietaire gerant@selma.test:maison-selma:proprietaire gerant@dar-alia.test:dar-alia:proprietaire"
+EQUIPE="gerant@maymar.test:maymar:proprietaire appels@maymar.test:maymar:confirmateur prepa@quincaillerie.test:quincaillerie-demo:preparateur gerant@quincaillerie.test:quincaillerie-demo:proprietaire gerant@selma.test:maison-selma:proprietaire gerant@dar-alia.test:dar-alia:proprietaire gerant@atelier-ocre.test:atelier-ocre:proprietaire"
 # téléphone:boutique — les fiches clients du jeu de démo qui ont un compte.
 CLIENTS="+21698765001:quincaillerie-demo +21622345002:quincaillerie-demo"
 . "$RACINE/outils/gotrue.sh"

@@ -32,6 +32,7 @@ export function Listing({
   avecRayons,
   gabarit,
   prixBarres = false,
+  prixMasques = false,
 }: {
   liste: Liste;
   filtres: Filtres;
@@ -42,6 +43,8 @@ export function Listing({
   avecRayons: boolean;
   gabarit: CodeTheme;
   prixBarres?: boolean;
+  /** Réglage `vitrine.prix_masques` d'un site vitrine. */
+  prixMasques?: boolean;
 }) {
   const actifs = nombreFiltresActifs(filtres);
   const pages = Math.max(1, Math.ceil(liste.total / liste.par_page));
@@ -105,7 +108,7 @@ export function Listing({
           <>
             <div className={technique ? "te-grille" : "ed-grille"}>
               {liste.produits.map((p, i) => (
-                <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={prixBarres} prioritaire={i < 4} />
+                <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={prixBarres} prixMasques={prixMasques} prioritaire={i < 4} />
               ))}
             </div>
 

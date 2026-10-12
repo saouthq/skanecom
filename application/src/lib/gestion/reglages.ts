@@ -49,6 +49,7 @@ type Genre = "booleen" | "choix" | "entier" | "montant" | "texte" | "numero" | "
 export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
   commandes: [
     { cle: "vitrine.site_vitrine", genre: "booleen" },
+    { cle: "vitrine.prix_masques", genre: "booleen" },
     { cle: "compte.obligatoire", genre: "booleen" },
     { cle: "compte.verification", genre: "choix" },
     { cle: "commande.mode_confirmation", genre: "choix" },
@@ -95,6 +96,8 @@ export const SECTIONS: Record<string, { cle: string; genre: Genre }[]> = {
     { cle: "contact.whatsapp", genre: "numero" },
     { cle: "contact.telephone", genre: "numero" },
     { cle: "vitrine.whatsapp_flottant", genre: "booleen" },
+    { cle: "vitrine.formulaire_contact", genre: "booleen" },
+    { cle: "vitrine.contact_sujets", genre: "texte" },
     { cle: "contact.horaires", genre: "texte" },
     { cle: "contact.instagram", genre: "texte" },
     { cle: "contact.facebook", genre: "texte" },
@@ -183,7 +186,8 @@ export function valeursDe(section: string, f: FormData, modulesActifs: (cle: str
         valeurs[cle] = brut.replace(/\s+/g, "").toUpperCase();
         break;
       default:
-        valeurs[cle] = brut;
+        // Un texte de plusieurs lignes (les objets du formulaire) : des sauts « \n », pas « \r\n ».
+        valeurs[cle] = brut.replace(/\r\n?/g, "\n");
     }
   }
   return valeurs;
@@ -199,6 +203,9 @@ export function montantChamp(v: unknown): string {
 
 const LIBELLES_COURTS: Record<string, string> = {
   "vitrine.site_vitrine": "Site vitrine",
+  "vitrine.prix_masques": "Prix masqués",
+  "vitrine.formulaire_contact": "Formulaire de contact",
+  "vitrine.contact_sujets": "Objets du formulaire",
   "compte.obligatoire": "Compte client",
   "compte.verification": "Code de connexion",
   "commande.mode_confirmation": "Confirmation",

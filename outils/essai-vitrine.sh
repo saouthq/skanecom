@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Essai de bout en bout de la vitrine : les trois boutiques du jeu de démo,
+# Essai de bout en bout de la vitrine : les boutiques du jeu de démo,
 # servies par la même application, ne se mélangent jamais — et chacune a
 # son gabarit.
 #
@@ -14,6 +14,7 @@ B=${1:-http://127.0.0.1:4200}
 M=maymar.localhost
 Q=quincaillerie.localhost
 S=mode.localhost
+O=studio.localhost
 echecs=0
 
 code()  { curl -s -o /dev/null -w "%{http_code}" -H "Host: $1" "$B$2"; }
@@ -69,6 +70,16 @@ verifie "une liste filtrée est mise en cache" \
 verifie "robots.txt propre à la boutique" 'corps $Q /robots.txt | grep -q "Sitemap: https://quincaillerie.localhost/sitemap.xml"'
 verifie "plan du site sans les fiches de l'autre boutique" \
   'corps $M /sitemap.xml | grep -q "valise-rigide-abs-4-roues" && ! corps $M /sitemap.xml | grep -q "perceuse" && ! corps $M /sitemap.xml | grep -q "robe-"'
+
+# Le site vitrine (structure Studio, Atelier Ocre) : ni prix ni panier, un formulaire.
+verifie "le site vitrine : ses réalisations chez lui seul, aucun prix" \
+  'a=$(corps $O /); echo "$a" | grep -q "data-structure=\"studio\"" && ! echo "$a" | grep -q "TND" && ! corps $O /produit/villa-gammarth | grep -q "TND" && [ "$(code $M /produit/villa-gammarth)" = 404 ]'
+verifie "le formulaire de contact exige une page de la boutique (même origine)" \
+  '[ "$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Host: $O" -H "content-type: application/json" -d "{}" "$B/contact/envoyer")" = 403 ]'
+verifie "le formulaire de contact : fermé là où le réglage est coupé" \
+  'poste $M /contact/envoyer "{}" 1 | grep -q "\"raison\":\"reglage\""'
+verifie "le formulaire de contact : un refus de la base, sous son champ" \
+  'poste $O /contact/envoyer "{\"nom\":\"\",\"message\":\"Un appartement à repenser\",\"telephone\":\"22334455\",\"duree\":5000}" 1 | grep -q "\"champ\":\"nom\""'
 
 # Le tunnel de commande
 verifie "la page de commande n'est ni en cache ni indexée" \

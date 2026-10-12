@@ -18,6 +18,7 @@ import { FournisseurCommande } from "@/components/CommandeEnLigne";
 import { BarreOnglets } from "@/components/BarreOnglets";
 import { Apparitions } from "@/components/Apparitions";
 import { TransitionsVue } from "@/components/TransitionsVue";
+import { MouvementStudio } from "@/components/MouvementStudio";
 import { AncresDouces } from "@/components/AncresDouces";
 import { Suspense } from "react";
 import { ProgressionNavigation } from "@/components/console/Retours";
@@ -122,6 +123,7 @@ export default async function RacineBoutique({ children, params }: Props) {
         {cadre.statistiques && !cadre.apercu ? <MesureAudience /> : null}
         <Apparitions />
         <TransitionsVue />
+        <MouvementStudio />
         <AncresDouces />
         <ApercuApparence code={cadre.theme.code} structure={cadre.theme.structure} />
         <Suspense fallback={null}>

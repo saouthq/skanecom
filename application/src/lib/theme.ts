@@ -30,9 +30,11 @@ export const GABARITS: CodeTheme[] = ["editorial", "technique"];
    l'en-tête flottant) reprend les composants éditoriaux : `code` reste la
    famille de composants, `structure` dit le choix. L'Immersif repose aussi
    sur les composants éditoriaux, comme le Monoproduit (la page de vente
-   d'une pièce) ; le Commerce, sur les techniques. */
-export type Structure = CodeTheme | "bento" | "immersif" | "commerce" | "monoproduit";
-export const STRUCTURES: Structure[] = ["editorial", "bento", "immersif", "technique", "commerce", "monoproduit"];
+   d'une pièce) ; le Commerce, sur les techniques. Le Studio (le site
+   vitrine qui se fait contacter : réalisations, services, méthode,
+   formulaire) repose sur les éditoriaux. */
+export type Structure = CodeTheme | "bento" | "immersif" | "commerce" | "monoproduit" | "studio";
+export const STRUCTURES: Structure[] = ["editorial", "bento", "immersif", "technique", "commerce", "monoproduit", "studio"];
 
 export const JETONS_COULEUR = [
   "fond", "surface", "surface_2", "filet", "filet_fort", "contour_champ",
@@ -111,7 +113,14 @@ export type Section =
   | { type: "piece"; textes: TextesSection; produit?: string }
   // Les bannières (migration 75) : une à cinq, qui défilent, chacune sa
   // photo, ses textes et le lien de son bouton.
-  | { type: "bannieres"; textes: TextesSection; diapos: Diapo[] };
+  | { type: "bannieres"; textes: TextesSection; diapos: Diapo[] }
+  // Le site vitrine (migration …_structure_studio), et toutes les autres :
+  // les services (s1_titre, s1_texte… six au plus), la méthode (e1_titre,
+  // e1_texte… cinq étapes au plus), l'appel à prendre contact (le
+  // formulaire de la boutique, ses moyens directs).
+  | { type: "services"; textes: TextesSection; image?: ImageSection; lien?: string }
+  | { type: "etapes"; textes: TextesSection }
+  | { type: "contact"; textes: TextesSection; image?: ImageSection };
 
 /** Un point du lookbook : sa place sur la photo (en %), la pièce qu'il montre. */
 export type PointLookbook = { x: number; y: number; produit: string };
@@ -122,6 +131,22 @@ export type Diapo = { textes: TextesSection; image?: ImageSection; lien?: string
 
 /** Cinq bannières au plus (la base tient la même règle, migration 75). */
 export const MAX_DIAPOS = 5;
+
+/** Six services, cinq étapes au plus : leurs textes numérotés (s1_…, e1_…). */
+export const MAX_SERVICES = 6;
+export const MAX_ETAPES = 5;
+
+/** Les éléments numérotés d'une section (services : « s », étapes : « e ») :
+ *  ceux qui ont un titre, dans l'ordre, avec leur rang d'origine (le texte
+ *  à écrire dans l'aperçu garde sa clé). */
+export function elementsNumerotes(textes: TextesSection, prefixe: "s" | "e", max: number): { n: number; titre: string; texte: string }[] {
+  const sortie: { n: number; titre: string; texte: string }[] = [];
+  for (let n = 1; n <= max; n++) {
+    const titreEl = texte(textes, `${prefixe}${n}_titre`);
+    if (titreEl) sortie.push({ n, titre: titreEl, texte: texte(textes, `${prefixe}${n}_texte`) });
+  }
+  return sortie;
+}
 
 export type TypeSection = Section["type"];
 
@@ -141,7 +166,10 @@ export const REGLAGES_STYLE = {
   casse: ["normale", "majuscules"],
   densite: ["serree", "normale", "aeree"],
   mode: ["clair", "sombre"],
-  animations: ["oui", "non"],
+  // « expressives » : titres dévoilés, images liées au défilement, sections
+  // épinglées, texte qui s'allume en lisant (app/studio.css) ; « oui », les
+  // apparitions sobres de toujours.
+  animations: ["oui", "non", "expressives"],
   // L'allure de l'interface (app/allure.css) : « classique », les filets et
   // les cases du gabarit ; « contemporaine », des commandes pleines et
   // arrondies, des titres de page alignés, des barres d'outils en verre.
@@ -332,8 +360,19 @@ function sectionsSures(valeur: unknown, defaut: Section[]): Section[] {
       case "engagements":
         sections.push({ type: "engagements", textes });
         break;
+      case "services": {
+        const image = imageSure(s.image);
+        sections.push({ type: "services", textes, ...(image ? { image } : {}), ...(lien ? { lien } : {}) });
+        break;
+      }
+      case "contact": {
+        const image = imageSure(s.image);
+        sections.push({ type: "contact", textes, ...(image ? { image } : {}) });
+        break;
+      }
       case "rayons":
       case "texte":
+      case "etapes":
         sections.push({ type: s.type, textes });
         break;
     }
@@ -370,7 +409,7 @@ export function gabaritDe(code: unknown): CodeTheme {
 
 /** La structure d'un code lu en base. */
 export function structureDe(code: unknown): Structure {
-  if (code === "bento" || code === "immersif" || code === "commerce" || code === "monoproduit") return code;
+  if (code === "bento" || code === "immersif" || code === "commerce" || code === "monoproduit" || code === "studio") return code;
   return gabaritDe(code);
 }
 
@@ -430,6 +469,25 @@ const PROPRE_A: Partial<Record<Structure, { style: Partial<Style>; sections?: Se
       { type: "editorial", textes: {} },
       { type: "avis", textes: {}, nombre: 6 },
       { type: "questions", textes: {}, nombre: 5 },
+    ],
+  },
+  // Le studio : le site vitrine qui se fait contacter. Le titre d'abord,
+  // puis la photo qui s'ouvre au défilement ; le manifeste qui s'allume en
+  // lisant ; les réalisations en grand (la sélection) ; les domaines (les
+  // rayons) ; les services ; la méthode ; le récit ; « Parlons de votre
+  // projet » et son formulaire. Des angles nets, des titres immenses, des
+  // animations expressives.
+  studio: {
+    style: { coins: "droits", boutons: "pilule", cartes: "nues", photos: "4-5", titres: "immense", densite: "aeree", animations: "expressives" },
+    sections: [
+      { type: "hero", textes: {} },
+      { type: "texte", textes: {} },
+      { type: "selection", textes: {}, nombre: 6 },
+      { type: "rayons", textes: {} },
+      { type: "services", textes: {} },
+      { type: "etapes", textes: {} },
+      { type: "editorial", textes: {} },
+      { type: "contact", textes: {} },
     ],
   },
 };

@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { Gabarit } from "@/components/Gabarit";
 import { Listing } from "@/components/Listing";
+import { ListeProjets } from "@/components/Projets";
 import { EnteteListe } from "@/components/EnteteListe";
 import { cadre as chargeCadre, descendance } from "@/lib/boutique";
 import { listeProduits, rayonDeplace } from "@/lib/catalogue";
 import { cheminFiltres, estCanonique, litSegments, nombreFiltresActifs, versCriteres } from "@/lib/filtres";
 import { champ, t } from "@/lib/i18n";
+import { texte } from "@/lib/theme";
 
 /* Un rayon, ses sous-rayons compris (rayons profonds de la quincaillerie :
    Plomberie › Raccords › Laiton). Filtres dans le chemin, comme le catalogue. */
@@ -32,6 +34,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+/** Le rayon de premier niveau d'un rayon (lui-même s'il en est un) : la puce allumée des domaines. */
+function racineDe<C extends { id: string; parent_id: string | null }>(categories: C[], c: C): C {
+  let r = c;
+  for (let garde = 0; r.parent_id && garde < 10; garde++) r = categories.find((x) => x.id === r.parent_id) ?? r;
+  return r;
+}
+
 export default async function Rayon({ params }: Params) {
   const { boutique, slug, filtres } = await params;
   const base = `/categorie/${slug}`;
@@ -52,6 +61,17 @@ export default async function Rayon({ params }: Params) {
   const parent = cadre.categories.find((c) => c.id === categorie.parent_id);
   const liste = await listeProduits(cadre.boutique.id, versCriteres(f, slug), f.tri, f.page);
   const nom = champ(categorie, "nom");
+
+  // Le Studio : un domaine de réalisations (components/Projets.tsx).
+  if (cadre.theme.structure === "studio") {
+    return (
+      <Gabarit>
+        <ListeProjets cadre={cadre} liste={liste} filtres={f} base={base} titre={nom} chapo={champ(categorie, "description") || null}
+          fil={[{ nom: texte(cadre.theme.textes, "catalogue_titre", t.studio.realisations), href: "/catalogue" }, ...(parent ? [{ nom: champ(parent, "nom"), href: `/categorie/${parent.slug}` }] : []), { nom }]}
+          rayonActif={racineDe(cadre.categories, categorie).slug} />
+      </Gabarit>
+    );
+  }
 
   return (
     <Gabarit>
@@ -78,6 +98,7 @@ export default async function Rayon({ params }: Params) {
         avecRayons={false}
         gabarit={cadre.theme.code}
         prixBarres={cadre.prixBarres}
+        prixMasques={cadre.prixMasques}
       />
     </Gabarit>
   );

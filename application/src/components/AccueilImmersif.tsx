@@ -13,6 +13,7 @@ import type { DonneesAccueil } from "@/lib/accueil";
 import { texte, type Section } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 import { champ, t } from "@/lib/i18n";
+import { SectionContact, SectionEtapes, SectionServices } from "./SectionsVitrine";
 
 /* ============================================================================
    L'ACCUEIL IMMERSIF — mode, luxe, maison haut de gamme.
@@ -48,6 +49,12 @@ export function AccueilImmersif({ cadre, donnees }: Props) {
             return <SectionLookbook key={i} rang={i} section={s} donnees={donnees} cadre={cadre} />;
           case "bannieres":
             return <SectionBannieres key={i} rang={i} section={s} cadre={cadre} />;
+          case "services":
+            return <SectionServices key={i} rang={i} section={s} />;
+          case "etapes":
+            return <SectionEtapes key={i} rang={i} section={s} />;
+          case "contact":
+            return <SectionContact key={i} rang={i} section={s} cadre={cadre} />;
           case "editorial":
             return <Recit key={i} rang={i} section={s} cadre={cadre} />;
           case "texte":
@@ -153,7 +160,7 @@ function Selection({ rang, section, cadre, produits }: { rang: number; section: 
         }>
           {produits.map((p) => (
             <li key={p.id} className="im-rail-piece">
-              <CarteProduit produit={p} gabarit="editorial" prixBarres={cadre.prixBarres} tailles="(min-width: 900px) 30vw, 78vw" />
+              <CarteProduit produit={p} gabarit="editorial" prixBarres={cadre.prixBarres} prixMasques={cadre.prixMasques} tailles="(min-width: 900px) 30vw, 78vw" />
             </li>
           ))}
         </Rail>

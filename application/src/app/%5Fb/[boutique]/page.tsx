@@ -5,6 +5,7 @@ import { AccueilTechnique } from "@/components/AccueilTechnique";
 import { AccueilBento } from "@/components/AccueilBento";
 import { AccueilImmersif } from "@/components/AccueilImmersif";
 import { AccueilMonoproduit } from "@/components/AccueilMonoproduit";
+import { AccueilStudio } from "@/components/AccueilStudio";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { donneesAccueil } from "@/lib/accueil";
 import { texte } from "@/lib/theme";
@@ -53,6 +54,8 @@ export default async function Accueil({ params }: Params) {
         <AccueilImmersif cadre={cadre} donnees={donnees} />
       ) : cadre.theme.structure === "monoproduit" ? (
         <AccueilMonoproduit cadre={cadre} donnees={donnees} />
+      ) : cadre.theme.structure === "studio" ? (
+        <AccueilStudio cadre={cadre} donnees={donnees} />
       ) : (
         <AccueilEditorial cadre={cadre} donnees={donnees} />
       )}

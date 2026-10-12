@@ -19,4 +19,6 @@ export const STRUCTURES_CONSOLE: { code: Structure; aide: string; pour: string }
     pour: "La recherche d'abord, le grand menu des rayons, la comparaison, la barre d'onglets au téléphone." },
   { code: "monoproduit", aide: "Une pièce vendue par la publicité : sa page de vente, la commande sur la page.",
     pour: "Une pièce vendue par la publicité : sa page de vente, les offres par quantité, la commande sur la page." },
+  { code: "studio", aide: "Le site vitrine, sans vente : architectes, agences, artisans, restaurants.",
+    pour: "Le site qui se fait contacter : titres immenses, réalisations en grand, services, méthode et formulaire, animations expressives." },
 ];

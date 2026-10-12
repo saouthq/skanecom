@@ -46,6 +46,8 @@ type Props = {
   prixBarres?: boolean;
   /** Priorité de chargement : les premières cartes visibles seulement. */
   prioritaire?: boolean;
+  /** Réglage `vitrine.prix_masques` d'un site vitrine : ni prix ni stock. */
+  prixMasques?: boolean;
 };
 
 /** Le plus fort écart prix barré / prix parmi les variantes, en %. */
@@ -111,13 +113,13 @@ export function CarteProduit(props: Props) {
   return props.gabarit === "technique" ? <CarteTechnique {...props} /> : <CarteEditoriale {...props} />;
 }
 
-function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = false }: Props) {
-  const prix = prixDepuis(produit);
-  const etat = etatProduit(produit);
+function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = false, prixMasques = false }: Props) {
+  const prix = prixMasques ? null : prixDepuis(produit);
+  const etat = prixMasques ? "en-stock" : etatProduit(produit);
   // Épuisé, mais un arrivage annoncé l'apporte : il se précommande.
   const precommande = etat === "rupture" && sePrecommande(produit);
   const couleurs = colorisDe(produit);
-  const reduction = prixBarres ? remise(produit) : null;
+  const reduction = prixBarres && !prixMasques ? remise(produit) : null;
   const marqueur =
     precommande ? t.precommande.etat : etat === "rupture" ? t.stock.epuise : etat === "faible" ? t.stock.faible(stockTotal(produit)) : reduction ? `−${reduction} %` : null;
   const autres = declinaisons(produit);
@@ -156,7 +158,7 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
       </span>
     </Link>
     <BoutonFavori slug={produit.slug} nom={champ(produit, "nom")} className="carte-favori" />
-    {ajout ? (
+    {ajout && !prixMasques ? (
       <AjoutCarte produitId={produit.id} slug={produit.slug} nom={champ(produit, "nom")} axe={ajout.axe} choix={ajout.choix}
         {...(paliers.length ? { paliers } : {})} />
     ) : null}
@@ -164,12 +166,12 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
   );
 }
 
-function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = false }: Props) {
-  const prix = prixDepuis(produit);
+function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = false, prixMasques = false }: Props) {
+  const prix = prixMasques ? null : prixDepuis(produit);
   const etat = etatProduit(produit);
   const restant = stockTotal(produit);
   const precommande = etat === "rupture" && sePrecommande(produit);
-  const reduction = prixBarres ? remise(produit) : null;
+  const reduction = prixBarres && !prixMasques ? remise(produit) : null;
   const unique = produit.variantes.length === 1 ? produit.variantes[0] : null;
   const photo = urlPhoto(produit);
   const nom = champ(produit, "nom");
@@ -207,14 +209,14 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
       <BoutonFavori slug={produit.slug} nom={nom} className="carte-favori" />
       <BoutonComparer slug={produit.slug} nom={nom} photo={produit.images[0]?.chemin ?? null} className="te-carte-comparer" />
       <div className="te-carte-bas">
-        {precommande ? <span className="etat etat-precommande">{t.precommande.etat}</span> : <EtatStock etat={etat} restant={restant} />}
+        {prixMasques ? null : precommande ? <span className="etat etat-precommande">{t.precommande.etat}</span> : <EtatStock etat={etat} restant={restant} />}
         {prix !== null ? (
           <p className="te-carte-prix">
             <PrixCarte classe="prix-carte" produitId={produit.id} variantes={produit.variantes} fort ttc />
             {prixBarre ? <s className="prix-barre">{formatePrix(prixBarre)}</s> : null}
           </p>
         ) : null}
-        {unique && unique.stock > 0 && unique.stock >= minimumVariante(unique) ? (
+        {!prixMasques && unique && unique.stock > 0 && unique.stock >= minimumVariante(unique) ? (
           <AjoutRapide
             ligne={{
               varianteId: unique.id,

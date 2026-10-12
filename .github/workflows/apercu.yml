@@ -6,6 +6,7 @@
 #   https://skanecom-apercu-quincaillerie.<sous-domaine>.workers.dev Quincaillerie du Sud
 #   https://skanecom-apercu-beaute.<sous-domaine>.workers.dev       Yasmine Beauté
 #   https://skanecom-apercu-maison.<sous-domaine>.workers.dev       Dar Alia
+#   https://skanecom-apercu-studio.<sous-domaine>.workers.dev       Atelier Ocre (site vitrine)
 #   https://skanecom-apercu-console.<sous-domaine>.workers.dev      console et backoffices
 #
 # Une seule application (skanecom-application) ; devant elle, un petit
@@ -58,6 +59,7 @@ on:
       - "supabase/seed-monoproduit.sql"
       - "supabase/seed-lots.sql"
       - "supabase/seed-precommandes.sql"
+      - "supabase/seed-studio.sql"
       - "supabase/apercu/**"
       - "supabase/functions/apercu-installer/**"
       - "supabase/fichiers-demo/**"
@@ -158,6 +160,7 @@ jobs:
           installe graines seed-monoproduit.sql supabase/seed-monoproduit.sql
           installe graines seed-lots.sql supabase/seed-lots.sql
           installe graines seed-precommandes.sql supabase/seed-precommandes.sql
+          installe graines seed-studio.sql supabase/seed-studio.sql
           installe script codes-demo.sql supabase/apercu/codes-demo.sql
 
       - name: Les adresses de l'aperçu
@@ -173,7 +176,7 @@ jobs:
           CROCHET="v1,whsec_$(printf '%s' "skanecom-crochet-courriel:$SUPABASE_SERVICE_ROLE_KEY" | sha256sum | cut -c1-64 | xxd -r -p | base64 -w0)"
           echo "::add-mask::$CROCHET"
           echo "COURRIELS_CROCHET_SECRET=$CROCHET" >> "$GITHUB_ENV"
-          echo "ANNUAIRE_EN_PLUS={\"skanecom-apercu-maymar.$SOUS.workers.dev\":\"maymar\",\"skanecom-apercu-selma.$SOUS.workers.dev\":\"maison-selma\",\"skanecom-apercu-quincaillerie.$SOUS.workers.dev\":\"quincaillerie-demo\",\"skanecom-apercu-beaute.$SOUS.workers.dev\":\"yasmine-beaute\",\"skanecom-apercu-maison.$SOUS.workers.dev\":\"dar-alia\"}" >> "$GITHUB_ENV"
+          echo "ANNUAIRE_EN_PLUS={\"skanecom-apercu-maymar.$SOUS.workers.dev\":\"maymar\",\"skanecom-apercu-selma.$SOUS.workers.dev\":\"maison-selma\",\"skanecom-apercu-quincaillerie.$SOUS.workers.dev\":\"quincaillerie-demo\",\"skanecom-apercu-beaute.$SOUS.workers.dev\":\"yasmine-beaute\",\"skanecom-apercu-maison.$SOUS.workers.dev\":\"dar-alia\",\"skanecom-apercu-studio.$SOUS.workers.dev\":\"atelier-ocre\"}" >> "$GITHUB_ENV"
 
       - name: Les adresses workers.dev, domaines principaux des boutiques (« Voir la vitrine », e-mails, partage)
         if: env.PRET == '1'
@@ -349,7 +352,7 @@ jobs:
           # temps de la production, essayé ici sur les adresses de l'aperçu.
           if [ "$DEUX_TEMPS" = "true" ]; then
             CIBLES=""
-            for nom in maymar selma quincaillerie beaute maison; do CIBLES="$CIBLES https://skanecom-apercu-$nom.$SOUS.workers.dev"; done
+            for nom in maymar selma quincaillerie beaute maison studio; do CIBLES="$CIBLES https://skanecom-apercu-$nom.$SOUS.workers.dev"; done
             CIBLES="$CIBLES" bash ../outils/deployer-deux-temps.sh
           else
             bun run deploy -- --skip-build
@@ -358,7 +361,7 @@ jobs:
       - name: Déployer les routeurs (une adresse par boutique, une pour la console)
         if: env.PRET == '1'
         run: |
-          for nom in maymar selma quincaillerie beaute maison console; do
+          for nom in maymar selma quincaillerie beaute maison studio console; do
             d=$(mktemp -d)
             cp outils/apercu/routeur.js "$d/routeur.js"
             cat > "$d/wrangler.jsonc" <<JSON
@@ -386,12 +389,13 @@ jobs:
             echo "| Quincaillerie du Sud | https://skanecom-apercu-quincaillerie.$SOUS.workers.dev |"
             echo "| Yasmine Beauté | https://skanecom-apercu-beaute.$SOUS.workers.dev |"
             echo "| Dar Alia | https://skanecom-apercu-maison.$SOUS.workers.dev |"
+            echo "| Atelier Ocre (site vitrine) | https://skanecom-apercu-studio.$SOUS.workers.dev |"
             echo "| Console et backoffices | https://skanecom-apercu-console.$SOUS.workers.dev |"
           } >> "$GITHUB_STEP_SUMMARY"
           # Une adresse workers.dev toute neuve met quelques secondes à répondre :
           # chaque page a une minute pour le faire.
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          for cible in maymar/ selma/ quincaillerie/ beaute/ maison/ console/connexion; do
+          for cible in maymar/ selma/ quincaillerie/ beaute/ maison/ studio/ console/connexion; do
             url="https://skanecom-apercu-${cible%%/*}.$SOUS.workers.dev/${cible#*/}"
             code=000
             for _ in $(seq 1 12); do
@@ -417,6 +421,7 @@ jobs:
           SITES="$SITES,quincaillerie=https://skanecom-apercu-quincaillerie.$SOUS.workers.dev"
           SITES="$SITES,beaute=https://skanecom-apercu-beaute.$SOUS.workers.dev"
           SITES="$SITES,maison=https://skanecom-apercu-maison.$SOUS.workers.dev"
+          SITES="$SITES,studio=https://skanecom-apercu-studio.$SOUS.workers.dev"
           SITES="$SITES" node essais/controle-en-ligne.mjs
 
       - name: Captures de l'aperçu

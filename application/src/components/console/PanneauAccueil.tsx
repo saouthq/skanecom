@@ -283,7 +283,9 @@ function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "page
   const rayon = (slug?: string) => a.rayons.find((r) => r.slug === slug)?.nom ?? slug;
   switch (s.type) {
     case "selection":
-      return [s.tri === "nouveautes" ? "Les nouveautés" : "Votre sélection", s.rayon ? `rayon ${rayon(s.rayon)}` : "tout le catalogue", `${s.nombre ?? 8} produits`].join(" · ");
+      return structure === "studio"
+        ? [s.tri === "nouveautes" ? "Les plus récentes" : "Votre sélection", s.rayon ? `domaine ${rayon(s.rayon)}` : "tous les domaines", `${s.nombre ?? 8} réalisations`].join(" · ")
+        : [s.tri === "nouveautes" ? "Les nouveautés" : "Votre sélection", s.rayon ? `rayon ${rayon(s.rayon)}` : "tout le catalogue", `${s.nombre ?? 8} produits`].join(" · ");
     case "avis":
       return `${s.nombre ?? 6} avis au plus`;
     case "questions": {
@@ -293,6 +295,11 @@ function resumeReglage(s: SectionBrute, a: Pick<AccueilGestion, "rayons" | "page
     case "hero":
     case "editorial":
       return s.image ? "Avec sa photo" : "Sans photo";
+    case "services":
+    case "etapes": {
+      const n = Object.entries(s.textes ?? {}).filter(([k, v]) => /^[se][1-9]_titre_fr$/.test(k) && v.trim()).length;
+      return s.type === "services" ? `${n} service${n > 1 ? "s" : ""}` : `${n} étape${n > 1 ? "s" : ""}`;
+    }
     case "lookbook": {
       const n = (s.points ?? []).length;
       return !s.image ? "Sans photo" : n ? `${n} point${n > 1 ? "s" : ""} sur la photo` : "Aucun point encore";
@@ -458,7 +465,7 @@ function Reglages({
 
 /** Le dessin de la section, en blocs : on la reconnaît d'un coup d'œil. */
 export function Miniature({ type, photo = null }: { type: TypeSection; photo?: string | null }) {
-  const n = { hero: 3, rayons: 3, selection: 4, editorial: 4, engagements: 4, texte: 3, avis: 3, questions: 4, marques: 6, lookbook: 3, piece: 3, bannieres: 4 }[type];
+  const n = { hero: 3, rayons: 3, selection: 4, editorial: 4, engagements: 4, texte: 3, avis: 3, questions: 4, marques: 6, lookbook: 3, piece: 3, bannieres: 4, services: 4, etapes: 4, contact: 4 }[type];
   // Sa photo, s'il en a une : en fond de l'ouverture, à la place de l'image du récit.
   const fond = photo ? { backgroundImage: `url("${photo}")` } : undefined;
   return (

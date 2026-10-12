@@ -18,7 +18,8 @@ with adresses (hote, slug) as (
     ('skanecom-apercu-selma.__SOUS__.workers.dev', 'maison-selma'),
     ('skanecom-apercu-quincaillerie.__SOUS__.workers.dev', 'quincaillerie-demo'),
     ('skanecom-apercu-beaute.__SOUS__.workers.dev', 'yasmine-beaute'),
-    ('skanecom-apercu-maison.__SOUS__.workers.dev', 'dar-alia')
+    ('skanecom-apercu-maison.__SOUS__.workers.dev', 'dar-alia'),
+    ('skanecom-apercu-studio.__SOUS__.workers.dev', 'atelier-ocre')
 )
 update plateforme.domaines d
    set principal = false
@@ -32,7 +33,8 @@ with adresses (hote, slug) as (
     ('skanecom-apercu-selma.__SOUS__.workers.dev', 'maison-selma'),
     ('skanecom-apercu-quincaillerie.__SOUS__.workers.dev', 'quincaillerie-demo'),
     ('skanecom-apercu-beaute.__SOUS__.workers.dev', 'yasmine-beaute'),
-    ('skanecom-apercu-maison.__SOUS__.workers.dev', 'dar-alia')
+    ('skanecom-apercu-maison.__SOUS__.workers.dev', 'dar-alia'),
+    ('skanecom-apercu-studio.__SOUS__.workers.dev', 'atelier-ocre')
 )
 insert into plateforme.domaines (hote, boutique_id, type, principal, statut_certificat)
 select a.hote, b.id, 'personnalise', true, 'actif'

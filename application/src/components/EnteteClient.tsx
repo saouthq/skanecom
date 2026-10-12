@@ -80,6 +80,8 @@ export function MenuMobile({
   raccourcis = [],
   faits,
   aide = [],
+  studio = false,
+  tout = t.commun.toutLeCatalogue,
   className = "",
 }: {
   /** Le logo de la boutique (ou son nom), en tête du menu, comme dans l'en-tête de la page. */
@@ -93,6 +95,10 @@ export function MenuMobile({
   /** « Besoin d'aide ? » : les pages, le contact, la garantie — au téléphone,
    *  le pied de page est loin (recette du 05/10). */
   aide?: { href: string; nom: string }[];
+  /** Un site vitrine en Studio : des domaines et des projets, pas de rayons ni de pièces, pas de recherche. */
+  studio?: boolean;
+  /** Le lien vers tout le catalogue (« Toutes les réalisations », en Studio). */
+  tout?: string;
   className?: string;
 }) {
   const [ouvert, setOuvert] = useState(false);
@@ -133,20 +139,22 @@ export function MenuMobile({
         className="tiroir-menu"
         entete={<div className="menu-marque">{marque}</div>}
       >
-        <form className="menu-recherche" action="/recherche" role="search" style={suivant()} onSubmit={() => ferme()}>
-          <Loupe taille={18} />
-          <input type="search" name="q" placeholder={t.menu.rechercher} aria-label={t.menu.rechercher} enterKeyHint="search" autoComplete="off" />
-        </form>
+        {studio ? null : (
+          <form className="menu-recherche" action="/recherche" role="search" style={suivant()} onSubmit={() => ferme()}>
+            <Loupe taille={18} />
+            <input type="search" name="q" placeholder={t.menu.rechercher} aria-label={t.menu.rechercher} enterKeyHint="search" autoComplete="off" />
+          </form>
+        )}
 
         <nav aria-label={t.commun.navigationPrincipale} className="menu-nav">
-          <p className="menu-sur-titre" style={suivant()}>{t.menu.rayons}</p>
+          <p className="menu-sur-titre" style={suivant()}>{studio ? t.studio.domaines : t.menu.rayons}</p>
           <ul className="menu-rayons">
             {entrees.map((e) => (
               <li key={e.cle} style={suivant()}>
                 <Link className="menu-rayon" href={e.href} onClick={ferme} aria-current={chemin === e.href ? "page" : undefined}>
                   <span className="menu-rayon-nom">
                     {e.nom}
-                    {e.compte ? <span className="menu-rayon-compte">{t.menu.pieces(e.compte)}</span> : null}
+                    {e.compte ? <span className="menu-rayon-compte">{studio ? t.studio.domaine(e.compte) : t.menu.pieces(e.compte)}</span> : null}
                   </span>
                   {e.image ? (
                     <span className="menu-rayon-image" aria-hidden="true">
@@ -171,7 +179,7 @@ export function MenuMobile({
             ))}
           </ul>
           <Link className="menu-tout" href="/catalogue" onClick={ferme} style={suivant()} aria-current={chemin === "/catalogue" ? "page" : undefined}>
-            <span>{t.commun.toutLeCatalogue}</span>
+            <span>{tout}</span>
             <Fleche taille={18} className="rtl:-scale-x-100" />
           </Link>
         </nav>

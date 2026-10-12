@@ -1,4 +1,4 @@
-import { gabaritDe, MAX_DIAPOS, type CodeTheme, type Structure, type TypeSection } from "@/lib/theme";
+import { gabaritDe, MAX_DIAPOS, MAX_ETAPES, MAX_SERVICES, type CodeTheme, type Structure, type TypeSection } from "@/lib/theme";
 
 /* ============================================================================
    COMPOSER L'ACCUEIL (backoffice, migration 59) — ce qui se partage entre
@@ -89,6 +89,15 @@ type Entree = {
 
 const ETIQUETTE: ChampTexte = { cle: "etiquette", libelle: "Surtitre", aide: "Quelques mots au-dessus du titre (facultatif)." };
 
+/** Les éléments numérotés d'une section (services, étapes) : un titre et un
+ *  texte chacun ; un élément sans titre ne s'affiche pas. */
+function numerotes(prefixe: "s" | "e", max: number, nom: string): ChampTexte[] {
+  return Array.from({ length: max }, (_, i) => [
+    { cle: `${prefixe}${i + 1}_titre`, libelle: `${nom} ${i + 1} — titre`, ...(i === 0 ? { aide: `Vide : ce${nom === "Étape" ? "tte" : ""} ${nom.toLowerCase()} ne s'affiche pas.` } : {}) },
+    { cle: `${prefixe}${i + 1}_texte`, libelle: `${nom} ${i + 1} — texte`, long: true },
+  ]).flat();
+}
+
 export const BIBLIOTHEQUE: Record<TypeSection, Entree> = {
   hero: {
     nom: "Ouverture",
@@ -150,6 +159,24 @@ export const BIBLIOTHEQUE: Record<TypeSection, Entree> = {
     resume: "Une à cinq bannières qui défilent : une photo, un titre, un bouton vers un rayon ou une page.",
     textes: [ETIQUETTE, { cle: "titre", libelle: "Titre", aide: "Facultatif : au-dessus des bannières." }],
   },
+  services: {
+    nom: "Services",
+    resume: "Ce que vous faites, en six points au plus, numérotés : un titre et un texte chacun.",
+    textes: [ETIQUETTE, { cle: "titre", libelle: "Titre", long: true, aide: "Un retour à la ligne pour couper le titre." }, { cle: "chapo", libelle: "Chapô", long: true },
+      ...numerotes("s", MAX_SERVICES, "Service"), { cle: "cta", libelle: "Texte du lien", aide: "Avec un lien choisi plus bas." }],
+  },
+  etapes: {
+    nom: "Méthode",
+    resume: "Votre façon de travailler, en cinq étapes numérotées. Sur ordinateur, elles défilent de côté.",
+    unique: true,
+    textes: [ETIQUETTE, { cle: "titre", libelle: "Titre", long: true }, ...numerotes("e", MAX_ETAPES, "Étape")],
+  },
+  contact: {
+    nom: "Contact",
+    resume: "« Parlons de votre projet » : vos moyens de contact et, s'il est ouvert, le formulaire de la boutique.",
+    unique: true,
+    textes: [ETIQUETTE, { cle: "titre", libelle: "Titre", long: true, aide: "Un retour à la ligne pour couper le titre." }, { cle: "chapo", libelle: "Chapô", long: true }],
+  },
   piece: {
     nom: "La pièce de la saison",
     resume: "Un produit en grand, achetable depuis l'accueil : ses photos, votre texte, ses tailles.",
@@ -168,11 +195,18 @@ export function entreeDe(type: TypeSection, structure: Structure): Entree {
       resume: "La page de vente : ses photos, votre promesse, ses offres par quantité et le formulaire de commande sur la page.",
     };
   }
+  // Au Studio (site vitrine), les produits sont des réalisations, les rayons des domaines.
+  if (structure === "studio" && type === "selection") {
+    return { ...BIBLIOTHEQUE.selection, nom: "Réalisations à la une", resume: "Les réalisations choisies, en grande grille décalée : chacune mène à son projet." };
+  }
+  if (structure === "studio" && type === "rayons") {
+    return { ...BIBLIOTHEQUE.rayons, nom: "Domaines", resume: "Vos domaines en liste : leur nombre de projets, leur photo au survol." };
+  }
   return BIBLIOTHEQUE[type];
 }
 
 /** L'ordre de la bibliothèque. */
-export const TYPES: TypeSection[] = ["hero", "bannieres", "piece", "selection", "rayons", "editorial", "lookbook", "avis", "questions", "marques", "engagements", "texte"];
+export const TYPES: TypeSection[] = ["hero", "bannieres", "piece", "selection", "rayons", "editorial", "services", "etapes", "lookbook", "avis", "questions", "marques", "engagements", "texte", "contact"];
 
 /** Les titres que la vitrine montre quand la section n'a pas le sien
  *  (selon la structure : le Bento a ses rayons, sur les textes éditoriaux). */
@@ -180,8 +214,11 @@ export function titreParDefaut(type: TypeSection, code: Structure, tri?: string)
   const technique = gabaritDe(code) === "technique";
   switch (type) {
     case "hero": return "Le nom de la boutique";
-    case "rayons": return technique ? "Nos rayons" : code === "bento" ? "Les rayons" : "Les collections";
-    case "selection": return tri === "nouveautes" ? "Les nouveautés" : technique ? "Les références du moment" : "La sélection";
+    case "rayons": return technique ? "Nos rayons" : code === "bento" ? "Les rayons" : code === "studio" ? "Nos domaines" : "Les collections";
+    case "selection": return tri === "nouveautes" ? "Les nouveautés" : technique ? "Les références du moment" : code === "studio" ? "Réalisations" : "La sélection";
+    case "services": return "Ce que nous faisons";
+    case "etapes": return "Notre méthode";
+    case "contact": return "Parlons de votre projet.";
     case "avis": return "Ce qu'en disent nos clients";
     case "questions": return "Vos questions";
     case "marques": return "Les marques";
@@ -195,6 +232,9 @@ export function titreParDefaut(type: TypeSection, code: Structure, tri?: string)
 export function nouvelleSection(type: TypeSection, cle: string): SectionBrute {
   switch (type) {
     case "selection": return { cle, type, textes: {}, nombre: 8 };
+    // Un premier élément à remplacer : la section se voit tout de suite dans l'aperçu.
+    case "services": return { cle, type, textes: { s1_titre_fr: "Votre premier service", s1_texte_fr: "Ce que vous faites, pour qui, comment." } };
+    case "etapes": return { cle, type, textes: { e1_titre_fr: "La rencontre", e1_texte_fr: "Ce qui se passe au premier rendez-vous." } };
     case "avis": return { cle, type, textes: {}, nombre: 6 };
     case "questions": return { cle, type, textes: {}, nombre: 5 };
     case "lookbook": return { cle, type, textes: {}, points: [] };
@@ -343,6 +383,12 @@ export function sectionMasquee(s: SectionBrute, a: Pick<AccueilGestion, "code" |
       return (s.points ?? []).some((p) => a.catalogue.some((c) => c.slug === p.produit)) ? null : "La photo paraît seule : posez un point sur une pièce portée.";
     case "bannieres":
       return (s.diapos ?? []).some((d) => d.image || (d.textes?.titre_fr ?? "").trim()) ? null : "Masquée tant qu'aucune bannière n'a de photo ni de titre.";
+    case "services":
+    case "etapes": {
+      const prefixe = s.type === "services" ? "s" : "e";
+      return Object.entries(s.textes ?? {}).some(([k, v]) => new RegExp(`^${prefixe}[1-9]_titre_`).test(k) && v.trim())
+        ? null : `Masquée tant qu'aucun${s.type === "etapes" ? "e étape" : " service"} n'a de titre.`;
+    }
     case "piece":
       // En Monoproduit, sans produit choisi, la page de vente vend le premier mis en avant.
       if (!s.produit) return structure === "monoproduit" ? null : "Masquée tant qu'aucune pièce n'est choisie.";

@@ -87,6 +87,7 @@ lancer() {
   echo "     http://quincaillerie.localhost:$PORT   Quincaillerie du Sud — gabarit technique"
   echo "     http://beaute.localhost:$PORT          Yasmine Beauté — beauté, gabarit éditorial"
   echo "     http://maison.localhost:$PORT          Dar Alia — maison et décoration, gabarit éditorial"
+  echo "     http://studio.localhost:$PORT          Atelier Ocre — site vitrine, structure Studio"
   echo "     http://console.localhost:$PORT         Console : admin@skanecom.test / console-locale-skanecom"
   echo
   echo "     Ctrl+C arrête la vitrine ; ensuite : outils/essayer.sh arreter"

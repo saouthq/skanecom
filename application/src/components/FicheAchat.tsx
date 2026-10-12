@@ -61,6 +61,7 @@ export function FicheAchat({
   partage = null,
   contact = null,
   paiement = "livraison",
+  prixMasques = false,
 }: {
   produit: Produit;
   /** Les moyens de paiement de la boutique (paiementsDe) : la phrase d'une précommande en dépend. */
@@ -81,6 +82,9 @@ export function FicheAchat({
   /** Réglage `catalogue.afficher_prix_barres` : l'ancien prix barré à côté du
    *  prix, ou jamais. */
   prixBarres?: boolean;
+  /** Réglage `vitrine.prix_masques` d'un site vitrine : ni prix ni stock, le
+   *  visiteur demande. */
+  prixMasques?: boolean;
 }) {
   /* L'état de la déclinaison est PARTAGÉ (SelectionVariante.tsx) : le pavé de
      caractéristiques vit ailleurs dans la page et doit suivre le même choix,
@@ -206,7 +210,7 @@ export function FicheAchat({
 
   return (
     <div className="fiche-achat">
-      {variante && prixProVariante !== undefined ? (
+      {prixMasques ? null : variante && prixProVariante !== undefined ? (
         <div className="fiche-prix fiche-prix-pro" data-pro="">
           <span className="fiche-prix-pro-tete"><span className="pro-badge">{t.pro.badge}</span> {t.pro.prixPro}</span>
           <span className="fiche-prix">
@@ -256,13 +260,15 @@ export function FicheAchat({
         </div>
       ) : null}
 
+      {prixMasques ? null : (
       <div className="fiche-stock">
         {precommande ? (
           <span className="etat etat-precommande">{t.precommande.etat}</span>
         ) : variante ? <EtatStock etat={etatVariante(variante)} restant={stock} /> : <span className="etat etat-rupture">{t.stock.rupture}</span>}
       </div>
+      )}
 
-      {minimum > 1 && !sousMinimum ? (
+      {minimum > 1 && !sousMinimum && !prixMasques ? (
         <p className="fiche-minimum" data-minimum={minimum}>
           <Lot />
           <span>
@@ -311,7 +317,7 @@ export function FicheAchat({
       ) : null}
       </>
       )}
-      <p className="legende fiche-note">{t.produit.stockReel}</p>
+      {prixMasques ? null : <p className="legende fiche-note">{t.produit.stockReel}</p>}
       {disponible && delaiJours && !contact ? <LivraisonEstimee min={delaiJours.min} max={delaiJours.max} /> : null}
       {partage ? <PartagerFiche nom={champ(produit, "nom")} boutique={partage.boutique} /> : null}
 
@@ -320,7 +326,7 @@ export function FicheAchat({
         <div className="achat-mobile cache-desktop" role="region" aria-label={t.siteVitrine.contact}>
           <div className="min-w-0 flex-1">
             <p className="legende truncate">{declinaison() || champ(produit, "nom")}</p>
-            {variante ? <Prix millimes={prixApplique} /> : null}
+            {variante && !prixMasques ? <Prix millimes={prixApplique} /> : null}
           </div>
           <a className="btn btn-primaire" href={lienWhatsappPiece(contact, libelle(), variante?.sku ?? null) ?? (contact.telephone ? `tel:${contact.telephone.replace(/[^\d+]/g, "")}` : "/contact")}
             target={contact.whatsapp ? "_blank" : undefined} rel={contact.whatsapp ? "noopener noreferrer" : undefined}>

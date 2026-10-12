@@ -1,4 +1,4 @@
-/* Aperçu rapide : captures des pages clés des cinq boutiques, sur grand
+/* Aperçu rapide : captures des pages clés des boutiques de démonstration, sur grand
    écran et sur téléphone. Sert à relire le rendu ; les parcours
    (parcours-humain.mjs) vérifient le comportement.
 
@@ -19,6 +19,8 @@ const PAGES = {
   quincaillerie: ["/", "/catalogue", "/categorie/outillage", "/produit/perceuse-visseuse-18v", "/produit/scie-circulaire-1400w"],
   beaute: ["/", "/categorie/soins-du-visage", "/produit/huile-figue-de-barbarie", "/produit/vernis-a-ongles"],
   maison: ["/", "/categorie/decoration", "/produit/kilim-tisse-main", "/produit/serviettes-table-lin"],
+  // Le site vitrine (structure Studio) : les réalisations, une fiche de projet, le contact.
+  studio: ["/", "/catalogue", "/produit/villa-gammarth", "/contact"],
 };
 const choix = process.argv.slice(2);
 const navigateur = await chromium.launch({ args: ["--host-resolver-rules=MAP *.localhost 127.0.0.1"] });
@@ -41,6 +43,9 @@ for (const [ecran, options] of [
         window.scrollTo(0, 0);
         // Tout est posé d'emblée pour la capture (les apparitions au défilement).
         document.documentElement.classList.remove("js-apparitions");
+        // Les animations expressives sont liées au défilement : une capture de toute
+        // la page les figerait à mi-course. Elle les prend sobres.
+        if (document.documentElement.dataset.animations === "expressives") document.documentElement.dataset.animations = "oui";
         await new Promise((r) => setTimeout(r, 200));
       });
       await page.waitForLoadState("networkidle");

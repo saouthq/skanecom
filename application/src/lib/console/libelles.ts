@@ -36,6 +36,7 @@ export const LIBELLES_THEME: Record<string, string> = {
   immersif: "Immersif",
   commerce: "Commerce",
   monoproduit: "Monoproduit",
+  studio: "Studio",
 };
 
 /** L'adresse publique d'un domaine. En local, les boutiques sont servies sur
