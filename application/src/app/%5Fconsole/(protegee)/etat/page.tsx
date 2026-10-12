@@ -6,7 +6,8 @@ import { dateJournal } from "@/lib/console/libelles";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { chronometre, configuration, hoteLocal, LIBELLES_FOURNISSEUR, taille, type DonneesEtat } from "@/lib/console/etat";
-import { LIBELLES_GENRE, surveillanceMuette, type DonneesSurveillance } from "@/lib/console/surveillance";
+import { LIBELLES_GENRE, surveillanceMuette, type DonneesAlertes, type DonneesSurveillance, type IncidentLu } from "@/lib/console/surveillance";
+import { duree } from "@/lib/courriels/alertes";
 
 export const metadata: Metadata = { title: "État technique" };
 
@@ -36,17 +37,21 @@ const pire = (points: Point[], sinon: Niveau): Niveau =>
   points.some((p) => p.niveau === "panne") ? "panne" : points.length ? "attention" : sinon;
 
 export default async function EtatTechnique({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; carte?: string }> }) {
-  const { user } = await exigeAdmin();
+  const { user, role } = await exigeAdmin();
   const v = await searchParams;
   const service = clientService();
-  const [[{ data, error }, duree], { data: dataSurv, error: errSurv }] = await Promise.all([
+  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }] = await Promise.all([
     chronometre(() => service.rpc("console_etat_technique", { p_acteur: user.id })),
     service.rpc("console_surveillance", { p_acteur: user.id }),
+    service.rpc("console_alertes", { p_acteur: user.id }),
   ]);
   if (error) throw new Error(`État technique illisible : ${error.message}`);
   if (errSurv) throw new Error(`Surveillance illisible : ${errSurv.message}`);
+  if (errAlertes) throw new Error(`Alertes illisibles : ${errAlertes.message}`);
   const e = data as DonneesEtat;
   const sv = dataSurv as DonneesSurveillance;
+  const al = dataAlertes as DonneesAlertes;
+  const superAdmin = role === "super_admin";
   const c = await configuration();
 
   // ---- La surveillance (chaque heure) --------------------------------------
@@ -60,6 +65,14 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   }));
   if (muette) pointsSurveillance.push({ niveau: "attention", texte: <>Le passage de l&apos;heure ne tourne plus : le dernier date du {dateJournal(sv.derniere_heure!)}. Le déclencheur planifié du Worker est à regarder.</> });
   const niveauSurveillance = pire(pointsSurveillance, dernier ? "ok" : "neutre");
+
+  // ---- Les alertes par e-mail ----------------------------------------------
+  const ouverts = al.incidents.filter((i) => !i.clos_le);
+  const pointsAlertes: Point[] = [];
+  if (!al.actives) pointsAlertes.push({ niveau: "attention", texte: "Coupées : une panne ne prévient personne tant qu'on n'ouvre pas la console." });
+  const enEchec = al.incidents.find((i) => i.alerte_erreur && !(i.clos_le ? i.alerte_cloture_le : i.alerte_ouverture_le));
+  if (al.actives && enEchec) pointsAlertes.push({ niveau: "attention", texte: <>Une alerte n&apos;est pas partie : « {enEchec.alerte_erreur} ». Elle se retente à chaque passage.</> });
+  const niveauAlertes: Niveau = pointsAlertes.length ? "attention" : "ok";
   const etatSurveillance = !dernier ? "Pas encore passée" : pointsSurveillance.some((p) => p.niveau === "panne") ? "En panne"
     : pointsSurveillance.length ? "À regarder" : "Tout répond";
   const dispo = sv.disponibilite;
@@ -68,12 +81,12 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const partConnexions = e.base.connexions_max ? e.base.connexions / e.base.connexions_max : 0;
   const pointsBase: Point[] = [];
   if (partConnexions >= 0.8) pointsBase.push({ niveau: "attention", texte: `${e.base.connexions} connexions ouvertes sur ${e.base.connexions_max} : près de la limite.` });
-  if (duree > 1500) pointsBase.push({ niveau: "attention", texte: `La base a mis ${(duree / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} s à répondre.` });
+  if (dureeBase > 1500) pointsBase.push({ niveau: "attention", texte: `La base a mis ${(dureeBase / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} s à répondre.` });
   const base: Carte = {
     id: "base", titre: "Base de données", icone: "modules",
     niveau: pire(pointsBase, "ok"), etat: pointsBase.length ? "À regarder" : "Répond",
     faits: [
-      ["Répond en", `${duree.toLocaleString("fr-FR")} ms`],
+      ["Répond en", `${dureeBase.toLocaleString("fr-FR")} ms`],
       ["Taille", taille(e.base.taille)],
       ["Connexions", `${e.base.connexions} sur ${e.base.connexions_max}`],
       ["PostgreSQL", e.base.version],
@@ -175,7 +188,7 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const etatDomaines = enErreur.length ? "En panne" : aVerifier.length ? "À vérifier" : enLigne.length ? "Valables" : "Local";
 
   const cartes = [base, courriels, skanfact, fichiers];
-  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
+  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
   // Le verdict renvoie à chaque carte concernée, une fois, avec son nombre de points.
   const parCarte = [...new Set(aRegarder.map((p) => p.carte))].map((id) => {
     const points = aRegarder.filter((p) => p.carte === id);
@@ -283,6 +296,67 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
           </div>
         </section>
 
+        <section className="carte et-carte et-large" aria-labelledby="t-alertes" data-niveau={niveauAlertes}>
+          <header className="et-tete">
+            <h2 id="t-alertes" className="carte-titre-icone"><Icone nom="courriel" /> Alertes par e-mail</h2>
+            <span className={PASTILLE[niveauAlertes]}>{al.actives ? "Allumées" : "Coupées"}</span>
+          </header>
+          {message("alertes")}
+          <p className="aide et-alertes-regle">
+            Quand la surveillance relève une panne — une vitrine qui ne répond pas deux passages de suite, des e-mails de commande
+            ou des factures SkanFact qui s&apos;entassent, un domaine d&apos;envoi qui perd sa vérification —, un e-mail part
+            une fois, puis une fois quand c&apos;est rétabli. Jamais à chaque passage.
+          </p>
+          <dl className="et-faits">
+            <div><dt>À qui</dt><dd>{al.destinataires.length ? al.destinataires.join(", ") : <span className="discret">personne</span>}</dd></div>
+            <div><dt>Incidents ouverts</dt><dd>{ouverts.length ? <b className="et-manque">{ouverts.length}</b> : "aucun"}</dd></div>
+            {al.modifie_le ? <div><dt>Réglé le</dt><dd>{dateJournal(al.modifie_le)}</dd></div> : null}
+          </dl>
+          {pointsAlertes.length && v.carte !== "alertes" ? (
+            <ul className="et-points">
+              {pointsAlertes.map((p, i) => <li key={i} data-niveau={p.niveau}><Icone nom="alerte" taille={14} /> <span>{p.texte}</span></li>)}
+            </ul>
+          ) : null}
+          {superAdmin ? (
+            <form action="/etat/alertes" method="post" className="formulaire et-alertes-form">
+              <fieldset className="choix">
+                <legend className="sr-only">Alertes de la surveillance</legend>
+                <label className="choix-carte">
+                  <input type="radio" name="actives" value="" defaultChecked={!al.actives} />
+                  <span><b>Coupées</b><span className="aide">Les incidents se suivent ici seulement.</span></span>
+                </label>
+                <label className="choix-carte">
+                  <input type="radio" name="actives" value="oui" defaultChecked={al.actives} />
+                  <span><b>Prévenir par e-mail</b><span className="aide">À l&apos;ouverture d&apos;un incident, puis à son rétablissement.</span></span>
+                </label>
+              </fieldset>
+              <div className="champ">
+                <label htmlFor="al-destinataires">Adresses à prévenir</label>
+                <textarea id="al-destinataires" name="destinataires" rows={2} maxLength={1100} autoComplete="off" spellCheck={false}
+                  defaultValue={(al.destinataires.length ? al.destinataires : [user.email ?? ""]).join("\n")} aria-describedby="al-destinataires-aide" />
+                <p className="aide" id="al-destinataires-aide">Une à cinq, une par ligne. Une boîte que vous lisez au téléphone.</p>
+              </div>
+              <div className="et-alertes-actions">
+                <button type="submit" className="btn btn-primaire">Enregistrer</button>
+              </div>
+            </form>
+          ) : <p className="aide">Un super-administrateur les règle.</p>}
+          {al.destinataires.length ? (
+            <form action="/etat/alertes/essai" method="post" className="et-pied">
+              <button type="submit" className="btn btn-second btn-petit">Envoyer un essai</button>
+              <p className="aide">Une alerte d&apos;exemple, sous « [Essai] », aux adresses ci-dessus : pour voir qu&apos;elle arrive.</p>
+            </form>
+          ) : null}
+          {al.incidents.length ? (
+            <>
+              <h3 className="et-sous-titre">Incidents, ouverts puis des 14 derniers jours</h3>
+              <ul className="et-domaines et-incidents">
+                {al.incidents.map((i) => <Incident key={i.id} i={i} />)}
+              </ul>
+            </>
+          ) : <p className="discret et-incidents-vide">Aucun incident ces 14 derniers jours.</p>}
+        </section>
+
         {cartes.map((x) => (
           <section key={x.id} className="carte et-carte" aria-labelledby={`t-${x.id}`} data-niveau={x.niveau}>
             <header className="et-tete">
@@ -355,5 +429,33 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
         Les SMS de connexion partent par Supabase Auth : leur fournisseur se règle dans Supabase, et le journal des envois ne les voit pas encore.
       </p>
     </>
+  );
+}
+
+const QUOI_INCIDENT: Record<IncidentLu["genre"], string> = {
+  page: "Vitrine sans réponse", courriels: "E-mails de commande en attente", skanfact: "Envois à SkanFact en attente", domaine_envoi: "Domaine d'envoi non vérifié",
+};
+
+/** Un incident : quoi, où, depuis quand (ou combien de temps), et s'il a été annoncé. */
+function Incident({ i }: { i: IncidentLu }) {
+  const ouvert = !i.clos_le;
+  const annonce = ouvert
+    ? i.alerte_ouverture_le ? `annoncé le ${dateJournal(i.alerte_ouverture_le)}` : i.echecs < i.seuil ? "pas encore annoncé (un raté isolé n'alerte pas)" : i.alerte_erreur ? `e-mail refusé : ${i.alerte_erreur}` : "à annoncer"
+    : i.alerte_cloture_le ? "rétablissement annoncé" : i.alerte_ouverture_le ? "rétablissement à annoncer" : "jamais annoncé (rétabli avant l'alerte)";
+  return (
+    <li>
+      <div className="et-domaine">
+        <span className="et-hote">{QUOI_INCIDENT[i.genre]}{i.genre === "page" || i.genre === "domaine_envoi" ? <> · {i.cible}</> : null}</span>
+        <span className="discret">
+          {i.boutique ? <Link href={`/boutiques/${i.boutique.slug}`}>{i.boutique.nom}</Link> : "Plateforme"}
+          {i.detail ? <> · {i.detail}</> : null}
+        </span>
+        <span className="aide">{annonce}</span>
+      </div>
+      <div className="et-domaine-etat">
+        <span className={PASTILLE[ouvert ? (i.genre === "page" ? "panne" : "attention") : "ok"]}>{ouvert ? "En cours" : "Rétabli"}</span>
+        <span className="aide">{ouvert ? `depuis le ${dateJournal(i.ouvert_le)}` : `${duree(i.ouvert_le, i.clos_le!)} · le ${dateJournal(i.ouvert_le)}`}</span>
+      </div>
+    </li>
   );
 }

@@ -2035,6 +2035,39 @@ await etape("la surveillance : chaque heure (le déclencheur du Worker), et d'un
   await capture(page, "console-surveillance", true);
 });
 
+await etape("les alertes par e-mail : coupées par défaut, allumées pour une adresse, un essai qui arrive", async () => {
+  const carte = page.locator('section[aria-labelledby="t-alertes"]');
+  verifie((await carte.locator(".et-tete .ui-etat").innerText()) === "Coupées" && (await carte.innerText()).includes("une panne ne prévient personne"),
+    "coupées par défaut, et la carte dit ce que cela veut dire");
+  // Une adresse illisible : refusée, rien n'est changé.
+  await clic(page, carte.getByLabel("Prévenir par e-mail"));
+  await page.locator("#al-destinataires").fill("alertes@skanecom");
+  await clic(page, carte.getByRole("button", { name: "Enregistrer" }));
+  await page.waitForURL(/carte=alertes/);
+  verifie((await carte.locator(".message").innerText()).includes("Adresse illisible"), "une adresse illisible : refusée, dite telle quelle");
+  // Une adresse, au clavier : allumées.
+  const ADRESSE = `alertes-${SUFFIXE}@skanecom.test`;
+  await carte.getByLabel("Prévenir par e-mail").check();
+  await page.locator("#al-destinataires").fill(`${ADRESSE.toUpperCase()}`);
+  await page.locator("#al-destinataires").press("Tab");
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => /Alertes allumées/.test(document.querySelector('section[aria-labelledby="t-alertes"] .message')?.textContent ?? ""));
+  verifie((await carte.locator(".et-tete .ui-etat").innerText()) === "Allumées" && (await carte.innerText()).includes(ADRESSE),
+    "allumées : l'adresse gardée en minuscules, « Allumées »");
+  // L'essai : une alerte d'exemple, reçue (le relais la garde).
+  await clic(page, carte.getByRole("button", { name: "Envoyer un essai" }));
+  await page.waitForFunction(() => /Essai envoyé/.test(document.querySelector('section[aria-labelledby="t-alertes"] .message')?.textContent ?? ""));
+  const essai = await (await fetch(`${RELAIS}/email-dev/rendu/dernier?email=${encodeURIComponent(ADRESSE)}`)).json().catch(() => null);
+  verifie(String(essai?.sujet ?? essai?.subject ?? "").startsWith("[Essai] Alerte") && String(essai?.html ?? "").includes("Ouvrir l&#39;état technique"),
+    "l'essai arrive : « [Essai] Alerte… », avec le bouton vers l'état technique");
+  await capture(page, "console-alertes", true);
+  // Coupées de nouveau (le reste du parcours ne doit rien recevoir).
+  await carte.getByLabel(/^Coupées/).check();
+  await clic(page, carte.getByRole("button", { name: "Enregistrer" }));
+  await page.waitForFunction(() => /Alertes coupées/.test(document.querySelector('section[aria-labelledby="t-alertes"] .message')?.textContent ?? ""));
+  verifie((await carte.locator(".et-tete .ui-etat").innerText()) === "Coupées", "coupées de nouveau d'un geste");
+});
+
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {
   await clic(page, page.locator(".app-cote").getByRole("link", { name: "Revenus" }));
   await page.waitForURL(/\/revenus$/);

@@ -1,6 +1,9 @@
 import { clientService } from "@/lib/console/service";
 import { hoteLocal, phraseErreur } from "@/lib/console/etat";
 import { verifierDomaine } from "@/lib/courriels/domaines";
+import { adresseHote } from "@/lib/courriels/commandes";
+import { envoyer } from "@/lib/courriels/envoi";
+import { courrielAlerte, incidentsExemple, type IncidentAlerte } from "@/lib/courriels/alertes";
 
 /* ============================================================================
    LA SURVEILLANCE (migration …_surveillance) — chaque heure (le déclencheur
@@ -40,7 +43,10 @@ export type Releve = {
   statut?: string;
 };
 
-export type Bilan = { passage: number; verifies: number; defauts: number; pannes: number };
+export type Bilan = { passage: number; verifies: number; defauts: number; pannes: number; alertes?: Annonce };
+
+/** Ce que le passage a annoncé par e-mail (migration …_alertes_surveillance). */
+export type Annonce = { ouverts: number; retablis: number; envoye: boolean; raison?: string } | null;
 
 /** La vitrine d'un hôte : son accueil, sans suivre de redirection (une
  *  redirection est une réponse : l'hôte secondaire vers le principal). Sur
@@ -109,8 +115,63 @@ export async function lancerSurveillance(declencheur: "heure" | "console", acteu
     p_acteur: acteur, p_declencheur: declencheur, p_debut: debut, p_releves: [...pages, ...envois],
   });
   if (e2) return { ok: false, raison: e2.message };
-  return { ok: true, bilan: bilan as Bilan };
+  const b = bilan as Bilan;
+  // Les incidents, puis l'alerte : une panne d'e-mail n'empêche jamais le passage d'être noté.
+  let alertes: Annonce = null;
+  try {
+    alertes = await annoncer(b.passage, ip);
+  } catch (e) {
+    alertes = { ouverts: 0, retablis: 0, envoye: false, raison: e instanceof Error ? e.message : String(e) };
+  }
+  return { ok: true, bilan: { ...b, alertes } };
 }
+
+type AAnnoncer = { actives: boolean; destinataires: string[]; ouverts: IncidentAlerte[]; retablis: IncidentAlerte[] };
+
+/** L'adresse d'État technique, pour le bouton de l'e-mail. */
+const lienEtat = () => {
+  const console = adresseHote(process.env.NEXT_PUBLIC_CONSOLE_HOTE);
+  return console ? `${console}/etat#t-alertes` : null;
+};
+
+/** Écrit à chaque destinataire ; « parti » si l'un d'eux au moins l'a reçu. */
+async function ecrire(destinataires: string[], ouverts: IncidentAlerte[], retablis: IncidentAlerte[], essai = false): Promise<{ ok: boolean; raison?: string }> {
+  const c = courrielAlerte(ouverts, retablis, lienEtat(), essai);
+  const resultats = await Promise.all(destinataires.map((a) => envoyer({ a, nom: "SkanEcom", sujet: c.sujet, html: c.html, texte: c.texte })));
+  const refus = resultats.find((r) => !r.ok);
+  return resultats.some((r) => r.ok) ? { ok: true } : { ok: false, raison: refus && !refus.ok ? refus.raison : "Aucun destinataire" };
+}
+
+/** Ouvre et clôt les incidents de ce passage, puis annonce ce qui doit l'être
+ *  (une fois à l'ouverture, une fois au rétablissement). Alertes coupées : on
+ *  tient les incidents, sans écrire. */
+async function annoncer(passage: number, ip?: string | null): Promise<Annonce> {
+  const service = clientService(ip);
+  const { data, error } = await service.rpc("surveillance_incidents", { p_passage: passage });
+  if (error) throw new Error(error.message);
+  const a = data as AAnnoncer;
+  if (!a.actives || !a.destinataires.length || (!a.ouverts.length && !a.retablis.length)) return null;
+  const r = await ecrire(a.destinataires, a.ouverts, a.retablis);
+  await service.rpc("surveillance_alertes_notees", {
+    p_ouverts: a.ouverts.map((i) => i.id), p_retablis: a.retablis.map((i) => i.id), p_ok: r.ok, p_raison: r.raison ?? null,
+  });
+  return { ouverts: a.ouverts.length, retablis: a.retablis.length, envoye: r.ok, ...(r.raison ? { raison: r.raison } : {}) };
+}
+
+/** L'essai depuis la console : un incident et un rétablissement d'exemple,
+ *  aux destinataires réglés (rien n'est noté sur les vrais incidents). */
+export async function alerteDEssai(destinataires: string[]): Promise<{ ok: boolean; raison?: string }> {
+  if (!destinataires.length) return { ok: false, raison: "Aucune adresse : réglez d'abord à qui écrire." };
+  const x = incidentsExemple();
+  return ecrire(destinataires, x.ouverts, x.retablis, true);
+}
+
+/* ---- Les alertes, telles que la console les lit (public.console_alertes) ---- */
+
+export type IncidentLu = IncidentAlerte & {
+  dernier_le: string; alerte_ouverture_le: string | null; alerte_cloture_le: string | null; alerte_erreur: string | null; seuil: number;
+};
+export type DonneesAlertes = { actives: boolean; destinataires: string[]; modifie_le: string | null; incidents: IncidentLu[]; ouverts: number };
 
 /* ---- Ce que la console en lit (public.console_surveillance) ---- */
 

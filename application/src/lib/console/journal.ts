@@ -61,6 +61,7 @@ export const ACTIONS: Record<string, string> = {
   "export.boutiques": "Liste des boutiques exportée",
   "boutique.contact": "Coordonnées du client",
   "administrateur.double_auth_exigee": "Double authentification de l'équipe SkanEcom : réglage changé",
+  "plateforme.alertes": "Alertes de la surveillance : réglage changé",
   "boutique.double_auth_exigee": "Double authentification de l'équipe de la boutique : réglage changé",
   "prospect.creer": "Prospect ajouté",
   "prospect.modifier": "Prospect modifié",
