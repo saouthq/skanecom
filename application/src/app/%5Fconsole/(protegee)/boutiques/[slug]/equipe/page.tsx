@@ -59,6 +59,8 @@ export default async function Equipe({ params, searchParams }: {
   const boutique = await boutiqueDe(slug);
   if (!boutique) notFound();
   const equipe = await equipeDe(boutique.id);
+  // Une boutique sans propriétaire : c'est lui qu'on invite d'abord.
+  const roleParDefaut = equipe.some((m) => m.role === "proprietaire") ? "confirmateur" : "proprietaire";
   const lien = lienEncoreUtile(lienRemis((await cookies()).get(COOKIE_LIEN)?.value), equipe);
   const actifs = equipe.filter((m) => m.actif).length;
   const action = cheminEquipe(slug);
@@ -205,7 +207,7 @@ export default async function Equipe({ params, searchParams }: {
               <legend>Rôle</legend>
               {rolesPermis.map((r) => (
                 <label key={r.code} className="choix-carte role-choix">
-                  <input type="radio" name="role" value={r.code} required defaultChecked={(messages.role ?? "confirmateur") === r.code} />
+                  <input type="radio" name="role" value={r.code} required defaultChecked={(messages.role ?? roleParDefaut) === r.code} />
                   <span>
                     <b>{LIBELLES_ROLE[r.code]}</b>
                     <span className="aide">{r.aide}</span>

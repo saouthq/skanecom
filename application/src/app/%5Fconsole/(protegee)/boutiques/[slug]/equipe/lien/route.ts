@@ -24,6 +24,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const ok = type === "invite"
       ? `Nouvelle invitation pour ${membre.email} : l'ancien lien ne marche plus.`
       : `Lien pour choisir un nouveau mot de passe, pour ${membre.email}. Son mot de passe actuel reste valable tant que le lien n'a pas servi.`;
-    return vers(`${retour}?${new URLSearchParams({ ok })}`);
+    return vers(`${retour}?${new URLSearchParams({ ok, ancre: "lien" })}#lien`);
   });
 }

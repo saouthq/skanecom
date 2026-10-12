@@ -55,6 +55,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     }
     const echec = await remettreLien(req, { acteur: user.id, ip, boutique, userId: userId!, email, jeton, type: "invite" });
     if (echec) return versAvecErreur(retour, echec);
-    return vers(`${retour}?${new URLSearchParams({ ok: `Invitation prête pour ${email} (${libelle}) : envoyez-lui le lien ci-dessous.` })}`);
+    // La carte du lien, en haut de la page : on y ramène (le formulaire est plus bas).
+    return vers(`${retour}?${new URLSearchParams({ ok: `Invitation prête pour ${email} (${libelle}) : envoyez-lui le lien ci-dessous.`, ancre: "lien" })}#lien`);
   });
 }

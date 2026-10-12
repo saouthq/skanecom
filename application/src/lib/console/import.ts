@@ -18,7 +18,8 @@ import type { Lignes } from "./tableur";
    TOUTE AUTRE COLONNE est un axe de variante, sous son propre nom :
    « Couleur », « Taille », « Tension », « Conditionnement »…
 
-   · Rayon : « Outillage > Perceuses » crée ou retrouve le rayon et son parent.
+   · Rayon : « Outillage > Perceuses » crée ou retrouve le rayon et son parent
+     (trois niveaux au plus, comme au backoffice).
    · Prix en dinars : 189 · 189,000 · 189.5 · « 1 234,500 TND ».
    · Poids en grammes, ou en kg si l'en-tête ou la cellule le dit.
    · Une cellule vide ne remplace rien : on peut réimporter un fichier
@@ -219,11 +220,14 @@ export function lisLignes(tableau: Lignes, attributs: AttributImport[] = []): Le
           else l.stock = s;
           break;
         }
-        case "rayon":
-          l.rayon = v.split(/\s*>\s*/).map((n) => n.trim()).filter(Boolean).slice(0, 4)
-            .map((nom) => ({ nom: nom.slice(0, 80), slug: slug(nom, 60) }));
+        case "rayon": {
+          // Trois niveaux au plus, comme au backoffice (…_rayons.sql) : Bagages > Valises > Cabine.
+          const noms = v.split(/\s*>\s*/).map((n) => n.trim()).filter(Boolean);
+          if (noms.length > 3) l.erreurs.push(`Rayon : trois niveaux au plus (Bagages > Valises > Cabine), pas « ${v} »`);
+          l.rayon = noms.slice(0, 3).map((nom) => ({ nom: nom.slice(0, 80), slug: slug(nom, 60) }));
           if (l.rayon.some((x) => !x.slug)) l.erreurs.push(`Rayon illisible : « ${v} »`);
           break;
+        }
         case "marque": l.marque = v ? v.slice(0, 80) : null; break;
         case "description": l.description = v ? v.slice(0, 5000) : null; break;
         case "poids": {

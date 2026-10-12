@@ -2368,6 +2368,11 @@ div.rg-verrou { border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-
 .ann[data-niveau="maintenance"] > .icone { color: var(--ui-ambre, #B45309); }
 .ann-texte { flex: 1; margin: 0; color: var(--ui-texte-2); }
 .ann-texte b { color: var(--ui-texte); margin-inline-end: .25rem; }
+/* La boutique pas encore ouverte : le bandeau mène à ce qui reste à régler. */
+.ann-preparation { flex-wrap: wrap; align-items: center; }
+.ann-preparation > .icone { align-self: flex-start; margin-block-start: .125rem; }
+.ann-preparation .ann-texte { flex: 1 1 16rem; }
+.ann-preparation .btn { flex: none; }
 .ann-fermer { flex: none; display: inline-grid; place-items: center; min-inline-size: 2rem; min-block-size: 2rem; padding: 0; margin: -.25rem -.25rem -.25rem 0; }
 @media (pointer: coarse) { .ann-fermer { min-inline-size: 2.75rem; min-block-size: 2.75rem; margin-block: -.625rem; } }
 

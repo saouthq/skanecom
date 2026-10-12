@@ -204,7 +204,7 @@ export function vigilances(
       const etape = titreEtape(b.mise_en_place.prochaine);
       out.push({
         cle: `${b.id}:preparation`, niveau: "info", boutique: b, href: `/boutiques/${b.slug}#t-mise-en-place`,
-        texte: `en préparation, ${b.mise_en_place.faites} étapes sur ${b.mise_en_place.total}${etape ? ` · prochaine : ${etape.toLowerCase()}` : ""}`,
+        texte: `en préparation, ${b.mise_en_place.faites} étape${b.mise_en_place.faites > 1 ? "s" : ""} sur ${b.mise_en_place.total}${etape ? ` · prochaine : ${etape.toLowerCase()}` : ""}`,
         court: `${b.mise_en_place.faites}/${b.mise_en_place.total}${etape ? ` · ${etape.toLowerCase()}` : ""}`,
       });
     }

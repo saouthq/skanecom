@@ -49,18 +49,48 @@ const COLORIS: Record<string, string> = {
   grenat: "#7A1F2B",
   nude: "#D9A88F",
   corail: "#E2725B",
+  // Les teintes courantes des bagages et de la maroquinerie.
+  "bleu nuit": "#1C2841",
+  "bleu roi": "#2647A0",
+  "bleu canard": "#1F5F6B",
+  "bleu pétrole": "#1D4E5A",
+  anthracite: "#3C4046",
+  kaki: "#6B6A44",
+  taupe: "#8B7D6B",
+  chocolat: "#4A2C1D",
+  "vert sapin": "#24453A",
+  "vert émeraude": "#1F6B4F",
+  moutarde: "#C99A2E",
+  lavande: "#A89BC8",
+  prune: "#5E2A4A",
+  "rose gold": "#C9967E",
+  "or rose": "#C9967E",
+  titane: "#7D8085",
+  transparent: "#E6E8EA",
 };
 
 /** Pastille neutre quand le coloris n'est pas encore cartographié : jamais un
  *  aplat criard qui mentirait sur la marchandise. */
 const INCONNU = "#C9BCA6";
 
+/** Le nom tel quel, puis de moins en moins précis (« bleu nuit mat » →
+ *  « bleu nuit » → « bleu ») : un coloris nommé librement garde au moins sa
+ *  teinte de base. Rien de reconnu : `undefined`. */
+function teinte(nom: string): string | undefined {
+  const mots = nom.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  for (let n = mots.length; n > 0; n--) {
+    const t = COLORIS[mots.slice(0, n).join(" ")];
+    if (t) return t;
+  }
+  return undefined;
+}
+
 export function couleurDeColoris(nom: string): string {
-  return COLORIS[nom.trim().toLowerCase()] ?? INCONNU;
+  return teinte(nom) ?? INCONNU;
 }
 
 /** Vrai si le coloris est cartographié — utile pour décider d'afficher une
  *  pastille ou seulement le nom. */
 export function colorisConnu(nom: string): boolean {
-  return nom.trim().toLowerCase() in COLORIS;
+  return teinte(nom) !== undefined;
 }

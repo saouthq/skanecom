@@ -12,6 +12,7 @@ import { PEUT_ECRIRE } from "@/lib/gestion/pages";
 import type { ElementPalette } from "@/lib/gestion/palette";
 import { OuvrirPalette, Palette } from "@/components/console/Palette";
 import { BandeauAnnonces } from "@/components/console/BandeauAnnonces";
+import { BandeauPreparation } from "@/components/console/BandeauPreparation";
 import { BandeauSuspension } from "@/components/console/BandeauSuspension";
 import type { AnnonceBoutique } from "@/lib/console/annonces";
 import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
@@ -62,6 +63,8 @@ export default async function BackofficeBoutique({
     sb.rpc("gestion_annonces", etat),
     boutique.statut === "suspendue" ? sb.rpc("gestion_suspension", etat) : Promise.resolve({ data: null }),
   ]);
+  // Pas encore ouverte : le bandeau le dit, en tête de chaque page.
+  const enPreparation = boutique.statut === "en_preparation";
   const suspension = (su ?? null) as { motif: string | null; message: string | null; le: string | null } | null;
   const annonces = (Array.isArray(an) ? an : []) as AnnonceBoutique[];
   // La facturation SkanFact, si la boutique a le module (ou y reste connectée) : ce que SkanFact a
@@ -234,9 +237,12 @@ export default async function BackofficeBoutique({
       recherche={<OuvrirPalette />}
       rechercheCompacte={<OuvrirPalette compact />}
       palette={<Palette source={`/gestion/${slug}/palette`} pages={pages} />}
-      bandeau={boutique.support_jusqu_a || annonces.length || suspension ? (
+      bandeau={boutique.support_jusqu_a || annonces.length || suspension || enPreparation ? (
         <>
           {suspension ? <BandeauSuspension s={suspension} /> : null}
+          {enPreparation ? (
+            <BandeauPreparation nom={boutique.nom} reglages={PEUT_MODIFIER.includes(boutique.role) ? `/gestion/${slug}/reglages` : null} />
+          ) : null}
           {boutique.support_jusqu_a ? (
             <BandeauSupport slug={slug} mode={boutique.role as ModeSupport} jusqua={boutique.support_jusqu_a} motif={boutique.support_motif} />
           ) : null}
