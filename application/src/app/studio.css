@@ -467,7 +467,8 @@ html[data-structure] .st-suivant-nom.vi-titre { font-size: calc(clamp(2.25rem, 6
       block-size: calc(100svh + max(0px, var(--n, 4) * 30vw - 82vw)); padding-block: 0; view-timeline: --st-etapes block;
     }
     html[data-animations="expressives"][data-structure="studio"] .vi-etapes-collant {
-      position: sticky; inset-block-start: 0; block-size: 100svh; overflow: clip; align-content: center;
+      /* Sous l'en-tête collant, jamais dessous : centrée dans ce qui reste de l'écran. */
+      position: sticky; inset-block-start: var(--entete-h, 0px); block-size: calc(100svh - var(--entete-h, 0px)); overflow: clip; align-content: center;
     }
     html[data-animations="expressives"][data-structure="studio"] .vi-etapes-piste {
       display: flex; inline-size: max-content; max-inline-size: none; margin: 0; padding-inline: var(--theme-marge) 12vw;

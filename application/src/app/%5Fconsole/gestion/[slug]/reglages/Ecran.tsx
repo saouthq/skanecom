@@ -915,7 +915,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                       aide="Sur la page Contact, dans la section « Contact » de l'accueil et sur chaque fiche d'un site vitrine : nom, téléphone ou e-mail, le message. Chaque demande arrive dans Demandes, et par e-mail au propriétaire et aux administrateurs.">
                       <div className="champ rg-inter-suite">
                         <label htmlFor="contact-sujets">Objets proposés <span className="discret">(facultatif)</span></label>
-                        <textarea id="contact-sujets" name="vitrine.contact_sujets" rows={4} defaultValue={texteDe("vitrine.contact_sujets")}
+                        <textarea id="contact-sujets" name="vitrine.contact_sujets" rows={6} defaultValue={texteDe("vitrine.contact_sujets")}
                           placeholder={"Appartement\nVilla\nCafé ou restaurant"} aria-describedby="contact-sujets-aide" />
                         <span className="aide" id="contact-sujets-aide">Un par ligne, six au plus : le visiteur choisit l&apos;objet de sa demande. Vide : le message seul.</span>
                       </div>
