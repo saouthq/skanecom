@@ -1,0 +1,12 @@
+Console : les fournisseurs, essayés pour de vrai — e-mails, SMS, SkanFact, Konnect, Cloudflare [complet]
+
+L'État technique disait si un secret est posé, pas si le fournisseur
+l'accepte encore. Chaque heure (le passage de la surveillance) et à la
+demande, un appel inoffensif à chacun — rien n'est envoyé, rien n'est
+créé — dit s'il répond, en combien de temps, sinon pourquoi (clé refusée,
+injoignable) et depuis quand. État technique → Fournisseurs ; un
+fournisseur d'e-mails en panne passe au verdict en rouge. En local, les
+simulateurs du relais répondent à leur place.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_018KxzzZp8B84dA9yDknE4Wy

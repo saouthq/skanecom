@@ -1,0 +1,17 @@
+Console : le diagnostic d'une boutique, et les fiches réflexes de l'État technique [complet]
+
+- La fiche d'une boutique → onglet Diagnostic : tout ce qui fait qu'elle
+  vend, relu à l'instant — sa vitrine essayée pour de vrai, son
+  certificat, son statut, ses conditions de service, ses pannes et ses
+  erreurs, qui reçoit ses e-mails, ses files coincées, son domaine d'envoi,
+  SkanFact, son catalogue en stock, sa livraison, son paiement par carte,
+  ses commandes. Ce qui bloque la vente d'abord ; chaque point dit ce qu'il
+  a vu et, s'il cloche, quoi faire, avec le lien du geste.
+- État technique → Fiches réflexes : sept symptômes (une vitrine qui ne
+  s'ouvre plus, tout qui casse après une mise en ligne, les e-mails,
+  SkanFact, une avalanche d'erreurs, un commerçant qui ne se connecte
+  plus, un paiement par carte non confirmé), les gestes dans l'ordre,
+  chacun avec son lien.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_018KxzzZp8B84dA9yDknE4Wy

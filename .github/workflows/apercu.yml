@@ -311,8 +311,7 @@ jobs:
           export SKANECOM_TITRE="$(git log -1 --format=%s | cut -c1-300)"
           export SKANECOM_CONSTRUITE_LE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           export SKANECOM_MIGRATION="$(ls ../supabase/migrations/*.sql | sort | tail -1 | xargs basename | cut -d_ -f1)"
-          for v in SKANECOM_VERSION SKANECOM_TITRE SKANECOM_CONSTRUITE_LE SKANECOM_MIGRATION; do printf '%s=%s
-' "$v" "${!v}" >> "$GITHUB_ENV"; done
+          for v in SKANECOM_VERSION SKANECOM_TITRE SKANECOM_CONSTRUITE_LE SKANECOM_MIGRATION; do printf '%s=%s\n' "$v" "${!v}" >> "$GITHUB_ENV"; done
           bun run build
 
       - name: Déployer l'application
