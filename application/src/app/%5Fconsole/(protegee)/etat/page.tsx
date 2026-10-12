@@ -8,6 +8,8 @@ import { exigeAdmin } from "@/lib/console/session";
 import { chronometre, configuration, hoteLocal, LIBELLES_FOURNISSEUR, taille, type DonneesEtat } from "@/lib/console/etat";
 import { LIBELLES_GENRE, surveillanceMuette, type DonneesAlertes, type DonneesSurveillance, type IncidentLu } from "@/lib/console/surveillance";
 import { duree } from "@/lib/courriels/alertes";
+import { chargeAccueil } from "@/lib/console/accueil-serveur";
+import { ilYa } from "@/lib/console/pilotage";
 
 export const metadata: Metadata = { title: "État technique" };
 
@@ -33,17 +35,29 @@ const PASTILLE: Record<Niveau, string> = {
 const pluriel = (n: number, un: string, plusieurs: string) => `${n.toLocaleString("fr-FR")} ${n > 1 ? plusieurs : un}`;
 const secondes = (ms: number) => (ms < 1000 ? `${ms.toLocaleString("fr-FR")} ms` : `${(ms / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} s`);
 const pose = (oui: boolean) => (oui ? <span className="et-pose">posé</span> : <span className="et-manque">manque</span>);
+/** Une erreur de l'application, regroupée (public.console_erreurs). */
+type ErreurLue = {
+  id: number; surface: string; genre: string; route: string | null; chemin: string | null; message: string; pile: string | null; digest: string | null;
+  nombre: number; premiere_le: string; derniere_le: string; reglee_le: string | null; reglee_par: string | null;
+  boutique: { id: string; nom: string; slug: string; demonstration: boolean } | null;
+};
+type DonneesErreurs = { erreurs: ErreurLue[]; ouvertes: number; reglees_7j: number; fois_24h: number };
+const SURFACES: Record<string, string> = { vitrine: "Vitrine", backoffice: "Backoffice", console: "Console", serveur: "Serveur" };
+
 const pire = (points: Point[], sinon: Niveau): Niveau =>
   points.some((p) => p.niveau === "panne") ? "panne" : points.length ? "attention" : sinon;
 
-export default async function EtatTechnique({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; carte?: string }> }) {
+export default async function EtatTechnique({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; carte?: string; erreurs?: string; reglees?: string }> }) {
   const { user, role } = await exigeAdmin();
   const v = await searchParams;
   const service = clientService();
-  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }] = await Promise.all([
+  // Les erreurs d'une boutique seulement (?erreurs=<boutique>) : la liste des boutiques est déjà lue pour la navigation.
+  const filtreErreurs = v.erreurs ? (await chargeAccueil(user.id)).boutiques.find((b) => b.slug === v.erreurs) ?? null : null;
+  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }, { data: dataErreurs, error: errErreurs }] = await Promise.all([
     chronometre(() => service.rpc("console_etat_technique", { p_acteur: user.id })),
     service.rpc("console_surveillance", { p_acteur: user.id }),
     service.rpc("console_alertes", { p_acteur: user.id }),
+    service.rpc("console_erreurs", { p_acteur: user.id, p_boutique_id: filtreErreurs?.id ?? null, p_reglees: v.reglees === "1" }),
   ]);
   if (error) throw new Error(`État technique illisible : ${error.message}`);
   if (errSurv) throw new Error(`Surveillance illisible : ${errSurv.message}`);
@@ -51,6 +65,9 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const e = data as DonneesEtat;
   const sv = dataSurv as DonneesSurveillance;
   const al = dataAlertes as DonneesAlertes;
+  if (errErreurs) throw new Error(`Erreurs de l'application illisibles : ${errErreurs.message}`);
+  const er = dataErreurs as DonneesErreurs;
+  const maintenant = new Date().getTime();
   const superAdmin = role === "super_admin";
   const c = await configuration();
 
@@ -76,6 +93,14 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const etatSurveillance = !dernier ? "Pas encore passée" : pointsSurveillance.some((p) => p.niveau === "panne") ? "En panne"
     : pointsSurveillance.length ? "À regarder" : "Tout répond";
   const dispo = sv.disponibilite;
+
+  // ---- Les erreurs de l'application -----------------------------------------
+  const recentes = er.erreurs.filter((x) => !x.reglee_le && maintenant - new Date(x.derniere_le).getTime() < 24 * 3600_000);
+  const pointsErreurs: Point[] = recentes.length
+    ? [{ niveau: "attention", texte: `${pluriel(recentes.length, "erreur ouverte vue", "erreurs ouvertes vues")} ces 24 heures${filtreErreurs ? ` pour ${filtreErreurs.nom}` : ""}.` }]
+    : [];
+  const niveauErreurs: Niveau = recentes.length ? "attention" : "ok";
+  const etatErreurs = recentes.length ? "À regarder" : er.ouvertes ? "Rien ces 24 h" : "Aucune";
 
   // ---- La base -------------------------------------------------------------
   const partConnexions = e.base.connexions_max ? e.base.connexions / e.base.connexions_max : 0;
@@ -188,7 +213,7 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const etatDomaines = enErreur.length ? "En panne" : aVerifier.length ? "À vérifier" : enLigne.length ? "Valables" : "Local";
 
   const cartes = [base, courriels, skanfact, fichiers];
-  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
+  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, { id: "erreurs", titre: "Erreurs", points: pointsErreurs }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
   // Le verdict renvoie à chaque carte concernée, une fois, avec son nombre de points.
   const parCarte = [...new Set(aRegarder.map((p) => p.carte))].map((id) => {
     const points = aRegarder.filter((p) => p.carte === id);
@@ -357,6 +382,80 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
           ) : <p className="discret et-incidents-vide">Aucun incident ces 14 derniers jours.</p>}
         </section>
 
+        <section className="carte et-carte et-large" aria-labelledby="t-erreurs" data-niveau={niveauErreurs}>
+          <header className="et-tete">
+            <h2 id="t-erreurs" className="carte-titre-icone"><Icone nom="alerte" /> Erreurs de l&apos;application</h2>
+            <span className={PASTILLE[niveauErreurs]}>{etatErreurs}</span>
+          </header>
+          {message("erreurs")}
+          <p className="aide et-alertes-regle">
+            Chaque page ou route qui casse — vitrine, backoffice, console — se note ici d&apos;elle-même, regroupée : la même erreur
+            au même endroit est une ligne, qui compte ses fois. Dix en une heure pour une boutique ouvrent un incident, et l&apos;alerte
+            part si elle est allumée. Gardé 30 jours.
+          </p>
+          <dl className="et-faits">
+            <div><dt>Ouvertes</dt><dd>{er.ouvertes ? <b className="et-manque">{pluriel(er.ouvertes, "erreur", "erreurs")}</b> : "aucune"}</dd></div>
+            <div><dt>Ces 24 heures</dt><dd>{er.fois_24h ? pluriel(er.fois_24h, "fois", "fois") : "rien"}</dd></div>
+            <div><dt>Réglées (7 jours)</dt><dd>{er.reglees_7j ? pluriel(er.reglees_7j, "erreur", "erreurs") : "aucune"}</dd></div>
+          </dl>
+          {filtreErreurs ? (
+            <p className="er-filtre">
+              Celles de <Link href={`/boutiques/${filtreErreurs.slug}`}>{filtreErreurs.nom}</Link> ·{" "}
+              <Link href={`/etat${v.reglees ? "?reglees=1" : ""}#t-erreurs`}>toutes les boutiques</Link>
+            </p>
+          ) : null}
+          {er.erreurs.length ? (
+            <ul className="er-liste" role="list">
+              {er.erreurs.map((x) => (
+                <li key={x.id} data-reglee={x.reglee_le ? "" : undefined}>
+                  <div className="er-tete">
+                    <span className="ui-etat">{SURFACES[x.surface] ?? x.surface}{x.genre === "navigateur" ? " · navigateur" : ""}</span>
+                    {x.boutique ? <Link href={`/etat?erreurs=${x.boutique.slug}#t-erreurs`} className="er-boutique">{x.boutique.nom}</Link> : <span className="discret">Plateforme</span>}
+                    <span className="er-fois" title={`${pluriel(x.nombre, "fois", "fois")} depuis le ${dateJournal(x.premiere_le)}`}>× {x.nombre.toLocaleString("fr-FR")}</span>
+                    <span className="aide er-quand">{x.reglee_le ? <>réglée le {dateJournal(x.reglee_le)}{x.reglee_par ? ` par ${x.reglee_par}` : ""}</> : <>{ilYa(x.derniere_le, maintenant)}</>}</span>
+                  </div>
+                  <p className="er-message">{x.message}</p>
+                  <p className="aide er-ou">
+                    {[
+                      x.route ? <code key="r">{x.route}</code> : null,
+                      x.chemin && x.chemin !== x.route ? <span key="c" className="et-cible">{x.chemin}</span> : null,
+                      <span key="d">{x.nombre > 1 ? `depuis le ${dateJournal(x.premiere_le)}` : `le ${dateJournal(x.premiere_le)}`}</span>,
+                      x.digest ? <span key="g">référence <code>{x.digest}</code></span> : null,
+                    ].filter(Boolean).map((morceau, i) => <span key={i}>{i ? " · " : ""}{morceau}</span>)}
+                  </p>
+                  {x.pile ? (
+                    <details className="er-pile">
+                      <summary>La pile</summary>
+                      <pre>{x.pile}</pre>
+                    </details>
+                  ) : null}
+                  {!x.reglee_le ? (
+                    <form action="/etat/erreurs" method="post" className="er-regler">
+                      <input type="hidden" name="id" value={x.id} />
+                      {filtreErreurs ? <input type="hidden" name="filtre" value={filtreErreurs.slug} /> : null}
+                      <button type="submit" className="btn btn-second btn-petit"><Icone nom="coche" taille={14} /> Réglée</button>
+                    </form>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : <p className="discret er-vide">{v.reglees ? "Aucune erreur ces sept derniers jours." : "Aucune erreur ouverte : tout s'affiche."}</p>}
+          <div className="et-pied">
+            {er.ouvertes > 1 ? (
+              <form action="/etat/erreurs" method="post">
+                {filtreErreurs ? <><input type="hidden" name="boutique_id" value={filtreErreurs.id} /><input type="hidden" name="filtre" value={filtreErreurs.slug} /></> : null}
+                <button type="submit" className="btn btn-second btn-petit">Tout marquer réglé{filtreErreurs ? ` pour ${filtreErreurs.nom}` : ""}</button>
+              </form>
+            ) : null}
+            {superAdmin ? (
+              <Link className="btn btn-second btn-petit" href="/etat/erreurs/essai" prefetch={false}>Provoquer une erreur d&apos;essai</Link>
+            ) : null}
+            <Link className="btn-lien aide" href={`/etat?${new URLSearchParams({ ...(filtreErreurs ? { erreurs: filtreErreurs.slug } : {}), ...(v.reglees ? {} : { reglees: "1" }) })}#t-erreurs`}>
+              {v.reglees ? "Cacher les réglées" : "Voir aussi les réglées"}
+            </Link>
+          </div>
+        </section>
+
         {cartes.map((x) => (
           <section key={x.id} className="carte et-carte" aria-labelledby={`t-${x.id}`} data-niveau={x.niveau}>
             <header className="et-tete">
@@ -434,6 +533,7 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
 
 const QUOI_INCIDENT: Record<IncidentLu["genre"], string> = {
   page: "Vitrine sans réponse", courriels: "E-mails de commande en attente", skanfact: "Envois à SkanFact en attente", domaine_envoi: "Domaine d'envoi non vérifié",
+  erreurs: "Erreurs de l'application en série",
 };
 
 /** Un incident : quoi, où, depuis quand (ou combien de temps), et s'il a été annoncé. */

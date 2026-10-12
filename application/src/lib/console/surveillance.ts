@@ -177,7 +177,7 @@ export type DonneesAlertes = { actives: boolean; destinataires: string[]; modifi
 
 export type ReleveLu = {
   boutique_id: string | null; boutique: string | null; slug: string | null;
-  genre: "page" | "courriels" | "skanfact" | "domaine_envoi"; cible: string; ok: boolean; lent: boolean;
+  genre: "page" | "courriels" | "skanfact" | "domaine_envoi" | "erreurs"; cible: string; ok: boolean; lent: boolean;
   duree_ms: number | null; statut_http: number | null; detail: string | null;
 };
 export type DonneesSurveillance = {
@@ -188,7 +188,7 @@ export type DonneesSurveillance = {
 };
 
 export const LIBELLES_GENRE: Record<ReleveLu["genre"], string> = {
-  page: "Vitrine", courriels: "E-mails de commande", skanfact: "SkanFact", domaine_envoi: "Domaine d'envoi",
+  page: "Vitrine", courriels: "E-mails de commande", skanfact: "SkanFact", domaine_envoi: "Domaine d'envoi", erreurs: "Erreurs de l'application",
 };
 
 /** Le passage de l'heure ne tourne plus : le dernier date de plus de deux heures. */

@@ -203,7 +203,7 @@ export const chargeCadre = cache(async (segment: string): Promise<Cadre | null> 
     lisBoutique(slug),
     // Ses pages portent l'étiquette de la boutique : « Publier » les renouvelle toutes.
     etiqueterBoutique(slug).catch(() => false),
-    jeton && /^[0-9a-f-]{36}$/.test(jeton)
+    jeton && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jeton)
       ? supabase.rpc("apercu_apparence", { p_slug: slug, p_jeton: jeton }).then((r) => (r.error ? null : (r.data as Record<string, unknown> | null)))
       : Promise.resolve(null),
   ]);

@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       modele: String(formulaire.get("modele") ?? "").trim(),
       contact_nom: String(formulaire.get("contact_nom") ?? "").trim().slice(0, 120),
       contact_telephone: String(formulaire.get("contact_telephone") ?? "").trim().slice(0, 20),
-      prospect: /^[0-9a-f-]{36}$/.test(String(formulaire.get("prospect") ?? "")) ? String(formulaire.get("prospect")) : "",
+      prospect: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(formulaire.get("prospect") ?? "")) ? String(formulaire.get("prospect")) : "",
       domaine_mode: ["sien", "provisoire", "acheter"].includes(String(formulaire.get("domaine_mode"))) ? String(formulaire.get("domaine_mode")) : "sien",
       achat: String(formulaire.get("achat") ?? "").trim().toLowerCase(),
     };

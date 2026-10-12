@@ -54,6 +54,11 @@ export function couleursDe(l: LignePilotage): { accent: string; fond: string; en
 
 /** « depuis 5 h », « depuis 2 j », « depuis 20 min » — le nombre et son unité
  *  liés par une espace insécable : jamais « 5 » en fin de ligne et « h » dessous. */
+/** « à l'instant » sous la minute, sinon « il y a 5 min », « il y a 2 h »… */
+export function ilYa(iso: string, maintenant: number): string {
+  return maintenant - new Date(iso).getTime() < 60_000 ? "à l'instant" : `il y a ${depuis(iso, maintenant)}`;
+}
+
 export function depuis(iso: string, maintenant: number): string {
   const minutes = Math.max(0, Math.round((maintenant - new Date(iso).getTime()) / 60_000));
   if (minutes < 60) return `${minutes}\u00a0min`;
@@ -123,6 +128,11 @@ export type SurveillanceLue = {
  *  vigueur, et les boutiques clientes ouvertes qui ne l'ont pas acceptée. */
 export type ConditionsLues = { en_vigueur: number | null; brouillon: boolean; manquantes: string[] };
 
+/** Les erreurs de l'application (public.console_erreurs_etat) : par boutique
+ *  (null : la console, le serveur), celles encore ouvertes vues ces 24 heures. */
+export type ErreursLues = { boutique_id: string | null; erreurs: number; fois: number; derniere_le: string; surface: string }[];
+const SURFACE_ERREUR: Record<string, string> = { vitrine: "de la vitrine", backoffice: "du backoffice", console: "de la console", serveur: "du serveur", application: "de l'application" };
+
 /* Les seuils : un refus sur quatre à la livraison coûte déjà plus que la
    marge (aller, retour, colis immobilisé) ; on en parle à partir de cinq
    colis clos sur trente jours, pour ne pas crier sur deux commandes. */
@@ -152,7 +162,7 @@ export const SEUILS = {
 export function vigilances(
   lignes: LignePilotage[],
   maintenant: number,
-  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null; surveillance?: SurveillanceLue | null; conditions?: ConditionsLues | null } = {},
+  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null; surveillance?: SurveillanceLue | null; conditions?: ConditionsLues | null; erreurs?: ErreursLues | null } = {},
 ): Vigilance[] {
   const out: Omit<Vigilance, "type">[] = [];
   // Les conditions de service : aucune publiée (avant le premier vrai client), ou pas encore acceptées.
@@ -164,6 +174,12 @@ export function vigilances(
     });
   }
   const sansAccord = new Set(cg?.manquantes ?? []);
+  // Les erreurs de l'application : une boutique (démonstrations comprises : elles se montrent), ou la plateforme.
+  const erreursPar = new Map((options.erreurs ?? []).map((x) => [x.boutique_id, x]));
+  const dire = (x: ErreursLues[number]) =>
+    `${x.fois > 1 ? `${x.fois.toLocaleString("fr-FR")} erreurs` : "une erreur"} ${SURFACE_ERREUR[x.surface] ?? ""} ces 24 heures${x.erreurs > 1 && x.fois > x.erreurs ? ` (${x.erreurs} différentes)` : ""}, ${x.fois > 1 ? "la dernière " : ""}${ilYa(x.derniere_le, maintenant)}`;
+  const plateforme = erreursPar.get(null);
+  if (plateforme) out.push({ cle: "plateforme:erreurs", niveau: "attention", boutique: null, href: "/etat#t-erreurs", texte: dire(plateforme) });
   if (options.surveillance) out.push(...signesDeSurveillance(options.surveillance, lignes, options.sante ?? [], maintenant));
   if (options.envoisRefuses) {
     const n = options.envoisRefuses;
@@ -229,6 +245,13 @@ export function vigilances(
     }
     if (b.statut === "suspendue") {
       out.push({ cle: `${b.id}:suspendue`, niveau: "info", boutique: b, href: `/boutiques/${b.slug}`, texte: "suspendue : sa vitrine est fermée" });
+    }
+    const er = erreursPar.get(b.id);
+    if (er) {
+      out.push({
+        cle: `${b.id}:erreurs`, niveau: "attention", boutique: b, href: `/etat?erreurs=${b.slug}#t-erreurs`,
+        texte: dire(er), court: `${er.fois.toLocaleString("fr-FR")} erreur${er.fois > 1 ? "s" : ""} en 24 h`,
+      });
     }
     if (sansAccord.has(b.id)) {
       out.push({

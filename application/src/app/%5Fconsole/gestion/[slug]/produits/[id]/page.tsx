@@ -51,7 +51,7 @@ export default async function FicheProduitBackoffice({
   searchParams: Promise<{ ok?: string; erreur?: string; stock?: string; toutes?: string }>;
 }) {
   const [{ slug, id }, messages] = await Promise.all([params, searchParams]);
-  if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const { boutique } = await exigeMembre(slug);
   const sb = await clientSession();
   const [{ data, error }, { data: technique }, { data: pro }, { data: remises }, { data: lusPaliers }, cadre, hoteConsole, { data: studio }, { data: redaction }] = await Promise.all([

@@ -2247,3 +2247,26 @@ li[data-fait] > .ce-puce { background: var(--ui-vert); border-color: var(--ui-ve
 @media (max-width: 640px) {
   .cdt-accord { justify-items: start; text-align: start; }
 }
+
+/* ---- Les erreurs de l'application (État technique) ---- */
+.er-filtre { margin: 0 0 .75rem; font-size: .875rem; }
+.er-liste { display: grid; margin: 0 -1.25rem; padding: 0; list-style: none; border-block: 1px solid var(--ui-bord-leger); }
+@media (min-width: 700px) { .er-liste { margin-inline: -1.5rem; } }
+.er-liste > li { display: grid; gap: .375rem; padding: .875rem 1.25rem; border-block-end: 1px solid var(--ui-bord-leger); }
+@media (min-width: 700px) { .er-liste > li { padding-inline: 1.5rem; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1rem; } .er-liste > li > :not(.er-regler) { grid-column: 1; } .er-regler { grid-column: 2; grid-row: 1 / span 4; align-self: start; } }
+.er-liste > li:last-child { border-block-end: 0; }
+.er-liste > li[data-reglee] { background: var(--ui-survol); }
+.er-liste > li[data-reglee] .er-message { color: var(--ui-texte-2); }
+.er-liste p { margin: 0; }
+.er-tete { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .625rem; font-size: .8125rem; }
+.er-boutique { font-weight: 600; }
+.er-fois { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ui-ambre); }
+.er-quand { margin-inline-start: auto; }
+@media (min-width: 700px) { .er-quand { margin-inline-start: 0; } }
+.er-message { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8125rem; line-height: 1.5; overflow-wrap: anywhere; }
+.er-ou { overflow-wrap: anywhere; }
+.er-ou code, .err-ref { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; padding: .0625rem .3125rem; border-radius: 4px; background: var(--ui-doux); }
+.er-pile summary { cursor: pointer; font-size: .8125rem; color: var(--ui-texte-2); }
+.er-pile pre { margin: .375rem 0 0; padding: .625rem .75rem; max-block-size: 14rem; overflow: auto; border-radius: var(--ui-r-s); background: var(--ui-doux); font-size: .75rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.er-vide { margin: 0; padding-block: .25rem; }
+

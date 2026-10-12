@@ -37,7 +37,7 @@ function Chiffre({ valeur, libelle }: { valeur: number | string; libelle: string
 export default async function RapportImport({ params }: { params: Promise<{ slug: string; id: string }> }) {
   await exigeAdmin();
   const { slug, id } = await params;
-  if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const { data, error } = await clientService().rpc("console_import", { p_import_id: id });
   if (error) throw new Error(`Import illisible : ${error.message}`);
   const imp = data as Import | null;

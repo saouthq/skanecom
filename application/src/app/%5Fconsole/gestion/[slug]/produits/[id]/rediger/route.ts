@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const a = await accesEquipe();
   if (a.etat !== "ok") return refus("Votre session a expiré : reconnectez-vous.", 401);
   const boutique = a.boutiques.find((b) => b.slug === slug);
-  if (!boutique || !/^[0-9a-f-]{36}$/.test(id)) return refus("Produit introuvable.", 404);
+  if (!boutique || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return refus("Produit introuvable.", 404);
   if (!PEUT_MODIFIER.includes(boutique.role)) return refus("Votre rôle dans l'équipe ne permet pas de modifier la fiche.", 403);
 
   const sb = await clientSession();

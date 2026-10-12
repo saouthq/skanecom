@@ -47,7 +47,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
     return reponse(0, "Envoi illisible : recommencez.", 400);
   }
   const avis = String(f.get("avis_id") ?? "");
-  if (!/^[0-9a-f-]{36}$/.test(avis)) return reponse(0, MESSAGES.avis, 400);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(avis)) return reponse(0, MESSAGES.avis, 400);
   const fichiers = f.getAll("photos").filter((x): x is File => typeof x !== "string" && x.size > 0).slice(0, 3);
 
   let passees = 0;

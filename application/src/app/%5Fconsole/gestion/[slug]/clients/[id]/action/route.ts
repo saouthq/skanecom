@@ -27,7 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const fiche = `/gestion/${slug}/clients/${id}`;
   const retour = (ancre: string) => (m: string, ok = false) =>
     vers(`${fiche}?${new URLSearchParams(ok ? { ok: m } : { erreur: m })}#${ancre}`);
-  if (!/^[0-9a-f-]{36}$/.test(id)) return retour("t-confiance")("Client introuvable.");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return retour("t-confiance")("Client introuvable.");
 
   const f = await req.formData();
   const texte = (cle: string) => String(f.get(cle) ?? "").trim();

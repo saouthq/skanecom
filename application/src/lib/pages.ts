@@ -26,7 +26,7 @@ export const chargePage = cache(async (boutiqueId: string, slug: string, segment
   if (!FORME_SLUG.test(slug) || slug.length > 60) return null;
   const [boutique, apercu] = (segment ?? "").split("~", 2);
   const jeton = apercu?.split(".")[0] ?? "";
-  const { data, error } = /^[0-9a-f-]{36}$/.test(jeton)
+  const { data, error } = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jeton)
     ? await supabase.rpc("apercu_page", { p_slug: boutique, p_jeton: jeton, p_page: slug })
     : await supabase.rpc("page_publique", { p_boutique_id: boutiqueId, p_slug: slug });
   if (error) throw new Error(`Page illisible : ${error.message}`);

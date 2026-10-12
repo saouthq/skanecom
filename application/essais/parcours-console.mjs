@@ -54,7 +54,10 @@ function codeFaux(secret) {
 
 // Réponses d'erreur provoquées exprès par le parcours.
 // (la vitrine fermée répond 404 tant que la boutique est en préparation).
-const attendue = (url, texte) => url.includes(HOTE) && texte.includes("404");
+// L'erreur d'essai (État technique) : l'écran casse exprès, React le dit dans la console du navigateur.
+let erreurVoulue = false;
+const attendue = (url, texte) => (url.includes(HOTE) && texte.includes("404"))
+  || (erreurVoulue && /Minified React error #441|The above error occurred|Erreur d'essai/.test(texte));
 
 /* Un vrai classeur .xlsx, rangé comme Excel le range (chaînes partagées,
    nombres en cellules numériques) : ce que le client enverra. */
@@ -2079,6 +2082,47 @@ await etape("les conditions de service : un brouillon à compléter, rien de pub
   await clic(page, page.locator(".cdt-brouillon .cdt-lire > summary"));
   verifie((await page.locator(".cdt-brouillon .cdt-texte h3").count()) >= 8, "« Voir le rendu » : le texte en titres et en listes");
   await capture(page, "console-conditions", true);
+});
+
+await etape("les erreurs de l'application : une erreur d'essai, l'écran en français, notée, listée, signalée, puis réglée", async () => {
+  await clic(page, page.locator(".app-cote").getByRole("link", { name: "État technique" }));
+  await page.waitForURL(/\/etat$/);
+  const carte = page.locator('section[aria-labelledby="t-erreurs"]');
+  verifie((await carte.locator(".et-tete .ui-etat").innerText()) === "Aucune" && (await carte.innerText()).includes("Aucune erreur ouverte"),
+    "aucune erreur au départ : « Aucune »");
+  // L'essai : l'écran casse exprès, et dit, en français, ce qu'il en est.
+  erreurVoulue = true;
+  await clic(page, carte.getByRole("link", { name: "Provoquer une erreur d'essai" }));
+  await page.waitForFunction(() => /n'a pas pu s'afficher/.test(document.querySelector("h1")?.textContent ?? ""));
+  await pause(300);
+  erreurVoulue = false;
+  verifie((await page.locator('[role="alert"]').innerText()).includes("État technique → Erreurs de l'application"),
+    "l'écran d'erreur, dans la coquille de la console, en français : il dit où la retrouver");
+  await capture(page, "console-erreur-ecran", true);
+  // Notée (le serveur, onRequestError) : la carte la liste, et « À surveiller » aussi.
+  let ligne = null;
+  for (let i = 0; i < 20 && !ligne; i++) {
+    await page.goto(`${CONSOLE}/etat#t-erreurs`, { waitUntil: "networkidle" });
+    const n = await carte.locator(".er-liste > li").count();
+    if (n) ligne = carte.locator(".er-liste > li").first(); else await pause(250);
+  }
+  verifie(Boolean(ligne) && (await ligne.innerText()).includes("Erreur d'essai") && (await ligne.innerText()).includes("Console"),
+    "notée par le serveur : la carte la liste (« Console », le message, la route)");
+  verifie((await carte.locator(".et-tete .ui-etat").innerText()) === "À regarder", "la carte passe « À regarder »");
+  await capture(page, "console-erreurs", true);
+  await page.goto(`${CONSOLE}/`, { waitUntil: "networkidle" });
+  verifie((await page.locator("main").innerText()).includes("une erreur de la console ces 24 heures"),
+    "« À surveiller » le dit : une erreur de la console ces 24 heures");
+  await page.goto(`${CONSOLE}/etat#t-erreurs`, { waitUntil: "networkidle" });
+  // Réglée, au clavier.
+  await carte.getByRole("button", { name: "Réglée" }).first().focus();
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => /marquée réglée/.test(document.querySelector('section[aria-labelledby="t-erreurs"] .message')?.textContent ?? ""));
+  verifie((await carte.locator(".er-liste > li").count()) === 0 && (await carte.locator(".et-tete .ui-etat").innerText()) === "Aucune",
+    "réglée d'un geste : la carte se vide");
+  await clic(page, carte.getByRole("link", { name: "Voir aussi les réglées" }));
+  await page.waitForURL(/reglees=1/);
+  verifie((await carte.locator(".er-liste > li[data-reglee]").innerText()).includes(`réglée le`), "les réglées se relisent, avec qui et quand");
 });
 
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {

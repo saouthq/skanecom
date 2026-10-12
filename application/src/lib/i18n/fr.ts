@@ -356,6 +356,13 @@ export const fr = {
     annonceSuggestions: (n: number) => (n > 1 ? `${n} suggestions` : n === 1 ? "Une suggestion" : "Aucune suggestion"),
   },
 
+  panne: {
+    etiquette: "Un contretemps",
+    titre: "Cette page n'a pas pu s'afficher.",
+    texte: "Une erreur l'a interrompue ; elle est signalée. Réessayez dans un instant, ou repartez de l'accueil : votre panier vous attend.",
+    reessayer: "Réessayer",
+  },
+
   introuvable: {
     etiquette: "Page introuvable",
     titre: "Cette page n'existe pas.",

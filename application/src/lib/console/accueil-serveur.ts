@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { clientService } from "./service";
 import { configSkanFact } from "./skanfact";
-import { vigilances, type ConditionsLues, type LignePilotage, type Quotas, type Rappel, type Sante, type SurveillanceLue } from "./pilotage";
+import { vigilances, type ConditionsLues, type ErreursLues, type LignePilotage, type Quotas, type Rappel, type Sante, type SurveillanceLue } from "./pilotage";
 import { rangeVigilances, type Reportee } from "./accueil";
 import type { DonneesFormules } from "./formules";
 
@@ -10,7 +10,7 @@ import type { DonneesFormules } from "./formules";
    page le demandent tous deux. */
 export const chargeAccueil = cache(async (acteur: string) => {
   const service = clientService();
-  const [{ data, error }, { data: df }, { data: ds }, { data: dr }, { data: de }, { data: dv }, { data: dq }, { data: dw }, { data: dc }] = await Promise.all([
+  const [{ data, error }, { data: df }, { data: ds }, { data: dr }, { data: de }, { data: dv }, { data: dq }, { data: dw }, { data: dc }, { data: dx }] = await Promise.all([
     service.rpc("console_pilotage"),
     service.rpc("console_formules", { p_acteur: acteur }),
     service.rpc("console_sante", { p_acteur: acteur }),
@@ -21,6 +21,7 @@ export const chargeAccueil = cache(async (acteur: string) => {
     service.rpc("console_quotas", { p_acteur: acteur }),
     service.rpc("console_surveillance", { p_acteur: acteur }),
     service.rpc("console_conditions_etat", { p_acteur: acteur }),
+    service.rpc("console_erreurs_etat", { p_acteur: acteur }),
   ]);
   if (error) throw new Error(`Boutiques illisibles : ${error.message}`);
   const boutiques = (data ?? []) as LignePilotage[];
@@ -31,6 +32,7 @@ export const chargeAccueil = cache(async (acteur: string) => {
     envoisRefuses: (de as { semaine?: { refuses: number } } | null)?.semaine?.refuses ?? 0,
     quotas: (dq as Quotas | null) ?? null, surveillance: (dw as SurveillanceLue | null) ?? null,
     conditions: (dc as ConditionsLues | null) ?? null,
+    erreurs: (Array.isArray(dx) ? dx : []) as ErreursLues,
   });
   const reportees = (Array.isArray(dv) ? dv : []) as Reportee[];
   return { boutiques, formules, signaux, ...rangeVigilances(signaux, reportees), maintenant };

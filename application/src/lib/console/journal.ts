@@ -68,6 +68,7 @@ export const ACTIONS: Record<string, string> = {
   "boutique.contact": "Coordonnées du client",
   "administrateur.double_auth_exigee": "Double authentification de l'équipe SkanEcom : réglage changé",
   "plateforme.alertes": "Alertes de la surveillance : réglage changé",
+  "plateforme.erreurs_reglees": "Erreurs de l'application marquées réglées",
   "plateforme.conditions_brouillon": "Conditions de service : brouillon enregistré",
   "plateforme.conditions_publiees": "Conditions de service : version publiée",
   "boutique.conditions_acceptees": "Conditions de service acceptées par le propriétaire",
@@ -216,6 +217,7 @@ const SIGNAUX: Record<string, string> = {
   preparation: "Mise en place à finir", support: "Accès support ouvert", suspendue: "Boutique suspendue",
   rappel: "Rappel d'une note", "quota-email": "Quota d'e-mails", "quota-sms": "Quota de SMS",
   "forfait-email": "Forfait d'e-mails du fournisseur", "forfait-sms": "Forfait de SMS du fournisseur",
+  erreurs: "Erreurs de l'application",
 };
 export function libelleSignal(cle: string | null): string {
   if (!cle) return "";

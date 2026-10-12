@@ -59,7 +59,7 @@ export default async function NouvelleBoutique({ searchParams }: {
       <form action="/nouvelle-boutique/creer" method="post" className="carte formulaire nb-formulaire">
         <IdentifiantDepuisNom />
         {/* Créée depuis un prospect : il passera « gagné », sa boutique rattachée. */}
-        {v.prospect && /^[0-9a-f-]{36}$/.test(v.prospect) ? <input type="hidden" name="prospect" value={v.prospect} /> : null}
+        {v.prospect && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.prospect) ? <input type="hidden" name="prospect" value={v.prospect} /> : null}
         {/* Quatre étapes, une à la fois (AssistantCreation) ; sans JavaScript, le formulaire entier. */}
         <AssistantCreation etapeInitiale={v.etape === "domaine" ? 1 : 0} />
         <ol className="nb-tete" aria-label="Les étapes">

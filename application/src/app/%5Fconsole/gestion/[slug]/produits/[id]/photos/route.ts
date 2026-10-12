@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
 
   const fiche = `/gestion/${slug}/produits/${id}`;
   const retour = (m: string, ok = false) => vers(`${fiche}?${new URLSearchParams(ok ? { ok: m } : { erreur: m })}#t-photos`);
-  if (!/^[0-9a-f-]{36}$/.test(id)) return versAvecErreur(fiche, "Produit introuvable.");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return versAvecErreur(fiche, "Produit introuvable.");
 
   // Tout l'envoi est lu en mémoire : on refuse d'emblée un envoi démesuré
   // (le navigateur réduit d'ordinaire chaque photo à quelques centaines de Ko).

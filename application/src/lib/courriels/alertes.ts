@@ -11,7 +11,7 @@ import { rendre, type Courriel } from "./modele";
 
 export type IncidentAlerte = {
   id: number;
-  genre: "page" | "courriels" | "skanfact" | "domaine_envoi";
+  genre: "page" | "courriels" | "skanfact" | "domaine_envoi" | "erreurs";
   cible: string;
   detail: string | null;
   echecs: number;
@@ -25,6 +25,7 @@ const QUOI: Record<IncidentAlerte["genre"], string> = {
   courriels: "Des e-mails de commande s'entassent",
   skanfact: "Des factures n'arrivent pas à SkanFact",
   domaine_envoi: "Le domaine d'envoi n'est plus vérifié",
+  erreurs: "Des erreurs de l'application s'enchaînent",
 };
 
 /** Ce qui est revenu, dit à l'endroit. */
@@ -33,6 +34,7 @@ const RETOUR: Record<IncidentAlerte["genre"], string> = {
   courriels: "Les e-mails de commande repartent",
   skanfact: "Les factures arrivent de nouveau à SkanFact",
   domaine_envoi: "Le domaine d'envoi est de nouveau vérifié",
+  erreurs: "Les erreurs de l'application ont cessé",
 };
 
 const jour = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { timeZone: "Africa/Tunis", day: "2-digit", month: "2-digit" });

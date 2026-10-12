@@ -22,7 +22,7 @@ import type { Metier } from "@/lib/console/metiers";
 import { titreBoutique } from "@/lib/console/titre-boutique";
 import { BranchementDomaine } from "@/components/console/BranchementDomaine";
 import { configDomaines, hotePlateforme, type Branchement } from "@/lib/console/domaines-cloudflare";
-import { depuis, vigilances, type LignePilotage, type Quotas, type Sante, type SurveillanceLue } from "@/lib/console/pilotage";
+import { depuis, vigilances, type ConditionsLues, type ErreursLues, type LignePilotage, type Quotas, type Sante, type SurveillanceLue } from "@/lib/console/pilotage";
 import { CANAUX, nomMois, type DonneesConsommation } from "@/lib/console/consommation";
 import { Mesure } from "@/components/console/JaugeEnvois";
 import { resumeEcarts, type DonneesDroits } from "@/lib/console/droits";
@@ -66,7 +66,7 @@ export default async function FicheBoutique({ params, searchParams }: {
   const hoteConsole = (await headers()).get("host");
   // Une boutique vide peut recevoir le préréglage d'un métier.
   const vide = f.compteurs.categories === 0 && f.compteurs.produits === 0;
-  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }, { data: ddr }, { data: dsv }, { data: dbr }] = await Promise.all([
+  const [equipe, { data: miseEnPlace }, { data: dm }, { data: df }, { data: dn }, { data: dp }, { data: dsa }, { data: dt }, { data: dc }, { data: dsu }, { data: dco }, { data: ddr }, { data: dsv }, { data: dbr }, { data: dcg }, { data: der }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     // Les métiers : le choix d'une boutique vide, et leur nom au journal.
@@ -87,6 +87,9 @@ export default async function FicheBoutique({ params, searchParams }: {
     clientService().rpc("console_surveillance", { p_acteur: user.id }),
     // Ses domaines à lui, chez Cloudflare : branchés, ou ce qu'il reste à poser.
     clientService().rpc("console_branchements", { p_acteur: user.id, p_boutique_id: b.id }),
+    // Ses conditions de service acceptées, ou non ; ses erreurs de l'application ces 24 heures.
+    clientService().rpc("console_conditions_etat", { p_acteur: user.id }),
+    clientService().rpc("console_erreurs_etat", { p_acteur: user.id }),
   ]);
   const dom = configDomaines();
   const branchements = ((dbr ?? []) as { hote: string; type: string; branchement: Branchement | null }[])
@@ -106,7 +109,9 @@ export default async function FicheBoutique({ params, searchParams }: {
   } : null;
   // (la surveillance elle-même, si elle ne tourne plus, se dit à l'accueil, pas sur chaque boutique)
   const surveillance = dsv ? { ...(dsv as SurveillanceLue), derniere_heure: null } : null;
-  const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [], quotas, surveillance }) : [];
+  const conditions = (dcg ?? null) as ConditionsLues | null;
+  const erreurs = ((Array.isArray(der) ? der : []) as ErreursLues).filter((x) => x.boutique_id === b.id);
+  const signaux = ligne ? vigilances([ligne], maintenant, { skanfact: configSkanFact() !== null, sante: sante ? [sante] : [], quotas, surveillance, conditions, erreurs }) : [];
   const clos = activite ? activite.livrees + activite.refusees : 0;
   const suspension = (dsu ?? null) as { motif: string | null; message: string | null; le: string } | null;
   // « À faire maintenant » : le signal le plus pressant ; sinon, en préparation, l'étape suivante.
