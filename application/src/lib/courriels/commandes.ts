@@ -153,9 +153,16 @@ export function courrielCommande(m: Marque, e: CourrielDu, liens: { site: string
 /** Vide la file (d'une boutique, ou de toutes) : rend le nombre d'e-mails partis.
  *  Ne lève jamais : un envoi manqué reste dans la file, retenté plus tard. */
 export async function envoyerCourrielsCommandes(boutiqueId?: string | null): Promise<number> {
+  return (await tourCourriels(boutiqueId)).partis;
+}
+
+/** Un tour de la file (dix e-mails dus au plus) : ce qui est parti, ce qui a été essayé, la dernière raison
+ *  d'un refus, et l'erreur de la base si la file ne se lit pas (les tâches de fond, lib/console/taches.ts). */
+export async function tourCourriels(boutiqueId?: string | null): Promise<{ partis: number; essayes: number; raison: string | null; erreur: string | null }> {
   const service = clientService();
   const { data, error } = await service.rpc("courriels_commandes_file", { p_boutique_id: boutiqueId ?? null, p_limite: 10 });
-  if (error || !Array.isArray(data)) return 0;
+  if (error || !Array.isArray(data)) return { partis: 0, essayes: 0, raison: null, erreur: error ? `La file ne se lit pas : ${error.message}` : null };
+  let derniere: string | null = null;
   const console = adresseHote(process.env.NEXT_PUBLIC_CONSOLE_HOTE);
   const marques = new Map<string, { marque: Marque; site: string | null }>();
   let partis = 0;
@@ -176,10 +183,11 @@ export async function envoyerCourrielsCommandes(boutiqueId?: string | null): Pro
         if (!r.ok) { ok = false; raison = r.raison; }
       }
       await service.rpc("courriels_commandes_noter", { p_id: e.id, p_ok: ok, p_erreur: raison });
-      if (ok) partis += 1;
+      if (ok) partis += 1; else derniere = raison;
     } catch (err) {
-      await service.rpc("courriels_commandes_noter", { p_id: e.id, p_ok: false, p_erreur: String(err).slice(0, 300) });
+      derniere = String(err).slice(0, 300);
+      await service.rpc("courriels_commandes_noter", { p_id: e.id, p_ok: false, p_erreur: derniere });
     }
   }
-  return partis;
+  return { partis, essayes: data.length, raison: derniere, erreur: null };
 }

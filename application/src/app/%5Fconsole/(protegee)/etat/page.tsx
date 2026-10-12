@@ -13,6 +13,7 @@ import { ilYa } from "@/lib/console/pilotage";
 import { DepannagePlateforme, type DonneesMaintenance } from "@/components/console/Depannage";
 import { CarteChronologie, CarteVersion, etatBase, type DonneesChronologie } from "@/components/console/Chronologie";
 import { VERSION, noterVersion } from "@/lib/version";
+import { CarteTaches, pointsTaches, type DonneesTaches } from "@/components/console/Taches";
 
 export const metadata: Metadata = { title: "État technique" };
 
@@ -62,13 +63,14 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const jours = [1, 7, 30].includes(Number(v.periode)) ? Number(v.periode) : 7;
   // La version qui répond se note d'abord : la chronologie la montre déjà.
   await noterVersion(service);
-  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }, { data: dataErreurs, error: errErreurs }, { data: dataPause }, { data: dataChrono, error: errChrono }] = await Promise.all([
+  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }, { data: dataErreurs, error: errErreurs }, { data: dataPause }, { data: dataChrono, error: errChrono }, { data: dataTaches, error: errTaches }] = await Promise.all([
     chronometre(() => service.rpc("console_etat_technique", { p_acteur: user.id })),
     service.rpc("console_surveillance", { p_acteur: user.id }),
     service.rpc("console_alertes", { p_acteur: user.id }),
     service.rpc("console_erreurs", { p_acteur: user.id, p_boutique_id: filtreErreurs?.id ?? null, p_reglees: v.reglees === "1" }),
     service.rpc("console_maintenance", { p_acteur: user.id }),
     service.rpc("console_chronologie", { p_acteur: user.id, p_jours: jours, p_boutique_id: pour?.id ?? null }),
+    service.rpc("console_taches", { p_acteur: user.id }),
   ]);
   if (error) throw new Error(`État technique illisible : ${error.message}`);
   if (errSurv) throw new Error(`Surveillance illisible : ${errSurv.message}`);
@@ -81,6 +83,8 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const pause = (dataPause ?? { plateforme: null, boutiques: [] }) as DonneesMaintenance;
   if (errChrono) throw new Error(`Chronologie illisible : ${errChrono.message}`);
   const chrono = dataChrono as DonneesChronologie;
+  if (errTaches) throw new Error(`Tâches de fond illisibles : ${errTaches.message}`);
+  const taches = dataTaches as DonneesTaches;
   const maintenant = new Date().getTime();
   const superAdmin = role === "super_admin";
   const c = await configuration();
@@ -237,7 +241,7 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const etatDomaines = enErreur.length ? "En panne" : aVerifier.length ? "À vérifier" : enLigne.length ? "Valables" : "Local";
 
   const cartes = [base, courriels, skanfact, fichiers];
-  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, { id: "erreurs", titre: "Erreurs", points: pointsErreurs }, { id: "depannage", titre: "Dépannage", points: pointsDepannage }, { id: "version", titre: "Version", points: pointsVersion }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
+  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, { id: "taches", titre: "Tâches de fond", points: pointsTaches(taches, maintenant) }, { id: "erreurs", titre: "Erreurs", points: pointsErreurs }, { id: "depannage", titre: "Dépannage", points: pointsDepannage }, { id: "version", titre: "Version", points: pointsVersion }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
   // Le verdict renvoie à chaque carte concernée, une fois, avec son nombre de points.
   const parCarte = [...new Set(aRegarder.map((p) => p.carte))].map((id) => {
     const points = aRegarder.filter((p) => p.carte === id);
@@ -408,6 +412,8 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
             </>
           ) : <p className="discret et-incidents-vide">Aucun incident ces 14 derniers jours.</p>}
         </section>
+
+        <CarteTaches d={taches} maintenant={maintenant} superAdmin={superAdmin} message={message("taches")} />
 
         <DepannagePlateforme m={pause} boutiques={toutes.filter((b) => b.statut !== "fermee").map((b) => ({ id: b.id, slug: b.slug, nom: b.nom, demonstration: b.demonstration }))}
           choisie={v.boutique ?? null} superAdmin={superAdmin} message={message("depannage")} />

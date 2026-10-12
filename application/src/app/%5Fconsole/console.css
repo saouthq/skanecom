@@ -2324,3 +2324,17 @@ li[data-fait] > .ce-puce { background: var(--ui-vert); border-color: var(--ui-ve
   .ch-versions > li .aide { grid-column: 1 / -1; }
 }
 
+/* ---- Les tâches de fond (État technique) ---- */
+.tf-liste { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.tf-liste > li { display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr) auto; align-items: start; gap: .375rem 1.25rem; padding: .75rem 0; border-block-end: 1px solid var(--ui-bord-leger); font-size: .875rem; }
+.tf-liste > li:last-child { border-block-end: 0; }
+.tf-nom { display: grid; gap: .125rem; }
+.tf-tour { display: grid; gap: .25rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.tf-detail, .tf-jour { display: block; }
+.tf-etat { justify-self: end; }
+@media (max-width: 48rem) {
+  .tf-liste > li { grid-template-columns: minmax(0, 1fr) auto; }
+  .tf-tour { grid-column: 1 / -1; grid-row: 2; }
+  .tf-etat { grid-column: 2; grid-row: 1; }
+}
+

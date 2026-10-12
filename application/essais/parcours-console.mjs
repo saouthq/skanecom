@@ -2168,6 +2168,17 @@ await etape("la version en ligne et la chronologie : la base suit le code, le fi
   await capture(page, "console-chronologie", true);
 });
 
+await etape("les tâches de fond : la carte dit chaque file, un tour à la main fait partir ce qui est dû", async () => {
+  await page.goto(`${CONSOLE}/etat#t-taches`, { waitUntil: "networkidle" });
+  const carte = page.locator('section[aria-labelledby="t-taches"]');
+  const texte = await carte.innerText();
+  verifie(["Surveillance des vitrines", "E-mails de commande", "Envois à SkanFact"].every((x) => texte.includes(x)), "la carte : la surveillance, les e-mails de commande, SkanFact");
+  await clic(page, carte.getByRole("button", { name: "Faire partir les files maintenant" }));
+  await page.waitForFunction(() => /^Tour fait/.test(document.querySelector('section[aria-labelledby="t-taches"] .message')?.textContent ?? ""), null, { timeout: 60000 });
+  verifie((await carte.innerText()).includes("lancé depuis la console"), "un tour à la main : noté, avec ce qui est parti et ce qui reste");
+  await capture(page, "console-taches-fond", true);
+});
+
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {
   await clic(page, page.locator(".app-cote").getByRole("link", { name: "Revenus" }));
   await page.waitForURL(/\/revenus$/);

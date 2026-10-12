@@ -1,4 +1,5 @@
 import { noterVersion } from "@/lib/version";
+import { viderFiles } from "./taches";
 import { clientService } from "@/lib/console/service";
 import { hoteLocal, phraseErreur } from "@/lib/console/etat";
 import { verifierDomaine } from "@/lib/courriels/domaines";
@@ -110,6 +111,10 @@ async function parVagues<T, R>(elements: T[], f: (x: T) => Promise<R>): Promise<
 export async function lancerSurveillance(declencheur: "heure" | "console", acteur: string | null, ip?: string | null):
   Promise<{ ok: true; bilan: Bilan } | { ok: false; raison: string }> {
   const service = clientService(ip);
+  // Le passage de l'heure fait d'abord partir les files d'envoi de toutes les boutiques (tâches de fond).
+  if (declencheur === "heure") {
+    try { await viderFiles("heure"); } catch { /* la vérification passe quand même */ }
+  }
   const debut = new Date().toISOString();
   const { data, error } = await service.rpc("surveillance_a_verifier");
   if (error) return { ok: false, raison: error.message };
