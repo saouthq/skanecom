@@ -3,6 +3,12 @@
    (console et back-office), et ce qu'on en dit.
    ========================================================================== */
 
+import { SANS_FORMULE } from "./formules";
+import { REGLES, type Emplacement } from "./images-marque";
+import { LIBELLES_MODULES, LIBELLES_STATUT } from "./libelles";
+import { ETAPES_MISE_EN_PLACE, type CleEtape } from "./mise-en-place";
+import { MODES_SUPPORT, type ModeSupport } from "./support";
+
 export const ACTIONS: Record<string, string> = {
   "boutique.creer": "Boutique créée",
   "boutique.metier": "Préréglage du métier posé",
@@ -93,8 +99,13 @@ export const ACTIONS: Record<string, string> = {
   "avis.publier": "Avis publié", "avis.ecarter": "Avis écarté", "avis.repondre": "Réponse à un avis", "avis.retirer_photo": "Photo d'un avis retirée",
   "clients.compte_pro": "Compte pro d'un client", "clients.confiance": "Confiance accordée à un client",
   "code_promo.creer": "Code promo créé", "code_promo.modifier": "Code promo modifié", "code_promo.retirer": "Code promo retiré",
+  "code_promo.couper": "Code promo coupé", "code_promo.reactiver": "Code promo réactivé",
   "soldes.lancer": "Soldes lancés", "soldes.terminer": "Soldes terminés",
   "lot.creer": "Pack créé", "lot.modifier": "Pack modifié", "lot.retirer": "Pack retiré",
+  "lot.couper": "Pack retiré de la vente", "lot.rallumer": "Pack remis en vente",
+  "panier.relance": "Panier abandonné relancé", "panier.ignore": "Panier abandonné laissé",
+  "alerte_retour.prevenue": "Clients prévenus du retour en stock", "alerte_retour.annulee": "Demandes de retour en stock closes",
+  "commande.facturation": "Facturation d'une commande corrigée",
   "devis.envoyer": "Devis envoyé", "devis.annuler": "Devis annulé",
   "objectif.fixer": "Objectif du mois fixé",
   "lettre.retirer": "Inscrit à la lettre retiré",
@@ -140,13 +151,53 @@ export const GENRES_JOURNAL: { cle: string; titre: string }[] = [
   { cle: "objectif", titre: "Objectif du mois" },
   { cle: "lettre", titre: "Lettre d'information" },
   { cle: "konnect", titre: "Paiement en ligne (Konnect)" },
+  { cle: "panier", titre: "Paniers abandonnés" },
+  { cle: "alerte_retour", titre: "Retours en stock" },
+  { cle: "commande", titre: "Commandes" },
 ];
+
+/** Le nom d'un geste ; un geste sans nom (ajouté depuis) se lit quand même,
+ *  sans son code : « code_promo.couper » → « Code promo : couper ». */
+export function libelleAction(action: string): string {
+  if (ACTIONS[action]) return ACTIONS[action];
+  const [genre, geste = ""] = action.split(".");
+  const titre = GENRES_JOURNAL.find((g) => g.cle === genre)?.titre ?? genre.replace(/_/g, " ");
+  return `${titre.charAt(0).toUpperCase()}${titre.slice(1)}${geste ? ` : ${geste.replace(/_/g, " ")}` : ""}`;
+}
+
+/** Une tranche de poids, comme le backoffice la dit (la base la trace en grammes). */
+function tranchePoids(c: string): string {
+  if (!/^\d+$/.test(c)) return c === "au-delà" ? "Au-delà de la dernière tranche" : c;
+  const g = Number(c);
+  return `Jusqu'à ${g >= 1000 ? `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(g / 1000)} kg` : `${g} g`}`;
+}
 
 /** Le canal d'un geste sur les envois (crédit, forfait du fournisseur), au journal. */
 export const CANAL_JOURNAL: Record<string, string> = { email: "E-mails", sms: "SMS" };
 /** Le détail d'une ligne, sans identifiant technique (le numéro d'une page retirée ne dit rien). */
 export const cibleLisible = (c: string | null) => (c && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-/i.test(c) ? c : "");
 export const estGesteEnvois = (action: string) => action.startsWith("boutique.credit_envois") || action === "plateforme.forfait_envoi";
+
+/** Le détail d'une ligne du journal, dit comme à l'écran (jamais un code) :
+ *  le même au journal de la plateforme, à celui d'une boutique et à l'export.
+ *  `noms` : les formules et les métiers par leur code, quand la page les a. */
+export function detailJournal(action: string, cible: string | null, noms: { formules?: Map<string, string>; metiers?: Map<string, string> } = {}): string {
+  // (une apparence publiée porte « apparence » pour cible : il ne dit rien de plus que le geste)
+  if (action.startsWith("note.") || action.startsWith("annonce.") || action.startsWith("catalogue.photos") || action.startsWith("apparence.")) return "";
+  if (action === "boutique.formule") return cible ? noms.formules?.get(cible) ?? cible : SANS_FORMULE;
+  if (action.startsWith("vigilance.")) return libelleSignal(cible);
+  if (!cible) return "";
+  if (action === "formule.quotas") return noms.formules?.get(cible) ?? cible;
+  if (action === "boutique.metier") return noms.metiers?.get(cible) ?? cible;
+  if (action === "boutique.statut") return LIBELLES_STATUT[cible] ?? cible;
+  if (action === "theme.image") return REGLES[cible as Emplacement]?.titre ?? cible;
+  if (action.startsWith("module.")) return LIBELLES_MODULES[cible] ?? cible;
+  if (action.startsWith("mise_en_place.")) return ETAPES_MISE_EN_PLACE[cible as CleEtape]?.titre ?? cible;
+  if (action.startsWith("support.")) return MODES_SUPPORT[cible as ModeSupport]?.titre ?? cible;
+  if (action.startsWith("reglages.tranche_poids")) return tranchePoids(cible);
+  if (estGesteEnvois(action)) return CANAL_JOURNAL[cible] ?? cible;
+  return cibleLisible(cible);
+}
 
 /** Un jour « 2026-10-05 » d'un formulaire, ou rien. */
 export function jourValide(v: string | null | undefined): string | null {

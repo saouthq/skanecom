@@ -94,7 +94,7 @@ export default async function Annonces({ searchParams }: { searchParams: Promise
               <label className="opt"><input type="radio" name="toutes" value="0" /> Seulement ces boutiques :</label>
               <div className="an-boutiques">
                 {boutiques.map((b) => (
-                  <label key={b.id} className="opt"><input type="checkbox" name="boutique" value={b.id} /> {b.nom}{b.demonstration ? <span className="an-demo"> · démo</span> : null}</label>
+                  <label key={b.id} className="opt"><input type="checkbox" name="boutique" value={b.id} /><span>{b.nom}{b.demonstration ? <span className="an-demo"> · démo</span> : null}</span></label>
                 ))}
               </div>
             </fieldset>

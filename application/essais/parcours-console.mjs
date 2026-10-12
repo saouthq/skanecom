@@ -791,7 +791,7 @@ await etape("les modules de la boutique", async () => {
 
 await etape("le journal garde tout", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  const journal = await page.locator("section:has(#t-journal) .bt-journal > li").allInnerTexts();
   const actions = ["Boutique créée", "Statut changé", "Marque modifiée", "Image de la marque", "Module activé", "Module coupé"];
   verifie(actions.every((a) => journal.some((l) => l.includes(a))) && journal.every((l) => l.includes(ADMIN.email)),
     `journal : ${journal.length} actions (${actions.join(", ")}), chacune avec l'administrateur`);
@@ -929,7 +929,7 @@ await etape("les photos à l'import : renvoyer le même dossier ne double rien ;
   await clic(page, page.getByRole("button", { name: "Envoyer 4 photos" }));
   await page.locator("#t-pi-fin").waitFor({ timeout: 60_000 });
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  const journal = await page.locator("section:has(#t-journal) .bt-journal > li").allInnerTexts();
   verifie(journal.filter((l) => l.includes("Photos importées")).length === 2 && journal.some((l) => l.includes("Photos d'un import retirées")),
     "au journal : un envoi, une ligne ; le retrait aussi");
 });
@@ -1111,7 +1111,7 @@ await etape("la liste de l'équipe suit : invitations acceptées, journal", asyn
   verifie(await page.locator("#lien-acces").count() === 0, "les liens qui ont servi ne sont plus affichés");
   await capture(page, "console-equipe-liste", true);
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  const journal = await page.locator("section:has(#t-journal) .bt-journal > li").allInnerTexts();
   verifie(journal.filter((l) => l.includes("Membre invité")).length === 3 && journal.filter((l) => l.includes("Lien d'accès remis")).length === 2,
     "le journal garde les trois invitations et les deux liens remis");
   // Sa session à elle, pour la suite (un nouveau téléphone, connexion ordinaire).
@@ -1315,7 +1315,7 @@ await etape("le propriétaire ferme lui-même l'accès du support", async () => 
   await page.goto(`${CONSOLE}/boutiques/${SLUG}/support`, { waitUntil: "networkidle" });
   verifie(await page.locator(".sp-actif").count() === 0, "dans la console, la carte de l'accès ouvert disparaît");
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  const journal = await page.locator("section:has(#t-journal) .bt-journal > li").allInnerTexts();
   verifie(journal.filter((l) => l.includes("Accès support ouvert")).length === 2
     && journal.filter((l) => l.includes("Accès support fermé")).length === 2
     && journal.some((l) => l.includes("Accès support fermé") && l.includes(GERANT)),
@@ -1531,7 +1531,7 @@ await etape("la boutique : son propriétaire l'exige de qui a la main, puis revi
   verifie((await p.locator("#double-auth [role=status]").innerText()).startsWith("Proposée"), "revenue à « proposée »");
   await bureau.close();
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  const journal = await page.locator("section:has(#t-journal) .bt-journal > li").allInnerTexts();
   verifie(journal.filter((l) => l.includes("Double authentification de l'équipe de la boutique")).length === 2,
     "le journal de la boutique garde les deux changements");
 });
@@ -1754,7 +1754,7 @@ await etape("facturation : délier, et le journal le garde", async () => {
   await page.getByText("n'est plus reliée à SkanFact.", { exact: false }).waitFor();
   verifie(await page.locator("#fa-identifiant").isVisible(), "déliée : la recherche du client revient");
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  const journal = await page.locator("section:has(#t-journal) tbody tr").allInnerTexts();
+  const journal = await page.locator("section:has(#t-journal) .bt-journal > li").allInnerTexts();
   verifie(journal.some((l) => l.includes("Reliée à son client SkanFact") && l.includes("Atelier d'essai SARL"))
     && journal.some((l) => l.includes("Déliée de son client SkanFact")), "le journal garde le lien et la fin du lien, avec le client");
 });

@@ -7,14 +7,29 @@ import { useEffect } from "react";
    (data-suite) : au téléphone, on devine qu'il y en a d'autres à faire
    glisser. Une seule écoute pour la page ; les rangées qu'une navigation
    apporte sont reprises au passage (MutationObserver). L'onglet de la page
-   (aria-current) est ramené en vue une fois, s'il était derrière le bord. */
+   (aria-current) est ramené en vue une fois, s'il était derrière le bord.
+   À la souris, la molette fait glisser la rangée tant qu'il en reste à voir
+   (puis la page reprend) : sans pavé tactile, les derniers restaient hors
+   d'atteinte. */
 export function BordsOnglets() {
   useEffect(() => {
     let image = 0;
+    const ecoutees = new WeakSet<HTMLElement>();
+    const roue = (e: WheelEvent) => {
+      const nav = e.currentTarget as HTMLElement;
+      if (e.ctrlKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      const fin = nav.scrollWidth - nav.clientWidth;
+      if (fin <= 0) return;
+      const vers = Math.min(fin, Math.max(0, nav.scrollLeft + e.deltaY));
+      if (vers === nav.scrollLeft) return;
+      e.preventDefault();
+      nav.scrollLeft = vers;
+    };
     const marque = () => {
       cancelAnimationFrame(image);
       image = requestAnimationFrame(() => {
         for (const nav of document.querySelectorAll<HTMLElement>(".onglets")) {
+          if (!ecoutees.has(nav)) { ecoutees.add(nav); nav.addEventListener("wheel", roue, { passive: false }); }
           const actif = nav.querySelector<HTMLElement>('[aria-current="page"]');
           const cle = actif?.getAttribute("href") ?? "";
           if (actif && nav.dataset.centre !== cle && nav.scrollWidth > nav.clientWidth) {

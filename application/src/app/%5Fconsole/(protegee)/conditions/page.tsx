@@ -128,7 +128,7 @@ export default async function Conditions({ searchParams }: { searchParams: Promi
                 ) : null}
                 <div className="champ">
                   <label htmlFor="cdt-texte">Le texte</label>
-                  <textarea id="cdt-texte" name="texte" required minLength={200} maxLength={60000} rows={22} defaultValue={brouillon.texte} spellCheck aria-describedby="cdt-texte-aide" />
+                  <textarea id="cdt-texte" name="texte" required minLength={200} maxLength={60000} rows={22} defaultValue={brouillon.texte.trim()} spellCheck aria-describedby="cdt-texte-aide" />
                   <p className="aide" id="cdt-texte-aide">« ## » ouvre un titre, « - » une ligne de liste, une ligne vide sépare les paragraphes. Ce qui reste entre crochets est à compléter.</p>
                 </div>
                 <div className="cdt-actions"><button type="submit" className="btn btn-second">Enregistrer le brouillon</button></div>

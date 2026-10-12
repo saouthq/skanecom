@@ -6,8 +6,8 @@ import { Pagination } from "@/components/console/Pagination";
 import { dateJournal } from "@/lib/console/libelles";
 import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
-import { ACTIONS, GENRES_JOURNAL, jourValide, libelleSignal, CANAL_JOURNAL, cibleLisible, estGesteEnvois } from "@/lib/console/journal";
-import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
+import { GENRES_JOURNAL, detailJournal, jourValide, libelleAction } from "@/lib/console/journal";
+import type { DonneesFormules } from "@/lib/console/formules";
 
 export const metadata: Metadata = { title: "Journal" };
 
@@ -41,15 +41,7 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
   const boutiques = donnees.boutiques;
   const nomsFormules = new Map(donnees.formules.map((f) => [f.code, f.nom]));
   const nomsMetiers = new Map(((dm ?? []) as { code: string; nom: string }[]).map((m) => [m.code, m.nom]));
-  // Le détail d'une ligne : rien pour une note ou une annonce (leur numéro ne dit rien), le nom d'une formule.
-  const detail = (x: LigneJournal) =>
-    x.action.startsWith("note.") || x.action.startsWith("annonce.") ? ""
-    : x.action === "boutique.formule" ? (x.cible ? nomsFormules.get(x.cible) ?? x.cible : SANS_FORMULE)
-    : x.action.startsWith("vigilance.") ? libelleSignal(x.cible)
-    : x.action === "boutique.metier" && x.cible ? nomsMetiers.get(x.cible) ?? x.cible
-    : estGesteEnvois(x.action) && x.cible ? CANAL_JOURNAL[x.cible] ?? x.cible
-    : x.action === "formule.quotas" && x.cible ? nomsFormules.get(x.cible) ?? x.cible
-    : cibleLisible(x.cible);
+  const detail = (x: LigneJournal) => detailJournal(x.action, x.cible, { formules: nomsFormules, metiers: nomsMetiers });
   const choisie = boutiques.find((b) => b.slug === p.boutique) ?? null;
   const genre = GENRES_JOURNAL.find((g) => g.cle === p.genre) ?? null;
   const echecs = p.echecs === "1";
@@ -166,7 +158,7 @@ export default async function Journal({ searchParams }: { searchParams: Promise<
               {j.lignes.map((x) => (
                 <tr key={x.id}>
                   <td className="tabular-nums whitespace-nowrap discret jr-quand">{dateJournal(x.at)}</td>
-                  <td className="font-medium jr-geste">{ACTIONS[x.action] ?? x.action}</td>
+                  <td className="font-medium jr-geste">{libelleAction(x.action)}</td>
                   <td className="jr-boutique">{x.boutique ? <Link href={`/boutiques/${x.boutique.slug}`}>{x.boutique.nom}</Link> : <span className="discret">Plateforme</span>}</td>
                   <td className="discret jr-cible">{detail(x)}</td>
                   <td className="whitespace-nowrap jr-par">{x.acteur ?? <span className="discret">—</span>}{x.ip ? <span className="aide jr-ip">{x.ip}</span> : null}</td>

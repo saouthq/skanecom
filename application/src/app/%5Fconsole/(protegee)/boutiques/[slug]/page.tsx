@@ -2,16 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { REGLES, type Emplacement } from "@/lib/console/images-marque";
-import { ETAPES_MISE_EN_PLACE, type CleEtape, type MiseEnPlace as DonneesMiseEnPlace } from "@/lib/console/mise-en-place";
+import { ETAPES_MISE_EN_PLACE, type MiseEnPlace as DonneesMiseEnPlace } from "@/lib/console/mise-en-place";
 import { clientService } from "@/lib/console/service";
-import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { exigeAdmin } from "@/lib/console/session";
-import { LIBELLES_MODULES, LIBELLES_STATUT, LIBELLES_THEME, adresseVitrine, dateJournal, jourCourt, jourTunis } from "@/lib/console/libelles";
+import { LIBELLES_THEME, adresseVitrine, dateJournal, jourCourt, jourTunis } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
 import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
 import { formateMontant } from "@/lib/prix";
-import { ACTIONS, CANAL_JOURNAL, cibleLisible, estGesteEnvois, libelleSignal } from "@/lib/console/journal";
+import { detailJournal, libelleAction } from "@/lib/console/journal";
 import { hoteLocal } from "@/lib/console/etat";
 import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
 import { initiales, styleAvatar } from "@/components/console/Coquille";
@@ -128,6 +126,8 @@ export default async function FicheBoutique({ params, searchParams }: {
   const codeFormule = formules.boutiques.find((x) => x.id === b.id)?.formule ?? null;
   const formule = formules.formules.find((x) => x.code === codeFormule) ?? null;
   const metiers = (dm ?? []) as Metier[];
+  const nomsFormules = new Map(formules.formules.map((x) => [x.code, x.nom]));
+  const nomsMetiers = new Map(metiers.map((m) => [m.code, m.nom]));
   const actifs = equipe.filter((m) => m.actif);
   const enAttente = actifs.filter((m) => m.en_attente).length;
   // Le retour d'un geste fait dans une carte s'affiche dans cette carte.
@@ -329,37 +329,28 @@ export default async function FicheBoutique({ params, searchParams }: {
             {f.journal.length === 0 ? (
               <p className="discret">Aucune action tracée.</p>
             ) : (
-              <div className="defile">
-                <table className="tableau">
-                  <thead><tr><th>Action</th><th>Détail</th><th>Par</th><th>Quand</th></tr></thead>
-                  <tbody>
-                    {f.journal.map((j, i) => (
-                      <tr key={i}>
-                        <td className="font-medium whitespace-nowrap">{ACTIONS[j.action] ?? j.action}</td>
-                        <td className="discret">{j.action === "boutique.statut" && j.cible ? (LIBELLES_STATUT[j.cible] ?? j.cible)
-                          : j.action === "theme.image" && j.cible ? (REGLES[j.cible as Emplacement]?.titre ?? j.cible)
-                          : j.action.startsWith("module.") && j.cible ? (LIBELLES_MODULES[j.cible] ?? j.cible)
-                          : j.action.startsWith("mise_en_place.") && j.cible ? (ETAPES_MISE_EN_PLACE[j.cible as CleEtape]?.titre ?? j.cible)
-                          : j.action.startsWith("support.") && j.cible ? (MODES_SUPPORT[j.cible as ModeSupport]?.titre ?? j.cible)
-                          : j.action === "boutique.formule" ? (formules.formules.find((x) => x.code === j.cible)?.nom ?? j.cible ?? SANS_FORMULE)
-                          : j.action.startsWith("vigilance.") ? libelleSignal(j.cible)
-                          : j.action === "boutique.metier" && j.cible ? (metiers.find((m) => m.code === j.cible)?.nom ?? j.cible)
-                          : estGesteEnvois(j.action) && j.cible ? (CANAL_JOURNAL[j.cible] ?? j.cible)
-                          : j.action.startsWith("catalogue.photos") || j.action.startsWith("note.") ? "" : cibleLisible(j.cible)}</td>
-                        <td>
+              <>
+                <ol className="bt-journal" role="list">
+                  {f.journal.map((j, i) => {
+                    const d = detailJournal(j.action, j.cible, { formules: nomsFormules, metiers: nomsMetiers });
+                    return (
+                      <li key={i}>
+                        <p className="bt-journal-quoi"><b>{libelleAction(j.action)}</b>{d ? <span className="discret"> · {d}</span> : null}</p>
+                        <p className="bt-journal-qui">
                           {j.acteur ? (
-                            <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                              <span className="avatar" style={styleAvatar(j.acteur, { inlineSize: 22, blockSize: 22, fontSize: ".5625rem" })} aria-hidden="true">{initiales(j.acteur)}</span>
-                              {j.acteur}
+                            <span className="bt-journal-acteur">
+                              <span className="avatar" style={styleAvatar(j.acteur, { inlineSize: 20, blockSize: 20, fontSize: ".5rem" })} aria-hidden="true">{initiales(j.acteur)}</span>
+                              <span>{j.acteur}</span>
                             </span>
-                          ) : "—"}
-                        </td>
-                        <td className="tabular-nums whitespace-nowrap discret">{dateJournal(j.at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          ) : <span className="discret">—</span>}
+                          <time className="tabular-nums discret" dateTime={j.at}>{dateJournal(j.at)}</time>
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <p className="bt-journal-tout"><Link href={`/journal?boutique=${b.slug}`} className="btn-lien aide inline-flex items-center gap-1">Tout son journal <Icone nom="droite" taille={12} /></Link></p>
+              </>
             )}
           </section>
 

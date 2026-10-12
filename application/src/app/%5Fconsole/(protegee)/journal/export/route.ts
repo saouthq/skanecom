@@ -2,9 +2,9 @@ import { acces } from "@/lib/console/session";
 import { clientService } from "@/lib/console/service";
 import { ipDe, vers } from "@/lib/console/http";
 import { dateJournal } from "@/lib/console/libelles";
-import { ACTIONS, GENRES_JOURNAL, jourValide, libelleSignal, CANAL_JOURNAL, cibleLisible, estGesteEnvois } from "@/lib/console/journal";
+import { GENRES_JOURNAL, detailJournal, jourValide, libelleAction } from "@/lib/console/journal";
 import { tableurCsv } from "@/lib/gestion/export";
-import { SANS_FORMULE, type DonneesFormules } from "@/lib/console/formules";
+import type { DonneesFormules } from "@/lib/console/formules";
 
 /* ============================================================================
    EXPORTER LE JOURNAL — /journal/export?boutique=&genre=&du=&au=, les mêmes
@@ -50,17 +50,10 @@ export async function GET(req: Request) {
   const noms = new Map(donnees.formules.map((f) => [f.code, f.nom]));
   const { data: dm } = await service.rpc("console_metiers", { p_acteur: a.user.id });
   const nomsMetiers = new Map(((dm ?? []) as { code: string; nom: string }[]).map((m) => [m.code, m.nom]));
-  const detail = (x: LigneJournal) =>
-    x.action.startsWith("note.") || x.action.startsWith("annonce.") ? ""
-    : x.action === "boutique.formule" ? (x.cible ? noms.get(x.cible) ?? x.cible : SANS_FORMULE)
-    : x.action.startsWith("vigilance.") ? libelleSignal(x.cible)
-    : x.action === "boutique.metier" && x.cible ? nomsMetiers.get(x.cible) ?? x.cible
-    : estGesteEnvois(x.action) && x.cible ? CANAL_JOURNAL[x.cible] ?? x.cible
-    : x.action === "formule.quotas" && x.cible ? noms.get(x.cible) ?? x.cible
-    : cibleLisible(x.cible);
+  const detail = (x: LigneJournal) => detailJournal(x.action, x.cible, { formules: noms, metiers: nomsMetiers });
   const csv = tableurCsv(
     ["Quand", "Geste", "Boutique", "Détail", "Par", "IP"],
-    j.lignes.map((x) => [dateJournal(x.at), ACTIONS[x.action] ?? x.action, x.boutique?.nom ?? "Plateforme", detail(x), x.acteur ?? "", x.ip ?? ""]),
+    j.lignes.map((x) => [dateJournal(x.at), libelleAction(x.action), x.boutique?.nom ?? "Plateforme", detail(x), x.acteur ?? "", x.ip ?? ""]),
   );
   const jour = new Intl.DateTimeFormat("fr-CA", { timeZone: "Africa/Tunis" }).format(new Date());
   const nom = ["journal", choisie?.slug, genre?.cle, du && `du-${du}`, au && `au-${au}`].filter(Boolean).join("-");

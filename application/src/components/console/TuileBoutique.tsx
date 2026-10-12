@@ -37,6 +37,8 @@ export function TuileBoutique({ b, maintenant, hoteConsole, formule }: { b: Lign
   const attenteLongue = !b.demonstration && c.a_confirmer > 0 && c.attente_depuis && maintenant - new Date(c.attente_depuis).getTime() >= 2 * 3_600_000;
   const monogramme = b.marque.monogramme_chemin;
   const style = { "--pl-accent": accent, "--pl-fond": fond, "--pl-encre": encre } as React.CSSProperties;
+  // Le plus utile d'abord : coupée faute de place, la ligne perd la formule, pas le compte.
+  const pied = [`${b.publies} en vitrine`, (b.marque.code && LIBELLES_THEME[b.marque.code]) ?? "—", formule].filter(Boolean).join(" · ");
 
   return (
     <article className="pl-tuile" style={style} data-statut={b.statut}>
@@ -107,9 +109,7 @@ export function TuileBoutique({ b, maintenant, hoteConsole, formule }: { b: Lign
       </Link>
 
       <div className="pl-pied">
-        <span className="discret">
-          {formule ? <>{formule} · </> : null}{(b.marque.code && LIBELLES_THEME[b.marque.code]) ?? "—"} · {b.publies} en vitrine
-        </span>
+        <span className="discret pl-pied-meta" title={pied}>{pied}</span>
         {b.hote ? (
           <a className="pl-vitrine" href={adresseVitrine(b.hote, hoteConsole)} target="_blank" rel="noopener">
             Vitrine <Icone nom="externe" taille={13} />

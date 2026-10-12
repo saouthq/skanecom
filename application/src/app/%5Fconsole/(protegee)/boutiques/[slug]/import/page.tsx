@@ -4,6 +4,7 @@ import { clientService } from "@/lib/console/service";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIMITE_LIGNES } from "@/lib/console/import";
 import Link from "next/link";
+import { ChoixFichier } from "@/components/console/ChoixFichier";
 import { Icone } from "@/components/console/Icone";
 import { titreBoutique } from "@/lib/console/titre-boutique";
 
@@ -38,8 +39,8 @@ export default async function Import({ params, searchParams }: {
         <input type="hidden" name="boutique_id" value={boutique.id} />
         <div className="champ">
           <label htmlFor="fichier">Fichier du catalogue</label>
-          <input id="fichier" name="fichier" type="file" required accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" />
-          <p className="aide">5 Mo et {LIMITE_LIGNES.toLocaleString("fr-FR")} lignes au plus. Seule la première feuille est lue.</p>
+          <ChoixFichier id="fichier" name="fichier" required aideId="fichier-aide" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" />
+          <p className="aide" id="fichier-aide">5 Mo et {LIMITE_LIGNES.toLocaleString("fr-FR")} lignes au plus. Seule la première feuille est lue.</p>
         </div>
         <button type="submit" className="btn btn-primaire">Vérifier le fichier</button>
       </form>

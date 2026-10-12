@@ -8,7 +8,8 @@ export async function POST(req: Request) {
     const { data, error } = await clientService(ip).rpc("console_enregistrer_conditions", {
       p_acteur: user.id,
       p_titre: String(formulaire.get("titre") ?? ""),
-      p_texte: String(formulaire.get("texte") ?? ""),
+      // Sans les lignes vides du début et de la fin (le texte se lit de la première ligne écrite).
+      p_texte: String(formulaire.get("texte") ?? "").replace(/^\s*\n|\s+$/g, ""),
       p_changements: String(formulaire.get("changements") ?? ""),
     });
     const retour = (m: Record<string, string>) => vers(`/conditions?${new URLSearchParams(m)}#t-cdt-brouillon`);
