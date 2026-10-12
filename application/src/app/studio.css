@@ -302,8 +302,12 @@ html[data-structure] .st-ouverture-titre.vi-titre {
   .st-domaine-photo {
     position: absolute; z-index: 2; inset-block-start: 50%; inset-inline-end: 16%; inline-size: clamp(9rem, 15vw, 14rem);
     opacity: 0; translate: 0 -50%; rotate: -4deg; scale: .88;
-    transition: opacity .35s var(--theme-courbe), scale .6s var(--st-courbe), rotate .6s var(--st-courbe);
+    transition: opacity .35s var(--theme-courbe), scale .6s var(--st-courbe), rotate .6s var(--st-courbe), left .7s var(--st-courbe);
   }
+  /* Avec le curseur du Studio : la photo suit la souris le long de la ligne (MouvementStudio pose --mx). */
+  html[data-curseur-actif] .st-domaine-photo { inset-inline-end: auto; left: var(--mx, 70%); translate: -50% -50%; }
+  /* Le nom passe devant la photo qui le suit : on le lit toujours. */
+  .st-domaine-nom { position: relative; z-index: 3; }
   .st-domaine:hover .st-domaine-photo { opacity: 1; scale: 1; rotate: 2deg; }
   .st-domaine:hover .st-domaine-nom { translate: 1.25rem 0; }
   .st-domaine:hover .st-domaine-fleche { transform: translateX(6px); }
@@ -495,3 +499,160 @@ html[data-structure] .st-suivant-nom.vi-titre { font-size: calc(clamp(2.25rem, 6
 @keyframes st-allume { from { opacity: .18; } to { opacity: 1; } }
 @keyframes st-glisse { from { translate: 0 0; } to { translate: min(0px, calc(-100% + 100vw)) 0; } }
 @keyframes st-jauge { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+
+/* ============================================================================
+   LE MOUVEMENT SOUS LA MAIN — components/MouvementStudio.tsx, IntroStudio.tsx,
+   HeureLocale.tsx. Le Studio seul ; le mouvement, avec le style expressif et
+   sans « réduire les animations » ; le curseur et l'aimant, à la souris.
+   ========================================================================== */
+.st-curseur, .st-rideau, .st-progression, .st-grain, .st-intro { display: none; }
+
+/* Le grain : une texture de papier, à peine — le Studio, toujours. */
+html[data-structure="studio"] .st-grain {
+  display: block; position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* L'heure de la maison, en haut de l'ouverture. */
+.st-ouverture-haut { display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem 2rem; }
+.st-heure {
+  display: inline-flex; align-items: center; gap: .5rem; margin: 0 0 0 auto; font-size: .75rem; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--theme-encre-doux); font-variant-numeric: tabular-nums;
+}
+html[dir="rtl"] .st-heure { margin: 0 auto 0 0; }
+.st-heure-point { inline-size: .4375rem; block-size: .4375rem; border-radius: 50%; background: var(--theme-accent); }
+.st-heure-valeur { color: var(--theme-encre); }
+
+/* Un libellé qui roule au survol : son double monte de dessous (Roule). */
+.st-roule { display: inline-grid; overflow: hidden; vertical-align: top; line-height: 1.25; }
+.st-roule > span { grid-area: 1 / 1; }
+.st-roule > span + span { translate: 0 115%; }
+@media (hover: hover) {
+  :is(a, button):hover > .st-roule > span:first-child { translate: 0 -115%; }
+  :is(a, button):hover > .st-roule > span + span { translate: 0 0; }
+}
+
+/* La navigation : le filet se trace de gauche à droite, et repart vers la droite. */
+html[data-structure="studio"] .ed-nav a { background-position: 100% calc(100% - .25rem); }
+html[data-structure="studio"] .ed-nav a:is(:hover, [aria-current="page"]) { background-position: 0 calc(100% - .25rem); }
+
+/* Les domaines en bandeau, immenses, pleine largeur ; un sur deux au trait. */
+.st-bandeau { overflow: hidden; margin-inline: calc(50% - 50vw); padding-block: clamp(.5rem, 2vw, 1.5rem) clamp(2.5rem, 6vw, 5.5rem); }
+.st-bandeau-piste { display: flex; inline-size: max-content; }
+.st-bandeau-groupe { display: flex; }
+.st-bandeau-mot {
+  display: inline-flex; align-items: center; white-space: nowrap; font-family: var(--theme-font-display);
+  font-size: calc(clamp(3.5rem, 11vw, 10.5rem) * var(--echelle-titres, 1)); line-height: 1; letter-spacing: -.045em;
+}
+.st-bandeau-mot::after { content: "✦"; margin-inline: .45em; font-size: .3em; color: var(--theme-accent); }
+.st-bandeau-mot:nth-child(even) { color: transparent; -webkit-text-stroke: 1px color-mix(in srgb, var(--theme-encre) 70%, transparent); }
+
+/* Au toucher : un appui se sent. */
+@media (hover: none) {
+  html[data-structure="studio"] :is(.st-projet-lien, .st-domaine, .st-cta, .btn, .st-suivant-lien):active { scale: .985; transition: scale .2s var(--st-courbe); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Les transitions qui portent le reste. */
+  html[data-structure="studio"] .st-roule > span { transition: translate .55s var(--st-courbe); }
+  html[data-structure="studio"] .ed-nav a { transition: background-size .55s var(--st-courbe); }
+  html[data-structure="studio"][data-animations="expressives"] [data-aimant] { transition: translate .6s var(--st-courbe); }
+  html[data-structure="studio"][data-animations="expressives"] .st-heure-point { animation: st-pouls 2.4s ease-in-out infinite; }
+  html[data-structure="studio"][data-animations="expressives"] .st-heure-deux { animation: st-bat 2s steps(1) infinite; }
+  html[data-animations="expressives"] .st-heure { animation: st-entree 1s var(--st-courbe) both; animation-delay: .55s; }
+
+  /* L'en-tête s'efface en descendant, revient en remontant. */
+  html[data-structure="studio"][data-animations="expressives"] .ed-entete {
+    transition: translate .55s var(--st-courbe), background-color .35s var(--theme-courbe), color .35s var(--theme-courbe), border-color .35s var(--theme-courbe);
+  }
+  html[data-structure="studio"][data-entete="cache"] .ed-entete { translate: 0 -100%; }
+
+  /* Le bandeau défile sans fin ; MouvementStudio l'accélère avec le défilement. */
+  html[data-structure="studio"][data-animations="expressives"] .st-bandeau-piste { animation: st-defile 42s linear infinite; }
+  html[dir="rtl"][data-structure="studio"][data-animations="expressives"] .st-bandeau-piste { animation-name: st-defile-rtl; }
+
+  /* Le rideau d'une page à l'autre : il monte, bord arrondi, dit où l'on va, puis s'en va vers le haut. */
+  html[data-structure="studio"][data-animations="expressives"] .st-rideau {
+    display: grid; place-items: center; position: fixed; inset: 0; z-index: 9990; pointer-events: none;
+    background: var(--theme-encre); color: var(--theme-fond); translate: 0 105%;
+    border-start-start-radius: 50% 14vh; border-start-end-radius: 50% 14vh;
+  }
+  html[data-structure="studio"][data-rideau="entre"] .st-rideau {
+    translate: 0 0; border-start-start-radius: 0 0; border-start-end-radius: 0 0; pointer-events: auto;
+    transition: translate .52s cubic-bezier(.7, 0, .2, 1), border-radius .52s cubic-bezier(.7, 0, .2, 1);
+  }
+  html[data-structure="studio"][data-rideau="sort"] .st-rideau {
+    translate: 0 -105%; border-end-start-radius: 50% 14vh; border-end-end-radius: 50% 14vh;
+    transition: translate .85s var(--st-courbe), border-radius .85s var(--st-courbe);
+  }
+  .st-rideau-nom {
+    font-family: var(--theme-font-display); font-size: calc(clamp(2.25rem, 7vw, 6.5rem) * var(--echelle-titres, 1));
+    letter-spacing: -.035em; line-height: 1; padding-inline: var(--theme-marge); text-align: center; opacity: 0; translate: 0 40%;
+  }
+  html[data-rideau="entre"] .st-rideau-nom { opacity: 1; translate: 0 0; transition: opacity .35s .2s, translate .7s .14s var(--st-courbe); }
+  html[data-rideau="sort"] .st-rideau-nom { opacity: 0; translate: 0 -30%; transition: opacity .25s, translate .5s var(--st-courbe); }
+
+  /* L'intro, au premier passage : le nom monte lettre à lettre, un filet se trace, le voile se lève. */
+  html[data-structure="studio"][data-animations="expressives"]:not([data-intro-vue]) .st-intro {
+    display: grid; place-content: center; justify-items: center; gap: 1.5rem; position: fixed; inset: 0; z-index: 9995;
+    pointer-events: none; background: var(--theme-encre); color: var(--theme-fond);
+    animation: st-intro-leve .95s cubic-bezier(.7, 0, .2, 1) 1.1s both;
+  }
+  .st-intro-nom { display: flex; overflow: clip; padding-block-end: .08em; font-family: var(--theme-font-display); font-size: clamp(2.5rem, 7vw, 5.75rem); line-height: 1.05; letter-spacing: -.035em; }
+  .st-intro-lettre { display: inline-block; animation: st-ligne .85s var(--st-courbe) both; animation-delay: calc(90ms + var(--i, 0) * 32ms); }
+  .st-intro-filet { inline-size: min(15rem, 55vw); block-size: 1px; background: currentColor; opacity: .45; transform-origin: left; animation: st-jauge 1s var(--st-courbe) .2s both; }
+  /* Le titre de l'ouverture attend que le voile se lève. */
+  html[data-animations="expressives"]:not([data-intro-vue]) .st-ouverture-titre .vi-ligne > span { animation-delay: calc(1.35s + var(--l, 0) * 110ms); }
+  html[data-animations="expressives"]:not([data-intro-vue]) :is(.st-ouverture-etiquette, .st-ouverture-pied, .st-heure) { animation-delay: 1.75s; }
+}
+
+/* Le curseur : un point qui suit la souris (en différence : il se voit sur le clair comme sur le sombre),
+   un disque sur ce qui se clique, un rond plein qui parle sur une réalisation ou une photo. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html[data-structure="studio"][data-curseur-actif] .st-curseur {
+    display: grid; place-items: center; position: fixed; inset: 0 auto auto 0; z-index: 9999; pointer-events: none;
+    inline-size: 6.5rem; block-size: 6.5rem; margin: -3.25rem 0 0 -3.25rem; border-radius: 50%;
+    background: #fff; mix-blend-mode: difference; scale: .1; will-change: translate, scale;
+    transition: scale .5s var(--st-courbe), background-color .3s, opacity .3s;
+  }
+  html[data-curseur-actif] .st-curseur[data-etat="lien"] { scale: .42; }
+  html[data-curseur-actif] .st-curseur[data-etat="texte"] { scale: 1; mix-blend-mode: normal; background: var(--theme-accent); color: #fff; }
+  html[data-curseur-actif] .st-curseur[data-etat="cache"] { scale: 0; }
+  html[data-curseur-actif] .st-curseur[data-appuye] { scale: .075; }
+  html[data-curseur-actif] .st-curseur[data-etat="lien"][data-appuye] { scale: .34; }
+  html[data-curseur-actif] .st-curseur[data-etat="texte"][data-appuye] { scale: .88; }
+  .st-curseur-texte { padding-inline: .625rem; font-size: .8125rem; font-weight: 500; line-height: 1.15; text-align: center; opacity: 0; transition: opacity .2s; }
+  .st-curseur[data-etat="texte"] .st-curseur-texte { opacity: 1; transition-delay: .1s; }
+  /* Le rond dit « Voir le projet » : la pastille fixe et le curseur du système s'effacent devant lui. */
+  html[data-curseur-actif] [data-curseur] { cursor: none; }
+  html[data-curseur-actif] .st-projet-voir { display: none; }
+}
+
+/* La barre de lecture, en haut de l'écran ; les photos qui se dévoilent ; le nom de la maison qui monte lettre à lettre. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html[data-structure="studio"][data-animations="expressives"] .st-progression {
+      display: block; position: fixed; inset: 0 0 auto; z-index: 60; block-size: 2px; pointer-events: none;
+      background: var(--theme-accent); transform-origin: left; animation: st-progres linear both; animation-timeline: scroll(root);
+    }
+    html[dir="rtl"][data-structure="studio"] .st-progression { transform-origin: right; }
+    html[data-animations="expressives"][data-structure="studio"] :is(.st-projet-media, .st-recit-image, .vi-services-image, .st-galerie-vue) {
+      animation: st-devoile linear both; animation-timeline: view(); animation-range: entry 0% entry 95%;
+    }
+    html[data-animations="expressives"][data-structure="studio"] .ed-pied-marque .mg-lettre {
+      display: inline-block; animation: st-lettre linear both; animation-timeline: view();
+      animation-range: entry calc(5% + var(--i, 0) * 3%) cover calc(30% + var(--i, 0) * 3%);
+    }
+  }
+}
+
+@keyframes st-defile { to { translate: -50% 0; } }
+@keyframes st-defile-rtl { to { translate: 50% 0; } }
+@keyframes st-progres { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* La fin déborde de 10 px : le contour du clavier (posé 4 px autour de la photo) reste visible. */
+@keyframes st-devoile { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(-10px); } }
+@keyframes st-lettre { from { translate: 0 80%; opacity: 0; } }
+@keyframes st-intro-leve { to { translate: 0 -100%; border-end-start-radius: 50% 14vh; border-end-end-radius: 50% 14vh; visibility: hidden; } }
+@keyframes st-pouls { 50% { opacity: .35; scale: .8; } }
+@keyframes st-bat { 50% { opacity: .25; } }

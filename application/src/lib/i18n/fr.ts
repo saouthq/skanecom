@@ -1409,6 +1409,9 @@ export const fr = {
     domainesTitre: "Nos domaines",
     /** Le titre des domaines, dans le menu du téléphone. */
     domaines: "Domaines",
+    curseurProjet: "Voir le projet",
+    agrandir: "Agrandir",
+    heureAria: (lieu: string, heure: string) => `${lieu}, il est ${heure}`,
     domaine: (n: number) => (n > 1 ? `${n} projets` : "1 projet"),
     servicesTitre: "Ce que nous faisons",
     etapesTitre: "Notre méthode",

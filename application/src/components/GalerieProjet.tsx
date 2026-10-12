@@ -25,7 +25,8 @@ export function GalerieProjet({ photos, depuis = 0, titre }: { photos: PhotoAffi
           const large = i % 3 === 0 || (i % 3 === 1 && i === suite.length - 1);
           return (
             <li key={p?.src ?? i} className="st-galerie-vue apparait" data-large={large ? "" : undefined}>
-              <button type="button" className="galerie-agrandir" aria-label={t.produit.agrandir(depuis + i + 1, photos.length)} onClick={() => setAgrandie(depuis + i)}>
+              <button type="button" className="galerie-agrandir" aria-label={t.produit.agrandir(depuis + i + 1, photos.length)} onClick={() => setAgrandie(depuis + i)}
+                data-curseur={t.studio.agrandir}>
                 <Photo photo={p} ratio={large ? "3 / 2" : "4 / 5"} tailles={large ? "(min-width: 900px) 90vw, 100vw" : "(min-width: 900px) 45vw, 100vw"} />
               </button>
             </li>

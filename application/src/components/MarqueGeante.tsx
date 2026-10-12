@@ -39,7 +39,10 @@ export function MarqueGeante({ nom }: { nom: string }) {
   }, []);
   return (
     <span ref={ref} className="marque-texte marque-geante">
-      {nom}
+      {/* Lettre à lettre : le Studio les fait monter l'une après l'autre (app/studio.css). */}
+      {[...nom].map((c, i) => (
+        <span key={i} className="mg-lettre" style={{ "--i": i } as React.CSSProperties}>{c}</span>
+      ))}
     </span>
   );
 }

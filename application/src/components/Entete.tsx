@@ -13,6 +13,7 @@ import { assurancesPanier, bandeau, faitsDeService, lienConseil } from "@/lib/fa
 import { descendance, type Cadre } from "@/lib/boutique";
 import { aUnContact, contactDe } from "@/lib/contact";
 import { texte } from "@/lib/theme";
+import { Roule } from "./SectionsVitrine";
 
 /* ============================================================================
    L'EN-TÊTE — un par gabarit, parce que les deux métiers ne cherchent pas de
@@ -172,7 +173,7 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
           </Link>
           <div className="ed-entete-fin">
             {studio ? (
-              contact ? <Link className="st-entete-cta" href="/contact">{t.studio.parlonsEn}</Link> : null
+              contact ? <Link className="st-entete-cta" href="/contact" data-aimant=""><Roule>{t.studio.parlonsEn}</Roule></Link> : null
             ) : (
               <Link className="icone-btn" href="/recherche" aria-label={t.commun.rechercher}>
                 <Loupe />

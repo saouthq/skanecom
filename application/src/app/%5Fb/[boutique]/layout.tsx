@@ -19,6 +19,7 @@ import { BarreOnglets } from "@/components/BarreOnglets";
 import { Apparitions } from "@/components/Apparitions";
 import { TransitionsVue } from "@/components/TransitionsVue";
 import { MouvementStudio } from "@/components/MouvementStudio";
+import { IntroStudio, SCRIPT_INTRO } from "@/components/IntroStudio";
 import { AncresDouces } from "@/components/AncresDouces";
 import { Suspense } from "react";
 import { ProgressionNavigation } from "@/components/console/Retours";
@@ -74,6 +75,8 @@ export default async function RacineBoutique({ children, params }: Props) {
   const langue = cadre.boutique.langue_defaut;
   // La structure Commerce : la comparaison, la barre d'onglets du téléphone.
   const commerce = cadre.theme.structure === "commerce";
+  // Le Studio : son mouvement (curseur, rideau, défilement doux) et son intro au premier passage.
+  const studio = cadre.theme.structure === "studio";
   return (
     <html
       lang={langue}
@@ -85,13 +88,18 @@ export default async function RacineBoutique({ children, params }: Props) {
       data-monogramme={cadre.theme.monogramme ? "" : undefined}
       {...attributsDuStyle(cadre.theme.style)}
       className="h-full"
+      // Le script de l'intro du Studio pose data-intro-vue avant l'hydratation.
+      suppressHydrationWarning={studio || undefined}
     >
       <head>
         <style dangerouslySetInnerHTML={{ __html: feuilleDuTheme(cadre.theme, urlFichier) }} />
         {/* Les pixels publicitaires, d'emblée si ce navigateur les a acceptés (lib/pixels.ts). */}
         {cadre.pixels && !cadre.apercu ? <script dangerouslySetInnerHTML={{ __html: scriptPixels(cadre.boutique.slug, cadre.pixels) }} /> : null}
+        {/* L'intro du Studio : une fois par visite, jamais dans un cadre (l'éditeur, la galerie des modèles). */}
+        {studio ? <script dangerouslySetInnerHTML={{ __html: SCRIPT_INTRO }} /> : null}
       </head>
       <body className="min-h-full flex flex-col bg-fond text-encre">
+        {studio ? <IntroStudio nom={cadre.boutique.nom} /> : null}
         <a className="saut-contenu" href="#principal">
           {t.commun.sauterAuContenu}
         </a>
@@ -123,7 +131,7 @@ export default async function RacineBoutique({ children, params }: Props) {
         {cadre.statistiques && !cadre.apercu ? <MesureAudience /> : null}
         <Apparitions />
         <TransitionsVue />
-        <MouvementStudio />
+        <MouvementStudio studio={studio} />
         <AncresDouces />
         <ApercuApparence code={cadre.theme.code} structure={cadre.theme.structure} />
         <Suspense fallback={null}>

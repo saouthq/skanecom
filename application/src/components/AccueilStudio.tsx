@@ -7,6 +7,7 @@ import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliothequ
 import { Lignes, SectionContact, SectionEtapes, SectionServices } from "./SectionsVitrine";
 import { CarteProjet } from "./Projets";
 import { Fleche } from "./Icones";
+import { HeureLocale } from "./HeureLocale";
 import { descendance, racinesGarnies, type Cadre } from "@/lib/boutique";
 import type { Produit } from "@/lib/catalogue";
 import type { DonneesAccueil } from "@/lib/accueil";
@@ -104,6 +105,13 @@ function Tete({ titre, etiquette }: { titre: string; etiquette?: string }) {
   );
 }
 
+/** Le lieu de la maison : la ville de son magasin, sinon le début de son adresse. */
+function lieuDe(cadre: Cadre): string {
+  const ville = String(cadre.reglages["retrait.ville"] ?? "").trim();
+  const adresse = String(cadre.reglages["legal.adresse"] ?? "").split(",")[0]?.trim();
+  return ville || adresse || "Tunis";
+}
+
 /* Le titre d'abord, immense, qui monte ligne après ligne ; dessous, la photo
    posée en retrait qui s'ouvre au défilement jusqu'à prendre la largeur. */
 function Ouverture({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "hero" }>; cadre: Cadre }) {
@@ -117,13 +125,16 @@ function Ouverture({ rang, section, cadre }: { rang: number; section: Extract<Se
   return (
     <section className="st-ouverture" data-section={rang} data-sans-image={image ? undefined : ""}>
       <div className="enveloppe st-ouverture-tete">
-        {etiquette ? <p className="etiquette st-ouverture-etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+        <div className="st-ouverture-haut">
+          {etiquette ? <p className="etiquette st-ouverture-etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+          <HeureLocale lieu={lieuDe(cadre)} />
+        </div>
         <h1 className="vi-titre st-ouverture-titre" key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h1>
         <div className="st-ouverture-pied">
           {chapo ? <p className="chapo st-ouverture-chapo" key={chapo} data-texte="chapo">{chapo}</p> : null}
           <Link className="st-cta" href={lien}>
             <span key={cta} data-texte="cta">{cta}</span>
-            <span className="st-cta-rond" aria-hidden="true"><Fleche taille={18} className="rtl:-scale-x-100" /></span>
+            <span className="st-cta-rond" aria-hidden="true" data-aimant=""><Fleche taille={18} className="rtl:-scale-x-100" /></span>
           </Link>
         </div>
       </div>
@@ -194,6 +205,18 @@ function Domaines({ rang, section, cadre, rayons }: { rang: number; section: Ext
   const etiquette = texte(section.textes, "etiquette");
   return (
     <section className="enveloppe st-domaines-section" data-section={rang}>
+      {rayons.length > 1 ? (
+        // Les domaines en bandeau, immenses, qui défilent sans fin (plus vite quand on défile).
+        <div className="st-bandeau" aria-hidden="true">
+          <div className="st-bandeau-piste">
+            {[0, 1].map((n) => (
+              <span key={n} className="st-bandeau-groupe">
+                {rayons.map((r) => <span key={r.slug} className="st-bandeau-mot">{champ(r, "nom")}</span>)}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="st-domaines-tete">
         {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
         <h2 className="vi-titre" key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h2>

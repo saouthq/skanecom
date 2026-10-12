@@ -55,7 +55,7 @@ export function CarteProjet({
   const ligne = ligneProjet(produit);
   return (
     <article className="st-projet apparait">
-      <Link className="st-projet-lien" href={`/produit/${produit.slug}`}>
+      <Link className="st-projet-lien" href={`/produit/${produit.slug}`} data-curseur={t.studio.curseurProjet}>
         <span className="st-projet-media">
           <Photo photo={urlPhoto(produit)} ratio={format} tailles={tailles} prioritaire={prioritaire} nom={nom} />
           <span className="st-projet-voir" aria-hidden="true">{t.studio.voir}</span>
@@ -190,7 +190,7 @@ export function FicheProjet({ cadre, produit, fil, suivant }: { cadre: Cadre; pr
 
       {suivant ? (
         <nav className="st-suivant" aria-label={t.studio.projetSuivant}>
-          <Link className="st-suivant-lien" href={`/produit/${suivant.slug}`}>
+          <Link className="st-suivant-lien" href={`/produit/${suivant.slug}`} data-curseur={t.studio.projetSuivant} data-rideau={champ(suivant, "nom")}>
             <span className="enveloppe st-suivant-textes">
               <span className="etiquette">{t.studio.projetSuivant}</span>
               <span className="vi-titre st-suivant-nom">{champ(suivant, "nom")}</span>

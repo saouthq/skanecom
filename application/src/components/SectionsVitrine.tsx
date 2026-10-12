@@ -41,6 +41,17 @@ export function Lignes({ texte: valeur }: { texte: string }) {
   );
 }
 
+/** Le libellé d'un bouton qui roule au survol : son double monte de dessous
+ *  (animations expressives, app/studio.css). Les lecteurs d'écran lisent le premier. */
+export function Roule({ children }: { children: string }) {
+  return (
+    <span className="st-roule">
+      <span>{children}</span>
+      <span aria-hidden="true">{children}</span>
+    </span>
+  );
+}
+
 const deux = (n: number) => String(n).padStart(2, "0");
 
 export function SectionServices({ rang, section }: { rang: number; section: Extract<Section, { type: "services" }> }) {

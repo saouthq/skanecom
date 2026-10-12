@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Coche, Fleche } from "./Icones";
+import { Roule } from "./SectionsVitrine";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -160,8 +161,8 @@ export function FormulaireContact({
       </div>
       {erreur && !erreur.champ ? <p className="fc-erreur fc-erreur-generale" role="alert">{erreur.message}</p> : null}
       <div className="fc-pied">
-        <button type="submit" className="btn btn-primaire fc-envoyer" disabled={etat === "envoi" || apercu}>
-          <span>{etat === "envoi" ? t.formulaire.envoi : t.formulaire.envoyer}</span>
+        <button type="submit" className="btn btn-primaire fc-envoyer" disabled={etat === "envoi" || apercu} data-aimant="">
+          <Roule>{etat === "envoi" ? t.formulaire.envoi : t.formulaire.envoyer}</Roule>
           <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />
         </button>
         <p className="fc-mention">
