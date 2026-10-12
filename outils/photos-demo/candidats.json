@@ -160,5 +160,71 @@
   "maison--lit": {
     "q": "bed linen bedroom",
     "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--ouverture": {
+    "q": "minimalist living room interior",
+    "rapport": "wide",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--salon": {
+    "q": "modern living room",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--cuisine": {
+    "q": "modern kitchen interior",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--chambre": {
+    "q": "bedroom interior design",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--bain": {
+    "q": "bathroom interior",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--bureau": {
+    "q": "office interior design",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--cafe": {
+    "q": "cafe interior",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--hotel": {
+    "q": "hotel lobby interior",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--arches": {
+    "q": "white arches architecture",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--escalier": {
+    "q": "staircase architecture interior",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--lumiere": {
+    "q": "sunlight shadow interior wall",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--matieres": {
+    "q": "marble wood texture detail",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--croquis": {
+    "q": "architect drawing plans desk",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--atelier": {
+    "q": "interior designer workspace samples",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--chaise": {
+    "q": "designer chair interior",
+    "sources": "stocksnap,nappy,rawpixel"
+  },
+  "studio--portrait": {
+    "q": "interior design living room",
+    "rapport": "tall",
+    "sources": "stocksnap,nappy,rawpixel"
   }
 }
