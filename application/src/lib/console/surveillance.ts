@@ -69,6 +69,10 @@ async function verifierPage(h: AVerifier["hotes"][number]): Promise<Releve | nul
     });
     const duree = Date.now() - debut;
     await r.body?.cancel().catch(() => {});
+    // Une vitrine en maintenance (posée dans la console) répond exprès sa page d'attente : pas une panne.
+    if (r.headers.get("x-skanecom-maintenance") === "1") {
+      return { genre: "page", boutique_id: h.boutique_id, cible: h.hote, ok: true, lent: false, duree_ms: duree, statut_http: r.status, detail: "En maintenance : la page d'attente est servie" };
+    }
     const ok = r.status < 400;
     const lent = ok && duree > SEUIL_LENT_MS;
     return {

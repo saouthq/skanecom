@@ -10,6 +10,7 @@ import { LIBELLES_GENRE, surveillanceMuette, type DonneesAlertes, type DonneesSu
 import { duree } from "@/lib/courriels/alertes";
 import { chargeAccueil } from "@/lib/console/accueil-serveur";
 import { ilYa } from "@/lib/console/pilotage";
+import { DepannagePlateforme, type DonneesMaintenance } from "@/components/console/Depannage";
 
 export const metadata: Metadata = { title: "État technique" };
 
@@ -47,17 +48,19 @@ const SURFACES: Record<string, string> = { vitrine: "Vitrine", backoffice: "Back
 const pire = (points: Point[], sinon: Niveau): Niveau =>
   points.some((p) => p.niveau === "panne") ? "panne" : points.length ? "attention" : sinon;
 
-export default async function EtatTechnique({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; carte?: string; erreurs?: string; reglees?: string }> }) {
+export default async function EtatTechnique({ searchParams }: { searchParams: Promise<{ ok?: string; erreur?: string; carte?: string; erreurs?: string; reglees?: string; boutique?: string }> }) {
   const { user, role } = await exigeAdmin();
   const v = await searchParams;
   const service = clientService();
   // Les erreurs d'une boutique seulement (?erreurs=<boutique>) : la liste des boutiques est déjà lue pour la navigation.
-  const filtreErreurs = v.erreurs ? (await chargeAccueil(user.id)).boutiques.find((b) => b.slug === v.erreurs) ?? null : null;
-  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }, { data: dataErreurs, error: errErreurs }] = await Promise.all([
+  const { boutiques: toutes } = await chargeAccueil(user.id);
+  const filtreErreurs = v.erreurs ? toutes.find((b) => b.slug === v.erreurs) ?? null : null;
+  const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }, { data: dataErreurs, error: errErreurs }, { data: dataPause }] = await Promise.all([
     chronometre(() => service.rpc("console_etat_technique", { p_acteur: user.id })),
     service.rpc("console_surveillance", { p_acteur: user.id }),
     service.rpc("console_alertes", { p_acteur: user.id }),
     service.rpc("console_erreurs", { p_acteur: user.id, p_boutique_id: filtreErreurs?.id ?? null, p_reglees: v.reglees === "1" }),
+    service.rpc("console_maintenance", { p_acteur: user.id }),
   ]);
   if (error) throw new Error(`État technique illisible : ${error.message}`);
   if (errSurv) throw new Error(`Surveillance illisible : ${errSurv.message}`);
@@ -67,6 +70,7 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const al = dataAlertes as DonneesAlertes;
   if (errErreurs) throw new Error(`Erreurs de l'application illisibles : ${errErreurs.message}`);
   const er = dataErreurs as DonneesErreurs;
+  const pause = (dataPause ?? { plateforme: null, boutiques: [] }) as DonneesMaintenance;
   const maintenant = new Date().getTime();
   const superAdmin = role === "super_admin";
   const c = await configuration();
@@ -101,6 +105,11 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
     : [];
   const niveauErreurs: Niveau = recentes.length ? "attention" : "ok";
   const etatErreurs = recentes.length ? "À regarder" : er.ouvertes ? "Rien ces 24 h" : "Aucune";
+  // ---- Le dépannage ---------------------------------------------------------
+  const pointsDepannage: Point[] = [
+    ...(pause.plateforme ? [{ niveau: "panne" as const, texte: `Toute la plateforme est en maintenance depuis le ${dateJournal(pause.plateforme.depuis)} : chaque vitrine montre la page d'attente.` }] : []),
+    ...pause.boutiques.map((b) => ({ niveau: "attention" as const, texte: `${b.nom} est en maintenance depuis le ${dateJournal(b.depuis)}.` })),
+  ];
 
   // ---- La base -------------------------------------------------------------
   const partConnexions = e.base.connexions_max ? e.base.connexions / e.base.connexions_max : 0;
@@ -213,7 +222,7 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   const etatDomaines = enErreur.length ? "En panne" : aVerifier.length ? "À vérifier" : enLigne.length ? "Valables" : "Local";
 
   const cartes = [base, courriels, skanfact, fichiers];
-  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, { id: "erreurs", titre: "Erreurs", points: pointsErreurs }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
+  const aRegarder = [{ id: "surveillance", titre: "Surveillance", points: pointsSurveillance }, { id: "alertes", titre: "Alertes", points: pointsAlertes }, { id: "erreurs", titre: "Erreurs", points: pointsErreurs }, { id: "depannage", titre: "Dépannage", points: pointsDepannage }, ...cartes, { id: "domaines", titre: "Domaines", points: pointsDomaines }].flatMap((x) => x.points.map((p) => ({ ...p, carte: x.id, titre: x.titre })));
   // Le verdict renvoie à chaque carte concernée, une fois, avec son nombre de points.
   const parCarte = [...new Set(aRegarder.map((p) => p.carte))].map((id) => {
     const points = aRegarder.filter((p) => p.carte === id);
@@ -381,6 +390,9 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
             </>
           ) : <p className="discret et-incidents-vide">Aucun incident ces 14 derniers jours.</p>}
         </section>
+
+        <DepannagePlateforme m={pause} boutiques={toutes.filter((b) => b.statut !== "fermee").map((b) => ({ id: b.id, slug: b.slug, nom: b.nom, demonstration: b.demonstration }))}
+          choisie={v.boutique ?? null} superAdmin={superAdmin} message={message("depannage")} />
 
         <section className="carte et-carte et-large" aria-labelledby="t-erreurs" data-niveau={niveauErreurs}>
           <header className="et-tete">

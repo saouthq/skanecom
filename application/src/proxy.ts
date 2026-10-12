@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { hoteDe, resoudre } from "@/lib/annuaire";
+import { apercuValide, etatMaintenance, pageMaintenance } from "@/lib/maintenance";
 
 /* ============================================================================
    LA FAÇADE — une application, toutes les boutiques.
@@ -108,6 +109,16 @@ export async function proxy(request: NextRequest) {
       const demande = request.nextUrl.searchParams.get("apercu");
       const garde = request.cookies.get(COOKIE_APERCU)?.value ?? null;
       const jeton = demande !== null ? (JETON_APERCU.test(demande) ? demande : null) : garde && JETON_APERCU.test(garde) ? garde : null;
+      // En maintenance (toute la plateforme, ou cette boutique) : la page d'attente — sauf pour l'aperçu de
+      // l'équipe (le vrai jeton de son brouillon) et l'appel de Konnect (/paiement/…), qui confirme un
+      // paiement même pendant la pause.
+      if (!pathname.startsWith("/paiement/")) {
+        const m = await etatMaintenance();
+        const b = m.boutiques[resolution.slug];
+        if ((b || m.plateforme) && !(jeton && (await apercuValide(resolution.slug, jeton)))) {
+          return pageMaintenance(b?.nom ?? m.noms?.[resolution.slug] ?? null, b?.message ?? m.plateforme?.message ?? null);
+        }
+      }
       const segment = jeton ? `${resolution.slug}~${jeton}` : resolution.slug;
       const reponse = NextResponse.rewrite(
         new URL(`/_b/${segment}${pathname === "/" ? "" : pathname}${search}`, request.url),

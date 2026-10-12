@@ -2270,3 +2270,21 @@ li[data-fait] > .ce-puce { background: var(--ui-vert); border-color: var(--ui-ve
 .er-pile pre { margin: .375rem 0 0; padding: .625rem .75rem; max-block-size: 14rem; overflow: auto; border-radius: var(--ui-r-s); background: var(--ui-doux); font-size: .75rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .er-vide { margin: 0; padding-block: .25rem; }
 
+/* ---- Le dépannage (État technique, fiche d'une boutique) ---- */
+.dp-ligne { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .625rem 1rem; padding: .75rem .875rem; border-radius: var(--ui-r); border: 1px solid var(--ui-bord-leger); background: var(--ui-survol); margin-block-end: .75rem; }
+.dp-ligne[data-pause] { border-color: var(--ui-ambre-bord, #FCD34D); background: var(--ui-ambre-fond, #FFFBEB); }
+.dp-ligne p { margin: 0; flex: 1 1 18rem; font-size: .875rem; }
+.dp-pause { display: grid; gap: .625rem; margin-block-end: .75rem; }
+.dp-pause-pied { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.dp-pause-pied .aide { margin: 0; flex: 1 1 16rem; }
+.dp-liste { display: grid; gap: .375rem; margin: 0 0 .75rem; padding: 0; list-style: none; }
+.dp-liste > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; padding: .5rem 0; border-block-end: 1px solid var(--ui-bord-leger); }
+.dp-liste p { margin: 0; font-size: .875rem; }
+.dp-boutique { display: grid; gap: .625rem; }
+.dp-boutique .champ { max-inline-size: 22rem; }
+.dp-gestes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.dp-confirmer > .bt-confirmer-panneau { position: static; inline-size: auto; max-inline-size: 38rem; margin-block-start: .75rem; box-shadow: none; border-color: var(--ui-rouge-bord, #FCA5A5); }
+.dp-confirmer .bt-confirmer-panneau > p { margin: 0; font-size: .875rem; }
+.dp-confirmer > .bt-confirmer-panneau { justify-items: stretch; }
+.dp-confirmer > .bt-confirmer-panneau > .btn { justify-self: start; }
+

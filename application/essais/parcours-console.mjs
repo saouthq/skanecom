@@ -2125,6 +2125,32 @@ await etape("les erreurs de l'application : une erreur d'essai, l'écran en fran
   verifie((await carte.locator(".er-liste > li[data-reglee]").innerText()).includes(`réglée le`), "les réglées se relisent, avec qui et quand");
 });
 
+await etape("le dépannage : une vitrine en maintenance, sa page d'attente, l'appel de Konnect qui passe, puis rouverte", async () => {
+  await page.goto(`${CONSOLE}/etat#t-depannage`, { waitUntil: "networkidle" });
+  const carte = page.locator('section[aria-labelledby="t-depannage"]');
+  const etat = () => carte.locator(".et-tete .ui-etat").innerText();
+  verifie((await etat()) === "Tout est ouvert", "au départ : « Tout est ouvert »");
+  await carte.locator("#dp-boutique").selectOption({ label: "Maymar" });
+  await clic(page, carte.getByRole("button", { name: "Mettre sa vitrine en maintenance" }));
+  await page.waitForURL(/carte=depannage/);
+  verifie((await etat()) === "1 en maintenance" && (await carte.locator(".dp-liste").innerText()).includes("Maymar"), "Maymar en maintenance : la carte la liste, avec « Rouvrir »");
+  await capture(page, "console-depannage", true);
+  // Un visiteur (une page à part : la page d'attente répond 503, exprès).
+  const visiteur = await ctx.newPage();
+  const MAYMAR = t.adresse("maymar.localhost");
+  let r = null;
+  for (let i = 0; i < 60 && r?.status() !== 503; i++) { r = await visiteur.goto(`${MAYMAR}/`, { waitUntil: "load" }); if (r.status() !== 503) await pause(500); }
+  verifie(r.status() === 503 && (await visiteur.locator("h1").innerText()) === "Maymar revient très vite.", "la vitrine : la page d'attente (HTTP 503), à son nom");
+  await capture(visiteur, "vitrine-maintenance");
+  verifie((await visiteur.goto(`${MAYMAR}/commande`, { waitUntil: "load" })).status() === 503, "le tunnel de commande aussi : personne ne commande pendant la pause");
+  verifie((await visiteur.goto(`${MAYMAR}/paiement/konnect?payment_ref=essai`, { waitUntil: "load" })).status() !== 503, "l'appel de Konnect passe toujours (un paiement se confirme)");
+  await clic(page, carte.locator(".dp-liste").getByRole("button", { name: "Rouvrir" }));
+  await page.waitForFunction(() => document.querySelector('section[aria-labelledby="t-depannage"] .et-tete .ui-etat')?.textContent === "Tout est ouvert");
+  for (let i = 0; i < 60 && r.status() !== 200; i++) { r = await visiteur.goto(`${MAYMAR}/`, { waitUntil: "load" }); if (r.status() !== 200) await pause(500); }
+  verifie(r.status() === 200, "rouverte : la vitrine sert de nouveau ses pages");
+  await visiteur.close();
+});
+
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {
   await clic(page, page.locator(".app-cote").getByRole("link", { name: "Revenus" }));
   await page.waitForURL(/\/revenus$/);

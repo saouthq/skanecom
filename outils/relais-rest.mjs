@@ -76,7 +76,12 @@ function vitrineLocale(req, res) {
     { host: VITRINE_LOCALE.hostname, port: VITRINE_LOCALE.port, method: "GET", path: "/" + reste.join("/"),
       headers: { host: `${hote}:${VITRINE_LOCALE.port}`, "user-agent": req.headers["user-agent"] ?? "" } },
     (reponse) => {
-      res.writeHead(reponse.statusCode ?? 502, { "content-type": reponse.headers["content-type"] ?? "text/plain", ...(reponse.headers.location ? { location: reponse.headers.location } : {}) });
+      res.writeHead(reponse.statusCode ?? 502, {
+        "content-type": reponse.headers["content-type"] ?? "text/plain",
+        ...(reponse.headers.location ? { location: reponse.headers.location } : {}),
+        // (la page d'attente d'une vitrine en maintenance : la surveillance la reconnaît)
+        ...(reponse.headers["x-skanecom-maintenance"] ? { "x-skanecom-maintenance": reponse.headers["x-skanecom-maintenance"] } : {}),
+      });
       reponse.pipe(res);
     },
   );

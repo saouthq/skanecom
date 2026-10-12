@@ -130,6 +130,8 @@ export type ConditionsLues = { en_vigueur: number | null; brouillon: boolean; ma
 
 /** Les erreurs de l'application (public.console_erreurs_etat) : par boutique
  *  (null : la console, le serveur), celles encore ouvertes vues ces 24 heures. */
+/** Le mode maintenance (public.console_maintenance) : toute la plateforme, et les boutiques en pause. */
+export type MaintenanceLue = { plateforme: { message: string | null; depuis: string } | null; boutiques: { id: string; depuis: string; message: string | null }[] };
 export type ErreursLues = { boutique_id: string | null; erreurs: number; fois: number; derniere_le: string; surface: string }[];
 const SURFACE_ERREUR: Record<string, string> = { vitrine: "de la vitrine", backoffice: "du backoffice", console: "de la console", serveur: "du serveur", application: "de l'application" };
 
@@ -162,7 +164,7 @@ export const SEUILS = {
 export function vigilances(
   lignes: LignePilotage[],
   maintenant: number,
-  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null; surveillance?: SurveillanceLue | null; conditions?: ConditionsLues | null; erreurs?: ErreursLues | null } = {},
+  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null; surveillance?: SurveillanceLue | null; conditions?: ConditionsLues | null; erreurs?: ErreursLues | null; maintenance?: MaintenanceLue | null } = {},
 ): Vigilance[] {
   const out: Omit<Vigilance, "type">[] = [];
   // Les conditions de service : aucune publiée (avant le premier vrai client), ou pas encore acceptées.
@@ -178,6 +180,13 @@ export function vigilances(
   const erreursPar = new Map((options.erreurs ?? []).map((x) => [x.boutique_id, x]));
   const dire = (x: ErreursLues[number]) =>
     `${x.fois > 1 ? `${x.fois.toLocaleString("fr-FR")} erreurs` : "une erreur"} ${SURFACE_ERREUR[x.surface] ?? ""} ces 24 heures${x.erreurs > 1 && x.fois > x.erreurs ? ` (${x.erreurs} différentes)` : ""}, ${x.fois > 1 ? "la dernière " : ""}${ilYa(x.derniere_le, maintenant)}`;
+  const pauses = new Map((options.maintenance?.boutiques ?? []).map((x) => [x.id, x]));
+  if (options.maintenance?.plateforme) {
+    out.push({
+      cle: "plateforme:maintenance", niveau: "urgent", boutique: null, href: "/etat#t-depannage",
+      texte: `toute la plateforme est en maintenance depuis ${depuis(options.maintenance.plateforme.depuis, maintenant)} : chaque vitrine montre la page d'attente`,
+    });
+  }
   const plateforme = erreursPar.get(null);
   if (plateforme) out.push({ cle: "plateforme:erreurs", niveau: "attention", boutique: null, href: "/etat#t-erreurs", texte: dire(plateforme) });
   if (options.surveillance) out.push(...signesDeSurveillance(options.surveillance, lignes, options.sante ?? [], maintenant));
@@ -245,6 +254,13 @@ export function vigilances(
     }
     if (b.statut === "suspendue") {
       out.push({ cle: `${b.id}:suspendue`, niveau: "info", boutique: b, href: `/boutiques/${b.slug}`, texte: "suspendue : sa vitrine est fermée" });
+    }
+    const pauseB = pauses.get(b.id);
+    if (pauseB) {
+      out.push({
+        cle: `${b.id}:maintenance`, niveau: "attention", boutique: b, href: `/boutiques/${b.slug}#t-depannage`,
+        texte: `vitrine en maintenance depuis ${depuis(pauseB.depuis, maintenant)} : ses clients voient la page d'attente`, court: "en maintenance",
+      });
     }
     const er = erreursPar.get(b.id);
     if (er) {

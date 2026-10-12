@@ -69,6 +69,10 @@ export const ACTIONS: Record<string, string> = {
   "administrateur.double_auth_exigee": "Double authentification de l'équipe SkanEcom : réglage changé",
   "plateforme.alertes": "Alertes de la surveillance : réglage changé",
   "plateforme.erreurs_reglees": "Erreurs de l'application marquées réglées",
+  "plateforme.maintenance": "Maintenance de toute la plateforme",
+  "boutique.maintenance": "Maintenance de la vitrine",
+  "boutique.file_relancee": "File d'envois relancée",
+  "boutique.cache_vide": "Cache de la vitrine vidé",
   "plateforme.conditions_brouillon": "Conditions de service : brouillon enregistré",
   "plateforme.conditions_publiees": "Conditions de service : version publiée",
   "boutique.conditions_acceptees": "Conditions de service acceptées par le propriétaire",
@@ -197,6 +201,7 @@ export function detailJournal(action: string, cible: string | null, noms: { form
   if (action.startsWith("support.")) return MODES_SUPPORT[cible as ModeSupport]?.titre ?? cible;
   if (action.startsWith("reglages.tranche_poids")) return tranchePoids(cible);
   if (estGesteEnvois(action)) return CANAL_JOURNAL[cible] ?? cible;
+  if (action === "boutique.file_relancee") return cible === "courriels" ? "E-mails de commande" : cible === "skanfact" ? "Envois à SkanFact" : cible;
   return cibleLisible(cible);
 }
 
@@ -217,7 +222,7 @@ const SIGNAUX: Record<string, string> = {
   preparation: "Mise en place à finir", support: "Accès support ouvert", suspendue: "Boutique suspendue",
   rappel: "Rappel d'une note", "quota-email": "Quota d'e-mails", "quota-sms": "Quota de SMS",
   "forfait-email": "Forfait d'e-mails du fournisseur", "forfait-sms": "Forfait de SMS du fournisseur",
-  erreurs: "Erreurs de l'application",
+  erreurs: "Erreurs de l'application", maintenance: "En maintenance",
 };
 export function libelleSignal(cle: string | null): string {
   if (!cle) return "";

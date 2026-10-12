@@ -15,6 +15,7 @@ import { BandeauAnnonces } from "@/components/console/BandeauAnnonces";
 import { BandeauPreparation } from "@/components/console/BandeauPreparation";
 import { BandeauSuspension } from "@/components/console/BandeauSuspension";
 import { BandeauConditions } from "@/components/console/BandeauConditions";
+import { BandeauMaintenance } from "@/components/console/BandeauMaintenance";
 import type { AnnonceBoutique } from "@/lib/console/annonces";
 import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
 
@@ -50,7 +51,7 @@ export default async function BackofficeBoutique({
   // pas l'un après l'autre : chaque page du backoffice les attend.
   const sb = await clientSession();
   const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }, { data: an }, { data: su }, { data: dc }, { data: cg }] = await Promise.all([
+  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }, { data: an }, { data: su }, { data: dc }, { data: cg }, { data: mt }] = await Promise.all([
     sb.rpc("gestion_sav_etat", etat),
     sb.rpc("gestion_pro_etat", etat),
     sb.rpc("gestion_devis_etat", etat),
@@ -65,6 +66,7 @@ export default async function BackofficeBoutique({
     boutique.statut === "suspendue" ? sb.rpc("gestion_suspension", etat) : Promise.resolve({ data: null }),
     sb.rpc("gestion_demandes_etat", etat),
     sb.rpc("gestion_conditions_etat", etat),
+    sb.rpc("maintenance_etat"),
   ]);
   // Les conditions de service de SkanEcom en vigueur, pas encore acceptées : le bandeau le dit.
   // (pendant un accès support, rien : SkanEcom n'accepte jamais à la place du commerçant)
@@ -72,6 +74,9 @@ export default async function BackofficeBoutique({
   const conditionsAAccepter = Boolean(conditions?.a_accepter && conditions.version && !boutique.support_jusqu_a);
   // Pas encore ouverte : le bandeau le dit, en tête de chaque page.
   const enPreparation = boutique.statut === "en_preparation";
+  // La vitrine en maintenance (toute la plateforme, ou cette boutique) : le dire à l'équipe.
+  const etatPause = (mt ?? null) as { plateforme: { message: string | null; depuis: string } | null; boutiques: Record<string, { message: string | null; depuis: string }> } | null;
+  const pause = etatPause?.boutiques?.[slug] ? { plateforme: false, ...etatPause.boutiques[slug] } : etatPause?.plateforme ? { plateforme: true, ...etatPause.plateforme } : null;
   const suspension = (su ?? null) as { motif: string | null; message: string | null; le: string | null } | null;
   const annonces = (Array.isArray(an) ? an : []) as AnnonceBoutique[];
   // La facturation SkanFact, si la boutique a le module (ou y reste connectée) : ce que SkanFact a
@@ -260,8 +265,9 @@ export default async function BackofficeBoutique({
       recherche={<OuvrirPalette />}
       rechercheCompacte={<OuvrirPalette compact />}
       palette={<Palette source={`/gestion/${slug}/palette`} pages={pages} />}
-      bandeau={boutique.support_jusqu_a || annonces.length || suspension || enPreparation || conditionsAAccepter ? (
+      bandeau={boutique.support_jusqu_a || annonces.length || suspension || enPreparation || conditionsAAccepter || pause ? (
         <>
+          {pause ? <BandeauMaintenance plateforme={pause.plateforme} message={pause.message} depuis={pause.depuis} /> : null}
           {suspension ? <BandeauSuspension s={suspension} /> : null}
           {conditionsAAccepter ? (
             <BandeauConditions slug={slug} version={conditions!.version!} peutAccepter={Boolean(conditions!.peut_accepter)} proprietaire={conditions!.proprietaire ?? null} />
