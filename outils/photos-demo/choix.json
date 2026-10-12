@@ -875,6 +875,302 @@
     600
    ],
    "rapport": 1.25
+  },
+  {
+   "id": "cd09dad0-cbad-4bc2-86b6-51b58a0883cb",
+   "chemin": "atelier-ocre/accueil/ouverture",
+   "largeurs": [
+    2400,
+    1200
+   ],
+   "rapport": 0.5625
+  },
+  {
+   "id": "cd09dad0-cbad-4bc2-86b6-51b58a0883cb",
+   "chemin": "atelier-ocre/accueil/ouverture-portrait",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "2c52d3f1-6c44-47ea-b062-fb6662169887",
+   "chemin": "atelier-ocre/accueil/recit",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "0ea50d40-9d0e-438d-a630-71929162c0bb",
+   "chemin": "atelier-ocre/accueil/services",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "e48425f4-5433-48f4-aef0-6fd30a0dd155",
+   "chemin": "atelier-ocre/rayons/residentiel",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "081b0708-d5e7-45c2-ac76-ccbdcc93fdb7",
+   "chemin": "atelier-ocre/rayons/cafes-restaurants",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "ac2c1535-0a0a-4a42-bdfc-1b518c7c08e3",
+   "chemin": "atelier-ocre/rayons/bureaux-commerces",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "5133a476-3c28-41a0-ad8f-362fadeeb52a",
+   "chemin": "atelier-ocre/rayons/hotellerie",
+   "largeurs": [
+    1200,
+    600
+   ],
+   "rapport": 1.25
+  },
+  {
+   "id": "7424bd95-7f42-4f0e-ae53-df840c815b55",
+   "chemin": "atelier-ocre/produits/appartement-la-marsa-1",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "6a250f15-f065-4e16-bd8d-d6fb49e22b22",
+   "chemin": "atelier-ocre/produits/appartement-la-marsa-2",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "2a6f7783-f77e-4972-985b-31559a2e8830",
+   "chemin": "atelier-ocre/produits/appartement-la-marsa-3",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "0a0db5a9-997f-434c-b557-d38a32e68e5d",
+   "chemin": "atelier-ocre/produits/appartement-la-marsa-4",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "7c6e69b6-1a24-4f9b-a43a-864b8e99387e",
+   "chemin": "atelier-ocre/produits/villa-gammarth-1",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "ab2997e5-f264-474a-a933-63cf94045cba",
+   "chemin": "atelier-ocre/produits/villa-gammarth-2",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "8c373b10-36fb-4d50-b93a-cc897a20f91b",
+   "chemin": "atelier-ocre/produits/villa-gammarth-3",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "a7f0154c-d1f4-440b-8d90-efe0f38af32c",
+   "chemin": "atelier-ocre/produits/villa-gammarth-4",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "1f6ae721-045a-4b6c-806b-8e1bc9ef30a5",
+   "chemin": "atelier-ocre/produits/duplex-carthage-1",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "0b015b64-5362-4364-a142-7f97823f8d26",
+   "chemin": "atelier-ocre/produits/duplex-carthage-2",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "82cb7fca-4fd4-4ec2-a787-9afe61cad7ff",
+   "chemin": "atelier-ocre/produits/duplex-carthage-3",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "c5dc6201-e31a-4c5e-b135-f36c5b53f405",
+   "chemin": "atelier-ocre/produits/cafe-mutuelleville-1",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "e2270f5c-6543-49bb-842e-1176592a4d1c",
+   "chemin": "atelier-ocre/produits/cafe-mutuelleville-2",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "36af7037-957b-48d0-8c51-6f7218825567",
+   "chemin": "atelier-ocre/produits/cafe-mutuelleville-3",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "081b0708-d5e7-45c2-ac76-ccbdcc93fdb7",
+   "chemin": "atelier-ocre/produits/brasserie-berges-du-lac-1",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "127f37c8-e721-4c70-83ab-6c7878fc7d9f",
+   "chemin": "atelier-ocre/produits/brasserie-berges-du-lac-2",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "ca1bfc3a-f9ce-466f-984b-01064c3abbcb",
+   "chemin": "atelier-ocre/produits/brasserie-berges-du-lac-3",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "ac2c1535-0a0a-4a42-bdfc-1b518c7c08e3",
+   "chemin": "atelier-ocre/produits/bureaux-montplaisir-1",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "065e4caf-bfbd-4666-a94b-d132105352b7",
+   "chemin": "atelier-ocre/produits/bureaux-montplaisir-2",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "5c59c865-3a7c-4d16-af69-0be97a9cc2fa",
+   "chemin": "atelier-ocre/produits/bureaux-montplaisir-3",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "56af3e05-2c26-4319-b198-1e83fcbc2007",
+   "chemin": "atelier-ocre/produits/bureaux-montplaisir-4",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "e9a25538-36b9-4c3b-a9e2-2f9042e104d7",
+   "chemin": "atelier-ocre/produits/maison-hotes-sidi-bou-said-1",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "5133a476-3c28-41a0-ad8f-362fadeeb52a",
+   "chemin": "atelier-ocre/produits/maison-hotes-sidi-bou-said-2",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "6233f739-3b13-47a8-9f49-7042e60c2a13",
+   "chemin": "atelier-ocre/produits/maison-hotes-sidi-bou-said-3",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "e8714efe-53fc-48af-bc87-633dd8c5a702",
+   "chemin": "atelier-ocre/produits/maison-hotes-sidi-bou-said-4",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "e2733fe4-d6e5-4a08-9521-b15a819ef88c",
+   "chemin": "atelier-ocre/produits/cuisine-ennasr-1",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "866ea77b-440e-4c71-8cd1-c7d076c0e8f1",
+   "chemin": "atelier-ocre/produits/cuisine-ennasr-2",
+   "largeurs": [
+    1600,
+    800
+   ]
+  },
+  {
+   "id": "954a2db6-3139-416f-9de2-b95150af150e",
+   "chemin": "atelier-ocre/produits/cuisine-ennasr-3",
+   "largeurs": [
+    1600,
+    800
+   ]
   }
  ]
 }
