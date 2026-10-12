@@ -101,3 +101,39 @@ Images trouvées avec [Openverse](https://openverse.org), sous CC0 ou dans le do
 | `dar-alia/produits/panier-jonc` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3292416/free-photo-image-basket-blossom-cc0) |
 | `dar-alia/produits/corbeille-osier` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3301431/free-photo-image-flower-basket-herbs-acanthaceae) |
 | `dar-alia/produits/bocal-verre` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5910925/aniseed-jar-free-public-domain-cc0-image) |
+| `atelier-ocre/accueil/ouverture` | Carol M Highsmith | CC0 | [rawpixel](https://www.rawpixel.com/image/2346691/photo-image-plant-tree-living-room) |
+| `atelier-ocre/accueil/ouverture-portrait` | Carol M Highsmith | CC0 | [rawpixel](https://www.rawpixel.com/image/2346691/photo-image-plant-tree-living-room) |
+| `atelier-ocre/accueil/recit` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5945598/free-public-domain-cc0-photo) |
+| `atelier-ocre/accueil/services` | [Medhat Ayad](https://stocksnap.io/author/55811) | CC0 | [stocksnap](https://stocksnap.io/photo/architecture-house-9QLIF5KSSQ) |
+| `atelier-ocre/rayons/residentiel` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5924316/photo-image-light-public-domain-black) |
+| `atelier-ocre/rayons/cafes-restaurants` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3301932/free-photo-image-interior-cafe) |
+| `atelier-ocre/rayons/bureaux-commerces` | [Breather](https://stocksnap.io/author/746) | CC0 | [stocksnap](https://stocksnap.io/photo/interior-design-478BZDEA2Y) |
+| `atelier-ocre/rayons/hotellerie` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6042791/photo-image-public-domain-wood-house) |
+| `atelier-ocre/produits/appartement-la-marsa-1` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5927318/photo-image-public-domain-minimalist-house) |
+| `atelier-ocre/produits/appartement-la-marsa-2` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6042749/photo-image-public-domain-minimal-house) |
+| `atelier-ocre/produits/appartement-la-marsa-3` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6042774/photo-image-public-domain-house-home) |
+| `atelier-ocre/produits/appartement-la-marsa-4` | [World Travel Adventures](https://stocksnap.io) | CC0 | [stocksnap](https://stocksnap.io/photo/modern-room-ORRHZ1VULX) |
+| `atelier-ocre/produits/villa-gammarth-1` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3284690/free-photo-image-office-living-room-interior-design) |
+| `atelier-ocre/produits/villa-gammarth-2` | [Kristin Hardwick](https://www.kristinhardwick.com) | CC0 | [stocksnap](https://stocksnap.io/photo/interior-design-HIH67XC5G0) |
+| `atelier-ocre/produits/villa-gammarth-3` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6043329/photo-image-public-domain-room-interior) |
+| `atelier-ocre/produits/villa-gammarth-4` | [Matt Bango](https://mattbango.photo) | CC0 | [stocksnap](https://stocksnap.io/photo/staircase-interior-CIMIPMHUXZ) |
+| `atelier-ocre/produits/duplex-carthage-1` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5915137/image-light-public-domain-plants) |
+| `atelier-ocre/produits/duplex-carthage-2` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5906894/photo-image-public-domain-kitchen-interior) |
+| `atelier-ocre/produits/duplex-carthage-3` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5903851/photo-image-public-domain-interior-free) |
+| `atelier-ocre/produits/cafe-mutuelleville-1` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3283414/free-photo-image-coffee-shop-tabletop) |
+| `atelier-ocre/produits/cafe-mutuelleville-2` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5926393/photo-image-public-domain-free-interior-design) |
+| `atelier-ocre/produits/cafe-mutuelleville-3` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3303531/free-photo-image-zoom-background-cafe-beverage) |
+| `atelier-ocre/produits/brasserie-berges-du-lac-1` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3301932/free-photo-image-interior-cafe) |
+| `atelier-ocre/produits/brasserie-berges-du-lac-2` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/3304725/free-photo-image-cafeteria-interior-cafe) |
+| `atelier-ocre/produits/brasserie-berges-du-lac-3` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5908288/image-flower-public-domain-wooden) |
+| `atelier-ocre/produits/bureaux-montplaisir-1` | [Breather](https://stocksnap.io/author/746) | CC0 | [stocksnap](https://stocksnap.io/photo/interior-design-478BZDEA2Y) |
+| `atelier-ocre/produits/bureaux-montplaisir-2` | [Breather](https://stocksnap.io/author/746) | CC0 | [stocksnap](https://stocksnap.io/photo/interior-design-70ZAX0HRQQ) |
+| `atelier-ocre/produits/bureaux-montplaisir-3` | [Breather](https://stocksnap.io/author/746) | CC0 | [stocksnap](https://stocksnap.io/photo/interior-design-LDZ0SMPXFD) |
+| `atelier-ocre/produits/bureaux-montplaisir-4` | [Kristin Hardwick](https://www.kristinhardwick.com) | CC0 | [stocksnap](https://stocksnap.io/photo/home-office-D3OTBIDS9X) |
+| `atelier-ocre/produits/maison-hotes-sidi-bou-said-1` | [Lisa Fotios](https://lisafotiosphotography.co.uk) | CC0 | [stocksnap](https://stocksnap.io/photo/alley-arches-KJ5NTGPBWF) |
+| `atelier-ocre/produits/maison-hotes-sidi-bou-said-2` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6042791/photo-image-public-domain-wood-house) |
+| `atelier-ocre/produits/maison-hotes-sidi-bou-said-3` | [Travel Adventures](https://stocksnap.io/author/183665) | CC0 | [stocksnap](https://stocksnap.io/photo/modern-bathroom-F4CZ0LN5OO) |
+| `atelier-ocre/produits/maison-hotes-sidi-bou-said-4` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5965351/interior-living-room-with-blue-sofa) |
+| `atelier-ocre/produits/cuisine-ennasr-1` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6042995/photo-image-public-domain-house-kitchen) |
+| `atelier-ocre/produits/cuisine-ennasr-2` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/5924472/photo-image-public-domain-kitchen-room) |
+| `atelier-ocre/produits/cuisine-ennasr-3` | — | CC0 | [rawpixel](https://www.rawpixel.com/image/6043532/photo-image-public-domain-house-living-room) |
