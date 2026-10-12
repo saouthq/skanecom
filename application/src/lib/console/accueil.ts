@@ -89,6 +89,7 @@ export const GROUPES_INFO: Record<string, string> = {
   avis: "Des avis à relire avant publication",
   "quota-email": "À plus de 80 % de leur quota d'e-mails du mois",
   "quota-sms": "À plus de 80 % de leur quota de SMS du mois",
+  conditions: "Conditions de service pas encore publiées : rien n'est encore accepté par les commerçants",
 };
 
 /** Le même genre, en deux mots, pour le résumé replié (« sans formule (2) »). */
@@ -100,6 +101,7 @@ export const GROUPES_INFO_COURT: Record<string, string> = {
   avis: "avis à relire",
   "quota-email": "quota d'e-mails à 80 %",
   "quota-sms": "quota de SMS à 80 %",
+  conditions: "conditions à publier",
 };
 
 export type GroupeInfo = { type: string; titre: string; signaux: Vigilance[] };

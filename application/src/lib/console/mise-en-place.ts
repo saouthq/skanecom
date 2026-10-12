@@ -1,5 +1,5 @@
 /* ============================================================================
-   LA MISE EN PLACE D'UNE BOUTIQUE (C6) — les dix étapes que rend
+   LA MISE EN PLACE D'UNE BOUTIQUE (C6) — les onze étapes que rend
    public.console_mise_en_place, dites pour Skander : ce qu'il faut faire,
    ce qu'on en sait, où le faire. Les étapes « manuelles » se cochent depuis
    la console ; les autres se constatent dans la base.
@@ -9,7 +9,7 @@ import { LIBELLES_THEME } from "./libelles";
 
 export type CleEtape =
   | "recueil" | "marque" | "catalogue" | "domaine" | "branchements"
-  | "legal" | "equipe" | "commande_test" | "formation" | "mise_en_ligne";
+  | "legal" | "conditions" | "equipe" | "commande_test" | "formation" | "mise_en_ligne";
 
 export type EtapeBrute = {
   cle: CleEtape;
@@ -29,6 +29,7 @@ export const ETAPES_MISE_EN_PLACE: Record<CleEtape, { titre: string; aide: strin
   domaine: { titre: "Domaine", aide: "Le domaine du client, branché sur la vitrine." },
   branchements: { titre: "Branchements", aide: "Le livreur et le WhatsApp de confirmation, dans les réglages du backoffice." },
   legal: { titre: "Informations légales", aide: "Raison sociale, siège, RNE, matricule fiscal, courriel, dans les réglages du backoffice." },
+  conditions: { titre: "Conditions de service", aide: "Les conditions de SkanEcom et l'accord de traitement des données, acceptés par le propriétaire depuis son backoffice." },
   equipe: { titre: "Équipe", aide: "Le propriétaire invité, et ses employés." },
   commande_test: { titre: "Commande test", aide: "De bout en bout : commande, confirmation, bordereau, livraison et refus simulés." },
   formation: { titre: "Formation", aide: "Une à deux heures avec l'équipe du client." },
@@ -66,6 +67,11 @@ export function detailEtape(e: EtapeBrute): string | null {
       // Dans l'ordre du formulaire du backoffice (la base les rend triés par clé).
       const manquants = Object.keys(LEGAUX).filter((c) => ((d.manquants ?? []) as string[]).includes(c)).map((c) => LEGAUX[c]);
       return manquants.length ? `Manque : ${manquants.join(", ")}.` : "Complètes : les pages légales de la vitrine les reprennent.";
+    }
+    case "conditions": {
+      if (!d.en_vigueur) return "Aucune version publiée pour l'instant (console, Conditions de service).";
+      if (e.fait) return `Version ${d.en_vigueur} acceptée${e.par ? ` par ${e.par}` : ""}.`;
+      return d.acceptee ? `Version ${d.acceptee} acceptée ; la version ${d.en_vigueur} attend le propriétaire.` : `La version ${d.en_vigueur} attend l'accord du propriétaire.`;
     }
     case "equipe": {
       const n = Number(d.membres ?? 0);

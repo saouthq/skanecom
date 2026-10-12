@@ -26,6 +26,7 @@ const PAGES: ElementPalette[] = [
   { groupe: "Aller à", icone: "journal", href: "/journal", titre: "Journal" },
   { groupe: "Aller à", icone: "courriel", href: "/journal?vue=envois", titre: "Journal des envois" },
   { groupe: "Aller à", icone: "outil", href: "/etat", titre: "État technique" },
+  { groupe: "Aller à", icone: "fichier", href: "/conditions", titre: "Conditions de service" },
   { groupe: "Aller à", icone: "personne", href: "/compte", titre: "Mon compte" },
 ];
 
@@ -90,6 +91,7 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
             { href: "/equipe-plateforme", libelle: "Équipe SkanEcom", icone: "equipe" },
             { href: "/journal", libelle: "Journal", icone: "journal" },
             { href: "/etat", libelle: "État technique", icone: "outil" },
+            { href: "/conditions", libelle: "Conditions de service", icone: "fichier" },
           ],
         },
       ]}

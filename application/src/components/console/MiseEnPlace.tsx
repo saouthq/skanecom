@@ -22,13 +22,15 @@ function chemin(slug: string, e: EtapeBrute): string | null {
     // Dans le backoffice du client : par un accès support ouvert d'ici.
     case "branchements": return `/boutiques/${slug}/support?${new URLSearchParams({ motif: "Régler le livreur et le WhatsApp de confirmation (mise en place)." })}`;
     case "legal": return `/boutiques/${slug}/support?${new URLSearchParams({ motif: "Saisir les informations légales de la boutique (mise en place)." })}`;
+    // Le propriétaire les accepte lui-même ; d'ici, on suit, et on publie la version.
+    case "conditions": return "/conditions";
     default: return null;
   }
 }
 
 /** Le libellé du lien : « Y aller », ou par où passer quand ce n'est pas ici. */
 function libelleChemin(e: EtapeBrute): string {
-  return e.cle === "branchements" || e.cle === "legal" ? "Par le support" : "Y aller";
+  return e.cle === "branchements" || e.cle === "legal" ? "Par le support" : e.cle === "conditions" ? "Les suivre" : "Y aller";
 }
 
 /** `replie` : une boutique déjà ouverte n'a plus la mise en place pour

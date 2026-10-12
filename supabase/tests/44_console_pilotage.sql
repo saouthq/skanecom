@@ -42,7 +42,7 @@ select is(pg_temp.ligne('A') #>> '{marque,image}', 'essai-a/accueil/ouverture-20
 -- Mise en place
 -- ---------------------------------------------------------------------
 select results_eq($$ select (pg_temp.ligne('A') #>> '{mise_en_place,total}')::int, pg_temp.ligne('A') #>> '{mise_en_place,prochaine}' $$,
-  $$ values (10, 'recueil') $$, 'dix étapes ; le recueil vient en premier');
+  $$ values (11, 'recueil') $$, 'onze étapes ; le recueil vient en premier');
 reset role;
 insert into plateforme.mise_en_place (boutique_id, etape) values (tests.id('A'), 'recueil');
 select tests.service();

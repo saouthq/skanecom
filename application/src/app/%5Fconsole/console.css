@@ -2174,3 +2174,36 @@ li[data-fait] > .ce-puce { background: var(--ui-vert); border-color: var(--ui-ve
   .ce-vu-lignes > div, .ce-fiche > div { grid-template-columns: 1fr; gap: .125rem; }
   .ce-retirer { margin-inline-start: 0; }
 }
+
+/* ---- Les conditions de service (console, Administrer → Conditions de service ; backoffice, la page de l'accord) ---- */
+.cdt-grille { display: grid; gap: 1rem; }
+.cdt-boutiques { margin: 0; padding: 0; list-style: none; }
+.cdt-boutiques > li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .375rem 1rem; padding-block: .75rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.cdt-boutiques > li:first-child { border-block-start: 0; }
+.cdt-accord { display: grid; justify-items: end; gap: .125rem; text-align: end; }
+.cdt-accord .aide { margin: 0; }
+.cdt-lire > summary { cursor: pointer; font-weight: 600; padding-block: .25rem; }
+.cdt-lire[open] > summary { margin-block-end: .75rem; }
+.cdt-formulaire { display: grid; gap: .875rem; }
+.cdt-formulaire textarea[name="texte"] { font-family: var(--ui-mono, ui-monospace, monospace); font-size: .8125rem; line-height: 1.55; min-block-size: 24rem; }
+.cdt-actions, .cdt-publier { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.cdt-publier { padding-block-start: .875rem; border-block-start: 1px solid var(--ui-bord-leger); }
+.cdt-publier .aide { margin: 0; flex: 1 1 18rem; }
+.cdt-versions { margin: 0; padding: 0; list-style: none; display: grid; gap: .5rem; }
+.cdt-champs { margin: 0; line-height: 1.7; }
+.cdt-a-completer { background: color-mix(in srgb, var(--ui-ambre, #b7791f) 22%, transparent); color: inherit; padding: 0 .125rem; border-radius: 3px; }
+/* Le texte lui-même : une page qui se lit, pas un formulaire. */
+.cdt-texte { max-inline-size: 72ch; font-size: .9375rem; line-height: 1.65; }
+.cdt-texte :is(h2, h3) { margin: 1.5rem 0 .5rem; font-size: 1rem; font-weight: 650; }
+.cdt-texte :is(h2, h3):first-child { margin-block-start: 0; }
+.cdt-texte p { margin: 0 0 .75rem; }
+.cdt-texte ul { margin: 0 0 .75rem; padding-inline-start: 1.25rem; display: grid; gap: .25rem; list-style: disc; }
+.cdt-texte li::marker { color: var(--ui-texte-2); }
+.cdt-page { display: grid; gap: 1rem; }
+.cdt-document-titre { margin: 0; font-size: 1.25rem; }
+.cdt-accepter { display: grid; gap: .875rem; }
+.cdt-accepter .case { display: flex; gap: .625rem; align-items: flex-start; max-inline-size: 60ch; line-height: 1.5; cursor: pointer; }
+.cdt-accepter .case input { inline-size: 1.125rem; block-size: 1.125rem; margin-block-start: .1875rem; flex: none; accent-color: var(--ui-accent); }
+@media (max-width: 640px) {
+  .cdt-accord { justify-items: start; text-align: start; }
+}

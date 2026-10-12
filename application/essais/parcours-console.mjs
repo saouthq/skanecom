@@ -954,15 +954,15 @@ await etape("la liste de mise en place", async () => {
   verifie((await page.getByRole("status").innerText()).includes("« Recueil des éléments » : faite") && await fait("recueil")
     && (await carte.locator('[data-etape="recueil"]').innerText()).includes(ADMIN.email),
     "le recueil se coche à la main, avec son auteur");
-  verifie((await carte.locator(".mp-compte").innerText()).includes(`${faites + 1} sur 10`), `l'avancement : ${faites + 1} sur 10`);
+  verifie((await carte.locator(".mp-compte").innerText()).includes(`${faites + 1} sur 11`), `l'avancement : ${faites + 1} sur 11`);
   await capture(page, "console-mise-en-place", true);
   await page.goto(`${CONSOLE}/`, { waitUntil: "networkidle" });
   const tuile = page.locator(".pl-tuile", { has: page.locator(".pl-nom", { hasText: "Outillage Pro Démo" }) }).last();
-  verifie((await tuile.locator(".pl-mise-tete").innerText()).includes(`${faites + 1}/10`) && (await tuile.locator(".pl-mise-suite").innerText()).startsWith("Prochaine"),
+  verifie((await tuile.locator(".pl-mise-tete").innerText()).includes(`${faites + 1}/11`) && (await tuile.locator(".pl-mise-suite").innerText()).startsWith("Prochaine"),
     "le poste de pilotage montre l'avancement de chacune, et sa prochaine étape");
   await page.goto(`${CONSOLE}/?vue=liste`, { waitUntil: "networkidle" });
   const ligne = page.locator("tr", { hasText: "Outillage Pro Démo" }).last();
-  verifie((await ligne.locator(".mp-mini").innerText()).includes(`${faites + 1}/10`), "la liste aussi");
+  verifie((await ligne.locator(".mp-mini").innerText()).includes(`${faites + 1}/11`), "la liste aussi");
   // Chercher une boutique : par son identifiant, sans tenir compte des majuscules
   // (le suffixe seul en trouverait deux : la boutique de bijoux le porte aussi).
   await clic(page, page.locator("#pl-q")); await tape(page, `OUTILLAGE-${SUFFIXE.toUpperCase()}`);
@@ -2066,6 +2066,19 @@ await etape("les alertes par e-mail : coupées par défaut, allumées pour une a
   await clic(page, carte.getByRole("button", { name: "Enregistrer" }));
   await page.waitForFunction(() => /Alertes coupées/.test(document.querySelector('section[aria-labelledby="t-alertes"] .message')?.textContent ?? ""));
   verifie((await carte.locator(".et-tete .ui-etat").innerText()) === "Coupées", "coupées de nouveau d'un geste");
+});
+
+await etape("les conditions de service : un brouillon à compléter, rien de publié ni de demandé", async () => {
+  await clic(page, page.locator(".app-cote").getByRole("link", { name: "Conditions de service" }));
+  await page.waitForURL(/\/conditions$/);
+  verifie((await page.locator('section[aria-labelledby="t-cdt-boutiques"]').innerText()).includes("Aucune version publiée"),
+    "aucune version publiée : rien n'est encore demandé aux commerçants");
+  const champs = await page.locator(".cdt-brouillon .cdt-a-completer").count();
+  verifie(champs >= 10 && await page.getByRole("button", { name: "Publier la version 1" }).isDisabled(),
+    `le brouillon de la version 1 : ${champs} champs entre crochets à compléter, « Publier » grisé`);
+  await clic(page, page.locator(".cdt-brouillon .cdt-lire > summary"));
+  verifie((await page.locator(".cdt-brouillon .cdt-texte h3").count()) >= 8, "« Voir le rendu » : le texte en titres et en listes");
+  await capture(page, "console-conditions", true);
 });
 
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {

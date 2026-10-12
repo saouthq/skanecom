@@ -32,8 +32,8 @@ select throws_ok(format($$ select public.console_marquer_etape(%L, %L, 'formatio
 -- Ce qui se constate
 -- ---------------------------------------------------------------------
 select is((select array_agg(e ->> 'cle') from jsonb_array_elements(public.console_mise_en_place(tests.id('A')) -> 'etapes') e),
-  array['recueil', 'marque', 'catalogue', 'domaine', 'branchements', 'legal', 'equipe', 'commande_test', 'formation', 'mise_en_ligne'],
-  'dix étapes, dans l''ordre de la mise en place (PRD §7)');
+  array['recueil', 'marque', 'catalogue', 'domaine', 'branchements', 'legal', 'conditions', 'equipe', 'commande_test', 'formation', 'mise_en_ligne'],
+  'onze étapes, dans l''ordre de la mise en place (PRD §7)');
 select results_eq($$ select (tests.etape('catalogue') ->> 'fait')::boolean, (tests.etape('catalogue') -> 'detail' ->> 'publies')::int > 0 $$,
   $$ values (true, true) $$, 'le catalogue est en vitrine : constaté');
 select is(tests.etape('domaine') -> 'detail' ->> 'hote', 'essai-a.test', 'le domaine du client : constaté, avec son adresse');
@@ -62,7 +62,7 @@ select results_eq($$ select (tests.etape('recueil') ->> 'fait')::boolean, tests.
 select public.console_marquer_etape(tests.id('admin_plateforme'), tests.id('A'), 'recueil', false);
 select is((tests.etape('recueil') ->> 'fait')::boolean, false, 'et décoché');
 
-select is(public.console_avancements() -> tests.id('A')::text, '{"faites": 6, "total": 10}'::jsonb,
+select is(public.console_avancements() -> tests.id('A')::text, '{"faites": 6, "total": 11}'::jsonb,
   'l''avancement de chaque boutique, pour la liste de la console');
 select results_eq($$ select action, cible from plateforme.journal_audit
                       where boutique_id = tests.id('A') and action like 'mise_en_place.%' order by id $$,

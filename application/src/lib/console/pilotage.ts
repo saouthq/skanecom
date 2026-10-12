@@ -119,6 +119,10 @@ export type SurveillanceLue = {
   derniere_heure: string | null;
 };
 
+/** Les conditions de service (public.console_conditions_etat) : la version en
+ *  vigueur, et les boutiques clientes ouvertes qui ne l'ont pas acceptée. */
+export type ConditionsLues = { en_vigueur: number | null; brouillon: boolean; manquantes: string[] };
+
 /* Les seuils : un refus sur quatre à la livraison coûte déjà plus que la
    marge (aller, retour, colis immobilisé) ; on en parle à partir de cinq
    colis clos sur trente jours, pour ne pas crier sur deux commandes. */
@@ -148,9 +152,18 @@ export const SEUILS = {
 export function vigilances(
   lignes: LignePilotage[],
   maintenant: number,
-  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null; surveillance?: SurveillanceLue | null } = {},
+  options: { skanfact?: boolean; sante?: Sante[]; rappels?: Rappel[]; envoisRefuses?: number; quotas?: Quotas | null; surveillance?: SurveillanceLue | null; conditions?: ConditionsLues | null } = {},
 ): Vigilance[] {
   const out: Omit<Vigilance, "type">[] = [];
+  // Les conditions de service : aucune publiée (avant le premier vrai client), ou pas encore acceptées.
+  const cg = options.conditions;
+  if (cg && cg.en_vigueur === null && lignes.some((b) => !b.demonstration && b.statut === "active")) {
+    out.push({
+      cle: "plateforme:conditions", niveau: "info", boutique: null, href: "/conditions",
+      texte: `conditions de service pas encore publiées${cg.brouillon ? " (un brouillon attend)" : ""} : rien n'est encore accepté par les commerçants`,
+    });
+  }
+  const sansAccord = new Set(cg?.manquantes ?? []);
   if (options.surveillance) out.push(...signesDeSurveillance(options.surveillance, lignes, options.sante ?? [], maintenant));
   if (options.envoisRefuses) {
     const n = options.envoisRefuses;
@@ -216,6 +229,13 @@ export function vigilances(
     }
     if (b.statut === "suspendue") {
       out.push({ cle: `${b.id}:suspendue`, niveau: "info", boutique: b, href: `/boutiques/${b.slug}`, texte: "suspendue : sa vitrine est fermée" });
+    }
+    if (sansAccord.has(b.id)) {
+      out.push({
+        cle: `${b.id}:conditions`, niveau: "attention", boutique: b, href: "/conditions",
+        texte: `ouverte sans avoir accepté les conditions de service (version ${cg!.en_vigueur}) : son propriétaire les trouve dans son backoffice`,
+        court: `version ${cg!.en_vigueur} à accepter`,
+      });
     }
   }
   const rang = { urgent: 0, attention: 1, info: 2 } as const;
