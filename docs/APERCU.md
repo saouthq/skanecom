@@ -93,5 +93,5 @@ Le workflow fait ensuite tout, à chaque exécution :
   console les redit (une boutique → Modules → Facturation SkanFact →
   « SkanEcom chez SkanFact ») : c'est ce que SkanFact déclare.
 
-Le jeton Cloudflare du dépôt (ajouté le 29/09) expire fin octobre : le
-renouveler avec le modèle « Edit Cloudflare Workers ».
+Le jeton Cloudflare du dépôt (`CLOUDFLARE_API_TOKEN`, ajouté le 29/09, modèle
+« Edit Cloudflare Workers ») n'a pas de date d'expiration (vérifié le 13/10).
