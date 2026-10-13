@@ -160,14 +160,15 @@ Deux pièges déjà corrigés dans les scripts, à ne pas réintroduire : le jet
 `--ui-texte-doux` n'existe pas dans la console (c'est `--ui-texte-3`), et la
 colonne s'écrit `publie_le`, pas `publiee_le`.
 
-**M7 (le trafic)** attend une clé Cloudflare en lecture seule, que Skander
-pose lui-même dans les secrets (jamais collée dans la conversation).
+**M7 (le trafic)** : la clé est posée — secret GitHub `CLOUDFLARE_LECTURE`
+(jeton « skanecom-lecture-trafic », Account Analytics: Read, sans expiration,
+posé par Skander le 13/10). Reste à la transmettre au Worker dans `apercu.yml`
+et à construire l'écran.
 
 ## Ce qui attend Skander
 
 - Les conditions de service v1, relues par un avocat.
 - Allumer les alertes de la surveillance, avec les adresses de destination.
-- La clé Cloudflare en lecture seule (M7).
 - Les sauvegardes Supabase.
 - Les comptes de production : SMS, Resend, Turnstile, les prix des formules…
 
