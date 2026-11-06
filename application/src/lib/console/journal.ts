@@ -74,6 +74,7 @@ export const ACTIONS: Record<string, string> = {
   "boutique.file_relancee": "File d'envois relancée",
   "boutique.cache_vide": "Cache de la vitrine vidé",
   "plateforme.taches_lancees": "Tâches de fond lancées à la main",
+  "plateforme.fournisseurs_essayes": "Fournisseurs essayés à la main",
   "plateforme.conditions_brouillon": "Conditions de service : brouillon enregistré",
   "plateforme.conditions_publiees": "Conditions de service : version publiée",
   "boutique.conditions_acceptees": "Conditions de service acceptées par le propriétaire",

@@ -19,13 +19,14 @@ export type Essai = { cle: CleFournisseur; mode: "reel" | "local" | "apercu" | "
 const relais = () => (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "");
 const ATTENTE = 8000;
 
-/** Un appel HTTP chronométré : le statut, ou la raison de l'échec. */
-async function appeler(url: string, init: RequestInit = {}): Promise<{ statut: number | null; duree: number; raison: string | null }> {
+/** Un appel HTTP chronométré : le statut, ou la raison de l'échec ; le début de la réponse si on le demande. */
+async function appeler(url: string, init: RequestInit = {}, lireCorps = false): Promise<{ statut: number | null; duree: number; raison: string | null; corps?: string }> {
   const debut = Date.now();
   try {
     const r = await fetch(url, { ...init, redirect: "manual", signal: AbortSignal.timeout(ATTENTE) });
-    await r.body?.cancel().catch(() => {});
-    return { statut: r.status, duree: Date.now() - debut, raison: null };
+    const corps = lireCorps ? (await r.text().catch(() => "")).slice(0, 500) : undefined;
+    if (!lireCorps) await r.body?.cancel().catch(() => {});
+    return { statut: r.status, duree: Date.now() - debut, raison: null, corps };
   } catch (e) {
     const nom = (e as { name?: string })?.name;
     return { statut: null, duree: Date.now() - debut, raison: nom === "TimeoutError" || nom === "AbortError" ? `Pas de réponse en ${ATTENTE / 1000} secondes` : "Injoignable" };
@@ -42,7 +43,14 @@ function lire(cle: CleFournisseur, mode: Essai["mode"], r: Awaited<ReturnType<ty
 
 async function courriels(): Promise<Essai> {
   const { fournisseur, cle } = lireEnvoi(process.env.COURRIELS_ENVOI ?? "");
-  if (fournisseur === "resend") return lire("courriels", "reel", await appeler("https://api.resend.com/domains", { headers: { authorization: `Bearer ${cle}` } }));
+  if (fournisseur === "resend") {
+    const r = await appeler("https://api.resend.com/domains", { headers: { authorization: `Bearer ${cle}` } }, true);
+    // Une clé « envoi seul » ne lit pas les domaines : Resend la reconnaît (restricted_api_key), elle envoie.
+    if (r.statut === 401 && /restricted_api_key/.test(r.corps ?? "")) {
+      return { cle: "courriels", mode: "reel", ok: true, duree_ms: r.duree, detail: "Clé d'envoi seule : reconnue par Resend (elle envoie, elle ne lit pas les domaines)." };
+    }
+    return lire("courriels", "reel", r);
+  }
   if (fournisseur === "brevo") return lire("courriels", "reel", await appeler("https://api.brevo.com/v3/account", { headers: { "api-key": cle, accept: "application/json" } }));
   if (fournisseur === "relais") return lire("courriels", "local", await appeler(`${relais()}/email-dev/resend/domains`, { headers: { authorization: "Bearer relais-local" } }));
   if (fournisseur === "apercu") return { cle: "courriels", mode: "apercu", ok: null, duree_ms: null, detail: "Aperçu : les e-mails sont gardés pour la console, rien ne part." };

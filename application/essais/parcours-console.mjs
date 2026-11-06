@@ -2193,6 +2193,17 @@ await etape("le diagnostic d'une boutique, et les fiches réflexes de l'État te
   verifie(await fiche.evaluate((d) => d.open), "une fiche réflexe s'ouvre : les gestes dans l'ordre, avec leurs liens");
 });
 
+await etape("les fournisseurs : un appel inoffensif à chacun, ce qu'il répond", async () => {
+  await page.goto(`${CONSOLE}/etat#t-fournisseurs`, { waitUntil: "networkidle" });
+  const carte = page.locator('section[aria-labelledby="t-fournisseurs"]');
+  await clic(page, carte.getByRole("button", { name: "Essayer maintenant" }));
+  await page.waitForFunction(() => /^Essayés/.test(document.querySelector('section[aria-labelledby="t-fournisseurs"] .message')?.textContent ?? ""), null, { timeout: 60000 });
+  const texte = await carte.innerText();
+  verifie(/E-mails[\s\S]*répond en/.test(texte), "les e-mails : le fournisseur (ici simulé) répond, en combien de temps");
+  verifie(["SMS", "SkanFact", "Konnect", "Cloudflare"].every((x) => texte.includes(x)), "et chaque autre fournisseur, avec son mode");
+  await capture(page, "console-fournisseurs", true);
+});
+
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {
   await clic(page, page.locator(".app-cote").getByRole("link", { name: "Revenus" }));
   await page.waitForURL(/\/revenus$/);

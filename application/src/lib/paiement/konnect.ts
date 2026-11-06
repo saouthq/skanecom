@@ -29,6 +29,19 @@ function base(mode: ModeKonnect): string {
   return BASES[mode];
 }
 
+/** L'API de Konnect répond-elle ? Sans clé, elle refuse : c'est la réponse attendue (État technique → Fournisseurs). */
+export async function joindreKonnect(): Promise<{ statut: number | null; duree: number; raison: string | null }> {
+  const debut = Date.now();
+  try {
+    const r = await fetch(`${base("reel")}/payments/000000000000000000000000`, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(8000) });
+    await r.body?.cancel().catch(() => {});
+    return { statut: r.status, duree: Date.now() - debut, raison: null };
+  } catch (e) {
+    const nom = (e as { name?: string })?.name;
+    return { statut: null, duree: Date.now() - debut, raison: nom === "TimeoutError" || nom === "AbortError" ? "Pas de réponse en 8 secondes" : "Injoignable" };
+  }
+}
+
 async function appel(mode: ModeKonnect, cle: string, chemin: string, init: RequestInit = {}): Promise<Reponse<unknown> & { statut?: number }> {
   try {
     const r = await fetch(`${base(mode)}${chemin}`, {

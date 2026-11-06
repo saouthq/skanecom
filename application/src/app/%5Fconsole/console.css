@@ -2373,3 +2373,15 @@ li[data-fait] > .ce-puce { background: var(--ui-vert); border-color: var(--ui-ve
 .rf > ol code { font-size: .8125rem; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) { .rf > summary svg { transition: none; } }
 
+/* ---- Les fournisseurs (État technique) ---- */
+.fo-liste { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.fo-liste > li { display: grid; grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) auto; align-items: center; gap: .25rem 1.25rem; padding: .625rem 0; border-block-end: 1px solid var(--ui-bord-leger); font-size: .875rem; }
+.fo-liste > li:last-child { border-block-end: 0; }
+.fo-nom, .fo-essai { display: grid; gap: .125rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.fo-etat { justify-self: end; }
+@media (max-width: 48rem) {
+  .fo-liste > li { grid-template-columns: minmax(0, 1fr) auto; }
+  .fo-essai { grid-column: 1 / -1; grid-row: 2; }
+  .fo-etat { grid-column: 2; grid-row: 1; }
+}
+
