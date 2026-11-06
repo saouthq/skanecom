@@ -15,7 +15,10 @@ import { createClient } from "@supabase/supabase-js";
    PANNE DE LA BASE (découverte n°7 du prototype) : par défaut, le client
    réessaie 3 fois (1 s, 2 s, 4 s) quand la base répond 503, soit 7 s
    d'attente avant l'erreur. La vitrine préfère échouer vite : la page en
-   cache, ou la page de secours, prend le relais.
+   cache, ou la page de secours, prend le relais. Sans nouvel essai, donc,
+   et quatre secondes au plus : deux secondes coupaient parfois la première
+   lecture après une heure de calme (l'aperçu, le 29/10 : « Catalogue
+   illisible : AbortError » au réveil de l'heure, la base saine juste après).
    ========================================================================== */
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,6 +32,6 @@ if (!url || !cleAnon) {
 
 export const supabase = createClient(url, cleAnon, {
   auth: { persistSession: false, autoRefreshToken: false },
-  db: { retry: false, timeout: 2000 },
+  db: { retry: false, timeout: 4000 },
   global: { headers: { "x-application-name": "skanecom-vitrine" } },
 });

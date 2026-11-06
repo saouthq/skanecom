@@ -400,6 +400,8 @@ await etape("la galerie des modèles : chaque structure, sa démonstration en ap
   verifie(stats.length === 0, "les aperçus ne comptent aucune visite dans les statistiques des démonstrations");
   page.context().off("request", compte);
   const [onglet] = await Promise.all([page.context().waitForEvent("page"), bento.locator(".mo-ouvrir").click()]);
+  // L'onglet naît vide : on attend qu'il ait son adresse avant de la lire.
+  await onglet.waitForURL(/^https?:\/\//, { timeout: 15000 }).catch(() => {});
   await onglet.waitForLoadState("domcontentloaded");
   verifie(new URL(onglet.url()).host.startsWith("maison.localhost"), `un geste sur l'aperçu ouvre la vitrine dans un onglet (${onglet.url()})`);
   await onglet.close();

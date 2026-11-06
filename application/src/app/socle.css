@@ -54,11 +54,14 @@
   transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe), border-color .2s var(--theme-courbe), opacity .2s;
 }
 .btn-primaire { background: var(--theme-bouton); color: var(--theme-sur-bouton); }
-.btn-primaire:hover { background: color-mix(in srgb, var(--theme-bouton) 86%, var(--theme-sur-bouton)); }
 .btn-second { background: transparent; color: var(--theme-encre); border-color: var(--theme-encre); }
-.btn-second:hover { background: var(--theme-encre); color: var(--theme-fond); }
 .btn-clair { background: var(--theme-surface); color: var(--theme-encre); }
-.btn-clair:hover { background: var(--theme-fond); }
+/* Le survol, seulement là où il existe : au doigt, un bouton touché garderait sinon son teint de survol. */
+@media (hover: hover) {
+  .btn-primaire:hover { background: color-mix(in srgb, var(--theme-bouton) 86%, var(--theme-sur-bouton)); }
+  .btn-second:hover { background: var(--theme-encre); color: var(--theme-fond); }
+  .btn-clair:hover { background: var(--theme-fond); }
+}
 .btn-bloc { inline-size: 100%; }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: .42; cursor: not-allowed; }
 .btn-lien {

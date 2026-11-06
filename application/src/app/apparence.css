@@ -25,8 +25,10 @@ html[data-boutons="contour"] .btn-primaire {
 html[data-boutons="contour"] .btn-second:not(:hover) {
   border-color: color-mix(in srgb, var(--theme-encre) 28%, transparent);
 }
-html[data-boutons="contour"][data-gabarit] .btn-primaire:hover {
-  background: var(--theme-bouton); color: var(--theme-sur-bouton); border-color: var(--theme-bouton); box-shadow: none;
+@media (hover: hover) {
+  html[data-boutons="contour"][data-gabarit] .btn-primaire:hover {
+    background: var(--theme-bouton); color: var(--theme-sur-bouton); border-color: var(--theme-bouton); box-shadow: none;
+  }
 }
 
 /* Pilule : les boutons, les filtres et les choix de déclinaison s'arrondissent

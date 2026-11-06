@@ -99,7 +99,7 @@ jobs:
       - name: Journal de la vitrine en cas d'échec
         if: failure()
         run: |
-          grep -v "Workers Response Store" .outils/vitrine.log | grep -n -i -B3 -A15 -E "error|exception| 500 " | tail -200 || true
+          grep -v "Workers Response Store" .outils/vitrine.log | grep -v " /_next/static/" | grep -n -i -B3 -A15 -E "error|exception| 500 " | tail -200 || true
           echo "---- fin du journal ----"
           tail -60 .outils/vitrine.log || true
 

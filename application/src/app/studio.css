@@ -127,10 +127,11 @@ html[data-structure] .vi-contact-titre.vi-titre { font-size: calc(clamp(2.75rem,
   background: var(--theme-surface); border: 1px solid var(--theme-filet-fort); border-radius: 999px;
 }
 .fc-piege { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.fc-pied { display: grid; gap: .875rem; justify-items: start; margin-block-start: .25rem; }
+/* Une colonne flexible (pas une grille) : la zone de l'anti-robots, vide, y rend son écart. */
+.fc-pied { display: flex; flex-direction: column; align-items: flex-start; gap: .875rem; margin-block-start: .25rem; }
 .fc-envoyer { min-block-size: 3.5rem; padding-inline: 2rem; }
 .fc-envoyer .icone-fleche { transition: transform .35s var(--st-courbe); }
-.fc-envoyer:hover:not(:disabled) .icone-fleche { transform: translateX(4px); }
+@media (hover: hover) { .fc-envoyer:hover:not(:disabled) .icone-fleche { transform: translateX(4px); } }
 .fc-formulaire[aria-busy] .fc-envoyer { opacity: .7; cursor: progress; }
 .fc-mention { margin: 0; font-size: .75rem; line-height: 1.5; color: var(--theme-encre-doux); }
 .fc-mention .lien-souligne { font-size: inherit; letter-spacing: inherit; color: inherit; }
@@ -217,10 +218,12 @@ html[data-structure="studio"] .btn-second {
   background: var(--theme-surface); color: var(--theme-encre); border-color: var(--theme-filet-fort);
   box-shadow: 0 1px 2px rgb(18 17 16 / .04);
 }
-html[data-structure="studio"] .btn-second:hover { background: var(--theme-surface-2); color: var(--theme-encre); border-color: var(--theme-filet-fort); }
 html[data-structure="studio"] .btn .icone-fleche { transition: transform .3s var(--st-courbe); }
-html[data-structure="studio"] .btn:hover .icone-fleche { transform: translateX(3px); }
-html[dir="rtl"][data-structure="studio"] .btn:hover .icone-fleche { transform: translateX(-3px); }
+@media (hover: hover) {
+  html[data-structure="studio"] .btn-second:hover { background: var(--theme-surface-2); color: var(--theme-encre); border-color: var(--theme-filet-fort); }
+  html[data-structure="studio"] .btn:hover .icone-fleche { transform: translateX(3px); }
+  html[dir="rtl"][data-structure="studio"] .btn:hover .icone-fleche { transform: translateX(-3px); }
+}
 
 /* Le lien d'une tête de section : discret, bordé. */
 .st-lien {
@@ -528,6 +531,7 @@ html[data-structure="studio"] .fc-champ textarea { min-block-size: 8.5rem; }
 html[data-structure="studio"] .fc-envoyer { min-block-size: 3rem; padding-inline: 1.5rem; }
 html[data-structure="studio"] .fc-a-propos { box-shadow: none; border-color: var(--theme-filet); background: var(--theme-surface-2); }
 html[data-structure="studio"] .fc-merci { padding: 0; background: none; }
+html[data-structure="studio"] .fc-merci h3 { font-weight: 600; font-size: clamp(1.375rem, 2.4vw, 1.75rem); letter-spacing: -.03em; }
 
 /* ---- Le pied : tenu, en colonnes, sans nom géant -------------------------------- */
 html[data-structure="studio"] .ed-pied { margin-block-start: 0; background: var(--theme-fond); }

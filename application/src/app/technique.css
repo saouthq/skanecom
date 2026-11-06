@@ -19,10 +19,10 @@ html[data-gabarit="technique"] :where(h1, h2, h3) { font-weight: 800; font-stret
 
 html[data-gabarit="technique"] .btn { font-weight: 700; font-size: .9375rem; }
 html[data-gabarit="technique"] .btn-primaire { background: var(--theme-bouton); color: var(--theme-sur-bouton); }
-html[data-gabarit="technique"] .btn-primaire:hover { background: color-mix(in srgb, var(--theme-bouton) 86%, var(--theme-sur-bouton)); }
+@media (hover: hover) { html[data-gabarit="technique"] .btn-primaire:hover { background: color-mix(in srgb, var(--theme-bouton) 86%, var(--theme-sur-bouton)); } }
 html[data-gabarit="technique"] .btn-primaire:disabled { background: var(--theme-surface-2); color: var(--theme-encre-doux); opacity: 1; }
 html[data-gabarit="technique"] .btn-second { background: var(--theme-surface); border-color: var(--theme-filet-fort); }
-html[data-gabarit="technique"] .btn-second:hover { background: var(--theme-surface); color: var(--theme-encre); border-color: var(--theme-encre); }
+@media (hover: hover) { html[data-gabarit="technique"] .btn-second:hover { background: var(--theme-surface); color: var(--theme-encre); border-color: var(--theme-encre); } }
 html[data-gabarit="technique"] .etiquette { font-weight: 700; letter-spacing: .06em; }
 html[data-gabarit="technique"] .tiroir-titre { font-size: 1.125rem; text-transform: uppercase; letter-spacing: .02em; }
 /* Au menu du téléphone, les rayons en police de texte, en gras : on cherche, on ne flâne pas. */
@@ -332,7 +332,7 @@ html[data-gabarit="technique"] .caracteristiques dd { font-weight: 600; }
 .te-carte-bas { padding-inline: .25rem; }
 .te-carte .btn { min-block-size: 40px; border-radius: var(--theme-radius-doux); }
 html[data-gabarit="technique"] .te-carte .btn-primaire { background: var(--theme-encre); color: var(--theme-surface); }
-html[data-gabarit="technique"] .te-carte .btn-primaire:hover { background: color-mix(in srgb, var(--theme-encre) 84%, var(--theme-surface)); }
+@media (hover: hover) { html[data-gabarit="technique"] .te-carte .btn-primaire:hover { background: color-mix(in srgb, var(--theme-encre) 84%, var(--theme-surface)); } }
 html[data-gabarit="technique"] .te-carte .btn-primaire svg { color: var(--theme-accent); }
 html[data-gabarit="technique"] .te-carte .btn-second { border-color: color-mix(in srgb, var(--theme-encre) 22%, transparent); }
 html[data-gabarit="technique"] .te-recherche input { font-size: .9375rem; }

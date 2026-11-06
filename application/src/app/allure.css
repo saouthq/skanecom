@@ -34,7 +34,7 @@ html[data-allure="contemporaine"] .btn { font-weight: 600; letter-spacing: -.005
 html[data-allure="contemporaine"][data-gabarit] .btn-second {
   background: var(--al-plein); color: var(--theme-encre); border-color: transparent; box-shadow: none;
 }
-html[data-allure="contemporaine"][data-gabarit] .btn-second:hover { background: var(--al-plein-survol); color: var(--theme-encre); border-color: transparent; }
+@media (hover: hover) { html[data-allure="contemporaine"][data-gabarit] .btn-second:hover { background: var(--al-plein-survol); color: var(--theme-encre); border-color: transparent; } }
 html[data-allure="contemporaine"]:not([data-boutons="pilule"]) .btn { border-radius: var(--al-rayon); }
 html[data-allure="contemporaine"] .btn:active:not(:disabled) { transform: scale(.985); }
 html[data-allure="contemporaine"] .btn { transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe), transform .15s var(--theme-courbe); }
