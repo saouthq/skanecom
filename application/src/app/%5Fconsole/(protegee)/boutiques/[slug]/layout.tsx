@@ -116,6 +116,7 @@ export default async function Boutique({ children, params }: {
           { href: `${base}/import`, libelle: "Catalogue", icone: "importer" },
           { href: `${base}/facturation`, libelle: "Facturation", icone: "billet" },
           { href: `${base}/support`, libelle: "Support", icone: "support" },
+          { href: `${base}/diagnostic`, libelle: "Diagnostic", icone: "jauge" },
         ]}
       />
       {children}

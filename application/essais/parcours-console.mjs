@@ -2179,6 +2179,20 @@ await etape("les tâches de fond : la carte dit chaque file, un tour à la main 
   await capture(page, "console-taches-fond", true);
 });
 
+await etape("le diagnostic d'une boutique, et les fiches réflexes de l'État technique", async () => {
+  await page.goto(`${CONSOLE}/boutiques/maymar`, { waitUntil: "networkidle" });
+  await clic(page, page.locator(".onglets").getByRole("link", { name: "Diagnostic" }));
+  await page.waitForURL(/\/boutiques\/maymar\/diagnostic$/);
+  const liste = await page.locator(".dg-liste").innerText();
+  verifie(/maymar\.localhost répond 200/.test(liste), "la vitrine essayée à l'instant : elle répond");
+  verifie(["Son statut", "Son catalogue", "Sa livraison", "Ses commandes"].every((x) => liste.includes(x)), "chaque point de la vente, avec ce qu'il a vu");
+  await capture(page, "console-diagnostic", true);
+  await page.goto(`${CONSOLE}/etat#t-reflexes`, { waitUntil: "networkidle" });
+  const fiche = page.locator('section[aria-labelledby="t-reflexes"] details.rf').first();
+  await clic(page, fiche.locator("summary"));
+  verifie(await fiche.evaluate((d) => d.open), "une fiche réflexe s'ouvre : les gestes dans l'ordre, avec leurs liens");
+});
+
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {
   await clic(page, page.locator(".app-cote").getByRole("link", { name: "Revenus" }));
   await page.waitForURL(/\/revenus$/);

@@ -14,6 +14,7 @@ import { DepannagePlateforme, type DonneesMaintenance } from "@/components/conso
 import { CarteChronologie, CarteVersion, etatBase, type DonneesChronologie } from "@/components/console/Chronologie";
 import { VERSION, noterVersion } from "@/lib/version";
 import { CarteTaches, pointsTaches, type DonneesTaches } from "@/components/console/Taches";
+import { FichesReflexes } from "@/components/console/Reflexes";
 
 export const metadata: Metadata = { title: "État technique" };
 
@@ -564,6 +565,8 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
 
         <CarteChronologie d={chrono} maintenant={maintenant} pour={pour}
           boutiques={toutes.filter((b) => b.statut !== "fermee").map((b) => ({ slug: b.slug, nom: b.nom, demonstration: b.demonstration }))} />
+
+        <FichesReflexes />
       </div>
       <p className="aide et-note">
         Les SMS de connexion partent par Supabase Auth : leur fournisseur se règle dans Supabase, et le journal des envois ne les voit pas encore.

@@ -55,6 +55,11 @@ export type Annonce = { ouverts: number; retablis: number; envoye: boolean; rais
  *  le poste de développement, par le relais, qui ouvre la vitrine du poste
  *  sous cet hôte : « .localhost » ne se résout pas depuis le Worker, et un
  *  vrai domaine (acheté ou branché par les simulateurs) ne mène pas au poste. */
+/** Essayer une vitrine à l'instant, comme le passage de l'heure (le diagnostic d'une boutique). */
+export function essayerVitrine(hote: string, boutiqueId: string): Promise<Releve | null> {
+  return verifierPage({ hote, boutique_id: boutiqueId, principal: true });
+}
+
 async function verifierPage(h: AVerifier["hotes"][number]): Promise<Releve | null> {
   const local = hoteLocal(h.hote);
   const relais = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "");

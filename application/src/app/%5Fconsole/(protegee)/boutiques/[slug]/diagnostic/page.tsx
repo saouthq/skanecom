@@ -22,10 +22,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
    avec le lien du geste.
    ========================================================================== */
 
-const MARQUE: Record<Constat["niveau"], { icone: "succes" | "alerte" | "refus" | "question"; mot: string }> = {
+const MARQUE: Record<Constat["niveau"], { icone: "succes" | "alerte" | "croix" | "question"; mot: string }> = {
   ok: { icone: "succes", mot: "Bon" },
   attention: { icone: "alerte", mot: "À regarder" },
-  panne: { icone: "refus", mot: "Bloque" },
+  panne: { icone: "croix", mot: "Bloque" },
   neutre: { icone: "question", mot: "Pour info" },
 };
 
