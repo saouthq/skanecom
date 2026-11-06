@@ -25,8 +25,16 @@ Note de passage entre deux séances. À lire en premier, puis à effacer (avec
 L'identité claire et tenue demandée par Skander (« comme Resend ») : voir la
 feuille de route, section E, « Le Studio refait ». Vérifié au navigateur (souris,
 clavier, téléphone, 1 440 / 1 280 / 1 000 / 768 / 390 px, une demande envoyée
-pour de vrai), pgTAP, essai de la vitrine. Il reste à l'étendre aux autres
-vitrines (même rigueur, chacune son caractère).
+pour de vrai), pgTAP, essai de la vitrine.
+
+Puis les cinq autres vitrines relues avec la même rigueur (accueil, catalogue,
+fiche, panier, recherche, compte, pages légales, page introuvable ; 1 440 et
+390 px) : le vide en trop avant le pied (Dar Alia, Yasmine), le double filet
+de Selma, ses flèches de rangée sans rien à faire défiler, la case vide de la
+Quincaillerie, le bouton de recherche hors de l'axe, le survol qui restait
+collé à un bouton touché au téléphone. Le reste tient ; le vrai manque est
+ailleurs : les photos de Maymar (« Photo à venir »), à refaire selon le
+protocole.
 
 ## Fait le 06/11 : M6, M4 et M7 (le poste de contrôle)
 
