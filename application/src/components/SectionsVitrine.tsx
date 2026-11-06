@@ -15,9 +15,8 @@ import { t } from "@/lib/i18n";
 
    · SERVICES — ce que fait la maison : jusqu'à six, numérotés, un titre et
      un texte chacun (s1_titre, s1_texte…), une photo facultative.
-   · ÉTAPES — la méthode : jusqu'à cinq étapes numérotées. Sur grand écran,
-     en Studio et avec les animations expressives, elles défilent de côté
-     pendant que la section reste épinglée.
+   · ÉTAPES — la méthode : jusqu'à cinq étapes numérotées, reliées d'un filet
+     au Studio.
    · CONTACT — « Parlons de votre projet » : les moyens directs (WhatsApp,
      téléphone, e-mail, l'adresse et son itinéraire, les horaires) et le
      formulaire de la boutique, s'il est ouvert. Une seule par accueil :
@@ -38,17 +37,6 @@ export function Lignes({ texte: valeur }: { texte: string }) {
         </span>
       ))}
     </>
-  );
-}
-
-/** Le libellé d'un bouton qui roule au survol : son double monte de dessous
- *  (animations expressives, app/studio.css). Les lecteurs d'écran lisent le premier. */
-export function Roule({ children }: { children: string }) {
-  return (
-    <span className="st-roule">
-      <span>{children}</span>
-      <span aria-hidden="true">{children}</span>
-    </span>
   );
 }
 
@@ -152,7 +140,8 @@ export function SectionContact({
   const editable = section !== null;
   return (
     <section className="vi-contact" id="contact" data-section={editable ? rang : undefined}>
-      <div className="enveloppe vi-contact-grille">
+      <div className="enveloppe">
+      <div className="vi-contact-grille">
         <div className="vi-contact-tete">
           <p className="etiquette" key={etiquette} data-texte={editable ? "etiquette" : undefined}>{etiquette}</p>
           {principal ? (
@@ -205,6 +194,7 @@ export function SectionContact({
             <Link className="btn btn-primaire" href="/contact">{t.siteVitrine.contact}</Link>
           )}
         </div>
+      </div>
       </div>
     </section>
   );

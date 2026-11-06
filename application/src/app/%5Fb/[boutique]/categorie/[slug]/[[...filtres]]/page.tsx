@@ -65,7 +65,7 @@ export default async function Rayon({ params }: Params) {
   // Le Studio : un domaine de réalisations (components/Projets.tsx).
   if (cadre.theme.structure === "studio") {
     return (
-      <Gabarit>
+      <Gabarit className="flex-1">
         <ListeProjets cadre={cadre} liste={liste} filtres={f} base={base} titre={nom} chapo={champ(categorie, "description") || null}
           fil={[{ nom: texte(cadre.theme.textes, "catalogue_titre", t.studio.realisations), href: "/catalogue" }, ...(parent ? [{ nom: champ(parent, "nom"), href: `/categorie/${parent.slug}` }] : []), { nom }]}
           rayonActif={racineDe(cadre.categories, categorie).slug} />

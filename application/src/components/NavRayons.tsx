@@ -42,7 +42,8 @@ export function NavRayons({
       ? "catalogue"
       : rayon
         ? racineDe[decodeURIComponent(rayon)]
-        : undefined;
+        // Une page de la maison (« Le studio », « Contact ») : son lien, s'il est dans la barre.
+        : liens.find((l) => l.href === chemin)?.cle;
 
   const nav = useRef<HTMLElement>(null);
   useLayoutEffect(() => {

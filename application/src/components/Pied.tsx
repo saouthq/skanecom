@@ -194,11 +194,14 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
   const { livraison, theme } = cadre;
   const resume = texte(theme.textes, "resume");
   const retour = texte(theme.textes, "politique_retour");
+  // Le Studio : un pied tenu, sans nom géant ; son nom en tête de la première colonne.
+  const studio = theme.structure === "studio";
   return (
     <footer className="ed-pied mt-auto" data-zone="pied">
       <Lettre cadre={cadre} classe="ed-lettre" />
       <div className="enveloppe ed-pied-grille">
         <div className="ed-pied-intro">
+          {studio ? <Link href="/" className="st-pied-logo" aria-label={t.marque.accueilAria(cadre.boutique.nom)}><Logo cadre={cadre} /></Link> : null}
           {resume ? <p>{resume}</p> : null}
           <Reseaux cadre={cadre} classe="pied-reseaux" />
         </div>
@@ -227,9 +230,11 @@ function PiedEditorial({ cadre }: { cadre: Cadre }) {
           </div>
         )}
       </div>
-      <div className="enveloppe ed-pied-marque" aria-hidden="true">
-        {cadre.theme.logo ? <Logo cadre={cadre} className="marque-geante" /> : <MarqueGeante nom={cadre.boutique.nom} />}
-      </div>
+      {studio ? null : (
+        <div className="enveloppe ed-pied-marque" aria-hidden="true">
+          {cadre.theme.logo ? <Logo cadre={cadre} className="marque-geante" /> : <MarqueGeante nom={cadre.boutique.nom} />}
+        </div>
+      )}
       <Moyens cadre={cadre} />
       <div className="enveloppe ed-pied-bas">
         <Droits cadre={cadre} />

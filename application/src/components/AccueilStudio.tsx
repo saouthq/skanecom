@@ -7,10 +7,10 @@ import { AvisClients, Marques, QuestionsFrequentes } from "./SectionsBibliothequ
 import { Lignes, SectionContact, SectionEtapes, SectionServices } from "./SectionsVitrine";
 import { CarteProjet } from "./Projets";
 import { Fleche } from "./Icones";
-import { HeureLocale } from "./HeureLocale";
 import { descendance, racinesGarnies, type Cadre } from "@/lib/boutique";
 import type { Produit } from "@/lib/catalogue";
 import type { DonneesAccueil } from "@/lib/accueil";
+import { aUnContact, contactDe } from "@/lib/contact";
 import { texte, type Section } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 import { champ, t } from "@/lib/i18n";
@@ -19,14 +19,13 @@ import { champ, t } from "@/lib/i18n";
    L'ACCUEIL STUDIO — le site vitrine qui se fait contacter : un studio
    d'architecture, une agence, un artisan sur mesure, un restaurant.
 
-   On lit une maison avant de voir un produit : le titre immense d'abord,
-   ligne après ligne ; la photo qui s'ouvre au défilement jusqu'à prendre la
-   largeur ; le manifeste qui s'allume mot à mot à la lecture ; les
-   réalisations en grand, en deux colonnes décalées ; les domaines en liste
-   typographique (la photo du domaine suit la souris) ; les services ; la
-   méthode qui défile de côté, épinglée ; le récit ; « Parlons de votre
-   projet ». Les animations « expressives » (app/studio.css) sont celles que
-   la structure conseille ; « sobres » ou coupées, tout est posé d'emblée.
+   Une page claire et tenue, à la manière des meilleurs sites de produit :
+   l'ouverture centrée (une pastille, le titre, deux gestes), la photo posée
+   dans un cadre ; le manifeste en une phrase forte ; les réalisations en
+   cartes ; les domaines en tuiles ; les services, la méthode, le récit ;
+   « Parlons de votre projet ». Rien ne bouge sans raison : les apparitions
+   sobres de la vitrine, et les animations « expressives » si la boutique les
+   choisit (app/studio.css).
    Les fiches et le catalogue sont ceux du Studio (components/Projets.tsx).
    Préfixe st- (vi- pour les sections communes).
    ========================================================================== */
@@ -105,15 +104,9 @@ function Tete({ titre, etiquette }: { titre: string; etiquette?: string }) {
   );
 }
 
-/** Le lieu de la maison : la ville de son magasin, sinon le début de son adresse. */
-function lieuDe(cadre: Cadre): string {
-  const ville = String(cadre.reglages["retrait.ville"] ?? "").trim();
-  const adresse = String(cadre.reglages["legal.adresse"] ?? "").split(",")[0]?.trim();
-  return ville || adresse || "Tunis";
-}
-
-/* Le titre d'abord, immense, qui monte ligne après ligne ; dessous, la photo
-   posée en retrait qui s'ouvre au défilement jusqu'à prendre la largeur. */
+/* L'ouverture : centrée — la pastille, le titre, le chapô, le geste
+   principal et « Parlons de votre projet » ; dessous, la photo dans son
+   cadre, sur une lueur de la couleur de la maison. */
 function Ouverture({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "hero" }>; cadre: Cadre }) {
   const titre = texte(section.textes, "titre", cadre.boutique.nom);
   const chapo = texte(section.textes, "chapo") || texte(cadre.theme.textes, "resume");
@@ -122,26 +115,28 @@ function Ouverture({ rang, section, cadre }: { rang: number; section: Extract<Se
   const lien = section.lien ?? "/catalogue";
   const cta = texte(section.textes, "cta", t.studio.toutesLesRealisations);
   const image = section.image && !section.image.detouree ? section.image : null;
+  const contact = aUnContact(contactDe(cadre)) || Boolean(cadre.formulaire);
   return (
     <section className="st-ouverture" data-section={rang} data-sans-image={image ? undefined : ""}>
+      <div className="st-ouverture-fond" aria-hidden="true" />
       <div className="enveloppe st-ouverture-tete">
-        <div className="st-ouverture-haut">
-          {etiquette ? <p className="etiquette st-ouverture-etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
-          <HeureLocale lieu={lieuDe(cadre)} />
-        </div>
+        {etiquette ? <p className="etiquette st-ouverture-etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
         <h1 className="vi-titre st-ouverture-titre" key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h1>
-        <div className="st-ouverture-pied">
-          {chapo ? <p className="chapo st-ouverture-chapo" key={chapo} data-texte="chapo">{chapo}</p> : null}
-          <Link className="st-cta" href={lien}>
+        {chapo ? <p className="chapo st-ouverture-chapo" key={chapo} data-texte="chapo">{chapo}</p> : null}
+        <div className="st-gestes">
+          <Link className="btn btn-primaire st-geste" href={lien}>
             <span key={cta} data-texte="cta">{cta}</span>
-            <span className="st-cta-rond" aria-hidden="true" data-aimant=""><Fleche taille={18} className="rtl:-scale-x-100" /></span>
+            <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />
           </Link>
+          {contact && lien !== "/contact" ? <Link className="btn btn-second st-geste" href="/contact">{t.studio.parlonsDeVotreProjet}</Link> : null}
         </div>
       </div>
       {image ? (
-        <div className="st-ouverture-media">
-          <div className="st-ouverture-cadre">
-            <PhotoOuverture className="st-ouverture-image" paysage={urlFichier(image.chemin)} portrait={image.portrait ? urlFichier(image.portrait) : undefined} alt={alt} />
+        <div className="enveloppe st-ouverture-media">
+          <div className="st-cadre">
+            <div className="st-ouverture-cadre">
+              <PhotoOuverture className="st-ouverture-image" paysage={urlFichier(image.chemin)} portrait={image.portrait ? urlFichier(image.portrait) : undefined} alt={alt} />
+            </div>
           </div>
         </div>
       ) : null}
@@ -149,91 +144,93 @@ function Ouverture({ rang, section, cadre }: { rang: number; section: Extract<Se
   );
 }
 
-/* Le manifeste : de grands caractères qui s'allument mot à mot, à mesure
-   qu'on les lit (les animations expressives) ; sinon, posés d'emblée. */
+/** Le manifeste en deux temps : sa première phrase, en encre ; la suite, en retrait. */
+function deuxTemps(corps: string): [string, string] {
+  const m = /^(.+?[.!?…])\s+(\S[\s\S]*)$/.exec(corps.trim());
+  return m ? [m[1], m[2]] : [corps.trim(), ""];
+}
+
+/* Le manifeste : une seule phrase forte, centrée ; la suite en retrait. */
 function Manifeste({ rang, section }: { rang: number; section: Extract<Section, { type: "texte" }> }) {
   const titre = texte(section.textes, "titre");
   const corps = texte(section.textes, "texte");
   if (!titre && !corps) return null;
   const etiquette = texte(section.textes, "etiquette");
+  const [fort, suite] = deuxTemps(corps);
   return (
     <section className="enveloppe st-manifeste" data-section={rang}>
       {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
       {titre ? <h2 className="st-manifeste-titre" key={titre} data-texte="titre">{titre}</h2> : null}
       {corps ? (
         <p className="st-manifeste-texte" key={corps} data-texte="texte">
-          {corps.split(/(\s+)/).map((m, i) => (/^\s+$/.test(m) ? m : <span key={i} className="st-mot">{m}</span>))}
+          <span className="st-manifeste-fort">{fort}</span>
+          {suite ? <> <span className="st-manifeste-suite">{suite}</span></> : null}
         </p>
       ) : null}
     </section>
   );
 }
 
-/* Les réalisations choisies : en deux colonnes décalées, la deuxième plus
-   bas, chaque photo glissant doucement dans son cadre au défilement. */
+/* La tête d'une section : la pastille et le titre ; à droite, son lien. */
+function TeteSection({ etiquette, titre, lien }: { etiquette?: string; titre: string; lien?: { href: string; texte: string } }) {
+  return (
+    <div className="enveloppe st-section-tete">
+      <div className="st-section-titres">
+        {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+        <h2 className="vi-titre" key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h2>
+      </div>
+      {lien ? (
+        <Link className="st-lien" href={lien.href}>
+          <span key={lien.texte} data-texte="cta">{lien.texte}</span>
+          <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+/* Les réalisations choisies : des cartes, trois de front sur ordinateur. */
 function Realisations({ rang, section, produits }: { rang: number; section: Extract<Section, { type: "selection" }>; produits: Produit[] }) {
   const lien = section.lien ?? (section.rayon ? `/categorie/${section.rayon}` : "/catalogue");
   const titre = texte(section.textes, "titre", t.studio.realisations);
   const etiquette = texte(section.textes, "etiquette", t.studio.realisationsEtiquette);
   const cta = texte(section.textes, "cta", t.studio.toutesLesRealisations);
   return (
-    <section className="st-realisations" data-section={rang}>
-      <div className="enveloppe st-realisations-tete">
-        <div>
-          <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p>
-          <h2 className="vi-titre" key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h2>
-        </div>
-        <Link className="vi-lien-fleche" href={lien}>
-          <span key={cta} data-texte="cta">{cta}</span>
-          <Fleche taille={16} className="rtl:-scale-x-100" />
-        </Link>
-      </div>
+    <section className="st-realisations st-section" data-section={rang}>
+      <TeteSection etiquette={etiquette} titre={titre} lien={{ href: lien, texte: cta }} />
       <div className="enveloppe st-grille-projets">
-        {produits.map((p, i) => (
-          <CarteProjet key={p.id} produit={p} numero={i + 1} />
+        {produits.map((p) => (
+          <CarteProjet key={p.id} produit={p} />
         ))}
       </div>
     </section>
   );
 }
 
-/* Les domaines (les rayons) en liste typographique : de grands noms, leur
-   nombre de projets ; au survol, la photo du domaine apparaît à côté. */
+/* Les domaines (les rayons) en tuiles : la photo du domaine, son nom, le nombre de projets. */
 function Domaines({ rang, section, cadre, rayons }: { rang: number; section: Extract<Section, { type: "rayons" }>; cadre: Cadre; rayons: Cadre["racines"] }) {
   const compte = (slug: string) => descendance(cadre.categories, slug).reduce((n, c) => n + (c.nb_produits ?? 0), 0);
   const titre = texte(section.textes, "titre", t.studio.domainesTitre);
   const etiquette = texte(section.textes, "etiquette");
   return (
-    <section className="enveloppe st-domaines-section" data-section={rang}>
-      {rayons.length > 1 ? (
-        // Les domaines en bandeau, immenses, qui défilent sans fin (plus vite quand on défile).
-        <div className="st-bandeau" aria-hidden="true">
-          <div className="st-bandeau-piste">
-            {[0, 1].map((n) => (
-              <span key={n} className="st-bandeau-groupe">
-                {rayons.map((r) => <span key={r.slug} className="st-bandeau-mot">{champ(r, "nom")}</span>)}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-      <div className="st-domaines-tete">
-        {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
-        <h2 className="vi-titre" key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h2>
-      </div>
-      <ul className="st-domaines-liste" role="list">
-        {rayons.map((r, i) => (
+    <section className="st-domaines-section st-section" data-section={rang}>
+      <TeteSection etiquette={etiquette || undefined} titre={titre} />
+      <ul className="enveloppe st-domaines-grille" role="list">
+        {rayons.map((r) => (
           <li key={r.slug} className="apparait">
-            <Link className="st-domaine" href={`/categorie/${r.slug}`}>
-              <span className="st-domaine-num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-              <span className="st-domaine-nom">{champ(r, "nom")}</span>
-              <span className="st-domaine-compte">{t.studio.domaine(compte(r.slug))}</span>
+            <Link className="st-carte st-domaine" href={`/categorie/${r.slug}`}>
               {r.image_chemin ? (
-                <span className="st-domaine-photo" aria-hidden="true">
-                  <Photo photo={{ src: urlFichier(r.image_chemin), alt: "" }} ratio="4 / 5" tailles="(min-width: 900px) 22vw, 96px" />
+                <span className="st-carte-photo">
+                  <Photo photo={{ src: urlFichier(r.image_chemin), alt: "" }} ratio="4 / 3" tailles="(min-width: 1000px) 22vw, (min-width: 640px) 45vw, 92vw" />
                 </span>
               ) : null}
-              <Fleche taille={22} className="st-domaine-fleche rtl:-scale-x-100" />
+              <span className="st-carte-corps">
+                <span className="st-carte-textes">
+                  <span className="st-carte-nom">{champ(r, "nom")}</span>
+                  <span className="st-carte-ligne">{t.studio.domaine(compte(r.slug))}</span>
+                </span>
+                <Fleche taille={16} className="st-carte-fleche rtl:-scale-x-100" />
+              </span>
             </Link>
           </li>
         ))}
@@ -242,7 +239,7 @@ function Domaines({ rang, section, cadre, rayons }: { rang: number; section: Ext
   );
 }
 
-/* Le récit : une grande photo qui glisse dans son cadre, et le texte à côté. */
+/* Le récit : une carte, la photo d'un côté, le texte de l'autre. */
 function Recit({ rang, section, cadre }: { rang: number; section: Extract<Section, { type: "editorial" }>; cadre: Cadre }) {
   const titre = texte(section.textes, "titre");
   const corps = texte(section.textes, "texte");
@@ -250,23 +247,25 @@ function Recit({ rang, section, cadre }: { rang: number; section: Extract<Sectio
   const etiquette = texte(section.textes, "etiquette");
   const cta = texte(section.textes, "cta", t.accueil.recitLien);
   return (
-    <section className="st-recit" data-section={rang} data-sans-image={section.image ? undefined : ""}>
-      <div className="enveloppe st-recit-grille">
-        {section.image ? (
-          <div className="st-recit-image">
-            <Photo photo={{ src: urlFichier(section.image.chemin), alt: texte(section.textes, "image_alt", cadre.boutique.nom) }} ratio="4 / 5" tailles="(min-width: 900px) 46vw, 100vw" />
-          </div>
-        ) : null}
-        <div className="st-recit-texte">
-          {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
-          {titre ? <h2 className="vi-titre" key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h2> : null}
-          {corps ? <p className="chapo" key={corps} data-texte="texte">{corps}</p> : null}
-          {section.lien ? (
-            <Link className="vi-lien-fleche" href={section.lien}>
-              <span key={cta} data-texte="cta">{cta}</span>
-              <Fleche taille={16} className="rtl:-scale-x-100" />
-            </Link>
+    <section className="st-recit st-section" data-section={rang} data-sans-image={section.image ? undefined : ""}>
+      <div className="enveloppe">
+        <div className="st-recit-carte">
+          {section.image ? (
+            <div className="st-recit-image">
+              <Photo photo={{ src: urlFichier(section.image.chemin), alt: texte(section.textes, "image_alt", cadre.boutique.nom) }} ratio="4 / 5" tailles="(min-width: 900px) 46vw, 100vw" />
+            </div>
           ) : null}
+          <div className="st-recit-texte">
+            {etiquette ? <p className="etiquette" key={etiquette} data-texte="etiquette">{etiquette}</p> : null}
+            {titre ? <h2 className="vi-titre" key={titre} data-texte="titre" data-lignes=""><Lignes texte={titre} /></h2> : null}
+            {corps ? <p className="chapo" key={corps} data-texte="texte">{corps}</p> : null}
+            {section.lien ? (
+              <Link className="btn btn-second st-geste" href={section.lien}>
+                <span key={cta} data-texte="cta">{cta}</span>
+                <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />
+              </Link>
+            ) : null}
+          </div>
         </div>
       </div>
     </section>

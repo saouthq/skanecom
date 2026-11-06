@@ -471,14 +471,14 @@ const PROPRE_A: Partial<Record<Structure, { style: Partial<Style>; sections?: Se
       { type: "questions", textes: {}, nombre: 5 },
     ],
   },
-  // Le studio : le site vitrine qui se fait contacter. Le titre d'abord,
-  // puis la photo qui s'ouvre au défilement ; le manifeste qui s'allume en
-  // lisant ; les réalisations en grand (la sélection) ; les domaines (les
-  // rayons) ; les services ; la méthode ; le récit ; « Parlons de votre
-  // projet » et son formulaire. Des angles nets, des titres immenses, des
-  // animations expressives.
+  // Le studio : le site vitrine qui se fait contacter. Une ouverture centrée
+  // et sa photo dans un cadre ; le manifeste ; les réalisations en cartes (la
+  // sélection) ; les domaines (les rayons) en tuiles ; les services ; la
+  // méthode ; le récit ; « Parlons de votre projet » et son formulaire. Des
+  // coins arrondis, des cartes au cadre, des titres amples, des apparitions
+  // sobres (les animations « expressives » restent au choix).
   studio: {
-    style: { coins: "droits", boutons: "pilule", cartes: "nues", photos: "4-5", titres: "immense", densite: "aeree", animations: "expressives" },
+    style: { coins: "arrondis", boutons: "pilule", cartes: "cadre", photos: "4-5", titres: "ample", densite: "normale", animations: "oui" },
     sections: [
       { type: "hero", textes: {} },
       { type: "texte", textes: {} },

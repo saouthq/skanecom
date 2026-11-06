@@ -20,5 +20,5 @@ export const STRUCTURES_CONSOLE: { code: Structure; aide: string; pour: string }
   { code: "monoproduit", aide: "Une pièce vendue par la publicité : sa page de vente, la commande sur la page.",
     pour: "Une pièce vendue par la publicité : sa page de vente, les offres par quantité, la commande sur la page." },
   { code: "studio", aide: "Le site vitrine, sans vente : architectes, agences, artisans, restaurants.",
-    pour: "Le site qui se fait contacter : titres immenses, réalisations en grand, services, méthode et formulaire, animations expressives." },
+    pour: "Le site qui se fait contacter : une ouverture claire et centrée, des réalisations en cartes, services, méthode et formulaire." },
 ];

@@ -4,32 +4,15 @@
    (components/SectionsVitrine.tsx, FormulaireContact.tsx).
 
    · .vi-*  les sections communes : services, méthode, contact, le titre en
-            lignes, le lien fléché ; habillées sobrement partout, en grand
-            sous html[data-structure="studio"] ;
+            lignes, le lien fléché ; habillées sobrement partout, à la manière
+            du Studio sous html[data-structure="studio"] ;
    · .fc-*  le formulaire de contact ;
-   · .st-*  la structure Studio : l'ouverture, le manifeste, les
-            réalisations, les domaines, le récit, la liste et la fiche d'un
+   · .st-*  la structure Studio : l'ouverture, le manifeste, les cartes des
+            réalisations et des domaines, le récit, la liste et la fiche d'un
             projet.
-
-   LES ANIMATIONS EXPRESSIVES (style « animations : expressives », que le
-   Studio conseille) — html[data-animations="expressives"] :
-   · à l'arrivée, le titre d'ouverture monte ligne après ligne (CSS seul :
-     sans JavaScript aussi) ; les autres titres font de même en entrant à
-     l'écran (Apparitions.tsx les marque data-vu) ;
-   · liées au défilement (animation-timeline, là où le navigateur le sait ;
-     ailleurs, tout est simplement posé) : la photo d'ouverture s'ouvre
-     jusqu'à prendre la largeur, chaque photo glisse doucement dans son
-     cadre, le manifeste s'allume mot à mot, la méthode défile de côté
-     pendant que sa section reste épinglée (sur ordinateur) ;
-   · d'une page à l'autre, le contenu arrive d'un léger élan (MouvementStudio.tsx).
-   « Réduire les animations » : rien ne bouge. Seules les propriétés que la
-   carte graphique compose (transform, opacity, clip-path) sont animées.
    ========================================================================== */
 
 html { --st-courbe: cubic-bezier(.16, 1, .3, 1); }
-html[data-structure="studio"] {
-  --st-section: calc(clamp(5rem, 11vw, 10rem) * var(--echelle-espace, 1));
-}
 
 /* ---- Le titre en lignes, le lien fléché (communs) ---------------------------- */
 .vi-titre {
@@ -74,7 +57,9 @@ html[data-structure="studio"] {
 
 /* ---- La méthode (commune) --------------------------------------------------- */
 .vi-etapes { padding-block: calc(clamp(3rem, 7vw, 6.5rem) * var(--echelle-espace, 1)); }
-.vi-etapes-collant { display: grid; gap: clamp(2rem, 4vw, 3rem); }
+/* Une seule colonne, à la largeur de la section : sans elle, la piste en auto-fit se calculait
+   sur son contenu et débordait de l'écran entre 700 et 900 px. */
+.vi-etapes-collant { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(2rem, 4vw, 3rem); }
 .vi-etapes-tete { display: grid; gap: 1rem; justify-items: start; }
 .vi-etapes-piste {
   display: grid; gap: 1rem; inline-size: 100%; max-inline-size: var(--theme-large); margin: 0 auto; padding: 0 var(--theme-marge);
@@ -178,481 +163,537 @@ html[data-structure] .vi-contact-titre.vi-titre { font-size: calc(clamp(2.75rem,
 html[data-structure="studio"] .contact-retour { margin-block-start: 1.5rem; }
 
 /* ============================================================================
-   LA STRUCTURE STUDIO
+   LA STRUCTURE STUDIO — un site clair et tenu, à la manière des meilleurs
+   sites de produit : une grille stricte, des filets d'un pixel, des cartes,
+   des lueurs douces de la couleur de la maison ; des titres nets, serrés, de
+   graisse moyenne ; du texte en retrait pour tout ce qui n'est pas l'essentiel.
+   Tout suit les jetons du thème et le style de la boutique : les coins
+   (--theme-radius-*), les cartes (nues, cadre, ombre), les titres
+   (--echelle-titres), la densité (--echelle-espace), le mode sombre.
    ========================================================================== */
 
-/* ---- L'en-tête : le nom à gauche, les pages, « Parlons-en » ----------------- */
-html[data-structure="studio"] .st-entete-cta {
-  display: inline-flex; align-items: center; justify-content: center; min-block-size: 2.75rem; padding: .5rem 1.25rem; border-radius: 999px; font-size: .875rem; font-weight: 500;
-  background: var(--theme-encre); color: var(--theme-fond); text-decoration: none; white-space: nowrap;
-  transition: background-color .25s var(--theme-courbe), transform .25s var(--st-courbe);
+html[data-structure="studio"] {
+  --theme-large: 76rem;
+  --entete-h: 4rem;
+  --st-section: calc(clamp(4.5rem, 9vw, 7.5rem) * var(--echelle-espace, 1));
+  --st-ombre: 0 1px 2px rgb(18 17 16 / .04), 0 12px 32px -18px rgb(18 17 16 / .18);
+  --st-ombre-forte: 0 1px 2px rgb(18 17 16 / .05), 0 32px 64px -32px rgb(18 17 16 / .28);
+  --st-rayon-bouton: var(--theme-radius-doux);
+  /* Une photo posée dans une carte à marge : son angle suit celui de la carte, moins la marge. */
+  --st-marge-carte: .5rem;
+  --st-rayon-photo: max(0px, calc(var(--theme-radius-carte) - var(--st-marge-carte)));
+  --st-rayon-cadre: max(0px, calc(var(--theme-radius-bloc) - var(--st-marge-carte)));
 }
-html[data-structure="studio"] .st-entete-cta:hover { background: var(--theme-accent); }
-html[data-structure="studio"] .st-entete-cta:active { transform: scale(.97); }
+html[data-structure="studio"][data-boutons="pilule"] { --st-rayon-bouton: 999px; }
+html[data-structure="studio"][data-mode="sombre"] {
+  --st-ombre: 0 1px 2px rgb(0 0 0 / .3), 0 12px 32px -18px rgb(0 0 0 / .6);
+  --st-ombre-forte: 0 1px 2px rgb(0 0 0 / .3), 0 32px 64px -32px rgb(0 0 0 / .7);
+}
+html[data-structure="studio"] body { font-size: 1rem; letter-spacing: -.006em; }
+
+/* ---- La typographie ---------------------------------------------------------- */
+html[data-structure="studio"] .vi-titre {
+  font-weight: 560; text-wrap: balance;
+  font-size: calc(clamp(2rem, 3.6vw, 3.125rem) * var(--echelle-titres, 1)); line-height: 1.06; letter-spacing: -.034em;
+}
+html[data-structure="studio"] .chapo { font-size: clamp(1.0625rem, 1.25vw, 1.1875rem); line-height: 1.6; color: var(--theme-encre-doux); max-inline-size: 44ch; }
+
+/* La pastille : chaque étiquette du Studio, un point de la couleur de la maison. */
+html[data-structure="studio"] .etiquette {
+  justify-self: start; inline-size: fit-content; gap: .5rem; margin: 0; padding: .3125rem .75rem .3125rem .625rem;
+  font-size: .8125rem; font-weight: 500; letter-spacing: 0; text-transform: none; line-height: 1.35;
+  color: var(--theme-encre-doux); background: var(--theme-surface); border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--theme-filet), 0 1px 2px rgb(18 17 16 / .04);
+}
+html[data-structure="studio"] .etiquette::before {
+  content: ""; flex: none; inline-size: .375rem; block-size: .375rem; border-radius: 50%;
+  background: var(--theme-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 16%, transparent);
+}
+
+/* ---- Les gestes --------------------------------------------------------------- */
+html[data-structure="studio"] .btn { min-block-size: 2.875rem; padding-inline: 1.25rem; font-weight: 500; letter-spacing: -.005em; }
+html[data-structure="studio"] .btn-primaire { box-shadow: 0 1px 2px rgb(18 17 16 / .12), inset 0 1px 0 rgb(255 255 255 / .12); }
+html[data-structure="studio"] .btn-second {
+  background: var(--theme-surface); color: var(--theme-encre); border-color: var(--theme-filet-fort);
+  box-shadow: 0 1px 2px rgb(18 17 16 / .04);
+}
+html[data-structure="studio"] .btn-second:hover { background: var(--theme-surface-2); color: var(--theme-encre); border-color: var(--theme-filet-fort); }
+html[data-structure="studio"] .btn .icone-fleche { transition: transform .3s var(--st-courbe); }
+html[data-structure="studio"] .btn:hover .icone-fleche { transform: translateX(3px); }
+html[dir="rtl"][data-structure="studio"] .btn:hover .icone-fleche { transform: translateX(-3px); }
+
+/* Le lien d'une tête de section : discret, bordé. */
+.st-lien {
+  display: inline-flex; align-items: center; gap: .5rem; min-block-size: 2.5rem; padding-inline: 1rem;
+  border-radius: var(--st-rayon-bouton, 999px); background: var(--theme-surface); color: var(--theme-encre);
+  box-shadow: inset 0 0 0 1px var(--theme-filet-fort); font-size: .875rem; font-weight: 500; text-decoration: none; white-space: nowrap;
+  transition: background-color .2s var(--theme-courbe);
+}
+.st-lien:hover { background: var(--theme-surface-2); }
+.st-lien .icone-fleche { transition: transform .3s var(--st-courbe); }
+.st-lien:hover .icone-fleche { transform: translateX(3px); }
+
+/* ---- L'en-tête : le nom à gauche, les pages, « Parlons-en » ------------------- */
+html[data-structure="studio"] .ed-entete {
+  background: color-mix(in srgb, var(--theme-fond) 82%, transparent);
+  backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  border-block-end-color: color-mix(in srgb, var(--theme-filet) 90%, transparent);
+}
+html[data-structure="studio"] .ed-logo .marque-texte {
+  display: inline-flex; align-items: center; gap: .5rem;
+  font-size: 1.1875rem; font-weight: 600; letter-spacing: -.03em; line-height: 1;
+}
+/* Le signe de la maison, quand elle n'a pas de logo : une arche, de sa couleur. */
+html[data-structure="studio"] :is(.ed-logo, .st-pied-logo, .menu-marque) .marque-texte::before {
+  content: ""; flex: none; inline-size: .8125rem; block-size: 1.0625rem;
+  border-radius: 999px 999px 2px 2px; background: var(--theme-accent);
+}
+html[data-structure="studio"] .ed-nav a {
+  padding: .4375rem .75rem; border-radius: 999px; background: none;
+  font-size: .875rem; font-weight: 500; color: var(--theme-encre-doux);
+  transition: background-color .2s var(--theme-courbe), color .2s var(--theme-courbe);
+}
+html[data-structure="studio"] .ed-nav a:hover { color: var(--theme-encre); background: var(--theme-surface-2); }
+html[data-structure="studio"] .ed-nav a[aria-current="page"] { color: var(--theme-encre); background: color-mix(in srgb, var(--theme-encre) 6%, transparent); }
+html[data-structure="studio"] .st-entete-cta { min-block-size: 2.375rem; padding-inline: 1rem; font-size: .875rem; }
 @media (min-width: 900px) {
   html[data-structure="studio"] .ed-entete-rang { grid-template-columns: auto minmax(0, 1fr) auto; }
-  html[data-structure="studio"] .ed-logo { order: -1; justify-self: start; }
+  html[data-structure="studio"] .ed-logo { justify-self: start; }
+  html[data-structure="studio"] .ed-logo .marque-texte { font-size: 1.25rem; }
   html[data-structure="studio"] .ed-entete-debut { justify-content: flex-end; }
-  html[data-structure="studio"] .ed-nav { justify-content: flex-end; gap: 2.25rem; padding-inline-end: 2rem; }
+  html[data-structure="studio"] .ed-nav { justify-content: flex-end; gap: .25rem; padding-inline-end: .75rem; }
 }
+/* Au téléphone : le nom à gauche, le bouton du menu à droite. */
 @media (max-width: 899px) {
   html[data-structure="studio"] .st-entete-cta { display: none; }
+  html[data-structure="studio"] .ed-entete-rang { grid-template-columns: minmax(0, 1fr) auto auto; }
+  html[data-structure="studio"] .ed-logo { justify-self: start; justify-content: flex-start; min-inline-size: 0; }
+  html[data-structure="studio"] .ed-logo .marque-texte { font-size: 1.125rem; }
+  html[data-structure="studio"] .ed-entete-debut { margin-inline: 0 -.625rem; }
+  html[data-structure="studio"] .ed-entete-fin:empty { display: none; }
 }
 
-/* ---- Les sections du Studio ------------------------------------------------- */
-html[data-structure="studio"] :is(.vi-services, .vi-etapes, .st-realisations, .st-domaines-section, .st-recit, .st-manifeste) {
-  padding-block: var(--st-section);
+/* ---- Le menu du téléphone : des rangs nets, la vignette du domaine à gauche ---- */
+html[data-structure="studio"] .menu-marque .marque-texte { display: inline-flex; align-items: center; gap: .5rem; font-size: 1.125rem; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+html[data-structure="studio"] .menu-sur-titre { margin-block-end: .75rem; font-size: .8125rem; font-weight: 500; letter-spacing: 0; text-transform: none; }
+html[data-structure="studio"] .menu-rayons { display: grid; gap: .5rem; }
+html[data-structure="studio"] .menu-rayons > li { border: 0; }
+html[data-structure="studio"] .menu-rayon {
+  grid-template-columns: minmax(0, 1fr) auto; gap: .875rem; padding: .5rem .875rem; border-radius: var(--theme-radius-carte);
+  background: var(--theme-surface); box-shadow: inset 0 0 0 1px var(--theme-filet);
 }
-html[data-structure="studio"] .vi-titre { font-size: calc(clamp(2.5rem, 6.4vw, 5.75rem) * var(--echelle-titres, 1)); line-height: .95; letter-spacing: -.03em; }
+html[data-structure="studio"] .menu-rayon:has(.menu-rayon-image) { grid-template-columns: auto minmax(0, 1fr); padding-inline-start: .5rem; }
+html[data-structure="studio"] .menu-rayon-image { order: -1; inline-size: 3.25rem; block-size: 3.25rem; border-radius: var(--st-rayon-photo); }
+html[data-structure="studio"] .menu-rayon-nom {
+  display: grid; gap: .125rem; font-family: var(--theme-font-display); font-size: 1.0625rem; font-weight: 600; line-height: 1.25; letter-spacing: -.014em;
+}
+html[data-structure="studio"] .menu-rayon-compte { margin: 0; font-size: .8125rem; font-weight: 400; letter-spacing: 0; line-height: 1.3; }
+html[data-structure="studio"] .menu-rayon[aria-current] { box-shadow: inset 0 0 0 1.5px var(--theme-encre); }
+html[data-structure="studio"] .menu-rayon[aria-current] .menu-rayon-nom { text-decoration: none; }
+html[data-structure="studio"] .menu-tout { padding: 1rem .875rem .25rem; }
+html[data-structure="studio"] .menu-aide ul { gap: .5rem; }
+html[data-structure="studio"] .menu-aide a {
+  padding: .5rem 1rem; border-radius: var(--st-rayon-bouton); box-shadow: inset 0 0 0 1px var(--theme-filet-fort);
+  font-size: .9375rem; font-weight: 500; text-decoration: none;
+}
+html[data-structure="studio"] .menu-aide a[aria-current] { background: var(--theme-encre); color: var(--theme-fond); box-shadow: none; }
 
-/* L'ouverture : le titre d'abord, la photo dessous qui s'ouvre au défilement. */
-.st-ouverture { padding-block-start: clamp(2.5rem, 7vw, 6.5rem); }
-.st-ouverture-tete { display: grid; gap: clamp(1.25rem, 3vw, 2.25rem); }
-.st-ouverture-etiquette { margin: 0; }
+/* ---- Les sections -------------------------------------------------------------- */
+html[data-structure="studio"] :is(.st-section, .vi-services, .vi-etapes, .st-manifeste) { padding-block: var(--st-section) 0; }
+html[data-structure="studio"] .st-accueil > :last-child { padding-block-end: var(--st-section); }
+.st-section-tete {
+  display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1.25rem 2rem;
+  margin-block-end: clamp(2rem, 4vw, 3rem);
+}
+.st-section-titres { display: grid; gap: 1rem; justify-items: start; }
+.st-section-titres .vi-titre { max-inline-size: 22ch; }
+
+/* L'ouverture : centrée, sur une trame et une lueur ; la photo dans son cadre. */
+.st-ouverture { position: relative; isolation: isolate; padding-block-start: calc(clamp(3.5rem, 8vw, 6.5rem) * var(--echelle-espace, 1)); }
+.st-ouverture-fond { position: absolute; inset: 0 0 auto; z-index: -1; block-size: min(52rem, 100%); pointer-events: none; overflow: hidden; }
+.st-ouverture-fond::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--theme-encre) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--theme-encre) 6%, transparent) 1px, transparent 1px);
+  background-size: 3.5rem 3.5rem; background-position: center top;
+  -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 20%, transparent 72%);
+  mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 20%, transparent 72%);
+}
+.st-ouverture-fond::after {
+  content: ""; position: absolute; inset-inline: 0; inset-block-start: -12rem; block-size: 40rem;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--theme-accent-clair) 42%, transparent), transparent);
+  opacity: .7;
+}
+.st-ouverture-tete { display: grid; justify-items: center; gap: 1.5rem; text-align: center; }
+html[data-structure="studio"] .st-ouverture-etiquette { justify-self: center; }
 html[data-structure] .st-ouverture-titre.vi-titre {
-  font-size: calc(clamp(3.25rem, 10.4vw, 11rem) * var(--echelle-titres, 1)); line-height: .9; letter-spacing: -.045em;
+  max-inline-size: 15ch; font-weight: 570;
+  font-size: calc(clamp(2.75rem, 6.4vw, 5.5rem) * var(--echelle-titres, 1)); line-height: 1.02; letter-spacing: -.042em;
 }
-.st-ouverture-pied { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1.5rem 3rem; }
-.st-ouverture-chapo { margin: 0; max-inline-size: 36ch; font-size: clamp(1.0625rem, 1.35vw, 1.25rem); line-height: 1.55; }
-.st-cta { display: inline-flex; align-items: center; gap: 1rem; color: inherit; font-size: .9375rem; font-weight: 500; text-decoration: none; }
-.st-cta-rond {
-  display: grid; place-items: center; inline-size: 3.5rem; block-size: 3.5rem; border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--theme-encre) 30%, transparent);
-  transition: background-color .35s var(--st-courbe), color .35s var(--st-courbe), transform .5s var(--st-courbe), border-color .35s;
+.st-ouverture-chapo.chapo { max-inline-size: 38rem; margin: 0; font-size: clamp(1.0625rem, 1.5vw, 1.25rem); }
+.st-gestes { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; margin-block-start: .5rem; }
+.st-ouverture-media { margin-block-start: clamp(3rem, 6vw, 4.5rem); }
+.st-cadre {
+  padding: var(--st-marge-carte); border-radius: var(--theme-radius-bloc);
+  background: color-mix(in srgb, var(--theme-surface) 72%, transparent);
+  box-shadow: inset 0 0 0 1px var(--theme-filet), var(--st-ombre-forte);
 }
-.st-cta:hover .st-cta-rond { background: var(--theme-encre); border-color: var(--theme-encre); color: var(--theme-fond); transform: rotate(-45deg); }
-.st-ouverture-media { margin-block-start: clamp(2.5rem, 6vw, 5rem); }
-.st-ouverture-cadre { position: relative; overflow: hidden; aspect-ratio: 4 / 5; }
+.st-cadre .cadre-image { border-radius: var(--st-rayon-cadre); }
+.st-ouverture-cadre { position: relative; overflow: hidden; aspect-ratio: 4 / 5; border-radius: var(--st-rayon-cadre); background: var(--theme-surface-2); }
 @media (min-width: 700px) { .st-ouverture-cadre { aspect-ratio: 16 / 9; } }
 .st-ouverture-image { position: absolute; inset: 0; }
 .st-ouverture-image img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .st-ouverture[data-sans-image] { padding-block-end: var(--st-section); }
 
-/* Le manifeste : de grands caractères, qui s'allument mot à mot. */
-.st-manifeste { display: grid; gap: 1.5rem; }
-.st-manifeste .etiquette { margin: 0; }
-.st-manifeste-titre { margin: 0; font-size: 1rem; font-weight: 500; }
+/* Le manifeste : une phrase forte, centrée ; la suite en retrait. */
+.st-manifeste { display: grid; justify-items: center; gap: 1.5rem; text-align: center; }
+html[data-structure="studio"] .st-manifeste .etiquette { justify-self: center; }
+.st-manifeste-titre { margin: 0; font-size: 1rem; font-weight: 600; }
 .st-manifeste-texte {
-  margin: 0; max-inline-size: 26ch; font-family: var(--theme-font-display); font-weight: 400; text-wrap: pretty;
-  font-size: calc(clamp(1.875rem, 4.6vw, 4.25rem) * var(--echelle-titres, 1)); line-height: 1.1; letter-spacing: -.02em;
+  margin: 0; max-inline-size: 30ch; font-weight: 500; text-wrap: balance;
+  font-size: calc(clamp(1.5rem, 2.9vw, 2.375rem) * var(--echelle-titres, 1)); line-height: 1.28; letter-spacing: -.026em;
 }
+.st-manifeste-fort { color: var(--theme-encre); }
+.st-manifeste-suite { color: var(--theme-encre-doux); }
 
-/* Les réalisations : deux colonnes décalées. */
-.st-realisations-tete { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1.5rem 2rem; margin-block-end: clamp(2.5rem, 5vw, 4.5rem); }
-.st-realisations-tete > div { display: grid; gap: 1rem; justify-items: start; }
-.st-realisations-tete .etiquette { margin: 0; }
-.st-grille-projets { display: grid; gap: clamp(3rem, 6vw, 5rem) clamp(1.25rem, 3vw, 2.5rem); }
-@media (min-width: 900px) {
-  .st-grille-projets { grid-template-columns: 1fr 1fr; }
-  .st-grille-projets > :nth-child(even) { margin-block-start: clamp(5rem, 13vw, 13rem); }
-}
+/* ---- Les cartes (réalisations, domaines, projet suivant) ------------------------ */
+.st-grille-projets { display: grid; gap: clamp(1rem, 2vw, 1.5rem); }
+@media (min-width: 640px) { .st-grille-projets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .st-grille-projets { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-/* Une carte de projet : la photo, puis son numéro, son nom, sa ligne. */
-.st-projet-lien { display: grid; gap: 1.125rem; color: inherit; text-decoration: none; }
-.st-projet-media { position: relative; display: block; }
-.st-projet-media .cadre-image { border-radius: var(--theme-radius-carte); }
-.st-projet-media .cadre-image img { transition: scale 1.4s var(--st-courbe); }
-.st-projet-voir {
-  position: absolute; inset-block-end: 1rem; inset-inline-start: 1rem; z-index: 1;
-  padding: .5rem 1rem; border-radius: 999px; font-size: .8125rem; font-weight: 500;
-  background: var(--theme-fond); color: var(--theme-encre);
-  opacity: 0; translate: 0 .5rem; transition: opacity .3s var(--theme-courbe), translate .45s var(--st-courbe);
+.st-carte {
+  display: grid; align-content: start; block-size: 100%; color: inherit; text-decoration: none;
+  border-radius: var(--theme-radius-carte);
+  transition: box-shadow .3s var(--theme-courbe), transform .3s var(--st-courbe), background-color .3s var(--theme-courbe);
 }
-.st-projet-legende { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 1rem; align-items: start; }
-.st-projet-num { padding-block-start: .45rem; font-size: .75rem; font-variant-numeric: tabular-nums; letter-spacing: .1em; color: var(--theme-encre-doux); }
-.st-projet-textes { display: grid; gap: .375rem; min-inline-size: 0; }
-.st-projet-nom { margin: 0; font-family: var(--theme-font-display); font-weight: 400; font-size: clamp(1.375rem, 2.3vw, 2.125rem); line-height: 1.08; letter-spacing: -.01em; }
-.st-projet-ligne { font-size: .875rem; color: var(--theme-encre-doux); }
-.st-projet-fleche { margin-block-start: .5rem; transition: transform .45s var(--st-courbe); }
+.st-carte-photo { display: block; overflow: hidden; border-radius: var(--theme-radius-carte); }
+.st-carte-photo .cadre-image { border-radius: inherit; }
+.st-carte-photo .cadre-image img { transition: scale .8s var(--st-courbe); }
+.st-carte-corps { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: .875rem .125rem 0; }
+.st-carte-textes { display: grid; gap: .25rem; min-inline-size: 0; }
+.st-carte-nom { margin: 0; font-family: var(--theme-font-display); font-size: 1.0625rem; font-weight: 600; line-height: 1.3; letter-spacing: -.014em; }
+.st-carte-ligne { font-size: .875rem; line-height: 1.45; color: var(--theme-encre-doux); }
+.st-carte-fleche { flex: none; margin-block-start: .1875rem; color: var(--theme-encre-doux); transition: transform .3s var(--st-courbe), color .2s; }
+/* Une carte au cadre (le style « cartes » de la boutique), ou à l'ombre : la photo s'y pose avec une marge. */
+html:is([data-cartes="cadre"], [data-cartes="ombre"]) .st-carte { padding: var(--st-marge-carte); background: var(--theme-surface); }
+html:is([data-cartes="cadre"], [data-cartes="ombre"]) .st-carte-photo { border-radius: var(--st-rayon-photo); }
+html:is([data-cartes="cadre"], [data-cartes="ombre"]) .st-carte-corps { padding: .875rem .5rem .375rem; }
+html[data-cartes="cadre"] .st-carte { box-shadow: inset 0 0 0 1px var(--theme-filet), 0 1px 2px rgb(18 17 16 / .03); }
+html[data-cartes="ombre"] .st-carte { box-shadow: var(--st-ombre); }
 @media (hover: hover) and (pointer: fine) {
-  .st-projet-lien:hover .cadre-image img { scale: 1.045; }
-  .st-projet-lien:hover .st-projet-voir { opacity: 1; translate: 0 0; }
-  .st-projet-lien:hover .st-projet-fleche { transform: translate(3px, -3px) rotate(-45deg); }
+  .st-carte:hover .cadre-image img { scale: 1.035; }
+  .st-carte:hover .st-carte-fleche { transform: translateX(3px); color: var(--theme-encre); }
+  html[dir="rtl"] .st-carte:hover .st-carte-fleche { transform: translateX(-3px); }
+  html[data-cartes="cadre"] .st-carte:hover { box-shadow: inset 0 0 0 1px var(--theme-filet-fort), var(--st-ombre); transform: translateY(-2px); }
+  html[data-cartes="ombre"] .st-carte:hover { box-shadow: var(--st-ombre-forte); transform: translateY(-2px); }
 }
-.st-projet-lien:focus-visible { outline: none; }
-.st-projet-lien:focus-visible .cadre-image { outline: 2px solid var(--theme-encre); outline-offset: 4px; }
+.st-carte:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 3px; }
 
-/* Les domaines : une liste typographique ; au survol, la photo du domaine. */
-.st-domaines-tete { display: grid; gap: 1rem; justify-items: start; }
-.st-domaines-tete .etiquette { margin: 0; }
-.st-domaines-liste { margin: clamp(2rem, 4vw, 3rem) 0 0; padding: 0; list-style: none; border-block-start: 1px solid var(--theme-filet-fort); }
-.st-domaine {
-  position: relative; display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) auto; align-items: center; gap: .25rem 1rem;
-  padding-block: clamp(1.25rem, 2.6vw, 2.25rem); border-block-end: 1px solid var(--theme-filet-fort); color: inherit; text-decoration: none;
-}
-.st-domaine-num { display: none; font-size: .8125rem; font-variant-numeric: tabular-nums; letter-spacing: .08em; color: var(--theme-encre-doux); }
-.st-domaine-nom {
-  grid-column: 2; font-family: var(--theme-font-display); font-weight: 400; line-height: 1; letter-spacing: -.025em;
-  font-size: calc(clamp(1.875rem, 5.4vw, 5rem) * var(--echelle-titres, 1)); transition: translate .6s var(--st-courbe);
-}
-.st-domaine-compte { grid-column: 2; font-size: .875rem; color: var(--theme-encre-doux); white-space: nowrap; }
-.st-domaine-fleche { grid-column: 3; grid-row: 1 / span 2; transition: transform .45s var(--st-courbe); }
-.st-domaine-photo { grid-column: 1; grid-row: 1 / span 2; inline-size: 4.5rem; pointer-events: none; }
-.st-domaine-photo .cadre-image { border-radius: var(--theme-radius-carte); }
-.st-domaine:not(:has(.st-domaine-photo)) { grid-template-columns: minmax(0, 1fr) auto; }
-.st-domaine:not(:has(.st-domaine-photo)) :is(.st-domaine-nom, .st-domaine-compte) { grid-column: 1; }
-.st-domaine:not(:has(.st-domaine-photo)) .st-domaine-fleche { grid-column: 2; }
-/* Sur ordinateur, à la souris : le numéro, le nom immense, le nombre ; la
-   photo du domaine apparaît au survol, inclinée, à côté du nom. */
-@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
-  .st-domaine, .st-domaine:not(:has(.st-domaine-photo)) { grid-template-columns: 3.5rem minmax(0, 1fr) auto auto; gap: 1.25rem; }
-  .st-domaine-num { display: block; }
-  .st-domaine :is(.st-domaine-nom, .st-domaine-compte, .st-domaine-fleche),
-  .st-domaine:not(:has(.st-domaine-photo)) :is(.st-domaine-nom, .st-domaine-compte, .st-domaine-fleche) { grid-column: auto; grid-row: auto; }
-  .st-domaine-photo {
-    position: absolute; z-index: 2; inset-block-start: 50%; inset-inline-end: 16%; inline-size: clamp(9rem, 15vw, 14rem);
-    opacity: 0; translate: 0 -50%; rotate: -4deg; scale: .88;
-    transition: opacity .35s var(--theme-courbe), scale .6s var(--st-courbe), rotate .6s var(--st-courbe), left .7s var(--st-courbe);
-  }
-  /* Avec le curseur du Studio : la photo suit la souris le long de la ligne (MouvementStudio pose --mx). */
-  html[data-curseur-actif] .st-domaine-photo { inset-inline-end: auto; left: var(--mx, 70%); translate: -50% -50%; }
-  /* Le nom passe devant la photo qui le suit : on le lit toujours. */
-  .st-domaine-nom { position: relative; z-index: 3; }
-  .st-domaine:hover .st-domaine-photo { opacity: 1; scale: 1; rotate: 2deg; }
-  .st-domaine:hover .st-domaine-nom { translate: 1.25rem 0; }
-  .st-domaine:hover .st-domaine-fleche { transform: translateX(6px); }
+/* Les domaines, en tuiles. */
+.st-domaines-grille { display: grid; gap: clamp(.75rem, 1.6vw, 1.25rem); margin-block: 0; padding-block: 0; list-style: none; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); }
+@media (min-width: 640px) { .st-domaines-grille { grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); } }
+.st-domaines-grille > li { min-inline-size: 0; }
+@media (max-width: 639px) {
+  .st-domaine .st-carte-nom { font-size: .9375rem; }
+  .st-domaine .st-carte-fleche { display: none; }
 }
 
-/* Le récit : la photo et le texte côte à côte. */
-.st-recit-grille { display: grid; gap: 2.5rem; align-items: center; }
-.st-recit-image .cadre-image { border-radius: var(--theme-radius-carte); }
-.st-recit-texte { display: grid; gap: 1.5rem; justify-items: start; }
-.st-recit-texte .etiquette, .st-recit-texte .chapo { margin: 0; }
-.st-recit-texte .chapo { font-size: clamp(1.0625rem, 1.3vw, 1.1875rem); max-inline-size: 44ch; }
-@media (min-width: 900px) { .st-recit-grille { grid-template-columns: 1fr 1fr; gap: clamp(3rem, 7vw, 8rem); } }
-
-/* Les services, la méthode, le contact, à la manière du Studio. */
-html[data-structure="studio"] .vi-services .vi-titre { font-size: calc(clamp(2.25rem, 4.4vw, 4.25rem) * var(--echelle-titres, 1)); }
-html[data-structure="studio"] .vi-etape h3 { font-size: clamp(1.5rem, 2.2vw, 2rem); }
-html[data-structure="studio"] .vi-etape p { font-size: 1rem; }
-html[data-structure="studio"] .vi-service h3 { font-size: calc(clamp(1.625rem, 3vw, 2.75rem) * var(--echelle-titres, 1)); }
-html[data-structure="studio"] .vi-etape { background: var(--theme-surface); box-shadow: inset 0 0 0 1px var(--theme-filet); }
-html[data-structure="studio"] .vi-contact { background: var(--theme-encre); color: var(--theme-fond); }
-html[data-structure="studio"] .vi-contact :is(.etiquette, .chapo, .legende, .fc-aide, .fc-mention) { color: color-mix(in srgb, var(--theme-fond) 72%, transparent); }
-html[data-structure="studio"] .vi-contact .fc-champ :is(input, select, textarea) {
-  color: var(--theme-fond); background: color-mix(in srgb, var(--theme-fond) 7%, transparent);
-  border-color: color-mix(in srgb, var(--theme-fond) 30%, transparent);
+/* ---- Les services : la tête et sa photo à gauche, les services en cartes ------- */
+html[data-structure="studio"] .vi-services-image { max-inline-size: none; }
+html[data-structure="studio"] .vi-services-image .cadre-image { border-radius: var(--theme-radius-carte); aspect-ratio: 4 / 3 !important; }
+html[data-structure="studio"] .vi-services-tete .vi-lien-fleche {
+  gap: .5rem; min-block-size: 2.5rem; padding: 0 1rem; border: 0; border-radius: var(--st-rayon-bouton);
+  background: var(--theme-surface); box-shadow: inset 0 0 0 1px var(--theme-filet-fort); font-size: .875rem;
 }
-html[data-structure="studio"] .vi-contact .fc-champ select option { color: var(--theme-encre); background: var(--theme-surface); }
-html[data-structure="studio"] .vi-contact .fc-champ :is(input, select, textarea):hover { border-color: color-mix(in srgb, var(--theme-fond) 60%, transparent); }
-html[data-structure="studio"] .vi-contact .fc-champ :is(input, select, textarea):focus-visible { outline-color: var(--theme-fond); border-color: var(--theme-fond); }
-html[data-structure="studio"] .vi-contact .fc-champ [aria-invalid="true"] { border-color: var(--theme-accent-clair); box-shadow: 0 0 0 1px var(--theme-accent-clair); }
-html[data-structure="studio"] .vi-contact .fc-erreur { color: var(--theme-accent-clair); }
-html[data-structure="studio"] .vi-contact .fc-erreur-generale { background: color-mix(in srgb, var(--theme-fond) 10%, transparent); }
-html[data-structure="studio"] .vi-contact .fc-a-propos { background: transparent; color: var(--theme-fond); border-color: color-mix(in srgb, var(--theme-fond) 30%, transparent); }
-html[data-structure="studio"] .vi-contact .fc-envoyer { background: var(--theme-fond); color: var(--theme-encre); }
-html[data-structure="studio"] .vi-contact .fc-envoyer:hover:not(:disabled) { background: var(--theme-accent-clair); }
-/* Le remerciement, sur le fond sombre : un filet clair, pas une carte claire posée dessus. */
-html[data-structure="studio"] .vi-contact .fc-merci {
-  background: color-mix(in srgb, var(--theme-fond) 6%, transparent); color: var(--theme-fond);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-fond) 22%, transparent);
+html[data-structure="studio"] .vi-services-tete .vi-lien-fleche:hover { background: var(--theme-surface-2); }
+html[data-structure="studio"] .vi-services-liste { display: grid; gap: clamp(.75rem, 1.6vw, 1rem); border: 0; }
+@media (min-width: 640px) { html[data-structure="studio"] .vi-services-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+html[data-structure="studio"] .vi-service {
+  grid-template-columns: none; align-content: start; gap: 1rem; padding: clamp(1.25rem, 2.2vw, 1.75rem);
+  border: 0; border-radius: var(--theme-radius-carte); background: var(--theme-surface);
+  box-shadow: inset 0 0 0 1px var(--theme-filet), 0 1px 2px rgb(18 17 16 / .03);
 }
-html[data-structure="studio"] .vi-contact .fc-merci p { color: color-mix(in srgb, var(--theme-fond) 72%, transparent); }
-html[data-structure="studio"] .vi-contact .fc-merci-icone { background: var(--theme-accent-clair); color: var(--theme-encre); }
-html[data-structure="studio"] .vi-contact .fc-merci .btn-lien { color: var(--theme-fond); }
-html[data-structure="studio"] .vi-contact .lien-souligne:focus-visible,
-html[data-structure="studio"] .vi-contact a:focus-visible,
-html[data-structure="studio"] .vi-contact button:focus-visible { outline: 2px solid var(--theme-fond); outline-offset: 3px; }
-
-/* ---- Les réalisations (le catalogue) ----------------------------------------- */
-.st-liste-tete { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; justify-items: start; padding-block: clamp(2rem, 5vw, 4.5rem) clamp(2.5rem, 5vw, 4.5rem); }
-html[data-structure] .st-liste-titre.vi-titre { font-size: calc(clamp(3rem, 9vw, 9rem) * var(--echelle-titres, 1)); line-height: .92; letter-spacing: -.04em; }
-.st-liste-tete .chapo { margin: 0; }
-.st-domaines { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .75rem; }
-.st-domaines a {
-  display: inline-flex; align-items: baseline; gap: .375rem; min-block-size: 2.75rem; padding: .6875rem 1.125rem;
-  border: 1px solid var(--theme-filet-fort); border-radius: 999px; color: inherit; font-size: .9375rem; text-decoration: none;
-  transition: background-color .25s var(--theme-courbe), color .25s var(--theme-courbe), border-color .25s var(--theme-courbe);
+html[data-structure="studio"] .vi-service-num {
+  display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; padding: 0;
+  border-radius: max(.5rem, var(--theme-radius-doux)); background: color-mix(in srgb, var(--theme-accent) 9%, var(--theme-surface));
+  color: var(--theme-accent); font-size: .8125rem; font-weight: 600; letter-spacing: 0;
 }
-.st-domaines a:hover { border-color: var(--theme-encre); }
-.st-domaines a[aria-current] { background: var(--theme-encre); border-color: var(--theme-encre); color: var(--theme-fond); }
-.st-domaines sup { font-size: .6875rem; opacity: .65; }
-.st-liste .st-grille-projets { padding-block-end: var(--st-section, 5rem); }
-.st-pagination { padding-block-end: var(--st-section, 5rem); }
-
-/* ---- La fiche d'un projet ---------------------------------------------------- */
-.st-fiche-tete { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; justify-items: start; padding-block: clamp(1.5rem, 4vw, 3.5rem) clamp(2rem, 4vw, 3.5rem); }
-.st-fiche-tete .etiquette { margin: 0; }
-/* Le fil d'Ariane prend la largeur, pas plus : au téléphone, le nom d'un long projet finit en « … ». */
-:is(.st-fiche-tete, .st-liste-tete) > .fil { justify-self: stretch; min-inline-size: 0; }
-html[data-structure] .st-fiche-titre.vi-titre { max-inline-size: 15ch; font-size: calc(clamp(2.75rem, 8vw, 8rem) * var(--echelle-titres, 1)); line-height: .92; letter-spacing: -.04em; }
-.st-faits {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 1.25rem 2rem; inline-size: 100%;
-  margin: .75rem 0 0; padding-block-start: 1.5rem; border-block-start: 1px solid var(--theme-filet-fort);
-}
-.st-faits dt { font-size: .75rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--theme-encre-doux); }
-.st-faits dd { margin: .375rem 0 0; font-size: 1.0625rem; }
-.st-fiche-ouverture .cadre-image { inline-size: 100%; max-block-size: 88svh; }
-.st-fiche-corps { display: grid; gap: 2.5rem; padding-block: var(--st-section, 5rem); }
-.st-fiche-texte { display: grid; gap: 1.25rem; align-content: start; }
-.st-fiche-texte .etiquette { margin: 0; }
-.st-fiche-texte :is(p, li) { max-inline-size: 60ch; font-size: clamp(1.0625rem, 1.4vw, 1.25rem); line-height: 1.65; }
-.st-fiche-texte p:first-of-type { font-family: var(--theme-font-display); font-size: clamp(1.5rem, 2.6vw, 2.25rem); line-height: 1.25; letter-spacing: -.01em; }
-.st-fiche-appel {
-  display: grid; gap: .875rem; justify-items: start; align-self: start; padding: clamp(1.5rem, 2.5vw, 2rem);
-  background: var(--theme-surface-2); border-radius: var(--theme-radius-carte);
-}
-.st-fiche-appel-titre { margin: 0; font-family: var(--theme-font-display); font-size: 1.625rem; line-height: 1.1; }
-.st-fiche-appel .legende { margin: 0; font-size: .9375rem; line-height: 1.55; }
+html[data-structure="studio"] .vi-service h3 { font-family: var(--theme-font-display); font-size: 1.125rem; font-weight: 600; line-height: 1.3; letter-spacing: -.014em; }
+html[data-structure="studio"] .vi-service p { margin-block-start: .5rem; font-size: .9375rem; line-height: 1.6; }
 @media (min-width: 900px) {
-  .st-fiche-corps { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: clamp(3rem, 7vw, 7rem); }
+  html[data-structure="studio"] .vi-services-grille { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(2.5rem, 5vw, 4.5rem); }
+  html[data-structure="studio"] .vi-services-tete { inset-block-start: calc(var(--entete-h) + 2rem); }
+}
+@media (hover: hover) and (pointer: fine) { html[data-structure="studio"] .vi-service:hover h3 { translate: none; } }
+
+/* ---- La méthode : des étapes numérotées, reliées d'un filet --------------------- */
+html[data-structure="studio"] .vi-etapes-tete { margin-block-end: clamp(.5rem, 2vw, 1rem); }
+html[data-structure="studio"] .vi-etapes-piste { gap: 1.75rem; max-inline-size: var(--theme-large); }
+html[data-structure="studio"] .vi-etape {
+  position: relative; grid-template-columns: 2.5rem minmax(0, 1fr); column-gap: 1rem; row-gap: .375rem;
+  min-block-size: 0; padding: 0; background: none; box-shadow: none; border-radius: 0;
+}
+html[data-structure="studio"] .vi-etape > :not(.vi-etape-num) { grid-column: 2; }
+html[data-structure="studio"] .vi-etape-num {
+  grid-column: 1; grid-row: 1 / span 3; position: relative; z-index: 1; display: grid; place-items: center;
+  inline-size: 2.5rem; block-size: 2.5rem; border-radius: 50%; background: var(--theme-surface);
+  box-shadow: inset 0 0 0 1px var(--theme-filet-fort), 0 1px 2px rgb(18 17 16 / .05);
+  font-family: var(--theme-font-texte); font-size: .8125rem; font-weight: 600; line-height: 1; color: var(--theme-encre);
+}
+/* Le filet qui relie les étapes : vertical au téléphone, horizontal sur ordinateur. */
+html[data-structure="studio"] .vi-etape:not(:last-child)::before {
+  content: ""; position: absolute; inset-inline-start: 1.25rem; inset-block: 2.5rem -1.75rem; inline-size: 1px;
+  background: var(--theme-filet-fort);
+}
+html[data-structure="studio"] .vi-etape-rang { margin: .5625rem 0 0; font-size: .75rem; font-weight: 600; letter-spacing: .01em; text-transform: none; color: var(--theme-accent); }
+html[data-structure="studio"] .vi-etape h3 { font-family: var(--theme-font-display); font-size: 1.125rem; font-weight: 600; line-height: 1.3; letter-spacing: -.014em; }
+html[data-structure="studio"] .vi-etape p { font-size: .9375rem; line-height: 1.6; }
+/* Sous 900 px, les étapes l'une sous l'autre, reliées d'un filet vertical. */
+@media (max-width: 899px) {
+  html[data-structure="studio"] .vi-etapes-piste { grid-template-columns: minmax(0, 1fr); }
+  html[data-structure="studio"] .vi-etape p { max-inline-size: 52ch; }
+}
+@media (min-width: 900px) {
+  html[data-structure="studio"] .vi-etapes-piste { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); }
+  html[data-structure="studio"] .vi-etape { grid-template-columns: none; row-gap: .5rem; }
+  html[data-structure="studio"] .vi-etape > :not(.vi-etape-num) { grid-column: auto; }
+  html[data-structure="studio"] .vi-etape-num { grid-row: auto; margin-block-end: .75rem; }
+  html[data-structure="studio"] .vi-etape:not(:last-child)::before {
+    inset-block: 1.25rem auto; inset-inline: 3.25rem -1rem; inline-size: auto; block-size: 1px;
+  }
+  html[data-structure="studio"] .vi-etape-rang { margin: 0; }
+}
+
+/* ---- Le récit : une carte, la photo d'un côté, le texte de l'autre ------------- */
+.st-recit-carte {
+  display: grid; overflow: hidden; border-radius: var(--theme-radius-bloc);
+  background: var(--theme-surface); border: 1px solid var(--theme-filet); box-shadow: var(--st-ombre);
+}
+.st-recit-image .cadre-image { border-radius: 0; }
+.st-recit-texte { display: grid; align-content: center; justify-items: start; gap: 1.25rem; padding: clamp(1.75rem, 4.5vw, 4rem); }
+.st-recit-texte .chapo { margin: 0; max-inline-size: 46ch; }
+.st-recit-texte .btn { margin-block-start: .5rem; }
+@media (min-width: 900px) {
+  .st-recit-carte { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .st-recit-image .cadre-image { block-size: 100%; min-block-size: 30rem; aspect-ratio: auto !important; }
+}
+
+/* ---- Contact : un encart clair, sa lueur ; le formulaire dans sa carte --------- */
+html[data-structure="studio"] .vi-contact { padding-block: var(--st-section); background: none; }
+html[data-structure="studio"] .vi-contact-grille {
+  position: relative; isolation: isolate; overflow: hidden; padding: clamp(1.5rem, 4vw, 3.5rem);
+  border-radius: var(--theme-radius-bloc); border: 1px solid var(--theme-filet);
+  background:
+    radial-gradient(42rem 24rem at 0% 0%, color-mix(in srgb, var(--theme-accent-clair) 34%, transparent), transparent 70%),
+    var(--theme-surface-2);
+}
+html[data-structure="studio"] .vi-contact-titre.vi-titre { font-size: calc(clamp(2.25rem, 4.4vw, 3.5rem) * var(--echelle-titres, 1)); line-height: 1.04; letter-spacing: -.04em; }
+html[data-structure="studio"] .vi-contact-tete .chapo { max-inline-size: 40ch; }
+html[data-structure="studio"] .vi-contact-ou { margin: .5rem 0 .25rem; font-size: .8125rem; font-weight: 500; letter-spacing: 0; text-transform: none; opacity: 1; color: var(--theme-encre-doux); }
+html[data-structure="studio"] .vi-contact-directs ul { gap: .5rem; }
+html[data-structure="studio"] .vi-contact-directs a {
+  gap: .875rem; min-block-size: 3.5rem; padding: .5rem .75rem .5rem .5rem; border: 0; border-radius: var(--theme-radius-carte);
+  background: color-mix(in srgb, var(--theme-surface) 70%, transparent); box-shadow: inset 0 0 0 1px var(--theme-filet);
+  transition: background-color .2s var(--theme-courbe), box-shadow .2s var(--theme-courbe);
+}
+html[data-structure="studio"] .vi-contact-directs a:hover { padding-inline-start: .5rem; background: var(--theme-surface); box-shadow: inset 0 0 0 1px var(--theme-filet-fort); }
+html[data-structure="studio"] .vi-contact-directs a svg {
+  box-sizing: content-box; inline-size: 1.125rem; block-size: 1.125rem; padding: .6875rem;
+  border-radius: max(.5rem, var(--theme-radius-doux)); background: var(--theme-surface); box-shadow: inset 0 0 0 1px var(--theme-filet);
+  color: var(--theme-encre);
+}
+html[data-structure="studio"] .vi-contact-directs a span { gap: .0625rem; font-size: .875rem; color: var(--theme-encre-doux); overflow-wrap: anywhere; }
+html[data-structure="studio"] .vi-contact-directs a b { font-weight: 600; color: var(--theme-encre); }
+html[data-structure="studio"] .vi-contact-horaires { font-size: .8125rem; }
+html[data-structure="studio"] .vi-contact-formulaire {
+  padding: clamp(1.25rem, 3vw, 2rem); border-radius: var(--theme-radius-carte); background: var(--theme-surface);
+  box-shadow: inset 0 0 0 1px var(--theme-filet), var(--st-ombre);
+}
+@media (min-width: 960px) {
+  html[data-structure="studio"] .vi-contact-grille { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(2.5rem, 5vw, 4.5rem); }
+}
+/* Le formulaire, au Studio : des champs nets, un anneau de la couleur de la maison au focus. */
+html[data-structure="studio"] .fc-champ label { font-weight: 600; color: var(--theme-encre); }
+html[data-structure="studio"] .fc-champ :is(input, select, textarea) {
+  min-block-size: 2.875rem; padding: .625rem .875rem; border-radius: var(--theme-radius-doux);
+  background: var(--theme-surface); box-shadow: 0 1px 2px rgb(18 17 16 / .04);
+}
+html[data-structure="studio"] .fc-champ :is(input, select, textarea):hover { border-color: color-mix(in srgb, var(--theme-encre) 45%, var(--theme-contour-champ)); }
+html[data-structure="studio"] .fc-champ :is(input, select, textarea):focus-visible {
+  outline: 2px solid transparent; border-color: var(--theme-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 20%, transparent);
+}
+html[data-structure="studio"] .fc-champ textarea { min-block-size: 8.5rem; }
+html[data-structure="studio"] .fc-envoyer { min-block-size: 3rem; padding-inline: 1.5rem; }
+html[data-structure="studio"] .fc-a-propos { box-shadow: none; border-color: var(--theme-filet); background: var(--theme-surface-2); }
+html[data-structure="studio"] .fc-merci { padding: 0; background: none; }
+
+/* ---- Le pied : tenu, en colonnes, sans nom géant -------------------------------- */
+html[data-structure="studio"] .ed-pied { margin-block-start: 0; background: var(--theme-fond); }
+html[data-structure="studio"] .ed-pied-grille { gap: 2.25rem 2rem; padding-block: clamp(2.5rem, 5vw, 3.5rem) 2rem; }
+/* Au téléphone, deux colonnes : la présentation et « Nous joindre » prennent la largeur. */
+html[data-structure="studio"] .ed-pied-grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 999px) {
+  html[data-structure="studio"] .ed-pied-grille > :is(:first-child, :nth-child(4)) { grid-column: 1 / -1; }
+}
+@media (min-width: 1000px) {
+  html[data-structure="studio"] .ed-pied-grille { grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); }
+}
+.st-pied-logo { display: inline-flex; color: inherit; text-decoration: none; }
+html[data-structure="studio"] .st-pied-logo .marque-texte { display: inline-flex; align-items: center; gap: .5rem; font-size: 1.125rem; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+html[data-structure="studio"] .ed-pied-intro { display: grid; gap: 1rem; align-content: start; justify-items: start; }
+html[data-structure="studio"] .ed-pied-intro p {
+  max-inline-size: 34ch; margin: 0; font-family: var(--theme-font-texte); font-size: .875rem; line-height: 1.6; letter-spacing: 0; color: var(--theme-encre-doux);
+}
+html[data-structure="studio"] .ed-pied-titre { margin-block-end: .875rem; font-size: .8125rem; font-weight: 600; color: var(--theme-encre); }
+html[data-structure="studio"] .ed-pied ul { gap: .5rem; font-size: .875rem; }
+html[data-structure="studio"] .ed-pied :is(ul, .ed-pied-faits) a { color: var(--theme-encre-doux); background: none; transition: color .2s var(--theme-courbe); }
+html[data-structure="studio"] .ed-pied :is(ul, .ed-pied-faits) a:hover { color: var(--theme-encre); }
+html[data-structure="studio"] .ed-pied-faits li { color: var(--theme-encre-doux); }
+/* Le filet du bas s'arrête où s'arrête le texte (l'enveloppe a ses marges). */
+html[data-structure="studio"] .ed-pied-bas {
+  padding-block: 1.25rem 2rem; font-size: .8125rem; border-block-start: 0;
+  background: linear-gradient(var(--theme-filet), var(--theme-filet)) 50% 0 / calc(100% - 2 * var(--theme-marge)) 1px no-repeat;
+}
+
+/* ---- Les réalisations (le catalogue) et la tête des pages ------------------------ */
+.st-page-tete { display: grid; gap: 1.25rem; justify-items: start; padding-block: clamp(2rem, 5vw, 3.5rem) clamp(2rem, 4vw, 3rem); }
+/* Le fil d'Ariane prend la largeur, pas plus : au téléphone, le nom d'un long projet finit en « … ». */
+.st-page-tete > .fil { justify-self: stretch; min-inline-size: 0; }
+html[data-structure] .st-page-titre.vi-titre {
+  max-inline-size: 20ch; font-weight: 570;
+  font-size: calc(clamp(2.375rem, 5vw, 4rem) * var(--echelle-titres, 1)); line-height: 1.04; letter-spacing: -.04em;
+}
+.st-page-chapo.chapo { margin: 0; max-inline-size: 46ch; }
+.st-onglets { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .5rem; }
+.st-onglets a {
+  display: inline-flex; align-items: center; gap: .5rem; min-block-size: 2.5rem; padding: 0 .375rem 0 1rem;
+  border-radius: var(--st-rayon-bouton, 999px); background: var(--theme-surface); color: var(--theme-encre-doux);
+  box-shadow: inset 0 0 0 1px var(--theme-filet); font-size: .875rem; font-weight: 500; text-decoration: none;
+  transition: color .2s var(--theme-courbe), box-shadow .2s var(--theme-courbe), background-color .2s var(--theme-courbe);
+}
+.st-onglet-n {
+  display: inline-grid; place-items: center; min-inline-size: 1.75rem; block-size: 1.75rem; padding-inline: .4375rem;
+  border-radius: 999px; background: var(--theme-surface-2); font-size: .75rem; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.st-onglets a:hover { color: var(--theme-encre); box-shadow: inset 0 0 0 1px var(--theme-filet-fort); }
+.st-onglets a[aria-current] { background: var(--theme-encre); color: var(--theme-fond); box-shadow: none; }
+.st-onglets a[aria-current] .st-onglet-n { background: color-mix(in srgb, var(--theme-fond) 18%, transparent); color: var(--theme-fond); }
+/* Au téléphone, les domaines tiennent sur une bande qu'on fait glisser. */
+@media (max-width: 639px) {
+  .st-onglets {
+    flex-wrap: nowrap; justify-self: stretch; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+    margin-inline: calc(-1 * var(--theme-marge)); padding: 1px var(--theme-marge); scroll-padding-inline: var(--theme-marge);
+  }
+  .st-onglets::-webkit-scrollbar { display: none; }
+  .st-onglets a { flex: none; }
+}
+.st-liste .st-grille-projets { padding-block-end: var(--st-section, 5rem); }
+.st-pagination { margin-block-start: 0; padding-block-end: var(--st-section, 5rem); }
+
+/* ---- La fiche d'un projet --------------------------------------------------------- */
+html[data-structure] .st-fiche-titre.vi-titre { max-inline-size: 18ch; }
+/* Ses faits, sur une barre : des cases séparées d'un filet, qui se partagent la largeur. */
+.st-faits {
+  display: flex; flex-wrap: wrap; inline-size: 100%; margin: .75rem 0 0; overflow: hidden;
+  border-radius: var(--theme-radius-carte); background: var(--theme-surface);
+  box-shadow: inset 0 0 0 1px var(--theme-filet);
+}
+.st-faits > div { flex: 1 1 9rem; padding: .875rem 1.125rem; box-shadow: -1px 0 0 var(--theme-filet), 0 -1px 0 var(--theme-filet); }
+.st-faits dt { font-size: .75rem; font-weight: 500; color: var(--theme-encre-doux); }
+.st-faits dd { margin: .25rem 0 0; font-size: .9375rem; font-weight: 600; color: var(--theme-encre); }
+.st-fiche-corps { display: grid; gap: 2.5rem; padding-block: var(--st-section, 5rem) 0; }
+.st-fiche-texte { display: grid; gap: 1.125rem; align-content: start; }
+.st-fiche-texte :is(p, li) { max-inline-size: 62ch; font-size: 1.0625rem; line-height: 1.7; color: var(--theme-encre-doux); }
+.st-fiche-texte p:first-of-type {
+  font-family: var(--theme-font-display); font-size: clamp(1.25rem, 1.9vw, 1.5rem); font-weight: 500; line-height: 1.45;
+  letter-spacing: -.016em; color: var(--theme-encre);
+}
+.st-fiche-appel {
+  display: grid; gap: .75rem; justify-items: start; align-self: start; padding: clamp(1.25rem, 2.4vw, 1.75rem);
+  border-radius: var(--theme-radius-carte); background: var(--theme-surface);
+  box-shadow: inset 0 0 0 1px var(--theme-filet), var(--st-ombre);
+}
+.st-fiche-appel-titre { margin: 0; font-family: var(--theme-font-display); font-size: 1.25rem; font-weight: 600; line-height: 1.25; letter-spacing: -.02em; }
+.st-fiche-appel-texte { margin: 0 0 .5rem; font-size: .9375rem; line-height: 1.6; color: var(--theme-encre-doux); }
+@media (min-width: 900px) {
+  .st-fiche-corps { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: clamp(3rem, 6vw, 6rem); }
   .st-fiche-appel { position: sticky; inset-block-start: calc(var(--entete-h, 4rem) + 1.5rem); }
 }
-.st-galerie { padding-block-end: var(--st-section, 5rem); }
-.st-galerie-liste { display: grid; gap: clamp(1rem, 2vw, 1.5rem); margin: 0; padding: 0; list-style: none; }
+.st-galerie { padding-block: var(--st-section, 5rem) 0; }
+.st-galerie-liste { display: grid; gap: clamp(.75rem, 1.6vw, 1.25rem); margin: 0; padding: 0; list-style: none; }
 @media (min-width: 900px) { .st-galerie-liste { grid-template-columns: 1fr 1fr; } .st-galerie-vue[data-large] { grid-column: 1 / -1; } }
-.st-galerie .galerie-agrandir { display: block; inline-size: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.st-galerie .galerie-agrandir { display: block; inline-size: 100%; padding: 0; border: 0; border-radius: var(--theme-radius-carte); background: none; cursor: zoom-in; }
 .st-galerie .cadre-image { border-radius: var(--theme-radius-carte); }
-.st-galerie .galerie-agrandir:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 4px; }
-.st-suivant { border-block-start: 1px solid var(--theme-filet-fort); }
-.st-suivant-lien { display: block; color: inherit; text-decoration: none; }
-.st-suivant-textes { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: .75rem 2rem; padding-block: clamp(3rem, 7vw, 6rem) clamp(1.5rem, 3vw, 2.5rem); }
-.st-suivant-textes .etiquette { grid-column: 1 / -1; margin: 0; }
-html[data-structure] .st-suivant-nom.vi-titre { font-size: calc(clamp(2.25rem, 6.5vw, 6.5rem) * var(--echelle-titres, 1)); line-height: .95; }
-.st-suivant-textes svg { margin-block-end: .5em; transition: transform .5s var(--st-courbe); }
-.st-suivant-media .cadre-image img { transition: scale 1.4s var(--st-courbe); }
+.st-galerie .galerie-agrandir:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: 3px; }
+/* Le projet suivant : une carte, sa photo et son nom. */
+.st-suivant { padding-block-end: var(--st-section, 5rem); }
+.st-suivant-lien { align-items: center; }
+.st-suivant-photo { display: block; overflow: hidden; border-radius: var(--theme-radius-carte); }
+html:is([data-cartes="cadre"], [data-cartes="ombre"]) .st-suivant-photo { border-radius: var(--st-rayon-photo); }
+.st-suivant-photo .cadre-image { border-radius: inherit; }
+.st-suivant-photo .cadre-image img { transition: scale .8s var(--st-courbe); }
+.st-suivant-textes { display: grid; gap: .5rem; justify-items: start; padding: clamp(1rem, 3vw, 2.5rem); }
+.st-suivant-etiquette { font-size: .8125rem; font-weight: 500; color: var(--theme-encre-doux); }
+.st-suivant-nom { font-family: var(--theme-font-display); font-size: calc(clamp(1.5rem, 2.8vw, 2.25rem) * var(--echelle-titres, 1)); font-weight: 560; line-height: 1.1; letter-spacing: -.034em; text-wrap: balance; }
+.st-suivant-fleche {
+  display: grid; place-items: center; inline-size: 2.5rem; block-size: 2.5rem; margin-block-start: .75rem; border-radius: 50%;
+  background: var(--theme-surface); box-shadow: inset 0 0 0 1px var(--theme-filet-fort);
+  transition: background-color .25s var(--theme-courbe), color .25s var(--theme-courbe), transform .3s var(--st-courbe);
+}
+@media (min-width: 700px) { .st-suivant-lien { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
 @media (hover: hover) and (pointer: fine) {
-  .st-suivant-lien:hover .st-suivant-textes svg { transform: translateX(10px); }
-  .st-suivant-lien:hover .st-suivant-media .cadre-image img { scale: 1.035; }
+  .st-suivant-lien:hover .st-suivant-fleche { background: var(--theme-encre); color: var(--theme-fond); box-shadow: none; transform: translateX(3px); }
+}
+
+/* ---- Les pages de la maison (« Le studio »…) et la page Contact ------------------ */
+html[data-structure="studio"] .page-boutique { max-inline-size: 46rem; }
+html[data-structure="studio"] .page-boutique-tete h1 {
+  font-family: var(--theme-font-display); font-weight: 570; text-wrap: balance;
+  font-size: calc(clamp(2.375rem, 5vw, 3.75rem) * var(--echelle-titres, 1)); line-height: 1.04; letter-spacing: -.04em;
+}
+html[data-structure="studio"] .page-boutique-texte { color: var(--theme-encre-doux); }
+html[data-structure="studio"] .page-boutique-texte > p:first-child { font-size: clamp(1.1875rem, 1.6vw, 1.375rem); line-height: 1.55; font-weight: 500; letter-spacing: -.012em; color: var(--theme-encre); }
+html[data-structure="studio"] .page-boutique-texte h2 { font-weight: 600; font-size: calc(clamp(1.375rem, 2.2vw, 1.75rem) * var(--echelle-titres, 1)); letter-spacing: -.026em; }
+html[data-structure="studio"] .page-boutique-texte h3 { font-weight: 600; }
+html[data-structure="studio"] .contact-retour { margin-block-start: 1.5rem; }
+
+/* Au toucher : un appui se sent. */
+@media (hover: none) {
+  html[data-structure="studio"] :is(.st-carte, .st-lien, .btn):active { scale: .985; transition: scale .2s var(--st-courbe); }
 }
 
 /* ============================================================================
-   LES ANIMATIONS EXPRESSIVES
+   LES ANIMATIONS EXPRESSIVES (style « animations : expressives », au choix de
+   la boutique) — html[data-animations="expressives"] : à l'arrivée, le titre
+   d'ouverture monte ligne après ligne, puis le reste de l'ouverture paraît ;
+   les autres titres de même en entrant à l'écran (Apparitions.tsx les marque
+   data-vu) ; là où le navigateur sait lier une animation au défilement,
+   chaque photo glisse doucement dans son cadre. « Réduire les animations » :
+   rien ne bouge. Seules transform, opacity et translate sont animées.
    ========================================================================== */
 @keyframes st-ligne { from { transform: translateY(108%); } }
-@keyframes st-entree { from { opacity: 0; transform: translateY(1.25rem); } }
+@keyframes st-entree { from { opacity: 0; transform: translateY(1rem); } }
 
 @media (prefers-reduced-motion: no-preference) {
   /* Les lignes d'un titre montent de sous leur ligne de base : elles sont rognées. */
   html[data-animations="expressives"] .vi-ligne { overflow: clip; padding-block-end: .08em; margin-block-end: -.08em; }
-
-  /* L'ouverture, dès l'arrivée (CSS seul : sans JavaScript aussi). */
   html[data-animations="expressives"] .st-ouverture-titre .vi-ligne > span {
-    animation: st-ligne 1.15s var(--st-courbe) both; animation-delay: calc(120ms + var(--l, 0) * 110ms);
+    animation: st-ligne 1s var(--st-courbe) both; animation-delay: calc(80ms + var(--l, 0) * 100ms);
   }
-  html[data-animations="expressives"] :is(.st-ouverture-etiquette, .st-ouverture-pied) {
-    animation: st-entree 1s var(--st-courbe) both; animation-delay: .45s;
-  }
-
-  /* Les autres titres, en entrant à l'écran (Apparitions.tsx pose data-vu). */
+  html[data-animations="expressives"] :is(.st-ouverture-etiquette, .st-ouverture-chapo, .st-gestes) { animation: st-entree .9s var(--st-courbe) both; animation-delay: .35s; }
+  html[data-animations="expressives"] .st-ouverture-media { animation: st-entree 1.1s var(--st-courbe) both; animation-delay: .5s; }
   html.js-apparitions[data-animations="expressives"] .vi-titre:not(.st-ouverture-titre):not([data-vu]) .vi-ligne > span { transform: translateY(108%); }
   html.js-apparitions[data-animations="expressives"] .vi-titre:not(.st-ouverture-titre)[data-vu] .vi-ligne > span {
     animation: st-ligne 1s var(--st-courbe) both; animation-delay: calc(var(--delai, 0ms) + var(--l, 0) * 100ms);
   }
-
-  /* D'une page à l'autre : le contenu arrive d'un léger élan (MouvementStudio.tsx). */
-  html[data-animations="expressives"][data-navigue] #principal { animation: st-entree .7s var(--st-courbe) both; }
 }
-
-/* Liées au défilement : là où le navigateur sait les lier. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    /* La photo d'ouverture, posée en retrait, s'ouvre jusqu'à prendre la largeur. */
-    html[data-animations="expressives"] .st-ouverture-cadre {
-      animation: st-deplie linear both; animation-timeline: view(); animation-range: entry 0% cover 45%;
-    }
-    html[data-animations="expressives"] .st-ouverture-image img {
-      animation: st-recul linear both; animation-timeline: view(); animation-range: cover 0% cover 100%;
-    }
-    /* Chaque photo glisse doucement dans son cadre. */
-    html[data-animations="expressives"] :is(.st-projet-media, .st-recit-image, .st-fiche-ouverture, .st-galerie-vue, .vi-services-image) .cadre-image img {
-      scale: 1.12; animation: st-glisse-photo linear both; animation-timeline: view(); animation-range: cover 0% cover 100%;
-    }
-    html[data-animations="expressives"] .st-projet-lien:hover .cadre-image img { scale: 1.16; }
-    /* Le manifeste s'allume mot à mot, à mesure qu'on le lit. */
-    html[data-animations="expressives"] .st-mot {
-      animation: st-allume linear both; animation-timeline: view(); animation-range: cover 12% cover 42%;
-    }
-  }
-
-  /* La méthode, sur ordinateur : épinglée, ses étapes défilent de côté. */
-  @media (prefers-reduced-motion: no-preference) and (min-width: 900px) {
-    html[data-animations="expressives"][data-structure="studio"] .vi-etapes {
-      block-size: calc(100svh + max(0px, var(--n, 4) * 30vw - 82vw)); padding-block: 0; view-timeline: --st-etapes block;
-    }
-    html[data-animations="expressives"][data-structure="studio"] .vi-etapes-collant {
-      /* Sous l'en-tête collant, jamais dessous : centrée dans ce qui reste de l'écran. */
-      position: sticky; inset-block-start: var(--entete-h, 0px); block-size: calc(100svh - var(--entete-h, 0px)); overflow: clip; align-content: center;
-    }
-    html[data-animations="expressives"][data-structure="studio"] .vi-etapes-piste {
-      display: flex; inline-size: max-content; max-inline-size: none; margin: 0; padding-inline: var(--theme-marge) 12vw;
-      animation: st-glisse linear both; animation-timeline: --st-etapes; animation-range: contain 0% contain 100%;
-    }
-    html[data-animations="expressives"][data-structure="studio"] .vi-etape { inline-size: clamp(19rem, 28vw, 27rem); min-block-size: min(24rem, 52svh); }
-    html[data-animations="expressives"][data-structure="studio"] .vi-etapes-jauge {
-      display: block; inline-size: min(var(--theme-large), calc(100% - 2 * var(--theme-marge))); margin-inline: auto;
-      block-size: 2px; background: var(--theme-filet);
-    }
-    html[data-animations="expressives"][data-structure="studio"] .vi-etapes-jauge span {
-      display: block; block-size: 100%; background: var(--theme-encre); transform-origin: left;
-      animation: st-jauge linear both; animation-timeline: --st-etapes; animation-range: contain 0% contain 100%;
-    }
-    html[dir="rtl"][data-animations="expressives"][data-structure="studio"] .vi-etapes-jauge span { transform-origin: right; }
-  }
-}
-@keyframes st-deplie {
-  from { clip-path: inset(0 var(--theme-marge) round var(--theme-radius-bloc)); }
-  to { clip-path: inset(0 0 round 0); }
-}
-@keyframes st-recul { from { transform: scale(1.14); } to { transform: scale(1); } }
-@keyframes st-glisse-photo { from { translate: 0 -5%; } to { translate: 0 5%; } }
-@keyframes st-allume { from { opacity: .18; } to { opacity: 1; } }
-@keyframes st-glisse { from { translate: 0 0; } to { translate: min(0px, calc(-100% + 100vw)) 0; } }
-@keyframes st-jauge { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-
-
-/* ============================================================================
-   LE MOUVEMENT SOUS LA MAIN — components/MouvementStudio.tsx, IntroStudio.tsx,
-   HeureLocale.tsx. Le Studio seul ; le mouvement, avec le style expressif et
-   sans « réduire les animations » ; le curseur et l'aimant, à la souris.
-   ========================================================================== */
-.st-curseur, .st-rideau, .st-progression, .st-grain, .st-intro { display: none; }
-
-/* Le grain : une texture de papier, à peine — le Studio, toujours. */
-html[data-structure="studio"] .st-grain {
-  display: block; position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: .05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-}
-
-/* L'heure de la maison, en haut de l'ouverture. */
-.st-ouverture-haut { display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem 2rem; }
-.st-heure {
-  display: inline-flex; align-items: center; gap: .5rem; margin: 0 0 0 auto; font-size: .75rem; font-weight: 500;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--theme-encre-doux); font-variant-numeric: tabular-nums;
-}
-html[dir="rtl"] .st-heure { margin: 0 auto 0 0; }
-.st-heure-point { inline-size: .4375rem; block-size: .4375rem; border-radius: 50%; background: var(--theme-accent); }
-.st-heure-valeur { color: var(--theme-encre); }
-
-/* Un libellé qui roule au survol : son double monte de dessous (Roule). */
-.st-roule { display: inline-grid; overflow: hidden; vertical-align: top; line-height: 1.25; }
-.st-roule > span { grid-area: 1 / 1; }
-.st-roule > span + span { translate: 0 115%; }
-@media (hover: hover) {
-  :is(a, button):hover > .st-roule > span:first-child { translate: 0 -115%; }
-  :is(a, button):hover > .st-roule > span + span { translate: 0 0; }
-}
-
-/* La navigation : le filet se trace de gauche à droite, et repart vers la droite. */
-html[data-structure="studio"] .ed-nav a { background-position: 100% calc(100% - .25rem); }
-html[data-structure="studio"] .ed-nav a:is(:hover, [aria-current="page"]) { background-position: 0 calc(100% - .25rem); }
-
-/* Les domaines en bandeau, immenses, pleine largeur ; un sur deux au trait. */
-.st-bandeau { overflow: hidden; margin-inline: calc(50% - 50vw); padding-block: clamp(.5rem, 2vw, 1.5rem) clamp(2.5rem, 6vw, 5.5rem); }
-.st-bandeau-piste { display: flex; inline-size: max-content; }
-.st-bandeau-groupe { display: flex; }
-.st-bandeau-mot {
-  display: inline-flex; align-items: center; white-space: nowrap; font-family: var(--theme-font-display);
-  font-size: calc(clamp(3.5rem, 11vw, 10.5rem) * var(--echelle-titres, 1)); line-height: 1; letter-spacing: -.045em;
-}
-.st-bandeau-mot::after { content: "✦"; margin-inline: .45em; font-size: .3em; color: var(--theme-accent); }
-.st-bandeau-mot:nth-child(even) { color: transparent; -webkit-text-stroke: 1px color-mix(in srgb, var(--theme-encre) 70%, transparent); }
-
-/* Au toucher : un appui se sent. */
-@media (hover: none) {
-  html[data-structure="studio"] :is(.st-projet-lien, .st-domaine, .st-cta, .btn, .st-suivant-lien):active { scale: .985; transition: scale .2s var(--st-courbe); }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  /* Les transitions qui portent le reste. */
-  html[data-structure="studio"] .st-roule > span { transition: translate .55s var(--st-courbe); }
-  html[data-structure="studio"] .ed-nav a { transition: background-size .55s var(--st-courbe); }
-  html[data-structure="studio"][data-animations="expressives"] [data-aimant] { transition: translate .6s var(--st-courbe); }
-  html[data-structure="studio"][data-animations="expressives"] .st-heure-point { animation: st-pouls 2.4s ease-in-out infinite; }
-  html[data-structure="studio"][data-animations="expressives"] .st-heure-deux { animation: st-bat 2s steps(1) infinite; }
-  html[data-animations="expressives"] .st-heure { animation: st-entree 1s var(--st-courbe) both; animation-delay: .55s; }
-
-  /* L'en-tête s'efface en descendant, revient en remontant. */
-  html[data-structure="studio"][data-animations="expressives"] .ed-entete {
-    transition: translate .55s var(--st-courbe), background-color .35s var(--theme-courbe), color .35s var(--theme-courbe), border-color .35s var(--theme-courbe);
-  }
-  html[data-structure="studio"][data-entete="cache"] .ed-entete { translate: 0 -100%; }
-
-  /* Le bandeau défile sans fin ; MouvementStudio l'accélère avec le défilement. */
-  html[data-structure="studio"][data-animations="expressives"] .st-bandeau-piste { animation: st-defile 42s linear infinite; }
-  html[dir="rtl"][data-structure="studio"][data-animations="expressives"] .st-bandeau-piste { animation-name: st-defile-rtl; }
-
-  /* Le rideau d'une page à l'autre : il monte, bord arrondi, dit où l'on va, puis s'en va vers le haut. */
-  html[data-structure="studio"][data-animations="expressives"] .st-rideau {
-    display: grid; place-items: center; position: fixed; inset: 0; z-index: 9990; pointer-events: none;
-    background: var(--theme-encre); color: var(--theme-fond); translate: 0 105%;
-    border-start-start-radius: 50% 14vh; border-start-end-radius: 50% 14vh;
-  }
-  html[data-structure="studio"][data-rideau="entre"] .st-rideau {
-    translate: 0 0; border-start-start-radius: 0 0; border-start-end-radius: 0 0; pointer-events: auto;
-    transition: translate .52s cubic-bezier(.7, 0, .2, 1), border-radius .52s cubic-bezier(.7, 0, .2, 1);
-  }
-  html[data-structure="studio"][data-rideau="sort"] .st-rideau {
-    translate: 0 -105%; border-end-start-radius: 50% 14vh; border-end-end-radius: 50% 14vh;
-    transition: translate .85s var(--st-courbe), border-radius .85s var(--st-courbe);
-  }
-  .st-rideau-nom {
-    font-family: var(--theme-font-display); font-size: calc(clamp(2.25rem, 7vw, 6.5rem) * var(--echelle-titres, 1));
-    letter-spacing: -.035em; line-height: 1; padding-inline: var(--theme-marge); text-align: center; opacity: 0; translate: 0 40%;
-  }
-  html[data-rideau="entre"] .st-rideau-nom { opacity: 1; translate: 0 0; transition: opacity .35s .2s, translate .7s .14s var(--st-courbe); }
-  html[data-rideau="sort"] .st-rideau-nom { opacity: 0; translate: 0 -30%; transition: opacity .25s, translate .5s var(--st-courbe); }
-
-  /* L'intro, au premier passage : le nom monte lettre à lettre, un filet se trace, le voile se lève. */
-  html[data-structure="studio"][data-animations="expressives"]:not([data-intro-vue]) .st-intro {
-    display: grid; place-content: center; justify-items: center; gap: 1.5rem; position: fixed; inset: 0; z-index: 9995;
-    pointer-events: none; background: var(--theme-encre); color: var(--theme-fond);
-    animation: st-intro-leve .95s cubic-bezier(.7, 0, .2, 1) 1.1s both;
-  }
-  .st-intro-nom { display: flex; overflow: clip; padding-block-end: .08em; font-family: var(--theme-font-display); font-size: clamp(2.5rem, 7vw, 5.75rem); line-height: 1.05; letter-spacing: -.035em; }
-  .st-intro-lettre { display: inline-block; animation: st-ligne .85s var(--st-courbe) both; animation-delay: calc(90ms + var(--i, 0) * 32ms); }
-  .st-intro-filet { inline-size: min(15rem, 55vw); block-size: 1px; background: currentColor; opacity: .45; transform-origin: left; animation: st-jauge 1s var(--st-courbe) .2s both; }
-  /* Le titre de l'ouverture attend que le voile se lève. */
-  html[data-animations="expressives"]:not([data-intro-vue]) .st-ouverture-titre .vi-ligne > span { animation-delay: calc(1.35s + var(--l, 0) * 110ms); }
-  html[data-animations="expressives"]:not([data-intro-vue]) :is(.st-ouverture-etiquette, .st-ouverture-pied, .st-heure) { animation-delay: 1.75s; }
-}
-
-/* Le curseur : un point qui suit la souris (en différence : il se voit sur le clair comme sur le sombre),
-   un disque sur ce qui se clique, un rond plein qui parle sur une réalisation ou une photo. */
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  html[data-structure="studio"][data-curseur-actif] .st-curseur {
-    display: grid; place-items: center; position: fixed; inset: 0 auto auto 0; z-index: 9999; pointer-events: none;
-    inline-size: 6.5rem; block-size: 6.5rem; margin: -3.25rem 0 0 -3.25rem; border-radius: 50%;
-    background: #fff; mix-blend-mode: difference; scale: .1; will-change: translate, scale;
-    transition: scale .5s var(--st-courbe), background-color .3s, opacity .3s;
-  }
-  html[data-curseur-actif] .st-curseur[data-etat="lien"] { scale: .42; }
-  html[data-curseur-actif] .st-curseur[data-etat="texte"] { scale: 1; mix-blend-mode: normal; background: var(--theme-accent); color: #fff; }
-  html[data-curseur-actif] .st-curseur[data-etat="cache"] { scale: 0; }
-  html[data-curseur-actif] .st-curseur[data-appuye] { scale: .075; }
-  html[data-curseur-actif] .st-curseur[data-etat="lien"][data-appuye] { scale: .34; }
-  html[data-curseur-actif] .st-curseur[data-etat="texte"][data-appuye] { scale: .88; }
-  .st-curseur-texte { padding-inline: .625rem; font-size: .8125rem; font-weight: 500; line-height: 1.15; text-align: center; opacity: 0; transition: opacity .2s; }
-  .st-curseur[data-etat="texte"] .st-curseur-texte { opacity: 1; transition-delay: .1s; }
-  /* Le rond dit « Voir le projet » : la pastille fixe et le curseur du système s'effacent devant lui. */
-  html[data-curseur-actif] [data-curseur] { cursor: none; }
-  html[data-curseur-actif] .st-projet-voir { display: none; }
-}
-
-/* La barre de lecture, en haut de l'écran ; les photos qui se dévoilent ; le nom de la maison qui monte lettre à lettre. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    html[data-structure="studio"][data-animations="expressives"] .st-progression {
-      display: block; position: fixed; inset: 0 0 auto; z-index: 60; block-size: 2px; pointer-events: none;
-      background: var(--theme-accent); transform-origin: left; animation: st-progres linear both; animation-timeline: scroll(root);
-    }
-    html[dir="rtl"][data-structure="studio"] .st-progression { transform-origin: right; }
-    html[data-animations="expressives"][data-structure="studio"] :is(.st-projet-media, .st-recit-image, .vi-services-image, .st-galerie-vue) {
-      animation: st-devoile linear both; animation-timeline: view(); animation-range: entry 0% entry 95%;
-    }
-    html[data-animations="expressives"][data-structure="studio"] .ed-pied-marque .mg-lettre {
-      display: inline-block; animation: st-lettre linear both; animation-timeline: view();
-      animation-range: entry calc(5% + var(--i, 0) * 3%) cover calc(30% + var(--i, 0) * 3%);
+    html[data-animations="expressives"] :is(.st-recit-image, .st-galerie-vue, .vi-services-image) .cadre-image img {
+      scale: 1.1; animation: st-glisse-photo linear both; animation-timeline: view(); animation-range: cover 0% cover 100%;
     }
   }
 }
-
-@keyframes st-defile { to { translate: -50% 0; } }
-@keyframes st-defile-rtl { to { translate: 50% 0; } }
-@keyframes st-progres { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-/* La fin déborde de 10 px : le contour du clavier (posé 4 px autour de la photo) reste visible. */
-@keyframes st-devoile { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(-10px); } }
-@keyframes st-lettre { from { translate: 0 80%; opacity: 0; } }
-@keyframes st-intro-leve { to { translate: 0 -100%; border-end-start-radius: 50% 14vh; border-end-end-radius: 50% 14vh; visibility: hidden; } }
-@keyframes st-pouls { 50% { opacity: .35; scale: .8; } }
-@keyframes st-bat { 50% { opacity: .25; } }
+@keyframes st-glisse-photo { from { translate: 0 -4%; } to { translate: 0 4%; } }

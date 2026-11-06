@@ -13,7 +13,6 @@ import { assurancesPanier, bandeau, faitsDeService, lienConseil } from "@/lib/fa
 import { descendance, type Cadre } from "@/lib/boutique";
 import { aUnContact, contactDe } from "@/lib/contact";
 import { texte } from "@/lib/theme";
-import { Roule } from "./SectionsVitrine";
 
 /* ============================================================================
    L'EN-TÊTE — un par gabarit, parce que les deux métiers ne cherchent pas de
@@ -132,6 +131,11 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
   // « Parlons-en » au bout. Pas de recherche : on y regarde, on n'y cherche pas.
   const studio = cadre.theme.structure === "studio";
   const contact = aUnContact(contactDe(cadre)) || Boolean(cadre.formulaire);
+  const logo = (
+    <Link href="/" className="ed-logo" aria-label={t.marque.accueilAria(cadre.boutique.nom)}>
+      <Logo cadre={cadre} />
+    </Link>
+  );
   // Cinq rayons au plus à côté du logo ; « Tout le catalogue » s'il reste
   // de la place (sinon, il est dans le menu, les sections et le pied).
   const liens = studio
@@ -160,6 +164,8 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
       ) : null}
       <EnteteDefilant className="ed-entete" surImage={ouvertureSurPhoto(cadre)}>
         <div className="enveloppe ed-entete-rang" data-zone="entete">
+          {/* Au Studio, le nom de la maison d'abord : à gauche à l'écran, premier au clavier. */}
+          {studio ? logo : null}
           <div className="ed-entete-debut">
             <MenuMobile marque={<Logo cadre={cadre} />} entrees={entreesMenu(cadre)} raccourcis={raccourcisMenu(cadre)} faits={faits} aide={aideMenu(cadre)} className="cache-desktop"
               {...(studio ? { studio: true, tout: t.studio.toutesLesRealisations } : {})} />
@@ -168,12 +174,10 @@ function EnteteEditorial({ cadre }: { cadre: Cadre }) {
               racineDe={studio ? Object.fromEntries(cadre.categories.map((c) => [c.slug, "catalogue"])) : racines(cadre)}
               replier={studio || liens.some((l) => l.cle === "catalogue") ? undefined : { cle: "catalogue", href: "/catalogue", nom: t.commun.toutLeCatalogue }} />
           </div>
-          <Link href="/" className="ed-logo" aria-label={t.marque.accueilAria(cadre.boutique.nom)}>
-            <Logo cadre={cadre} />
-          </Link>
+          {studio ? null : logo}
           <div className="ed-entete-fin">
             {studio ? (
-              contact ? <Link className="st-entete-cta" href="/contact" data-aimant=""><Roule>{t.studio.parlonsEn}</Roule></Link> : null
+              contact ? <Link className="btn btn-primaire st-entete-cta" href="/contact">{t.studio.parlonsEn}</Link> : null
             ) : (
               <Link className="icone-btn" href="/recherche" aria-label={t.commun.rechercher}>
                 <Loupe />

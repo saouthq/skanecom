@@ -45,7 +45,7 @@ export default async function Catalogue({ params }: Params) {
   // Le Studio : les réalisations, en grand (components/Projets.tsx).
   if (cadre.theme.structure === "studio") {
     return (
-      <Gabarit>
+      <Gabarit className="flex-1">
         <ListeProjets cadre={cadre} liste={liste} filtres={f} base="/catalogue" titre={texte(cadre.theme.textes, "catalogue_titre", t.studio.realisations)}
           chapo={texte(cadre.theme.textes, "catalogue_chapo") || null} fil={null} rayonActif={null} />
       </Gabarit>
