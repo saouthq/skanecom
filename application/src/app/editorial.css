@@ -356,7 +356,8 @@ html[data-gabarit="editorial"] .attente-cartel .filigrane { inline-size: 14%; op
 .ed-entete-liste h1 { margin-block-start: 1.5rem; font-size: calc(clamp(3rem, 7.5vw, 6rem) * var(--echelle-titres, 1)); line-height: .92; letter-spacing: -.025em; }
 .ed-entete-liste .chapo { margin: 1.25rem auto 0; }
 .ed-entete-liste .sous-rayons { justify-content: center; gap: .5rem; margin-block-start: 1.75rem; }
-.ed-entete-liste .recherche-page { margin-inline: auto; }
+/* Une tête centrée : le champ, et le bouton quand il passe dessous (téléphone), dans l'axe. */
+.ed-entete-liste .recherche-page { margin-inline: auto; justify-content: center; }
 .ed-entete-liste .sous-rayons a {
   padding: .5rem 1rem; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--theme-encre) 16%, transparent);
   background: transparent; font-size: var(--ed-texte-ui); text-decoration: none; transition: border-color .2s, background-color .2s;

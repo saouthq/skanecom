@@ -117,7 +117,7 @@ html[data-allure="contemporaine"] .ed-entete-liste h1 {
 }
 html[data-allure="contemporaine"] .ed-entete-liste .chapo { margin-inline: 0; max-inline-size: 46ch; }
 html[data-allure="contemporaine"] .ed-entete-liste .sous-rayons { justify-content: flex-start; }
-html[data-allure="contemporaine"] .ed-entete-liste .recherche-page { margin-inline: 0; }
+html[data-allure="contemporaine"] .ed-entete-liste .recherche-page { margin-inline: 0; justify-content: flex-start; }
 @media (max-width: 699px) {
   /* Au téléphone, le menu et le titre disent où l'on est : le fil se tait. */
   html[data-allure="contemporaine"] .ed-entete-liste .fil { display: none; }
