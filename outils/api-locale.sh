@@ -192,6 +192,7 @@ ENV
     # Les domaines des boutiques chez Cloudflare (brancher, acheter) : simulés par le relais.
     printf 'CLOUDFLARE_DOMAINES=relais\n'
     printf 'CLOUDFLARE_REGISTRAR=relais\n'
+    printf 'CLOUDFLARE_TRAFIC=relais\n'
   } > "$RACINE/application/.dev.vars"
 
   # Jusqu'à une minute : au premier démarrage, GoTrue passe ses propres

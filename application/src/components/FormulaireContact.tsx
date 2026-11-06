@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Coche, Fleche } from "./Icones";
 import { t } from "@/lib/i18n";
+import { useControleRobot } from "@/lib/turnstile-navigateur";
 
 /* ============================================================================
    LE FORMULAIRE DE CONTACT (réglage vitrine.formulaire_contact) — sur la
@@ -19,7 +20,9 @@ import { t } from "@/lib/i18n";
    · envoyée, la demande laisse un remerciement qui prend le focus (lu par
      les lecteurs d'écran), et de quoi en écrire une autre ;
    · un champ piège, invisible et hors du clavier, arrête les robots qui
-     remplissent tout ; il ne gêne personne d'autre.
+     remplissent tout ; il ne gêne personne d'autre. Avec les clés Turnstile
+     de la plateforme, Cloudflare vérifie aussi le visiteur, sans énigme pour
+     un humain (lib/turnstile-navigateur.ts).
    · dans l'aperçu de l'éditeur, rien ne part : on voit le formulaire.
    ========================================================================== */
 
@@ -54,6 +57,7 @@ export function FormulaireContact({
   useEffect(() => { depart.current = Date.now(); }, []);
   const formulaire = useRef<HTMLFormElement>(null);
   const merci = useRef<HTMLHeadingElement>(null);
+  const { zone: zoneRobot, jeton: jetonRobot } = useControleRobot(etat !== "envoyee");
 
   const idDe = (c: string) => `${base}-${c}`;
 
@@ -64,12 +68,13 @@ export function FormulaireContact({
     setErreur(null);
     setEtat("envoi");
     try {
+      const turnstile = await jetonRobot();
       const r = await fetch("/contact/envoyer", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           nom: f.get("nom"), telephone: f.get("telephone"), email: f.get("email"), sujet: f.get("sujet"), message: f.get("message"),
-          produit: produit?.slug ?? null, page: window.location.pathname, site: f.get("site"), duree: Date.now() - depart.current,
+          produit: produit?.slug ?? null, page: window.location.pathname, site: f.get("site"), duree: Date.now() - depart.current, turnstile,
         }),
       });
       const corps = (await r.json().catch(() => null)) as { ok?: boolean; numero?: string; champ?: string; message?: string } | null;
@@ -160,6 +165,8 @@ export function FormulaireContact({
       </div>
       {erreur && !erreur.champ ? <p className="fc-erreur fc-erreur-generale" role="alert">{erreur.message}</p> : null}
       <div className="fc-pied">
+        {/* La vérification anti-robots (Turnstile) : vide pour un visiteur ordinaire, sa case s'il le faut. */}
+        <div ref={zoneRobot} className="controle-robot" />
         <button type="submit" className="btn btn-primaire fc-envoyer" disabled={etat === "envoi" || apercu}>
           {etat === "envoi" ? t.formulaire.envoi : t.formulaire.envoyer}
           <Fleche taille={16} className="icone-fleche rtl:-scale-x-100" />

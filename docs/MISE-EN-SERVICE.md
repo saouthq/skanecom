@@ -14,6 +14,7 @@ le catalogue et les photos étant prêts.
 | Le domaine de la boutique (`maymar.tn`) | registrar tunisien agréé | l'adresse de la vitrine |
 | Les SMS : `SMS_ENVOI` = `twilio:<compte>:<jeton>:<expéditeur>` | secret du Worker | le code de l'acheteur à la commande ; sans lui, Réglages → Commandes → vérification par e-mail |
 | Les e-mails : `COURRIELS_ENVOI` = `resend:<clé>:<adresse>` ou `brevo:<clé>:<adresse>` | secret du Worker, domaine vérifié chez le fournisseur | invitations, suivi des commandes, codes par e-mail |
+| L'anti-robots : `TURNSTILE_CLE_SITE` et `TURNSTILE_SECRET` (Cloudflare → Turnstile, un widget « Managed ») | secrets du Worker ; le domaine de la boutique ajouté au widget | le formulaire de contact et les codes par SMS ; sans elles, rien ne change |
 
 Le reste du déploiement : `docs/DEPLOIEMENT.md` (premier `vinext-cloudflare deploy`, puis le
 déploiement en deux temps).

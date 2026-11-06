@@ -28,42 +28,25 @@ clavier, téléphone, 1 440 / 1 280 / 1 000 / 768 / 390 px, une demande envoyée
 pour de vrai), pgTAP, essai de la vitrine. Il reste à l'étendre aux autres
 vitrines (même rigueur, chacune son caractère).
 
-## Maintenant : M6 puis M4 (tâche #192), prêts à poser
+## Fait le 06/11 : M6, M4 et M7 (le poste de contrôle)
 
-Les deux lots sont écrits et essayés sur une copie du dépôt, posés l'un après
-l'autre sur `00bb798` (dans cet ordre : M4 s'accroche à des lignes que M6
-ajoute). Ils sont gardés dans `docs/reprise/` :
+- **M6** — le diagnostic d'une boutique (sa fiche → Diagnostic) et les fiches
+  réflexes de l'État technique.
+- **M4** — les fournisseurs essayés chaque heure (une clé Resend « envoi
+  seul » est reconnue comme bonne).
+- **M7** — le trafic : lu chez Cloudflare avec la clé en lecture de Skander
+  (`CLOUDFLARE_LECTURE`, transmise au Worker de l'aperçu sous
+  `CLOUDFLARE_TRAFIC`). À vérifier en ligne après le déploiement : la table
+  `plateforme.trafic_lecture` de l'aperçu doit dire `ok = true` (sinon son
+  `detail` dit pourquoi).
 
-- **M6 — le diagnostic d'une boutique et les fiches réflexes.**
-  - Un onglet « Diagnostic » sur la fiche : la vitrine essayée à l'instant,
-    puis son statut, ses erreurs, ses e-mails, son catalogue, sa livraison,
-    son paiement, ses commandes. Ce qui bloque passe en tête, avec quoi faire.
-  - Dans l'État technique : les fiches réflexes (symptôme, puis le geste qui
-    répond).
-  - Migration `…120900_diagnostic`, pgTAP 126.
-- **M4 — les fournisseurs.** Konnect, Resend, SkanFact, etc. essayés depuis
-  l'État technique, et chaque heure. Migration `…121000_fournisseurs`,
-  pgTAP 127.
+- **Turnstile** — l'anti-robots devant le formulaire de contact et les codes
+  par SMS, coupé tant que les clés ne sont pas posées.
+- **La vitrine attend la base quatre secondes** (deux avant) : une lecture lente
+  au réveil de l'heure ne casse plus une page.
 
-Poser :
-
-```sh
-python3 docs/reprise/m6/appliquer.py
-docs/reprise/outils-essai/relance-vitrine.sh --build
-node docs/reprise/outils-essai/verif-m6.mjs   # captures dans $ESSAIS/m3m6-captures
-# pgTAP, parcours de la console, puis commit avec docs/reprise/m6/commit.txt, push
-python3 docs/reprise/m4/appliquer.py
-# même chose avec verif-m4.mjs et docs/reprise/m4/commit.txt
-```
-
-Deux pièges déjà corrigés dans les scripts, à ne pas réintroduire : le jeton
-`--ui-texte-doux` n'existe pas dans la console (c'est `--ui-texte-3`), et la
-colonne s'écrit `publie_le`, pas `publiee_le`.
-
-**M7 (le trafic)** : la clé est posée — secret GitHub `CLOUDFLARE_LECTURE`
-(jeton « skanecom-lecture-trafic », Account Analytics: Read, sans expiration,
-posé par Skander le 13/10). Reste à la transmettre au Worker dans `apercu.yml`
-et à construire l'écran.
+Les outils d'essai restent dans `docs/reprise/outils-essai/` (relance,
+captures, vérifications au navigateur).
 
 ## Ce qui attend Skander
 
@@ -71,6 +54,8 @@ et à construire l'écran.
 - Allumer les alertes de la surveillance, avec les adresses de destination.
 - Les sauvegardes Supabase.
 - Les comptes de production : SMS, Resend, Turnstile, les prix des formules…
+- Turnstile : créer le widget chez Cloudflare, y déclarer le domaine de chaque
+  boutique, poser les deux secrets.
 
 ## Plus loin (déjà notées)
 

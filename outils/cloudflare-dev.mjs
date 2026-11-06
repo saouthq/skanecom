@@ -13,6 +13,9 @@
 //       POST /cloudflare-dev/client/v4/accounts/<compte>/registrar/registrations  { domain_name }
 //     Un .tn n'est pas vendu par Cloudflare (« extension_not_supported ») ;
 //     un nom qui contient « pris » est déjà pris ; le prix suit l'extension.
+//   · Les analyses — le trafic des Workers, heure par heure (src/lib/console/trafic.ts) :
+//       POST /cloudflare-dev/client/v4/graphql   { query, variables: { compte, depuis, jusque } }
+//     Une journée déterministe : calme la nuit, deux pics (midi, soir), quelques erreurs.
 // Gardé en mémoire : jamais en production.
 export const PREFIXE = "/cloudflare-dev/client/v4";
 const NOMS = new Map(); // nom → nom personnalisé
@@ -44,6 +47,25 @@ export function cloudflareDev(req, res) {
     if (!/^Bearer \S{8,}/.test(String(req.headers.authorization ?? ""))) return refus(res, 403, 10000, "Authentication error");
     let entree = {};
     try { entree = JSON.parse(corps || "{}"); } catch { return refus(res, 400, 1001, "Invalid JSON"); }
+
+    // ---- Les analyses (GraphQL) : le trafic de l'application, heure par heure ----
+    if (chemin === "/graphql" && req.method === "POST") {
+      const v = entree.variables ?? {};
+      const depuis = Date.parse(v.depuis), jusque = Date.parse(v.jusque);
+      if (!Number.isFinite(depuis) || !Number.isFinite(jusque)) return json(res, 200, { data: null, errors: [{ message: "invalid variables" }] });
+      const HEURE = 3600_000;
+      const lignes = [];
+      for (let h = Math.ceil(depuis / HEURE) * HEURE; h <= jusque; h += HEURE) {
+        const heure = new Date(h).getUTCHours();
+        const requetes = Math.round(40 + 260 * Math.max(0, Math.sin(((heure - 6) / 16) * Math.PI)) + (heure === 19 ? 120 : 0));
+        lignes.push({
+          sum: { requests: requetes, errors: heure % 9 === 0 ? 2 : 0, subrequests: requetes * 3 },
+          quantiles: { cpuTimeP50: 3800 + heure * 40, cpuTimeP99: 26000 + heure * 600 },
+          dimensions: { datetimeHour: new Date(h).toISOString().replace(".000Z", "Z"), scriptName: "skanecom-application" },
+        });
+      }
+      return json(res, 200, { data: { viewer: { accounts: [{ workersInvocationsAdaptive: lignes }] } }, errors: null });
+    }
 
     // ---- Cloudflare for SaaS ----
     if (/^\/zones\/[\w-]+\/custom_hostnames$/.test(chemin)) {

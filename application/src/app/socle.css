@@ -1269,3 +1269,12 @@ html[data-gabarit=technique] .lot-piece-photo { aspect-ratio: 1; background: var
 .panier-lot { padding: .875rem 1rem .25rem; background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-doux); }
 .panier-lot-texte { margin-block-end: .125rem; }
 .tunnel-lot { color: inherit; }
+
+/* L'anti-robots (Turnstile, lib/turnstile-navigateur.ts) : rien pour un visiteur
+   ordinaire ; la case de Cloudflare, à sa taille, s'il doute. */
+.controle-robot:empty { display: none; }
+/* Le widget se pose en ligne : sans hauteur de ligne, invisible, il ne prend aucune place. */
+.controle-robot { line-height: 0; }
+.controle-robot iframe { display: block; max-inline-size: 100%; }
+/* Dans le pied d'un formulaire (une colonne flexible), la zone ne creuse pas d'écart quand le widget reste invisible. */
+.fc-pied > .controle-robot { margin-block-end: -.875rem; }

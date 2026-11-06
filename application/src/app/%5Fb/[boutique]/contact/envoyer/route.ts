@@ -5,6 +5,8 @@ import { envoyer } from "@/lib/courriels/envoi";
 import { adresseHote } from "@/lib/courriels/commandes";
 import { courrielDemande } from "@/lib/courriels/demandes";
 import { marqueDeBoutique } from "@/lib/courriels/messages";
+import { ipDuVisiteur, verifierTurnstile } from "@/lib/turnstile";
+import { t } from "@/lib/i18n";
 
 /* Envoyer une demande de contact (réglage vitrine.formulaire_contact), depuis
    components/FormulaireContact.tsx (JSON) ou, sans JavaScript, le formulaire
@@ -57,6 +59,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ boutiqu
   const duree = typeof corps.duree === "number" ? corps.duree : null;
   if (chaine(corps.site, 200).trim() || (duree !== null && duree < 2000)) {
     return json ? reponse({ ok: true, numero: null }) : retour({ demande: "envoyee" });
+  }
+
+  // Turnstile (les clés de la plateforme posées) : un visiteur que Cloudflare n'a pas vérifié ne passe pas.
+  if (!(await verifierTurnstile(corps.turnstile, ipDuVisiteur(req)))) {
+    return json ? reponse({ ok: false, raison: "robot", champ: null, message: t.formulaire.robot }, 422) : retour({ erreur: "1" });
   }
 
   const page = chaine(corps.page, 300);

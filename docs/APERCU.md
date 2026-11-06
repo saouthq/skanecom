@@ -65,6 +65,9 @@ donner à personne, ni les coller dans une conversation) :
    (Project Settings → API Keys → Legacy API Keys) — fait le 30/09.
 6. `SUPABASE_ACCESS_TOKEN` : un jeton d'accès de son compte Supabase
    (avatar → Account preferences → Access Tokens → Generate new token).
+7. `CLOUDFLARE_LECTURE` : un jeton Cloudflare en lecture seule (« Account
+   Analytics: Read ») — posé le 13/10. Le workflow en compose le secret
+   `CLOUDFLARE_TRAFIC` du Worker (État technique → Trafic) ; sans lui, « aucun ».
 
 Le workflow fait ensuite tout, à chaque exécution :
 

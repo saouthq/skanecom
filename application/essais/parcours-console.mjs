@@ -2206,6 +2206,19 @@ await etape("les fournisseurs : un appel inoffensif à chacun, ce qu'il répond"
   await capture(page, "console-fournisseurs", true);
 });
 
+await etape("le trafic : les requêtes de l'application heure par heure, lues chez Cloudflare (ici simulé)", async () => {
+  await page.goto(`${CONSOLE}/etat#t-trafic`, { waitUntil: "networkidle" });
+  const carte = page.locator('section[aria-labelledby="t-trafic"]');
+  await clic(page, carte.getByRole("button", { name: "Relire maintenant" }));
+  await page.waitForFunction(() => /^Relu/.test(document.querySelector('section[aria-labelledby="t-trafic"] .message')?.textContent ?? ""), null, { timeout: 60000 });
+  verifie((await carte.locator(".tr-barres > li").count()) === 24, "vingt-quatre heures, une barre chacune");
+  const requetes = Number((await carte.locator(".tr-chiffres dd").first().innerText()).replace(/\D/g, ""));
+  verifie(requetes > 0, `les requêtes des 24 heures : ${requetes}`);
+  await carte.locator(".tr-tableau summary").click();
+  verifie((await carte.locator(".tr-tableau tbody tr").count()) === 24, "le tableau, heure par heure");
+  await capture(page, "console-trafic", true);
+});
+
 await etape("les revenus : sans prix fixé, rien n'est compté ; les démonstrations n'y sont pas", async () => {
   await clic(page, page.locator(".app-cote").getByRole("link", { name: "Revenus" }));
   await page.waitForURL(/\/revenus$/);

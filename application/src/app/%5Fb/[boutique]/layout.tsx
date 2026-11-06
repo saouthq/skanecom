@@ -22,6 +22,7 @@ import { AncresDouces } from "@/components/AncresDouces";
 import { Suspense } from "react";
 import { ProgressionNavigation } from "@/components/console/Retours";
 import { ApercuApparence } from "@/components/ApercuApparence";
+import { cleSiteTurnstile } from "@/lib/turnstile";
 
 /* ============================================================================
    LE LAYOUT RACINE D'UNE BOUTIQUE
@@ -87,6 +88,8 @@ export default async function RacineBoutique({ children, params }: Props) {
     >
       <head>
         <style dangerouslySetInnerHTML={{ __html: feuilleDuTheme(cadre.theme, urlFichier) }} />
+        {/* L'anti-robots (lib/turnstile-navigateur.ts) : sa clé publique, quand la plateforme a ses clés. */}
+        {cleSiteTurnstile() ? <meta name="skanecom-turnstile" content={cleSiteTurnstile() ?? ""} /> : null}
         {/* Les pixels publicitaires, d'emblée si ce navigateur les a acceptés (lib/pixels.ts). */}
         {cadre.pixels && !cadre.apercu ? <script dangerouslySetInnerHTML={{ __html: scriptPixels(cadre.boutique.slug, cadre.pixels) }} /> : null}
       </head>

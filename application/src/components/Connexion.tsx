@@ -6,6 +6,7 @@ import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import { chiffresTelephone, telephoneLisible } from "@/lib/commande";
 import { canauxDe, emailValide, type Canal, type Verification } from "@/lib/connexion";
 import { t } from "@/lib/i18n";
+import { useControleRobot } from "@/lib/turnstile-navigateur";
 
 /* ============================================================================
    LA CONNEXION DE L'ACHETEUR — un code à six chiffres, reçu par SMS ou par
@@ -63,6 +64,8 @@ export function Identification({
   // Le réglage a changé sous nos pieds (rare) : le canal suit.
   const canalActif: Canal = canaux.includes(canal) ? canal : canaux[0];
   const parSms = canalActif === "sms";
+  // Par SMS, la vérification anti-robots (Turnstile, avec les clés de la plateforme) : un SMS coûte.
+  const { zone: zoneRobot, jeton: jetonRobot } = useControleRobot(parSms ? etape : false);
 
   useEffect(() => {
     if (attente <= 0) return;
@@ -99,11 +102,18 @@ export function Identification({
     setEnvoi(true);
     setErreur(null);
     // Par SMS, le numéro annoncé d'abord : le crochet des SMS saura pour
-    // quelle boutique le code part (compté à son mois). Jamais bloquant.
+    // quelle boutique le code part (compté à son mois). Il ne bloque que
+    // l'anti-robots : sans vérification (clés posées), le crochet n'envoie rien.
     if (cible.canal === "sms") {
-      await fetch("/compte/code-sms", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ telephone: cible.valeur }),
+      const turnstile = await jetonRobot();
+      const r = await fetch("/compte/code-sms", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ telephone: cible.valeur, turnstile }),
       }).catch(() => null);
+      if (r?.status === 403 && ((await r.json().catch(() => null)) as { raison?: string } | null)?.raison === "robot") {
+        setEnvoi(false);
+        setErreur(t.connexion.robot);
+        return;
+      }
     }
     // Par e-mail, l'adresse de la boutique en lien de retour : l'e-mail part
     // à son nom et à ses couleurs (le crochet des e-mails, lib/courriels).
@@ -200,6 +210,7 @@ export function Identification({
         <button type="button" className="btn-lien legende tunnel-renvoi" onClick={() => void envoyerCode()} disabled={attente > 0 || envoi}>
           {attente > 0 ? t.commande.renvoyerDans(attente) : t.commande.renvoyer}
         </button>
+        <div ref={zoneRobot} className="controle-robot" />
       </div>
     );
   }
@@ -289,6 +300,7 @@ export function Identification({
           <p id={`${id}-aide`} className="legende">{parSms ? t.commande.telephoneAideCompte : t.connexion.aideEmail}</p>
         ) : null}
         <p id={`${id}-erreur`} className="champ-erreur" role={erreur ? "alert" : undefined}>{erreurMontree}</p>
+        <div ref={zoneRobot} className="controle-robot" />
       </div>
     </div>
   );

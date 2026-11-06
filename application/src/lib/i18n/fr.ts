@@ -564,6 +564,7 @@ export const fr = {
    *  frais, délais, zones et montants arrivent en paramètre : ils viennent
    *  de la base (devis_commande, commande_suivie). */
   connexion: {
+    robot: "La vérification anti-robots n'a pas abouti : rechargez la page et réessayez.",
     canaux: "Recevoir le code par",
     parSms: "SMS",
     parEmail: "E-mail",
@@ -1440,6 +1441,7 @@ export const fr = {
 
   /** Le formulaire de contact (réglage vitrine.formulaire_contact). */
   formulaire: {
+    robot: "La vérification anti-robots n'a pas abouti : rechargez la page et réessayez, ou écrivez-nous sur WhatsApp.",
     titre: "Écrivez-nous",
     nom: "Votre nom",
     telephone: "Téléphone",

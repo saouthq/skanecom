@@ -321,8 +321,14 @@ jobs:
         working-directory: application
         env:
           DEUX_TEMPS: ${{ inputs.deux_temps }}
+          # La clé Cloudflare en lecture seule (Account Analytics: Read), posée par Skander le 13/10 : le trafic.
+          CLOUDFLARE_LECTURE: ${{ secrets.CLOUDFLARE_LECTURE }}
         run: |
           printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | $WRANGLER secret put SUPABASE_SERVICE_ROLE_KEY --name skanecom-application
+          # Le trafic (État technique → Trafic) : lu chez Cloudflare avec la clé en lecture seule ;
+          # « aucun » tant qu'elle n'est pas posée dans les secrets du dépôt.
+          if [ -n "$CLOUDFLARE_LECTURE" ]; then trafic="compte:$CLOUDFLARE_ACCOUNT_ID:$CLOUDFLARE_LECTURE"; else trafic="aucun"; fi
+          printf '%s' "$trafic" | $WRANGLER secret put CLOUDFLARE_TRAFIC --name skanecom-application
           # Les e-mails : rédigés par l'application, gardés pour la console (rien ne part de l'aperçu).
           printf '%s' "$COURRIELS_CROCHET_SECRET" | $WRANGLER secret put COURRIELS_CROCHET_SECRET --name skanecom-application
           printf '%s' "apercu" | $WRANGLER secret put COURRIELS_ENVOI --name skanecom-application
@@ -340,6 +346,10 @@ jobs:
           # Les domaines chez Cloudflare (brancher, acheter) : pas sur l'aperçu, sauf jeton posé à la main.
           for s in CLOUDFLARE_DOMAINES CLOUDFLARE_REGISTRAR; do
             printf '%s' "$deja" | grep -q "\"$s\"" || printf '%s' "aucun" | $WRANGLER secret put "$s" --name skanecom-application
+          done
+          # L'anti-robots (Turnstile) : pas sur l'aperçu, sauf clés posées à la main.
+          for s in TURNSTILE_CLE_SITE TURNSTILE_SECRET; do
+            printf '%s' "$deja" | grep -q "\"$s\"" || printf '%s' "aucune" | $WRANGLER secret put "$s" --name skanecom-application
           done
           # Le chiffrement des clés que les commerçants confient : tiré une fois,
           # jamais remplacé (les clés gardées ne se reliraient plus).

@@ -80,6 +80,15 @@ export default defineConfig({
       // Registrar). « aucun » : non branché, dit tel quel ; « relais » en local.
       CLOUDFLARE_DOMAINES: bindings.secret(),
       CLOUDFLARE_REGISTRAR: bindings.secret(),
+      // Le trafic des Workers, lu chez Cloudflare (src/lib/console/trafic.ts) :
+      // « compte:<id de compte>:<jeton> », droits « Account Analytics: Read »
+      // (lecture seule) ; « aucun » : non branché ; « relais » en local.
+      CLOUDFLARE_TRAFIC: bindings.secret(),
+      // L'anti-robots de Cloudflare (src/lib/turnstile.ts) : la clé du widget
+      // (publique) et son secret ; les deux posés, le formulaire de contact et
+      // les codes par SMS vérifient le visiteur. « aucune » : rien ne change.
+      TURNSTILE_CLE_SITE: bindings.secret(),
+      TURNSTILE_SECRET: bindings.secret(),
     },
   }),
 });

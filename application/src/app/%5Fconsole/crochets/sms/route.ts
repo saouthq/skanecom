@@ -2,6 +2,7 @@ import { signatureValide } from "@/lib/courriels/crochet";
 import { MARQUE_PLATEFORME } from "@/lib/courriels/messages";
 import { clientService } from "@/lib/console/service";
 import { envoyerSms } from "@/lib/sms/envoi";
+import { turnstileActif } from "@/lib/turnstile";
 
 /* ============================================================================
    LE CROCHET « SEND SMS » DE SUPABASE AUTH — Supabase confie le code et le
@@ -10,6 +11,8 @@ import { envoyerSms } from "@/lib/sms/envoi";
    le SMS part à son nom (lib/sms/envoi.ts), compté à son mois. Signé par
    Supabase avec le même secret que le crochet des e-mails
    (COURRIELS_CROCHET_SECRET) : sans signature valide, rien ne part.
+   Avec l'anti-robots (Turnstile) actif, un code dont l'annonce n'a pas été
+   vérifiée — un robot qui appelle Supabase Auth en direct — ne part pas.
    ========================================================================== */
 
 export const dynamic = "force-dynamic";
@@ -36,11 +39,15 @@ export async function POST(req: Request) {
   const code = evenement.sms?.otp ?? "";
   if (!chiffres || !/^\d{4,10}$/.test(code)) return erreur(400, "numéro ou code absents");
 
-  let boutique: { id: string; nom: string } | null = null;
+  let boutique: { id: string; nom: string; verifiee?: boolean } | null = null;
   try {
     const { data } = await clientService().rpc("console_boutique_du_sms", { p_telephone: chiffres });
-    boutique = (data as { id: string; nom: string } | null) ?? null;
+    boutique = (data as { id: string; nom: string; verifiee?: boolean } | null) ?? null;
   } catch { /* sans boutique retrouvée, SkanEcom signe le SMS */ }
+  if (turnstileActif() && boutique?.verifiee !== true) {
+    console.error("Crochet des SMS : code refusé, l'annonce du numéro n'a pas été vérifiée (anti-robots)");
+    return erreur(403, "Vérification anti-robots absente");
+  }
 
   const r = await envoyerSms({ a: `+${chiffres}`, code, nom: boutique?.nom ?? MARQUE_PLATEFORME.nom, boutique: boutique?.id ?? null });
   if (!r.ok) {
