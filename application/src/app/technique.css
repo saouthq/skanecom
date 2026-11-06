@@ -381,6 +381,18 @@ html[data-gabarit="technique"] .te-fiche-details h2 { border-block-end-width: 1p
   .te-grille-rang > .tuile-fin:nth-child(5n+1) { display: none; }
   .te-grille:not(.te-grille-rang) > .tuile-fin:nth-child(4n+1) { display: none; }
 }
+/* La tuile de fin, au bout d'une ligne incomplète (trois pièces sur cinq
+   colonnes), s'étire jusqu'au bord : plus de case vide à droite. */
+@media (min-width: 700px) and (max-width: 1099px) {
+  .te-grille > .tuile-fin:nth-child(3n+2) { grid-column: span 2; }
+}
+@media (min-width: 1100px) {
+  .te-grille-rang > .tuile-fin:nth-child(5n+2) { grid-column: span 4; }
+  .te-grille-rang > .tuile-fin:nth-child(5n+3) { grid-column: span 3; }
+  .te-grille-rang > .tuile-fin:nth-child(5n+4) { grid-column: span 2; }
+  .te-grille:not(.te-grille-rang) > .tuile-fin:nth-child(4n+2) { grid-column: span 3; }
+  .te-grille:not(.te-grille-rang) > .tuile-fin:nth-child(4n+3) { grid-column: span 2; }
+}
 
 /* Les services de l'accueil : autant de colonnes que de services (trois
    services ne laissent plus une case vide sur quatre). */

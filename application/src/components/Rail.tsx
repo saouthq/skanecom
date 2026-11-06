@@ -25,6 +25,8 @@ export function Rail({ tete, libelle, className = "", children }: {
   const total = Children.count(children);
   const [position, setPosition] = useState(1);
   const [bords, setBords] = useState({ debut: true, fin: total <= 1 });
+  // Tout tient à l'écran (trois pièces sur un grand écran) : ni compteur ni flèches, il n'y a rien à faire défiler.
+  const [defile, setDefile] = useState(true);
 
   useEffect(() => {
     const el = liste.current;
@@ -36,6 +38,7 @@ export function Rail({ tete, libelle, className = "", children }: {
       const reste = el.scrollWidth - el.clientWidth - fait;
       setPosition(Math.min(total, Math.max(1, Math.round(fait / Math.max(pas, 1)) + 1)));
       setBords({ debut: fait < 4, fin: reste < 4 });
+      setDefile(el.scrollWidth - el.clientWidth > 4);
     };
     lire();
     el.addEventListener("scroll", lire, { passive: true });
@@ -59,7 +62,7 @@ export function Rail({ tete, libelle, className = "", children }: {
       <div className="im-rail-tete">
         <div className="im-rail-titre">{tete}</div>
         {total > 1 ? (
-          <div className="im-rail-gestes">
+          <div className="im-rail-gestes" hidden={!defile}>
             <span className="im-rail-position" aria-hidden="true">{t.accueil.railPosition(position, total)}</span>
             <button type="button" className="im-rail-fleche" onClick={() => glisser(-1)} disabled={bords.debut} aria-label={t.accueil.railPrecedent}>
               <Fleche taille={18} className="-scale-x-100 rtl:scale-x-100" />

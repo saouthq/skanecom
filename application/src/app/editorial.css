@@ -451,8 +451,9 @@ html[data-gabarit="editorial"] .pli > div { font-size: .9375rem; line-height: 1.
 
 /* --- Pied de page ----------------------------------------------------------- */
 .ed-pied { margin-block-start: calc(clamp(4.5rem, 9vw, 8rem) * var(--echelle-espace, 1)); border-block-start: 1px solid var(--theme-filet); }
-/* L'accueil finit par les engagements (filet bas) : le pied s'y colle. */
-main:has(> .ed-engagements:last-child) + .ed-pied { margin-block-start: 0; border-block-start: 0; }
+/* L'accueil finit par les engagements (filet bas) : le pied s'y colle — qu'ils
+   soient enfants du <main> ou de l'accueil d'une structure (immersif). */
+main:has(> .ed-engagements:last-child, > :last-child > .ed-engagements:last-child) + .ed-pied { margin-block-start: 0; border-block-start: 0; }
 .ed-pied-grille { display: grid; gap: 2.5rem; padding-block: 3.5rem 1rem; }
 @media (min-width: 700px) { .ed-pied-grille { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 3rem; } }
 .ed-pied-intro p { max-inline-size: 22ch; font-family: var(--theme-font-display); font-size: 1.875rem; line-height: 1.1; letter-spacing: -.01em; }

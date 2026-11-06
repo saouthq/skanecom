@@ -77,6 +77,7 @@ html[data-structure="immersif"] .etiquette { letter-spacing: .24em; }
 .im-rail-titre .etiquette { margin: 0; }
 .im-tout { justify-self: start; font-size: .875rem; }
 .im-rail-gestes { display: flex; align-items: center; gap: .625rem; }
+.im-rail-gestes[hidden] { display: none; }
 .im-rail-position { margin-inline-end: .75rem; font-size: .875rem; letter-spacing: .1em; font-variant-numeric: tabular-nums; color: var(--theme-encre-doux); }
 .im-rail-fleche {
   display: grid; place-items: center; inline-size: 3.25rem; block-size: 3.25rem; padding: 0; border-radius: 999px;

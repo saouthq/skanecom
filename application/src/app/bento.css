@@ -34,6 +34,8 @@ a.bn-tuile:focus-visible { outline: 2px solid var(--theme-encre); outline-offset
   background: linear-gradient(to top, rgb(0 0 0 / .62) 0%, rgb(0 0 0 / .22) 42%, transparent 70%);
 }
 .bn-section { margin-block: calc(clamp(2.5rem, 5vw, 4.5rem) * var(--echelle-espace, 1)); }
+/* La dernière section ne double pas l'écart du pied (le <main> est une colonne flexible : les marges ne fusionnent pas). */
+.bn-accueil > .bn-section:last-child { margin-block-end: 0; }
 .bn-tete { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: .75rem 2rem; margin-block-end: 1.25rem; }
 .bn-tete h2 { margin: .25rem 0 0; font-size: calc(clamp(1.875rem, 3.2vw, 2.75rem) * var(--echelle-titres, 1)); line-height: 1; letter-spacing: -.015em; }
 .bn-lien { display: inline-flex; align-items: center; gap: .375rem; font-size: .9375rem; font-weight: 500; color: var(--theme-encre); text-decoration: none; }

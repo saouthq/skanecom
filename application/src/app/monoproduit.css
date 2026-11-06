@@ -78,6 +78,8 @@
 
 /* Le dernier rappel, au bas de la page : le produit, son prix, « Commander ». */
 .pv-rappel { margin-block: clamp(3rem, 7vw, 6rem); }
+/* Le dernier rappel de l'accueil ne double pas l'écart du pied. */
+main > .pv-rappel:last-child { margin-block-end: 0; }
 .pv-rappel-corps {
   display: grid; justify-items: center; gap: 1rem; padding: clamp(2rem, 5vw, 3.5rem) var(--theme-marge);
   border-radius: var(--theme-radius-carte); background: var(--theme-surface-2); text-align: center;
