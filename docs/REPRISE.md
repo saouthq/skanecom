@@ -44,9 +44,11 @@ protocole.
   seul » est reconnue comme bonne).
 - **M7** — le trafic : lu chez Cloudflare avec la clé en lecture de Skander
   (`CLOUDFLARE_LECTURE`, transmise au Worker de l'aperçu sous
-  `CLOUDFLARE_TRAFIC`). À vérifier en ligne après le déploiement : la table
-  `plateforme.trafic_lecture` de l'aperçu doit dire `ok = true` (sinon son
-  `detail` dit pourquoi).
+  `CLOUDFLARE_TRAFIC`). **Vérifié en ligne le 07/11 à 01:17 UTC** : lecture
+  réussie, 209 heures-Worker sur 25 heures (9 Workers), 2 614 requêtes de
+  l'application, 0 erreur. Le relevé tourne à la 17e minute de chaque heure
+  (à l'heure pile, l'API des analyses ne répondait pas en dix secondes) ; le
+  workflow de l'aperçu mesure aussi la lecture à chaque déploiement.
 
 - **Turnstile** — l'anti-robots devant le formulaire de contact et les codes
   par SMS, coupé tant que les clés ne sont pas posées.
