@@ -1398,9 +1398,18 @@ if (section("2")) {
     await tape(page, "Rappeler avant toute nouvelle commande");
     await envoie(page.getByRole("button", { name: "Enregistrer la note" }));
     verifie((await page.locator("#note").inputValue()) === "Rappeler avant toute nouvelle commande", "la note est gardée");
+    // Sur sa commande, ce que l'équipe sait de lui : qui appelle, prépare ou livre le lit sans ouvrir sa fiche.
+    await ouvre(page, 6);
+    const aSavoir = await page.locator(".bo-fiche-cote .bo-a-savoir").innerText();
+    verifie(aSavoir.includes("Bloqué pour la vitrine : Colis refusé à la porte") && aSavoir.includes("Rappeler avant toute nouvelle commande"),
+      "sur sa commande, la carte du client dit pourquoi il est bloqué, et la note de l'équipe");
+    await page.goto(ficheClient, { waitUntil: "networkidle" });
     await clic(page, page.locator("section:has(#t-confiance)").getByText("Normal", { exact: true }));
     await envoie(page.locator("section:has(#t-confiance)").getByRole("button", { name: "Enregistrer" }));
     verifie(!(await page.locator("h1").innerText()).includes("Bloqué"), "rétabli, sans motif à donner");
+    await ouvre(page, 6);
+    const apres = await page.locator(".bo-fiche-cote .bo-a-savoir").innerText();
+    verifie(!apres.includes("Bloqué") && apres.includes("Rappeler avant toute nouvelle commande"), "rétabli : la note reste, la vigilance s'efface");
   });
 
   /* ---------------- L'équipe (B7) ---------------- */

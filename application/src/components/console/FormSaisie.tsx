@@ -293,9 +293,9 @@ export function FormSaisie({
                     {client.pro ? <span className="ui-etat ui-etat-bleu">Pro · {client.pro}</span> : null}
                   </p>
                   {risque === "bloque" ? (
-                    <p className="sc-client-texte">Bloqué pour la vitrine : il ne peut plus commander en ligne. Vous pouvez saisir sa commande si vous lui faites confiance.</p>
+                    <p className="sc-client-texte">Bloqué pour la vitrine : la boutique en ligne refuse ses commandes. Vous pouvez saisir celle-ci si vous lui faites confiance.</p>
                   ) : risque === "surveille" ? (
-                    <p className="sc-client-texte">Client surveillé : confirmez bien sa commande avec lui.</p>
+                    <p className="sc-client-texte">Surveillé : confirmez bien la commande avant de l&apos;enregistrer.</p>
                   ) : null}
                   {client.pro ? <p className="sc-client-texte">Ses prix pro s&apos;appliquent.</p> : null}
                   {client.adresse ? (

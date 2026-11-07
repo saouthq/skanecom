@@ -85,7 +85,7 @@ bouton final « Confirmer la commande » n'est qu'un cadre.
 
 ## Fait le 07/11 (après-midi) : d'autres parcours joués en vrai
 
-Dix-neuf lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
+Vingt lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
 et par les parcours automatiques : la cliente de Selma (filtres, panier, code
 promo, commande), l'artisan de la Quincaillerie (comparer, retrait, facture
 société, quantité tapée, devis), le devis des deux côtés, l'équipe (une
@@ -95,7 +95,9 @@ invité, la vente au comptoir (et son reçu), le SAV au backoffice, les
 codes promo, l'ajout rapide au doigt, les réglages (la confirmation d'office), l'employée de préparation, les
 favoris et la recherche au téléphone, un produit créé au téléphone, le
 code SMS faux, le site vitrine (formulaire de contact, demandes), le client
-bloqué, les encaissements, l'éditeur de la vitrine au téléphone. Le détail : feuille de
+bloqué, les encaissements, l'éditeur de la vitrine au téléphone, le client
+surveillé vu par l'employé des appels, l'achat sur la page de vente de
+Yasmine. Le détail : feuille de
 route, section E, « D'autres parcours, joués en vrai ».
 
 Remarqué, laissé tel quel :
@@ -107,7 +109,8 @@ Remarqué, laissé tel quel :
 - La page de bienvenue d'une invitation ne nomme pas la boutique (l'e-mail,
   si).
 - « Panier (250) » compte les pièces, même pour 250 vis.
-- En local, après `outils/base-locale.sh reinit`, redémarrer l'application
+- En local, après `outils/base-locale.sh reinit`, relancer `outils/api-locale.sh
+  demarrer` (les comptes de l'équipe) et redémarrer l'application
   (`redemarre-app.sh`) avant un parcours : les pages produit gardées en cache
   portent les identifiants de déclinaisons d'avant, que la base ne connaît
   plus (le tunnel les dit « plus disponibles »). La CI part d'un serveur neuf.
@@ -115,6 +118,9 @@ Remarqué, laissé tel quel :
   messageries refusent souvent le SVG : il faudrait une version PNG).
 - Au comptoir, la liste de recherche montre le prix public même pour un
   client pro (son prix pro paraît dès l'article ajouté, chiffré par la base).
+- La saisie d'une commande (au téléphone, au comptoir) reconnaît un client
+  surveillé, mais n'en donne pas encore le motif ni la note de l'équipe (la
+  fiche de la commande, si).
 - Le bandeau d'une boutique suspendue dit « appelez-nous » (le message de la
   console), sans moyen de joindre SkanEcom : il faudra le numéro du support.
 

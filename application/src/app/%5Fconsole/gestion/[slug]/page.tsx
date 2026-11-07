@@ -243,7 +243,10 @@ export default async function Commandes({
                     {c.client && c.client.nb_commandes > 1 ? <span className="ui-etat">{c.client.nb_commandes} commandes</span> : null}
                     {c.client && c.client.nb_refus > 0 ? <span className="ui-etat ui-etat-rouge">{c.client.nb_refus} refus</span> : null}
                     {c.client && c.client.niveau_risque !== "normal" ? (
-                      <span className="ui-etat ui-etat-rouge">{c.client.niveau_risque === "bloque" ? "Bloqué" : "Surveillé"}</span>
+                      // Comme sur sa fiche : surveillé en ambre (prudence), bloqué en rouge.
+                      c.client.niveau_risque === "bloque"
+                        ? <span className="ui-etat ui-etat-rouge">Bloqué</span>
+                        : <span className="ui-etat ui-etat-ambre"><Icone nom="alerte" taille={12} /> Surveillé</span>
                     ) : null}
                     {aConfirmer && c.appels > 0 ? (
                       <span className="ui-etat ui-etat-ambre">

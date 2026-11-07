@@ -28,6 +28,7 @@ import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { canal as canalDe } from "@/lib/gestion/saisie";
 import { jourArrivage } from "@/lib/gestion/arrivages";
+import { pastilleConfiance, type Confiance } from "@/lib/gestion/clients";
 
 /* ============================================================================
    LA FICHE D'UNE COMMANDE — en tête, le geste du moment, selon l'étape :
@@ -108,8 +109,11 @@ type Fiche = {
     compte: boolean;
     nb_commandes: number;
     nb_refus: number;
-    niveau_risque: string;
+    niveau_risque: Confiance;
     depuis: string;
+    /** La note de l'équipe sur le client (sa fiche), et pourquoi il est surveillé ou bloqué. */
+    note: string | null;
+    vigilance: { motif: string | null; le: string; auteur: string | null } | null;
   } | null;
   autres: { numero: string; statut: string; cree_le: string; total_millimes: number }[];
 };
@@ -242,6 +246,33 @@ const peut = (role: Role, roles: Role[]) => roles.includes(role);
 const CONFIRMER: Role[] = ["proprietaire", "admin", "confirmateur"];
 const EXPEDIER: Role[] = ["proprietaire", "admin", "preparateur"];
 const LIVRER: Role[] = ["proprietaire", "admin", "confirmateur", "preparateur"];
+
+/** Ce que l'équipe sait du client — pourquoi il est surveillé ou bloqué, la note de sa fiche : à lire avant d'appeler, de préparer, de livrer. */
+function ASavoir({ client, maintenant, titre }: { client: NonNullable<Fiche["client"]>; maintenant: Date; titre?: string }) {
+  const v = client.niveau_risque !== "normal" ? client.vigilance : null;
+  if (!v && !client.note) return null;
+  const niveau = client.niveau_risque === "bloque" ? "Bloqué pour la vitrine" : "Surveillé";
+  return (
+    <div className="bo-a-savoir" role="note" aria-label={titre ?? "À savoir sur ce client"}>
+      {titre ? <p className="bo-a-savoir-titre">{titre}</p> : null}
+      {client.niveau_risque !== "normal" ? (
+        <p className={`bo-a-savoir-ligne bo-a-savoir-${client.niveau_risque}`}>
+          <Icone nom="alerte" taille={16} />
+          <span>
+            <strong>{niveau}</strong>{v?.motif ? <> : {v.motif}</> : null}
+            {v ? <span className="bo-a-savoir-meta">{v.auteur ? `${v.auteur} · ` : ""}{quand(v.le, maintenant)}</span> : null}
+          </span>
+        </p>
+      ) : null}
+      {client.note ? (
+        <p className="bo-a-savoir-ligne">
+          <Icone nom="note" taille={16} />
+          <span><strong>Note de l&apos;équipe</strong> : {client.note}</span>
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 function etapeDe(statut: string): string {
   if (statut === "recue" || statut === "a_arbitrer") return "a_confirmer";
@@ -499,6 +530,7 @@ export default async function FicheCommande({
                         ? <>Appelez {prenom} pour confirmer la commande et le moment du retrait au magasin, puis notez le résultat.</>
                         : <>Appelez {prenom} pour confirmer l&apos;adresse et la disponibilité, puis notez le résultat.</>}
                     </p>
+                    {f.client ? <ASavoir client={f.client} maintenant={maintenant} titre="À savoir avant d'appeler" /> : null}
                     <div className="bo-contact">
                       <a className="btn btn-primaire btn-grand" href={lienAppel(f.contact.telephone)}>
                         <Icone nom="telephone" /> Appeler le {telephoneLisible(f.contact.telephone)}
@@ -892,10 +924,10 @@ export default async function FicheCommande({
                       : <span className="ui-etat">Commande en invité</span>}
                     {f.client.nb_commandes <= 1 ? <span className="ui-etat ui-etat-bleu">Nouveau client</span> : <span className="ui-etat">{f.client.nb_commandes} commandes</span>}
                     {f.client.nb_refus > 0 ? <span className="ui-etat ui-etat-rouge">{f.client.nb_refus} refus à la livraison</span> : null}
-                    {f.client.niveau_risque !== "normal" ? (
-                      <span className="ui-etat ui-etat-rouge">{f.client.niveau_risque === "bloque" ? "Bloqué" : "Surveillé"}</span>
-                    ) : null}
+                    {(() => { const p = pastilleConfiance(f.client.niveau_risque); return p ? <span className={p.classe}>{p.texte}</span> : null; })()}
                   </p>
+                  {/* À confirmer, l'étape d'appel le dit déjà ; ensuite, c'est ici que le préparateur le lit. */}
+                  {aConfirmer && peut(role, CONFIRMER) ? null : <ASavoir client={f.client} maintenant={maintenant} />}
                   <p className="text-petit discret mt-3 bo-client-depuis">
                     Client depuis le {new Date(f.client.depuis).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" })}
                     <Link href={`/gestion/${slug}/clients/${f.client.telephone.replace(/\D/g, "")}`} className="lien">Voir sa fiche <Icone nom="droite" taille={12} /></Link>

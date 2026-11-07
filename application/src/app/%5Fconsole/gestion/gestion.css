@@ -225,6 +225,17 @@
 .bo-action h2 { font-size: 1.0625rem; }
 .bo-action-aide { color: var(--ui-texte-2); margin-block-end: 1rem; }
 .bo-action-note { display: flex; align-items: center; gap: .5rem; margin-block-start: 1rem; font-size: .8125rem; color: var(--ui-texte-3); }
+/* Ce que l'équipe sait du client : le pourquoi de sa vigilance, la note de sa fiche. */
+.bo-a-savoir { display: grid; gap: .5rem; margin-block: -.25rem 1rem; padding: .75rem .875rem; border-radius: 10px;
+  background: var(--ui-doux); box-shadow: inset 0 0 0 1px var(--ui-bord-leger); font-size: .875rem; }
+.ui-etats + .bo-a-savoir { margin-block: .75rem 0; }
+.bo-a-savoir-titre { margin: 0; font-size: .75rem; font-weight: 600; color: var(--ui-texte-3); }
+.bo-a-savoir-ligne { display: flex; align-items: flex-start; gap: .5rem; margin: 0; color: var(--ui-texte); line-height: 1.45; overflow-wrap: anywhere; }
+.bo-a-savoir-ligne > .icone { flex: none; margin-block-start: .125rem; color: var(--ui-texte-3); }
+.bo-a-savoir-ligne strong { font-weight: 600; }
+.bo-a-savoir-surveille > .icone, .bo-a-savoir-surveille strong { color: var(--ui-ambre); }
+.bo-a-savoir-bloque > .icone, .bo-a-savoir-bloque strong { color: var(--ui-rouge); }
+.bo-a-savoir-meta { display: block; font-size: .75rem; color: var(--ui-texte-3); }
 .console .carte.bo-cloture { box-shadow: var(--ui-ombre-xs); border-color: var(--ui-bord-leger); background: var(--ui-panneau); }
 .bo-cloture .bo-action-aide { margin-block-end: 0; }
 .bo-cloture .bo-action-icone { background: var(--ui-doux); color: var(--ui-texte-2); box-shadow: inset 0 0 0 1px var(--ui-bord); }
