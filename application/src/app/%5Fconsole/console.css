@@ -1731,10 +1731,16 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
 .nb-tete-etape[aria-current="step"] .nb-tete-numero { background: var(--ui-texte); border-color: var(--ui-texte); color: var(--ui-panneau); }
 .nb-tete-etape[data-faite] .nb-tete-numero { background: var(--ui-vert-fond); border-color: var(--ui-vert-bord); color: var(--ui-vert); }
 @media (max-width: 40rem) {
-  .nb-tete-etape > span:not(.nb-tete-numero) { display: none; }
+  /* Masqué à l'œil, pas aux lecteurs d'écran : le numéro est aria-hidden, et
+     « display: none » laissait ces boutons sans nom (« bouton », rien d'autre). */
+  .nb-tete-etape > span:not(.nb-tete-numero) {
+    position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
   .nb-tete-etape { justify-content: center; }
   /* L'étape en cours dit son nom, sur une ligne, et prend la place qu'il lui faut ; son numéro reste centré. */
-  .nb-tete-etape[aria-current="step"] > span:not(.nb-tete-numero) { display: inline; white-space: nowrap; }
+  .nb-tete-etape[aria-current="step"] > span:not(.nb-tete-numero) {
+    position: static; inline-size: auto; block-size: auto; overflow: visible; clip-path: none; display: inline;
+  }
   .nb-tete li:has([aria-current="step"]) { flex: 0 0 auto; }
 }
 .nb-etape { display: grid; gap: 1rem; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
