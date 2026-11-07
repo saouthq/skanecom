@@ -1,5 +1,7 @@
 "use client";
 
+import { ImagesMarque } from "@/app/%5Fconsole/(protegee)/boutiques/[slug]/marque/ImagesMarque";
+import type { ImagesMarque as ImagesMarqueType } from "@/lib/console/images-marque";
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Icone } from "./Icone";
 import { BoutonCopier } from "./BoutonCopier";
@@ -125,13 +127,15 @@ const heureTunis = () => new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", min
 const empreinteRendu = (b: { sections?: unknown; reglages?: unknown }) => JSON.stringify({ sections: b.sections ?? null, reglages: b.reglages ?? null });
 
 export function EditeurApparence({
-  action, photoAction, retour: lienRetour, vitrine, ecrit, nom, fiche, panneau: panneauInitial, infos, reglages: reglagesInitiaux, whatsapp,
+  action, photoAction, logo, retour: lienRetour, vitrine, ecrit, nom, fiche, panneau: panneauInitial, infos, reglages: reglagesInitiaux, whatsapp,
   pages: pagesInitiales, pageOuverte, modeles, office, affichee,
   version: versionInitiale, publie: publieInitial, brouillon: brouillonInitial, message,
 }: {
   action: string;
   /** Où téléverser une photo de l'accueil. */
   photoAction: string;
+  /** Le logo de la boutique (« En-tête et pied ») : où l'envoyer, et ce qui est posé. */
+  logo: { action: string; slug: string; images: ImagesMarqueType } | null;
   /** Le backoffice, d'où l'on vient (l'éditeur prend tout l'écran). */
   retour: string;
   vitrine: string | null;
@@ -165,6 +169,7 @@ export function EditeurApparence({
   const depart = brouillonInitial?.contenu ?? publieInitial;
   const [publie, setPublie] = useState(publieInitial);
   const [version, setVersion] = useState(versionInitiale);
+  const [imagesLogo, setImagesLogo] = useState<ImagesMarqueType | null>(null);
   const [contenu, setContenu] = useState<ContenuApparence>(depart);
   const [brouillon, setBrouillon] = useState<Brouillon | null>(brouillonInitial ? { version: brouillonInitial.version, jeton: brouillonInitial.jeton } : null);
   // Le contenu tel que la base l'a (brouillon ou publié) : l'écran sait s'il reste à enregistrer.
@@ -948,6 +953,15 @@ export function EditeurApparence({
           </div>
 
           <div className="ap-panneau" role="tabpanel" id="ap-panneau-cadre" aria-labelledby="ap-onglet-cadre" hidden={panneau !== "cadre"}>
+            {logo && ecrit ? (
+              // Le logo s'enregistre à part (il ne passe pas par le brouillon) : la version du thème qu'il rend
+              // est gardée pour publier ensuite, et l'aperçu se recharge pour le montrer.
+              <ImagesMarque slug={logo.slug} action={logo.action} seulement={["logo", "monogramme", "favicon"]}
+                titre="Logo" intro="Enregistré dès son envoi, il paraît aussitôt sur la vitrine (sans attendre « Publier ») ; glissez un fichier sur sa ligne, ou choisissez-le. Un SVG devient une image nette ; les marges vides sont ôtées."
+                images={{ ...(imagesLogo ?? logo.images), version: version ?? 0 }}
+                teintes={{ fond: contenu.couleurs.fond, encre: contenu.couleurs.encre, surface: contenu.couleurs.surface }}
+                surChangement={(im) => { setImagesLogo(im); setVersion(im.version); recharger(brouillon ? `${brouillon.jeton}.${brouillon.version}` : null); }} />
+            ) : null}
             <PanneauCadre reglages={reglages} ecrit={ecrit} whatsapp={whatsapp} lienReglages={lienRetour + "/reglages/contact"} regler={reglerReglage} />
           </div>
 

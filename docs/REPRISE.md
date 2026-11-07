@@ -70,19 +70,18 @@ conseil WhatsApp sur toutes les fiches (message prérempli), l'ouverture sans
 photo, les saisies perdues au backoffice, la photo retirée sans question, le
 lien proposé après chaque geste sur une commande.
 
-Restent à trancher avec Skander (voir le bilan de la séance) :
+Tranché par Skander le 07/11 :
 
-- **L'aperçu avant l'ouverture** : une boutique « en préparation » ne se voit
-  nulle part — ni dans l'éditeur (« l'aperçu apparaîtra dès son ouverture »),
-  ni par « Voir la vitrine » (« Boutique fermée »). Le commerçant règle à
-  l'aveugle. Le permettre à l'équipe touche le filtre `statut = 'active'` de la
-  vitrine (une soixantaine d'endroits) : un chantier à part.
-- **Le logo** : le commerçant ne peut pas poser le sien (seule la console, onglet
-  Marque, le fait). Voulu ?
-- Petits points : la référence tirée du nom (« PORTEFEUILLE-HOMME-EN-CU ») paraît
-  dans les suggestions de recherche ; « Les nouveautés » et « La sélection »
-  montrent les mêmes pièces sur un tout petit catalogue ; en style « contour »,
-  le bouton final « Confirmer la commande » n'est qu'un cadre.
+- **L'aperçu avant l'ouverture** : voulu ainsi — une boutique sans contenu ne
+  donnerait pas envie ; on l'ouvre une fois garnie.
+- **Le logo** : le commerçant le pose lui-même (fait le 07/11 : éditeur de la
+  vitrine → En-tête et pied → Logo, avec le monogramme et l'icône d'onglet ;
+  migration …_logo_commercant, pgTAP 130).
+
+Petits points restants : la référence tirée du nom (« PORTEFEUILLE-HOMME-EN-CU »)
+paraît dans les suggestions de recherche ; « Les nouveautés » et « La sélection »
+montrent les mêmes pièces sur un tout petit catalogue ; en style « contour », le
+bouton final « Confirmer la commande » n'est qu'un cadre.
 
 ## Ce qui attend Skander
 

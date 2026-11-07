@@ -1,3 +1,4 @@
+import { imagesDuTheme } from "@/lib/console/images-marque";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -48,7 +49,7 @@ export default async function Apparence({
   const { boutique } = await exigeMembre(slug);
   if (!DIRECTION.includes(boutique.role)) notFound();
   const sb = await clientSession();
-  const [{ data, error }, accueil, cadre, hoteConsole, { data: piece }, { data: numero }] = await Promise.all([
+  const [{ data, error }, accueil, cadre, hoteConsole, { data: piece }, { data: numero }, { data: themeImages }] = await Promise.all([
     sb.rpc("gestion_apparence", { p_boutique_id: boutique.boutique_id }),
     // Ce que l'accueil peut montrer : les rayons, les pages, les avis, les marques.
     sb.rpc("gestion_accueil", { p_boutique_id: boutique.boutique_id }),
@@ -59,6 +60,9 @@ export default async function Apparence({
       .order("mis_en_avant", { ascending: false }).order("position").limit(1).maybeSingle(),
     // Le numéro WhatsApp (écran Réglages) : sans lui, pas de bouton flottant.
     sb.from("reglages").select("valeur").eq("boutique_id", boutique.boutique_id).eq("cle", "contact.whatsapp").maybeSingle(),
+    // Le logo, le monogramme et l'icône d'onglet : le commerçant les pose dans « En-tête et pied ».
+    sb.from("themes").select("version, code, sections, logo_chemin, logo_ratio, logo_mode, monogramme_chemin, favicon_chemin")
+      .eq("boutique_id", boutique.boutique_id).maybeSingle(),
   ]);
   if (error) throw new Error(`Apparence illisible : ${error.message}`);
   if (accueil.error) throw new Error(`Accueil illisible : ${accueil.error.message}`);
@@ -83,6 +87,7 @@ export default async function Apparence({
       key={`${a.version ?? 0}-${a.brouillon?.version ?? 0}`}
       action={`/gestion/${slug}/apparence/action`}
       photoAction={`/gestion/${slug}/accueil/photo`}
+      logo={themeImages ? { action: `/gestion/${slug}/apparence/logo`, slug, images: imagesDuTheme(themeImages as Record<string, unknown>) } : null}
       retour={`/gestion/${slug}`}
       vitrine={hote && ouverte ? adresseVitrine(hote, hoteConsole) : null}
       ecrit={PEUT_ECRIRE.includes(boutique.role) && a.theme}

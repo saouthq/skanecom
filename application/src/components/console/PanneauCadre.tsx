@@ -59,7 +59,7 @@ export function PanneauCadre({
             </p>
           </div>
         </fieldset>
-        <p className="aide pc-note">Le logo et le menu des rayons suivent la marque et le catalogue.</p>
+        <p className="aide pc-note">Le menu des rayons suit le catalogue.</p>
       </section>
 
       <section className="carte ap-groupe" aria-labelledby="pc-t-pied" data-zone-editeur="pied">

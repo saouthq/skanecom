@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Icone } from "@/components/console/Icone";
 import { REGLES, defautImage, type Emplacement, type ImagesMarque as Images, type Regle } from "@/lib/console/images-marque";
 import { urlFichier } from "@/lib/photos";
@@ -168,21 +168,31 @@ async function preparer(fichier: File, e: Emplacement): Promise<Prepare> {
 /* --- L'écran ------------------------------------------------------------- */
 
 export function ImagesMarque({
-  slug, images, surChangement, teintes,
+  slug, images, surChangement, teintes, action: actionDonnee, seulement, titre = "Logo et images", intro,
 }: {
   slug: string;
   images: Images;
   surChangement: (images: Images) => void;
   /** Les couleurs en cours de la marque, pour montrer le logo sur ses fonds. */
   teintes: { fond: string; encre: string; surface: string };
+  /** Où envoyer : la console par défaut ; l'éditeur de la vitrine (le commerçant) a sa route. */
+  action?: string;
+  /** Les emplacements montrés (l'éditeur de la vitrine : logo, monogramme, icône d'onglet). */
+  seulement?: Emplacement[];
+  titre?: string;
+  intro?: string;
 }) {
   const pret = useSyncExternalStore(rien, () => true, () => false);
   const [etats, setEtats] = useState<Partial<Record<Emplacement, Etat>>>({});
   // Les gestes passent l'un après l'autre, chacun avec la version rendue par
   // le précédent (deux fichiers glissés d'affilée ne se contredisent pas).
   const version = useRef(images.version);
+  // La version du thème peut avancer ailleurs (l'éditeur de la vitrine qui publie) : la suivre,
+  // sans remonter le composant (ses messages restent à l'écran).
+  useEffect(() => { version.current = images.version; }, [images.version]);
   const file = useRef<Promise<void>>(Promise.resolve());
-  const action = `/boutiques/${slug}/marque/images`;
+  const action = actionDonnee ?? `/boutiques/${slug}/marque/images`;
+  const montre = (e: Emplacement) => !seulement || seulement.includes(e);
   const etat = (e: Emplacement): Etat => etats[e] ?? { phase: "repos" };
   const poser = (e: Emplacement, x: Etat) => setEtats((s) => ({ ...s, [e]: x }));
 
@@ -317,8 +327,8 @@ export function ImagesMarque({
       style={{ "--im-fond": teintes.fond, "--im-encre": teintes.encre, "--im-surface": teintes.surface } as React.CSSProperties}>
       <div className="carte-tete">
         <div>
-          <h2 id="t-images">Logo et images</h2>
-          <p>Chaque image est enregistrée dès son envoi, et paraît sur la boutique d&apos;ici cinq minutes. Glissez un fichier sur sa ligne, ou choisissez-le.</p>
+          <h2 id="t-images">{titre}</h2>
+          <p>{intro ?? "Chaque image est enregistrée dès son envoi, et paraît sur la boutique d'ici cinq minutes. Glissez un fichier sur sa ligne, ou choisissez-le."}</p>
         </div>
       </div>
 
@@ -333,16 +343,16 @@ export function ImagesMarque({
             surChoix={(m) => { if (pret) void envoyer("logo", "mode", { logo_mode: m }); }} />
         ) : <p className="aide">Sans logo, le nom de la boutique s&apos;écrit dans la police des titres.</p>)}
 
-        {ligne("monogramme", trace(images.monogramme, true, "clair", "Monogramme"), Boolean(images.monogramme))}
-        {ligne("favicon", (
+        {montre("monogramme") ? ligne("monogramme", trace(images.monogramme, true, "clair", "Monogramme"), Boolean(images.monogramme)) : null}
+        {montre("favicon") ? ligne("favicon", (
           <span className="im-onglet">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <span className="im-onglet-icone">{images.favicon ? <img src={urlFichier(images.favicon)} alt="Icône d'onglet" /> : null}</span>
             <span className="im-onglet-nom" aria-hidden="true" />
           </span>
-        ), Boolean(images.favicon))}
+        ), Boolean(images.favicon)) : null}
 
-        {images.ouverture ? (
+        {images.ouverture && montre("ouverture") ? (
           <>
             {ligne("ouverture", photo(images.ouverture.chemin, images.ouverture.alt), Boolean(images.ouverture.chemin), (
               <Description key={images.ouverture.alt} e="ouverture" alt={images.ouverture.alt} actif={Boolean(images.ouverture.chemin)}
@@ -353,7 +363,7 @@ export function ImagesMarque({
               : null}
           </>
         ) : null}
-        {images.recit ? ligne("recit", photo(images.recit.chemin, images.recit.alt), Boolean(images.recit.chemin), (
+        {images.recit && montre("recit") ? ligne("recit", photo(images.recit.chemin, images.recit.alt), Boolean(images.recit.chemin), (
           <Description key={images.recit.alt} e="recit" alt={images.recit.alt} actif={Boolean(images.recit.chemin)}
             occupe={etat("recit").phase !== "repos"} action={action} surEnvoi={legender} pret={pret} />
         )) : null}
