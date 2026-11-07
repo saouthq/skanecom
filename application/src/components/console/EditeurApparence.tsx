@@ -838,6 +838,8 @@ export function EditeurApparence({
 
   return (
     <form
+      // Chaque geste s'enregistre seul dans le brouillon : la garde des saisies du backoffice ne le suit pas.
+      data-sans-garde=""
       className="ap-editeur"
       data-onglet={onglet}
       action={action}

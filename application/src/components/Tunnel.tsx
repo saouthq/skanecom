@@ -961,13 +961,16 @@ export function Tunnel({
                 aria-invalid={tentee && !accepte ? true : undefined}
                 aria-describedby={`${id}-conditions-aide ${id}-conditions-erreur`}
               />
-              <span>
-                {t.commande.conditionsAvant}{" "}
-                <a href="/conditions-de-vente" target="_blank" rel="noopener">{t.commande.conditionsLien}</a>{" "}
-                {t.commande.conditionsEt}{" "}
-                <a href="/confidentialite" target="_blank" rel="noopener">{t.commande.confidentialiteLien}</a>.
-              </span>
+              {/* Sans lien dans la phrase : au téléphone, la toucher ouvrait la politique de
+                  confidentialité dans un autre onglet au lieu de cocher la case. */}
+              <span>{t.commande.conditionsAccepte}</span>
             </label>
+            <p className="legende tunnel-conditions-liens">
+              {t.commande.conditionsLire}{" "}
+              <a href="/conditions-de-vente" target="_blank" rel="noopener">{t.commande.conditionsLien}</a>
+              <span aria-hidden="true"> · </span>
+              <a href="/confidentialite" target="_blank" rel="noopener">{t.commande.confidentialiteLien}</a>
+            </p>
             <p id={`${id}-conditions-aide`} className="legende">{t.commande.retractation(retractationJours)}</p>
             {/* Une fois dit, le message garde sa place quand la case est cochée :
                 sinon le bouton remonterait sous le doigt qui va le toucher. */}

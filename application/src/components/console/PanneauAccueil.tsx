@@ -178,6 +178,8 @@ export function PanneauAccueil({
                       <span className="ac-section-titre">{titre.replace(/\n/g, " ")}</span>
                       {resumeReglage(s, accueil, structure) ? <span className="aide">{resumeReglage(s, accueil, structure)}</span> : null}
                       {masquee ? <span className="ac-masquee"><Icone nom="oeil" taille={12} /> {masquee}</span> : null}
+                      {/* L'ouverture est la première chose que voit le client : sans photo, ce n'est qu'un titre sur un aplat. */}
+                      {!masquee && s.type === "hero" && !s.image && i === 0 ? <span className="ac-masquee ac-conseil"><Icone nom="photo" taille={12} /> Ajoutez une photo : c&apos;est le premier écran du client.</span> : null}
                     </span>
                     <span className="pa-regler" aria-hidden="true"><Icone nom={ouvert ? "croix" : "crayon"} taille={14} /></span>
                   </button>

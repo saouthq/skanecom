@@ -16,6 +16,7 @@ import { BandeauPreparation } from "@/components/console/BandeauPreparation";
 import { BandeauSuspension } from "@/components/console/BandeauSuspension";
 import { BandeauConditions } from "@/components/console/BandeauConditions";
 import { BandeauMaintenance } from "@/components/console/BandeauMaintenance";
+import { GardeModifications } from "@/components/console/GardeModifications";
 import type { AnnonceBoutique } from "@/lib/console/annonces";
 import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
 
@@ -282,6 +283,7 @@ export default async function BackofficeBoutique({
         </>
       ) : undefined}
     >
+      <GardeModifications />
       {children}
     </Coquille>
   );

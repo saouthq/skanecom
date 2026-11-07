@@ -236,6 +236,8 @@ function FicheEditoriale({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pr
   const politiqueRetour = texte(cadre.theme.textes, "politique_retour");
   const description = champ(produit, "description");
   const lignes = rassurances(cadre).filter((r) => r.cle !== "rappel").slice(0, 3);
+  // Le module « Demander conseil » : sa carte sur chaque fiche, pas seulement en structure technique.
+  const conseil = lienConseil(cadre, champ(produit, "nom"));
 
   return (
     <FournisseurSelection produit={produit}>
@@ -265,6 +267,16 @@ function FicheEditoriale({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pr
                 </li>
               ))}
             </ul>
+
+            {conseil ? (
+              <a className="te-conseil ed-conseil" href={conseil} target="_blank" rel="noopener noreferrer">
+                <Bulle taille={22} />
+                <span>
+                  <b>{t.produit.conseil}</b>
+                  <span>{t.produit.conseilTexte}</span>
+                </span>
+              </a>
+            ) : null}
 
             <div className="plis">
               {description ? (
@@ -304,7 +316,7 @@ function FicheEditoriale({ cadre, produit, fil, avis, lots }: { cadre: Cadre; pr
 }
 
 function FicheTechnique({ cadre, produit, fil, avis, lots }: { cadre: Cadre; produit: Produit; fil: Etape[]; avis: Avis | null; lots: Lot[] }) {
-  const conseil = lienConseil(cadre);
+  const conseil = lienConseil(cadre, champ(produit, "nom"));
   const description = champ(produit, "description");
   const rayon = produit.categorie ? champ(produit.categorie, "nom") : null;
 

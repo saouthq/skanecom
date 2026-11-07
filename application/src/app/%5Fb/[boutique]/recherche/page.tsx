@@ -77,7 +77,7 @@ export default async function Recherche({
             {t.recherche.champAria}
           </label>
           <span className="recherche-page-champ">
-            <ChampRecherche id="q" defaultValue={requete} placeholder={t.recherche.placeholder} />
+            <ChampRecherche id="q" defaultValue={requete} placeholder={t.recherche.placeholder} focusArrivee={!requete} />
           </span>
           <button type="submit" className="btn btn-primaire">
             <Loupe taille={18} />

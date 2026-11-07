@@ -139,6 +139,7 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
     verifie((await conditions.innerText()).includes("rétracter dans les 10 jours ouvrables"), "le délai de rétractation est rappelé");
     verifie(await conditions.locator("a[href='/conditions-de-vente']").count() === 1 && await conditions.locator("a[href='/confidentialite']").count() === 1,
       "les conditions et la politique de confidentialité sont à un clic");
+    verifie(await conditions.locator("label a").count() === 0, "la phrase de la case n'a pas de lien : la toucher coche la case (au téléphone, elle ouvrait un onglet)");
     await capture(page, "selma-commande-conditions");
     await clic(page, conditions.locator("input[type=checkbox]"));
   });

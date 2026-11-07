@@ -442,6 +442,8 @@ html[data-gabarit="editorial"] .fiche-note { font-size: .8125rem; }
   list-style: none; margin: .25rem 0 0; padding: 1.25rem 1.25rem; display: grid; gap: 1rem;
   background: var(--theme-surface-2); border-radius: var(--theme-radius-carte);
 }
+/* « Demander conseil » sur la fiche (le module WhatsApp) : sous les rassurances, à leur rayon. */
+.ed-conseil { margin-block-start: .75rem; border-radius: var(--theme-radius-carte); text-decoration: none; }
 .ed-rassure li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .875rem; align-items: start; font-size: .875rem; color: var(--theme-encre-doux); line-height: 1.5; }
 .ed-rassure svg { margin-block-start: .125rem; color: var(--theme-encre); }
 .ed-rassure b { display: block; font-weight: 500; color: var(--theme-encre); }

@@ -41,11 +41,15 @@ export function ChampRecherche({
   defaultValue = "",
   placeholder,
   className,
+  focusArrivee = false,
 }: {
   id: string;
   defaultValue?: string;
   placeholder: string;
   className?: string;
+  /** La page de recherche, ouverte sans recherche (la loupe de l'en-tête) : le curseur est
+   *  déjà dans le champ — on vient pour taper (sans cela, la frappe partait dans le vide). */
+  focusArrivee?: boolean;
 }) {
   const router = useRouter();
   const chemin = usePathname();
@@ -65,6 +69,9 @@ export function ChampRecherche({
   }
 
   const terme = q.replace(/\s+/g, " ").trim();
+  useEffect(() => {
+    if (focusArrivee) champ.current?.focus({ preventScroll: true });
+  }, [focusArrivee, chemin]);
   useEffect(() => {
     if (terme.length < 2) return;
     const arret = new AbortController();

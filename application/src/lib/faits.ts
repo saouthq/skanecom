@@ -53,7 +53,9 @@ export function assurancesPanier(cadre: Cadre): Assurance[] {
   return a.slice(0, 3);
 }
 
-/** Le lien WhatsApp de conseil, si le module est actif et le numéro réglé. */
-export function lienConseil(cadre: Cadre): string | null {
-  return cadre.modules.includes("conseil_whatsapp") && cadre.whatsapp ? `https://wa.me/${cadre.whatsapp}` : null;
+/** Le lien WhatsApp de conseil, si le module est actif et le numéro réglé ; depuis une fiche,
+ *  le message part déjà écrit avec le nom de la pièce (la promesse du module). */
+export function lienConseil(cadre: Cadre, piece?: string): string | null {
+  if (!cadre.modules.includes("conseil_whatsapp") || !cadre.whatsapp) return null;
+  return piece ? `https://wa.me/${cadre.whatsapp}?text=${encodeURIComponent(t.produit.conseilMessage(piece))}` : `https://wa.me/${cadre.whatsapp}`;
 }

@@ -291,6 +291,7 @@ export const fr = {
     conseil: "Besoin d'un conseil ?",
     conseilTexte: "Posez votre question sur WhatsApp, on vous répond.",
     conseilLien: "Écrire sur WhatsApp",
+    conseilMessage: (piece: string) => `Bonjour, j'ai une question sur « ${piece} ».`,
     livraisonTitre: "Livraison",
   },
 
@@ -700,10 +701,12 @@ export const fr = {
     noteRetrait: "Une précision pour la boutique",
     noteRetraitAide: "Qui vient la retirer, et quand.",
     donnees: "Vos coordonnées servent uniquement à préparer et livrer vos commandes.",
-    conditionsAvant: "J'ai lu et j'accepte les",
+    // La phrase de la case reste sans lien (au doigt, toucher la phrase coche la case) ; les
+    // deux textes se lisent juste dessous.
+    conditionsAccepte: "J'ai lu et j'accepte les conditions de vente et la politique de confidentialité.",
+    conditionsLire: "Les lire :",
     conditionsLien: "conditions de vente",
-    conditionsEt: "et la",
-    confidentialiteLien: "politique de confidentialité",
+    confidentialiteLien: "confidentialité",
     conditionsManquantes: "Cochez cette case pour confirmer la commande.",
     conditionsRequises: "Dernière étape : acceptez les conditions de vente, en bas du formulaire.",
     retractation: (jours: number) => `Vous pouvez vous rétracter dans les ${jours} jours ouvrables qui suivent la réception.`,

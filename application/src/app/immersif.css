@@ -12,7 +12,9 @@
 /* ---- L'ouverture : tout l'écran -------------------------------------------- */
 /* Tout l'écran sous le bandeau d'annonce : le titre ne passe pas sous la ligne de flottaison. */
 .im-ouverture { min-block-size: calc(100svh - 2.25rem); }
-.im-ouverture[data-sans-image] { min-block-size: min(88svh, 52rem); }
+/* Sans photo, l'ouverture n'est qu'un titre sur l'encre : elle ne prend plus presque tout l'écran
+   (au téléphone, une boutique neuve s'ouvrait sur un écran et demi d'aplat) — les pièces se voient dessous. */
+.im-ouverture[data-sans-image] { min-block-size: min(64svh, 40rem); }
 .im-ouverture-contenu {
   display: grid; gap: 2rem; align-items: end; inline-size: 100%;
   padding-block: calc(var(--entete-h) + 4rem) clamp(2rem, 5vw, 3.5rem);

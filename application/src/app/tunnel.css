@@ -230,6 +230,8 @@ html:has(.tunnel-page, .compte-page, .pv-commande) { scroll-padding-block: calc(
 .tunnel-conditions a { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .tunnel-conditions a:hover { text-decoration-thickness: 2px; }
 .tunnel-conditions .legende { margin: 0; padding-inline-start: 2rem; }
+/* Les deux liens, à part de la case : une cible franche au doigt (24 px de haut au moins). */
+.tunnel-conditions-liens a { display: inline-block; padding-block: .1875rem; white-space: nowrap; }
 .tunnel-conditions .champ-erreur { padding-inline-start: 2rem; }
 .tunnel-conditions .champ-erreur[data-masque] { visibility: hidden; }
 .tunnel-conditions[data-invalide] input { outline: 2px solid var(--theme-erreur); outline-offset: 2px; }
