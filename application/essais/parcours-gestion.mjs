@@ -1801,12 +1801,15 @@ if (section("4bis")) {
     await page.waitForURL(/\/produits\/[0-9a-f-]{36}/);
     await page.waitForLoadState("networkidle");
     const xl = page.locator(".var", { hasText: "SEL03-GRI-XL" });
-    await clic(page, xl.locator("summary", { hasText: "Mouvement de stock" }));
-    await clic(page, xl.locator("input[name=quantite]"));
+    // Le lien promet une réception : elle est ouverte, le curseur dans sa quantité.
+    verifie(await xl.locator("details.var-pli").evaluate((d) => d.open), "« Réceptionner un arrivage » : la réception de la robe en XL est déjà ouverte");
+    verifie(await xl.locator("input[name=quantite]").evaluate((e) => e === document.activeElement), "… le curseur dans sa quantité");
     await tape(page, "4");
     await t.envoie(page, xl.getByRole("button", { name: "Valider" }));
-    verifie((await page.locator(".message-succes").first().innerText()).includes("Réception de 4 pièces"), "un arrivage de quatre robes en XL");
-    await clic(page, page.locator(".app-cote").getByRole("link", { name: /^Réassort/ }));
+    const recue = (await page.locator(".message-succes").first().innerText()).replace(/\s+/g, " ");
+    verifie(recue.includes("Réception de 4 pièces") && recue.includes("3 personnes l'attendaient : les prévenir"),
+      `un arrivage de quatre robes en XL, et la suite proposée (« ${recue} »)`);
+    await clic(page, page.locator(".message-succes a", { hasText: "les prévenir" }));
     await page.waitForURL(/\/reassort$/);
     await page.waitForLoadState("networkidle");
     const revenue = page.locator(".ra-piece[data-revenue]", { hasText: "Robe midi en jersey" });

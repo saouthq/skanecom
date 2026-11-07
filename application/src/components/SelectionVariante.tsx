@@ -32,9 +32,13 @@ const Contexte = createContext<Selection | null>(null);
 
 const rienAEcouter = () => () => {};
 
-/** La déclinaison que désignent les paramètres de l'adresse (« ?taille=M »). */
+/** La déclinaison que désignent les paramètres de l'adresse : la liste
+ *  filtrée (« ?taille=M »), ou le message « de retour en stock » du
+ *  réassort, qui la nomme (« ?declinaison=<id> »). */
 function varianteCherchee(produit: Produit, recherche: string): Variante | null {
   const cherche = new URLSearchParams(recherche);
+  const nommee = cherche.get("declinaison");
+  if (nommee) return produit.variantes.find((v) => v.id === nommee) ?? null;
   const axes = produit.options.map((o) => o.cle).filter((c) => cherche.has(c));
   if (axes.length === 0) return null;
   const convient = (v: Variante) => axes.every((c) => cherche.getAll(c).includes(v.options?.[c] ?? ""));

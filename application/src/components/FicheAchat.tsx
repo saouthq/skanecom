@@ -291,7 +291,7 @@ export function FicheAchat({
           <button type="button" aria-label={t.produit.retirerUnArticle} disabled={quantite <= minimum} onClick={() => setQuantite((q) => Math.max(minimum, q - 1))}>
             −
           </button>
-          <ChampQuantite valeur={quantite} minimum={minimum} maximum={plafond} libelle={t.produit.quantite} onChange={setQuantite} />
+          <ChampQuantite valeur={quantite} minimum={minimum} maximum={plafond} libelle={t.produit.quantite} onChange={setQuantite} disabled={!achetable} />
           <button type="button" aria-label={t.produit.ajouterUnArticle} disabled={quantite >= plafond} onClick={() => setQuantite((q) => Math.min(plafond, q + 1))}>
             +
           </button>

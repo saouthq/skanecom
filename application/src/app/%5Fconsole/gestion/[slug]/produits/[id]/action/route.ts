@@ -4,6 +4,7 @@ import { millimes } from "@/lib/console/import";
 import { formateMontant } from "@/lib/prix";
 import { rafraichirVitrine } from "@/lib/console/vitrine-cache";
 import { messageCatalogue, referenceProposee, type FicheProduit } from "@/lib/gestion/catalogue";
+import type { EcranReassort } from "@/lib/gestion/reassort";
 
 /* ============================================================================
    LES GESTES SUR UN PRODUIT — formulaires HTML ordinaires, réponse par une
@@ -128,6 +129,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       if (error) return retour(messageCatalogue(error.hint, error.message));
       const pieces = `${quantite} pièce${quantite > 1 ? "s" : ""}`;
       const libelle = mode === "reception" ? `Réception de ${pieces} enregistrée` : mode === "casse" ? `Casse de ${pieces} enregistrée` : "Inventaire enregistré";
+      // Revenue en stock, la pièce attendue (« Prévenez-moi ») : la suite est de
+      // prévenir ceux qui l'attendaient — le message le propose (?prevenir=n).
+      let prevenir = 0;
+      if (mode !== "casse" && Number(data) > 0) {
+        const { data: ecran } = await sb.rpc("gestion_alertes_retour", { p_boutique_id: b });
+        prevenir = (ecran as EcranReassort | null)?.pieces.find((x) => x.variante_id === vid)?.a_prevenir.length ?? 0;
+      }
+      if (prevenir > 0) {
+        return vers(`${fiche}?${new URLSearchParams({ ok: `${libelle} : ${data} en stock.`, prevenir: String(prevenir) })}#var-${vid}`);
+      }
       return retour(`${libelle} : ${data} en stock.`, true);
     }
 

@@ -83,6 +83,25 @@ paraît dans les suggestions de recherche ; « Les nouveautés » et « La séle
 montrent les mêmes pièces sur un tout petit catalogue ; en style « contour », le
 bouton final « Confirmer la commande » n'est qu'un cadre.
 
+## Fait le 07/11 (après-midi) : d'autres parcours joués en vrai
+
+Cinq lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
+et par les parcours automatiques : la cliente de Selma (filtres, panier, code
+promo, commande), l'artisan de la Quincaillerie (comparer, retrait, facture
+société, quantité tapée, devis), le devis des deux côtés, l'équipe (une
+employée invitée, ses appels), le retour en stock. Le détail : feuille de
+route, section E, « D'autres parcours, joués en vrai ».
+
+Remarqué, laissé tel quel :
+
+- Sur « Tout le catalogue » d'une boutique qui mêle les rayons, « Pointure »
+  passe avant « Taille » (l'ordre des axes, alphabétique à égalité).
+- Au backoffice, une page chargée directement (`?stock=…`) n'a pas le focus
+  automatique sur la quantité ; venu par le lien du réassort, il y est.
+- La page de bienvenue d'une invitation ne nomme pas la boutique (l'e-mail,
+  si).
+- « Panier (250) » compte les pièces, même pour 250 vis.
+
 ## Ce qui attend Skander
 
 - Les conditions de service v1, relues par un avocat.

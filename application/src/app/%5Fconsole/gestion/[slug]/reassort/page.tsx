@@ -113,7 +113,8 @@ function CartePiece({ p, boutique, vitrine, slug, maintenant, previent, action }
   p: PieceAttendue; boutique: string; vitrine: string | null; slug: string; maintenant: Date; previent: boolean; action: string;
 }) {
   const revenue = p.a_prevenir.length > 0;
-  const lien = vitrine ? `${vitrine}/produit/${p.slug}` : null;
+  // La fiche ouverte sur la déclinaison attendue (la taille M, pas la première en stock).
+  const lien = vitrine ? `${vitrine}/produit/${p.slug}?declinaison=${p.variante_id}` : null;
   return (
     <li className="carte ra-piece" id={`piece-${p.variante_id}`} data-revenue={revenue ? "" : undefined}>
       <div className="ra-tete">
@@ -181,7 +182,7 @@ function CartePiece({ p, boutique, vitrine, slug, maintenant, previent, action }
 
       {!revenue ? (
         <div className="pm-gestes">
-          <Link className="btn btn-second" href={`/gestion/${slug}/produits/${p.produit_id}#var-${p.variante_id}`}>
+          <Link className="btn btn-second" href={`/gestion/${slug}/produits/${p.produit_id}?stock=${p.variante_id}#var-${p.variante_id}`}>
             <Icone nom="colis" /> Réceptionner un arrivage
           </Link>
           {previent ? (

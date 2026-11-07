@@ -48,7 +48,7 @@ export default async function FicheProduitBackoffice({
   searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
-  searchParams: Promise<{ ok?: string; erreur?: string; stock?: string; toutes?: string }>;
+  searchParams: Promise<{ ok?: string; erreur?: string; stock?: string; toutes?: string; prevenir?: string }>;
 }) {
   const [{ slug, id }, messages] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
@@ -127,7 +127,20 @@ export default async function FicheProduitBackoffice({
       />
 
       <div className="pile">
-        {messages.ok ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
+        {messages.ok ? (
+          <p className="message message-succes" role="status">
+            {messages.ok}
+            {/* Une pièce attendue revenue en stock : prévenir ceux qui l'attendaient. */}
+            {Number(messages.prevenir) > 0 ? (
+              <>
+                {" "}
+                <Link href={`/gestion/${slug}/reassort`}>
+                  {Number(messages.prevenir) > 1 ? `${messages.prevenir} personnes l'attendaient : les prévenir` : "Une personne l'attendait : la prévenir"}
+                </Link>
+              </>
+            ) : null}
+          </p>
+        ) : null}
         {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
         {!modifie ? (
           <p className="message">{stocke ? "Vous tenez le stock ; la fiche et les prix reviennent au propriétaire." : "Lecture seule."}</p>
@@ -387,7 +400,10 @@ export default async function FicheProduitBackoffice({
                             </fieldset>
                             <div className="champ var-qte">
                               <label htmlFor={`qte-${v.id}`} className="sr-only">Quantité</label>
-                              <input id={`qte-${v.id}`} name="quantite" type="number" min={0} max={100000} required placeholder="Qté" />
+                              {/* Ouvert pour elle (« Réceptionner un arrivage » du réassort, ou après une
+                                  erreur) : le focus y est, on tape le nombre reçu. */}
+                              <input id={`qte-${v.id}`} name="quantite" type="number" min={0} max={100000} required placeholder="Qté"
+                                     autoFocus={messages.stock === v.id} />
                             </div>
                             <div className="champ var-note">
                               <label htmlFor={`note-${v.id}`} className="sr-only">Commentaire</label>

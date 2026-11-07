@@ -18,6 +18,7 @@ export function ChampQuantite({
   onChange,
   libelle,
   className,
+  disabled = false,
 }: {
   valeur: number;
   minimum?: number;
@@ -26,6 +27,8 @@ export function ChampQuantite({
   onChange: (quantite: number) => void;
   libelle: string;
   className?: string;
+  /** Rien d'achetable (une déclinaison épuisée) : le chiffre se grise, comme « − » et « + ». */
+  disabled?: boolean;
 }) {
   // Le texte en cours de frappe ; `null` = le champ montre la valeur.
   const [texte, setTexte] = useState<string | null>(null);
@@ -61,6 +64,7 @@ export function ChampQuantite({
       enterKeyHint="done"
       className={className ?? "qte-saisie"}
       aria-label={libelle}
+      disabled={disabled}
       value={texte ?? String(valeur)}
       onChange={(e) => setTexte(e.target.value.replace(/\D/g, "").slice(0, 6))}
       onFocus={(e) => e.target.select()}
