@@ -150,7 +150,10 @@ export function Identification({
     setVerificationEnCours(false);
     if (error || !data.session) {
       setErreur(envoye.canal === "sms" ? t.commande.codeIncorrect : t.connexion.codeIncorrectEmail);
+      // Le code refusé reste lisible (une faute se repère), mais sélectionné : le chiffre suivant le remplace.
+      // Sans cela, le champ plein (6 chiffres) ignorait la frappe : six effacements au téléphone.
       refCode.current?.focus();
+      refCode.current?.select();
       return;
     }
     setEtape("saisie");

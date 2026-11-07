@@ -85,7 +85,7 @@ bouton final « Confirmer la commande » n'est qu'un cadre.
 
 ## Fait le 07/11 (après-midi) : d'autres parcours joués en vrai
 
-Quinze lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
+Seize lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
 et par les parcours automatiques : la cliente de Selma (filtres, panier, code
 promo, commande), l'artisan de la Quincaillerie (comparer, retrait, facture
 société, quantité tapée, devis), le devis des deux côtés, l'équipe (une
@@ -93,7 +93,8 @@ employée invitée, ses appels), le retour en stock, le paiement en ligne,
 la suspension d'une boutique, le service après-vente, la commande en
 invité, la vente au comptoir (et son reçu), le SAV au backoffice, les
 codes promo, l'ajout rapide au doigt, les réglages (la confirmation d'office), l'employée de préparation, les
-favoris et la recherche au téléphone, un produit créé au téléphone. Le détail : feuille de
+favoris et la recherche au téléphone, un produit créé au téléphone, le
+code SMS faux. Le détail : feuille de
 route, section E, « D'autres parcours, joués en vrai ».
 
 Remarqué, laissé tel quel :
@@ -105,6 +106,12 @@ Remarqué, laissé tel quel :
 - La page de bienvenue d'une invitation ne nomme pas la boutique (l'e-mail,
   si).
 - « Panier (250) » compte les pièces, même pour 250 vis.
+- En local, après `outils/base-locale.sh reinit`, redémarrer l'application
+  (`redemarre-app.sh`) avant un parcours : les pages produit gardées en cache
+  portent les identifiants de déclinaisons d'avant, que la base ne connaît
+  plus (le tunnel les dit « plus disponibles »). La CI part d'un serveur neuf.
+- Les e-mails de commande portent le nom de la boutique, pas son logo (les
+  messageries refusent souvent le SVG : il faudrait une version PNG).
 - Au comptoir, la liste de recherche montre le prix public même pour un
   client pro (son prix pro paraît dès l'article ajouté, chiffré par la base).
 - Le bandeau d'une boutique suspendue dit « appelez-nous » (le message de la

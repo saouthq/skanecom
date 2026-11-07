@@ -42,8 +42,12 @@ async function codeEmail(adresse) {
   throw new Error(`aucun e-mail pour ${adresse}`);
 }
 
+/** Pendant le code faux tapé exprès : le refus du serveur (403 sur /auth/v1/verify) et sa ligne de console sont attendus. */
+let codeFauxEnCours = false;
+const refusDuCodeFaux = (url, texte) => codeFauxEnCours && (/\/auth\/v1\/verify/.test(url) || /status of 403/.test(texte));
+
 /** Le numéro, le code du SMS, puis « Numéro confirmé ». */
-async function confirmeNumero(page, numero, lisible) {
+async function confirmeNumero(page, numero, lisible, { fauteDabord = false } = {}) {
   await clic(page, page.getByLabel("Téléphone"));
   await tape(page, lisible);
   await clic(page, page.getByRole("button", { name: "Recevoir le code" }));
@@ -51,6 +55,18 @@ async function confirmeNumero(page, numero, lisible) {
   verifie((await page.locator(".tunnel-etape").first().innerText()).includes("Code envoyé au +216"), "le SMS est annoncé avec le numéro");
   const code = await codeRecu(numero);
   note("INFO  ", `code reçu : ${code}`);
+  if (fauteDabord) {
+    // Une faute de frappe : refusé, dit ; le code refusé reste lisible mais sélectionné — le code juste se retape par-dessus.
+    const faux = `${(Number(code[0]) + 1) % 10}${code.slice(1)}`;
+    codeFauxEnCours = true;
+    await tape(page, faux);
+    const champ = page.getByLabel("Code reçu par SMS");
+    await page.getByText("Code incorrect ou expiré").waitFor({ timeout: 8000 });
+    await pause(300);
+    codeFauxEnCours = false;
+    const sel = await champ.evaluate((e) => [e.value, e.selectionStart, e.selectionEnd, e === document.activeElement]);
+    verifie(sel[0] === faux && sel[1] === 0 && sel[2] === 6 && sel[3], `un code faux : refusé, dit, et sélectionné pour être retapé (${JSON.stringify(sel)})`);
+  }
   await tape(page, code);
   await page.locator(".tunnel-identite").waitFor({ timeout: 8000 });
   verifie((await page.locator(".tunnel-identite").innerText()).includes("Numéro confirmé"), "six chiffres tapés : le numéro est confirmé, sans autre clic");
@@ -78,7 +94,7 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
     tiktok: (Array.isArray(window.ttq) ? window.ttq : []).filter((a) => a[0] === "track").map((a) => ({ nom: a[1], valeur: a[2]?.value, evenement: a[3]?.event_id })),
   }));
   const page = await ctx.newPage();
-  t.espion(page, "selma-commande");
+  t.espion(page, "selma-commande", refusDuCodeFaux);
 
   await etape("fiche → panier → « Commander »", async () => {
     await page.goto(S + "/produit/robe-bretelles-terracotta", { waitUntil: "networkidle" });
@@ -109,7 +125,7 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
   });
 
   await etape("numéro confirmé par SMS", async () => {
-    await confirmeNumero(page, "20555123", "20 555 123");
+    await confirmeNumero(page, "20555123", "20 555 123", { fauteDabord: true });
     // Selma relance ses paniers abandonnés (supabase/seed-paniers.sql) : la
     // cliente connectée le lit sous son identité, avant de rien remplir.
     const relance = page.locator(".tunnel-relance");
