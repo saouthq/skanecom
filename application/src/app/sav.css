@@ -84,6 +84,7 @@
 .sav-signaler { justify-self: start; font-size: .875rem; }
 .sav-envoyee { display: flex; align-items: flex-start; gap: .5rem; margin: 0; font-size: .875rem; line-height: 1.45; }
 .sav-envoyee svg { flex: none; margin-block-start: .125rem; color: var(--theme-succes); }
+.sav-envoyee:focus { outline: none; }
 
 .sav-formulaire { display: grid; gap: .875rem; }
 .sav-formulaire h3 { font-size: 1.0625rem; }

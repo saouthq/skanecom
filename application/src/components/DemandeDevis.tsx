@@ -44,10 +44,12 @@ export function DemandeDevis({ boutiqueId, verification }: { boutiqueId: string;
     const { data } = supabaseNavigateur().auth.onAuthStateChange((_evenement, s) => {
       if (dejaLue.current === false && s) vientDeSeConnecter.current = true;
       dejaLue.current = Boolean(s);
+      // Une fiche sans compte au même numéro : rattachée, la demande la retrouve.
+      if (s) void supabaseNavigateur().rpc("rattacher_mon_client", { p_boutique_id: boutiqueId });
       setSession(Boolean(s));
     });
     return () => data.subscription.unsubscribe();
-  }, []);
+  }, [boutiqueId]);
   const numeroLu = numero.telephone !== undefined;
   useEffect(() => {
     // Le numéro du compte lu d'abord : s'il manque, son champ passe devant le message.

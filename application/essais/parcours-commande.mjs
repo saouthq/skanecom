@@ -715,11 +715,14 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     verifie((await carte.locator(".compte-frise [data-faite]").count()) === 4 && (await carte.locator(".compte-frise [aria-current=step]").innerText()).trim() === "Retirée",
       "la frise est complète, jusqu'à « Retirée »");
     await capture(page, "quincaillerie-sav-envoyee", true);
-    await clic(page, carte.getByRole("button", { name: "Un problème avec un article ?" }));
-    verifie((await carte.locator(".sav-formulaire").innerText()).includes("demande SAV-00001 en cours")
-      && await carte.getByRole("button", { name: "Envoyer la demande" }).isDisabled(),
-      "une seconde demande sur le même article : la première est rappelée, rien ne part");
-    await clic(page, carte.getByRole("button", { name: "Annuler" }));
+    // Une seconde demande sur le même article : plus de formulaire qui ne
+    // pourrait rien envoyer — la carte dit la demande en cours.
+    verifie((await carte.getByRole("button", { name: "Un problème avec un article ?" }).count()) === 0,
+      "l'article a sa demande : plus de « Un problème… », qui ouvrait un formulaire sans issue");
+    await page.reload({ waitUntil: "networkidle" });
+    const deja = page.locator(".compte-carte").first().locator(".sav-deja");
+    await deja.waitFor({ timeout: 8000 });
+    verifie((await deja.innerText()).includes("demande SAV-00001 en cours"), "la page rouverte : la demande en cours sur l'article");
     await page.goto(Q + "/garantie-et-sav", { waitUntil: "networkidle" });
     const g = await page.locator("main").innerText();
     verifie(g.includes("Garantie 12 mois") && g.includes("Revendeur officiel Atelier Pro") && g.includes("Faire une demande"),

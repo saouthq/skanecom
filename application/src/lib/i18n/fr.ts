@@ -1046,6 +1046,7 @@ export const fr = {
       hors_garantie: "hors garantie", mauvaise_utilisation: "usage non couvert", non_constate: "défaut non constaté",
     } as Record<string, string>,
     enCoursSurArticle: (numero: string) => `demande ${numero} en cours`,
+    enCoursSuite: "La boutique vous recontacte.",
     garantieTexte: "Un souci ? Signalez-le depuis « Mes commandes » : la boutique vous rappelle.",
   },
 

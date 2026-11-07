@@ -338,13 +338,17 @@ export function Tunnel({
   useEffect(() => {
     if (!session) return;
     let actif = true;
-    supabaseNavigateur()
+    const sb = supabaseNavigateur();
+    // Une fiche sans compte au même numéro (une commande saisie par l'équipe,
+    // ou passée sans compte) : rattachée d'abord — sa commande n'ouvrira pas
+    // une seconde fiche, et sa dernière adresse revient.
+    sb.rpc("rattacher_mon_client", { p_boutique_id: boutiqueId }).then(() => sb
       .from("adresses")
       .select("nom_destinataire, ligne1, ligne2, ville, gouvernorat_code, code_postal")
       .eq("boutique_id", boutiqueId)
       .order("par_defaut", { ascending: false })
       .order("updated_at", { ascending: false })
-      .limit(1)
+      .limit(1))
       .then(({ data }) => {
         const a = data?.[0];
         if (!actif || !a) return;

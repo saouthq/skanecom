@@ -97,9 +97,28 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
     return () => data.subscription.unsubscribe();
   }, []);
 
-  // Les commandes, dès que la session est là.
+  // La session là, la fiche sans compte au même numéro (commandes saisies
+  // par l'équipe, ou passées sans compte) est d'abord rattachée au compte
+  // (migration …_rattacher_client) ; commandes, demandes et avis se lisent
+  // ensuite — avant, la liste des demandes revenait vide.
+  const [rattache, setRattache] = useState(false);
   useEffect(() => {
     if (!session) return;
+    let actif = true;
+    supabaseNavigateur()
+      .rpc("rattacher_mon_client", { p_boutique_id: boutiqueId })
+      .then(() => {
+        if (actif) setRattache(true);
+      });
+    return () => {
+      actif = false;
+    };
+  }, [session, boutiqueId]);
+  const pret = Boolean(session) && rattache;
+
+  // Les commandes.
+  useEffect(() => {
+    if (!pret) return;
     let actif = true;
     supabaseNavigateur()
       .rpc("mes_commandes", { p_boutique_id: boutiqueId })
@@ -114,11 +133,11 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
     return () => {
       actif = false;
     };
-  }, [session, boutiqueId]);
+  }, [pret, boutiqueId]);
 
   // Les demandes de SAV, avec le module ; relues après chaque demande.
   useEffect(() => {
-    if (!session || !sav) return;
+    if (!pret || !sav) return;
     let actif = true;
     supabaseNavigateur()
       .rpc("mes_sav", { p_boutique_id: boutiqueId })
@@ -128,11 +147,11 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
     return () => {
       actif = false;
     };
-  }, [session, sav, boutiqueId, relecture]);
+  }, [pret, sav, boutiqueId, relecture]);
 
   // Les avis déjà donnés, avec le module ; relus après chaque avis.
   useEffect(() => {
-    if (!session || !avis) return;
+    if (!pret || !avis) return;
     let actif = true;
     supabaseNavigateur()
       .rpc("mes_avis", { p_boutique_id: boutiqueId })
@@ -142,10 +161,11 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
     return () => {
       actif = false;
     };
-  }, [session, avis, boutiqueId, relectureAvis]);
+  }, [pret, avis, boutiqueId, relectureAvis]);
 
   async function deconnecter() {
     await supabaseNavigateur().auth.signOut();
+    setRattache(false);
     setCommandes(null);
   }
 
@@ -314,6 +334,11 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [envoyee, setEnvoyee] = useState<string | null>(null);
+  // Le formulaire refermé : le focus revient au message « Demande envoyée »,
+  // ou (« Annuler ») au bouton qui l'avait ouvert — au premier des deux rendu.
+  const rendreFocus = useRef(false);
+  const ouvertesIci = demandes.filter((d) => d.commande === c.numero && (d.statut === "nouvelle" || d.statut === "en_cours"));
+  const toutesPrises = c.lignes.length > 0 && c.lignes.every((l) => ouvertesIci.some((d) => d.ligne_id === l.id));
   const cloturee = ["livree", "refusee", "annulee"].includes(c.statut);
 
   return (
@@ -321,21 +346,32 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
       <ResumeCommande c={c} />
       {sav && c.statut === "livree" ? (
         <div className="sav-carte">
-          {envoyee ? <p className="sav-envoyee" role="status"><Coche taille={16} /> {t.sav.envoyee(envoyee)}</p> : null}
-          {ouvert ? (
+          {envoyee ? <p className="sav-envoyee" role="status" tabIndex={-1} ref={(m) => { if (m && rendreFocus.current) { rendreFocus.current = false; m.focus({ preventScroll: true }); } }}><Coche taille={16} /> {t.sav.envoyee(envoyee)}</p> : null}
+          {toutesPrises ? (
+            /* Chaque article a déjà sa demande ouverte : un formulaire qui ne
+               peut rien envoyer s'ouvrait (« Envoyer » grisé, sans un mot).
+               Juste envoyée, la confirmation au-dessus suffit. */
+            envoyee ? null : (
+              <p className="legende sav-deja">
+                {ouvertesIci.map((d) => `${d.produit_nom} : ${t.sav.enCoursSurArticle(d.numero)}`).join(" · ")}. {t.sav.enCoursSuite}
+              </p>
+            )
+          ) : ouvert ? (
             <Signaler
               boutiqueId={boutiqueId}
               commande={c}
-              ouvertes={demandes.filter((d) => d.commande === c.numero && (d.statut === "nouvelle" || d.statut === "en_cours"))}
-              fermer={() => setOuvert(false)}
+              ouvertes={ouvertesIci}
+              fermer={() => { rendreFocus.current = true; setOuvert(false); }}
               envoye={(numero) => {
+                rendreFocus.current = true;
                 setOuvert(false);
                 setEnvoyee(numero);
                 surDemande();
               }}
             />
           ) : (
-            <button type="button" className="btn-lien sav-signaler" onClick={() => { setEnvoyee(null); setOuvert(true); }} aria-expanded={false}>
+            <button type="button" className="btn-lien sav-signaler" ref={(b) => { if (b && rendreFocus.current) { rendreFocus.current = false; b.focus(); } }}
+                    onClick={() => { setEnvoyee(null); setOuvert(true); }} aria-expanded={false}>
               {t.sav.signaler}
             </button>
           )}
@@ -371,7 +407,17 @@ function Signaler({ boutiqueId, commande, ouvertes, fermer, envoye }: {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const refProbleme = useRef<HTMLTextAreaElement>(null);
+  const refFormulaire = useRef<HTMLFormElement>(null);
   const id = `sav-${commande.numero}`;
+  // Ouvert d'un geste : le curseur va au premier choix (l'article, s'il y en a
+  // plusieurs ; sinon ce qui ne va pas) — il restait sur la page.
+  useEffect(() => {
+    const premier = commande.lignes.length > 1
+      ? refFormulaire.current?.querySelector<HTMLInputElement>("input[type=radio]:checked, input[type=radio]:not(:disabled)")
+      : refProbleme.current;
+    premier?.focus({ preventScroll: true });
+    refFormulaire.current?.scrollIntoView({ block: "nearest" });
+  }, [commande.lignes.length]);
 
   async function envoyer() {
     if (probleme.trim().length < 10) {
@@ -395,6 +441,7 @@ function Signaler({ boutiqueId, commande, ouvertes, fermer, envoye }: {
 
   return (
     <form
+      ref={refFormulaire}
       className="sav-formulaire"
       aria-labelledby={`${id}-titre`}
       onSubmit={(e) => {
