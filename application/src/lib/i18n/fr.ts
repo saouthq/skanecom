@@ -540,6 +540,9 @@ export const fr = {
     videTexte: "Les pièces que vous ajoutez se retrouvent ici.",
     retirer: (libelle: string) => `Retirer ${libelle}`,
     retirerCourt: "Retirer",
+    retiree: (libelle: string) => `Retiré du panier : ${libelle}.`,
+    annuler: "Annuler",
+    annulerRetrait: (libelle: string) => `Annuler : remettre ${libelle} au panier`,
     parMinimum: (n: number) => `Par ${n} au moins`,
     total: "Total des articles",
     horsLivraison: "Livraison en sus, réglée à la remise.",
@@ -554,7 +557,9 @@ export const fr = {
     /** La confirmation légère qui suit un ajout (au lieu du tiroir). */
     voir: (n: number) => `Voir le panier (${n})`,
     fermerConfirmation: "Fermer la confirmation",
-    quantiteFois: (n: number) => `× ${n}`,
+    /** Le total d'abord, puis son détail : « 318,000 TND · 2 × 159,000 TND »
+     *  (« × 2 » seul se lisait « deux fois 318 »). */
+    quantiteFois: (n: number, unite: string) => `${n} × ${unite}`,
     titreCompte: (n: number) => `Panier (${n})`,
     resteAvantGratuite: (montant: string) => `Plus que ${montant} pour la livraison offerte.`,
     gratuiteAtteinte: "La livraison vous est offerte.",
@@ -575,11 +580,11 @@ export const fr = {
     aideEmail: "Un code vous est envoyé à cette adresse. Elle vous sert ensuite de compte dans cette boutique, sans mot de passe.",
     codeEnvoyeEmail: (email: string) => `Code envoyé à ${email}. Il n'arrive pas ? Regardez dans les courriers indésirables.`,
     codeEmail: "Code reçu par e-mail",
-    modifierEmail: "Modifier l'adresse",
+    modifierEmail: "Modifier l'e-mail",
     codeIncorrectEmail: "Code incorrect ou expiré. Vérifiez l'e-mail, ou demandez un nouveau code.",
     emailEchec: "L'e-mail n'a pas pu partir. Réessayez dans un instant.",
-    connecteEmail: (email: string) => `Adresse confirmée : ${email}`,
-    changerEmail: "Changer d'adresse",
+    connecteEmail: (email: string) => `E-mail confirmé : ${email}`,
+    changerEmail: "Changer d'e-mail",
     aConfirmer: (v: Verification) =>
       v === "sms"
         ? "Confirmez votre numéro avec le code reçu par SMS."

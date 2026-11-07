@@ -9,8 +9,8 @@ import { Tiroir } from "./Tiroir";
 import { ConfirmationAjout } from "./ConfirmationAjout";
 import { EnsembleDuPanier } from "./EnsembleDuPanier";
 import { CompleterLots, RemiseLot, useLotsDuPanier } from "./LotsDuPanier";
-import { changeQuantitePanier, retireDuPanier, usePanier, usePanierLu } from "@/lib/panier";
-import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalLigne, totalMillimes, type AjoutAnnonce } from "@/lib/panier-contrat";
+import { changeQuantitePanier, remetDansPanier, retireDuPanier, usePanier, usePanierLu } from "@/lib/panier";
+import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalLigne, totalMillimes, type AjoutAnnonce, type LignePanier } from "@/lib/panier-contrat";
 import { envole } from "@/lib/envol";
 import { appliqueLots } from "@/lib/lots";
 import { jourPrevu } from "@/lib/catalogue";
@@ -122,6 +122,40 @@ export function BoutonPanier({
     };
   }, []);
 
+  // Retirer une ligne : elle peut revenir (« Annuler »), et le focus, qui était
+  // sur le bouton disparu, va sur « Annuler » au lieu de tomber sur la page.
+  const [retiree, setRetiree] = useState<{ ligne: LignePanier; position: number } | null>(null);
+  const boutonAnnuler = useRef<HTMLButtonElement>(null);
+  const remise = useRef<string | null>(null);
+  const retirer = (ligne: LignePanier) => {
+    setRetiree({ ligne, position: panier.lignes.findIndex((l) => l.varianteId === ligne.varianteId) });
+    retireDuPanier(ligne.varianteId);
+    setAnnonce(t.panier.retiree(ligne.libelle));
+  };
+  const annulerRetrait = () => {
+    if (!retiree) return;
+    remise.current = retiree.ligne.varianteId;
+    remetDansPanier(retiree.ligne, retiree.position);
+    setRetiree(null);
+  };
+  useEffect(() => {
+    if (retiree) boutonAnnuler.current?.focus({ preventScroll: true });
+  }, [retiree]);
+  useEffect(() => {
+    if (!remise.current) return;
+    const lien = document.querySelector<HTMLElement>(`.panier-ligne[data-variante="${CSS.escape(remise.current)}"] .panier-libelle`);
+    if (!lien) return;
+    remise.current = null;
+    lien.focus({ preventScroll: true });
+  }, [panier]);
+  // Le tiroir refermé oublie la ligne retirée : rouvert, il ne la propose plus.
+  const [ouvertVu, setOuvertVu] = useState(ouvert);
+  if (ouvertVu !== ouvert) {
+    setOuvertVu(ouvert);
+    if (!ouvert) setRetiree(null);
+  }
+  const retireeVisible = retiree && !panier.lignes.some((l) => l.varianteId === retiree.ligne.varianteId) ? retiree : null;
+
   const reste = seuilGratuite !== null ? Math.max(0, seuilGratuite - total) : null;
 
   return (
@@ -210,6 +244,15 @@ export function BoutonPanier({
           </div>
         ) : null}
 
+        {retireeVisible ? (
+          <p className="panier-retiree">
+            <span>{t.panier.retiree(retireeVisible.ligne.libelle)}</span>
+            <button ref={boutonAnnuler} type="button" className="btn-lien" aria-label={t.panier.annulerRetrait(retireeVisible.ligne.libelle)} onClick={annulerRetrait}>
+              {t.panier.annuler}
+            </button>
+          </p>
+        ) : null}
+
         {panier.lignes.length === 0 ? (
           <div className="panier-vide">
             <span className="panier-vide-icone" aria-hidden="true">
@@ -224,7 +267,7 @@ export function BoutonPanier({
               // Au minimum de la déclinaison, « − » ne descend plus (« Retirer » reste là).
               const minimum = minimumLigne(ligne);
               return (
-              <li key={ligne.varianteId} className="panier-ligne">
+              <li key={ligne.varianteId} className="panier-ligne" data-variante={ligne.varianteId}>
                 <Link href={`/produit/${ligne.produitSlug}`} className="panier-vignette" tabIndex={-1} aria-hidden="true" onClick={() => setOuvert(false)}>
                   {ligne.image ? (
                     <Image src={urlFichier(ligne.image)} alt="" fill sizes="96px" />
@@ -244,6 +287,7 @@ export function BoutonPanier({
                   </div>
                   <p className="legende tabular-nums">
                     {ligne.sku}
+                    {ligne.quantite > 1 && !totalLigne(ligne).palier ? <span> · {t.panier.quantiteFois(ligne.quantite, formatePrix(ligne.prixMillimesAjout))}</span> : null}
                     {minimum > 1 ? <span className="panier-minimum"> · {t.panier.parMinimum(minimum)}</span> : null}
                     {totalLigne(ligne).palier ? <span className="panier-palier"> · {t.panier.palierApplique(totalLigne(ligne).palier!.quantite, formatePrix(totalLigne(ligne).palier!.prixMillimes))}</span> : null}
                   </p>
@@ -253,7 +297,7 @@ export function BoutonPanier({
                   <div className="panier-ligne-actions">
                     <div className="qte qte-petite" role="group" aria-label={t.produit.quantite}>
                       <button type="button" aria-label={t.produit.retirerUnArticle} disabled={minimum > 1 && ligne.quantite <= minimum}
-                              onClick={() => changeQuantitePanier(ligne.varianteId, ligne.quantite - 1)}>
+                              onClick={() => (ligne.quantite <= 1 ? retirer(ligne) : changeQuantitePanier(ligne.varianteId, ligne.quantite - 1))}>
                         −
                       </button>
                       <span>{ligne.quantite}</span>
@@ -261,7 +305,7 @@ export function BoutonPanier({
                         +
                       </button>
                     </div>
-                    <button type="button" className="btn-lien legende" aria-label={t.panier.retirer(ligne.libelle)} onClick={() => retireDuPanier(ligne.varianteId)}>
+                    <button type="button" className="btn-lien legende" aria-label={t.panier.retirer(ligne.libelle)} onClick={() => retirer(ligne)}>
                       {t.panier.retirerCourt}
                     </button>
                   </div>

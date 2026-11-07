@@ -49,7 +49,7 @@ html:has(.tunnel-page, .compte-page, .pv-commande) { scroll-padding-block: calc(
 
 /* --- Formulaire ------------------------------------------------------------ */
 .tunnel-formulaire { display: grid; gap: .5rem; min-inline-size: 0; }
-.tunnel-etape { margin: 0; padding: 1.75rem 0 2rem; border: 0; border-block-start: 1px solid var(--theme-filet); min-inline-size: 0; display: grid; gap: 1.125rem; }
+.tunnel-etape { margin: 0; padding: 1.75rem 0 2rem; border: 0; border-block-start: 1px solid var(--theme-filet); min-inline-size: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.125rem; }
 .tunnel-etape > legend {
   display: flex; align-items: center; gap: .75rem; float: inline-start; inline-size: 100%;
   margin-block-end: .25rem; padding: 0; font-family: var(--theme-font-display); font-size: 1.5rem; line-height: 1.15;
@@ -193,7 +193,9 @@ html:has(.tunnel-page, .compte-page, .pv-commande) { scroll-padding-block: calc(
 }
 .tunnel-promo-ouvrir svg { color: var(--theme-encre-doux); }
 .tunnel-promo-rangee { display: flex; gap: .5rem; }
-.champ .tunnel-promo-rangee input { flex: 1 1 auto; min-inline-size: 0; text-transform: uppercase; letter-spacing: .04em; }
+/* Sans largeur propre : la largeur par défaut d'un champ (20 caractères) poussait
+   toute l'étape « Paiement » de 10 px dans la marge, au téléphone. */
+.champ .tunnel-promo-rangee input { flex: 1 1 auto; inline-size: 0; min-inline-size: 0; text-transform: uppercase; letter-spacing: .04em; }
 .champ .tunnel-promo-rangee input::placeholder { text-transform: none; letter-spacing: 0; }
 .tunnel-promo-rangee > .btn { flex: 0 0 auto; }
 /* Le code et « Retirer » sur la première ligne ; ce qu'on y gagne dessous

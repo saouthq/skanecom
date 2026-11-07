@@ -48,6 +48,9 @@ type Props = {
   prioritaire?: boolean;
   /** Réglage `vitrine.prix_masques` d'un site vitrine : ni prix ni stock. */
   prixMasques?: boolean;
+  /** Les choix des filtres de la liste (« ?taille=M ») : la fiche s'ouvre sur
+   *  la déclinaison cherchée, pas sur la première en stock. */
+  choix?: string;
 };
 
 /** Le plus fort écart prix barré / prix parmi les variantes, en %. */
@@ -113,7 +116,7 @@ export function CarteProduit(props: Props) {
   return props.gabarit === "technique" ? <CarteTechnique {...props} /> : <CarteEditoriale {...props} />;
 }
 
-function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = false, prixMasques = false }: Props) {
+function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = false, prixMasques = false, choix = "" }: Props) {
   const prix = prixMasques ? null : prixDepuis(produit);
   const etat = prixMasques ? "en-stock" : etatProduit(produit);
   // Épuisé, mais un arrivage annoncé l'apporte : il se précommande.
@@ -128,7 +131,7 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
 
   return (
     <div className="ed-carte">
-    <Link className="ed-carte-lien" href={`/produit/${produit.slug}`}>
+    <Link className="ed-carte-lien" href={`/produit/${produit.slug}${choix}`}>
       <Photo
         photo={urlPhoto(produit)}
         survol={photoSurvol(produit)}
@@ -166,7 +169,7 @@ function CarteEditoriale({ produit, tailles, prixBarres = false, prioritaire = f
   );
 }
 
-function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = false, prixMasques = false }: Props) {
+function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = false, prixMasques = false, choix = "" }: Props) {
   const prix = prixMasques ? null : prixDepuis(produit);
   const etat = etatProduit(produit);
   const restant = stockTotal(produit);
@@ -183,7 +186,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
 
   return (
     <article className="te-carte">
-      <Link className="te-carte-lien" href={`/produit/${produit.slug}`}>
+      <Link className="te-carte-lien" href={`/produit/${produit.slug}${choix}`}>
         <Photo photo={photo} ratio="var(--theme-ratio-carte)" tailles={tailles ?? "(min-width: 1100px) 20vw, (min-width: 700px) 30vw, 48vw"} prioritaire={prioritaire}>
           {reduction ? <span className="te-remise">−{reduction} %</span> : null}
         </Photo>
@@ -234,7 +237,7 @@ function CarteTechnique({ produit, tailles, prixBarres = false, prioritaire = fa
             produitId={produit.id}
           />
         ) : (
-          <Link className="btn btn-second btn-bloc te-carte-choisir" href={`/produit/${produit.slug}`} aria-label={`${t.produit.choisir} — ${nom}`}>
+          <Link className="btn btn-second btn-bloc te-carte-choisir" href={`/produit/${produit.slug}${choix}`} aria-label={`${t.produit.choisir} — ${nom}`}>
             {etat === "rupture" && !precommande ? t.produit.voir : t.produit.choisir}
           </Link>
         )}

@@ -351,7 +351,7 @@ console.log("\n== 2. Maison Selma, sur téléphone ==");
     await capture(page, "selma-telephone-code-email");
     await tape(page, await codeEmail("leila.gharbi@exemple.tn"));
     await page.locator(".tunnel-identite").waitFor({ timeout: 8000 });
-    verifie((await page.locator(".tunnel-identite").innerText()).includes("Adresse confirmée : leila.gharbi@exemple.tn"), "six chiffres tapés : l'adresse est confirmée");
+    verifie((await page.locator(".tunnel-identite").innerText()).includes("E-mail confirmé : leila.gharbi@exemple.tn"), "six chiffres tapés : l'e-mail est confirmé");
     const numero = page.getByLabel("Téléphone");
     verifie(await numero.isVisible() && (await numero.inputValue()) === "", "reste le numéro du livreur, à saisir : un compte e-mail n'en a pas");
     // Le formulaire garde l'adresse saisie avant le changement de compte : on la réécrit.

@@ -119,7 +119,7 @@ export function ConfirmationAjout({
           <span className="confirmation-libelle">{ajout.libelle}</span>
           <span className="confirmation-prix">
             <Prix millimes={ajout.prixMillimes * ajout.quantite} />
-            {ajout.quantite > 1 ? <span className="legende">{t.panier.quantiteFois(ajout.quantite)}</span> : null}
+            {ajout.quantite > 1 ? <span className="legende">{t.panier.quantiteFois(ajout.quantite, formatePrix(ajout.prixMillimes))}</span> : null}
           </span>
         </span>
       </div>

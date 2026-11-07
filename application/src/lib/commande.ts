@@ -251,5 +251,30 @@ export function gardeCode(boutique: string, code: string | null): void {
 export function oublieCleDeCommande(boutique: string): void {
   try {
     window.sessionStorage.removeItem(cleStockage(boutique));
+    window.sessionStorage.removeItem(cleSaisie(boutique));
+  } catch {}
+}
+
+/* La saisie du tunnel (numéro, adresse, précision), gardée le temps de
+   l'onglet : au téléphone, le navigateur recharge souvent un onglet laissé
+   derrière soi (lire le code dans sa messagerie, chercher son code postal),
+   et tout était à retaper. Dans l'onglet seulement — jamais sur l'appareil —,
+   oubliée à la fin de la commande (ci-dessus). */
+const cleSaisie = (boutique: string) => `skanecom.saisie.${boutique}`;
+
+export function saisieGardee(boutique: string): Record<string, string> {
+  try {
+    const lu = JSON.parse(window.sessionStorage.getItem(cleSaisie(boutique)) ?? "null") as unknown;
+    if (!lu || typeof lu !== "object") return {};
+    return Object.fromEntries(Object.entries(lu).filter(([, v]) => typeof v === "string").map(([k, v]) => [k, (v as string).slice(0, 500)]));
+  } catch {
+    return {};
+  }
+}
+
+export function gardeSaisie(boutique: string, saisie: Record<string, string>): void {
+  try {
+    if (Object.values(saisie).some((v) => v.trim())) window.sessionStorage.setItem(cleSaisie(boutique), JSON.stringify(saisie));
+    else window.sessionStorage.removeItem(cleSaisie(boutique));
   } catch {}
 }

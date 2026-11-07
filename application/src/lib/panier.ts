@@ -73,6 +73,17 @@ export function retireDuPanier(varianteId: string): void {
   ecrit(retireLigne(lit(), varianteId));
 }
 
+/** « Annuler » après un retrait (le tiroir du panier) : la ligne revient telle
+ *  qu'elle était, à sa place. Revenue entre-temps par un autre chemin, elle
+ *  n'est pas doublée. */
+export function remetDansPanier(ligne: LignePanier, position: number): void {
+  const panier = lit();
+  if (panier.lignes.some((l) => l.varianteId === ligne.varianteId)) return;
+  const lignes = [...panier.lignes];
+  lignes.splice(Math.max(0, Math.min(position, lignes.length)), 0, ligne);
+  ecrit({ ...panier, lignes, majLe: new Date().toISOString() });
+}
+
 /** Le lien d'une relance (/panier/<id>) : les pièces gardées par la boutique
  *  reviennent dans ce navigateur. Une pièce déjà au panier garde la plus
  *  grande des deux quantités : rien n'est doublé. */

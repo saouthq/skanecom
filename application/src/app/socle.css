@@ -577,6 +577,9 @@ html[data-animations="non"] .tiroir-menu .tiroir-corps [style*="--i"] { animatio
   background: var(--theme-surface-2); color: var(--theme-encre-doux);
 }
 .panier-lignes { list-style: none; margin: 0; padding: 0; }
+/* Une ligne retirée : la dire, et pouvoir la remettre. */
+.panier-retiree { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; margin: 0; padding-block: .875rem; border-block-end: 1px solid var(--theme-filet); font-size: .875rem; }
+.panier-retiree .btn-lien { font-weight: 600; padding-block: .625rem; margin-block: -.625rem; }
 .panier-ligne { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 1rem; padding-block: 1rem; border-block-end: 1px solid var(--theme-filet); }
 .panier-vignette { position: relative; display: block; aspect-ratio: 4 / 5; background: var(--theme-surface-2); overflow: hidden; border-radius: var(--theme-radius-net); }
 .panier-vignette img { object-fit: cover; }
@@ -628,7 +631,7 @@ html[data-animations="non"] .tiroir-menu .tiroir-corps [style*="--i"] { animatio
 .confirmation-vignette img { object-fit: cover; }
 .confirmation-texte { display: grid; gap: .25rem; min-inline-size: 0; }
 .confirmation-libelle { font-size: .875rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.confirmation-prix { display: flex; align-items: baseline; gap: .5rem; font-size: .875rem; }
+.confirmation-prix { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .5rem; font-size: .875rem; }
 .confirmation-livraison { margin: 0; padding-block-start: .75rem; border-block-start: 1px solid var(--theme-filet); }
 .confirmation-livraison[data-atteinte] { color: var(--theme-succes); }
 .confirmation-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }

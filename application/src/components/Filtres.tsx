@@ -34,14 +34,20 @@ import { valeurAvecUnite } from "@/lib/caracteristiques";
 const TAILLES = ["XXS", "XS", "XS/S", "S", "S/M", "M", "M/L", "L", "L/XL", "XL", "XXL", "3XL"];
 
 /** Les valeurs d'un axe dans l'ordre où on les lit : les tailles de XS à XL,
- *  les mesures du plus petit au plus grand (4 mm, 6 mm, 10 mm). Sinon, l'ordre
- *  de la base. */
+ *  les mesures du plus petit au plus grand (4 mm, 6 mm, 10 mm). Un rayon qui
+ *  mêle les deux (des robes en S, M, L et un blazer en 46, 48) : les lettres
+ *  d'abord, puis les chiffres. Sinon, l'ordre de la base. */
 export function ordreNaturel<T extends { valeur: string }>(options: T[]): T[] {
   const rang = (v: string) => TAILLES.indexOf(v.trim().toUpperCase());
-  if (options.every((o) => rang(o.valeur) >= 0)) return [...options].sort((a, b) => rang(a.valeur) - rang(b.valeur));
   const nombre = (v: string) => Number.parseFloat(v.replace(",", "."));
-  if (options.every((o) => Number.isFinite(nombre(o.valeur)))) return [...options].sort((a, b) => nombre(a.valeur) - nombre(b.valeur));
-  return options;
+  const lettre = (v: string) => rang(v) >= 0;
+  const chiffre = (v: string) => Number.isFinite(nombre(v));
+  if (!options.every((o) => lettre(o.valeur) || chiffre(o.valeur))) return options;
+  return [...options].sort((a, b) => {
+    const la = lettre(a.valeur), lb = lettre(b.valeur);
+    if (la !== lb) return la ? -1 : 1;
+    return la ? rang(a.valeur) - rang(b.valeur) : nombre(a.valeur) - nombre(b.valeur);
+  });
 }
 
 /** Demande de fermeture du tiroir de filtres (« Voir les résultats »). */
@@ -147,6 +153,9 @@ export function FormulaireFiltres({
         const options = ordreNaturel(facettes.options[cle] ?? []);
         const choisies = choix.options[cle] ?? [];
         if (options.length < 2 && choisies.length === 0) return null;
+        // Un axe dont plus rien ne reste (les pointures, une fois la taille M
+        // cochée) : un bloc entier d'options éteintes n'aide pas, il s'efface.
+        if (choisies.length === 0 && options.every((o) => o.compte === 0)) return null;
         const estCouleur = cle === "couleur";
         const axe = facettes.axes.find((a) => a.cle === cle);
         return (

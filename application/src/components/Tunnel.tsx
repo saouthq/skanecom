@@ -17,6 +17,8 @@ import {
   cleDeCommande,
   codeGarde,
   gardeCode,
+  gardeSaisie,
+  saisieGardee,
   telephoneLisible,
   type CodeDevis,
   type Devis,
@@ -310,6 +312,25 @@ export function Tunnel({
       actif = false;
     };
   }, [sansNumero, boutiqueId]);
+
+  // La saisie retrouvée après un rechargement de l'onglet (lib/commande.ts),
+  // relue une fois le navigateur là (la page servie est la même pour tous),
+  // puis gardée à chaque frappe — pas avant : les champs encore vides
+  // effaceraient ce qu'on va relire.
+  const navigateur = useSyncExternalStore(rienAEcouter, () => true, () => false);
+  const [saisieRelue, setSaisieRelue] = useState(false);
+  if (navigateur && !saisieRelue) {
+    setSaisieRelue(true);
+    const garde = saisieGardee(boutique);
+    setChamps((c) => {
+      const suite = { ...c };
+      for (const k of Object.keys(CHAMPS_VIDES) as (keyof Champs)[]) if (!suite[k] && garde[k]) suite[k] = garde[k];
+      return suite;
+    });
+  }
+  useEffect(() => {
+    if (saisieRelue) gardeSaisie(boutique, champs);
+  }, [saisieRelue, boutique, champs]);
 
   // Un acheteur qui revient retrouve sa dernière adresse (carnet du compte,
   // lu sous la RLS : seulement les siennes, dans cette boutique).
@@ -1104,7 +1125,12 @@ function ChampCode({ id, code, devis, onAppliquer, onRetirer }: {
   const valeur = saisie ?? code ?? "";
 
   useEffect(() => {
-    const cible = aFocaliser.current === "saisie" ? refSaisie.current : aFocaliser.current === "applique" && applique ? refApplique.current : null;
+    // Refusé, le code rend la main au champ (le bouton, désactivé le temps de
+    // la vérification, avait perdu le focus) : on corrige sans le chercher.
+    const cible = aFocaliser.current === "saisie" ? refSaisie.current
+      : aFocaliser.current === "applique" && applique ? refApplique.current
+      : aFocaliser.current === "applique" && refuse ? refSaisie.current
+      : null;
     if (!cible) return;
     aFocaliser.current = null;
     cible.focus();

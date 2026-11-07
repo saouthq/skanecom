@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useSyncExternalStore } from "react";
 import { trouveVariante, varianteParDefaut, type Produit, type Variante } from "@/lib/catalogue";
 
 /* ============================================================================
@@ -30,6 +30,17 @@ type Selection = {
 
 const Contexte = createContext<Selection | null>(null);
 
+const rienAEcouter = () => () => {};
+
+/** La déclinaison que désignent les paramètres de l'adresse (« ?taille=M »). */
+function varianteCherchee(produit: Produit, recherche: string): Variante | null {
+  const cherche = new URLSearchParams(recherche);
+  const axes = produit.options.map((o) => o.cle).filter((c) => cherche.has(c));
+  if (axes.length === 0) return null;
+  const convient = (v: Variante) => axes.every((c) => cherche.getAll(c).includes(v.options?.[c] ?? ""));
+  return produit.variantes.find((v) => v.stock > 0 && convient(v)) ?? produit.variantes.find(convient) ?? null;
+}
+
 export function FournisseurSelection({
   produit,
   children,
@@ -40,6 +51,17 @@ export function FournisseurSelection({
   const [choix, setChoix] = useState<Record<string, string>>(() => ({
     ...(varianteParDefaut(produit)?.options ?? {}),
   }));
+
+  // Arrivée depuis une liste filtrée (« ?taille=M », CarteProduit) : la
+  // déclinaison cherchée, si elle existe — en stock d'abord. Lue une fois le
+  // navigateur là : la page servie reste la même pour tous.
+  const recherche = useSyncExternalStore(rienAEcouter, () => window.location.search, () => "");
+  const [rechercheVue, setRechercheVue] = useState("");
+  if (recherche !== rechercheVue) {
+    setRechercheVue(recherche);
+    const trouvee = varianteCherchee(produit, recherche);
+    if (trouvee) setChoix({ ...trouvee.options });
+  }
 
   const variante = useMemo(() => trouveVariante(produit, choix), [produit, choix]);
 

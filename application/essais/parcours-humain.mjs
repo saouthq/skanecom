@@ -1472,6 +1472,10 @@ if (section("maison")) {
     const jonc = carte(page, "panier-jonc-de-mer");
     await jonc.scrollIntoViewIfNeeded();
     const plus = jonc.locator(".ajc-plus");
+    // La souris loin de la carte : restée là où l'étape d'avant a cliqué, elle
+    // pouvait se trouver sur elle une fois la carte amenée à l'écran.
+    await page.mouse.move(2, 2);
+    await page.waitForTimeout(250);
     verifie(await plus.evaluate((e) => getComputedStyle(e).opacity) === "0", "à la souris, le « + » attend le survol de la carte, comme le cœur");
     await jonc.hover();
     await page.waitForTimeout(300);

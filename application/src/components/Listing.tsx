@@ -54,6 +54,11 @@ export function Listing({
     valeur: (cle, v) => valeurAvecUnite(v, liste.facettes.axes.find((a) => a.cle === cle)),
   });
   const technique = gabarit === "technique";
+  // Les axes cochés suivent la cliente jusqu'à la fiche : filtrée sur « M »,
+  // elle y arrive sur la taille M (SelectionVariante).
+  const parametres = new URLSearchParams();
+  for (const [cle, valeurs] of Object.entries(filtres.options)) for (const v of valeurs) parametres.append(cle, v);
+  const choix = parametres.size ? `?${parametres}` : "";
 
   const formulaire = (prefixe: string) => (
     <FormulaireFiltres base={base} facettes={liste.facettes} valeurs={filtres} prefixe={prefixe} avecRayons={avecRayons} resultats={liste.total} />
@@ -108,7 +113,7 @@ export function Listing({
           <>
             <div className={technique ? "te-grille" : "ed-grille"}>
               {liste.produits.map((p, i) => (
-                <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={prixBarres} prixMasques={prixMasques} prioritaire={i < 4} />
+                <CarteProduit key={p.id} produit={p} gabarit={gabarit} prixBarres={prixBarres} prixMasques={prixMasques} prioritaire={i < 4} choix={choix} />
               ))}
             </div>
 
