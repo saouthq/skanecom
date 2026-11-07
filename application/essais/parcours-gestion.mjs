@@ -2274,6 +2274,12 @@ if (section("5")) {
       verifie((await page.locator(".bo-vide").innerText()).includes("Aucune commande"), "aucune commande : la liste le dit");
     }
     await capture(page, "gestion-preparateur");
+    // « Aujourd'hui » et la navigation ne lui demandent pas un geste qu'il n'a pas.
+    await page.goto(`${C}/gestion/quincaillerie-demo/aujourdhui`, { waitUntil: "networkidle" });
+    const cartes = await page.locator(".jd-carte-titre").allInnerTexts();
+    verifie(cartes.length > 0 && !cartes.some((c) => /Devis à chiffrer|Comptes pro à valider|Avis à relire/.test(c)),
+      `« Aujourd'hui » : ni devis à chiffrer, ni compte pro à valider, ni avis à relire (${cartes.join(" · ")})`);
+    verifie(await page.locator(".app-nav a[href$='/clients'] .app-nav-compte").count() === 0, "pas de pastille sur « Clients » : il ne valide pas les comptes pro");
   });
 
   await etape("au catalogue : il tient le stock, pas les fiches", async () => {

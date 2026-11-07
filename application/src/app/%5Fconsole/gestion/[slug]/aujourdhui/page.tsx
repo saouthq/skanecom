@@ -7,6 +7,11 @@ import { clientSession, exigeMembre, type Role } from "@/lib/console/session";
 import { lieu } from "@/lib/commande";
 import { LIBELLES_RESULTAT, lienAppel, lienWhatsApp, messageConfirmation, telephoneLisible } from "@/lib/gestion/libelles";
 import { DIRECTION } from "@/lib/gestion/tableau";
+import { PEUT_DECIDER_PRO } from "@/lib/gestion/pro";
+import { PEUT_CHIFFRER } from "@/lib/gestion/devis";
+import { PEUT_MODERER } from "@/lib/gestion/avis";
+import { PEUT_PREVENIR } from "@/lib/gestion/reassort";
+import { PEUT_RELANCER } from "@/lib/gestion/paniers";
 import { duMois, enTnd, type Objectif } from "@/lib/gestion/objectif";
 import { jourArrivageCourt, type EcranArrivages } from "@/lib/gestion/arrivages";
 
@@ -68,6 +73,8 @@ type Tache = {
   /** Ce qui suit son cours sans geste de l'équipe (colis en route, précommandes) :
    *  compté, mais sans la couleur « à faire » tant que rien n'est anormal. */
   enCours?: boolean; alerte?: boolean;
+  /** Le geste est réservé (chiffrer un devis, valider un compte pro…) : la carte ne se montre qu'à qui peut le faire. */
+  roles?: Role[];
 };
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Tunis" });
@@ -171,30 +178,32 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
           titre: "Demandes de SAV", detail: e.modules.sav ? "Nouvelles : le client attend votre appel." : "Aucune nouvelle demande." }]
       : []),
     ...(e.modules.devis !== null
-      ? [{ cle: "devis", nombre: e.modules.devis, icone: "fichier" as const, href: `${base}/devis`,
+      ? [{ cle: "devis", nombre: e.modules.devis, icone: "fichier" as const, href: `${base}/devis`, roles: PEUT_CHIFFRER,
           titre: "Devis à chiffrer", detail: e.modules.devis ? "Des listes de chantier attendent vos prix." : "Aucune demande de devis en attente." }]
       : []),
     ...(e.modules.avis !== null
-      ? [{ cle: "avis", nombre: e.modules.avis, icone: "etoile" as const, href: `${base}/avis`,
+      ? [{ cle: "avis", nombre: e.modules.avis, icone: "etoile" as const, href: `${base}/avis`, roles: PEUT_MODERER,
           titre: "Avis à relire", detail: e.modules.avis ? "Relisez-les avant qu'ils paraissent sur la vitrine." : "Aucun avis à relire." }]
       : []),
     ...(reassort && (reassort.actif || reassort.ouvertes)
-      ? [{ cle: "reassort", nombre: reassort.a_prevenir, icone: "cloche" as const, href: `${base}/reassort`,
+      ? [{ cle: "reassort", nombre: reassort.a_prevenir, icone: "cloche" as const, href: `${base}/reassort`, roles: PEUT_PREVENIR,
           titre: reassort.a_prevenir > 1 ? "Clients à prévenir" : "Client à prévenir",
           detail: reassort.a_prevenir ? "Leur pièce est de retour en stock : le message est prêt." : "Personne n'attend une pièce revenue." }]
       : []),
     ...(relances?.actif
-      ? [{ cle: "paniers", nombre: relances.a_relancer, icone: "panier" as const, href: `${base}/paniers`,
+      ? [{ cle: "paniers", nombre: relances.a_relancer, icone: "panier" as const, href: `${base}/paniers`, roles: PEUT_RELANCER,
           titre: relances.a_relancer > 1 ? "Paniers à relancer" : "Panier à relancer",
           detail: relances.a_relancer ? "Laissés sans commande depuis plus d'une heure : le message est prêt." : "Aucun panier laissé en route." }]
       : []),
     ...(e.modules.comptes_pro !== null
-      ? [{ cle: "pros", nombre: e.modules.comptes_pro, icone: "personne" as const, href: `${base}/clients/pros`,
+      ? [{ cle: "pros", nombre: e.modules.comptes_pro, icone: "personne" as const, href: `${base}/clients/pros`, roles: PEUT_DECIDER_PRO,
           titre: "Comptes pro à valider", detail: e.modules.comptes_pro ? "Des professionnels demandent leurs prix." : "Aucune demande de compte pro." }]
       : []),
   ];
   const COMMANDES = new Set(["a_confirmer", "a_preparer", "en_livraison"]);
-  const montrees = vitrineSeule ? taches.filter((x) => x.nombre > 0 || !COMMANDES.has(x.cle)) : taches;
+  // Le fil des commandes se montre à toute l'équipe (c'est son travail qui vient) ; un geste réservé, à qui peut le faire.
+  const permises = taches.filter((x) => !x.roles || x.roles.includes(boutique.role));
+  const montrees = vitrineSeule ? permises.filter((x) => x.nombre > 0 || !COMMANDES.has(x.cle)) : permises;
   const aFaire = montrees.filter((x) => x.nombre > 0);
   const aJour = montrees.filter((x) => x.nombre === 0);
   // Un site vitrine ne vend ni ne livre : ni stock à réassortir, ni chiffres de commandes.
@@ -222,7 +231,8 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
 
       {aFaire.length ? (
         <section aria-labelledby="jd-a-faire">
-          <h2 id="jd-a-faire" className="jd-titre">À faire</h2>
+          {/* Rien que des colis en route (ou des précommandes) : ça suit son cours, ce n'est pas « à faire ». */}
+          <h2 id="jd-a-faire" className="jd-titre">{aFaire.some((x) => !x.enCours || x.alerte) ? "À faire" : "En cours"}</h2>
           <ul className="jd-grille" role="list">
             {aFaire.map((x, i) => <Carte key={x.cle} tache={x} rang={i} />)}
           </ul>

@@ -8,6 +8,7 @@ import { clientSession, exigeMembre } from "@/lib/console/session";
 import { quand, telephoneLisible } from "@/lib/gestion/libelles";
 import { FILTRES_CLIENTS, pastilleConfiance, type ListeClients } from "@/lib/gestion/clients";
 import { RaccourciRecherche } from "@/components/console/Raccourcis";
+import { PEUT_DECIDER_PRO } from "@/lib/gestion/pro";
 
 export const metadata: Metadata = { title: "Clients" };
 
@@ -80,7 +81,8 @@ export default async function Clients({
             <strong>Comptes professionnels</strong>
             <span className="discret">
               {etatPro.demandes > 0
-                ? `${etatPro.demandes} demande${etatPro.demandes > 1 ? "s" : ""} en attente de votre réponse`
+                // Seuls le propriétaire et l'administrateur y répondent : aux autres, la page ne le demande pas.
+                ? `${etatPro.demandes} demande${etatPro.demandes > 1 ? "s" : ""} en attente${PEUT_DECIDER_PRO.includes(boutique.role) ? " de votre réponse" : " : le propriétaire ou l'administrateur y répond"}`
                 : "Les demandes, les comptes ouverts, leurs prix pro"}
             </span>
           </span>

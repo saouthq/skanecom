@@ -9,6 +9,11 @@ import { enFond, envoyerFile } from "@/lib/gestion/skanfact";
 import { DIRECTION } from "@/lib/gestion/tableau";
 import { PEUT_MODIFIER, PEUT_STOCKER } from "@/lib/gestion/catalogue";
 import { PEUT_ECRIRE } from "@/lib/gestion/pages";
+import { PEUT_DECIDER_PRO } from "@/lib/gestion/pro";
+import { PEUT_CHIFFRER } from "@/lib/gestion/devis";
+import { PEUT_MODERER } from "@/lib/gestion/avis";
+import { PEUT_PREVENIR } from "@/lib/gestion/reassort";
+import { PEUT_RELANCER } from "@/lib/gestion/paniers";
 import type { ElementPalette } from "@/lib/gestion/palette";
 import { OuvrirPalette, Palette } from "@/components/console/Palette";
 import { BandeauAnnonces } from "@/components/console/BandeauAnnonces";
@@ -103,12 +108,13 @@ export default async function BackofficeBoutique({
   const etatSav = sav as { actif: boolean; nouvelles: number } | null;
   // Les comptes professionnels, si la boutique a le module : les demandes en attente.
   const etatPro = pro as { actif: boolean; demandes: number } | null;
-  const badgePro = etatPro?.actif && etatPro.demandes
+  // Un badge appelle un geste : seulement pour le rôle qui peut le faire (la préparation ne valide pas un compte pro).
+  const badgePro = etatPro?.actif && etatPro.demandes && PEUT_DECIDER_PRO.includes(boutique.role)
     ? <span className="app-nav-compte" aria-label={`${etatPro.demandes} demande${etatPro.demandes > 1 ? "s" : ""} de compte pro`}>{etatPro.demandes}</span>
     : undefined;
   // Les devis, si la boutique a le module : ceux à chiffrer.
   const etatDevis = dv as { actif: boolean; a_chiffrer: number } | null;
-  const badgeDevis = etatDevis?.a_chiffrer
+  const badgeDevis = etatDevis?.a_chiffrer && PEUT_CHIFFRER.includes(boutique.role)
     ? <span className="app-nav-compte" aria-label={`${etatDevis.a_chiffrer} à chiffrer`}>{etatDevis.a_chiffrer}</span>
     : undefined;
   const lienDevis = etatDevis?.actif || etatDevis?.a_chiffrer
@@ -116,7 +122,7 @@ export default async function BackofficeBoutique({
     : [];
   // Les avis clients, si la boutique a le module : ceux à relire.
   const etatAvis = av as { actif: boolean; a_moderer: number } | null;
-  const badgeAvis = etatAvis?.a_moderer
+  const badgeAvis = etatAvis?.a_moderer && PEUT_MODERER.includes(boutique.role)
     ? <span className="app-nav-compte" aria-label={`${etatAvis.a_moderer} avis à relire`}>{etatAvis.a_moderer}</span>
     : undefined;
   const lienAvis = etatAvis?.actif || etatAvis?.a_moderer
@@ -139,7 +145,7 @@ export default async function BackofficeBoutique({
   const lienReassort = etatReassort?.actif || etatReassort?.ouvertes
     ? [{
         href: `/gestion/${slug}/reassort`, libelle: "Réassort", icone: "cloche" as const,
-        extra: etatReassort.a_prevenir
+        extra: etatReassort.a_prevenir && PEUT_PREVENIR.includes(boutique.role)
           ? <span className="app-nav-compte" aria-label={`${etatReassort.a_prevenir} personne${etatReassort.a_prevenir > 1 ? "s" : ""} à prévenir`}>{etatReassort.a_prevenir}</span>
           : undefined,
       }]
@@ -149,7 +155,7 @@ export default async function BackofficeBoutique({
   const lienPaniers = etatPaniers?.actif
     ? [{
         href: `/gestion/${slug}/paniers`, libelle: "Paniers", icone: "panier" as const,
-        extra: etatPaniers.a_relancer
+        extra: etatPaniers.a_relancer && PEUT_RELANCER.includes(boutique.role)
           ? <span className="app-nav-compte" aria-label={`${etatPaniers.a_relancer} panier${etatPaniers.a_relancer > 1 ? "s" : ""} à relancer`}>{etatPaniers.a_relancer}</span>
           : undefined,
       }]
