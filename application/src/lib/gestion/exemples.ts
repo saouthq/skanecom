@@ -65,8 +65,64 @@ const PAR_STRUCTURE: Record<Structure, Brut> = {
   },
 };
 
-export function exemplesProduit(code: unknown): ExemplesProduit {
-  const e = PAR_STRUCTURE[structureDe(code)];
+/* Le métier choisi à la création (console) pose la structure — mais
+   plusieurs métiers en partagent une : une bijouterie (immersif) lisait
+   « Robe longue en lin », une parfumerie (éditorial) la valise, le
+   high-tech (commerce) la perceuse. Le métier se reconnaît à ses rayons
+   (posés avec lui) : deux en commun suffisent ; sinon, la structure. */
+type Metier = "mode" | "bijoux" | "beaute" | "bagages" | "high_tech" | "maison" | "outillage" | "alimentation";
+
+const RAYONS_METIER: Record<Metier, string[]> = {
+  mode: ["femme", "homme", "chaussures", "accessoires"],
+  bijoux: ["colliers", "bagues", "bracelets", "boucles-d-oreilles", "montres"],
+  beaute: ["soins-du-visage", "corps-et-bain", "cheveux", "maquillage", "parfums", "coffrets"],
+  bagages: ["valises-cabine", "valises-soute", "sacs-de-voyage", "sacs-a-dos", "accessoires-de-voyage"],
+  high_tech: ["smartphones", "ordinateurs-portables", "tablettes", "audio", "accessoires", "maison-connectee"],
+  maison: ["cuisine-et-table", "decoration", "linge-de-maison", "luminaires", "rangement"],
+  outillage: ["outillage-electroportatif", "outillage-a-main", "quincaillerie", "protection", "jardin"],
+  alimentation: ["huiles-d-olive", "dattes-et-fruits-secs", "miels-et-confitures", "epices-et-harissa", "coffrets-cadeaux"],
+};
+
+const PAR_METIER: Record<Metier, Brut> = {
+  mode: PAR_STRUCTURE.immersif,
+  bijoux: {
+    nom: "Bracelet jonc en argent",
+    axes: ["Taille", "Métal", "Pierre"],
+    valeurs: ["S, M, L", "Argent, Plaqué or", "Sans pierre, Zircon"],
+    sku: "BRA-JON",
+  },
+  beaute: PAR_STRUCTURE.monoproduit,
+  bagages: PAR_STRUCTURE.editorial,
+  high_tech: {
+    nom: "Écouteurs sans fil",
+    axes: ["Couleur", "Version", "Garantie"],
+    valeurs: ["Noir, Blanc", "Standard, Pro", "1 an, 2 ans"],
+    sku: "ECO-SF",
+  },
+  maison: PAR_STRUCTURE.bento,
+  outillage: OUTILLAGE,
+  alimentation: {
+    nom: "Huile d'olive extra vierge",
+    axes: ["Contenance", "Origine", "Conditionnement"],
+    valeurs: ["50 cl, 1 L", "Sfax, Zaghouan", "Bouteille, Bidon"],
+    sku: "HUI-OLV",
+  },
+};
+
+/** Le métier qu'ont posé les rayons de la boutique (leurs adresses), s'il se reconnaît. */
+export function metierDe(rayons: string[]): Metier | null {
+  let meilleur: Metier | null = null;
+  let score = 1;
+  for (const [m, liste] of Object.entries(RAYONS_METIER) as [Metier, string[]][]) {
+    const n = liste.filter((s) => rayons.includes(s)).length;
+    if (n > score) { score = n; meilleur = m; }
+  }
+  return meilleur;
+}
+
+export function exemplesProduit(code: unknown, rayons: string[] = []): ExemplesProduit {
+  const metier = metierDe(rayons);
+  const e = metier ? PAR_METIER[metier] : PAR_STRUCTURE[structureDe(code)];
   const premiere = (liste: string) => liste.split(",")[0]?.trim() ?? "";
   return { ...e, skuDeclinaison: referenceProposee(e.sku, [premiere(e.valeurs[0]), premiere(e.valeurs[1])]) };
 }

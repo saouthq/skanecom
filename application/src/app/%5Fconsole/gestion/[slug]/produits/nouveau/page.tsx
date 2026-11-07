@@ -22,12 +22,12 @@ export default async function NouveauProduit({ params, searchParams }: {
   if (!PEUT_MODIFIER.includes(boutique.role)) redirect(`/gestion/${slug}/produits`);
   const sb = await clientSession();
   const [{ data: cats }, { data: theme }] = await Promise.all([
-    sb.from("categories").select("id, nom_fr, parent_id, position").eq("boutique_id", boutique.boutique_id).order("position"),
+    sb.from("categories").select("id, slug, nom_fr, parent_id, position").eq("boutique_id", boutique.boutique_id).order("position"),
     sb.from("themes").select("code").eq("boutique_id", boutique.boutique_id).maybeSingle(),
   ]);
-  // Les exemples parlent le métier de la boutique (sa structure), pas celui de Maymar.
-  const ex = exemplesProduit(theme?.code);
-  const categories = (cats ?? []) as { id: string; nom_fr: string | null; parent_id: string | null }[];
+  const categories = (cats ?? []) as { id: string; slug: string; nom_fr: string | null; parent_id: string | null }[];
+  // Les exemples parlent le métier de la boutique (ses rayons, sinon sa structure), pas celui de Maymar.
+  const ex = exemplesProduit(theme?.code, categories.filter((c) => !c.parent_id).map((c) => c.slug));
   const nomDe = (c: { nom_fr: string | null; parent_id: string | null }) => {
     const parent = c.parent_id ? categories.find((p) => p.id === c.parent_id) : null;
     return parent ? `${parent.nom_fr} › ${c.nom_fr}` : (c.nom_fr ?? "");
