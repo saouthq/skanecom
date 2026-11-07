@@ -48,12 +48,42 @@ const CADRES_PERMIS = HOTE_CONSOLE
 const interne = (chemin: string) =>
   chemin === "/_b" || chemin.startsWith("/_b/") || chemin === "/_console" || chemin.startsWith("/_console/");
 
-function page(statut: number, titre: string, texte: string): NextResponse {
-  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${titre}</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:36rem;margin:15vh auto;padding:0 1.5rem;color:#1b1f24;background:#fafaf8}h1{font-size:1.5rem;font-weight:500}</style></head><body><h1>${titre}</h1><p>${texte}</p></body></html>`;
+const echappe = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+/** La page sobre d'une adresse qu'on ne sert pas — l'allure de la page de
+ *  maintenance (lib/maintenance.ts) : centrée, l'initiale de la boutique
+ *  quand on la connaît, le mode sombre suivi. */
+function page(statut: number, titre: string, texte: string, entetes: Record<string, string> = {}, nom: string | null = null): NextResponse {
+  const initiale = nom ? `<span class="initiale" aria-hidden="true">${echappe(nom.trim().charAt(0).toUpperCase())}</span>` : "";
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${echappe(titre)}</title><style>
+:root{color-scheme:light dark;--fond:#f7f6f3;--encre:#1b1f24;--doux:#5d6470;--trait:#e4e1da}
+@media (prefers-color-scheme:dark){:root{--fond:#121416;--encre:#f1efe9;--doux:#a5abb4;--trait:#2a2e33}}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;display:grid;place-items:center;padding:2rem 1.25rem;background:var(--fond);color:var(--encre);font:17px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:30rem;text-align:center}
+.initiale{display:inline-grid;place-items:center;width:3.25rem;height:3.25rem;border-radius:999px;border:1px solid var(--trait);font-weight:600;font-size:1.25rem;margin-bottom:1.5rem}
+h1{margin:0;font-size:clamp(1.5rem,5vw,2rem);font-weight:600;letter-spacing:-.02em;line-height:1.2;text-wrap:balance}
+p{margin:.875rem 0 0;color:var(--doux);text-wrap:pretty}
+</style></head><body><main>${initiale}<h1>${echappe(titre)}</h1><p>${echappe(texte)}</p></main></body></html>`;
   return new NextResponse(html, {
     status: statut,
-    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", ...entetes },
   });
+}
+
+/* Une boutique qu'on ne sert pas, selon pourquoi. Suspendue (un abonnement à
+   régler, un contenu à corriger), c'est momentané : un 503 que les moteurs de
+   recherche attendent, là où un 404 de quelques jours retirait ses pages de
+   leur index ; et son nom, pour que le client sache où il est. */
+function pageNonServie(statut: string | undefined, nom: string | null | undefined): NextResponse {
+  const qui = nom?.trim() || null;
+  if (statut === "suspendue") {
+    return page(503, qui ? `${qui} est momentanément fermée` : "Boutique momentanément fermée",
+      "Elle rouvre bientôt : revenez un peu plus tard.", { "retry-after": "3600" }, qui);
+  }
+  if (statut === "en_preparation") {
+    return page(404, qui ? `${qui} ouvre bientôt` : "Boutique bientôt ouverte", "Elle se prépare : revenez dans quelques jours.", {}, qui);
+  }
+  return page(404, "Boutique fermée", "Cette boutique n'est pas ouverte en ce moment.");
 }
 
 /* La console : réécriture, et rafraîchissement de la session (jetons de
@@ -147,7 +177,7 @@ export async function proxy(request: NextRequest) {
       return reponse;
     }
     case "fermee":
-      return page(404, "Boutique fermée", "Cette boutique n'est pas ouverte en ce moment.");
+      return pageNonServie(resolution.statut, resolution.nom);
     case "injoignable":
       return page(503, "Boutique momentanément indisponible", "Revenez dans quelques minutes.");
     default:

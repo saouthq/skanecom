@@ -260,6 +260,9 @@ html[data-gabarit="technique"] .pied-moyen svg { color: var(--theme-accent); }
 
 /* --- La page du lien de la lettre ------------------------------------------- */
 .lettre-page { display: grid; place-items: center; padding-block: clamp(3rem, 8vw, 6rem); }
+/* Sur la page de la lettre (confirmer, se désinscrire), le pied ne propose pas
+   de s'inscrire encore : sous « C'est confirmé », il se contredisait. */
+html:has(.lettre-page) footer .enveloppe:has(> .lettre) { display: none; }
 .lettre-geste {
   display: grid; justify-items: center; gap: .875rem; max-inline-size: 34rem; text-align: center;
   padding: clamp(1.75rem, 5vw, 3rem); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);

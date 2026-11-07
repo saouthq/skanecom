@@ -17,7 +17,8 @@ import instantane from "../annuaire.genere.json";
 
 export type Resolution =
   | { etat: "boutique"; slug: string }
-  | { etat: "fermee" }
+  /** Pas servie : en préparation, suspendue (momentané) ou fermée (pour de bon). */
+  | { etat: "fermee"; statut?: string; nom?: string | null }
   | { etat: "inconnu" }
   | { etat: "injoignable" };
 
@@ -47,9 +48,9 @@ async function demandeALaBase(hote: string): Promise<Resolution> {
     signal: AbortSignal.timeout(1500),
   });
   if (!reponse.ok) throw new Error(`resoudre_domaine : HTTP ${reponse.status}`);
-  const [ligne] = (await reponse.json()) as { slug: string; statut: string }[];
+  const [ligne] = (await reponse.json()) as { slug: string; nom: string | null; statut: string }[];
   if (!ligne) return { etat: "inconnu" };
-  return ligne.statut === "active" ? { etat: "boutique", slug: ligne.slug } : { etat: "fermee" };
+  return ligne.statut === "active" ? { etat: "boutique", slug: ligne.slug } : { etat: "fermee", statut: ligne.statut, nom: ligne.nom };
 }
 
 export async function resoudre(hote: string): Promise<Resolution> {

@@ -572,10 +572,10 @@ await etape("le domaine : en acheter un d'un geste (vérifié au registre, confi
   verifie(journal.includes("10.44 USD") || /achet/i.test(journal), "l'achat est au journal, avec son prix");
 });
 
-await etape("la vitrine de la boutique en préparation est fermée", async () => {
+await etape("la vitrine de la boutique en préparation n'est pas servie", async () => {
   const vitrine = await ctx.newPage();
   const r = await vitrine.goto(VITRINE + "/", { waitUntil: "networkidle" });
-  verifie(r.status() === 404 && (await vitrine.locator("h1").innerText()).includes("fermée"), `avant l'ouverture : HTTP ${r.status()}, « ${await vitrine.locator("h1").innerText()} »`);
+  verifie(r.status() === 404 && (await vitrine.locator("h1").innerText()).includes("ouvre bientôt"), `avant l'ouverture : HTTP ${r.status()}, « ${await vitrine.locator("h1").innerText()} »`);
   await capture(vitrine, "vitrine-fermee");
   await vitrine.close();
 });

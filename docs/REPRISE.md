@@ -101,6 +101,8 @@ Remarqué, laissé tel quel :
 - La page de bienvenue d'une invitation ne nomme pas la boutique (l'e-mail,
   si).
 - « Panier (250) » compte les pièces, même pour 250 vis.
+- Le bandeau d'une boutique suspendue dit « appelez-nous » (le message de la
+  console), sans moyen de joindre SkanEcom : il faudra le numéro du support.
 
 ## Ce qui attend Skander
 
