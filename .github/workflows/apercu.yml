@@ -120,6 +120,29 @@ jobs:
             echo "PRET=1" >> "$GITHUB_ENV"
           fi
 
+      # La clé en lecture (trafic), essayée telle que l'application l'emploie :
+      # le temps de réponse de Cloudflare sur 25 heures puis sur 3, le nombre de
+      # lignes, l'erreur s'il y en a une — jamais la clé. Ne bloque rien.
+      - name: La lecture du trafic, mesurée
+        if: env.PRET == '1'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_LECTURE: ${{ secrets.CLOUDFLARE_LECTURE }}
+        run: |
+          if [ -z "$CLOUDFLARE_LECTURE" ]; then echo "Pas de clé en lecture : rien à mesurer."; exit 0; fi
+          q='query Trafic($compte: string!, $depuis: Time!, $jusque: Time!) { viewer { accounts(filter: { accountTag: $compte }) { workersInvocationsAdaptive(limit: 5000, filter: { datetime_geq: $depuis, datetime_leq: $jusque }) { sum { requests errors subrequests } quantiles { cpuTimeP50 cpuTimeP99 } dimensions { datetimeHour scriptName } } } } }'
+          j=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          for h in 25 3; do
+            d=$(date -u -d "-$h hours" +%Y-%m-%dT%H:00:00Z)
+            corps=$(jq -nc --arg q "$q" --arg c "$CLOUDFLARE_ACCOUNT_ID" --arg d "$d" --arg j "$j" '{query: $q, variables: {compte: $c, depuis: $d, jusque: $j}}')
+            mesure=$(curl -sS -o /tmp/trafic.json -w '%{http_code} %{time_total}' --max-time 60 -X POST https://api.cloudflare.com/client/v4/graphql \
+              -H "Authorization: Bearer $CLOUDFLARE_LECTURE" -H "content-type: application/json" -d "$corps") || true
+            lignes=$(jq '[.data.viewer.accounts[0].workersInvocationsAdaptive // [] | .[]] | length' /tmp/trafic.json 2>/dev/null || echo "?")
+            erreur=$(jq -r '.errors[0].message // ""' /tmp/trafic.json 2>/dev/null | cut -c1-200)
+            echo "Trafic sur ${h} h : HTTP ${mesure% *}, ${mesure#* } s, ${lignes} lignes ${erreur:+— $erreur}" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+          rm -f /tmp/trafic.json
+
       - uses: oven-sh/setup-bun@v2
         if: env.PRET == '1'
         with:
