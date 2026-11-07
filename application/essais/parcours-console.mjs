@@ -582,7 +582,18 @@ await etape("la vitrine de la boutique en préparation n'est pas servie", async 
 
 await etape("ouvrir la boutique", async () => {
   await page.goto(`${CONSOLE}/boutiques/${SLUG}`, { waitUntil: "networkidle" });
-  await envoie(page, page.getByRole("button", { name: "Ouvrir la boutique" }));
+  // Sa mise en place pas finie (catalogue, équipe, mentions, conditions, livreur) : l'ouverture le dit d'abord.
+  const confirmer = page.locator("summary", { hasText: "Ouvrir la boutique" });
+  if (await confirmer.count()) {
+    await clic(page, confirmer);
+    const panneau = await page.locator(".bt-confirmer-panneau").innerText();
+    verifie(panneau.includes("mise en place n'est pas finie") && (await page.locator(".bt-manques li").count()) > 0,
+      `l'ouverture dit d'abord ce qui manque (${(await page.locator(".bt-manques li b").allInnerTexts()).join(", ")})`);
+    await envoie(page, page.getByRole("button", { name: "Ouvrir quand même" }));
+  } else {
+    note("mise en place complète : « Ouvrir la boutique » ouvre d'un geste");
+    await envoie(page, page.getByRole("button", { name: "Ouvrir la boutique" }));
+  }
   await page.waitForURL(/ok=/);
   verifie((await page.getByRole("status").innerText()).includes("ouverte"), "la console confirme l'ouverture");
   const vitrine = await ctx.newPage();

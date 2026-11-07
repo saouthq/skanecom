@@ -121,8 +121,12 @@ export default async function FicheBoutique({ params, searchParams }: {
   // « À faire maintenant » : le signal le plus pressant ; sinon, en préparation, l'étape suivante.
   const pressants = signaux.filter((v) => v.niveau !== "info");
   const etapeSuivante = (miseEnPlace as DonneesMiseEnPlace | null)?.etapes.find((e) => !e.fait) ?? null;
+  // Ouverte sans un produit en vitrine : elle « tournait », disait la page.
+  const vitrineVide = b.statut === "active" && (miseEnPlace as DonneesMiseEnPlace | null)?.etapes.some((e) => e.cle === "catalogue" && !e.fait);
   const maintenantFaire: { niveau: string; texte: string; href?: string; geste?: string } = pressants.length
     ? { niveau: pressants[0].niveau, texte: `${pressants[0].texte}${pressants.length > 1 ? ` (et ${pressants.length - 1} autre${pressants.length > 2 ? "s" : ""} signal${pressants.length > 2 ? "s" : ""} plus bas)` : ""}`, href: pressants[0].href, geste: "Voir" }
+    : vitrineVide
+      ? { niveau: "attention", texte: "sa vitrine est ouverte sans un produit à vendre : importez son catalogue.", href: `/boutiques/${b.slug}/import`, geste: "Le catalogue" }
     : b.statut === "en_preparation" && etapeSuivante
       ? { niveau: "info", texte: `${ETAPES_MISE_EN_PLACE[etapeSuivante.cle].titre.toLowerCase()}, l'étape suivante de sa mise en place.`, href: "#t-mise-en-place", geste: "La mise en place" }
       : { niveau: "calme", texte: b.statut === "suspendue" ? "la boutique est suspendue ; rien d'autre n'attend." : b.statut === "fermee" ? "la boutique est fermée." : "rien ne presse, la boutique tourne." };

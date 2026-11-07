@@ -1639,6 +1639,16 @@ form:has(.mt-choix input[name="metier"]:checked:not([value=""])) .nb-structure-m
   box-shadow: var(--ui-ombre-l, 0 12px 32px rgb(0 0 0 / .12)); font-size: .8125rem; color: var(--ui-texte-2);
 }
 .bt-confirmer-panneau p { margin: 0; line-height: 1.45; }
+/* Ouvrir une boutique dont la mise en place n'est pas finie : le bouton garde sa couleur (texte blanc), la liste dit ce qui manque. */
+.console .bt-confirmer[open] > summary.btn-primaire { background: var(--ui-action-survol); }
+.bt-manques { display: grid; gap: .375rem; margin: 0; padding-inline-start: 1.125rem; line-height: 1.4; }
+/* Au téléphone, ancré au bord droit d'un bouton d'en-tête, le panneau sortait de l'écran par la gauche :
+   il se pose sous le bouton, sur toute la largeur (ouvrir, suspendre). */
+@media (max-width: 40rem) {
+  .page-actions .bt-confirmer[open] { flex-basis: 100%; }
+  .page-actions .bt-confirmer-panneau { position: static; inline-size: auto; margin-block-start: .5rem; }
+}
+.bt-manques b { color: var(--ui-texte); font-weight: 600; }
 
 /* ---- Une confirmation en popover (components/console/Confirmation) ----
    Au-dessus de tout, centrée ; le fond s'assombrit à peine. Sans

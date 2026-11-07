@@ -9,6 +9,10 @@ import { Icone } from "@/components/console/Icone";
 import { Onglets } from "@/components/console/Onglets";
 import { themeDeLaBoutique } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
+import { ETAPES_MISE_EN_PLACE, detailEtape, type CleEtape, type MiseEnPlace } from "@/lib/console/mise-en-place";
+
+/** Ce sans quoi une vitrine ouverte déçoit ou trompe : rien à vendre, personne pour répondre, ni mentions ni conditions, ni livreur. */
+const ESSENTIELLES: CleEtape[] = ["catalogue", "equipe", "legal", "conditions", "branchements"];
 
 /* L'en-tête commun des pages d'une boutique dans la console : son nom, son
    état, sa vitrine, et les onglets (vue d'ensemble, équipe, marque,
@@ -31,13 +35,19 @@ export default async function Boutique({ children, params }: {
   const accent = themeDeLaBoutique({ code: theme?.code ?? "editorial", couleurs: theme?.couleurs ?? null }).couleurs.accent;
   const principal = domaines.find((d) => d.principal)?.hote;
   const hoteConsole = (await headers()).get("host");
-  const [equipe, { data: modules }] = await Promise.all([
+  const enPreparation = b.statut === "en_preparation";
+  const [equipe, { data: modules }, { data: mep }] = await Promise.all([
     equipeDe(b.id),
     clientService().rpc("console_modules", { p_boutique_id: b.id }),
+    // Ouvrir pour la première fois : ce qui manque encore, dit avant (une boutique vide s'ouvrait d'un toucher).
+    enPreparation ? clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }) : Promise.resolve({ data: null }),
   ]);
   const actifs = equipe.filter((m) => m.actif).length;
   const modulesActifs = ((modules ?? []) as { actif: boolean }[]).filter((m) => m.actif).length;
   const base = `/boutiques/${b.slug}`;
+  const manques = ((mep as MiseEnPlace | null)?.etapes ?? [])
+    .filter((e) => !e.fait && ESSENTIELLES.includes(e.cle))
+    .map((e) => ({ cle: e.cle, titre: ETAPES_MISE_EN_PLACE[e.cle].titre, detail: detailEtape(e) }));
 
   return (
     <>
@@ -93,6 +103,18 @@ export default async function Boutique({ children, params }: {
                         placeholder="Votre abonnement d'octobre reste à régler : appelez-nous pour rouvrir la vitrine." />
                     </div>
                     <button type="submit" name="statut" value="suspendue" className="btn btn-danger btn-petit">Suspendre maintenant</button>
+                  </div>
+                </details>
+              ) : manques.length ? (
+                // Sa mise en place n'est pas finie : ce qui manque, dit avant d'ouvrir (ouvrir quand même reste possible).
+                <details className="bt-confirmer" data-reste-ouvert>
+                  <summary className="btn btn-primaire"><Icone nom="alimentation" taille={16} /> Ouvrir la boutique</summary>
+                  <div className="bt-confirmer-panneau" role="group" aria-label="Confirmer l'ouverture">
+                    <p><b>Sa mise en place n&apos;est pas finie.</b> Ouverte, sa vitrine est servie à tous, telle quelle :</p>
+                    <ul className="bt-manques">
+                      {manques.map((m) => <li key={m.cle}><b>{m.titre}</b>{m.detail ? <> : {m.detail}</> : null}</li>)}
+                    </ul>
+                    <button type="submit" name="statut" value="active" className="btn btn-primaire btn-petit">Ouvrir quand même</button>
                   </div>
                 </details>
               ) : (
