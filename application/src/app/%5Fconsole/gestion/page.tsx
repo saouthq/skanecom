@@ -18,7 +18,8 @@ export default async function MesBoutiques() {
   // Un administrateur de la plateforme sans accès support ouvert : la console.
   if (a.etat === "aucune") redirect((await estAdministrateur(a.user.id)) ? "/" : "/refuse");
   if (a.etat === "aal1") redirect("/double-authentification");
-  if (a.boutiques.length === 1) redirect(`/gestion/${a.boutiques[0].slug}`);
+  // L'entrée : chacun sur son travail (un site vitrine sur ses Demandes, les autres sur leurs Commandes).
+  if (a.boutiques.length === 1) redirect(`/gestion/${a.boutiques[0].slug}/entree`);
 
   return (
     <Porte
@@ -34,7 +35,7 @@ export default async function MesBoutiques() {
       <ul className="carte porte-carte choix-boutiques" role="list">
         {a.boutiques.map((b) => (
           <li key={b.slug}>
-            <Link href={`/gestion/${b.slug}`} className="choix-boutique">
+            <Link href={`/gestion/${b.slug}/entree`} className="choix-boutique" prefetch={false}>
               <span className="initiale" style={styleAvatar(b.nom)} aria-hidden="true">{b.nom.trim().charAt(0).toUpperCase()}</span>
               <span className="choix-boutique-texte">
                 <span className="font-medium">{b.nom}</span>

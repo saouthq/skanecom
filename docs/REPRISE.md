@@ -85,7 +85,7 @@ bouton final « Confirmer la commande » n'est qu'un cadre.
 
 ## Fait le 07/11 (après-midi) : d'autres parcours joués en vrai
 
-Seize lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
+Dix-sept lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
 et par les parcours automatiques : la cliente de Selma (filtres, panier, code
 promo, commande), l'artisan de la Quincaillerie (comparer, retrait, facture
 société, quantité tapée, devis), le devis des deux côtés, l'équipe (une
@@ -94,7 +94,7 @@ la suspension d'une boutique, le service après-vente, la commande en
 invité, la vente au comptoir (et son reçu), le SAV au backoffice, les
 codes promo, l'ajout rapide au doigt, les réglages (la confirmation d'office), l'employée de préparation, les
 favoris et la recherche au téléphone, un produit créé au téléphone, le
-code SMS faux. Le détail : feuille de
+code SMS faux, le site vitrine (formulaire de contact, demandes). Le détail : feuille de
 route, section E, « D'autres parcours, joués en vrai ».
 
 Remarqué, laissé tel quel :

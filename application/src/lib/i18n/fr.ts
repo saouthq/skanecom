@@ -1492,6 +1492,10 @@ export const fr = {
     autre: "Écrire une autre demande",
     erreur: "La demande n'est pas partie. Réessayez dans un instant, ou écrivez-nous sur WhatsApp.",
     ouDirectement: "Ou directement",
+    /** Les manques vus avant l'envoi (les mêmes mots que la base). */
+    manqueNom: "Votre nom, s'il vous plaît",
+    manqueContact: "Laissez un numéro ou une adresse e-mail : c'est par là qu'on vous répondra",
+    manqueMessage: "Dites-nous en un peu plus (dix caractères au moins)",
   },
 
   /** L'e-mail que l'équipe reçoit pour chaque demande du formulaire. */

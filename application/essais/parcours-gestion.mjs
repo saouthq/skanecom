@@ -62,6 +62,7 @@ await sansDoubleAuthentification("gerant@maymar.test");
 await sansDoubleAuthentification("gerant@quincaillerie.test");
 await sansDoubleAuthentification("gerant@selma.test");
 await sansDoubleAuthentification("gerant@dar-alia.test");
+await sansDoubleAuthentification("gerant@atelier-ocre.test");
 const navigateur = await t.navigateur();
 
 /* TOTP (RFC 6238), le même calcul que parcours-console.mjs. */
@@ -2427,6 +2428,20 @@ if (section("5")) {
     }
   });
   await ctx.close();
+
+  // Un site vitrine (Atelier Ocre) ne vend pas : son backoffice ouvre sur ses Demandes, pas sur « Commandes ».
+  const ctxOcre = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
+  const ocre = await ctxOcre.newPage();
+  t.espion(ocre, "atelier-ocre");
+  await etape("un site vitrine : l'artisan arrive sur ses demandes", async () => {
+    await connexion(ocre, "gerant@atelier-ocre.test", true);
+    await ocre.waitForURL(/\/(double-authentification|gestion\/)/, { timeout: 15000 });
+    if (/double-authentification/.test(ocre.url())) await ocre.getByRole("button", { name: "Plus tard" }).tap();
+    await ocre.waitForURL(/\/gestion\/atelier-ocre\/demandes/, { timeout: 15000 });
+    verifie((await ocre.locator("h1").first().innerText()).includes("Demandes"), "après la connexion : « Demandes », pas « Commandes : aucune commande à confirmer »");
+    await capture(ocre, "gestion-site-vitrine-entree");
+  });
+  await ctxOcre.close();
 }
 
 /* ------------------------------------------------------------------ */

@@ -1125,6 +1125,30 @@ if (section("5")) {
     await capture(page, "selma-contact");
   });
 
+  await etape("le formulaire de contact d'un site vitrine : tout ce qui manque, d'un coup", async () => {
+    const O = t.adresse("studio.localhost");
+    await page.goto(O + "/contact", { waitUntil: "networkidle" });
+    const f = page.locator(".fc-formulaire").first();
+    await clic(page, f.getByRole("button", { name: "Envoyer ma demande" }));
+    const dits = await f.locator(".fc-erreur").allInnerTexts();
+    verifie(dits.length === 3 && dits.some((x) => x.startsWith("Votre nom")) && dits.some((x) => x.includes("un numéro ou une adresse e-mail")) && dits.some((x) => x.includes("dix caractères")),
+      `envoyé vide : les trois manques, chacun sous son champ, d'un coup (${dits.length})`);
+    verifie(await f.getByLabel("Votre nom").evaluate((e) => e === document.activeElement), "le curseur dans le premier");
+    await tape(page, "Rania Ben Youssef");
+    verifie(await f.locator(".fc-erreur").count() === 2, "son nom tapé : son message s'efface");
+    await clic(page, f.getByLabel("E-mail"));
+    await tape(page, "rania@exemple.tn");
+    await clic(page, f.getByLabel("Votre message"));
+    await tape(page, "Une table en chêne pour huit, livrée à La Marsa : quel délai ?");
+    verifie(await f.locator(".fc-erreur").count() === 0, "tout rempli : plus rien n'est signalé");
+    await clic(page, f.getByRole("button", { name: "Envoyer ma demande" }));
+    await page.getByRole("heading", { name: "Merci, votre demande est partie." }).waitFor({ timeout: 10000 });
+    verifie(await page.evaluate(() => document.activeElement?.textContent?.includes("Merci")), "partie : le remerciement prend le focus");
+    await capture(page, "ocre-contact-envoye");
+    // L'étape suivante repart de la page Contact de Selma.
+    await page.goto(S + "/contact", { waitUntil: "networkidle" });
+  });
+
   await etape("suivre une commande, sans compte", async () => {
     await clic(page, page.locator(".contact-suivi a"));
     await page.waitForURL(/\/suivi$/);

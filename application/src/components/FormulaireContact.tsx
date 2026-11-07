@@ -51,6 +51,8 @@ export function FormulaireContact({
   const base = useId();
   const [etat, setEtat] = useState<"saisie" | "envoi" | "envoyee">("saisie");
   const [erreur, setErreur] = useState<{ champ: Champ | null; message: string } | null>(null);
+  // Les manques vus avant d'envoyer, tous d'un coup (la base, elle, ne dit que le premier).
+  const [manques, setManques] = useState<Partial<Record<Champ, string>>>({});
   const [numero, setNumero] = useState<string | null>(null);
   // L'heure où le formulaire paraît : un envoi en moins de deux secondes est un robot.
   const depart = useRef(0);
@@ -65,6 +67,19 @@ export function FormulaireContact({
     e.preventDefault();
     if (etat === "envoi" || apercu) return;
     const f = new FormData(e.currentTarget);
+    // Les mêmes règles que la base : nom, un moyen de répondre, un message.
+    const val = (n: string) => String(f.get(n) ?? "").trim();
+    const m: Partial<Record<Champ, string>> = {};
+    if (val("nom").length < 2) m.nom = t.formulaire.manqueNom;
+    if (!val("telephone") && !val("email")) m.telephone = t.formulaire.manqueContact;
+    if (val("message").length < 10) m.message = t.formulaire.manqueMessage;
+    setManques(m);
+    const premier = (["nom", "telephone", "message"] as Champ[]).find((c) => m[c]);
+    if (premier) {
+      setErreur(null);
+      formulaire.current?.querySelector<HTMLElement>(`[name="${premier}"]`)?.focus();
+      return;
+    }
     setErreur(null);
     setEtat("envoi");
     try {
@@ -103,40 +118,48 @@ export function FormulaireContact({
         <span className="fc-merci-icone" aria-hidden="true"><Coche taille={22} /></span>
         <h3 ref={merci} tabIndex={-1}>{t.formulaire.merciTitre}</h3>
         <p>{t.formulaire.merciTexte(boutique, numero)}</p>
-        <button type="button" className="btn-lien" onClick={() => { setEtat("saisie"); depart.current = Date.now(); }}>
+        <button type="button" className="btn-lien" onClick={() => { setEtat("saisie"); setManques({}); depart.current = Date.now(); }}>
           {t.formulaire.autre}
         </button>
       </div>
     );
   }
 
-  const aide = (c: Champ) => (erreur?.champ === c ? (
-    <p className="fc-erreur" id={idDe(`${c}-erreur`)} role="alert">{erreur.message}</p>
+  const messageDe = (c: Champ) => manques[c] ?? (erreur?.champ === c ? erreur.message : null);
+  const aide = (c: Champ) => (messageDe(c) ? (
+    <p className="fc-erreur" id={idDe(`${c}-erreur`)} role="alert">{messageDe(c)}</p>
   ) : null);
-  const decrit = (c: Champ, aussi?: string) => [erreur?.champ === c ? idDe(`${c}-erreur`) : null, aussi].filter(Boolean).join(" ") || undefined;
+  const invalide = (c: Champ) => (messageDe(c) ? true : undefined);
+  const decrit = (c: Champ, aussi?: string) => [messageDe(c) ? idDe(`${c}-erreur`) : null, aussi].filter(Boolean).join(" ") || undefined;
+  // Taper dans un champ efface son manque (l'e-mail répond aussi au « numéro ou e-mail »).
+  const corrige = (e: React.FormEvent<HTMLFormElement>) => {
+    const n = (e.target as HTMLInputElement).name as Champ;
+    const cible: Champ = n === "email" ? "telephone" : n;
+    if (manques[cible]) setManques((avant) => { const reste = { ...avant }; delete reste[cible]; return reste; });
+  };
 
   return (
-    <form ref={formulaire} className="fc-formulaire" id={id} method="post" action="/contact/envoyer" onSubmit={envoyer} noValidate
+    <form ref={formulaire} className="fc-formulaire" id={id} method="post" action="/contact/envoyer" onSubmit={envoyer} onInput={corrige} noValidate
       aria-busy={etat === "envoi" || undefined}>
       {produit ? <p className="fc-a-propos">{t.formulaire.aPropos(produit.nom)}</p> : null}
       {produit ? <input type="hidden" name="produit" value={produit.slug} /> : null}
       <div className="fc-champ">
         <label htmlFor={idDe("nom")}>{t.formulaire.nom}</label>
         <input id={idDe("nom")} name="nom" autoComplete="name" required maxLength={80}
-          aria-invalid={erreur?.champ === "nom" || undefined} aria-describedby={decrit("nom")} />
+          aria-invalid={invalide("nom")} aria-describedby={decrit("nom")} />
         {aide("nom")}
       </div>
       <div className="fc-rang">
         <div className="fc-champ">
           <label htmlFor={idDe("telephone")}>{t.formulaire.telephone}</label>
           <input id={idDe("telephone")} name="telephone" type="tel" inputMode="tel" autoComplete="tel" maxLength={24}
-            aria-invalid={erreur?.champ === "telephone" || undefined} aria-describedby={decrit("telephone", idDe("un-des-deux"))} />
+            aria-invalid={invalide("telephone")} aria-describedby={decrit("telephone", idDe("un-des-deux"))} />
           {aide("telephone")}
         </div>
         <div className="fc-champ">
           <label htmlFor={idDe("email")}>{t.formulaire.email}</label>
           <input id={idDe("email")} name="email" type="email" inputMode="email" autoComplete="email" maxLength={200}
-            aria-invalid={erreur?.champ === "email" || undefined} aria-describedby={decrit("email", idDe("un-des-deux"))} />
+            aria-invalid={invalide("email")} aria-describedby={decrit("email", idDe("un-des-deux"))} />
           {aide("email")}
         </div>
       </div>
@@ -144,7 +167,7 @@ export function FormulaireContact({
       {sujets.length ? (
         <div className="fc-champ">
           <label htmlFor={idDe("sujet")}>{t.formulaire.sujet}</label>
-          <select id={idDe("sujet")} name="sujet" defaultValue="" aria-invalid={erreur?.champ === "sujet" || undefined} aria-describedby={decrit("sujet")}>
+          <select id={idDe("sujet")} name="sujet" defaultValue="" aria-invalid={invalide("sujet")} aria-describedby={decrit("sujet")}>
             <option value="">{t.formulaire.sujetChoisir}</option>
             {sujets.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
@@ -154,7 +177,7 @@ export function FormulaireContact({
       <div className="fc-champ">
         <label htmlFor={idDe("message")}>{t.formulaire.message}</label>
         <textarea id={idDe("message")} name="message" rows={5} required minLength={10} maxLength={2000}
-          aria-invalid={erreur?.champ === "message" || undefined} aria-describedby={decrit("message", idDe("message-aide"))} />
+          aria-invalid={invalide("message")} aria-describedby={decrit("message", idDe("message-aide"))} />
         <p className="fc-aide" id={idDe("message-aide")}>{t.formulaire.messageAide}</p>
         {aide("message")}
       </div>
