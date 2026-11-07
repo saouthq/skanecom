@@ -1,7 +1,6 @@
 import { noterVersion } from "@/lib/version";
 import { viderFiles } from "./taches";
 import { essayerFournisseurs } from "./fournisseurs";
-import { releverTrafic } from "./trafic";
 import { clientService } from "@/lib/console/service";
 import { hoteLocal, phraseErreur } from "@/lib/console/etat";
 import { verifierDomaine } from "@/lib/courriels/domaines";
@@ -122,7 +121,7 @@ export async function lancerSurveillance(declencheur: "heure" | "console", acteu
   if (declencheur === "heure") {
     try { await viderFiles("heure"); } catch { /* la vérification passe quand même */ }
     try { await essayerFournisseurs(); } catch { /* idem */ }
-    try { await releverTrafic(); } catch { /* idem */ }
+    // Le trafic se relève à part, à la 17e minute (src/worker.ts).
   }
   const debut = new Date().toISOString();
   const { data, error } = await service.rpc("surveillance_a_verifier");

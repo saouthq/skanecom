@@ -18,8 +18,10 @@ export default defineConfig({
     name: "skanecom-application",
     // vinext, plus le déclencheur planifié de la surveillance (src/worker.ts).
     entrypoint: "./src/worker.ts",
-    // Chaque heure : la surveillance des vitrines ouvertes (État technique).
-    triggers: [triggers.scheduled({ schedule: "0 * * * *" })],
+    // Chaque heure : la surveillance des vitrines ouvertes (État technique),
+    // puis, à la 17e minute, le relevé du trafic chez Cloudflare (l'heure
+    // écoulée y est close, l'API des analyses n'est plus encombrée).
+    triggers: [triggers.scheduled({ schedule: "0 * * * *" }), triggers.scheduled({ schedule: "17 * * * *" })],
     compatibilityDate: "2026-09-28",
     // global_fetch_strictly_public : sans lui, la vitrine ne peut pas appeler le
     // faux Supabase, qui est un autre Worker du même sous-domaine workers.dev

@@ -17,12 +17,14 @@ type Gestionnaire = {
   fetch(requete: Request, env: unknown, ctx: Contexte): Promise<Response> | Response;
 };
 const application = entree as unknown as Gestionnaire;
+/** Le déclencheur du relevé du trafic (cloudflare.config.ts). */
+const CRON_TRAFIC = "17 * * * *";
 
 const worker = {
   ...(entree as object),
   fetch: (requete: Request, env: unknown, ctx: Contexte) => application.fetch(requete, env, ctx),
 
-  async scheduled(_controleur: { cron: string; scheduledTime: number }, env: unknown, ctx: Contexte) {
+  async scheduled(controleur: { cron: string; scheduledTime: number }, env: unknown, ctx: Contexte) {
     const hote = process.env.NEXT_PUBLIC_CONSOLE_HOTE;
     if (!hote) {
       console.error("surveillance : NEXT_PUBLIC_CONSOLE_HOTE manque, le passage de l'heure ne part pas");
@@ -31,11 +33,12 @@ const worker = {
     const jeton = tirerJetonInterne();
     try {
       const r = await application.fetch(
-        new Request(`https://${hote}/crochets/surveillance`, { method: "POST", headers: { host: hote, "x-surveillance": jeton } }),
+        // À la 17e minute (cloudflare.config.ts), le relevé du trafic seul ; à l'heure pile, la surveillance.
+        new Request(`https://${hote}/crochets/surveillance${controleur.cron === CRON_TRAFIC ? "?quoi=trafic" : ""}`, { method: "POST", headers: { host: hote, "x-surveillance": jeton } }),
         env, ctx,
       );
       const corps = await r.text();
-      if (!r.ok) console.error(`surveillance : le passage de l'heure a échoué (${r.status}) ${corps.slice(0, 300)}`);
+      if (!r.ok) console.error(`surveillance (${controleur.cron}) : le passage a échoué (${r.status}) ${corps.slice(0, 300)}`);
     } finally {
       oublierJetonInterne();
     }

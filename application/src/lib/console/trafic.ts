@@ -6,8 +6,12 @@ import { clientService } from "./service";
    lecture seule (Account Analytics: Read) : les appels des Workers de
    SkanEcom sur les 25 dernières heures — requêtes, erreurs, sous-requêtes,
    temps de calcul (médiane, 99e centile). Rien n'est modifié chez
-   Cloudflare. Chaque heure (le passage de la surveillance) et à la demande
-   (État technique → Trafic).
+   Cloudflare. Chaque heure, à la 17e minute (son propre déclencheur,
+   cloudflare.config.ts : à l'heure pile, l'API des analyses est encombrée
+   par toutes les tâches planifiées et l'heure écoulée n'y est pas encore
+   close — le premier relevé, à 00:00, n'avait pas eu de réponse en dix
+   secondes, quand la même lecture répondait en 0,4 s à 00:11), et à la
+   demande (État technique → Trafic).
 
    Secret CLOUDFLARE_TRAFIC = « compte:<id du compte>:<jeton> », « relais »
    en local (outils/cloudflare-dev.mjs simule la réponse), « aucun » sinon.
@@ -17,7 +21,7 @@ export type ModeTrafic = "reel" | "local" | "aucun";
 /** Le Worker de l'application : il sert toutes les boutiques (les autres sont les routeurs de l'aperçu). */
 export const APPLICATION = "skanecom-application";
 const API = "https://api.cloudflare.com/client/v4/graphql";
-const ATTENTE = 10_000;
+const ATTENTE = 20_000;
 
 export function configTrafic(): { mode: ModeTrafic; compte: string; jeton: string } {
   const s = (process.env.CLOUDFLARE_TRAFIC ?? "").trim();
@@ -70,34 +74,59 @@ export function lireReponse(json: unknown): { ok: true; heures: HeureLue[] } | {
   return { ok: true, heures };
 }
 
-/** Lire les 25 dernières heures chez Cloudflare. Ne lève jamais. */
-export async function lireTrafic(maintenant = new Date()): Promise<Releve> {
-  const c = configTrafic();
-  if (c.mode === "aucun") return { mode: "aucun", ok: null, detail: "Non branché : posez la clé en lecture (CLOUDFLARE_TRAFIC).", heures: [] };
+// Une date telle que Cloudflare l'écrit (à la seconde, sans millièmes).
+const date = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, "Z");
+
+/** Ce que dit une réponse en erreur : une clé refusée (Cloudflare répond 400,
+ *  « Authentication failed », pour une clé inconnue), sinon son message. */
+function lireRefus(statut: number, json: unknown): string {
+  const e = (json as { errors?: { code?: number; message?: string }[] } | null)?.errors?.[0];
+  if (statut === 401 || statut === 403 || e?.code === 9106 || e?.code === 10000 || /authenticat/i.test(e?.message ?? "")) return `Clé refusée (HTTP ${statut})`;
+  return `Cloudflare répond HTTP ${statut}${e?.message ? ` : ${String(e.message).slice(0, 160)}` : ""}`;
+}
+
+/** Une lecture des 25 dernières heures chez Cloudflare. Ne lève jamais. */
+async function lireUneFois(c: ReturnType<typeof configTrafic>, maintenant: Date): Promise<Releve & { reessayer: boolean }> {
   const url = c.mode === "local" ? `${(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "")}/cloudflare-dev/client/v4/graphql` : API;
   const jusque = new Date(maintenant);
   const depuis = new Date(jusque.getTime() - 25 * 3600_000);
   depuis.setUTCMinutes(0, 0, 0);
+  const debut = Date.now();
   try {
     const r = await fetch(url, {
       method: "POST",
-      headers: { authorization: `Bearer ${c.jeton}`, "content-type": "application/json" },
-      body: JSON.stringify({ query: REQUETE, variables: { compte: c.compte, depuis: depuis.toISOString(), jusque: jusque.toISOString() } }),
+      headers: { authorization: `Bearer ${c.jeton}`, "content-type": "application/json", "user-agent": "SkanEcom-trafic/1" },
+      body: JSON.stringify({ query: REQUETE, variables: { compte: c.compte, depuis: date(depuis), jusque: date(jusque) } }),
       signal: AbortSignal.timeout(ATTENTE),
     });
-    if (r.status === 401 || r.status === 403) return { mode: c.mode, ok: false, detail: `Clé refusée (HTTP ${r.status})`, heures: [] };
-    if (!r.ok) return { mode: c.mode, ok: false, detail: `Cloudflare répond HTTP ${r.status}`, heures: [] };
-    const lu = lireReponse(await r.json().catch(() => null));
-    return lu.ok ? { mode: c.mode, ok: true, detail: null, heures: lu.heures } : { mode: c.mode, ok: false, detail: lu.raison, heures: [] };
+    const json = await r.json().catch(() => null);
+    if (!r.ok) return { mode: c.mode, ok: false, detail: lireRefus(r.status, json), heures: [], reessayer: r.status >= 500 || r.status === 429 };
+    const lu = lireReponse(json);
+    return lu.ok ? { mode: c.mode, ok: true, detail: null, heures: lu.heures, reessayer: false } : { mode: c.mode, ok: false, detail: lu.raison, heures: [], reessayer: false };
   } catch (e) {
     const nom = (e as { name?: string })?.name;
-    return { mode: c.mode, ok: false, detail: nom === "TimeoutError" || nom === "AbortError" ? `Pas de réponse en ${ATTENTE / 1000} secondes` : "Cloudflare injoignable", heures: [] };
+    const attente = nom === "TimeoutError" || nom === "AbortError";
+    return { mode: c.mode, ok: false, detail: attente ? `Pas de réponse en ${ATTENTE / 1000} secondes` : `Cloudflare injoignable (après ${((Date.now() - debut) / 1000).toFixed(1)} s)`, heures: [], reessayer: true };
   }
 }
 
-/** Lire et noter (le passage de l'heure, « Relire maintenant »). Ne lève jamais. */
-export async function releverTrafic(): Promise<Releve> {
-  const releve = await lireTrafic();
+/** Lire les 25 dernières heures chez Cloudflare ; `essais` : une lenteur ou
+ *  une panne passagère de l'API se retente (le relevé de l'heure en a deux). Ne lève jamais. */
+export async function lireTrafic(maintenant = new Date(), essais = 1): Promise<Releve> {
+  const c = configTrafic();
+  if (c.mode === "aucun") return { mode: "aucun", ok: null, detail: "Non branché : posez la clé en lecture (CLOUDFLARE_TRAFIC).", heures: [] };
+  let lu = await lireUneFois(c, maintenant);
+  for (let n = 1; n < essais && lu.reessayer; n++) {
+    await new Promise((ok) => setTimeout(ok, 3000));
+    const second = await lireUneFois(c, new Date());
+    lu = second.ok ? second : { ...second, detail: `${second.detail} (${n + 1} essais)` };
+  }
+  return { mode: lu.mode, ok: lu.ok, detail: lu.detail, heures: lu.heures };
+}
+
+/** Lire et noter (le relevé de l'heure, « Relire maintenant »). Ne lève jamais. */
+export async function releverTrafic(essais = 1): Promise<Releve> {
+  const releve = await lireTrafic(new Date(), essais);
   try {
     await clientService().rpc("trafic_noter", { p_mode: releve.mode, p_ok: releve.ok, p_detail: releve.detail, p_heures: releve.heures });
   } catch { /* le tour suivant le notera */ }
