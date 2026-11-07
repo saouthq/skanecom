@@ -159,6 +159,8 @@ export function VenteMonoproduit({
       libelle: libelle(),
       quantite,
       prixMillimes: prixApplique,
+      // L'offre choisie : « 3 pour 147 », pas 3 × le prix à l'unité.
+      ...(total.palier ? { totalMillimes: total.total, detail: t.panier.palierApplique(total.palier.quantite, formatePrix(total.palier.prixMillimes)) } : {}),
       ...(image ? { image } : {}),
       depuis: photoVisible(document.querySelector(`[data-fiche="${CSS.escape(produit.slug)}"]`)) ?? declencheur,
       bouton: declencheur,

@@ -88,7 +88,10 @@ function CarteLot({ lot, pro }: { lot: Lot; pro: ReturnType<typeof usePrixPro> }
     annonceAjout({
       libelle: lot.nom,
       quantite: lot.produits.length,
+      // Le prix du pack est celui de toutes ses pièces : pas « 2 × 359 ».
       prixMillimes: lot.prix_millimes,
+      totalMillimes: lot.prix_millimes,
+      detail: t.lots.contenu(lot.produits.length),
       ...(premiere.image ? { image: premiere.image } : {}),
       depuis: bouton.closest(".lot-carte")?.querySelector(".lot-piece-photo") ?? bouton,
       bouton,

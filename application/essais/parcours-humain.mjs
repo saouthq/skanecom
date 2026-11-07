@@ -1355,6 +1355,18 @@ if (section("beaute")) {
       "le panier du navigateur n'a pas été touché");
   });
 
+  await etape("l'offre ajoutée au panier : la confirmation dit son prix, pas trois fois l'unité", async () => {
+    await page.goto(B + "/", { waitUntil: "networkidle" });
+    const avant = await page.evaluate(() => Object.fromEntries(Object.keys(localStorage).filter((k) => k.includes("panier")).map((k) => [k, localStorage.getItem(k)])));
+    await clic(page, page.locator(".offre", { hasText: "3 pièces" }));
+    await clic(page, page.getByRole("button", { name: /Ou l'ajouter au panier/ }));
+    await page.locator(".confirmation-ajout").waitFor({ timeout: 5000 });
+    const prix = (await page.locator(".confirmation-ajout .confirmation-prix").innerText()).replace(/\s+/g, " ");
+    verifie(prix.includes("147,000") && prix.includes("3 pour 147,000") && !prix.includes("177"), `« ${prix} » (le panier compte 147,000)`);
+    // Le panier rendu tel qu'il était : la suite du parcours n'en dépend pas.
+    await page.evaluate((s) => { for (const k of Object.keys(localStorage).filter((k) => k.includes("panier"))) localStorage.removeItem(k); for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v); }, avant);
+  });
+
   await etape("la contenance fait le prix : l'huile de figue de Barbarie en 30 ml", async () => {
     await page.goto(B + "/produit/huile-figue-de-barbarie", { waitUntil: "networkidle" });
     await clic(page, page.locator(".valeur", { hasText: "30 ml" }));

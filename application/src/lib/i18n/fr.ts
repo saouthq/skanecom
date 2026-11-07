@@ -520,6 +520,8 @@ export const fr = {
     ajouter: "Ajouter le pack au panier",
     ajoute: "Le pack est dans votre panier",
     ajouteAnnonce: (nom: string) => `${nom} : le pack est dans votre panier.`,
+    /** La confirmation d'ajout, sous le prix du pack. */
+    contenu: (n: number) => `Le pack · ${n} articles`,
     choisir: (nom: string) => `Taille ou couleur — ${nom}`,
     choisirOption: "Choisir…",
     epuisee: "épuisée",

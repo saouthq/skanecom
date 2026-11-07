@@ -193,10 +193,13 @@ export function FicheAchat({
     setAjoute(true);
     // La photo qu'on regarde part vers le panier ; sinon, une pastille part du bouton.
     const bouton = e.currentTarget;
+    // Un palier atteint (« 10 pour 9,000 ») : le prix de l'ajout est le sien, pas quantité × prix à l'unité.
+    const total = totalAvecPaliers(prixApplique, quantite, paliers);
     annonceAjout({
       libelle: libelle(),
       quantite,
       prixMillimes: prixApplique,
+      ...(total.palier ? { totalMillimes: total.total, detail: t.panier.palierApplique(total.palier.quantite, formatePrix(total.palier.prixMillimes)) } : {}),
       ...(image ? { image } : {}),
       depuis: photoVisible(document.querySelector(`[data-fiche="${CSS.escape(produit.slug)}"]`)) ?? bouton,
       bouton,

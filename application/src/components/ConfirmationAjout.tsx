@@ -118,8 +118,11 @@ export function ConfirmationAjout({
         <span className="confirmation-texte">
           <span className="confirmation-libelle">{ajout.libelle}</span>
           <span className="confirmation-prix">
-            <Prix millimes={ajout.prixMillimes * ajout.quantite} />
-            {ajout.quantite > 1 ? <span className="legende">{t.panier.quantiteFois(ajout.quantite, formatePrix(ajout.prixMillimes))}</span> : null}
+            {/* Le prix de l'ajout tel que le panier le comptera : un palier ou un pack n'est pas quantité × prix. */}
+            <Prix millimes={ajout.totalMillimes ?? ajout.prixMillimes * ajout.quantite} />
+            {ajout.detail ? <span className="legende">{ajout.detail}</span>
+              : ajout.quantite > 1 ? <span className="legende">{t.panier.quantiteFois(ajout.quantite, formatePrix(ajout.prixMillimes))}</span>
+              : null}
           </span>
         </span>
       </div>

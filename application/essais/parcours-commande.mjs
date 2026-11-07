@@ -536,6 +536,9 @@ console.log("\n== 2 ter. Maison Selma : un pack, commandé ==");
     for (let i = 0; i < 2; i++) await carte.locator("select").nth(i).selectOption({ index: 1 });
     await clic(page, carte.getByRole("button", { name: "Ajouter le pack au panier" }));
     await page.locator(".confirmation-ajout").waitFor({ timeout: 5000 });
+    const confirmation = sansEspaces(await page.locator(".confirmation-ajout .confirmation-prix").innerText());
+    verifie(confirmation.includes("359,000") && confirmation.includes("Lepack·2articles") && !confirmation.includes("718"),
+      `la confirmation dit le prix du pack, pas deux fois (« ${confirmation} »)`);
     await capture(page, "selma-pack-fiche");
   });
 

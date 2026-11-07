@@ -64,6 +64,11 @@ export type AjoutAnnonce = {
   quantite: number;
   /** Le prix unitaire appliqué à l'ajout (prix pro compris). */
   prixMillimes: number;
+  /** Ce que coûte l'ajout quand ce n'est pas quantité × prix unitaire : un
+   *  palier (3 pièces pour 147), un pack (son prix, pour ses N pièces). */
+  totalMillimes?: number;
+  /** Ce qui l'explique, sous le prix (« 3 pour 147,000 TND », « Pack · 2 pièces »). */
+  detail?: string;
   /** Le chemin de la photo (`LignePanier.image`), s'il y en a une. */
   image?: string;
   /** D'où part l'envol : la photo à l'écran, sinon le bouton pressé. */
