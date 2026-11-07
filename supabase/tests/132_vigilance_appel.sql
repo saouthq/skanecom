@@ -1,10 +1,10 @@
 -- =====================================================================
--- 132 · Ce qu'il faut savoir avant d'appeler : la note et la vigilance du client
+-- 132 · Ce qu'il faut savoir avant d'appeler : la note et la vigilance du client (fiche de la commande, saisie)
 -- =====================================================================
 begin;
 \ir outils.psql
 
-select plan(8);
+select plan(11);
 
 create function pg_temp.numero() returns text language sql as $$
   select numero from public.commandes where id = tests.id('commande_a')
@@ -31,11 +31,17 @@ select ok((pg_temp.client() -> 'vigilance' ->> 'auteur') is not null and (pg_tem
 select tests.connecte('prepa_a');
 select is(pg_temp.client() ->> 'note', 'Appeler après 18 h', 'le préparateur lit la note');
 
+-- La saisie d'une commande, le client reconnu à son numéro : la même chose, pendant l'appel.
 select tests.connecte('confirm_a');
+select is(public.gestion_saisie_client(tests.id('A'), '20 000 001') ->> 'note', 'Appeler après 18 h', 'à la saisie : la note de sa fiche');
+select is(public.gestion_saisie_client(tests.id('A'), '20 000 001') -> 'vigilance' ->> 'motif', 'Adresse floue, un refus ailleurs',
+  'à la saisie : pourquoi il est surveillé');
+
 select public.gestion_confiance_client(tests.id('A'), tests.id('fiche_client_a'), 'bloque', 'Trois colis refusés');
 select is(pg_temp.client() -> 'vigilance' ->> 'motif', 'Trois colis refusés', 'bloqué : le motif du blocage, pas celui de la surveillance');
 select public.gestion_confiance_client(tests.id('A'), tests.id('fiche_client_a'), 'normal');
 select is(pg_temp.client() -> 'vigilance', 'null'::jsonb, 'revenu à la normale : plus de vigilance affichée');
+select is(public.gestion_saisie_client(tests.id('A'), '20 000 001') -> 'vigilance', 'null'::jsonb, 'à la saisie non plus');
 
 select * from finish();
 rollback;

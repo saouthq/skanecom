@@ -46,6 +46,9 @@ export type ClientSaisi = {
   nb_commandes?: number;
   nb_refus?: number;
   niveau_risque?: "normal" | "surveille" | "bloque";
+  /** La note de l'équipe (sa fiche), et pourquoi il est surveillé ou bloqué : à lire pendant l'appel. */
+  note?: string | null;
+  vigilance?: { motif: string | null; le: string; auteur: string | null } | null;
   pro?: string | null;
   adresse?: { ligne1: string; ligne2: string | null; ville: string; gouvernorat: string; code_postal: string | null } | null;
 };

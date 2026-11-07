@@ -1403,6 +1403,14 @@ if (section("2")) {
     const aSavoir = await page.locator(".bo-fiche-cote .bo-a-savoir").innerText();
     verifie(aSavoir.includes("Bloqué pour la vitrine : Colis refusé à la porte") && aSavoir.includes("Rappeler avant toute nouvelle commande"),
       "sur sa commande, la carte du client dit pourquoi il est bloqué, et la note de l'équipe");
+    // Il rappelle la boutique : sa commande saisie au téléphone, la même chose sous les yeux pendant l'appel.
+    const numeroClient = (await page.locator(".bo-client-texte a").first().innerText()).replace(/\D/g, "").slice(-8);
+    await page.goto(`${C}/gestion/maymar/commandes/nouvelle`, { waitUntil: "networkidle" });
+    await clic(page, page.getByLabel("Numéro du client"));
+    await tape(page, numeroClient);
+    const saisie = await page.locator(".sc-client", { hasText: "Bloqué pour la vitrine" }).innerText();
+    verifie(saisie.includes("Colis refusé à la porte") && saisie.includes("Rappeler avant toute nouvelle commande"),
+      "à la saisie de sa commande aussi : pourquoi il est bloqué, et la note de l'équipe");
     await page.goto(ficheClient, { waitUntil: "networkidle" });
     await clic(page, page.locator("section:has(#t-confiance)").getByText("Normal", { exact: true }));
     await envoie(page.locator("section:has(#t-confiance)").getByRole("button", { name: "Enregistrer" }));

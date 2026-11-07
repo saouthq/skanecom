@@ -8,6 +8,7 @@ import { formatePrix } from "@/lib/prix";
 import { millimes } from "@/lib/console/import";
 import { telephoneLisible } from "@/lib/commande";
 import { jourArrivageCourt } from "@/lib/gestion/arrivages";
+import { quand } from "@/lib/gestion/libelles";
 import {
   CANAUX,
   messageSaisie,
@@ -280,22 +281,41 @@ export function FormSaisie({
             </div>
           </div>
           {client ? (
-            <div className={`sc-client${risque === "bloque" || risque === "surveille" ? " sc-client-risque" : ""}`} role="status">
+            <div className={`sc-client${risque === "bloque" || risque === "surveille" ? ` sc-client-${risque}` : ""}`} role="status">
               {client.connu ? (
                 <>
                   <p className="sc-client-tete">
                     <Icone nom="personne" taille={15} />
                     <b>{client.nom ?? telephoneLisible(client.telephone)}</b>
-                    <span className="discret">
-                      {" "}· client {client.compte ? "avec un compte" : "connu"} · {client.nb_commandes ?? 0} commande{(client.nb_commandes ?? 0) > 1 ? "s" : ""}
-                    </span>
                     {(client.nb_refus ?? 0) > 0 ? <span className="ui-etat ui-etat-rouge">{client.nb_refus} refus</span> : null}
                     {client.pro ? <span className="ui-etat ui-etat-bleu">Pro · {client.pro}</span> : null}
                   </p>
-                  {risque === "bloque" ? (
-                    <p className="sc-client-texte">Bloqué pour la vitrine : la boutique en ligne refuse ses commandes. Vous pouvez saisir celle-ci si vous lui faites confiance.</p>
-                  ) : risque === "surveille" ? (
-                    <p className="sc-client-texte">Surveillé : confirmez bien la commande avant de l&apos;enregistrer.</p>
+                  {/* Sur sa propre ligne : au téléphone, le nom et ces chiffres ne tiennent pas côte à côte. */}
+                  <p className="sc-client-meta">
+                    Client {client.compte ? "avec un compte" : "connu"} · {client.nb_commandes ?? 0} commande{(client.nb_commandes ?? 0) > 1 ? "s" : ""}
+                  </p>
+                  {risque === "bloque" || risque === "surveille" ? (
+                    <p className="sc-client-ligne sc-client-alerte">
+                      <Icone nom="alerte" taille={16} />
+                      <span>
+                        <strong>{risque === "bloque" ? "Bloqué pour la vitrine" : "Surveillé"}</strong>
+                        {client.vigilance?.motif ? <> : {client.vigilance.motif}</> : null}
+                        {client.vigilance ? (
+                          <span className="discret">{client.vigilance.auteur ? `${client.vigilance.auteur} · ` : ""}{quand(client.vigilance.le)}</span>
+                        ) : null}
+                        <span className="discret">
+                          {risque === "bloque"
+                            ? "La boutique en ligne refuse ses commandes ; vous pouvez saisir celle-ci si vous lui faites confiance."
+                            : "Confirmez bien la commande avant de l'enregistrer."}
+                        </span>
+                      </span>
+                    </p>
+                  ) : null}
+                  {client.note ? (
+                    <p className="sc-client-ligne">
+                      <Icone nom="note" taille={16} />
+                      <span><strong>Note de l&apos;équipe</strong> : {client.note}</span>
+                    </p>
                   ) : null}
                   {client.pro ? <p className="sc-client-texte">Ses prix pro s&apos;appliquent.</p> : null}
                   {client.adresse ? (

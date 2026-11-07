@@ -1275,14 +1275,22 @@ form[data-modifie] .carte-pied .rg-pied-attente {
   display: grid; gap: .5rem; margin-block-start: 1rem; padding: .75rem .875rem; border-radius: var(--ui-r);
   background: var(--ui-survol); border: 1px solid var(--ui-bord-leger); font-size: .875rem;
 }
-.sc-client-risque { background: var(--ui-rouge-fond); border-color: var(--ui-rouge-bord); }
+/* Surveillé : la prudence (ambre) ; bloqué : le refus (rouge) — comme sur sa fiche. */
+.sc-client-surveille { background: var(--ui-ambre-fond); border-color: var(--ui-ambre-bord); }
+.sc-client-bloque { background: var(--ui-rouge-fond); border-color: var(--ui-rouge-bord); }
 .sc-client-tete { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .5rem; margin: 0; }
 .sc-client-tete .icone { color: var(--ui-texte-3); }
+.sc-client-meta { margin: -.25rem 0 0; color: var(--ui-texte-3); }
+.sc-client-ligne { display: flex; align-items: flex-start; gap: .5rem; margin: 0; color: var(--ui-texte); line-height: 1.45; overflow-wrap: anywhere; }
+.sc-client-ligne > .icone { flex: none; margin-block-start: .125rem; color: var(--ui-texte-3); }
+.sc-client-ligne strong { font-weight: 600; }
+.sc-client-surveille .sc-client-alerte > .icone, .sc-client-surveille .sc-client-alerte strong { color: var(--ui-ambre); }
+.sc-client-bloque .sc-client-alerte > .icone, .sc-client-bloque .sc-client-alerte strong { color: var(--ui-rouge); }
+.sc-client-ligne .discret { display: block; font-size: .75rem; }
 .sc-client-texte { margin: 0; color: var(--ui-texte-2); }
 .sc-client-nouveau { display: flex; align-items: flex-start; gap: .5rem; margin: 0; }
 .sc-client-nouveau .icone { flex: none; margin-block-start: .1875rem; color: var(--ui-texte-3); }
 .sc-sku { white-space: nowrap; }
-.sc-client-risque .sc-client-texte { color: var(--ui-rouge); }
 .console .btn.sc-reprendre { justify-self: start; max-inline-size: 100%; white-space: normal; text-align: start; line-height: 1.3; padding-block: .375rem; }
 .sc-recherche { position: relative; }
 .sc-resultats {
