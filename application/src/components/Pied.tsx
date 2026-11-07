@@ -250,7 +250,7 @@ function PiedTechnique({ cadre }: { cadre: Cadre }) {
   const services = [
     livraison.cod ? { icone: <Billets taille={22} />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
     livraison.delai ? { icone: <Camion taille={22} />, titre: livraison.delai, texte: livraison.frais ?? "" } : null,
-    cadre.retrait ? { icone: <Magasin taille={22} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) } : null,
+    cadre.retrait ? { icone: <Magasin taille={22} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures), cadre.livraison.rappel) } : null,
     cadre.sav?.garantieMois ? { icone: <Bouclier taille={22} />, titre: t.annonce.garantie(cadre.sav.garantieMois), texte: t.sav.garantieTexte } : null,
     { icone: <Retour taille={22} />, titre: t.produit.refusPossible, texte: t.produit.refusPossibleTexte },
   ].filter((s) => s !== null)

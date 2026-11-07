@@ -210,6 +210,8 @@ export function Tunnel({
   // L'alerte ne prend le focus que pour un refus de la base (ou une coupure) :
   // un formulaire incomplet, lui, met le focus sur le premier champ à reprendre.
   const focusAlerte = useRef(false);
+  // Les articles qui ne sont plus en vente retirés : le focus va au titre du panier vide.
+  const vientDeVider = useRef(false);
   const focusApresConnexion = useRef(false);
   const refChoixMode = useRef<HTMLDivElement>(null);
 
@@ -609,9 +611,35 @@ export function Tunnel({
   if (lignesPanier.length === 0) {
     return (
       <div className="listing-vide tunnel-vide">
-        <h2>{t.commande.panierVide}</h2>
+        <h2 tabIndex={-1} ref={(h) => { if (h && vientDeVider.current) { vientDeVider.current = false; h.focus(); } }}>{t.commande.panierVide}</h2>
         <p>{t.commande.panierVideTexte}</p>
         <a className="btn btn-primaire" href="/catalogue">{t.commun.voirLeCatalogue}</a>
+      </div>
+    );
+  }
+
+  // Plus rien du panier n'est en vente (épuisé, ou retiré de la boutique depuis
+  // l'ajout) : rien à commander. Le tunnel le dit, au lieu d'un total qui ne
+  // compterait que la livraison et d'un bouton que la base refuserait.
+  const toutIndisponible = !fige && !express && devis !== null
+    && lignesPanier.every((l) => devis.lignes.find((d) => d.variante_id === l.varianteId)?.quantite_disponible === 0);
+  if (toutIndisponible) {
+    const n = lignesPanier.length;
+    return (
+      <div className="listing-vide tunnel-vide tunnel-indisponible">
+        <h2>{t.commande.toutIndisponible(n)}</h2>
+        <p>{t.commande.toutIndisponibleTexte(n)}</p>
+        <ul className="tunnel-indisponible-liste" role="list">
+          {lignesPanier.map((l) => (
+            <li key={l.varianteId}><a href={`/produit/${l.produitSlug}`}>{l.libelle}</a></li>
+          ))}
+        </ul>
+        <div className="tunnel-vide-actions">
+          <button type="button" className="btn btn-primaire" onClick={() => { vientDeVider.current = true; lignesPanier.forEach((l) => retireDuPanier(l.varianteId)); }}>
+            {t.commande.retirerTout(n)}
+          </button>
+          <a className="btn btn-second" href="/catalogue">{t.commun.voirLeCatalogue}</a>
+        </div>
       </div>
     );
   }

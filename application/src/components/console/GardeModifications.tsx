@@ -16,22 +16,40 @@ import { useEffect } from "react";
    Un formulaire marqué `data-sans-garde` (un réglage qui s'enregistre de
    lui-même) n'est pas suivi. Un formulaire marqué `data-confirmer="…"`
    (retirer une photo : elle ne revient pas) pose sa question avant de partir.
+
+   Les cases et les choix ne comptent que sous `data-garde-choix` (les
+   réglages : « Confirmée d'office » cochée, puis « Livraison » cliqué, se
+   perdait sans un mot) ; ailleurs, une case sert souvent à choisir (des
+   commandes pour un geste groupé). Un formulaire en cours porte
+   `data-modifie` : son pied d'enregistrement reste à l'écran (CSS).
    ========================================================================== */
 
 const SUIVIS = "input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]), textarea, select";
+const CHOIX = "input[type=checkbox], input[type=radio]";
+
+/** Les cases et les choix comptent là où ce sont des réglages. */
+const choixSuivis = (f: HTMLFormElement) => f.closest("[data-garde-choix]") !== null;
 
 function formulaireSuivi(el: EventTarget | null): HTMLFormElement | null {
-  if (!(el instanceof HTMLElement) || !el.matches(SUIVIS)) return null;
-  const f = (el as HTMLInputElement).form;
+  if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) return null;
+  const f = el.form;
   if (!f || f.method.toLowerCase() !== "post" || f.hasAttribute("data-sans-garde")) return null;
-  return f;
+  if (el.matches(SUIVIS) || (el.matches(CHOIX) && choixSuivis(f))) return f;
+  return null;
 }
 
 /** Un champ revenu à sa valeur de départ n'est plus une modification. */
 function modifie(f: HTMLFormElement): boolean {
-  return [...f.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(SUIVIS)].some((c) =>
+  const saisi = [...f.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(SUIVIS)].some((c) =>
     c instanceof HTMLSelectElement ? [...c.options].some((o) => o.selected !== o.defaultSelected) : c.value !== c.defaultValue,
   );
+  return saisi || (choixSuivis(f) && [...f.querySelectorAll<HTMLInputElement>(CHOIX)].some((c) => c.checked !== c.defaultChecked));
+}
+
+/** Le formulaire en cours le porte : son pied reste à l'écran (le style s'en charge). */
+function marque(f: HTMLFormElement, enCours: boolean) {
+  if (enCours) f.setAttribute("data-modifie", "");
+  else f.removeAttribute("data-modifie");
 }
 
 const QUESTION = "Une saisie de cette page n'est pas enregistrée : la perdre ?";
@@ -39,13 +57,15 @@ const QUESTION = "Une saisie de cette page n'est pas enregistrée : la perdre ?"
 export function GardeModifications() {
   useEffect(() => {
     const enCours = new Set<HTMLFormElement>();
-    const relire = () => { for (const f of [...enCours]) if (!f.isConnected || !modifie(f)) enCours.delete(f); };
+    const relire = () => { for (const f of [...enCours]) if (!f.isConnected || !modifie(f)) { enCours.delete(f); marque(f, false); } };
 
     const saisie = (e: Event) => {
       const f = formulaireSuivi(e.target);
       if (!f) return;
-      if (modifie(f)) enCours.add(f);
+      const m = modifie(f);
+      if (m) enCours.add(f);
       else enCours.delete(f);
+      marque(f, m);
     };
     const envoi = (e: SubmitEvent) => {
       const f = e.target as HTMLFormElement;
@@ -62,6 +82,8 @@ export function GardeModifications() {
         e.stopImmediatePropagation();
         return;
       }
+      for (const x of enCours) marque(x, false);
+      marque(f, false);
       enCours.clear();
     };
     const clic = (e: MouseEvent) => {

@@ -1026,8 +1026,19 @@ if (section("2")) {
     await clic(page, section("commandes").getByText("Commande en invité"));
     await clic(page, section("commandes").getByText("Par e-mail seulement"));
     await clic(page, section("commandes").getByText("Confirmée d'office"));
+    // Un choix changé, pas enregistré : le pied le dit, collé en bas de l'écran ; partir demande d'abord.
+    const pied = section("commandes").locator("form[data-modifie] .carte-pied");
+    verifie(await attend(async () => /Pas encore enregistré/.test(await pied.innerText())), "un choix changé : le pied dit « Pas encore enregistré »");
+    verifie(await pied.evaluate((e) => { const r = e.getBoundingClientRect(); return getComputedStyle(e).position === "sticky" && r.bottom <= innerHeight + 1 && r.top >= 0; }),
+      "et reste à l'écran, collé en bas");
+    let question = null;
+    page.once("dialog", (d) => { question = d.message(); d.dismiss(); });
+    await clic(page, page.locator(".rg-nav").getByRole("link", { name: "Livraison" }));
+    await pause(600);
+    verifie(/pas enregistrée/.test(question ?? "") && /\/reglages\/commandes/.test(page.url()), `partir sans enregistrer demande d'abord (« ${question} ») ; « Annuler » reste`);
     await envoie(section("commandes").getByRole("button", { name: "Enregistrer" }));
     verifie((await ok()).includes("Réglages enregistrés"), `« ${await ok()} »`);
+    verifie(await section("commandes").locator("form[data-modifie]").count() === 0, "enregistré : le pied redevient lui-même");
     verifie(await section("commandes").getByLabel("Commande en invité").isChecked(), "le choix est gardé");
     const j = await journal();
     verifie(j.includes("Compte client : obligatoire → invité possible") && j.includes("Confirmation : par téléphone → automatique")

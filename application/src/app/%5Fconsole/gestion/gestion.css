@@ -683,6 +683,23 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 .rg-pied-erreur { color: var(--ui-rouge); }
 .carte-pied[data-retour="ok"] { background: var(--ui-vert-fond); }
 .carte-pied[data-retour="erreur"] { background: var(--ui-rouge-fond); }
+/* Un réglage changé, pas encore enregistré (GardeModifications marque le
+   formulaire) : le pied le dit, et reste collé en bas de l'écran tant que
+   le formulaire y est — on ne cherche plus « Enregistrer » 900 px plus bas. */
+.rg-pied-attente { display: none; }
+form[data-modifie] .carte-pied {
+  position: sticky; inset-block-end: 0; z-index: 6;
+  background: color-mix(in srgb, var(--ui-panneau) 96%, transparent); backdrop-filter: blur(10px) saturate(1.5);
+  border-block-start-color: var(--ui-ambre-bord); box-shadow: 0 -8px 24px -12px rgb(0 0 0 / .18);
+}
+form[data-modifie] .carte-pied .rg-pied-repos { display: none; }
+form[data-modifie] .carte-pied .rg-pied-attente {
+  display: inline-flex; align-items: center; gap: .375rem; font-size: .875rem; font-weight: 500; color: var(--ui-ambre);
+}
+@media screen and (max-width: 1023px) {
+  /* Au téléphone, au-dessus de la barre d'onglets. */
+  .app-avec-onglets form[data-modifie] .carte-pied { inset-block-end: calc(4.0625rem + env(safe-area-inset-bottom)); }
+}
 .rg-journal-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .lien-discret { display: inline-flex; align-items: center; gap: .25rem; font-size: .8125rem; color: var(--ui-texte-2); text-decoration: none; }
 .lien-discret:hover { color: var(--ui-texte); text-decoration: underline; text-underline-offset: .2em; }

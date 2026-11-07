@@ -247,8 +247,9 @@ export const fr = {
      *  Ce pli ne les répète pas : il dit ce qui n'est écrit nulle part
      *  ailleurs (juge visuel, 11/08 — la même information vivait à trois
      *  endroits sans qu'on sache laquelle fait foi). */
+    /** Confirmée d'office (réglage) : pas d'appel, la préparation suit la commande. */
     expeditionTexte: (origine?: string) =>
-      `La commande part${origine ? ` de ${origine}` : ""} après confirmation. Le livreur vous appelle avant de se présenter.`,
+      `La commande est préparée dès sa réception, puis part${origine ? ` de ${origine}` : ""}. Le livreur vous appelle avant de se présenter.`,
     expeditionAvecRappel: (origine?: string) =>
       `On vous appelle d'abord pour confirmer l'adresse et la disponibilité, puis la commande part${origine ? ` de ${origine}` : ""}. Le livreur vous appelle avant de se présenter.`,
     retourEtRefus: "Retour et refus",
@@ -287,7 +288,8 @@ export const fr = {
     photoPrecedente: "Photo précédente",
     photoSuivante: "Photo suivante",
     retraitMagasin: "Retrait en magasin",
-    retraitMagasinTexte: (ville: string, pret: string) => `Gratuit, au magasin de ${ville}. ${pret} après confirmation.`,
+    /** `rappel` : la boutique confirme par téléphone (réglage) ; d'office, la commande est prête sans attendre d'appel. */
+    retraitMagasinTexte: (ville: string, pret: string, rappel = true) => `Gratuit, au magasin de ${ville}. ${pret}${rappel ? " après confirmation" : ""}.`,
     conseil: "Besoin d'un conseil ?",
     conseilTexte: "Posez votre question sur WhatsApp, on vous répond.",
     conseilLien: "Écrire sur WhatsApp",
@@ -744,6 +746,12 @@ export const fr = {
     totalChange: "Un prix ou un frais a changé. Vérifiez le nouveau total, puis confirmez.",
     relancePaniers: "Si vous ne finissez pas votre commande, la boutique pourra vous écrire une fois pour vous la rappeler.",
     stockChange: "Un article n'est plus disponible dans la quantité demandée. Ajustez le récapitulatif.",
+    toutIndisponible: (n: number) => (n > 1 ? "Ces articles ne sont plus disponibles" : "Cet article n'est plus disponible"),
+    toutIndisponibleTexte: (n: number) =>
+      n > 1
+        ? "Épuisés ou retirés de la boutique depuis que vous les avez ajoutés : il n'y a rien à commander pour l'instant. Leur fiche dit s'ils reviennent."
+        : "Épuisé ou retiré de la boutique depuis que vous l'avez ajouté : il n'y a rien à commander pour l'instant. Sa fiche dit s'il revient.",
+    retirerTout: (n: number) => (n > 1 ? "Les retirer du panier" : "Le retirer du panier"),
     minimumNonAtteint: "Un article se commande par lot : sa quantité est sous le minimum. Ajustez le récapitulatif.",
     enAttente: "Ce numéro a déjà des commandes en attente de confirmation. La boutique vous appelle ; vous pourrez commander de nouveau ensuite.",
     bloque: "Ce numéro ne peut pas commander en ligne. Contactez la boutique.",
@@ -764,6 +772,9 @@ export const fr = {
     suiteExpedition: "Expédition",
     suiteExpeditionTexte: (delai?: string) =>
       delai ? `Le colis part après confirmation : comptez ${delai}.` : "Le colis part après confirmation.",
+    /** Déjà confirmée (d'office) : rien n'attend d'appel. */
+    suiteExpeditionTexteConfirmee: (delai?: string) =>
+      delai ? `La boutique prépare votre colis : comptez ${delai}.` : "La boutique prépare votre colis.",
     /** Une précommande : le colis attend l'arrivage, le délai court ensuite. */
     suiteExpeditionTexteArrivage: (delai?: string) =>
       delai ? `Le colis part à l'arrivage : comptez ensuite ${delai}.` : "Le colis part à l'arrivage.",
@@ -773,6 +784,7 @@ export const fr = {
     aRetirerA: "À retirer au magasin",
     suitePreparation: "Préparation",
     suitePreparationTexte: (pret: string) => `La boutique prépare la commande après confirmation. ${pret}.`,
+    suitePreparationTexteConfirmee: (pret: string) => `La boutique prépare votre commande. ${pret}.`,
     suitePreparationTexteArrivage: (pret: string) => `La boutique prépare la commande dès l'arrivage. ${pret}.`,
     suiteRetrait: "Retrait et paiement",
     suiteRetraitTexte: (montant: string) => `Au comptoir, à votre nom : vous réglez ${montant} en espèces en la retirant.`,

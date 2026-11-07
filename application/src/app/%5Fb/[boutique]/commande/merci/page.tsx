@@ -128,14 +128,15 @@ export default async function Merci({ params, searchParams }: {
     ...(retrait
       ? [
           { titre: t.commande.suitePreparation,
-            texte: (commande.arrivage_prevu ? t.commande.suitePreparationTexteArrivage : t.commande.suitePreparationTexte)(t.commande.pretSous(magasin?.delai_heures ?? 24)), fait: false },
+            texte: (commande.arrivage_prevu ? t.commande.suitePreparationTexteArrivage : aConfirmer ? t.commande.suitePreparationTexte : t.commande.suitePreparationTexteConfirmee)(t.commande.pretSous(magasin?.delai_heures ?? 24)), fait: false },
           payee
             ? { titre: t.commande.suiteRemiseRetrait, texte: t.commande.suitePayeeTexteRetrait, fait: false }
             : { titre: t.commande.suiteRetrait, texte: t.commande.suiteRetraitTexte(formatePrix(commande.total_millimes)), fait: false },
         ]
       : ([
           { titre: t.commande.suiteExpedition,
-            texte: commande.arrivage_prevu ? t.commande.suiteExpeditionTexteArrivage(delai) : t.commande.suiteExpeditionTexte(delai), fait: false },
+            // Confirmée d'office (réglage) : elle n'attend plus de confirmation.
+            texte: commande.arrivage_prevu ? t.commande.suiteExpeditionTexteArrivage(delai) : aConfirmer ? t.commande.suiteExpeditionTexte(delai) : t.commande.suiteExpeditionTexteConfirmee(delai), fait: false },
           payee
             ? { titre: t.commande.suiteRemise, texte: t.commande.suitePayeeTexte, fait: false }
             : enLigne ? null

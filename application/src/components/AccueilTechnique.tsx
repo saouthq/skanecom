@@ -224,7 +224,7 @@ export function servicesDe(cadre: Cadre, taille = 28): Service[] {
   const { livraison } = cadre;
   const conseil = lienConseil(cadre);
   return [
-    cadre.retrait ? { icone: <Magasin taille={taille} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures)) } : null,
+    cadre.retrait ? { icone: <Magasin taille={taille} />, titre: t.produit.retraitMagasin, texte: t.produit.retraitMagasinTexte(cadre.retrait.ville, t.commande.pretSous(cadre.retrait.delai_heures), cadre.livraison.rappel) } : null,
     livraison.cod ? { icone: <Billets taille={taille} />, titre: t.produit.payezALaLivraison, texte: t.produit.payezALaLivraisonTexte } : null,
     livraison.delai ? { icone: <Camion taille={taille} />, titre: livraison.delai, texte: livraison.frais ?? "" } : null,
     conseil

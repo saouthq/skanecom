@@ -143,7 +143,11 @@ function Pied({ modifie, retour, texte = "Enregistrer" }: { modifie: boolean; re
     <div className="carte-pied" data-retour={retour?.ok ? "ok" : retour?.erreur ? "erreur" : undefined}>
       {retour?.ok ? <span className="rg-pied-retour rg-pied-ok" role="status"><Icone nom="succes" taille={15} /> {retour.ok}</span>
         : retour?.erreur ? <span className="rg-pied-retour rg-pied-erreur" role="alert"><Icone nom="alerte" taille={15} /> {retour.erreur}</span>
-        : <span className="aide">La vitrine en tient compte aussitôt.</span>}
+        : <>
+            <span className="aide rg-pied-repos">La vitrine en tient compte aussitôt.</span>
+            {/* Une modification attend (le formulaire porte data-modifie) : le pied le dit, collé en bas de l'écran. */}
+            <span className="rg-pied-attente"><Icone nom="alerte" taille={15} /> Pas encore enregistré</span>
+          </>}
       <button className="btn btn-primaire">{texte}</button>
     </div>
   );
@@ -373,7 +377,8 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
           </ol>
         </nav>
 
-        <div className="pile rg-contenu">
+        {/* Ici, chaque case et chaque choix est un réglage : changé sans « Enregistrer », il est gardé (GardeModifications). */}
+        <div className="pile rg-contenu" data-garde-choix="">
           {messages.ok && !dansIci ? <p className="message message-succes" role="status">{messages.ok}</p> : null}
           {messages.erreur && !dansIci ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
           {lecture}

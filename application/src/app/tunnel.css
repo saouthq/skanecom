@@ -32,6 +32,10 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 .tunnel-tete h1 { font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; }
 .tunnel-attente { min-block-size: 40vh; display: grid; place-items: center; color: var(--theme-encre-doux); font-size: .875rem; }
 .tunnel-vide { max-inline-size: 36rem; margin-inline: auto; }
+/* Plus rien du panier n'est en vente : lesquels, vers leur fiche, et le geste. */
+.tunnel-indisponible-liste { display: grid; gap: .375rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+.tunnel-indisponible-liste a { text-decoration: underline; text-underline-offset: .2em; }
+.tunnel-vide-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; margin-block-start: 1.5rem; }
 
 .tunnel { display: grid; gap: 1.5rem; align-items: start; }
 /* Au téléphone, le récapitulatif (après le formulaire dans la page) se montre en tête. */

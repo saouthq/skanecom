@@ -145,7 +145,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
     {
       cle: "a_preparer", nombre: c.a_preparer, icone: "colis", href: `${base}?etape=a_preparer`,
       titre: "Colis à préparer",
-      detail: c.a_preparer ? "Confirmés par le client : à emballer et à remettre au transporteur." : "Rien en attente de préparation.",
+      detail: c.a_preparer ? "Confirmés : à emballer et à remettre au transporteur." : "Rien en attente de préparation.",
       action: c.a_preparer ? { href: `${base}/bordereaux?etape=a_preparer`, libelle: "Imprimer les bordereaux" } : undefined,
     },
     {
