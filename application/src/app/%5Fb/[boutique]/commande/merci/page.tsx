@@ -14,6 +14,7 @@ import { lignesPub } from "@/lib/pixels";
 import { formatePrix } from "@/lib/prix";
 import { t } from "@/lib/i18n";
 import { relirePaiement } from "@/lib/paiement/commande";
+import { verificationDe } from "@/lib/connexion";
 
 /* ============================================================================
    LA PAGE DE FIN DE COMMANDE — ce qui a été commandé, où, pour combien, et
@@ -100,6 +101,8 @@ export default async function Merci({ params, searchParams }: {
 
   const aConfirmer = commande.statut === "recue" || commande.statut === "a_arbitrer";
   const retrait = commande.mode_livraison === "retrait";
+  // Les codes partent par SMS : un numéro vérifié retrouve ses commandes.
+  const suiviInvite = verificationDe(cadre.reglages) !== "email";
   const magasin = commande.retrait;
   const zone = cadre.zones.find((z) => (z.nom_fr ?? z.nom_ar) === commande.livraison.zone);
   const delai =
@@ -207,8 +210,14 @@ export default async function Merci({ params, searchParams }: {
             </ol>
             <p className="merci-actions">
               <a className="btn btn-primaire merci-continuer" href="/">{t.commande.continuer}</a>
-              {cadre.reglages["compte.obligatoire"] !== false ? <a className="btn-lien" href="/compte">{t.compte.suivre}</a> : null}
+              {cadre.reglages["compte.obligatoire"] !== false || suiviInvite ? <a className="btn-lien" href="/compte">{t.compte.suivre}</a> : null}
             </p>
+            {/* Commandée sans compte : elle se retrouve dans « Mes commandes » en s'y
+                connectant avec ce numéro (le code SMS le prouve ; migration
+                …_rattacher_client). Avant, rien ne disait comment la suivre. */}
+            {suiviInvite && cadre.reglages["compte.obligatoire"] === false ? (
+              <p className="legende merci-suivre">{t.commande.suivreInvite(telephoneLisible(commande.contact.telephone))}</p>
+            ) : null}
           </div>
 
           <div className="merci-recap">

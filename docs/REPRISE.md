@@ -85,11 +85,13 @@ bouton final « Confirmer la commande » n'est qu'un cadre.
 
 ## Fait le 07/11 (après-midi) : d'autres parcours joués en vrai
 
-Cinq lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
+Neuf lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
 et par les parcours automatiques : la cliente de Selma (filtres, panier, code
 promo, commande), l'artisan de la Quincaillerie (comparer, retrait, facture
 société, quantité tapée, devis), le devis des deux côtés, l'équipe (une
-employée invitée, ses appels), le retour en stock. Le détail : feuille de
+employée invitée, ses appels), le retour en stock, le paiement en ligne,
+la suspension d'une boutique, le service après-vente, la commande en
+invité. Le détail : feuille de
 route, section E, « D'autres parcours, joués en vrai ».
 
 Remarqué, laissé tel quel :

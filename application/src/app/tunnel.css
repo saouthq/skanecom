@@ -410,6 +410,7 @@ html[data-gabarit="technique"] .merci-suite li[data-fait] .merci-puce { backgrou
 
 /* Continuer ses achats, ou suivre ses commandes (compte). */
 .merci-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.5rem; margin: 0; }
+.merci-suivre { margin: .75rem 0 0; max-inline-size: 34rem; }
 
 /* --- La fin de commande : la coche se dessine, le titre monte ------------- */
 .merci-etiquette svg { border-radius: 50%; animation: merci-coche .6s cubic-bezier(.34, 1.5, .64, 1) .1s backwards; }

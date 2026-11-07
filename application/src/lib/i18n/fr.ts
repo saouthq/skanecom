@@ -778,6 +778,8 @@ export const fr = {
     suiteRetraitTexte: (montant: string) => `Au comptoir, à votre nom : vous réglez ${montant} en espèces en la retirant.`,
     articles: "Articles",
     continuer: "Continuer mes achats",
+    /** Commandée sans compte : comment la suivre ensuite. */
+    suivreInvite: (telephone: string) => `Pour la suivre, ouvrez « Mes commandes » et connectez-vous avec le ${telephone} : un code vous arrive par SMS.`,
     aucune: "Aucune commande récente sur ce navigateur.",
     aucuneTexte: "Si vous venez de commander, la boutique vous appelle pour la confirmer.",
     statut: {
