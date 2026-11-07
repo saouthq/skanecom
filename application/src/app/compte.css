@@ -41,6 +41,9 @@
   background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
 }
 .compte-carte[data-cloturee] { background: color-mix(in srgb, var(--theme-surface) 70%, var(--theme-fond)); }
+/* Une commande pas encore partie : la changer ou l'annuler, c'est la boutique qu'on prévient. */
+.compte-joindre { margin: 0; padding-block-start: .75rem; border-block-start: 1px solid var(--theme-filet); color: var(--theme-encre-doux); }
+.compte-joindre a { color: var(--theme-encre); text-decoration: underline; text-underline-offset: .2em; white-space: nowrap; }
 /* Au téléphone, un état long (« Reçue, en attente d'appel ») passe sous le numéro plutôt que de
    couper la date en deux lignes (« Passée le 7 / novembre 2026 »). */
 .compte-carte-tete { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .5rem 1rem; }

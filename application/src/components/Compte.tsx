@@ -72,9 +72,11 @@ export type CommandeMienne = {
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
-export function Compte({ boutiqueId, verification, sav = false, pro = false, devis = false, avis = false, avisPhotos = false }: {
+export function Compte({ boutiqueId, verification, sav = false, pro = false, devis = false, avis = false, avisPhotos = false, joindre = null }: {
   boutiqueId: string;
   verification: Verification;
+  /** Joindre la boutique (son WhatsApp, son téléphone) : sous une commande pas encore partie, pour la changer ou l'annuler. */
+  joindre?: { boutique: string; whatsapp: string | null; telephone: string | null } | null;
   sav?: boolean;
   pro?: boolean;
   devis?: boolean;
@@ -234,6 +236,7 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
                 avisPhotos={avisPhotos}
                 mesAvis={mesAvis}
                 surAvis={() => setRelectureAvis((n) => n + 1)}
+                joindre={joindre}
               />
             ))}
           </ul>
@@ -321,7 +324,7 @@ export function ResumeCommande({ c }: { c: CommandeMienne }) {
   );
 }
 
-function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mesAvis, surAvis }: {
+function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mesAvis, surAvis, joindre }: {
   c: CommandeMienne;
   boutiqueId: string;
   sav: boolean;
@@ -331,6 +334,7 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
   avisPhotos: boolean;
   mesAvis: MonAvis[];
   surAvis: () => void;
+  joindre: { boutique: string; whatsapp: string | null; telephone: string | null } | null;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [envoyee, setEnvoyee] = useState<string | null>(null);
@@ -344,6 +348,19 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
   return (
     <li className="compte-carte" data-statut={c.statut} data-cloturee={cloturee ? "" : undefined}>
       <ResumeCommande c={c} />
+      {/* Pas encore partie : une taille à changer, une adresse, ou l'annuler — on le dit à la boutique, le numéro déjà écrit. */}
+      {joindre && (joindre.whatsapp || joindre.telephone) && ["recue", "a_arbitrer", "confirmee"].includes(c.statut) ? (
+        <p className="compte-joindre legende">
+          {t.compte.changerCommande}{" "}
+          {joindre.whatsapp ? (
+            <a href={`https://wa.me/${joindre.whatsapp}?text=${encodeURIComponent(t.compte.messageCommande(c.numero))}`} target="_blank" rel="noopener noreferrer">
+              {t.compte.ecrireBoutique}
+            </a>
+          ) : (
+            <a href={joindre.telephone!}>{t.compte.appelerBoutique}</a>
+          )}
+        </p>
+      ) : null}
       {sav && c.statut === "livree" ? (
         <div className="sav-carte">
           {envoyee ? <p className="sav-envoyee" role="status" tabIndex={-1} ref={(m) => { if (m && rendreFocus.current) { rendreFocus.current = false; m.focus({ preventScroll: true }); } }}><Coche taille={16} /> {t.sav.envoyee(envoyee)}</p> : null}

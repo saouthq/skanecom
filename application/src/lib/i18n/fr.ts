@@ -987,6 +987,11 @@ export const fr = {
     aucune: "Aucune commande pour le moment.",
     aucuneTexte: "Les commandes passées avec ce numéro s'afficheront ici.",
     passeeLe: (date: string) => `Passée le ${date}`,
+    /** Sous une commande pas encore partie : la changer ou l'annuler, c'est la boutique qu'on prévient. */
+    changerCommande: "Une taille, une adresse à changer, ou l'annuler ?",
+    ecrireBoutique: "Écrire à la boutique",
+    appelerBoutique: "Appeler la boutique",
+    messageCommande: (numero: string) => `Bonjour, à propos de ma commande ${numero} : `,
     articles: (n: number) => `${n} article${n > 1 ? "s" : ""}`,
     livraisonA: (lieu: string) => `Livraison à ${lieu}`,
     retraitA: (lieu: string) => `À retirer : ${lieu}`,

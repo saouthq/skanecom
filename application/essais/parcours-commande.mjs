@@ -678,6 +678,9 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     verifie(carte.includes(`QDS-${annee}-00001`) && carte.includes("À retirer : Route de Tunis, km 3, Sfax")
       && carte.includes("La boutique vous appelle pour la confirmer"),
       "sa commande, où la retirer, et où elle en est");
+    const joindre = page.locator(".compte-carte").first().locator(".compte-joindre a");
+    verifie(decodeURIComponent((await joindre.getAttribute("href")) ?? "").includes(`ma commande QDS-${annee}-00001`),
+      "pas encore partie : « Écrire à la boutique » pour la changer ou l'annuler, le numéro de commande déjà écrit");
     verifie((await page.locator(".compte-identite").innerText()).includes("+216 98 765 432"), "connecté avec le numéro confirmé au tunnel");
     const etapeDuMoment = page.locator(".compte-carte").first().locator(".compte-frise [aria-current=step]");
     verifie((await etapeDuMoment.innerText()).trim() === "Reçue", "la frise de suivi marque « Reçue » (retrait : Reçue, Confirmée, Prête, Retirée)");
