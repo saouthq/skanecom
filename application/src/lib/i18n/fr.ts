@@ -346,7 +346,10 @@ export const fr = {
           ? `Une pièce trouvée pour « ${q} »`
           : `Aucune pièce trouvée pour « ${q} »`,
     videTexte:
-      "Essayez un mot plus court, ou parcourez le catalogue rayon par rayon.",
+      "Essayez un mot plus court, ou parcourez un rayon.",
+    rayonsAria: "Les rayons de la boutique",
+    demanderWhatsapp: "La demander sur WhatsApp",
+    demandeWhatsapp: (boutique: string, q: string) => `Bonjour ${boutique}, je cherche « ${q} » : l'avez-vous ?`,
     /** La recherche en phrase (réglage catalogue.recherche_phrase). */
     compris: "Compris :",
     reste: (mots: string) => `et « ${mots} » dans le texte`,

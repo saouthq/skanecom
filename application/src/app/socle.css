@@ -329,6 +329,14 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 }
 .listing-vide h2, .listing-vide h3 { font-size: 1.375rem; }
 .listing-vide p { max-inline-size: 44ch; color: var(--theme-encre-doux); font-size: .9375rem; }
+/* Rien trouvé : les rayons, en pastilles, puis le catalogue et WhatsApp. */
+.recherche-vide-rayons { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.recherche-vide-rayons a {
+  display: inline-flex; align-items: center; min-block-size: 2.5rem; padding: .375rem 1rem; border: 1px solid var(--theme-filet);
+  border-radius: 999px; color: var(--theme-encre); font-size: .9375rem; text-decoration: none; transition: border-color .15s, background .15s;
+}
+.recherche-vide-rayons a:hover { border-color: var(--theme-encre); }
+.recherche-vide-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
 .sous-rayons { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 1.25rem 0 0; padding: 0; }
 .sous-rayons a {
   display: inline-flex; align-items: center; gap: .5rem; min-block-size: 36px; padding: .375rem .875rem;
@@ -555,6 +563,9 @@ html[data-gabarit="editorial"]:not([data-allure="contemporaine"]) .ed-entete-lis
 .menu-raccourcis a:active { transform: scale(.97); }
 .menu-raccourcis a[aria-current] { box-shadow: inset 0 0 0 1.5px var(--theme-encre); }
 .menu-raccourcis a[data-raccourci="whatsapp"] svg { color: #1FA855; }
+/* Le nombre de favoris, en haut à droite de sa tuile (le cœur de l'en-tête n'a pas de place au téléphone). */
+.menu-raccourcis a[data-raccourci="favoris"] { position: relative; }
+.menu-compte { position: absolute; inset-block-start: .75rem; inset-inline-end: .75rem; }
 
 /* « Besoin d'aide ? » : des liens simples, en ligne. */
 .menu-aide ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; }

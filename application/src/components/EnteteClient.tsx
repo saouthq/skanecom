@@ -8,6 +8,7 @@ import { Camion, Coeur, Fleche, LogoWhatsApp, Loupe, Menu, Personne, Telephone }
 import { Tiroir } from "./Tiroir";
 import { urlFichier } from "@/lib/photos";
 import { t } from "@/lib/i18n";
+import { useFavoris } from "@/lib/favoris";
 
 /* ============================================================================
    LES MORCEAUX VIVANTS DE L'EN-TÊTE
@@ -105,6 +106,8 @@ export function MenuMobile({
   const bouton = useRef<HTMLButtonElement>(null);
   const chemin = cheminVisible(usePathname());
   const ferme = () => setOuvert(false);
+  // Au téléphone, le cœur de l'en-tête n'a pas de place : le menu dit combien de pièces attendent.
+  const favoris = useFavoris();
 
   useEffect(() => {
     const ouvre = () => setOuvert(true);
@@ -196,9 +199,12 @@ export function MenuMobile({
                       <span>{r.nom}</span>
                     </a>
                   ) : (
-                    <Link href={r.href} onClick={ferme} aria-current={chemin === r.href ? "page" : undefined} data-raccourci={r.icone}>
+                    <Link href={r.icone === "favoris" && favoris.length ? `${r.href}?s=${favoris.slice(0, 60).join(",")}` : r.href} onClick={ferme}
+                          aria-current={chemin === r.href ? "page" : undefined} data-raccourci={r.icone}
+                          aria-label={r.icone === "favoris" ? t.favoris.lienAria(favoris.length) : undefined}>
                       <Icone taille={20} />
                       <span>{r.nom}</span>
+                      {r.icone === "favoris" && favoris.length ? <span className="favoris-compte menu-compte" aria-hidden="true">{favoris.length}</span> : null}
                     </Link>
                   )}
                 </li>

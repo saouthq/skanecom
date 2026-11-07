@@ -5,11 +5,12 @@ import { CarteProduit } from "@/components/CarteProduit";
 import { EnteteListe } from "@/components/EnteteListe";
 import { ChampRecherche } from "@/components/ChampRecherche";
 import { Loupe } from "@/components/Icones";
-import { cadre as chargeCadre, type Cadre } from "@/lib/boutique";
+import { cadre as chargeCadre, descendance, type Cadre } from "@/lib/boutique";
 import { listeProduits, type CriteresSql, type Liste } from "@/lib/catalogue";
 import { champ, t } from "@/lib/i18n";
 import { dinarsVersMillimes } from "@/lib/prix";
 import { comprendre, type Comprise } from "@/lib/recherche-phrase";
+import { contactDe } from "@/lib/contact";
 
 /* La recherche lit son terme dans l'adresse (`?q=`) : c'est la seule page de
    la vitrine qui n'est pas mise en cache. Elle cherche en base (nom, marque,
@@ -111,13 +112,35 @@ export default async function Recherche({
           ))}
         </div>
       ) : liste ? (
-        <div className="listing-vide">
-          <p>{t.recherche.videTexte}</p>
-          <Link className="btn btn-second" href="/catalogue">
-            {t.commun.voirLeCatalogue}
-          </Link>
-        </div>
+        <RechercheVide cadre={cadre} requete={requete} />
       ) : null}
     </Gabarit>
+  );
+}
+
+/** Rien trouvé : les rayons garnis, d'un geste, et — si la boutique a
+ *  WhatsApp — la question posée à la boutique, la recherche déjà écrite.
+ *  « Voir le catalogue » seul laissait repartir les mains vides. */
+function RechercheVide({ cadre, requete }: { cadre: Cadre; requete: string }) {
+  // Les rayons qui ont des pièces, sous-rayons compris (comme le menu).
+  const garnis = cadre.racines.filter((r) => descendance(cadre.categories, r.slug).some((c) => (c.nb_produits ?? 0) > 0));
+  const whatsapp = contactDe(cadre, t.recherche.demandeWhatsapp(cadre.boutique.nom, requete)).whatsapp;
+  return (
+    <div className="listing-vide recherche-vide">
+      <p>{t.recherche.videTexte}</p>
+      {garnis.length ? (
+        <ul className="recherche-vide-rayons" role="list" aria-label={t.recherche.rayonsAria}>
+          {garnis.map((r) => (
+            <li key={r.slug}><Link href={`/categorie/${r.slug}`}>{champ(r, "nom")}</Link></li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="recherche-vide-actions">
+        <Link className="btn btn-second" href="/catalogue">{t.commun.voirLeCatalogue}</Link>
+        {whatsapp ? (
+          <a className="btn btn-second" href={whatsapp.href} target="_blank" rel="noopener noreferrer">{t.recherche.demanderWhatsapp}</a>
+        ) : null}
+      </div>
+    </div>
   );
 }
