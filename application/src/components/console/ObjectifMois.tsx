@@ -32,7 +32,7 @@ function Fixer({ slug, mois, valeur, libelle, ouvert, propose }: {
           <input id={`objectif-${mois}`} name="montant" inputMode="numeric" defaultValue={enDinars(valeur)} placeholder="Ex. 20000" autoComplete="off" />
           <span className="aide">
             {propose && valeur
-              ? "Proposé : le mois dernier, plus 10 %. À changer à votre main ; vide, pas d'objectif."
+              ? "Proposé : le mois dernier, plus 10 %, arrondi. À changer à votre main ; vide, pas d'objectif."
               : "Ce qui doit être livré — donc encaissé — dans le mois. Vide : pas d'objectif."}
           </span>
         </div>

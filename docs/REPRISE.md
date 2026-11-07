@@ -85,7 +85,7 @@ bouton final « Confirmer la commande » n'est qu'un cadre.
 
 ## Fait le 07/11 (après-midi) : d'autres parcours joués en vrai
 
-Trente lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
+Trente et un lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
 et par les parcours automatiques : la cliente de Selma (filtres, panier, code
 promo, commande), l'artisan de la Quincaillerie (comparer, retrait, facture
 société, quantité tapée, devis), le devis des deux côtés, l'équipe (une
@@ -101,7 +101,7 @@ Yasmine (et son offre ajoutée au panier, comme un pack de Selma), l'avis d'une 
 livrée (et sa relecture par la gérante), les pages de la
 vitrine écrites au téléphone, l'équipe, une boutique créée (et ouverte) depuis la console, le premier jour de sa
 propriétaire (et son premier produit), la relance d'un panier, la
-commande à changer avant l'appel. Le détail : feuille de
+commande à changer avant l'appel, le tableau de bord au téléphone. Le détail : feuille de
 route, section E, « D'autres parcours, joués en vrai ».
 
 Remarqué, laissé tel quel :

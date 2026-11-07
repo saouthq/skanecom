@@ -49,11 +49,12 @@ export function moisSuivant(mois: string): string {
 }
 
 /** Un chiffre à proposer, sans objectif : le livré du mois dernier, plus
- *  dix pour cent, arrondi à un nombre rond (au millier de dinars, ou à la
- *  centaine sous dix mille). Rien sans mois dernier. */
+ *  dix pour cent, arrondi à un nombre rond (au millier de dinars, à la
+ *  centaine sous dix mille, à la dizaine sous mille — 196 TND donnaient
+ *  300, « plus 10 % » qui en faisaient 53). Rien sans mois dernier. */
 export function suggestion(moisDernier: number): number | null {
   if (moisDernier <= 0) return null;
   const vise = moisDernier * 1.1;
-  const pas = vise >= 10_000_000 ? 1_000_000 : 100_000;
+  const pas = vise >= 10_000_000 ? 1_000_000 : vise >= 1_000_000 ? 100_000 : 10_000;
   return Math.ceil(vise / pas) * pas;
 }
