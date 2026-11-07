@@ -139,7 +139,7 @@ export default async function Avis({
               ) : null}
               {a.reponse ? (
                 <div className="av-reponse">
-                  <b>Votre réponse, publique</b>
+                  <b>{a.statut === "publie" ? "Votre réponse, publique" : "Votre réponse, publique avec l'avis"}</b>
                   <p>{a.reponse}</p>
                 </div>
               ) : null}
@@ -161,6 +161,8 @@ export default async function Avis({
                         <input type="hidden" name="avis" value={a.id} />
                         <input type="hidden" name="geste" value="repondre" />
                         <input type="hidden" name="filtre" value={filtre.cle} />
+                        {/* Le message qui suit en dépend : la réponse ne paraît qu'avec l'avis publié. */}
+                        {a.statut === "publie" ? <input type="hidden" name="publie" value="1" /> : null}
                         <label className="sr-only" htmlFor={`rep-${a.id}`}>Votre réponse</label>
                         <textarea id={`rep-${a.id}`} name="texte" rows={3} maxLength={1000} defaultValue={a.reponse ?? ""}
                           placeholder="Merci pour votre avis… (vide : la réponse s'efface)" />

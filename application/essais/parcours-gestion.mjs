@@ -2199,6 +2199,23 @@ if (section("4bis")) {
     verifie(fichier.status === 200, `une photo du jeu de démo n'est jamais effacée du dépôt (HTTP ${fichier.status})`);
   });
 
+  await etape("répondre à un avis encore à relire : la réponse attend sa publication, puis s'efface", async () => {
+    await page.goto(`${C}/gestion/maison-selma/avis`, { waitUntil: "networkidle" });
+    const avis = () => page.locator(".av-carte", { hasText: "le L taille petit" });
+    await clic(page, avis().locator("summary", { hasText: "Répondre" }));
+    await clic(page, avis().locator("textarea"));
+    await tape(page, "Merci Yosra, nous l'ajoutons au guide des tailles.");
+    await t.envoie(page, avis().getByRole("button", { name: "Enregistrer la réponse" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("dès que vous le publierez"),
+      "sous un avis à relire, la réponse attendra sa publication — la page le dit (plus « d'ici cinq minutes »)");
+    await clic(page, avis().locator("summary", { hasText: "Modifier la réponse" }));
+    await clic(page, avis().locator("textarea"));
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("Delete");
+    await t.envoie(page, avis().getByRole("button", { name: "Enregistrer la réponse" }));
+    verifie((await page.locator(".message-succes").first().innerText()).includes("Réponse retirée"), "vidée : « Réponse retirée »");
+  });
+
   await etape("les prix par quantité d'un pull : posés au clavier, vus sur la fiche, retirés", async () => {
     // Le pull en mérinos : 189,000 l'unité.
     await page.goto(`${C}/gestion/maison-selma/produits/00000000-0000-4000-8003-000000000109#paliers`, { waitUntil: "networkidle" });

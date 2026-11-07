@@ -85,7 +85,7 @@ bouton final « Confirmer la commande » n'est qu'un cadre.
 
 ## Fait le 07/11 (après-midi) : d'autres parcours joués en vrai
 
-Vingt-trois lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
+Vingt-quatre lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
 et par les parcours automatiques : la cliente de Selma (filtres, panier, code
 promo, commande), l'artisan de la Quincaillerie (comparer, retrait, facture
 société, quantité tapée, devis), le devis des deux côtés, l'équipe (une
@@ -98,7 +98,7 @@ code SMS faux, le site vitrine (formulaire de contact, demandes), le client
 bloqué, les encaissements, l'éditeur de la vitrine au téléphone, le client
 surveillé vu par l'employé des appels (et à la saisie de sa commande), l'achat sur la page de vente de
 Yasmine (et son offre ajoutée au panier, comme un pack de Selma), l'avis d'une cliente
-livrée. Le détail : feuille de
+livrée (et sa relecture par la gérante). Le détail : feuille de
 route, section E, « D'autres parcours, joués en vrai ».
 
 Remarqué, laissé tel quel :
@@ -119,8 +119,6 @@ Remarqué, laissé tel quel :
   messageries refusent souvent le SVG : il faudrait une version PNG).
 - Au comptoir, la liste de recherche montre le prix public même pour un
   client pro (son prix pro paraît dès l'article ajouté, chiffré par la base).
-- Les pixels publicitaires reçoivent, à l'ajout au panier, la quantité et le
-  prix à l'unité : une offre par quantité (3 pour 147) y vaut 3 × 59.
 - Le bandeau d'une boutique suspendue dit « appelez-nous » (le message de la
   console), sans moyen de joindre SkanEcom : il faudra le numéro du support.
 

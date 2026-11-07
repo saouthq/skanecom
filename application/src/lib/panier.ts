@@ -19,6 +19,7 @@ import {
   type LignePanier,
   type Panier,
 } from "./panier-contrat";
+import { totalAvecPaliers } from "./paliers";
 
 /* ============================================================================
    PANIER LOCAL — l'implémentation navigateur du contrat.
@@ -53,8 +54,10 @@ function ecrit(panier: Panier): void {
 
 export function ajouteAuPanier(ligne: Omit<LignePanier, "ajouteLe">, stockMax: number): void {
   ecrit(ajouteLigne(lit(), ligne, stockMax));
+  // Le prix à l'unité réellement appliqué : une offre « 3 pour 147 » vaut 147, pas 3 × 59, pour les pixels aussi.
+  const { total } = totalAvecPaliers(ligne.prixMillimesAjout, ligne.quantite, ligne.paliers);
   window.dispatchEvent(new CustomEvent<LigneAjoutee>(PANIER_LIGNE, {
-    detail: { sku: ligne.sku, libelle: ligne.libelle, quantite: ligne.quantite, prixMillimes: ligne.prixMillimesAjout },
+    detail: { sku: ligne.sku, libelle: ligne.libelle, quantite: ligne.quantite, prixMillimes: Math.round(total / Math.max(1, ligne.quantite)) },
   }));
 }
 

@@ -58,6 +58,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     p_boutique_id: boutique.boutique_id, p_avis_id: avis, p_geste: geste, p_texte: texte("texte") || null,
   });
   if (error) return retour(messageAvis(error.hint, error.message), false, `#avis-${avis}`);
-  // Répondre laisse l'avis dans son onglet : on y revient, sur lui.
-  return retour(REUSSITES[geste], true, geste === "repondre" ? `#avis-${avis}` : "");
+  // Répondre laisse l'avis dans son onglet : on y revient, sur lui. Le message
+  // disait « elle paraît … d'ici cinq minutes » même sous un avis encore à
+  // relire (elle ne paraît qu'avec lui), et même pour une réponse effacée.
+  if (geste === "repondre") {
+    const publie = texte("publie") === "1";
+    const m = !texte("texte")
+      ? (publie ? "Réponse retirée : la fiche du produit ne la montre plus d'ici cinq minutes." : "Réponse retirée.")
+      : publie ? REUSSITES.repondre
+      : "Réponse enregistrée : elle paraîtra sous l'avis dès que vous le publierez.";
+    return retour(m, true, `#avis-${avis}`);
+  }
+  return retour(REUSSITES[geste], true);
 }
