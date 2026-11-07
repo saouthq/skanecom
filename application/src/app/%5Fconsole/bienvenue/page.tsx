@@ -56,7 +56,9 @@ export default async function Bienvenue({ searchParams }: {
         </p>
       ) : null}
 
-      <form action="/bienvenue/valider" method="post" className="carte porte-carte formulaire">
+      {/* Sans la bulle du navigateur (dans sa langue, à son style) : le message
+          vient du serveur, en clair (« 10 caractères au moins »). */}
+      <form action="/bienvenue/valider" method="post" className="carte porte-carte formulaire" noValidate>
         {p.erreur ? <p className="message message-erreur" role="alert">{p.erreur}</p> : null}
         {reprise ? <input type="hidden" name="reprise" value="1" /> : (
           <>

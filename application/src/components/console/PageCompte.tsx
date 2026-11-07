@@ -54,7 +54,7 @@ export function PageCompte({ d }: { d: DonneesCompte }) {
             </div>
           </div>
           <Retour carte="mot-de-passe" messages={d.messages} />
-          <form action="/compte/mot-de-passe" method="post" className="formulaire">
+          <form action="/compte/mot-de-passe" method="post" className="formulaire" noValidate>
             <input type="hidden" name="retour" value={d.retour} />
             {/* (l'adresse, pour que le gestionnaire de mots de passe sache à quel compte il touche) */}
             <input type="email" name="email" value={d.email} autoComplete="username" readOnly hidden />
