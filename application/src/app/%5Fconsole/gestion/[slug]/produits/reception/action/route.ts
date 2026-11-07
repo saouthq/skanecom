@@ -42,5 +42,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const r = data as { declinaisons: number; pieces: number };
   // Le stock reçu paraît tout de suite sur les fiches.
   rafraichirVitrine(slug);
-  return vers(`${page}?${new URLSearchParams({ recues: String(r.pieces), declinaisons: String(r.declinaisons) })}`);
+  // Venu de la fiche d'un produit : la page de retour le garde (son filtre, et le lien vers la fiche).
+  const produit = String(f.get("produit") ?? "");
+  const suite: Record<string, string> = /^[0-9a-f-]{36}$/.test(produit) ? { produit, q: String(f.get("filtre") ?? "").slice(0, 120) } : {};
+  return vers(`${page}?${new URLSearchParams({ recues: String(r.pieces), declinaisons: String(r.declinaisons), ...suite })}`);
 }

@@ -48,7 +48,7 @@ export default async function FicheProduitBackoffice({
   searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
-  searchParams: Promise<{ ok?: string; erreur?: string; stock?: string; toutes?: string; prevenir?: string }>;
+  searchParams: Promise<{ ok?: string; erreur?: string; stock?: string; toutes?: string; prevenir?: string; cree?: string }>;
 }) {
   const [{ slug, id }, messages] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
@@ -89,6 +89,8 @@ export default async function FicheProduitBackoffice({
   const actionPhotos = `/gestion/${slug}/produits/${f.id}/photos`;
   const libelleDe = new Map(f.variantes.map((v) => [v.id, v.libelle ?? v.sku]));
   const actives = f.variantes.filter((v) => v.actif);
+  // La réception de l'arrivage, sur ce seul produit : toutes ses déclinaisons d'un coup (Entrée passe à la suivante).
+  const reception = `/gestion/${slug}/produits/reception?${new URLSearchParams({ q: f.nom, produit: id })}`;
   const stockTotal = actives.reduce((n, v) => n + v.stock, 0);
   const prixMin = actives.length ? Math.min(...actives.map((v) => v.prix)) : null;
   const maintenant = new Date();
@@ -130,6 +132,8 @@ export default async function FicheProduitBackoffice({
         {messages.ok ? (
           <p className="message message-succes" role="status">
             {messages.ok}
+            {/* Créé à l'instant : son premier stock se reçoit d'un coup, pas déclinaison par déclinaison. */}
+            {messages.cree && stocke && f.variantes.length > 0 ? <>{" "}<Link href={reception}>Recevoir leur stock</Link></> : null}
             {/* Une pièce attendue revenue en stock : prévenir ceux qui l'attendaient. */}
             {Number(messages.prevenir) > 0 ? (
               <>
@@ -289,6 +293,9 @@ export default async function FicheProduitBackoffice({
                   <h2 id="t-declinaisons" className="carte-titre-icone"><Icone nom="colis" /> Déclinaisons et stock</h2>
                   <p>Le stock ne change que par un mouvement : réception d&apos;un arrivage, inventaire, casse. Chaque mouvement est gardé.</p>
                 </div>
+                {stocke && f.variantes.length > 1 ? (
+                  <Link href={reception} className="btn btn-second btn-petit"><Icone nom="colis" taille={14} /> Recevoir un arrivage</Link>
+                ) : null}
               </div>
               {operations.length > 0 ? (
                 <p className="message mb-4">

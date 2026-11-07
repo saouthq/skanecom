@@ -65,5 +65,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (error) return retour(messageCatalogue(error.hint, error.message));
   const cree = data as { id: string; slug: string };
   const ok = `Produit créé en brouillon, avec ${variantes.length} déclinaison${variantes.length > 1 ? "s" : ""}. Recevez leur stock, puis mettez-le en vitrine.`;
-  return vers(`/gestion/${slug}/produits/${cree.id}?${new URLSearchParams({ ok })}`);
+  // cree=1 : la fiche propose d'aller recevoir le stock de toutes ses déclinaisons d'un coup.
+  return vers(`/gestion/${slug}/produits/${cree.id}?${new URLSearchParams({ ok, cree: "1" })}`);
 }

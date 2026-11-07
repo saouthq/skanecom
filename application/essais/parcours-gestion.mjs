@@ -632,6 +632,16 @@ if (section("2")) {
     verifie((await ok()).includes("3 déclinaisons"), "créé en brouillon, avec ses trois tailles");
     verifie((await page.locator(".var-sku").allInnerTexts()).join(" ") === "HOUSSE-DE-PROTECTION-S HOUSSE-DE-PROTECTION-M HOUSSE-DE-PROTECTION-L",
       `références proposées : ${(await page.locator(".var-sku").allInnerTexts()).join(", ")}`);
+    // Son premier stock se reçoit d'un coup : le message mène à la réception, sur lui seul, le curseur dans sa première quantité.
+    const recevoir = page.locator(".message-succes").getByRole("link", { name: "Recevoir leur stock" });
+    verifie(await recevoir.count() === 1, "le message propose de recevoir leur stock");
+    await clic(page, recevoir);
+    await page.waitForURL(/produits\/reception\?/);
+    await page.waitForLoadState("networkidle");
+    verifie(await page.locator(".rc-produit:not([hidden])").count() === 1 && (await page.locator(".rc-filtre input").inputValue()) === "Housse de protection",
+      "la réception s'ouvre sur lui seul");
+    verifie((await page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "")).includes("Housse de protection, S"), "le curseur dans sa première quantité");
+    await page.goto(nouveau, { waitUntil: "networkidle" });
     await clic(page, page.locator(".choix-carte", { hasText: "En vitrine" }));
     await envoie(page.getByRole("button", { name: "Enregistrer la fiche" }));
     verifie((await ok()).includes("en vitrine"), "puis mis en vitrine");

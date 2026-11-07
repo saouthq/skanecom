@@ -22,7 +22,7 @@ export default async function Reception({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ recues?: string; declinaisons?: string; erreur?: string }>;
+  searchParams: Promise<{ recues?: string; declinaisons?: string; erreur?: string; q?: string; produit?: string }>;
 }) {
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
@@ -33,6 +33,8 @@ export default async function Reception({
   if (error) throw new Error(`Catalogue illisible : ${error.message}`);
   const produits = data as ProduitReception[];
   const n = Number(messages.recues ?? 0);
+  // Venu de la fiche d'un produit : la réception faite, y revenir (un brouillon s'y met en vitrine).
+  const origine = messages.produit ? produits.find((p) => p.id === messages.produit) ?? null : null;
 
   return (
     <>
@@ -45,6 +47,9 @@ export default async function Reception({
         {n > 0 ? (
           <p className="message message-succes" role="status">
             Réception enregistrée : {n} pièce{n > 1 ? "s" : ""} sur {messages.declinaisons} déclinaison{Number(messages.declinaisons) > 1 ? "s" : ""}, au journal du stock.
+            {origine ? (
+              <>{" "}<Link href={`${catalogue}/${origine.id}#t-fiche`} autoFocus>{origine.publie ? `Retour à la fiche « ${origine.nom} »` : `« ${origine.nom} » : le mettre en vitrine`}</Link></>
+            ) : null}
           </p>
         ) : null}
         {messages.erreur ? <p className="message message-erreur" role="alert">{messages.erreur}</p> : null}
@@ -55,7 +60,8 @@ export default async function Reception({
             <p>Aucune déclinaison en vente pour le moment : créez d&apos;abord un produit.</p>
           </div>
         ) : (
-          <FormReception action={`${catalogue}/reception/action`} produits={produits} />
+          // ?q= : venu de la fiche d'un produit, la réception s'ouvre filtrée sur lui.
+          <FormReception action={`${catalogue}/reception/action`} produits={produits} filtreInitial={(messages.q ?? "").slice(0, 120)} produit={origine?.id ?? null} />
         )}
       </div>
     </>

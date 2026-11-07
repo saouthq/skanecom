@@ -6,6 +6,7 @@ import { ApercuDeclinaisons } from "@/components/console/ApercuDeclinaisons";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
 import { PEUT_MODIFIER } from "@/lib/gestion/catalogue";
+import { exemplesProduit } from "@/lib/gestion/exemples";
 
 export const metadata: Metadata = { title: "Nouveau produit" };
 
@@ -20,7 +21,12 @@ export default async function NouveauProduit({ params, searchParams }: {
   const { boutique } = await exigeMembre(slug);
   if (!PEUT_MODIFIER.includes(boutique.role)) redirect(`/gestion/${slug}/produits`);
   const sb = await clientSession();
-  const { data: cats } = await sb.from("categories").select("id, nom_fr, parent_id, position").eq("boutique_id", boutique.boutique_id).order("position");
+  const [{ data: cats }, { data: theme }] = await Promise.all([
+    sb.from("categories").select("id, nom_fr, parent_id, position").eq("boutique_id", boutique.boutique_id).order("position"),
+    sb.from("themes").select("code").eq("boutique_id", boutique.boutique_id).maybeSingle(),
+  ]);
+  // Les exemples parlent le métier de la boutique (sa structure), pas celui de Maymar.
+  const ex = exemplesProduit(theme?.code);
   const categories = (cats ?? []) as { id: string; nom_fr: string | null; parent_id: string | null }[];
   const nomDe = (c: { nom_fr: string | null; parent_id: string | null }) => {
     const parent = c.parent_id ? categories.find((p) => p.id === c.parent_id) : null;
@@ -39,7 +45,7 @@ export default async function NouveauProduit({ params, searchParams }: {
         {v.erreur ? <p className="message message-erreur" role="alert">{v.erreur}</p> : null}
         <div className="champ">
           <label htmlFor="nom">Nom du produit</label>
-          <input id="nom" name="nom" required maxLength={200} defaultValue={v.nom ?? ""} placeholder="Valise rigide ABS 4 roues" autoFocus />
+          <input id="nom" name="nom" required maxLength={200} defaultValue={v.nom ?? ""} placeholder={ex.nom} autoFocus />
         </div>
         <div className="deux-colonnes">
           <div className="champ">
@@ -63,12 +69,12 @@ export default async function NouveauProduit({ params, searchParams }: {
               <div className="champ">
                 <label htmlFor={`axe-nom-${i}`} className="sr-only">Axe {i + 1}</label>
                 <input id={`axe-nom-${i}`} name={`axe_nom_${i}`} maxLength={40} defaultValue={v[`axe_nom_${i}`] ?? ""}
-                  placeholder={["Taille", "Couleur", "Matière"][i]} />
+                  placeholder={ex.axes[i]} />
               </div>
               <div className="champ">
                 <label htmlFor={`axe-val-${i}`} className="sr-only">Valeurs de l&apos;axe {i + 1}</label>
                 <input id={`axe-val-${i}`} name={`axe_valeurs_${i}`} maxLength={600} defaultValue={v[`axe_valeurs_${i}`] ?? ""}
-                  placeholder={["Cabine 55 cm, Moyenne 65 cm", "Noir, Bleu nuit, Bordeaux", "ABS, Polycarbonate"][i]} />
+                  placeholder={ex.valeurs[i]} />
               </div>
             </div>
           ))}
@@ -77,8 +83,8 @@ export default async function NouveauProduit({ params, searchParams }: {
 
         <div className="champ">
           <label htmlFor="sku">Référence de base <span className="facultatif">(facultatif)</span></label>
-          <input id="sku" name="sku" maxLength={40} defaultValue={v.sku ?? ""} placeholder="VAL-ABS" />
-          <p className="aide">Chaque déclinaison reçoit la sienne : la base, puis trois lettres par valeur (VAL-ABS-CAB-NOI).</p>
+          <input id="sku" name="sku" maxLength={40} defaultValue={v.sku ?? ""} placeholder={ex.sku} />
+          <p className="aide">Chaque déclinaison reçoit la sienne : la base, puis trois lettres par valeur ({ex.skuDeclinaison}).</p>
         </div>
         <div className="carte-pied">
           <span className="aide">Tout se modifie ensuite sur la fiche.</span>

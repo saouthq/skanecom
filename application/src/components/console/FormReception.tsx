@@ -21,9 +21,13 @@ import type { ProduitReception } from "@/lib/gestion/reception";
 
 const QUANTITE = /^\d{1,6}$/;
 
-export function FormReception({ action, produits }: { action: string; produits: ProduitReception[] }) {
+export function FormReception({ action, produits, filtreInitial = "", produit = null }: {
+  action: string; produits: ProduitReception[]; filtreInitial?: string;
+  /** Venu de la fiche de ce produit : la réception faite, la page propose d'y revenir. */
+  produit?: string | null;
+}) {
   const [quantites, setQuantites] = useState<Record<string, string>>({});
-  const [filtre, setFiltre] = useState("");
+  const [filtre, setFiltre] = useState(filtreInitial);
 
   const cherche = filtre.trim().toLowerCase();
   const visibles = useMemo(
@@ -36,6 +40,8 @@ export function FormReception({ action, produits }: { action: string; produits: 
     [produits, cherche],
   );
 
+  // Venu de la fiche d'un produit (filtre posé d'avance) : le curseur attend dans sa première quantité.
+  const premiere = filtreInitial ? visibles[0]?.variantes[0]?.id : undefined;
   const saisies = Object.entries(quantites).filter(([, q]) => QUANTITE.test(q) && Number(q) > 0);
   const pieces = saisies.reduce((s, [, q]) => s + Number(q), 0);
   const invalides = Object.values(quantites).filter((q) => q !== "" && !QUANTITE.test(q)).length;
@@ -51,6 +57,7 @@ export function FormReception({ action, produits }: { action: string; produits: 
 
   return (
     <form method="post" action={action} className="rc-form" onReset={() => setQuantites({})}>
+      {produit ? <><input type="hidden" name="produit" value={produit} /><input type="hidden" name="filtre" value={filtreInitial} /></> : null}
       <div className="rc-filtre">
         <span className="bo-recherche-champ">
           <Icone nom="recherche" />
@@ -97,6 +104,7 @@ export function FormReception({ action, produits }: { action: string; produits: 
                       value={q}
                       onChange={(e) => setQuantites((avant) => ({ ...avant, [v.id]: e.target.value.replace(/\s/g, "") }))}
                       onKeyDown={suivante}
+                      autoFocus={v.id === premiere}
                       aria-label={`Quantité reçue : ${p.nom}${v.libelle ? `, ${v.libelle}` : ""}`}
                     />
                   </li>
