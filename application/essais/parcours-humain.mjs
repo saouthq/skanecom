@@ -246,7 +246,7 @@ if (section("1")) {
     note("INFO  ", `jauge : ${(await page.locator(".jauge-livraison p").innerText().catch(() => "(absente)")).trim()}`);
     await capture(page, "selma-tiroir-panier");
     await clic(page, page.locator(".tiroir-panier").getByRole("button", { name: /ajouter un article/i }));
-    verifie((await ligne.locator(".qte span").innerText()) === "2", "« + » dans le tiroir : 2");
+    verifie((await ligne.locator(".qte input").inputValue()) === "2", "« + » dans le tiroir : 2");
     // L'ajout en un geste : le sac n'a qu'une déclinaison ; la chemise a ses tailles.
     const ajoutSac = ensemble.getByRole("button", { name: "Ajouter Sac de voyage en cuir au panier" });
     verifie((await ajoutSac.count()) === 1, "le sac (une seule déclinaison) s'ajoute d'un geste, depuis le tiroir");
@@ -1043,7 +1043,7 @@ if (section("4")) {
   await etape("vis au détail : par 20 au moins", async () => {
     await page.keyboard.press("Escape");
     await page.goto(Q + "/produit/vis-bois-tete-fraisee", { waitUntil: "networkidle" });
-    const qte = () => page.locator(".achat .qte span").innerText().then((x) => x.trim());
+    const qte = () => page.locator(".achat .qte input").inputValue().then((x) => x.trim());
     verifie((await qte()) === "20" && (await page.locator(".achat .qte button").first().isDisabled()),
       "les vis au détail : le sélecteur part de 20 et « − » s'y arrête");
     verifie((await page.locator(".fiche-minimum").innerText()).includes("par 20 pièces au moins"), "la fiche dit le minimum, avec le prix du lot");

@@ -20,6 +20,7 @@ import { AlerteRetour } from "./AlerteRetour";
 import { AxesDeclinaison } from "./AxesDeclinaison";
 import { ContactProduit, lienWhatsappPiece, type ContactVente } from "./ContactProduit";
 import { OffresQuantite } from "./OffresQuantite";
+import { ChampQuantite } from "./ChampQuantite";
 import { paliersDe, totalAvecPaliers } from "@/lib/paliers";
 import type { CodeTheme } from "@/lib/theme";
 
@@ -290,7 +291,7 @@ export function FicheAchat({
           <button type="button" aria-label={t.produit.retirerUnArticle} disabled={quantite <= minimum} onClick={() => setQuantite((q) => Math.max(minimum, q - 1))}>
             −
           </button>
-          <span aria-live="polite">{quantite}</span>
+          <ChampQuantite valeur={quantite} minimum={minimum} maximum={plafond} libelle={t.produit.quantite} onChange={setQuantite} />
           <button type="button" aria-label={t.produit.ajouterUnArticle} disabled={quantite >= plafond} onClick={() => setQuantite((q) => Math.min(plafond, q + 1))}>
             +
           </button>

@@ -9,6 +9,7 @@ import { Tiroir } from "./Tiroir";
 import { ConfirmationAjout } from "./ConfirmationAjout";
 import { EnsembleDuPanier } from "./EnsembleDuPanier";
 import { CompleterLots, RemiseLot, useLotsDuPanier } from "./LotsDuPanier";
+import { ChampQuantite } from "./ChampQuantite";
 import { changeQuantitePanier, remetDansPanier, retireDuPanier, usePanier, usePanierLu } from "@/lib/panier";
 import { minimumLigne, nombreArticles, PANIER_AJOUT, PANIER_OUVRIR, totalLigne, totalMillimes, type AjoutAnnonce, type LignePanier } from "@/lib/panier-contrat";
 import { envole } from "@/lib/envol";
@@ -300,7 +301,8 @@ export function BoutonPanier({
                               onClick={() => (ligne.quantite <= 1 ? retirer(ligne) : changeQuantitePanier(ligne.varianteId, ligne.quantite - 1))}>
                         −
                       </button>
-                      <span>{ligne.quantite}</span>
+                      <ChampQuantite valeur={ligne.quantite} minimum={Math.max(1, minimum)} libelle={t.panier.quantiteDe(ligne.libelle)}
+                        onChange={(q) => changeQuantitePanier(ligne.varianteId, q)} />
                       <button type="button" aria-label={t.produit.ajouterUnArticle} onClick={() => changeQuantitePanier(ligne.varianteId, ligne.quantite + 1)}>
                         +
                       </button>

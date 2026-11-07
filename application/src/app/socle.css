@@ -127,12 +127,18 @@
 
 /* --- Quantité ----------------------------------------------------------- */
 .qte {
-  display: inline-grid; grid-template-columns: 44px 2.5rem 44px; align-items: center;
+  display: inline-grid; grid-template-columns: 44px 3rem 44px; align-items: center;
   border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux); background: var(--theme-surface);
 }
 .qte button { block-size: 46px; background: none; border: 0; cursor: pointer; font-size: 1.125rem; }
 .qte button:disabled { opacity: .3; cursor: not-allowed; }
 .qte span { text-align: center; font-variant-numeric: tabular-nums; }
+/* La quantité se tape (ChampQuantite) : un champ qui a l'air du chiffre. */
+.qte-saisie {
+  inline-size: 100%; min-inline-size: 0; block-size: 100%; padding: 0; border: 0; border-radius: 2px; background: none;
+  color: inherit; font: inherit; text-align: center; font-variant-numeric: tabular-nums; appearance: none;
+}
+.qte-saisie:focus-visible { outline: 2px solid var(--theme-encre); outline-offset: -2px; }
 
 /* --- Puces (filtres actifs) --------------------------------------------- */
 .puces { display: flex; flex-wrap: wrap; gap: .5rem; }
@@ -595,7 +601,7 @@ html[data-animations="non"] .tiroir-menu .tiroir-corps [style*="--i"] { animatio
 .panier-libelle:hover { text-decoration: underline; text-underline-offset: .2em; }
 .panier-ligne-tete .prix { font-size: .875rem; }
 .panier-ligne-actions { display: flex; align-items: center; gap: 1rem; margin-block-start: .5rem; }
-.qte-petite { grid-template-columns: 36px 2rem 36px; }
+.qte-petite { grid-template-columns: 36px 2.5rem 36px; }
 .qte-petite button { block-size: 34px; font-size: 1rem; }
 .panier-total { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: .875rem; }
 .tiroir-panier .tiroir-pied { display: grid; gap: .5rem; }

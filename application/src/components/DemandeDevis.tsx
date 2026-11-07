@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Coche } from "./Icones";
@@ -36,10 +36,27 @@ export function DemandeDevis({ boutiqueId, verification }: { boutiqueId: string;
   const numero = useTelephoneDuCompte(boutiqueId, Boolean(session));
   const numeroManque = numero.telephone === null;
 
+  // Connecté ICI (le code tapé sur cette page) : la connexion s'efface et
+  // emportait le focus ; il passe au premier champ de la demande.
+  const vientDeSeConnecter = useRef(false);
+  const dejaLue = useRef<boolean | undefined>(undefined);
   useEffect(() => {
-    const { data } = supabaseNavigateur().auth.onAuthStateChange((_evenement, s) => setSession(Boolean(s)));
+    const { data } = supabaseNavigateur().auth.onAuthStateChange((_evenement, s) => {
+      if (dejaLue.current === false && s) vientDeSeConnecter.current = true;
+      dejaLue.current = Boolean(s);
+      setSession(Boolean(s));
+    });
     return () => data.subscription.unsubscribe();
   }, []);
+  const numeroLu = numero.telephone !== undefined;
+  useEffect(() => {
+    // Le numéro du compte lu d'abord : s'il manque, son champ passe devant le message.
+    if (!session || !numeroLu || !vientDeSeConnecter.current) return;
+    vientDeSeConnecter.current = false;
+    const champ = document.querySelector<HTMLElement>(".devis-formulaire input:not([type=hidden]), .devis-formulaire textarea");
+    champ?.focus({ preventScroll: true });
+    champ?.scrollIntoView({ block: "center" });
+  }, [session, numeroLu]);
 
   async function envoyer(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -78,7 +95,8 @@ export function DemandeDevis({ boutiqueId, verification }: { boutiqueId: string;
     return (
       <div className="devis-envoyee" role="status">
         <span className="devis-envoyee-icone" aria-hidden="true"><Coche taille={26} /></span>
-        <h2>{t.devis.envoyee(envoyee)}</h2>
+        {/* Le formulaire s'efface : le focus repart de la confirmation. */}
+        <h2 tabIndex={-1} ref={(titre) => titre?.focus({ preventScroll: true })}>{t.devis.envoyee(envoyee)}</h2>
         <p className="legende">{t.devis.envoyeeTexte}</p>
         <Link className="btn btn-primaire" href="/compte">{t.devis.voirMesDevis}</Link>
       </div>

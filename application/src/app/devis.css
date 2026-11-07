@@ -31,6 +31,7 @@
   animation: panier-coche .5s cubic-bezier(.34, 1.5, .64, 1) backwards;
 }
 .devis-envoyee h2 { font-size: 1.25rem; }
+.devis-envoyee h2:focus { outline: none; }
 .devis-envoyee .legende { max-inline-size: 30rem; }
 
 /* Les lignes (page de demande et « Mes devis ») */

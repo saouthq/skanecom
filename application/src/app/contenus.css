@@ -126,9 +126,10 @@
   /* Pendant qu'on descend la page, il se retire : il ne couvre plus le « + »
      des cartes de droite ; il revient dès qu'on remonte. */
   html[data-defile="bas"] .whatsapp-flottant { transform: translateY(calc(100% + 2rem)); opacity: 0; pointer-events: none; }
-  /* En bas de page, le bouton ne cache plus les derniers liens du pied. */
-  html:has(.whatsapp-flottant) footer[data-zone="pied"] { padding-block-end: calc(4.5rem + env(safe-area-inset-bottom)); }
 }
+/* En bas de page, le bouton ne cache plus les derniers liens du pied (ni, à
+   l'ordinateur, la fin de la dernière ligne : « …toutes taxes comprises »). */
+html:has(.whatsapp-flottant) footer[data-zone="pied"] { padding-block-end: calc(4.5rem + env(safe-area-inset-bottom)); }
 /* Pendant la commande et sur sa page de fin : rien ne détourne de « Confirmer ». */
 html:has(.tunnel-page, .merci) .whatsapp-flottant { display: none; }
 /* La confirmation d'un ajout, en bas du téléphone : il s'efface le temps qu'elle est là. */

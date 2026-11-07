@@ -168,6 +168,10 @@
   .barre-comparaison { animation: bc-arrive .3s var(--theme-courbe) both; }
 }
 @keyframes bc-arrive { from { translate: 0 100%; } }
+/* La bulle WhatsApp se range au-dessus de la barre (elle passait dessous, à
+   l'ordinateur : on n'en voyait qu'un bord vert). Au téléphone, les onglets
+   ont leur propre règle, plus bas. */
+html:has(.barre-comparaison) .whatsapp-flottant { inset-block-end: calc(5.5rem + env(safe-area-inset-bottom)); transition: inset-block-end .3s var(--theme-courbe), transform .3s var(--theme-courbe), box-shadow .3s var(--theme-courbe); }
 .bc-pieces { display: flex; gap: .5rem; min-inline-size: 0; margin: 0; padding: 0; list-style: none; }
 .bc-pieces > li { position: relative; display: flex; align-items: center; gap: .5rem; min-inline-size: 0; padding: .25rem 2rem .25rem .25rem; border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-doux); max-inline-size: 14rem; }
 .bc-vignette { position: relative; flex: none; inline-size: 2.75rem; block-size: 2.75rem; overflow: hidden; border-radius: var(--theme-radius-net); background: var(--theme-surface-2); }
@@ -183,7 +187,10 @@
 @media (max-width: 899px) {
   .bc-pieces { gap: .75rem; }
   .bc-pieces > li { padding: .1875rem; max-inline-size: none; }
-  .bc-pieces > .bc-vide, .bc-nom, .bc-effacer, .bc-aide { display: none; }
+  .bc-pieces > .bc-vide, .bc-nom, .bc-effacer { display: none; }
+  /* Une seule pièce : la vignette seule ne disait pas ce qu'elle attend. */
+  .bc-actions:has(.bc-aide) { flex: 1 1 auto; min-inline-size: 0; justify-content: flex-end; }
+  .bc-aide { font-size: .8125rem; text-align: end; }
   .bc-retirer { inset: -.5rem -.5rem auto auto; inline-size: 1.5rem; block-size: 1.5rem; background: var(--theme-encre); color: var(--theme-surface); font-size: .875rem; line-height: 1; }
   .bc-vignette { inline-size: 2.5rem; block-size: 2.5rem; }
 }
@@ -245,6 +252,7 @@
 .cp-retirer { display: inline-block; margin-block-start: .375rem; color: var(--theme-encre-doux); font-size: .8125rem; text-decoration: underline; text-underline-offset: .2em; }
 .cp-prix .prix-fort { font-size: 1.25rem; font-weight: 800; }
 .cp-prix .ttc { margin-inline-start: .375rem; }
+.cp-prix .dès { margin-inline-end: .3rem; font-size: .8125rem; color: var(--theme-encre-doux); }
 .cp-note { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
 .cp-rien { color: var(--theme-encre-doux); }
 .cp-actions td { border-block-end: 0; }

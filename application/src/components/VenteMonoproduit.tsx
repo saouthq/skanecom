@@ -10,6 +10,7 @@ import { Tunnel } from "./Tunnel";
 import { Coche } from "./Icones";
 import { ContactProduit, type ContactVente } from "./ContactProduit";
 import { useSelection } from "./SelectionVariante";
+import { ChampQuantite } from "./ChampQuantite";
 import { ajouteAuPanier, annonceAjout } from "@/lib/panier";
 import { photoVisible } from "@/lib/envol";
 import { evenementPub } from "@/lib/pixels";
@@ -208,7 +209,7 @@ export function VenteMonoproduit({
                 <button type="button" aria-label={t.produit.retirerUnArticle} disabled={quantite <= minimum} onClick={() => setQuantite((q) => Math.max(minimum, q - 1))}>
                   −
                 </button>
-                <span aria-live="polite">{quantite}</span>
+                <ChampQuantite valeur={quantite} minimum={minimum} maximum={stock} libelle={t.produit.quantite} onChange={setQuantite} />
                 <button type="button" aria-label={t.produit.ajouterUnArticle} disabled={quantite >= stock} onClick={() => setQuantite((q) => Math.min(stock, q + 1))}>
                   +
                 </button>

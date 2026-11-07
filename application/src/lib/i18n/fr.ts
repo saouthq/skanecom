@@ -540,6 +540,7 @@ export const fr = {
     videTexte: "Les pièces que vous ajoutez se retrouvent ici.",
     retirer: (libelle: string) => `Retirer ${libelle}`,
     retirerCourt: "Retirer",
+    quantiteDe: (libelle: string) => `Quantité : ${libelle}`,
     retiree: (libelle: string) => `Retiré du panier : ${libelle}.`,
     annuler: "Annuler",
     annulerRetrait: (libelle: string) => `Annuler : remettre ${libelle} au panier`,

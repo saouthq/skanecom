@@ -211,6 +211,7 @@ export function Tunnel({
   // un formulaire incomplet, lui, met le focus sur le premier champ à reprendre.
   const focusAlerte = useRef(false);
   const focusApresConnexion = useRef(false);
+  const refChoixMode = useRef<HTMLDivElement>(null);
 
   // Les lignes : celles du panier ; au tunnel d'un devis ou d'un achat
   // express, celles que la base a relues (avec leurs prix), jamais
@@ -373,7 +374,10 @@ export function Tunnel({
   useEffect(() => {
     if (session && focusApresConnexion.current) {
       focusApresConnexion.current = false;
-      amene(session.telephone ? refs.current.nom : refs.current.telephone);
+      // Une boutique qui propose le retrait : d'abord le choix « domicile ou
+      // magasin » (au clavier, sauter au nom le faisait passer inaperçu).
+      const mode = refChoixMode.current?.querySelector<HTMLInputElement>("input:checked");
+      amene(session.telephone ? mode ?? refs.current.nom : refs.current.telephone);
     }
   }, [session]);
 
@@ -704,7 +708,7 @@ export function Tunnel({
             {t.commande.etapeLivraison}
           </legend>
           {retrait ? (
-            <div className="tunnel-choix" role="radiogroup" aria-label={t.commande.modeLivraison}>
+            <div ref={refChoixMode} className="tunnel-choix" role="radiogroup" aria-label={t.commande.modeLivraison}>
               <label className="tunnel-mode">
                 <input type="radio" name="mode-livraison" value="domicile" checked={!enRetrait} onChange={() => setMode("domicile")} />
                 <span className="tunnel-mode-corps">
