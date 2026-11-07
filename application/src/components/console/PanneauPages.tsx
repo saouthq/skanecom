@@ -55,17 +55,26 @@ export function PanneauPages({
 }) {
   const [annonce, setAnnonce] = useState("");
   const [souci, setSouci] = useState<string | null>(null);
+  // Le bouton pressé disparaît avec la vue (« Créer la page », une ligne de
+  // la liste, « Toutes les pages ») : le curseur tombait sur la page. Il suit
+  // le geste — jamais quand l'aperçu change de page tout seul.
+  const rendre = useRef<string | null>(null);
+  const prend = (cle: string) => (el: HTMLElement | null) => {
+    if (el && rendre.current === cle) { rendre.current = null; el.focus(); }
+  };
+  const aller = (id: string | null, cle: string) => { rendre.current = cle; ouvrir(id); };
   const page = pages.find((p) => p.id === courante) ?? null;
   if (courante === "nouvelle" || courante?.startsWith("modele:")) {
     const modele = courante.startsWith("modele:") ? modeles.find((m) => `modele:${m.cle}` === courante) ?? null : null;
-    return <NouvellePage key={courante} modele={modele} affichee={affichee} ecrit={ecrit} retour={() => ouvrir(null)} creer={creer} ouvrir={ouvrir} />;
+    return <NouvellePage key={courante} modele={modele} affichee={affichee} ecrit={ecrit} retour={() => aller(null, courante)} creer={creer} ouvrir={(id) => aller(id, "ecriture")} />;
   }
   if (page) {
     return (
-      <Ecriture key={`${page.id}-${generation}`} page={page} affichee={affichee} ecrit={ecrit} retour={() => ouvrir(null)} ecrire={ecrire} videurRef={videurRef}
+      <Ecriture key={`${page.id}-${generation}`} page={page} affichee={affichee} ecrit={ecrit} retour={() => aller(null, `page:${page.slug}`)} ecrire={ecrire} videurRef={videurRef}
+        titreRef={prend("ecriture")}
         retirer={async () => {
           const r = await retirer(page);
-          if (!r) { ouvrir(null); setAnnonce(`« ${(page.brouillon ?? page.en_ligne).titre_fr} » retirée de la boutique.`); }
+          if (!r) { aller(null, "liste"); setAnnonce(`« ${(page.brouillon ?? page.en_ligne).titre_fr} » retirée de la boutique.`); }
           return r;
         }} />
     );
@@ -93,7 +102,7 @@ export function PanneauPages({
     <div className="pp-pages">
       <p className="sr-only" aria-live="polite">{annonce}</p>
       <section className="carte ap-groupe" aria-labelledby="pp-t-liste">
-        <h2 id="pp-t-liste">Les pages de la boutique</h2>
+        <h2 id="pp-t-liste" tabIndex={-1} ref={prend("liste")}>Les pages de la boutique</h2>
         {pages.length ? (
           <ul className="pp-liste" role="list">
             {pages.map((p, i) => {
@@ -101,7 +110,7 @@ export function PanneauPages({
               const changee = p.brouillon !== null && !memes(p.brouillon, p.en_ligne);
               return (
                 <li key={p.id} className="pp-item" data-page={p.slug}>
-                  <button type="button" className="pp-ligne" onClick={() => ouvrir(p.id)}>
+                  <button type="button" className="pp-ligne" ref={prend(`page:${p.slug}`)} onClick={() => aller(p.id, "ecriture")}>
                     <span className="pp-ligne-texte">
                       <b>{vue.titre_fr}</b>
                       <span className="aide">/{p.slug}{vue.genre === "questions" ? " · questions-réponses" : ""}{vue.dans_pied ? " · au pied de page" : ""}</span>
@@ -141,14 +150,14 @@ export function PanneauPages({
           <ul className="pp-modeles" role="list">
             {libres.map((m) => (
               <li key={m.cle}>
-                <button type="button" className="ac-modele" onClick={() => ouvrir(`modele:${m.cle}`)}>
+                <button type="button" className="ac-modele" ref={prend(`modele:${m.cle}`)} onClick={() => ouvrir(`modele:${m.cle}`)}>
                   <span className="ac-modele-texte"><b>{m.titre}</b><span className="aide">{m.resume}</span></span>
                   <span className="ac-modele-plus" aria-hidden="true"><Icone nom="plus" taille={14} /></span>
                 </button>
               </li>
             ))}
             <li>
-              <button type="button" className="ac-modele" onClick={() => ouvrir("nouvelle")}>
+              <button type="button" className="ac-modele" ref={prend("nouvelle")} onClick={() => ouvrir("nouvelle")}>
                 <span className="ac-modele-texte"><b>Une page vide</b><span className="aide">Un guide des tailles, l&apos;entretien, vos boutiques…</span></span>
                 <span className="ac-modele-plus" aria-hidden="true"><Icone nom="plus" taille={14} /></span>
               </button>
@@ -175,11 +184,13 @@ export function PanneauPages({
 }
 
 /** L'écriture d'une page : chaque frappe part dans son brouillon, une seconde plus tard. */
-function Ecriture({ page, affichee, ecrit, retour, ecrire, retirer, videurRef }: {
+function Ecriture({ page, affichee, ecrit, retour, ecrire, retirer, videurRef, titreRef }: {
   page: PageEditeur;
   affichee: string | null;
   ecrit: boolean;
   retour: () => void;
+  /** Le titre de la page : il prend le focus quand on vient de l'ouvrir ou de la créer. */
+  titreRef: (el: HTMLElement | null) => void;
   ecrire: (page: PageEditeur, contenu: ContenuPage | null) => Promise<Refus>;
   retirer: () => Promise<string | null>;
   videurRef: RefObject<(() => Promise<void>) | null>;
@@ -232,7 +243,7 @@ function Ecriture({ page, affichee, ecrit, retour, ecrire, retirer, videurRef }:
     <div className="pp-ecriture">
       <button type="button" className="btn btn-fantome btn-petit pp-retour" onClick={retour}><Icone nom="gauche" /> Toutes les pages</button>
       <section className="carte ap-groupe" aria-labelledby="pp-t-page">
-        <h2 id="pp-t-page">{c.titre_fr.trim() || "La page"}</h2>
+        <h2 id="pp-t-page" tabIndex={-1} ref={titreRef}>{c.titre_fr.trim() || "La page"}</h2>
         <p className="aide pp-adresse">{affichee ?? ""}/{page.slug}</p>
         <fieldset className="ac-champs" disabled={!ecrit}>
           <legend className="sr-only">La page « {c.titre_fr} »</legend>
@@ -378,7 +389,7 @@ function NouvellePage({ modele, affichee, ecrit, retour, creer, ouvrir }: {
         </fieldset>
         {refus && !refus.champ ? <p className="pg-erreur" role="alert">{refus.texte}</p> : null}
         <button type="button" className="btn btn-primaire" disabled={!ecrit || envoi} aria-busy={envoi || undefined} onClick={() => void valider()}><Icone nom="plus" /> Créer la page</button>
-        <p className="aide">Elle s&apos;ouvre aussitôt à côté, dans l&apos;aperçu ; elle reste hors ligne jusqu&apos;à « Publier ».</p>
+        <p className="aide">Elle s&apos;ouvre aussitôt dans l&apos;aperçu ; elle reste hors ligne jusqu&apos;à « Publier ».</p>
       </section>
     </div>
   );

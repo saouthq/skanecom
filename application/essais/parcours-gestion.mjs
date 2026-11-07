@@ -1602,6 +1602,8 @@ if (section("4")) {
     await clic(page, page.getByRole("button", { name: "Créer la page" }));
     const corps = page.locator("#pp-corps");
     await corps.waitFor({ timeout: 10000 });
+    verifie(await attend(() => page.evaluate(() => document.activeElement?.id === "pp-t-page"), 3000),
+      "créée : le curseur est sur le titre de la page (le bouton disparu, il tombait sur la page entière)");
     verifie((await corps.inputValue()).includes("au magasin de Sfax"), "le texte vient des réglages : le retrait au magasin de Sfax");
     verifie(((await corps.inputValue()).split("## Retrait")[0].match(/dès \S+\sTND/g) ?? []).length === 1, "le seuil de la livraison offerte n'y est dit qu'une fois");
     await page.locator("#pp-titre").press("Enter");
