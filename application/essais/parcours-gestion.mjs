@@ -2998,6 +2998,17 @@ if (section("8")) {
     verifie(/Vendue au comptoir/.test(await page.locator(".bo-fiche-tete").innerText()) && /Retirée/.test(await statut(page)), "la vente est remise, payée, close");
     verifie(/Remise au client, payée au comptoir/.test(await page.locator("main").innerText()), "l'historique le dit");
     await capture(page, "gestion-saisie-comptoir");
+    // Le client attend son papier : « Imprimer le reçu » a le focus, Entrée l'ouvre.
+    const recu = page.getByRole("link", { name: "Imprimer le reçu" });
+    verifie(await recu.evaluate((e) => e === document.activeElement).catch(() => false), "après la vente, le focus est sur « Imprimer le reçu »");
+    await page.keyboard.press("Enter");
+    await page.locator(".rcu").waitFor({ timeout: 15000 });
+    const papier = await page.locator(".rcu").innerText();
+    verifie(/Reçu/i.test(papier) && /Hédi Mansour/.test(papier) && /Business/i.test(papier) && /Total TTC/.test(papier) && /Payé au comptoir le/.test(papier) && /ne vaut pas facture/.test(papier),
+      "le reçu : le client, l'article, le total, payé au comptoir — et qu'il ne vaut pas facture");
+    verifie(await page.locator(".rcu-logo").evaluate((i) => i.getBoundingClientRect().height > 10).catch(() => false), "le logo de la boutique, à sa taille");
+    verifie(await page.getByRole("button", { name: "Imprimer le reçu" }).isVisible(), "un bouton l'imprime");
+    await capture(page, "gestion-recu-comptoir");
     await page.goto(`${C}/gestion/maymar/tableau`, { waitUntil: "networkidle" });
     const canaux = page.locator("section", { has: page.getByRole("heading", { name: "D'où viennent les commandes" }) });
     const texte = await canaux.innerText().catch(() => "");

@@ -405,11 +405,19 @@ export default async function FicheCommande({
           </>
         }
         actions={
-          !retrait && ["confirmee", "expediee"].includes(f.statut) ? (
-            <Link href={`/gestion/${slug}/bordereaux?n=${encodeURIComponent(f.numero)}`} className="btn btn-second">
-              <Icone nom="fichier" /> Bordereau
-            </Link>
-          ) : null
+          f.statut === "annulee" || f.statut === "refusee" ? null : (
+            <>
+              {!retrait && ["confirmee", "expediee"].includes(f.statut) ? (
+                <Link href={`/gestion/${slug}/bordereaux?n=${encodeURIComponent(f.numero)}`} className="btn btn-second">
+                  <Icone nom="fichier" /> Bordereau
+                </Link>
+              ) : null}
+              {/* Le reçu à remettre au client (au comptoir, dans le colis, au retrait). */}
+              <Link href={`/gestion/${slug}/commandes/${f.numero}/recu`} className="btn btn-second">
+                <Icone nom="fichier" /> Reçu
+              </Link>
+            </>
+          )
         }
       />
 
@@ -432,7 +440,14 @@ export default async function FicheCommande({
           <p className="message message-succes bo-message" role="status">
             <span>
               {fait}{" "}
-              {messages.fait === "saisie" || messages.fait === "comptoir"
+              {messages.fait === "comptoir"
+                ? <>
+                    {/* Au comptoir, le client attend son papier : le reçu d'abord, le focus dessus. */}
+                    <Link href={`/gestion/${slug}/commandes/${f.numero}/recu`} autoFocus>Imprimer le reçu</Link>
+                    {" · "}
+                    <Link href={`/gestion/${slug}/commandes/nouvelle`}>Saisir une autre commande</Link>
+                  </>
+                : messages.fait === "saisie"
                 ? <Link href={`/gestion/${slug}/commandes/nouvelle`}>Saisir une autre commande</Link>
                 : messages.fait && SUITE[messages.fait]
                   ? <Link href={`/gestion/${slug}?etape=${SUITE[messages.fait][0]}`}>{SUITE[messages.fait][1]}</Link>

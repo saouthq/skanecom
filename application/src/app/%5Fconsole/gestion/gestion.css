@@ -767,6 +767,49 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
   .bdx:nth-child(even) { break-after: page; }
 }
 
+/* ---- Le reçu d'une commande (A5, fluide : un rouleau de 80 mm le prend en largeur) ---- */
+.rcu {
+  display: grid; gap: 5mm; inline-size: min(100%, 148mm); margin-inline: auto; padding: 8mm;
+  background: #fff; color: #111; border: 1px solid var(--ui-bord); border-radius: 4px; box-shadow: var(--ui-ombre-s);
+  font-size: 10pt; line-height: 1.4;
+}
+.rcu p { margin: 0; }
+.rcu .prix, .rcu .prix * { color: inherit !important; }
+.rcu-tete { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3mm 6mm; padding-block-end: 4mm; border-block-end: 1.5px solid #111; }
+.rcu-vendeur { display: grid; gap: .5mm; min-inline-size: 0; font-size: 9pt; color: #333; }
+.rcu-nom { font-size: 13pt; font-weight: 700; color: #111; }
+.rcu-logo { display: block; max-inline-size: 100%; block-size: auto; margin-block-end: 1.5mm; object-fit: contain; object-position: left center; }
+.rcu-logo-mono { filter: brightness(0); }
+.rcu-ref { text-align: end; font-size: 9pt; color: #333; }
+.rcu-titre { font-size: 8pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #555; }
+.rcu-num { font-size: 13pt; font-weight: 800; color: #111; }
+.rcu-client { display: grid; gap: 1mm; }
+.rcu-etiquette { font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #555; margin-inline-end: 2mm; }
+.rcu-lignes { inline-size: 100%; border-collapse: collapse; font-size: 9.5pt; }
+.rcu-lignes th { padding-block-end: 1.5mm; border-block-end: 1px solid #111; font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #555; text-align: start; }
+.rcu-lignes td { padding-block: 2mm; border-block-end: 1px solid #ddd; vertical-align: top; }
+.rcu-lignes th:not(:first-child), .rcu-lignes td:not(:first-child) { text-align: end; white-space: nowrap; padding-inline-start: 3mm; font-variant-numeric: tabular-nums; }
+.rcu-detail { display: block; font-size: 8pt; color: #555; }
+.rcu-sku { white-space: nowrap; }
+.rcu-pu { display: none; }
+.rcu { container-type: inline-size; }
+@container (max-width: 440px) {
+  .rcu-lignes th:nth-child(3), .rcu-lignes td:nth-child(3) { display: none; }
+  .rcu-pu { display: block; }
+}
+.rcu-totaux { display: grid; gap: 1mm; margin: 0; margin-inline-start: auto; inline-size: min(100%, 75mm); font-size: 9.5pt; }
+.rcu-totaux > div { display: flex; justify-content: space-between; gap: 4mm; }
+.rcu-totaux dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rcu-total { margin-block-start: 1mm; padding-block-start: 2mm; border-block-start: 1.5px solid #111; font-size: 12pt; font-weight: 800; }
+.rcu-paiement { padding: 2.5mm 3mm; border: 1.5px solid #111; border-radius: 2mm; font-weight: 600; text-align: center; }
+.rcu-paye { background: #111; color: #fff; }
+.rcu-pied { display: grid; gap: .5mm; padding-block-start: 3mm; border-block-start: 1px dashed #999; font-size: 8.5pt; color: #444; text-align: center; }
+@media print {
+  .rcu-ecran { display: none !important; }
+  .rcu { inline-size: min(100%, 148mm); margin: 0 auto; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .rcu-paye { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+
 /* ---- La veille : compteur des commandes à confirmer, alertes ---- */
 /* (le compteur lui-même, .app-nav-compte, est dans la feuille de la console : la console a aussi le sien) */
 /* Ce qui tourne sans attendre personne (des prix barrés en cours) : en vert, pas en alerte. */
