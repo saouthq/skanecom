@@ -186,7 +186,9 @@ function CarteCode({ x, boutique, vitrine, maintenant, regle, action }: {
               </form>
             ) : null}
             {!x.a_servi ? (
-              <form action={action} method="post">
+              // Un code peut déjà circuler (une carte dans les colis, une story) : on demande d'abord.
+              <form action={action} method="post"
+                    data-confirmer={`Retirer le code ${x.code} ? Il disparaît : un client qui l'a encore (une carte, une story) le verra refusé. « Couper » le suspend sans le perdre.`}>
                 <input type="hidden" name="geste" value="retirer" />
                 <input type="hidden" name="code_id" value={x.id} />
                 <button className="btn btn-danger"><Icone nom="corbeille" taille={14} /> Retirer</button>

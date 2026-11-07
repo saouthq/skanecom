@@ -166,7 +166,8 @@ function CarteLot({ lot, regle, action, produits }: {
             <input type="hidden" name="lot_id" value={lot.id} />
             <button className="btn btn-second">{lot.actif ? "Couper" : "Remettre en vente"}</button>
           </form>
-          <form action={action} method="post">
+          <form action={action} method="post"
+                data-confirmer={`Retirer le pack « ${lot.nom} » ? Il disparaît et ne reviendra pas. « Couper » le retire de la vente sans le perdre.`}>
             <input type="hidden" name="geste" value="retirer" />
             <input type="hidden" name="lot_id" value={lot.id} />
             <button className="btn btn-danger"><Icone nom="corbeille" taille={14} /> Retirer</button>

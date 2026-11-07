@@ -1710,6 +1710,13 @@ if (section("4bis")) {
       return Boolean(e?.textContent?.includes("existe déjà") && r && r.top >= 0 && r.bottom <= innerHeight);
     });
     verifie(rappel, "le refus, affiché en tête de page hors de l'écran, est redit près du bouton");
+    // Retirer ne se défait pas (le code peut circuler) : la page demande ; « Annuler » le garde, « OK » le retire.
+    let question = null;
+    page.once("dialog", (d) => { question = d.message(); d.dismiss(); });
+    await clic(page, carte("RENTREE15").getByRole("button", { name: "Retirer" }));
+    await pause(600);
+    verifie(/Retirer le code RENTREE15 \?/.test(question ?? "") && (await carte("RENTREE15").count()) === 1, `retirer demande d'abord (« ${question} ») ; « Annuler » le garde`);
+    page.once("dialog", (d) => d.accept());
     await t.envoie(page, carte("RENTREE15").getByRole("button", { name: "Retirer" }));
     verifie((await carte("RENTREE15").count()) === 0 && (await page.locator(".message-succes").first().innerText()).includes("retiré"), "jamais servi : il se retire");
     const r = await posteBrut(ctx, "/gestion/maison-selma/promotions/action", { geste: "enregistrer", code: "ENORME", type: "pourcentage", valeur: "95" });
