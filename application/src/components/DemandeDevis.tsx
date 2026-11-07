@@ -98,7 +98,7 @@ export function DemandeDevis({ boutiqueId, verification }: { boutiqueId: string;
         {/* Le formulaire s'efface : le focus repart de la confirmation. */}
         <h2 tabIndex={-1} ref={(titre) => titre?.focus({ preventScroll: true })}>{t.devis.envoyee(envoyee)}</h2>
         <p className="legende">{t.devis.envoyeeTexte}</p>
-        <Link className="btn btn-primaire" href="/compte">{t.devis.voirMesDevis}</Link>
+        <Link className="btn btn-primaire" href="/compte#mes-devis">{t.devis.voirMesDevis}</Link>
       </div>
     );
   }

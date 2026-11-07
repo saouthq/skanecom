@@ -76,7 +76,9 @@ export type Devis = {
    *  arrivage qu'elle attend est là (sa date prévue). */
   precommande?: { date_prevue: string } | null;
   /** Au tunnel d'un devis (module devis) : son numéro, sa validité, la note. */
-  devis?: { numero: string; valide_jusqu_au: string; note: string | null };
+  devis?: { numero: string; valide_jusqu_au: string; note: string | null;
+    /** Les frais fixés par le devis : null = ceux de la zone, 0 = offerte. */
+    frais_livraison_millimes?: number | null };
   /** Le code promo tapé (module promotions) : appliqué, ou pourquoi pas. */
   code?: CodeDevis | null;
   /** Ce que le code retire (déjà déduit de total_millimes). */

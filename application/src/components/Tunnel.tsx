@@ -713,7 +713,13 @@ export function Tunnel({
                 <input type="radio" name="mode-livraison" value="domicile" checked={!enRetrait} onChange={() => setMode("domicile")} />
                 <span className="tunnel-mode-corps">
                   <strong>{t.commande.modeDomicile}</strong>
-                  <span className="legende">{t.commande.modeDomicileTexte}</span>
+                  <span className="legende">
+                    {/* Au tunnel d'un devis, les frais convenus (le récapitulatif disait
+                        « Offerte » pendant que la carte parlait de gouvernorat). */}
+                    {typeof devis?.devis?.frais_livraison_millimes === "number"
+                      ? t.commande.modeDomicileDevis(devis.devis.frais_livraison_millimes === 0 ? null : formatePrix(devis.devis.frais_livraison_millimes))
+                      : t.commande.modeDomicileTexte}
+                  </span>
                 </span>
                 <Camion taille={22} />
               </label>

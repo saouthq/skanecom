@@ -660,6 +660,8 @@ export const fr = {
     modeLivraison: "Mode de livraison",
     modeDomicile: "Livraison à domicile",
     modeDomicileTexte: "Partout en Tunisie. Les frais dépendent du gouvernorat.",
+    modeDomicileDevis: (frais: string | null) =>
+      frais ? `Partout en Tunisie, pour ${frais} : les frais convenus au devis.` : "Partout en Tunisie. Livraison offerte, comme convenu au devis.",
     modeRetrait: "Retrait en magasin",
     modeRetraitTexte: (ville: string, pret: string) => `Au magasin de ${ville}. ${pret}.`,
     gratuit: "Gratuit",

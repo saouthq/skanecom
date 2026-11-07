@@ -52,6 +52,9 @@
   animation: fiche-livraison-arrive .45s var(--theme-courbe) backwards;
 }
 .devis-mes h2 { font-size: 1.0625rem; }
+.devis-mes h2:focus { outline: none; }
+/* Sous l'en-tête collant, quand « Voir mes devis » l'amène à l'écran. */
+.devis-mes { scroll-margin-block-start: 9rem; }
 .devis-mes > ul { display: grid; gap: .875rem; margin: 0; padding: 0; list-style: none; }
 .devis-carte { display: grid; gap: .75rem; padding-block-start: .875rem; border-block-start: 1px solid var(--theme-filet); }
 .devis-carte:first-child { border-block-start: 0; padding-block-start: 0; }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Prix } from "./Prix";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
@@ -61,10 +61,20 @@ export function MesDevis({ boutiqueId }: { boutiqueId: string }) {
     };
   }, [boutiqueId, relecture]);
 
+  // Arrivé par « Voir mes devis » (/compte#mes-devis) : la section, chargée
+  // après la page, est amenée à l'écran une fois là, son titre au focus.
+  const amenee = useRef(false);
+  const amene = (titre: HTMLHeadingElement | null) => {
+    if (!titre || amenee.current || window.location.hash !== "#mes-devis") return;
+    amenee.current = true;
+    titre.focus({ preventScroll: true });
+    titre.closest("section")?.scrollIntoView({ block: "start" });
+  };
+
   if (devis.length === 0) return null;
   return (
-    <section className="devis-mes" aria-labelledby="devis-mes-titre">
-      <h2 id="devis-mes-titre">{t.devis.mesDevis}</h2>
+    <section id="mes-devis" className="devis-mes" aria-labelledby="devis-mes-titre">
+      <h2 id="devis-mes-titre" tabIndex={-1} ref={amene}>{t.devis.mesDevis}</h2>
       <ul role="list">
         {devis.map((d) => (
           <CarteDevis key={d.numero} d={d} boutiqueId={boutiqueId} relire={() => setRelecture((n) => n + 1)} />

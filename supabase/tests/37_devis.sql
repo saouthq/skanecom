@@ -4,7 +4,7 @@
 begin;
 \ir outils.psql
 
-select plan(64);
+select plan(66);
 
 create function tests.indice(p_sql text) returns text
 language plpgsql as $$
@@ -133,6 +133,8 @@ select results_eq($$ select d ->> 'tarif', (d ->> 'complet')::boolean, (d ->> 's
                             (d ->> 'frais_livraison_millimes')::bigint, (d ->> 'total_millimes')::bigint
                        from (select public.chiffre_devis(tests.id('A'), 'DEV-00001', 'tunis') d) q $$,
   $$ values ('devis'::text, true, 2060000::bigint, 0::bigint, 2060000::bigint) $$, 'le tunnel chiffre au devis : ses prix, ses frais');
+select is((public.chiffre_devis(tests.id('A'), 'DEV-00001') -> 'devis' ->> 'frais_livraison_millimes')::bigint, 0::bigint,
+  'le tunnel sait, avant même le gouvernorat, que le devis offre la livraison');
 select is(public.devis_commande(tests.id('A'), pg_temp.panier(), 'tunis') ->> 'tarif', 'public',
   'le même panier hors devis : le prix public (le devis ne fuit pas)');
 select ok((select (r ->> 'numero') is not null from (select pg_temp.accepte('DEV-00001', 'essai-devis-accepte-000001') r) q),
@@ -190,6 +192,8 @@ select is((select (r ->> 'frais_livraison_millimes')::bigint = public.frais_livr
                     and r ->> 'tarif' = 'devis'
                from (select public.chiffre_devis(tests.id('A'), 'DEV-00002', 'tunis') r) q), true,
   'les frais de la zone s''appliquent, au tarif du devis');
+select is(public.chiffre_devis(tests.id('A'), 'DEV-00002', 'tunis') -> 'devis' -> 'frais_livraison_millimes', 'null'::jsonb,
+  '… et que ce devis-là laisse les frais à la boutique');
 
 -- ---------------------------------------------------------------------
 -- Expiré, refusé, annulé, trop, bloqué
