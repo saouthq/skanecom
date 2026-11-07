@@ -46,7 +46,7 @@ export function messageLots(indice: string | undefined, message: string): string
     case "role":
       return "Votre rôle dans l'équipe ne permet pas ce geste : un pack est un prix, il revient à la direction.";
     case "module":
-      return "Les promotions ne sont pas ouvertes pour cette boutique : elles s'activent depuis la console SkanEcom.";
+      return "Les promotions ne sont pas ouvertes pour cette boutique : SkanEcom les ouvre sur demande.";
     case "introuvable":
       return "Ce pack n'existe plus dans cette boutique.";
     case "produits":

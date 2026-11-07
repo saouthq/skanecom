@@ -413,7 +413,7 @@ export function messageAccueil(indice: string | undefined, message: string): str
     case "vide":
       return "L'accueil garde une section au moins.";
     case "theme":
-      return "La boutique n'a pas encore de thème : la console le pose à sa mise en place.";
+      return "La boutique n'a pas encore de thème : SkanEcom le pose à sa mise en place.";
     case "section":
       return `Une section n'a pas été acceptée (${message.replace(/^themes\.sections : /, "")}).`;
     default:

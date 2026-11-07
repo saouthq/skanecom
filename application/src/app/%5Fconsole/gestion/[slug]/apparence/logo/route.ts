@@ -104,7 +104,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (error) {
     if (depose) await retirerFichier(depose).catch(() => {});
     const texte = error.hint === "version"
-      ? "L'apparence a changé entre-temps (un collègue, la console) : rechargez la page, puis recommencez."
+      ? "L'apparence a changé entre-temps (un collègue, SkanEcom) : rechargez la page, puis recommencez."
       : error.hint === "role" ? "Seuls le propriétaire et l'administrateur posent le logo." : error.message;
     return reponse(false, texte);
   }

@@ -7,7 +7,7 @@ import { slug } from "@/lib/console/import";
    ========================================================================== */
 
 export const FILTRES_CATALOGUE = [
-  { cle: "tous", libelle: "Tous", vide: "Aucun produit pour le moment. Créez le premier, ou importez un catalogue depuis la console." },
+  { cle: "tous", libelle: "Tous", vide: "Aucun produit pour le moment. Créez le premier ; tout un catalogue en fichier, SkanEcom vous l'importe." },
   { cle: "publies", libelle: "En vitrine", vide: "Aucun produit en vitrine." },
   { cle: "brouillons", libelle: "Brouillons", vide: "Aucun brouillon : tout est en vitrine." },
   { cle: "stock_bas", libelle: "Stock bas", vide: "Aucune déclinaison sous son seuil d'alerte." },

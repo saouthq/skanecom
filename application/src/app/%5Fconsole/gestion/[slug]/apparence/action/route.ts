@@ -44,10 +44,10 @@ function message(indice: string | undefined, texte: string, geste: string): stri
       return "Seuls le propriétaire et l'administrateur règlent l'apparence.";
     case "version":
       return geste === "publier"
-        ? "L'apparence publiée a changé entre-temps (un collègue, la console) : rechargez la page. Votre essai reste dans le brouillon."
+        ? "L'apparence publiée a changé entre-temps (un collègue, SkanEcom) : rechargez la page. Votre essai reste dans le brouillon."
         : "Un collègue a modifié le brouillon entre-temps : rechargez la page pour repartir du sien.";
     case "theme":
-      return "La boutique n'a pas encore de thème : la console le pose à sa mise en place.";
+      return "La boutique n'a pas encore de thème : SkanEcom le pose à sa mise en place.";
     case "forme":
       return `Un réglage n'a pas été accepté (${texte.replace(/^themes\.\w+ : /, "")}) : rechargez la page.`;
     case "vide":

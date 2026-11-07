@@ -104,7 +104,7 @@ export function messagePromotions(indice: string | undefined, message: string): 
     case "role":
       return "Votre rôle dans l'équipe ne permet pas ce geste : un code promo est un prix, il revient à la direction.";
     case "module":
-      return "Les codes promo ne sont pas ouverts pour cette boutique : ils s'activent depuis la console SkanEcom.";
+      return "Les codes promo ne sont pas ouverts pour cette boutique : SkanEcom les ouvre sur demande.";
     case "introuvable":
       return "Ce code n'existe plus dans cette boutique.";
     default:
@@ -162,7 +162,7 @@ export function messagePrixBarres(indice: string | undefined, message: string): 
     case "role":
       return "Votre rôle dans l'équipe ne permet pas ce geste : des prix barrés sont des prix, ils reviennent à la direction.";
     case "module":
-      return "Les promotions ne sont pas ouvertes pour cette boutique : elles s'activent depuis la console SkanEcom.";
+      return "Les promotions ne sont pas ouvertes pour cette boutique : SkanEcom les ouvre sur demande.";
     case "introuvable":
       return "Cette opération n'existe plus dans cette boutique.";
     case "etat":

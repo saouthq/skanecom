@@ -239,7 +239,11 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
   const allumees = fonctions.filter((c) => Boolean(v(c))).length;
   const reseaux = ["contact.instagram", "contact.facebook", "contact.tiktok"].filter((c) => texteDe(c)).length;
   const sansContact = !texteDe("contact.whatsapp") && !texteDe("contact.telephone");
-  const attentions: { groupe: Groupe; ancre?: string; texte: string }[] = [
+  // Le premier jour d'une boutique : rien à vendre encore — la liste n'en disait rien (ce n'est pas un réglage).
+  const { count: enVitrine } = await sb.from("produits").select("id", { count: "exact", head: true })
+    .eq("boutique_id", boutique.boutique_id).eq("publie", true);
+  const attentions: { groupe: Groupe | null; ancre?: string; href?: string; texte: string }[] = [
+    ...(!enVitrine ? [{ groupe: null, href: `/gestion/${slug}/produits`, texte: "Aucun produit en vitrine : ajoutez vos premiers produits au catalogue" }] : []),
     ...(manquants.length ? [{ groupe: "legal" as Groupe, texte: `Informations légales : ${manquants.join(", ")}` }] : []),
     ...(sansContact ? [{ groupe: "contact" as Groupe, texte: "Aucun numéro pour vous joindre : ni WhatsApp, ni téléphone" }] : []),
     ...(retraitIncomplet ? [{ groupe: "livraison" as Groupe, ancre: "retrait", texte: "Retrait en magasin : l'adresse ou la ville du magasin manque" }] : []),
@@ -309,7 +313,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
               <h2 id="t-attention"><Icone nom="alerte" /> À régler avant d&apos;ouvrir</h2>
               <ul role="list">
                 {attentions.map((a) => (
-                  <li key={a.texte}><Link href={lien(a.groupe, a.ancre)}>{a.texte}</Link></li>
+                  <li key={a.texte}><Link href={a.href ?? lien(a.groupe!, a.ancre)}>{a.texte}</Link></li>
                 ))}
               </ul>
             </section>
