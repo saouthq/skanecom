@@ -128,6 +128,7 @@ export function Tunnel({
   express = null,
   codesPromo = false,
   relancePaniers = false,
+  contact = null,
   factureSociete = false,
   integre = false,
 }: {
@@ -154,6 +155,8 @@ export function Tunnel({
   codesPromo?: boolean;
   /** Réglage `commande.relance_paniers` : le tunnel prévient qu'un panier laissé peut être rappelé, une fois. */
   relancePaniers?: boolean;
+  /** Joindre la boutique (WhatsApp, sinon le téléphone) : un numéro refusé à la commande a de quoi le faire. */
+  contact?: { whatsapp: string | null; telephone: string | null } | null;
   /** Réglage `commande.facture_societe` : la facture au nom d'une société (raison sociale, matricule, adresse). */
   factureSociete?: boolean;
   /** Posé sur la page de vente : « la commande ouverte » (le pixel, l'étape
@@ -168,6 +171,8 @@ export function Tunnel({
   const [champs, setChamps] = useState<Champs>(CHAMPS_VIDES);
   const [tentee, setTentee] = useState(false);
   const [alerte, setAlerte] = useState<string | null>(null);
+  // Le numéro est refusé par la boutique : l'alerte propose de la joindre.
+  const [bloque, setBloque] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   // Le moyen de paiement choisi : à la livraison d'abord, quand la boutique le prend.
   const [paiement, setPaiement] = useState<"cod" | "konnect">(cod || !konnect ? "cod" : "konnect");
@@ -453,6 +458,7 @@ export function Tunnel({
       case "en_attente":
         return setAlerte(t.commande.enAttente);
       case "bloque":
+        setBloque(true);
         return setAlerte(t.commande.bloque);
       case "contact":
       case "adresse":
@@ -512,6 +518,7 @@ export function Tunnel({
 
     setEnvoi(true);
     setAlerte(null);
+    setBloque(false);
     const telephone = session?.telephone ?? `+216${chiffresTelephone(champs.telephone)}`;
     try {
       const r = await fetch("/commande/passer", {
@@ -687,6 +694,12 @@ export function Tunnel({
         {alerte ? (
           <div className="tunnel-alerte" role="alert" tabIndex={-1} ref={refAlerte}>
             {alerte}
+            {bloque && (contact?.whatsapp || contact?.telephone) ? (
+              <span className="tunnel-alerte-actions">
+                {contact.whatsapp ? <a className="lien-souligne" href={contact.whatsapp} target="_blank" rel="noopener noreferrer">{t.contact.ecrireWhatsapp}</a> : null}
+                {contact.telephone ? <a className="lien-souligne" href={contact.telephone}>{t.contact.appeler}</a> : null}
+              </span>
+            ) : null}
           </div>
         ) : null}
 

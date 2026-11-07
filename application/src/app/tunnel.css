@@ -32,6 +32,8 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 .tunnel-tete h1 { font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; }
 .tunnel-attente { min-block-size: 40vh; display: grid; place-items: center; color: var(--theme-encre-doux); font-size: .875rem; }
 .tunnel-vide { max-inline-size: 36rem; margin-inline: auto; }
+/* Un numéro refusé par la boutique : de quoi la joindre, sous le message. */
+.tunnel-alerte-actions { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin-block-start: .625rem; }
 /* Plus rien du panier n'est en vente : lesquels, vers leur fiche, et le geste. */
 .tunnel-indisponible-liste { display: grid; gap: .375rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .tunnel-indisponible-liste a { text-decoration: underline; text-underline-offset: .2em; }

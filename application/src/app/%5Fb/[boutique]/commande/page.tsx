@@ -5,6 +5,7 @@ import { CommandeHorsLigne } from "@/components/CommandeHorsLigne";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { verificationVitrine } from "@/lib/connexion-serveur";
 import { identiteLegale } from "@/lib/legal";
+import { contactDe } from "@/lib/contact";
 import { supabase } from "@/lib/supabase";
 import { t } from "@/lib/i18n";
 import { NUMERO_DEVIS } from "@/lib/commande";
@@ -86,6 +87,7 @@ export default async function Commande({
         express={express}
         codesPromo={cadre.promotions}
         relancePaniers={cadre.relancePaniers}
+        contact={(() => { const c = contactDe(cadre, t.contact.messageWhatsapp(cadre.boutique.nom)); return { whatsapp: c.whatsapp?.href ?? null, telephone: c.telephone?.href ?? null }; })()}
       />
     </Gabarit>
   );
