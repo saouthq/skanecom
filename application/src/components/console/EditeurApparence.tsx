@@ -43,7 +43,8 @@ import {
    ========================================================================== */
 
 type Brouillon = { version: number; jeton: string };
-type Message = { ok: boolean; texte: string };
+/** `reprendre` : le message propose de défaire le geste (au doigt, ⌘Z n'existe pas). */
+type Message = { ok: boolean; texte: string; reprendre?: boolean };
 
 const NOMS_STRUCTURES: Record<Structure, { nom: string; aide: string }> = {
   editorial: { nom: "Éditoriale", aide: "Grandes photos, peu de mots, typographie de magazine. Mode, beauté, maison." },
@@ -799,7 +800,7 @@ export function EditeurApparence({
       setGenerationPages((n) => n + 1);
       setComparer(false);
       setEtat({ genre: "repos" });
-      setRetour({ ok: true, texte: oublie ? "Retour à la version publiée." : "Retour à la version publiée (⌘Z pour reprendre l'essai)." });
+      setRetour({ ok: true, texte: "Retour à la version publiée.", reprendre: !oublie });
       rafraichir("fin");
     } catch {
       setEtat({ genre: "erreur", texte: "L'abandon du brouillon n'a pas abouti (réseau coupé ?) : réessayez." });
@@ -811,7 +812,8 @@ export function EditeurApparence({
   // Un message de réussite s'efface de lui-même ; une erreur reste.
   useEffect(() => {
     if (!retour?.ok) return;
-    const minuterie = window.setTimeout(() => setRetour(null), 6000);
+    // Le temps de lire, et — quand il le propose — de reprendre l'essai.
+    const minuterie = window.setTimeout(() => setRetour(null), retour.reprendre ? 12000 : 6000);
     return () => window.clearTimeout(minuterie);
   }, [retour]);
 
@@ -889,7 +891,8 @@ export function EditeurApparence({
           {ecrit && (brouillon || !identique) ? (
             <button type="submit" name="geste" value="abandonner" className="btn btn-second btn-petit ap-abandon" disabled={etat.genre === "envoi"}
               aria-label="Revenir à la version publiée" title="Revenir à la version publiée">
-              <Icone nom="retour" /><span className="ap-abandon-texte">Revenir à la version publiée</span>
+              {/* Au téléphone, « Tout annuler » : une flèche seule s'y lisait comme « retour ». */}
+              <span className="ap-abandon-texte">Revenir à la version publiée</span><span className="ap-abandon-court" aria-hidden="true">Tout annuler</span>
             </button>
           ) : null}
           {ecrit ? (
@@ -903,6 +906,9 @@ export function EditeurApparence({
       {retour ? (
         <p className={retour.ok ? "message message-succes ap-retour" : "message message-erreur ap-retour"} role={retour.ok ? "status" : "alert"}>
           {retour.texte}
+          {retour.reprendre ? (
+            <button type="button" className="btn-lien" onClick={() => { setRetour(null); defaire(); }}>Reprendre l&apos;essai</button>
+          ) : null}
           <button type="button" className="btn-icone" aria-label="Fermer ce message" onClick={() => setRetour(null)}><Icone nom="croix" /></button>
         </p>
       ) : null}

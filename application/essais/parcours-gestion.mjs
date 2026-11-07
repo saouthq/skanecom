@@ -2696,8 +2696,17 @@ if (section("6")) {
     verifie((await page.locator(".ap-appareils button[aria-pressed='true']").innerText()).includes("Téléphone"), "l'aperçu se met d'office en téléphone");
     await pause(1200);
     await capture(page, "apparence-tel-apercu");
-    await clic(page, page.getByRole("button", { name: "Revenir à la version publiée" }));
+    const abandon = page.getByRole("button", { name: "Revenir à la version publiée" });
+    verifie((await abandon.innerText()).trim() === "Tout annuler", "au téléphone, il se lit « Tout annuler » (une flèche seule s'y prenait pour « retour »)");
+    await clic(page, abandon);
     verifie(await attend(async () => (await html("data-coins")) === "arrondis", 8000), "« Revenir à la version publiée » : l'essai abandonné");
+    // Au doigt, ⌘Z n'existe pas : le message propose de reprendre l'essai.
+    const reprendre = page.locator(".ap-retour").getByRole("button", { name: "Reprendre l'essai" });
+    verifie(await reprendre.isVisible(), "le message propose « Reprendre l'essai »");
+    await clic(page, reprendre);
+    verifie(await attend(async () => (await html("data-coins")) === "ronds", 8000), "repris : l'essai revient (coins ronds)");
+    await clic(page, page.getByRole("button", { name: "Revenir à la version publiée" }));
+    verifie(await attend(async () => (await html("data-coins")) === "arrondis", 8000), "puis abandonné pour de bon");
   });
 
   await etape("le site vitrine : réglé au backoffice, la fiche propose d'écrire ou d'appeler, puis retour à la boutique", async () => {

@@ -38,13 +38,15 @@
 .ap-statut[data-etat="erreur"] { color: var(--ui-rouge); }
 .ap-statut[data-etat="erreur"] .ap-pastille { background: var(--ui-rouge); }
 @keyframes ap-pouls { from { opacity: 1; } to { opacity: .35; } }
+.ap-abandon-court { display: none; }
 .ap-barre-gestes { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .375rem; margin-inline-start: auto; }
 .ap-barre-gestes .btn-primaire { padding-inline: 1.125rem; }
 @media (max-width: 720px) {
   .ap-quitter-texte { display: none; }
-  /* Au téléphone, « Revenir à la version publiée » en icône : la barre reste sur une ligne. */
+  /* Au téléphone, « Revenir à la version publiée » se dit « Tout annuler » : la barre reste sur une ligne. */
   .ap-abandon-texte { display: none; }
-  .ap-abandon { min-inline-size: 40px; padding-inline: .5rem; justify-content: center; }
+  .ap-abandon-court { display: inline; }
+  .ap-abandon { padding-inline: .625rem; justify-content: center; }
   .ap-quitter { padding-inline: .5rem; }
   .ap-barre-titre { border: 0; padding: 0; }
   .ap-statut { order: 5; flex-basis: 100%; font-size: .8125rem; }
@@ -57,6 +59,7 @@
   box-shadow: var(--ui-ombre-l); animation: ap-toast .3s var(--theme-courbe, ease) both;
 }
 .ap-retour > .btn-icone { margin-inline-start: auto; }
+.ap-retour > .btn-lien { white-space: nowrap; }
 @keyframes ap-toast { from { opacity: 0; transform: translateY(10px); } }
 @media (prefers-reduced-motion: reduce) { .ap-retour { animation: none; } }
 .ap-chapo { margin: 0; padding-inline: .125rem; font-size: .8125rem; line-height: 1.5; color: var(--ui-texte-2); }
