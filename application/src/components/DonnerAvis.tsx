@@ -39,6 +39,14 @@ export function AvisCommande({ boutiqueId, numero, lignes, mesAvis, surAvis, pho
 }) {
   const [ouverte, setOuverte] = useState<string | null>(null);
   const [merci, setMerci] = useState<{ ligne: string; publie: boolean; photos: number; erreur: string | null } | null>(null);
+  /** Le formulaire refermé emporte le focus : il revient au bouton (Annuler) ou au remerciement (envoyé). */
+  const rendreFocus = useRef<{ ligne: string; vers: "bouton" | "merci" } | null>(null);
+  const prendFocus = (ligne: string, vers: "bouton" | "merci", options?: FocusOptions) => (el: HTMLElement | null) => {
+    if (el && rendreFocus.current?.ligne === ligne && rendreFocus.current.vers === vers) {
+      rendreFocus.current = null;
+      el.focus(options);
+    }
+  };
   return (
     <div className="avis-commande">
       <p className="avis-commande-titre">{t.avis.vosArticles}</p>
@@ -57,12 +65,14 @@ export function AvisCommande({ boutiqueId, numero, lignes, mesAvis, surAvis, pho
                   <span className="legende">{t.avis.statut[mien.statut]}</span>
                 </span>
               ) : ouverte === l.id ? null : (
-                <button type="button" className="btn-lien avis-noter" onClick={() => { setMerci(null); setOuverte(l.id); }}>
+                <button type="button" className="btn-lien avis-noter" ref={prendFocus(l.id, "bouton")}
+                        onClick={() => { setMerci(null); setOuverte(l.id); }}>
                   {t.avis.noter}
                 </button>
               )}
               {merci?.ligne === l.id ? (
-                <p className="avis-merci" role="status" data-erreur={merci.erreur ? "" : undefined}>
+                <p className="avis-merci" role="status" tabIndex={-1} ref={prendFocus(l.id, "merci", { preventScroll: true })}
+                   data-erreur={merci.erreur ? "" : undefined}>
                   <Coche taille={16} /> {merci.publie ? t.avis.merciPublie : t.avis.merciRelu}
                   {merci.photos > 0 ? ` ${t.avis.merciPhotos(merci.photos)}` : null}
                   {merci.erreur ? ` ${t.avis.photoRatee(merci.erreur)}` : null}
@@ -74,8 +84,9 @@ export function AvisCommande({ boutiqueId, numero, lignes, mesAvis, surAvis, pho
                   numero={numero}
                   ligne={l}
                   photos={photos}
-                  fermer={() => setOuverte(null)}
+                  fermer={() => { rendreFocus.current = { ligne: l.id, vers: "bouton" }; setOuverte(null); }}
                   envoye={(publie, envoi) => {
+                    rendreFocus.current = { ligne: l.id, vers: "merci" };
                     setOuverte(null);
                     setMerci({ ligne: l.id, publie, ...envoi });
                     surAvis();
@@ -126,8 +137,17 @@ function Formulaire({ boutiqueId, numero, ligne, photos, fermer, envoye }: {
   const [erreur, setErreur] = useState<string | null>(null);
   const [choisies, setChoisies] = useState<Choisie[]>([]);
   const entree = useRef<HTMLInputElement>(null);
+  const refFormulaire = useRef<HTMLFormElement>(null);
   const id = `avis-${ligne.id}`;
   const allumees = survol ?? note;
+
+  // Ouvert d'un geste : le curseur va aux étoiles (le bouton pressé a disparu,
+  // le focus tombait sur la page) et le formulaire vient à l'écran — au
+  // téléphone, il s'ouvrait sous le bord.
+  useEffect(() => {
+    refFormulaire.current?.querySelector<HTMLInputElement>("input[type=radio]")?.focus({ preventScroll: true });
+    refFormulaire.current?.scrollIntoView({ block: "nearest" });
+  }, []);
 
   // Les aperçus vivent le temps du formulaire.
   const vues = useRef<Choisie[]>([]);
@@ -178,6 +198,7 @@ function Formulaire({ boutiqueId, numero, ligne, photos, fermer, envoye }: {
 
   return (
     <form
+      ref={refFormulaire}
       className="avis-formulaire"
       aria-labelledby={`${id}-titre`}
       onSubmit={(e) => {

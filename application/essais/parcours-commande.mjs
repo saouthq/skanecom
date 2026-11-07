@@ -754,8 +754,19 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     const bloc = page.locator(".compte-carte").first().locator(".avis-commande");
     await bloc.waitFor({ timeout: 8000 });
     verifie((await bloc.innerText()).includes("Perceuse"), "sous la commande retirée : l'article reçu, à noter");
-    await clic(page, bloc.getByRole("button", { name: "Donner mon avis" }));
+    // Au clavier : le bouton pressé disparaît, le curseur doit suivre (il tombait sur la page).
+    const noter = bloc.getByRole("button", { name: "Donner mon avis" });
+    await noter.focus();
+    await page.keyboard.press("Enter");
     const f = bloc.locator(".avis-formulaire");
+    await f.waitFor();
+    await pause(200);
+    verifie(await page.evaluate(() => document.activeElement?.closest(".avis-formulaire") !== null && document.activeElement?.getAttribute("type") === "radio"),
+      "ouvert au clavier : le curseur est sur les étoiles");
+    await clic(page, f.getByRole("button", { name: "Annuler" }));
+    await pause(200);
+    verifie(await page.evaluate(() => document.activeElement?.textContent?.trim() === "Donner mon avis"), "« Annuler » : le curseur revient sur « Donner mon avis »");
+    await clic(page, noter);
     await clic(page, f.getByRole("button", { name: "Publier mon avis" }));
     verifie((await f.getByRole("alert").innerText()).includes("Choisissez une note"), "sans note, rien ne part");
     await clic(page, f.locator(".avis-saisie-etoiles label").nth(4));
@@ -766,6 +777,7 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await clic(page, f.getByRole("button", { name: "Publier mon avis" }));
     await bloc.locator(".avis-merci").waitFor({ timeout: 8000 });
     verifie((await bloc.locator(".avis-merci").innerText()).includes("après relecture"), "l'avis part, relu avant publication (réglage par défaut)");
+    verifie(await page.evaluate(() => document.activeElement?.classList.contains("avis-merci") === true), "envoyé : le curseur est sur le remerciement");
     await pause(600);
     verifie((await bloc.innerText()).includes("En relecture"), "l'article dit « En relecture »");
     // Ce que la vitrine lit (public.avis_produit, la fonction de la fiche — la

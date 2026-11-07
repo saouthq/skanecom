@@ -144,7 +144,8 @@ html[data-gabarit=editorial] .avis-filtre { border-radius: var(--theme-radius-ne
 .avis-saisie-etoiles label[data-allumee] { color: var(--etoile, #D9A21B); }
 .avis-saisie-etoiles label[data-allumee] svg { fill: currentColor; }
 .avis-saisie-etoiles label:active { transform: scale(.9); }
-.avis-saisie-etoiles label:focus-within { outline: 2px solid var(--theme-accent); outline-offset: 1px; }
+/* Au clavier seulement : au doigt, un anneau autour de la première étoile (le formulaire ouvert y met le curseur) se lisait « une étoile ». */
+.avis-saisie-etoiles label:has(input:focus-visible) { outline: 2px solid var(--theme-accent); outline-offset: 1px; }
 .avis-saisie-mot { font-size: .875rem; color: var(--theme-encre-doux); min-inline-size: 7rem; }
 .avis-formulaire textarea { inline-size: 100%; }
 .avis-formulaire .champ-erreur:empty { display: none; }

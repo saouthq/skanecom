@@ -85,7 +85,7 @@ bouton final « Confirmer la commande » n'est qu'un cadre.
 
 ## Fait le 07/11 (après-midi) : d'autres parcours joués en vrai
 
-Vingt-deux lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
+Vingt-trois lots, chacun vérifié au navigateur (souris, clavier, téléphone, captures)
 et par les parcours automatiques : la cliente de Selma (filtres, panier, code
 promo, commande), l'artisan de la Quincaillerie (comparer, retrait, facture
 société, quantité tapée, devis), le devis des deux côtés, l'équipe (une
@@ -97,7 +97,8 @@ favoris et la recherche au téléphone, un produit créé au téléphone, le
 code SMS faux, le site vitrine (formulaire de contact, demandes), le client
 bloqué, les encaissements, l'éditeur de la vitrine au téléphone, le client
 surveillé vu par l'employé des appels (et à la saisie de sa commande), l'achat sur la page de vente de
-Yasmine (et son offre ajoutée au panier, comme un pack de Selma). Le détail : feuille de
+Yasmine (et son offre ajoutée au panier, comme un pack de Selma), l'avis d'une cliente
+livrée. Le détail : feuille de
 route, section E, « D'autres parcours, joués en vrai ».
 
 Remarqué, laissé tel quel :
