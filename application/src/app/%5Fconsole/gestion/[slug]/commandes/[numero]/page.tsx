@@ -132,6 +132,19 @@ const FAIT: Record<string, string> = {
   "facturation-retirer": "Facture au nom de la personne qui commande.",
 };
 
+/** Après un geste, la liste du travail qui suit : la prochaine à appeler, le prochain colis à
+ *  remettre, la prochaine livraison à noter. Une note ou une facture corrigée : aucune. */
+const SUITE: Record<string, [string, string]> = {
+  "appel-confirmee": ["a_confirmer", "Commandes à confirmer"],
+  "appel-injoignable": ["a_confirmer", "Commandes à confirmer"],
+  "appel-rappeler": ["a_confirmer", "Commandes à confirmer"],
+  "appel-refus": ["a_confirmer", "Commandes à confirmer"],
+  annuler: ["a_confirmer", "Commandes à confirmer"],
+  expedier: ["a_preparer", "Colis à préparer"],
+  livrer: ["expediees", "Colis en route"],
+  refuser: ["expediees", "Colis en route"],
+};
+
 const REMBOURSER = "Payée en ligne : le remboursement du client se fait depuis votre espace Konnect, l'argent n'est jamais passé par SkanEcom.";
 
 type Facturation = { raison_sociale: string; matricule_fiscal: string; adresse: { ligne1: string; ville: string; code_postal: string | null } | null };
@@ -421,7 +434,9 @@ export default async function FicheCommande({
               {fait}{" "}
               {messages.fait === "saisie" || messages.fait === "comptoir"
                 ? <Link href={`/gestion/${slug}/commandes/nouvelle`}>Saisir une autre commande</Link>
-                : <Link href={`/gestion/${slug}?etape=a_confirmer`}>Commandes à confirmer</Link>}
+                : messages.fait && SUITE[messages.fait]
+                  ? <Link href={`/gestion/${slug}?etape=${SUITE[messages.fait][0]}`}>{SUITE[messages.fait][1]}</Link>
+                  : null}
             </span>
           </p>
         ) : null}

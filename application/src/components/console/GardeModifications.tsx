@@ -14,7 +14,8 @@ import { useEffect } from "react";
    l'onglet demande d'abord si l'on veut perdre la saisie. Envoyer le
    formulaire lui-même, ou revenir à sa valeur de départ, lève la garde.
    Un formulaire marqué `data-sans-garde` (un réglage qui s'enregistre de
-   lui-même) n'est pas suivi.
+   lui-même) n'est pas suivi. Un formulaire marqué `data-confirmer="…"`
+   (retirer une photo : elle ne revient pas) pose sa question avant de partir.
    ========================================================================== */
 
 const SUIVIS = "input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]), textarea, select";
@@ -48,6 +49,12 @@ export function GardeModifications() {
     };
     const envoi = (e: SubmitEvent) => {
       const f = e.target as HTMLFormElement;
+      const question = f.getAttribute("data-confirmer");
+      if (question && !window.confirm(question)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
       relire();
       const autres = [...enCours].filter((x) => x !== f);
       if (autres.length && !window.confirm(QUESTION)) {

@@ -743,6 +743,14 @@ if (section("2")) {
     await clic(page, vignettes().nth(1).locator(".ph-image"));
     const feuille = page.locator(".ph-feuille:popover-open");
     await feuille.waitFor();
+    // Retirer une photo demande confirmation (elle ne revient pas) : d'abord « Annuler », rien ne part ;
+    // puis « OK », comme une vraie personne.
+    let question = null;
+    page.once("dialog", (d) => { question = d.message(); d.dismiss(); });
+    await clic(page, feuille.getByRole("button", { name: "Retirer la photo" }));
+    await pause(600);
+    verifie(/Retirer cette photo \?/.test(question ?? "") && await vignettes().count() === 2, `retirer demande d'abord (« ${question} ») ; « Annuler » la garde`);
+    page.once("dialog", (d) => d.accept());
     await envoie(feuille.getByRole("button", { name: "Retirer la photo" }));
     verifie((await ok()).includes("Photo retirée"), `« ${await ok()} »`);
     verifie(await vignettes().count() === 1, "il en reste une");
@@ -773,6 +781,7 @@ if (section("2")) {
     await clic(page, vignettes().nth(1).locator(".ph-image"));
     const deuxieme = page.locator(".ph-feuille:popover-open");
     await deuxieme.waitFor();
+    page.once("dialog", (d) => d.accept());
     await envoie(deuxieme.getByRole("button", { name: "Retirer la photo" }));
     verifie(await vignettes().count() === 1, "retirée, il reste l'originale");
   });

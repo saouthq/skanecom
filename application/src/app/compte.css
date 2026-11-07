@@ -41,9 +41,11 @@
   background: var(--theme-surface); border: 1px solid var(--theme-filet); border-radius: var(--theme-radius-carte);
 }
 .compte-carte[data-cloturee] { background: color-mix(in srgb, var(--theme-surface) 70%, var(--theme-fond)); }
-.compte-carte-tete { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+/* Au téléphone, un état long (« Reçue, en attente d'appel ») passe sous le numéro plutôt que de
+   couper la date en deux lignes (« Passée le 7 / novembre 2026 »). */
+.compte-carte-tete { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .5rem 1rem; }
 .compte-numero { margin: 0 0 .125rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
-.compte-carte-tete .legende { margin: 0; color: var(--theme-encre-doux); }
+.compte-carte-tete .legende { margin: 0; color: var(--theme-encre-doux); white-space: nowrap; }
 .compte-statut {
   flex: none; padding: .25rem .625rem; border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap;
   background: var(--theme-surface-2); color: var(--theme-encre);

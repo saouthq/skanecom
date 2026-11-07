@@ -58,6 +58,32 @@ protocole.
 Les outils d'essai restent dans `docs/reprise/outils-essai/` (relance,
 captures, vérifications au navigateur).
 
+## Fait le 07/11 : le parcours entier, joué en utilisateur
+
+Une boutique neuve (« Nour Maroquinerie ») créée dans la console, sa gérante
+invitée par e-mail qui la configure seule (identité légale, contact, deux
+produits avec déclinaisons, photos, stock, livraison, éditeur), l'ouverture,
+puis deux clientes (téléphone au doigt, ordinateur au clavier seul), une
+commande livrée, une refusée à la remise (stock rendu), un avis relu et publié.
+Corrigé : la case des conditions au doigt, le curseur de la recherche, le
+conseil WhatsApp sur toutes les fiches (message prérempli), l'ouverture sans
+photo, les saisies perdues au backoffice, la photo retirée sans question, le
+lien proposé après chaque geste sur une commande.
+
+Restent à trancher avec Skander (voir le bilan de la séance) :
+
+- **L'aperçu avant l'ouverture** : une boutique « en préparation » ne se voit
+  nulle part — ni dans l'éditeur (« l'aperçu apparaîtra dès son ouverture »),
+  ni par « Voir la vitrine » (« Boutique fermée »). Le commerçant règle à
+  l'aveugle. Le permettre à l'équipe touche le filtre `statut = 'active'` de la
+  vitrine (une soixantaine d'endroits) : un chantier à part.
+- **Le logo** : le commerçant ne peut pas poser le sien (seule la console, onglet
+  Marque, le fait). Voulu ?
+- Petits points : la référence tirée du nom (« PORTEFEUILLE-HOMME-EN-CU ») paraît
+  dans les suggestions de recherche ; « Les nouveautés » et « La sélection »
+  montrent les mêmes pièces sur un tout petit catalogue ; en style « contour »,
+  le bouton final « Confirmer la commande » n'est qu'un cadre.
+
 ## Ce qui attend Skander
 
 - Les conditions de service v1, relues par un avocat.

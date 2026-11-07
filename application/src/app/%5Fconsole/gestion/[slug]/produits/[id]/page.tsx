@@ -245,7 +245,7 @@ export default async function FicheProduitBackoffice({
                                       </button>
                                     </form>
                                   ) : <span />}
-                                  <form action={actionPhotos} method="post">
+                                  <form action={actionPhotos} method="post" data-confirmer="Retirer cette photo ? Elle ne reviendra pas : il faudrait la déposer de nouveau.">
                                     <input type="hidden" name="action" value="retirer" />
                                     <input type="hidden" name="image_id" value={img.id} />
                                     <button className="btn btn-fantome btn-petit ph-retirer">
