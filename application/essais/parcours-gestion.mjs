@@ -3242,6 +3242,13 @@ if (section("9")) {
     await clic(page, page.getByLabel("Tout cocher"));
     const garde = await exp.nth(m - 1).getAttribute("value");
     await clic(page, exp.nth(m - 1));           // celui qui est revenu refusé reste à part
+    // Ce que le livreur doit pour les colis cochés : leurs totaux, sauf ceux déjà payés en ligne.
+    const coches = await exp.evaluateAll((l) => l.filter((c) => c.checked).map((c) => c.value));
+    const dus = await lit(`commandes?select=numero,total_millimes,mode_paiement,statut_paiement&boutique_id=eq.${MAYMAR}&numero=in.(${coches.join(",")})`);
+    const attendu = dus.reduce((s, l) => s + (l.mode_paiement === "konnect" && l.statut_paiement === "paye" ? 0 : l.total_millimes), 0);
+    const du = await page.locator(".bo-lot-du").innerText().catch(() => "");
+    verifie(du.includes("à encaisser") && Number(du.replace(/\D/g, "")) === attendu,
+      `la barre dit ce que le livreur doit pour ${coches.length > 1 ? `les ${coches.length} colis cochés` : "le colis coché"} (${du.trim() || "rien"})`);
     const livrer = page.getByRole("button", { name: /Marquer livrées, payées/ });
     await t.envoie(page, livrer);
     verifie(await attend(async () => (await message(page)).includes(`${m - 1} colis livré`)), `le point du livreur : ${m - 1} colis livrés d'un geste`);

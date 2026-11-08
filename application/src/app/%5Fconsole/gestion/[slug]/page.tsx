@@ -44,6 +44,8 @@ type Ligne = {
   ville: string | null;
   gouvernorat: string | null;
   total_millimes: number;
+  /** Payée en ligne (Konnect, montant reçu) : le livreur n'encaisse rien (migration …_point_livreur). */
+  payee_en_ligne?: boolean;
   origine: string;
   articles: number;
   premier_article: string | null;
@@ -125,6 +127,10 @@ export default async function Commandes({
   const geste = etape.cle === "a_preparer" && EXPEDIER_LOT.includes(boutique.role) ? "expedier"
     : etape.cle === "expediees" && LIVRER_LOT.includes(boutique.role) ? "livrer" : null;
   const statutLot = geste === "expedier" ? "confirmee" : "expediee";
+  // Remettre au livreur : le transporteur habituel déjà écrit, comme sur la fiche (sinon les colis partaient sans).
+  const { data: transporteurRegle } = geste === "expedier"
+    ? await sb.from("reglages").select("valeur").eq("boutique_id", boutique.boutique_id).eq("cle", "livraison.transporteur").maybeSingle()
+    : { data: null };
   const bilan = bilanLot(recherche.fait, recherche.n, recherche.ignorees);
   const lien = (e: string, p = 1) => `/gestion/${slug}?etape=${e}${q ? `&q=${encodeURIComponent(q)}` : ""}${p > 1 ? `&page=${p}` : ""}`;
 
@@ -201,7 +207,7 @@ export default async function Commandes({
               <li key={c.numero} className="bo-ligne" data-statut={c.statut}>
                 {geste && c.statut === statutLot && c.mode_livraison === "domicile" ? (
                   <label className="bo-coche">
-                    <input type="checkbox" form={FORMULAIRE_LOT} name="n" value={c.numero}
+                    <input type="checkbox" form={FORMULAIRE_LOT} name="n" value={c.numero} data-encaisser={c.payee_en_ligne ? 0 : c.total_millimes}
                            aria-label={`${geste === "expedier" ? "Remettre au livreur" : "Livrée"} : ${c.numero}, ${c.contact_nom}`} />
                   </label>
                 ) : null}
@@ -233,6 +239,8 @@ export default async function Commandes({
                       <span className="ui-etat ui-etat-bleu"><Icone nom="calendrier" taille={12} /> Attend l&apos;arrivage · {jourArrivageCourt(c.arrivage_prevu)}</span>
                     ) : null}
                     {c.mode_livraison === "retrait" ? <span className="ui-etat ui-etat-violet"><Icone nom="boutique" taille={12} /> À retirer</span> : null}
+                    {/* Le livreur n'encaisse rien pour elle : la liste le dit, la barre du point ne la compte pas. */}
+                    {c.payee_en_ligne ? <span className="ui-etat ui-etat-vert"><Icone nom="coche" taille={12} /> Payée en ligne</span> : null}
                     {c.origine === "manuelle" ? <span className="ui-etat"><Icone nom="crayon" taille={12} /> Saisie par l&apos;équipe</span> : null}
                     {c.client?.compte ? (
                       numeroVerifie.has(c.numero)
@@ -270,7 +278,7 @@ export default async function Commandes({
         </ul>
       )}
 
-      {geste && liste.commandes.length ? <BarreLot formulaire={FORMULAIRE_LOT} geste={geste} /> : null}
+      {geste && liste.commandes.length ? <BarreLot formulaire={FORMULAIRE_LOT} geste={geste} transporteur={typeof transporteurRegle?.valeur === "string" ? transporteurRegle.valeur : ""} /> : null}
 
       <Pagination page={page} pages={pages} total={liste.total} parPage={PAR_PAGE} lien={(n) => lien(etape.cle, n)} unite={["commande", "commandes"]} />
     </>
