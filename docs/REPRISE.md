@@ -110,7 +110,15 @@ un blocage du compte (minutes Actions ou plafond de dépenses), à lever dans le
 réglages de facturation GitHub. Les lots 34 et suivants sont vérifiés en local
 (tous les parcours de la CI, chacun sur base neuve, pgTAP, essai de la vitrine ;
 l'aperçu des cinq boutiques avec le Chromium du poste) ; relancer la CI complète
-dès qu'elle repart.
+dès qu'elle repart. L'aperçu en ligne reste à `ededfdd` tant qu'elle ne repart pas.
+
+**Aperçu, 08/11 après-midi** : État technique casse (référence `1082066082`, la même à
+chaque fois) et la fiche de Maison Selma répond « introuvable ». Toutes les fonctions
+de la base répondent 200 (journaux Supabase) et rien n'est noté dans les erreurs de
+l'application : le détail est dans les journaux du Worker `skanecom-apercu-console`
+(Cloudflare → Workers → Logs), non lisibles d'ici. Non reproduit en local (boutique en
+préparation avec domaine personnalisé, domaines en ligne actifs, Konnect « réel »).
+Depuis `1650b85`, la référence d'un écran d'erreur se retrouve toujours dans la liste.
 
 Remarqué, laissé tel quel :
 
