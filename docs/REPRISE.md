@@ -119,6 +119,10 @@ l'application : le détail est dans les journaux du Worker `skanecom-apercu-cons
 (Cloudflare → Workers → Logs), non lisibles d'ici. Non reproduit en local (boutique en
 préparation avec domaine personnalisé, domaines en ligne actifs, Konnect « réel »).
 Depuis `1650b85`, la référence d'un écran d'erreur se retrouve toujours dans la liste.
+Le Worker `skanecom-apercu-console` ne fait que relayer : tout s'exécute dans
+`skanecom-application`. Ses journaux (logs, traces, issues) ont été allumés à la main
+le 08/11 dans le tableau de bord (Settings → Observability) : la configuration `cf`
+n'a pas de champ pour eux, revérifier après chaque déploiement qu'ils le sont encore.
 
 Remarqué, laissé tel quel :
 
