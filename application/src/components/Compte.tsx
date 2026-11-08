@@ -63,6 +63,8 @@ export type CommandeMienne = {
   total_millimes: number;
   transporteur: string | null;
   numero_suivi: string | null;
+  /** Refusée : d'où vient le refus (client, livreur, injoignable, autre — migration …_refus_acheteur). */
+  refus_origine?: string | null;
   /** Elle attend un arrivage (précommande, migration 88) : sa date prévue. */
   arrivage_prevu?: string | null;
   /** Payée en ligne, montant reçu (Konnect ; migration …_mes_commandes_acheteur). */
@@ -274,8 +276,14 @@ function Frise({ statut, retrait }: { statut: string; retrait: boolean }) {
  *  suivi sans compte (SuiviCommande.tsx). */
 export function ResumeCommande({ c }: { c: CommandeMienne }) {
   const retrait = c.mode_livraison === "retrait";
-  const statut = (retrait ? t.commande.statutRetrait[c.statut] : undefined) ?? t.commande.statut[c.statut] ?? c.statut;
-  const etat = (retrait ? t.compte.etatRetrait[c.statut] : undefined) ?? t.compte.etat[c.statut] ?? "";
+  // Revenue sans être livrée : le client qui était absent n'a rien « refusé ».
+  const nonLivree = !retrait && c.statut === "refusee";
+  const statut = (retrait ? t.commande.statutRetrait[c.statut] : undefined)
+    ?? (nonLivree && c.refus_origine !== "client" ? t.compte.nonLivree : undefined)
+    ?? t.commande.statut[c.statut] ?? c.statut;
+  const etat = (retrait ? t.compte.etatRetrait[c.statut] : undefined)
+    ?? (nonLivree ? t.compte.etatRefus[c.refus_origine ?? "autre"] ?? t.compte.etatRefus.autre : undefined)
+    ?? t.compte.etat[c.statut] ?? "";
   const articles = c.lignes.reduce((n, l) => n + l.quantite, 0);
   const vignettes = c.lignes.slice(0, 3);
   const suivi = !retrait && (c.transporteur || c.numero_suivi) ? t.compte.suivi(c.transporteur, c.numero_suivi) : null;
@@ -295,7 +303,7 @@ export function ResumeCommande({ c }: { c: CommandeMienne }) {
         <span className="compte-statut">{statut}</span>
       </div>
       <Frise statut={c.statut} retrait={retrait} />
-      <p className="compte-etat">{etat}</p>
+      {etat ? <p className="compte-etat">{etat}</p> : null}
       {c.arrivage_prevu && ["a_arbitrer", "recue", "confirmee"].includes(c.statut) ? (
         <p className="compte-precommande"><Calendrier taille={15} /> {t.precommande.suivi(jourPrevu(c.arrivage_prevu))}</p>
       ) : null}
@@ -327,14 +335,20 @@ export function ResumeCommande({ c }: { c: CommandeMienne }) {
 export type Joindre = { boutique: string; whatsapp: string | null; telephone: string | null };
 
 /** Pas encore partie : une taille à changer, une adresse, ou l'annuler — on le dit à la boutique, le numéro déjà écrit
- *  (« Mes commandes », et « Suivre ma commande » sans compte). Le paiement à la livraison n'a pas d'annulation en ligne. */
-export function JoindreBoutique({ c, joindre }: { c: Pick<CommandeMienne, "numero" | "statut">; joindre: Joindre | null }) {
-  if (!joindre || !(joindre.whatsapp || joindre.telephone) || !["recue", "a_arbitrer", "confirmee"].includes(c.statut)) return null;
+ *  (« Mes commandes », et « Suivre ma commande » sans compte). Le paiement à la livraison n'a pas d'annulation en ligne.
+ *  Revenue sans que le client l'ait refusée (absent, un souci du livreur), ou pas retirée : la reprendre. */
+export function JoindreBoutique({ c, joindre }: { c: Pick<CommandeMienne, "numero" | "statut" | "mode_livraison" | "refus_origine">; joindre: Joindre | null }) {
+  if (!joindre || !(joindre.whatsapp || joindre.telephone)) return null;
+  const enCours = ["recue", "a_arbitrer", "confirmee"].includes(c.statut);
+  const aReprendre = c.statut === "refusee" && c.refus_origine !== "client";
+  if (!enCours && !aReprendre) return null;
+  const message = enCours ? t.compte.messageCommande(c.numero)
+    : c.mode_livraison === "retrait" ? t.compte.messageRetrait(c.numero) : t.compte.messageRenvoi(c.numero);
   return (
     <p className="compte-joindre legende">
-      {t.compte.changerCommande}{" "}
+      {enCours ? t.compte.changerCommande : t.compte.laVeutToujours}{" "}
       {joindre.whatsapp ? (
-        <a href={`https://wa.me/${joindre.whatsapp}?text=${encodeURIComponent(t.compte.messageCommande(c.numero))}`} target="_blank" rel="noopener noreferrer">
+        <a href={`https://wa.me/${joindre.whatsapp}?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer">
           {t.compte.ecrireBoutique}
         </a>
       ) : (

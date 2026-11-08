@@ -467,6 +467,18 @@ if (section("2")) {
     await page.waitForURL(/fait=refuser/);
     verifie((await message(page)).includes("Le stock est rendu"), "refus enregistré, stock rendu");
     verifie((await page.locator(".bo-fiche-cote").innerText()).includes("1 refus à la livraison"), "le refus compte sur la fiche du client");
+    // Ce que le client en lit, sans compte : il l'a refusée, il le sait — sans « la reprendre » ni le commentaire de l'équipe.
+    const vitrine = await page.context().newPage();
+    await vitrine.goto(`${t.adresse("maymar.localhost")}/suivi`, { waitUntil: "networkidle" });
+    await vitrine.locator("#suivi-numero").fill(num(6));
+    await vitrine.locator("#suivi-telephone").fill("97 552 018");
+    await vitrine.locator("#suivi-telephone").press("Enter");
+    const carte = vitrine.locator(".suivi-resultat");
+    await carte.waitFor({ timeout: 8000 });
+    const lu = await carte.innerText();
+    verifie(lu.includes("Refusée à la livraison") && lu.includes("Vous l'avez refusée à la remise : le colis est revenu à la boutique.")
+      && !lu.includes("Ne voulait plus"), "le client suit sa commande : refusée par lui, le colis revenu — le commentaire de l'équipe reste à l'équipe");
+    await vitrine.close();
   });
 
   await etape("annuler, avec un motif", async () => {

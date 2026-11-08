@@ -992,6 +992,10 @@ export const fr = {
     ecrireBoutique: "Écrire à la boutique",
     appelerBoutique: "Appeler la boutique",
     messageCommande: (numero: string) => `Bonjour, à propos de ma commande ${numero} : `,
+    /** Un colis revenu sans que le client l'ait refusé (absent, livreur), une commande pas retirée : la reprendre. */
+    laVeutToujours: "Vous la voulez toujours ?",
+    messageRenvoi: (numero: string) => `Bonjour, ma commande ${numero} n'a pas pu m'être livrée : pouvez-vous me la renvoyer ?`,
+    messageRetrait: (numero: string) => `Bonjour, je n'ai pas pu retirer ma commande ${numero} : puis-je encore venir la chercher ?`,
     articles: (n: number) => `${n} article${n > 1 ? "s" : ""}`,
     livraisonA: (lieu: string) => `Livraison à ${lieu}`,
     retraitA: (lieu: string) => `À retirer : ${lieu}`,
@@ -1004,14 +1008,22 @@ export const fr = {
       confirmee: "Confirmée : elle est en préparation.",
       expediee: "En route : le livreur vous appelle avant de passer.",
       livree: "Livrée. Merci !",
-      refusee: "Refusée à la livraison.",
-      annulee: "Annulée.",
+      annulee: "",
+    } as Record<string, string>,
+    /** Revenue sans être livrée, selon d'où vient le refus (l'équipe le note) : le client n'est accusé de rien
+     *  qu'il n'a pas fait. La pastille dit « Non livrée », sauf s'il l'a refusée. */
+    nonLivree: "Non livrée",
+    etatRefus: {
+      client: "Vous l'avez refusée à la remise : le colis est revenu à la boutique.",
+      injoignable: "Le livreur n'a pas pu vous joindre : le colis est revenu à la boutique.",
+      livreur: "Le colis n'a pas pu vous être livré : il est revenu à la boutique.",
+      autre: "Le colis n'a pas été livré : il est revenu à la boutique.",
     } as Record<string, string>,
     etatRetrait: {
       confirmee: "Confirmée : la boutique la prépare.",
       expediee: "Prête : elle vous attend au magasin.",
       livree: "Retirée. Merci !",
-      refusee: "Non retirée.",
+      refusee: "Elle n'est plus réservée au magasin.",
     } as Record<string, string>,
     commander: "Voir le catalogue",
     suivre: "Suivre mes commandes",
