@@ -14,6 +14,7 @@ import {
   libelleIssue,
   messageSav,
   type StatutSav,
+  PEUT_TRAITER_SAV,
 } from "@/lib/gestion/sav";
 
 /* ============================================================================
@@ -55,7 +56,7 @@ const FAIT: Record<string, string> = {
   noter: "Note ajoutée à l'historique.",
 };
 
-const AGIR: Role[] = ["proprietaire", "admin", "confirmateur", "preparateur"];
+const AGIR: Role[] = PEUT_TRAITER_SAV;
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
 function libelleEvenement(e: Fiche["historique"][number]): string {

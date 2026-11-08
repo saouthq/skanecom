@@ -3,7 +3,13 @@
    demande (…_sav.sql) : ses étapes, comment elle s'est close.
    ========================================================================== */
 
+import type { Role } from "@/lib/console/session";
+
 export type StatutSav = "nouvelle" | "en_cours" | "resolue" | "refusee";
+
+/** Qui traite une demande (la prendre en charge, noter, clore) : la lecture
+ *  seule la consulte — la pastille « à rappeler » ne l'appelle pas. */
+export const PEUT_TRAITER_SAV: Role[] = ["proprietaire", "admin", "confirmateur", "preparateur"];
 
 export const ETAPES_SAV = [
   { cle: "nouvelles", libelle: "Nouvelles", vide: "Aucune demande en attente : tout le monde a été rappelé." },

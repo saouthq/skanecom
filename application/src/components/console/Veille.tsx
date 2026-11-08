@@ -108,8 +108,10 @@ function abonner(slug: string, f: () => void): () => void {
   };
 }
 
-/** Le compteur des commandes à confirmer, dans la navigation. */
-export function CompteurCommandes({ slug }: { slug: string }) {
+/** Le compteur des commandes à confirmer, dans la navigation. `muet` : la
+ *  veille tourne (la liste se tient à jour), le chiffre ne s'affiche pas — à
+ *  qui ne confirme pas (lecture seule, préparation), il n'appelle aucun geste. */
+export function CompteurCommandes({ slug, muet = false }: { slug: string; muet?: boolean }) {
   const router = useRouter();
   useEffect(() => {
     magasinDe(slug).aller = (url) => router.push(url);
@@ -128,7 +130,7 @@ export function CompteurCommandes({ slug }: { slug: string }) {
     if (fait) void interroger(slug, true);
   }, [fait, chemin, slug]);
   const n = etat?.a_confirmer ?? 0;
-  if (n === 0) return null;
+  if (n === 0 || muet) return null;
   return <span className="app-nav-compte" aria-label={`${n} à confirmer`}>{n}</span>;
 }
 

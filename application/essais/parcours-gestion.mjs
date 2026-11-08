@@ -1514,6 +1514,34 @@ if (section("2")) {
     verifie((await page.getByRole("alert").innerText()).includes("au moins un propriétaire actif"), "le seul propriétaire ne se rétrograde pas");
   });
 
+  await etape("la comptable, en lecture seule : elle consulte, rien ne l'appelle à agir", async () => {
+    const comptable = `comptable-${Date.now()}@maymar.test`;
+    await page.goto(`${C}/gestion/maymar/equipe`, { waitUntil: "networkidle" });
+    await clic(page, page.locator("#email"));
+    await tape(page, comptable);
+    await clic(page, page.locator(".role-choix", { hasText: "Lecture seule" }));
+    await envoie(page.getByRole("button", { name: "Inviter" }));
+    const lien = (await page.locator("#lien-acces").inputValue()).trim();
+    const bureau = await navigateur.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+    const p = await bureau.newPage();
+    t.espion(p, "comptable", attendue);
+    await p.goto(lien, { waitUntil: "networkidle" });
+    await p.locator("#mot_de_passe").fill("les comptes du mois");
+    await p.locator("#confirmation").fill("les comptes du mois");
+    await clic(p, p.getByRole("button", { name: "Enregistrer et entrer" }));
+    await entre(p, "maymar");
+    await p.goto(`${C}/gestion/maymar?etape=a_confirmer`, { waitUntil: "networkidle" });
+    verifie(await p.locator(".bo-ligne").count() > 0 && await p.locator(".bo-appel").count() === 0 && await p.locator(".bo-premier").count() === 0,
+      "la liste à confirmer : les commandes, sans bouton d'appel ni « à appeler en premier »");
+    verifie(await p.locator(".app-cote .app-nav-compte").count() === 0, "ni « à confirmer » ni SAV à rappeler en pastille dans le menu");
+    await p.goto(`${C}/gestion/maymar/aujourdhui`, { waitUntil: "networkidle" });
+    const jour = await p.locator("main").innerText();
+    verifie(/Commandes? à confirmer/.test(jour) && !jour.includes("Imprimer les bordereaux") && !jour.includes("Réceptionner une livraison"),
+      "« Aujourd'hui » : ce qui attend l'équipe, sans les gestes de la préparation");
+    await capture(p, "gestion-lecture-aujourdhui");
+    await bureau.close();
+  });
+
   await etape("la fiche client sur téléphone", async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(ficheClient, { waitUntil: "networkidle" });

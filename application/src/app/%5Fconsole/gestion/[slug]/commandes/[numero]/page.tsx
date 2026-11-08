@@ -23,6 +23,7 @@ import {
   messagePrete,
   quand,
   telephoneLisible,
+  PEUT_CONFIRMER,
 } from "@/lib/gestion/libelles";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
@@ -243,7 +244,7 @@ const FAIT_RETRAIT: Record<string, string> = {
 };
 
 const peut = (role: Role, roles: Role[]) => roles.includes(role);
-const CONFIRMER: Role[] = ["proprietaire", "admin", "confirmateur"];
+const CONFIRMER: Role[] = PEUT_CONFIRMER;
 const EXPEDIER: Role[] = ["proprietaire", "admin", "preparateur"];
 const LIVRER: Role[] = ["proprietaire", "admin", "confirmateur", "preparateur"];
 

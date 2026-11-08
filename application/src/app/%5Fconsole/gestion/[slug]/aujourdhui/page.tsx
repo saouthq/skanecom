@@ -12,7 +12,8 @@ import { PEUT_CHIFFRER } from "@/lib/gestion/devis";
 import { PEUT_MODERER } from "@/lib/gestion/avis";
 import { PEUT_PREVENIR } from "@/lib/gestion/reassort";
 import { PEUT_RELANCER } from "@/lib/gestion/paniers";
-import { duMois, enTnd, type Objectif } from "@/lib/gestion/objectif";
+import { duMois, enTnd, PEUT_FIXER, type Objectif } from "@/lib/gestion/objectif";
+import { PEUT_STOCKER } from "@/lib/gestion/catalogue";
 import { jourArrivageCourt, type EcranArrivages } from "@/lib/gestion/arrivages";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
@@ -49,6 +50,8 @@ type Prochaine = {
 };
 
 const CONFIRMER: Role[] = ["proprietaire", "admin", "confirmateur"];
+/** Les gestes de la préparation (les bordereaux, le stock) : pas pour la lecture seule ni les appels. */
+const PREPARER: Role[] = PEUT_STOCKER;
 
 type Etat = {
   jour: string;
@@ -153,7 +156,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
       cle: "a_preparer", nombre: c.a_preparer, icone: "colis", href: `${base}?etape=a_preparer`,
       titre: "Colis à préparer",
       detail: c.a_preparer ? "Confirmés : à emballer et à remettre au transporteur." : "Rien en attente de préparation.",
-      action: c.a_preparer ? { href: `${base}/bordereaux?etape=a_preparer`, libelle: "Imprimer les bordereaux" } : undefined,
+      action: c.a_preparer && PREPARER.includes(boutique.role) ? { href: `${base}/bordereaux?etape=a_preparer`, libelle: "Imprimer les bordereaux" } : undefined,
     },
     {
       cle: "en_livraison", nombre: c.en_livraison, icone: "camion", href: `${base}?etape=expediees`,
@@ -175,7 +178,7 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
     ...(vitrineSeule ? [] : tacheDemandes),
     ...(e.modules.sav !== null
       ? [{ cle: "sav", nombre: e.modules.sav, icone: "outil" as const, href: `${base}/sav`,
-          titre: "Demandes de SAV", detail: e.modules.sav ? "Nouvelles : le client attend votre appel." : "Aucune nouvelle demande." }]
+          titre: "Demandes de SAV", detail: e.modules.sav ? "Nouvelles : le client attend un appel." : "Aucune nouvelle demande." }]
       : []),
     ...(e.modules.devis !== null
       ? [{ cle: "devis", nombre: e.modules.devis, icone: "fichier" as const, href: `${base}/devis`, roles: PEUT_CHIFFRER,
@@ -283,12 +286,16 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
                 Toutes les {e.stock.ruptures + e.stock.bas} au catalogue <Icone nom="droite" taille={14} />
               </Link>
             ) : null}
-            <Link className="btn btn-second btn-petit" href={`${base}/produits/reception`}>
-              <Icone nom="colis" taille={14} /> Réceptionner une livraison
-            </Link>
-            <Link className="btn btn-second btn-petit" href={`${base}/produits/arrivages`}>
-              <Icone nom="calendrier" taille={14} /> Annoncer un arrivage
-            </Link>
+            {PREPARER.includes(boutique.role) ? (
+              <>
+                <Link className="btn btn-second btn-petit" href={`${base}/produits/reception`}>
+                  <Icone nom="colis" taille={14} /> Réceptionner une livraison
+                </Link>
+                <Link className="btn btn-second btn-petit" href={`${base}/produits/arrivages`}>
+                  <Icone nom="calendrier" taille={14} /> Annoncer un arrivage
+                </Link>
+              </>
+            ) : null}
           </div>
         </section>
       ) : null}
@@ -326,9 +333,9 @@ export default async function Aujourdhui({ params }: { params: Promise<{ slug: s
                   <span style={{ inlineSize: `${Math.min(100, (objectif.livre / objectif.objectif) * 100)}%` }} />
                 </span>
               </Link>
-            ) : (
+            ) : PEUT_FIXER.includes(boutique.role) ? (
               <Link className="btn-lien aide jd-objectif-fixer" href={`${base}/tableau#objectif`}>Fixer l&apos;objectif {duMois(objectif.mois)} →</Link>
-            )
+            ) : null
           ) : null}
           <Link className="btn-lien aide" href={`${base}/tableau`}>Le tableau de bord, sur 30 jours →</Link>
         </section>

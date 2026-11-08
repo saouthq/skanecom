@@ -16,6 +16,7 @@ import {
   lienAppel,
   telephoneLisible,
   type Etape,
+  PEUT_CONFIRMER,
 } from "@/lib/gestion/libelles";
 import { PEUT_SAISIR } from "@/lib/gestion/saisie";
 import { jourArrivageCourt } from "@/lib/gestion/arrivages";
@@ -127,6 +128,8 @@ export default async function Commandes({
   const geste = etape.cle === "a_preparer" && EXPEDIER_LOT.includes(boutique.role) ? "expedier"
     : etape.cle === "expediees" && LIVRER_LOT.includes(boutique.role) ? "livrer" : null;
   const statutLot = geste === "expedier" ? "confirmee" : "expediee";
+  // Les appels (le bouton, l'ordre d'appel, les alertes) : pour qui confirme.
+  const appelle = PEUT_CONFIRMER.includes(boutique.role);
   // Remettre au livreur : le transporteur habituel déjà écrit, comme sur la fiche (sinon les colis partaient sans).
   const { data: transporteurRegle } = geste === "expedier"
     ? await sb.from("reglages").select("valeur").eq("boutique_id", boutique.boutique_id).eq("cle", "livraison.transporteur").maybeSingle()
@@ -138,7 +141,7 @@ export default async function Commandes({
     <>
       <EnTetePage
         titre="Commandes"
-        description={etape.cle === "a_confirmer" ? "La plus ancienne en haut : c'est elle qu'on appelle d'abord."
+        description={etape.cle === "a_confirmer" ? (appelle ? "La plus ancienne en haut : c'est elle qu'on appelle d'abord." : "La plus ancienne en haut. L'équipe des appels les confirme.")
           : etape.cle === "precommandes" ? "Elles attendent leur arrivage : à la réception (Catalogue → Arrivages), elles sont servies dans l'ordre et passent « À préparer »." : undefined}
         actions={
           <>
@@ -153,7 +156,7 @@ export default async function Commandes({
               <RaccourciRecherche cible="q" />
               <button type="submit" className="btn btn-second">Chercher</button>
             </form>
-            {etape.cle === "a_confirmer" ? <AlertesCommandes /> : null}
+            {etape.cle === "a_confirmer" && appelle ? <AlertesCommandes /> : null}
             {PEUT_SAISIR.includes(boutique.role) ? (
               <Link href={`/gestion/${slug}/commandes/nouvelle`} className="btn btn-second">
                 <Icone nom="plus" /> Saisir une commande
@@ -202,7 +205,7 @@ export default async function Commandes({
         <ul className="bo-liste" role="list">
           {liste.commandes.map((c, i) => {
             const aConfirmer = c.statut === "recue" || c.statut === "a_arbitrer";
-            const premier = i === 0 && page === 1 && !q && etape.cle === "a_confirmer" && liste.commandes.length > 1;
+            const premier = appelle && i === 0 && page === 1 && !q && etape.cle === "a_confirmer" && liste.commandes.length > 1;
             return (
               <li key={c.numero} className="bo-ligne" data-statut={c.statut}>
                 {geste && c.statut === statutLot && c.mode_livraison === "domicile" ? (
@@ -267,7 +270,7 @@ export default async function Commandes({
                     <span className="bo-ligne-total"><Prix millimes={c.total_millimes} /></span>
                   </span>
                 </Link>
-                {aConfirmer ? (
+                {aConfirmer && appelle ? (
                   <a className="bo-appel" href={lienAppel(c.contact_telephone)} aria-label={`Appeler ${c.contact_nom} au ${telephoneLisible(c.contact_telephone)}`}>
                     <Icone nom="telephone" taille={18} />
                   </a>

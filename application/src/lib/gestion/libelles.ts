@@ -1,4 +1,5 @@
 import { formatePrix } from "@/lib/prix";
+import type { Role } from "@/lib/console/session";
 
 /* ============================================================================
    LE BACKOFFICE DES BOUTIQUES — ses libellés et ses petits outils.
@@ -14,6 +15,11 @@ export const LIBELLES_ROLE: Record<string, string> = {
   preparateur: "Préparation",
   lecture: "Lecture seule",
 };
+
+/** Qui appelle les clients et confirme leurs commandes : les appels, le
+ *  compteur « à confirmer » et l'ordre d'appel ne se montrent qu'à eux (la
+ *  lecture seule consulte, la préparation prépare). */
+export const PEUT_CONFIRMER: Role[] = ["proprietaire", "admin", "confirmateur"];
 
 export const LIBELLES_STATUT: Record<string, string> = {
   a_arbitrer: "À vérifier",

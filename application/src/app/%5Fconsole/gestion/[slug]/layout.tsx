@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { accesEquipe, clientSession, exigeMembre } from "@/lib/console/session";
 import { Coquille, type LienCoquille } from "@/components/console/Coquille";
 import { CompteurCommandes } from "@/components/console/Veille";
-import { LIBELLES_ROLE } from "@/lib/gestion/libelles";
+import { LIBELLES_ROLE, PEUT_CONFIRMER } from "@/lib/gestion/libelles";
 import { MODES_SUPPORT, type ModeSupport } from "@/lib/console/support";
 import { BandeauSupport } from "@/components/console/AccesSupport";
 import { enFond, envoyerFile } from "@/lib/gestion/skanfact";
@@ -14,6 +14,7 @@ import { PEUT_CHIFFRER } from "@/lib/gestion/devis";
 import { PEUT_MODERER } from "@/lib/gestion/avis";
 import { PEUT_PREVENIR } from "@/lib/gestion/reassort";
 import { PEUT_RELANCER } from "@/lib/gestion/paniers";
+import { PEUT_TRAITER_SAV } from "@/lib/gestion/sav";
 import type { ElementPalette } from "@/lib/gestion/palette";
 import { OuvrirPalette, Palette } from "@/components/console/Palette";
 import { BandeauAnnonces } from "@/components/console/BandeauAnnonces";
@@ -160,7 +161,7 @@ export default async function BackofficeBoutique({
           : undefined,
       }]
     : [];
-  const badgeSav = etatSav?.nouvelles
+  const badgeSav = etatSav?.nouvelles && PEUT_TRAITER_SAV.includes(boutique.role)
     ? <span className="app-nav-compte" aria-label={`${etatSav.nouvelles} à rappeler`}>{etatSav.nouvelles}</span>
     : undefined;
   // Les demandes du formulaire de contact de la vitrine, s'il est ouvert (ou
@@ -179,7 +180,7 @@ export default async function BackofficeBoutique({
   const vitrineSeule = Boolean(etatDemandes?.site_vitrine && lienDemandes.length);
   const lienCommandes = {
     href: `/gestion/${slug}`, libelle: "Commandes", icone: "commandes" as const, exact: true, aussi: [`/gestion/${slug}/commandes/`],
-    extra: <CompteurCommandes slug={slug} />,
+    extra: <CompteurCommandes slug={slug} muet={!PEUT_CONFIRMER.includes(boutique.role)} />,
   };
 
   const liens: LienCoquille[] = [
