@@ -87,7 +87,7 @@ export default async function PageLettre({
 
       <div className="pile">
         {/* ---------------- Les quatre chiffres ---------------- */}
-        <section className="tb-chiffres lt-chiffres" aria-label="Les inscrits">
+        <section className="tb-chiffres tb-chiffres-courts" aria-label="Les inscrits">
           <article className="carte tb-chiffre tb-chiffre-fort">
             <p className="tb-libelle">Inscrits</p>
             <p className="tb-valeur"><Compteur valeur={c.inscrits} /></p>

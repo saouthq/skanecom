@@ -1044,6 +1044,13 @@ form:has(input[name="livraison.mode_frais"][value="zone"]:checked) .rg-si-fixe {
 
 .tb-chiffres { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
 .tb-chiffre { display: grid; gap: .375rem; align-content: start; }
+/* Au téléphone, quatre chiffres courts (des nombres, pas des montants) vont
+   deux par deux : la lettre (« Copier les adresses » un écran plus tôt), les
+   visites (le graphique aussi). Le tableau de bord garde la pleine largeur. */
+@media (max-width: 40rem) {
+  .tb-chiffres-courts { grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .tb-chiffres-courts .tb-chiffre { padding: 1rem; }
+}
 .tb-libelle { font-size: .8125rem; font-weight: 500; color: var(--ui-texte-2); }
 /* Le montant et son unité sur une ligne (« 2 641,000 » puis « TND » seul en dessous, avant). */
 .tb-valeur { font-size: clamp(1.625rem, 2.6vw, 2rem); font-weight: 600; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -2017,12 +2024,6 @@ a.pg-titre:hover { color: var(--ui-accent); }
 }
 
 /* --- La lettre d'information (…/lettre) ------------------------------------- */
-/* Au téléphone, les quatre chiffres deux par deux (des nombres courts) :
-   « Copier les adresses » arrive un écran plus tôt. */
-@media (max-width: 40rem) {
-  .lt-chiffres { grid-template-columns: 1fr 1fr; gap: .75rem; }
-  .lt-chiffres .tb-chiffre { padding: 1rem; }
-}
 .lt-barres { block-size: 8rem; gap: 6px; }
 .lt-barre { background: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-bord)); }
 .lt-outils { display: flex; flex-wrap: wrap; gap: .5rem; }

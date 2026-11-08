@@ -7,6 +7,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     const { data, error } = await clientService(ip).rpc("console_appliquer_import", { p_acteur: user.id, p_import_id: id });
     if (error) return versAvecErreur(`/boutiques/${slug}/import/${id}`, messageBase(error));
     const r = data as { produits: number; lignes: number };
-    return vers(`/boutiques/${slug}?${new URLSearchParams({ ok: `Catalogue importé : ${r.produits} produits, ${r.lignes} variantes.` })}`);
+    return vers(`/boutiques/${slug}?${new URLSearchParams({ ok: `Catalogue importé : ${r.produits} produit${r.produits > 1 ? "s" : ""}, ${r.lignes} variante${r.lignes > 1 ? "s" : ""}.` })}`);
   });
 }

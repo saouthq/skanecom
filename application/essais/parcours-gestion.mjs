@@ -1963,6 +1963,9 @@ if (section("4bis")) {
     }
     verifie(visiteurs > 500, `les visiteurs des trente derniers jours (${visiteurs})`);
     verifie((await page.locator(".tb-barres li").count()) === 30, "trente jours, jour par jour");
+    const jours = (await page.locator(".vi-barres .sr-only").allTextContents()).join(" | ");
+    verifie(/\b\d+ visiteurs?\b/.test(jours) && !/\b1 (commandes|visiteurs|pages)\b/.test(jours),
+      "chaque jour se lit au bon nombre (« 1 commande »)");
     const sources = await page.locator(".vi-sources .tb-origine-nom").allInnerTexts();
     verifie(sources.includes("Instagram") && sources.includes("Direct ou lien partagé") && new Set(sources).size === sources.length,
       `les sources, chacune une fois (${sources.join(", ")})`);

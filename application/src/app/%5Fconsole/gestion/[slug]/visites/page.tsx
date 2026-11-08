@@ -31,6 +31,9 @@ export const metadata: Metadata = { title: "Visites" };
 const PERIODES = [7, 30, 90] as const;
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
 const JOUR_LONG = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+/** « mardi 13 octobre : 69 visiteurs, 157 pages vues, 1 commande » — la bulle et les lecteurs d'écran disent la même chose. */
+const jourLu = (j: { jour: string; visiteurs: number; vues: number; commandes: number }) =>
+  `${JOUR_LONG.format(new Date(j.jour))} : ${j.visiteurs} visiteur${j.visiteurs > 1 ? "s" : ""}, ${j.vues} page${j.vues > 1 ? "s" : ""} vue${j.vues > 1 ? "s" : ""}${j.commandes ? `, ${j.commandes} commande${j.commandes > 1 ? "s" : ""}` : ""}`;
 const NOMBRE = new Intl.NumberFormat("fr-FR");
 const CONVERSION = new Intl.NumberFormat("fr-FR", { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const APPAREILS = [
@@ -117,7 +120,7 @@ export default async function PageVisites({
       ) : (
         <div className="pile">
           {/* ---------------- Les quatre chiffres ---------------- */}
-          <section className="tb-chiffres" aria-label="Les chiffres de la période">
+          <section className="tb-chiffres tb-chiffres-courts" aria-label="Les chiffres de la période">
             <article className="carte tb-chiffre tb-chiffre-fort">
               <p className="tb-libelle">Visiteurs</p>
               <p className="tb-valeur"><Compteur valeur={c.visiteurs} /></p>
@@ -155,12 +158,12 @@ export default async function PageVisites({
             <ol className="tb-barres vi-barres" data-jours={jours} aria-label="Visiteurs par jour">
               {v.par_jour.map((j, i) => (
                 <li key={j.jour} style={{ "--i": i } as React.CSSProperties}
-                  title={`${JOUR_LONG.format(new Date(j.jour))} : ${j.visiteurs} visiteur${j.visiteurs > 1 ? "s" : ""}, ${j.vues} page${j.vues > 1 ? "s" : ""} vue${j.vues > 1 ? "s" : ""}${j.commandes ? `, ${j.commandes} commande${j.commandes > 1 ? "s" : ""}` : ""}`}>
+                  title={jourLu(j)}>
                   <span className="tb-barre vi-barre" style={{ blockSize: `${(j.visiteurs / max) * 100}%` }}>
                     {j.commandes ? <span className="vi-commande" aria-hidden="true" /> : null}
                   </span>
                   <span className="sr-only">
-                    {JOUR_LONG.format(new Date(j.jour))} : {j.visiteurs} visiteurs, {j.vues} pages vues{j.commandes ? `, ${j.commandes} commandes` : ""}
+                    {jourLu(j)}
                   </span>
                 </li>
               ))}

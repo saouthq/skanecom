@@ -125,7 +125,7 @@ export default async function TableauPlateforme({ searchParams }: { searchParams
           {t.serie.map((j) => (
             <li key={j.jour} title={`${JOUR.format(new Date(j.jour))} : ${tnd(j.chiffre)} · ${j.recues} reçue${j.recues > 1 ? "s" : ""}`}>
               <span className="tbp-barre" style={{ blockSize: `${Math.max(j.chiffre ? 3 : 0, (j.chiffre / max) * 100)}%` }} />
-              <span className="sr-only">{JOUR.format(new Date(j.jour))} : {tnd(j.chiffre)}, {j.recues} commandes reçues</span>
+              <span className="sr-only">{JOUR.format(new Date(j.jour))} : {tnd(j.chiffre)}, {j.recues} commande{j.recues > 1 ? "s" : ""} reçue{j.recues > 1 ? "s" : ""}</span>
             </li>
           ))}
         </ol>
