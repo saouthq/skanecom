@@ -36,6 +36,26 @@ export function lieuDe(chemin: string, route?: string | null): { surface: Surfac
   return { surface: "serveur", slug: null };
 }
 
+/** La référence d'une erreur du rendu, telle que l'écran d'erreur la montre :
+ *  le digest que le rendu pose (djb2 du message et de la pile, comme Next.js
+ *  et vinext), recalculé si l'erreur n'en porte pas. */
+export function referenceDe(e: unknown): string {
+  const o = e as { digest?: unknown } | null;
+  if (typeof o?.digest === "string" && o.digest) return o.digest;
+  const texte = e instanceof Error ? e.message + (e.stack || "") : String(e);
+  let h = 5381;
+  for (let i = texte.length - 1; i >= 0; i--) h = (h * 33) ^ texte.charCodeAt(i);
+  return (h >>> 0).toString();
+}
+
+/** Une référence signalée par le navigateur : des chiffres, rien d'autre. */
+export function referenceLue(v: unknown): string | null {
+  return typeof v === "string" && /^\d{1,20}$/.test(v) ? v : null;
+}
+/** Le message d'une erreur du serveur signalée par le navigateur seul (le
+ *  serveur n'a pas pu la noter : son détail est resté dans ses journaux). */
+export const sansDetail = (reference: string) => `Erreur du serveur, signalée par le navigateur (référence ${reference}) : le détail n'a pas pu être noté.`;
+
 /** Le début de la pile : ses dix premières lignes. */
 export function pileCourte(pile: unknown): string | null {
   if (typeof pile !== "string" || !pile) return null;

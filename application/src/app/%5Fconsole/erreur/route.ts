@@ -1,4 +1,4 @@
-import { lieuDe, noterErreur, pileCourte } from "@/lib/erreurs";
+import { lieuDe, noterErreur, pileCourte, referenceLue, sansDetail } from "@/lib/erreurs";
 import { memeOrigine } from "@/lib/origine";
 
 /* Une page de la console ou d'un backoffice cassée au navigateur
@@ -14,15 +14,17 @@ export async function POST(req: Request) {
   if (!memeOrigine(req)) return rien();
   const texte = await req.text().catch(() => "");
   if (!texte || texte.length > 4000) return rien();
-  let corps: { message?: unknown; pile?: unknown; chemin?: unknown } | null = null;
+  let corps: { message?: unknown; pile?: unknown; chemin?: unknown; reference?: unknown } | null = null;
   try { corps = JSON.parse(texte); } catch { return rien(); }
-  const message = typeof corps?.message === "string" ? corps.message.trim() : "";
+  // Une erreur du serveur que le serveur n'a peut-être pas pu noter : sa référence seule.
+  const reference = referenceLue(corps?.reference);
+  const message = reference ? sansDetail(reference) : typeof corps?.message === "string" ? corps.message.trim() : "";
   const chemin = typeof corps?.chemin === "string" && corps.chemin.startsWith("/") ? corps.chemin.slice(0, 300) : "/";
   if (!message) return rien();
   const { surface, slug } = lieuDe(chemin);
   await noterErreur({
     surface: surface === "serveur" ? "console" : surface, genre: "navigateur", slug,
-    hote: req.headers.get("host"), route: null, chemin, message, pile: pileCourte(corps?.pile), digest: null,
+    hote: req.headers.get("host"), route: null, chemin, message, pile: reference ? null : pileCourte(corps?.pile), digest: reference,
   });
   return rien();
 }

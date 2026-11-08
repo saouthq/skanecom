@@ -1,4 +1,4 @@
-import { estControle, lieuDe, noterErreur, pileCourte } from "@/lib/erreurs";
+import { estControle, lieuDe, noterErreur, pileCourte, referenceDe } from "@/lib/erreurs";
 
 /* Chaque erreur qu'une requête laisse échapper (une page, une route, une
    action) se note dans la base, pour la console : État technique → Erreurs
@@ -22,6 +22,7 @@ export async function onRequestError(erreur: unknown, requete: Requete, contexte
     chemin: requete.path ?? null,
     message: typeof e?.message === "string" && e.message ? e.message : String(erreur),
     pile: pileCourte(e?.stack),
-    digest: typeof e?.digest === "string" ? e.digest : null,
+    // La référence que l'écran d'erreur montre : on la retrouve dans la liste.
+    digest: referenceDe(erreur),
   });
 }
