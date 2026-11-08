@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { clientService } from "@/lib/console/service";
+import { boutiqueConsole } from "@/lib/console/boutique-lue";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_STATUT, MOTIFS_SUSPENSION, adresseVitrine, deNom } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
@@ -24,7 +25,7 @@ export default async function Boutique({ children, params }: {
 }) {
   const { role } = await exigeAdmin();
   const { slug } = await params;
-  const { data } = await clientService().rpc("console_boutique", { p_slug: slug });
+  const { data } = await boutiqueConsole(slug);
   if (!data) notFound();
   const { boutique: b, domaines, theme } = data as {
     boutique: { id: string; slug: string; nom: string; statut: string; demonstration: boolean };

@@ -4,6 +4,7 @@ import { EnTetePage } from "@/components/console/Coquille";
 import { Icone, type NomIcone } from "@/components/console/Icone";
 import { dateJournal } from "@/lib/console/libelles";
 import { clientService } from "@/lib/console/service";
+import { lecture } from "@/lib/console/lecture";
 import { exigeAdmin } from "@/lib/console/session";
 import { chronometre, configuration, hoteLocal, LIBELLES_FOURNISSEUR, taille, type DonneesEtat } from "@/lib/console/etat";
 import { LIBELLES_GENRE, surveillanceMuette, type DonneesAlertes, type DonneesSurveillance, type IncidentLu } from "@/lib/console/surveillance";
@@ -69,10 +70,10 @@ export default async function EtatTechnique({ searchParams }: { searchParams: Pr
   await noterVersion(service);
   const [[{ data, error }, dureeBase], { data: dataSurv, error: errSurv }, { data: dataAlertes, error: errAlertes }, { data: dataErreurs, error: errErreurs }, { data: dataPause }, { data: dataChrono, error: errChrono }, { data: dataTaches, error: errTaches }, { data: dataFourn }, { data: dataTrafic, error: errTrafic }] = await Promise.all([
     chronometre(() => service.rpc("console_etat_technique", { p_acteur: user.id })),
-    service.rpc("console_surveillance", { p_acteur: user.id }),
+    lecture("console_surveillance", { p_acteur: user.id }),
     service.rpc("console_alertes", { p_acteur: user.id }),
     service.rpc("console_erreurs", { p_acteur: user.id, p_boutique_id: filtreErreurs?.id ?? null, p_reglees: v.reglees === "1" }),
-    service.rpc("console_maintenance", { p_acteur: user.id }),
+    lecture("console_maintenance", { p_acteur: user.id }),
     service.rpc("console_chronologie", { p_acteur: user.id, p_jours: jours, p_boutique_id: pour?.id ?? null }),
     service.rpc("console_taches", { p_acteur: user.id }),
     service.rpc("console_fournisseurs", { p_acteur: user.id }),

@@ -1,5 +1,5 @@
-import { cache } from "react";
-import { clientService } from "./service";
+import { parRequete } from "@/lib/par-requete";
+import { lecture } from "./lecture";
 import { configSkanFact } from "./skanfact";
 import { vigilances, type ConditionsLues, type ErreursLues, type LignePilotage, type MaintenanceLue, type Quotas, type Rappel, type Sante, type SurveillanceLue } from "./pilotage";
 import { rangeVigilances, type Reportee } from "./accueil";
@@ -8,21 +8,20 @@ import type { DonneesFormules } from "./formules";
 /* L'état de la plateforme que lisent l'accueil et la navigation (son
    compteur d'alertes) : lu une fois par requête, même si le layout et la
    page le demandent tous deux. */
-export const chargeAccueil = cache(async (acteur: string) => {
-  const service = clientService();
+export const chargeAccueil = parRequete("console.chargeAccueil", async (acteur: string) => {
   const [{ data, error }, { data: df }, { data: ds }, { data: dr }, { data: de }, { data: dv }, { data: dq }, { data: dw }, { data: dc }, { data: dx }, { data: dm }] = await Promise.all([
-    service.rpc("console_pilotage"),
-    service.rpc("console_formules", { p_acteur: acteur }),
-    service.rpc("console_sante", { p_acteur: acteur }),
-    service.rpc("console_rappels", { p_acteur: acteur }),
+    lecture("console_pilotage"),
+    lecture("console_formules", { p_acteur: acteur }),
+    lecture("console_sante", { p_acteur: acteur }),
+    lecture("console_rappels", { p_acteur: acteur }),
     // (une ligne suffit : on n'en lit que la semaine)
-    service.rpc("console_envois", { p_acteur: acteur, p_echecs: true, p_limite: 1 }),
-    service.rpc("console_vigilances_reportees", { p_acteur: acteur }),
-    service.rpc("console_quotas", { p_acteur: acteur }),
-    service.rpc("console_surveillance", { p_acteur: acteur }),
-    service.rpc("console_conditions_etat", { p_acteur: acteur }),
-    service.rpc("console_erreurs_etat", { p_acteur: acteur }),
-    service.rpc("console_maintenance", { p_acteur: acteur }),
+    lecture("console_envois", { p_acteur: acteur, p_echecs: true, p_limite: 1 }),
+    lecture("console_vigilances_reportees", { p_acteur: acteur }),
+    lecture("console_quotas", { p_acteur: acteur }),
+    lecture("console_surveillance", { p_acteur: acteur }),
+    lecture("console_conditions_etat", { p_acteur: acteur }),
+    lecture("console_erreurs_etat", { p_acteur: acteur }),
+    lecture("console_maintenance", { p_acteur: acteur }),
   ]);
   if (error) throw new Error(`Boutiques illisibles : ${error.message}`);
   const boutiques = (data ?? []) as LignePilotage[];

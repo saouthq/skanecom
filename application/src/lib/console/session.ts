@@ -1,6 +1,6 @@
-import { cache } from "react";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { parRequete } from "@/lib/par-requete";
 import { createServerClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { clientService } from "./service";
@@ -60,7 +60,10 @@ export type Acces =
   | { etat: "aal1"; user: User; role: string }
   | { etat: "ok"; user: User; role: string };
 
-export async function acces(): Promise<Acces> {
+/** Lu une fois par requête (lib/par-requete.ts) : le layout, le titre
+ *  d'onglet et la page le partagent — un Worker gratuit ne permet que 50
+ *  appels sortants par requête. */
+export const acces = parRequete("console.acces", async function acces(): Promise<Acces> {
   const sb = await clientSession();
   const { data } = await sb.auth.getUser();
   const user = data.user;
@@ -78,7 +81,7 @@ export async function acces(): Promise<Acces> {
     if (exigee === true) return { etat: "aal1", user, role: role as string };
   }
   return { etat: "ok", user, role: role as string };
-}
+});
 
 /** Pour les pages protégées : renvoie l'administrateur, ou redirige vers la
  *  bonne porte. */
@@ -120,9 +123,9 @@ export type AccesEquipe =
   | { etat: "aal1"; user: User; boutiques: Membre[] }
   | { etat: "ok"; user: User; boutiques: Membre[] };
 
-/** Mis en cache pour le temps d'un rendu : le layout du backoffice, son titre
- *  d'onglet et la page la lisent sans refaire la requête. */
-export const accesEquipe = cache(async function accesEquipe(): Promise<AccesEquipe> {
+/** Lue une fois par requête (lib/par-requete.ts) : le layout du backoffice,
+ *  son titre d'onglet et la page la partagent. */
+export const accesEquipe = parRequete("console.accesEquipe", async function accesEquipe(): Promise<AccesEquipe> {
   const sb = await clientSession();
   const { data } = await sb.auth.getUser();
   const user = data.user;
@@ -164,7 +167,7 @@ export async function exigeMembre(slug: string): Promise<{ user: User; boutique:
   return { user: a.user, boutique, boutiques: a.etat === "ok" ? a.boutiques : [] };
 }
 
-export async function estAdministrateur(userId: string): Promise<boolean> {
+export const estAdministrateur = parRequete("console.estAdministrateur", async function estAdministrateur(userId: string): Promise<boolean> {
   const { data } = await clientService().rpc("console_administrateur", { p_user_id: userId });
   return Boolean(data);
-}
+});

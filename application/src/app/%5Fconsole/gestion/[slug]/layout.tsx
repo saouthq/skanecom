@@ -1,3 +1,4 @@
+import { parRequete } from "@/lib/par-requete";
 import type { Metadata } from "next";
 import { accesEquipe, clientSession, exigeMembre } from "@/lib/console/session";
 import { Coquille, type LienCoquille } from "@/components/console/Coquille";
@@ -38,6 +39,19 @@ import { envoyerCourrielsCommandes } from "@/lib/courriels/commandes";
    ========================================================================== */
 /** L'onglet du navigateur porte le nom de la boutique (« Commandes · Maison Selma ») :
  *  c'est son backoffice, pas la console de SkanEcom. */
+/** L'état des modules pour la navigation, lu une fois par requête. */
+const coquilleDe = parRequete("gestion.coquille", async (boutiqueId: string, suspendue: boolean) => {
+  const sb = await clientSession();
+  const { data } = await sb.rpc("gestion_coquille", { p_boutique_id: boutiqueId, p_suspendue: suspendue });
+  return (data ?? null) as Record<string, unknown> | null;
+});
+
+/** Ce qui attendait une panne repart, en fond — une fois par requête. */
+const relancerFiles = parRequete("gestion.files", async (boutiqueId: string, skanfact: boolean) => {
+  if (skanfact) enFond(envoyerFile(boutiqueId));
+  enFond(envoyerCourrielsCommandes(boutiqueId));
+});
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const a = await accesEquipe();
@@ -56,25 +70,13 @@ export default async function BackofficeBoutique({
   const { user, boutique, boutiques } = await exigeMembre(slug);
   // L'état des modules de la boutique, pour la navigation — en même temps,
   // pas l'un après l'autre : chaque page du backoffice les attend.
-  const sb = await clientSession();
-  const etat = { p_boutique_id: boutique.boutique_id };
-  const [{ data: sav }, { data: pro }, { data: dv }, { data: av }, { data: pm }, { data: ra }, { data: pn }, { data: vi }, { data: lt }, { data: sf }, { data: an }, { data: su }, { data: dc }, { data: cg }, { data: mt }] = await Promise.all([
-    sb.rpc("gestion_sav_etat", etat),
-    sb.rpc("gestion_pro_etat", etat),
-    sb.rpc("gestion_devis_etat", etat),
-    sb.rpc("gestion_avis_etat", etat),
-    sb.rpc("gestion_promotions_etat", etat),
-    sb.rpc("gestion_alertes_etat", etat),
-    sb.rpc("gestion_paniers_etat", etat),
-    sb.rpc("gestion_visites_etat", etat),
-    sb.rpc("gestion_lettre_etat", etat),
-    sb.rpc("gestion_skanfact_etat", etat),
-    sb.rpc("gestion_annonces", etat),
-    boutique.statut === "suspendue" ? sb.rpc("gestion_suspension", etat) : Promise.resolve({ data: null }),
-    sb.rpc("gestion_demandes_etat", etat),
-    sb.rpc("gestion_conditions_etat", etat),
-    sb.rpc("maintenance_etat"),
-  ]);
+  // En une lecture (public.gestion_coquille), partagée par l'essai du layout
+  // et son rendu : un Worker gratuit ne permet que 50 appels par requête.
+  const c = await coquilleDe(boutique.boutique_id, boutique.statut === "suspendue");
+  const [sav, pro, dv, av, pm, ra, pn, vi, lt, sf, an, su, dc, cg, mt] = (["gestion_sav_etat", "gestion_pro_etat", "gestion_devis_etat",
+    "gestion_avis_etat", "gestion_promotions_etat", "gestion_alertes_etat", "gestion_paniers_etat", "gestion_visites_etat",
+    "gestion_lettre_etat", "gestion_skanfact_etat", "gestion_annonces", "gestion_suspension", "gestion_demandes_etat",
+    "gestion_conditions_etat", "maintenance_etat"] as const).map((k) => c?.[k] ?? null);
   // Les conditions de service de SkanEcom en vigueur, pas encore acceptées : le bandeau le dit.
   // (pendant un accès support, rien : SkanEcom n'accepte jamais à la place du commerçant)
   const conditions = (cg ?? null) as { version: number | null; a_accepter: boolean; peut_accepter?: boolean; proprietaire?: string | null } | null;
@@ -90,9 +92,9 @@ export default async function BackofficeBoutique({
   // refusé, une connexion coupée ou bientôt expirée. Ce qui attendait une panne repart, en fond.
   const etatSkanFact = sf as { actif: boolean; connecte: boolean; coupee: boolean; expire_bientot: boolean; a_regler: boolean;
                                dus: number; refuses: number } | null;
-  if (etatSkanFact?.dus) enFond(envoyerFile(boutique.boutique_id));
   // Les e-mails de commande restés dans leur file (une panne passée) repartent, en fond.
-  enFond(envoyerCourrielsCommandes(boutique.boutique_id));
+  // (une fois par requête : l'essai du layout ne les relance pas une seconde fois)
+  await relancerFiles(boutique.boutique_id, Boolean(etatSkanFact?.dus));
   const alerteSkanFact = etatSkanFact?.coupee ? "connexion coupée" : etatSkanFact?.a_regler ? "taux de TVA à choisir"
     : etatSkanFact?.expire_bientot ? "connexion à renouveler" : null;
   const lienSkanFact = DIRECTION.includes(boutique.role) && (etatSkanFact?.actif || etatSkanFact?.connecte)

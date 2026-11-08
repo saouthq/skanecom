@@ -41,12 +41,14 @@
 import http from "node:http";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { appendFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PREFIXE as SKANFACT, skanfactDev } from "./skanfact-dev.mjs";
 import { PREFIXE as RESEND, resendDev } from "./resend-dev.mjs";
 import { PREFIXE as KONNECT, konnectDev } from "./konnect-dev.mjs";
 import { PREFIXE as CLOUDFLARE, cloudflareDev } from "./cloudflare-dev.mjs";
 
+const JOURNAL = process.env.RELAIS_JOURNAL || null;
 const PORT = Number(process.env.RELAIS_PORT ?? 54321);
 const AMONTS = [
   { prefixe: "/rest/v1", port: Number(process.env.POSTGREST_PORT ?? 54330), nom: "PostgREST" },
@@ -224,6 +226,10 @@ function deposeFichier(req, res) {
 
 http
   .createServer((req, res) => {
+    // Le journal des requêtes (RELAIS_JOURNAL=<fichier>) : chaque appel du
+    // serveur de l'application, pour compter ce qu'une page en fait — un
+    // Worker gratuit n'en permet que 50 par requête (« Too many subrequests »).
+    if (JOURNAL) appendFileSync(JOURNAL, `${Date.now()} ${req.method} ${req.url.split("?")[0]} ${/Mozilla/.test(req.headers["user-agent"] ?? "") ? "navigateur" : "serveur"}\n`);
     // SkanFact simulé, SANS en-tête CORS, comme le vrai : ses pages se visitent
     // (« Relier SkanEcom à SkanFact »), son API s'appelle depuis le serveur. Un
     // formulaire de la console qui le suivrait par fetch échoue ici aussi.

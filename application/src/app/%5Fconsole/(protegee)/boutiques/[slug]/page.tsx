@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ETAPES_MISE_EN_PLACE, type MiseEnPlace as DonneesMiseEnPlace } from "@/lib/console/mise-en-place";
 import { clientService } from "@/lib/console/service";
+import { boutiqueConsole } from "@/lib/console/boutique-lue";
+import { lecture } from "@/lib/console/lecture";
 import { exigeAdmin } from "@/lib/console/session";
 import { LIBELLES_THEME, adresseVitrine, dateJournal, jourCourt, jourTunis } from "@/lib/console/libelles";
 import { equipeDe } from "@/lib/console/equipe-serveur";
@@ -59,7 +61,7 @@ export default async function FicheBoutique({ params, searchParams }: {
   // Le support aide sans engager : formule, statut, retrait d'un domaine restent au super-administrateur.
   const superAdmin = role === "super_admin";
   const [{ slug }, messages] = await Promise.all([params, searchParams]);
-  const { data, error } = await clientService().rpc("console_boutique", { p_slug: slug });
+  const { data, error } = await boutiqueConsole(slug);
   if (error) throw new Error(`Boutique illisible : ${error.message}`);
   if (!data) notFound();
   const f = data as Fiche;
@@ -72,11 +74,11 @@ export default async function FicheBoutique({ params, searchParams }: {
     clientService().rpc("console_mise_en_place", { p_boutique_id: b.id }),
     // Les métiers : le choix d'une boutique vide, et leur nom au journal.
     clientService().rpc("console_metiers", { p_acteur: user.id }),
-    clientService().rpc("console_formules", { p_acteur: user.id }),
+    lecture("console_formules", { p_acteur: user.id }),
     clientService().rpc("console_notes", { p_acteur: user.id, p_boutique_id: b.id }),
     // L'activité et la santé de la boutique : les mêmes chiffres et les mêmes signaux que l'accueil et le tableau de bord.
-    clientService().rpc("console_pilotage"),
-    clientService().rpc("console_sante", { p_acteur: user.id }),
+    lecture("console_pilotage"),
+    lecture("console_sante", { p_acteur: user.id }),
     clientService().rpc("console_tableau", { p_acteur: user.id, p_jours: 30 }),
     clientService().rpc("console_contact", { p_acteur: user.id, p_boutique_id: b.id }),
     b.statut === "suspendue" ? clientService().rpc("console_suspension", { p_acteur: user.id, p_boutique_id: b.id }) : Promise.resolve({ data: null }),
@@ -85,13 +87,13 @@ export default async function FicheBoutique({ params, searchParams }: {
     // Ses écarts à sa formule (onglet Formule) et son prix propre.
     clientService().rpc("console_droits_boutique", { p_acteur: user.id, p_boutique_id: b.id }),
     // Ce que la surveillance horaire a relevé sur sa vitrine, ses files, son domaine d'envoi.
-    clientService().rpc("console_surveillance", { p_acteur: user.id }),
+    lecture("console_surveillance", { p_acteur: user.id }),
     // Ses domaines à lui, chez Cloudflare : branchés, ou ce qu'il reste à poser.
     clientService().rpc("console_branchements", { p_acteur: user.id, p_boutique_id: b.id }),
     // Ses conditions de service acceptées, ou non ; ses erreurs de l'application ces 24 heures.
-    clientService().rpc("console_conditions_etat", { p_acteur: user.id }),
-    clientService().rpc("console_erreurs_etat", { p_acteur: user.id }),
-    clientService().rpc("console_maintenance", { p_acteur: user.id }),
+    lecture("console_conditions_etat", { p_acteur: user.id }),
+    lecture("console_erreurs_etat", { p_acteur: user.id }),
+    lecture("console_maintenance", { p_acteur: user.id }),
   ]);
   const dom = configDomaines();
   const branchements = ((dbr ?? []) as { hote: string; type: string; branchement: Branchement | null }[])

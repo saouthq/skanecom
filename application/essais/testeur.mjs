@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { chromium } from "playwright-core";
 
 /* ============================================================================
@@ -64,9 +64,29 @@ export function creeTesteur() {
     await page.waitForLoadState("networkidle");
   };
 
+  /* Les appels que le serveur fait pour afficher une page (le relais local
+     les note, outils/api-locale.sh → .outils/requetes.log) : un Worker gratuit
+     n'en permet que 50 par requête (« Too many subrequests »), et l'écran
+     casse au-delà. Rend leur nombre, ou null sans journal. Les cadres d'une
+     page (des aperçus) sont d'autres requêtes : une page qui en a se compte
+     ailleurs. */
+  const JOURNAL = process.env.RELAIS_JOURNAL ?? "../.outils/requetes.log";
+  const appelsServeur = async (page, url) => {
+    if (!existsSync(JOURNAL)) { await page.goto(url); return null; }
+    const lignes = () => readFileSync(JOURNAL, "utf8").split("\n").filter((l) => l.endsWith(" serveur")).length;
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await pause(400);
+    const avant = lignes();
+    await page.goto(url);
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await pause(400);
+    return lignes() - avant;
+  };
+
   return {
     port,
     dossier,
+    appelsServeur,
     pause,
     note,
     verifie,

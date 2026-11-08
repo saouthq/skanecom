@@ -155,7 +155,10 @@ CONF
   # Il tient aussi lieu de SkanFact (outils/skanfact-dev.mjs) : l'entreprise,
   # la clé et le secret des avis sont de développement, les mêmes que ceux
   # que l'application reçoit plus bas.
-  FICHIERS_DEPOT_CLE="$(jeton service_role)" \
+  # Chaque requête du serveur de l'application, notée (.outils/requetes.log) :
+  # les parcours y comptent les appels d'une page (50 au plus sur un Worker gratuit).
+  : > "$OUTILS/requetes.log"
+  RELAIS_JOURNAL="$OUTILS/requetes.log" FICHIERS_DEPOT_CLE="$(jeton service_role)" \
   SKANFACT_ENTREPRISE="$SKANFACT_ENTREPRISE_DEV" SKANFACT_CLE="$SKANFACT_CLE_DEV" SKANFACT_AVIS_SECRET="$SKANFACT_AVIS_DEV" \
   SKANFACT_PARTENAIRE_EMPREINTE="$(printf '%s' "$SKANFACT_SECRET_DEV" | sha256sum | cut -d' ' -f1)" \
     setsid node "$RACINE/outils/relais-rest.mjs" > "$OUTILS/relais.log" 2>&1 < /dev/null &

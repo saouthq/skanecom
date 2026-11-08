@@ -112,17 +112,21 @@ réglages de facturation GitHub. Les lots 34 et suivants sont vérifiés en loca
 l'aperçu des cinq boutiques avec le Chromium du poste) ; relancer la CI complète
 dès qu'elle repart. L'aperçu en ligne reste à `ededfdd` tant qu'elle ne repart pas.
 
-**Aperçu, 08/11 après-midi** : État technique casse (référence `1082066082`, la même à
-chaque fois) et la fiche de Maison Selma répond « introuvable ». Toutes les fonctions
-de la base répondent 200 (journaux Supabase) et rien n'est noté dans les erreurs de
-l'application : le détail est dans les journaux du Worker `skanecom-apercu-console`
-(Cloudflare → Workers → Logs), non lisibles d'ici. Non reproduit en local (boutique en
-préparation avec domaine personnalisé, domaines en ligne actifs, Konnect « réel »).
-Depuis `1650b85`, la référence d'un écran d'erreur se retrouve toujours dans la liste.
-Le Worker `skanecom-apercu-console` ne fait que relayer : tout s'exécute dans
-`skanecom-application`. Ses journaux (logs, traces, issues) ont été allumés à la main
-le 08/11 dans le tableau de bord (Settings → Observability) : la configuration `cf`
-n'a pas de champ pour eux, revérifier après chaque déploiement qu'ils le sont encore.
+**Aperçu, 08/11 après-midi — « Too many subrequests »** : État technique cassait
+(référence `1082066082`), la fiche de Maison Selma répondait « introuvable », et rien
+n'était noté — trois effets d'une seule cause, lue dans les journaux du Worker
+`skanecom-application` (le Worker `skanecom-apercu-console` ne fait que relayer) : un
+Worker gratuit ne permet que 50 appels sortants par requête. vinext exécute chaque layout
+une fois « pour essai » avant le rendu, hors du `cache()` de React : la coquille était lue
+deux fois (seize états au backoffice). Corrigé par `lib/par-requete.ts` (une lecture par
+requête, partagée par l'essai et le rendu), `lib/console/lecture.ts`,
+`public.gestion_coquille` (les seize états en un appel). Mesuré : console 16 à 27 appels
+par écran, backoffice 9 à 16 (avant : jusqu'à 61). Les parcours console et gestion le
+vérifient (40 au plus), par le journal du relais local (`.outils/requetes.log`).
+Les journaux du Worker (logs, traces, issues) ont été allumés à la main au tableau de bord
+le 08/11 : la configuration `cf` n'a pas de champ pour eux, revérifier après chaque
+déploiement. Le dépôt est public depuis le 08/11 (minutes Actions illimitées) : la CI
+repart.
 
 Remarqué, laissé tel quel :
 

@@ -291,6 +291,18 @@ await etape("bon code : la console s'ouvre", async () => {
   await capture(page, "console-tableau-liste");
 });
 
+await etape("chaque écran tient sous la limite d'un Worker gratuit (50 appels par requête)", async () => {
+  // L'aperçu cassait au-delà (« Too many subrequests ») : État technique, la
+  // fiche d'une boutique. 40 au plus, pour la marge (l'aperçu en fait un peu plus).
+  const ecrans = ["/", "/etat", "/boutiques/maison-selma", "/boutiques/maymar", "/boutiques/maymar/equipe", "/boutiques/maymar/modules",
+    "/tableau", "/revenus", "/consommation", "/journal", "/prospects", "/formules"];
+  const mesures = [];
+  for (const e of ecrans) mesures.push([e, await t.appelsServeur(page, CONSOLE + e)]);
+  if (mesures[0][1] === null) return verifie(true, "(pas de journal du relais : mesure sautée)");
+  const pire = mesures.reduce((a, b) => (b[1] > a[1] ? b : a));
+  verifie(mesures.every(([, n]) => n <= 40), `appels du serveur par écran, 40 au plus : ${mesures.map(([e, n]) => `${e} ${n}`).join(", ")} (le plus lourd : ${pire[0]}, ${pire[1]})`);
+});
+
 await etape("les boutiques de démonstration à part : la synthèse ne compte que les clientes", async () => {
   await page.goto(CONSOLE + "/", { waitUntil: "networkidle" });
   const groupes = (await page.locator(".pl-groupe").allInnerTexts()).map((g) => g.replace(/\s+/g, " ").trim());

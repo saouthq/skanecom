@@ -4,6 +4,7 @@ import { exigeAdmin } from "@/lib/console/session";
 import { Coquille, LogoSkanEcom } from "@/components/console/Coquille";
 import { chargeAccueil } from "@/lib/console/accueil-serveur";
 import { compteAlertes } from "@/lib/console/accueil";
+import { parRequete } from "@/lib/par-requete";
 import { clientService } from "@/lib/console/service";
 import { aRelancer, type Prospect } from "@/lib/console/prospects";
 import { OuvrirPalette, Palette } from "@/components/console/Palette";
@@ -36,6 +37,11 @@ const PAGES: ElementPalette[] = [
    côté client, Next peut ne rendre que la page, sans relancer le layout — et
    la page lit les données avec la clé service_role. Les gestionnaires POST
    revérifient eux-mêmes (lib/console/http.ts). */
+/** Les prospects à relancer, lus une fois par requête (lib/par-requete.ts). */
+const relancesDe = parRequete("console.relances", (acteur: string) =>
+  Promise.resolve(clientService().rpc("console_prospects", { p_acteur: acteur }))
+    .then(({ data }) => aRelancer((data ?? []) as Prospect[]), () => 0));
+
 export default async function ConsoleProtegee({ children }: { children: React.ReactNode }) {
   const { user, role } = await exigeAdmin();
   // Le compteur de « Boutiques » : ce qui presse dans « À surveiller » (hors
@@ -45,8 +51,7 @@ export default async function ConsoleProtegee({ children }: { children: React.Re
     <span className="app-nav-compte" data-urgent={alertes.urgent ? "" : undefined} aria-label={`${alertes.n} point${alertes.n > 1 ? "s" : ""} à surveiller`}>{alertes.n}</span>
   ) : undefined;
   // Le compteur de « Prospects » : ceux à relancer aujourd'hui ou en retard.
-  const relances = await clientService().rpc("console_prospects", { p_acteur: user.id })
-    .then(({ data }) => aRelancer((data ?? []) as Prospect[]), () => 0);
+  const relances = await relancesDe(user.id);
   const badgeProspects = relances ? (
     <span className="app-nav-compte" aria-label={`${relances} prospect${relances > 1 ? "s" : ""} à relancer`}>{relances}</span>
   ) : undefined;

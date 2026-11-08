@@ -393,6 +393,17 @@ if (section("2")) {
     verifie((await page.locator(".app-cote").getByRole("link", { name: "Lettre", exact: true }).count()) === 0, "ni de lettre : pas d'écran Lettre");
   });
 
+  await etape("chaque écran tient sous la limite d'un Worker gratuit (50 appels par requête)", async () => {
+    // L'aperçu cassait au-delà (« Too many subrequests ») : la coquille du
+    // backoffice était lue deux fois, en seize appels. 40 au plus, pour la marge.
+    const ecrans = ["", "/aujourdhui", "/produits", "/clients", "/reglages", "/sav", "/equipe", "/avis", "/encaissements"];
+    const mesures = [];
+    for (const e of ecrans) mesures.push([e || "/", await t.appelsServeur(page, `${C}/gestion/maymar${e}`)]);
+    if (mesures[0][1] === null) return verifie(true, "(pas de journal du relais : mesure sautée)");
+    const pire = mesures.reduce((a, b) => (b[1] > a[1] ? b : a));
+    verifie(mesures.every(([, n]) => n <= 40), `appels du serveur par écran, 40 au plus : ${mesures.map(([e, n]) => `${e} ${n}`).join(", ")} (le plus lourd : ${pire[0]}, ${pire[1]})`);
+  });
+
   await etape("« Aujourd'hui » : ce qui attend l'équipe, chaque carte vers sa liste", async () => {
     await clic(page, page.locator(".app-nav a", { hasText: "Aujourd'hui" }).first());
     await page.waitForURL(/\/aujourdhui$/);

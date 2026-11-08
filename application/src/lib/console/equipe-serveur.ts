@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { parRequete } from "@/lib/par-requete";
 import { clientService } from "./service";
 import { COOKIE_LIEN, DUREE_COOKIE_LIEN, cheminEquipe, lienBienvenue, type LienRemis, type MembreEquipe, type TypeLien } from "./equipe";
 import { MARQUE_PLATEFORME, courrielInvitation, courrielMotDePasse, marqueDeBoutique } from "@/lib/courriels/messages";
@@ -18,11 +19,11 @@ export async function boutiqueDe(slug: string): Promise<Boutique | null> {
   return data ? (data as { boutique: Boutique }).boutique : null;
 }
 
-export async function equipeDe(boutiqueId: string): Promise<MembreEquipe[]> {
+export const equipeDe = parRequete("console.equipeDe", async function equipeDe(boutiqueId: string): Promise<MembreEquipe[]> {
   const { data, error } = await clientService().rpc("console_equipe", { p_boutique_id: boutiqueId });
   if (error) throw new Error(`Équipe illisible : ${error.message}`);
   return (data ?? []) as MembreEquipe[];
-}
+});
 
 /** Demande à GoTrue un jeton à usage unique pour cette adresse. `invite` crée
  *  le compte s'il n'existe pas encore. */
