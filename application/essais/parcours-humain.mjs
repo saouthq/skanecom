@@ -1169,6 +1169,7 @@ if (section("5")) {
     await resultat.waitFor({ timeout: 8000 }).catch(() => {});
     verifie(await resultat.count() === 1 && (await resultat.innerText()).includes("SEL-2025-00048"), "le bon téléphone : la commande, sa frise, son contenu");
     verifie(await page.evaluate(() => document.activeElement?.classList.contains("suivi-resultat")), "le focus passe au résultat (lecteurs d'écran)");
+    verifie(await resultat.locator(".compte-joindre").count() === 0, "livrée : plus de « changer ou annuler » à proposer");
     await capture(page, "selma-suivi");
     let bouton = false;
     for (let i = 0; i < 15 && !bouton; i++) {

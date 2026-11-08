@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Gabarit } from "@/components/Gabarit";
 import { SuiviCommande } from "@/components/SuiviCommande";
 import { cadre as chargeCadre } from "@/lib/boutique";
+import { contactDe } from "@/lib/contact";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -30,7 +31,7 @@ export default async function Suivi({ params }: { params: Promise<{ boutique: st
         <h1>{t.suivi.titre}</h1>
         <p className="chapo">{t.suivi.chapo}</p>
       </header>
-      <SuiviCommande exemple={exemple} />
+      <SuiviCommande exemple={exemple} joindre={{ boutique: cadre.boutique.nom, whatsapp: cadre.whatsapp, telephone: contactDe(cadre).telephone?.href ?? null }} />
       {avecComptes ? (
         <p className="legende suivi-compte">
           <Link className="lien-souligne" href="/compte">{t.suivi.compte}</Link>

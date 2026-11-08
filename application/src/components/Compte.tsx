@@ -324,6 +324,26 @@ export function ResumeCommande({ c }: { c: CommandeMienne }) {
   );
 }
 
+export type Joindre = { boutique: string; whatsapp: string | null; telephone: string | null };
+
+/** Pas encore partie : une taille à changer, une adresse, ou l'annuler — on le dit à la boutique, le numéro déjà écrit
+ *  (« Mes commandes », et « Suivre ma commande » sans compte). Le paiement à la livraison n'a pas d'annulation en ligne. */
+export function JoindreBoutique({ c, joindre }: { c: Pick<CommandeMienne, "numero" | "statut">; joindre: Joindre | null }) {
+  if (!joindre || !(joindre.whatsapp || joindre.telephone) || !["recue", "a_arbitrer", "confirmee"].includes(c.statut)) return null;
+  return (
+    <p className="compte-joindre legende">
+      {t.compte.changerCommande}{" "}
+      {joindre.whatsapp ? (
+        <a href={`https://wa.me/${joindre.whatsapp}?text=${encodeURIComponent(t.compte.messageCommande(c.numero))}`} target="_blank" rel="noopener noreferrer">
+          {t.compte.ecrireBoutique}
+        </a>
+      ) : (
+        <a href={joindre.telephone!}>{t.compte.appelerBoutique}</a>
+      )}
+    </p>
+  );
+}
+
 function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mesAvis, surAvis, joindre }: {
   c: CommandeMienne;
   boutiqueId: string;
@@ -348,19 +368,7 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
   return (
     <li className="compte-carte" data-statut={c.statut} data-cloturee={cloturee ? "" : undefined}>
       <ResumeCommande c={c} />
-      {/* Pas encore partie : une taille à changer, une adresse, ou l'annuler — on le dit à la boutique, le numéro déjà écrit. */}
-      {joindre && (joindre.whatsapp || joindre.telephone) && ["recue", "a_arbitrer", "confirmee"].includes(c.statut) ? (
-        <p className="compte-joindre legende">
-          {t.compte.changerCommande}{" "}
-          {joindre.whatsapp ? (
-            <a href={`https://wa.me/${joindre.whatsapp}?text=${encodeURIComponent(t.compte.messageCommande(c.numero))}`} target="_blank" rel="noopener noreferrer">
-              {t.compte.ecrireBoutique}
-            </a>
-          ) : (
-            <a href={joindre.telephone!}>{t.compte.appelerBoutique}</a>
-          )}
-        </p>
-      ) : null}
+      <JoindreBoutique c={c} joindre={joindre} />
       {sav && c.statut === "livree" ? (
         <div className="sav-carte">
           {envoyee ? <p className="sav-envoyee" role="status" tabIndex={-1} ref={(m) => { if (m && rendreFocus.current) { rendreFocus.current = false; m.focus({ preventScroll: true }); } }}><Coche taille={16} /> {t.sav.envoyee(envoyee)}</p> : null}

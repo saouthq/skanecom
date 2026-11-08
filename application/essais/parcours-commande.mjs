@@ -698,6 +698,22 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
     await capture(page, "quincaillerie-mes-commandes-vide");
   });
 
+  await etape("la même commande, suivie sans compte : qui prévenir pour la changer", async () => {
+    await page.goto(Q + "/suivi", { waitUntil: "networkidle" });
+    await clic(page, page.locator("#suivi-numero"));
+    await tape(page, `QDS-${annee}-00001`);
+    await clic(page, page.locator("#suivi-telephone"));
+    await tape(page, "98 765 432");
+    await page.keyboard.press("Enter");
+    const resultat = page.locator(".suivi-resultat");
+    await resultat.waitFor({ timeout: 8000 });
+    const joindre = resultat.locator(".compte-joindre a");
+    verifie(await joindre.count() === 1 && decodeURIComponent((await joindre.getAttribute("href")) ?? "").includes(`ma commande QDS-${annee}-00001`),
+      "suivie par numéro : « Écrire à la boutique » aussi, le numéro de commande déjà écrit");
+    await capture(page, "quincaillerie-suivi-joindre");
+    await page.goto(Q + "/compte", { waitUntil: "networkidle" });
+  });
+
   await etape("retirée : un problème avec un article (service après-vente)", async () => {
     // La commande est retirée au comptoir : la base le note (clé de service
     // de l'API locale, comme le ferait le backoffice).

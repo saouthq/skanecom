@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
-import { ResumeCommande, type CommandeMienne } from "./Compte";
+import { JoindreBoutique, ResumeCommande, type CommandeMienne, type Joindre } from "./Compte";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -13,7 +13,7 @@ import { t } from "@/lib/i18n";
 
 type Reponse = { ok: true; commande: CommandeMienne } | { ok: false; raison: string; message?: string };
 
-export function SuiviCommande({ exemple }: { exemple: string }) {
+export function SuiviCommande({ exemple, joindre = null }: { exemple: string; joindre?: Joindre | null }) {
   const [numero, setNumero] = useState("");
   const [telephone, setTelephone] = useState("");
   const [enCours, setEnCours] = useState(false);
@@ -65,6 +65,7 @@ export function SuiviCommande({ exemple }: { exemple: string }) {
       <div className="suivi-resultat" ref={resultat} tabIndex={-1}>
         <div className="compte-carte" data-statut={commande.statut}>
           <ResumeCommande c={commande} />
+          <JoindreBoutique c={commande} joindre={joindre} />
         </div>
         <button type="button" className="btn-lien legende" onClick={() => { retourAuFormulaire.current = true; setCommande(null); setNumero(""); }}>
           {t.suivi.autre}
