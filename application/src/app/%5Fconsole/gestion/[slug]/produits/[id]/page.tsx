@@ -307,6 +307,23 @@ export default async function FicheProduitBackoffice({
                   </span>
                 </p>
               ) : null}
+              {modifie && cadre && !cadre.prixBarres && f.variantes.some((v) => v.prix_barre) ? (
+                /* Un prix barré saisi, que la vitrine ne montre pas (réglage
+                   catalogue.afficher_prix_barres, coupé par défaut) : le client
+                   ne voit que le nouveau prix. On le dit, avec l'interrupteur. */
+                <div className="message message-attention mb-4 var-barres-masques" id="barres-masques">
+                  <span>
+                    La vitrine n&apos;affiche pas les prix barrés : le client voit le nouveau prix seul, sans l&apos;ancien.
+                    {reglePrix ? null : " Le propriétaire ou l'administrateur peut les afficher (Réglages → Fonctions de la vitrine)."}
+                  </span>
+                  {reglePrix ? (
+                    <form action={action} method="post">
+                      <input type="hidden" name="action" value="afficher_prix_barres" />
+                      <button className="btn btn-second btn-petit">Les afficher sur la vitrine</button>
+                    </form>
+                  ) : null}
+                </div>
+              ) : null}
               {modifie && f.variantes.length > 1 ? (
                 /* Toutes les tailles au même prix : un geste au lieu d'un par ligne. */
                 <details className="var-toutes" open={messages.toutes ? true : undefined}>

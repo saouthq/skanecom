@@ -87,6 +87,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       );
     }
 
+    case "afficher_prix_barres": {
+      // Depuis la fiche : le prix barré saisi, la vitrine le montre (le réglage
+      // de toute la boutique, Réglages → Fonctions de la vitrine ; la base
+      // revérifie le rôle et le module).
+      const retour = ici("t-declinaisons");
+      const { error } = await sb.rpc("gestion_enregistrer_reglages", { p_boutique_id: b, p_valeurs: { "catalogue.afficher_prix_barres": true } });
+      if (error) return retour(`Les prix barrés restent masqués : ${error.message}`);
+      return retour("La vitrine affiche maintenant les prix barrés, sur toutes les fiches qui en ont un.", true);
+    }
+
     case "prix_toutes": {
       // Un prix pour toutes les déclinaisons : le reste de chaque ligne (alerte,
       // mise en vente ; le minimum, passé à null) reste tel qu'il est en base.
@@ -98,6 +108,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       const pb = prix(f.get("prix_barre"));
       if (!p) return retour("Prix illisible : écrivez par exemple 189,000.");
       if (pb === undefined) return retour("Prix barré illisible : écrivez par exemple 229,000, ou laissez vide.");
+      // Le même pour toutes : vérifié une fois, avant d'en toucher aucune — le
+      // refus ne nomme pas une déclinaison, et rien n'est changé à moitié.
+      if (pb !== null && pb <= p) {
+        return retour(`Le prix barré (${formateMontant(pb)} TND) doit être supérieur au prix (${formateMontant(p)} TND) : c'est l'ancien prix, celui qu'on barre.`);
+      }
       const { data } = await sb.rpc("gestion_produit", { p_boutique_id: b, p_produit_id: id });
       const variantes = (data as FicheProduit | null)?.variantes ?? [];
       if (!variantes.length) return retour("Produit introuvable.");

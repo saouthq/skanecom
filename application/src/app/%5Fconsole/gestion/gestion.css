@@ -70,6 +70,9 @@
   backdrop-filter: saturate(1.6) blur(12px);
 }
 .bo-lot-tout { font-weight: 500; }
+/* La fiche : un prix barré que la vitrine ne montre pas — le texte, puis l'interrupteur (dessous au téléphone). */
+.var-barres-masques { flex-wrap: wrap; align-items: center; }
+.var-barres-masques > span { flex: 1 1 16rem; }
 .bo-lot-du { font-variant-numeric: tabular-nums; color: var(--ui-texte-2); }
 .console .entree.bo-lot-transporteur { flex: 1 1 14rem; min-inline-size: 0; inline-size: auto; }
 .bo-lot .btn { margin-inline-start: auto; }

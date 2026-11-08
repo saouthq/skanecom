@@ -569,6 +569,36 @@ if (section("2")) {
     verifie((await page.locator(".var").first().locator("input[name=prix]").inputValue()) === "199,000", "et affiché");
   });
 
+  await etape("un prix barré que la vitrine ne montre pas ; un prix barré trop bas pour toutes", async () => {
+    // Maymar n'affiche pas les prix barrés (réglage coupé par défaut) : la fiche le dit dès qu'on en saisit un.
+    const barre = page.locator(".var").first().locator("input[name=prix_barre]");
+    await barre.fill("");
+    await clic(page, barre);
+    await tape(page, "249,000");
+    await envoie(page.locator(".var").first().getByRole("button", { name: "Enregistrer" }));
+    const avis = page.locator("#barres-masques");
+    verifie(await avis.count() === 1 && (await avis.innerText()).includes("le client voit le nouveau prix seul")
+      && await avis.getByRole("button", { name: "Les afficher sur la vitrine" }).count() === 1,
+      "le prix barré saisi, la fiche dit que la vitrine ne l'affiche pas — et propose de l'afficher");
+    // Pour toutes : un prix barré plus bas que le prix est refusé avant d'en toucher aucune, sans nommer une déclinaison.
+    if (await page.locator(".var-toutes").count()) {
+      await clic(page, page.locator(".var-toutes > summary"));
+      await page.locator("#var-toutes input[name=prix]").fill("189,000");
+      await page.locator("#barre-toutes").fill("179,000");
+      await envoie(page.locator("#var-toutes").getByRole("button", { name: /Appliquer/ }));
+      const refus = await page.getByRole("alert").first().innerText().catch(() => "");
+      verifie(refus.startsWith("Le prix barré (179,000 TND) doit être supérieur au prix (189,000 TND)"), `pour toutes, le refus dit les deux prix (« ${refus.slice(0, 80)} »)`);
+      verifie((await page.locator(".var").first().locator("input[name=prix]").inputValue()) === "199,000", "et rien n'a changé");
+    }
+    // Retiré : l'avertissement reste tant qu'une autre déclinaison garde un prix barré (la 65 cm noire en a un, de départ).
+    await page.locator(".var").first().locator("input[name=prix_barre]").fill("");
+    await envoie(page.locator(".var").first().getByRole("button", { name: "Enregistrer" }));
+    const encore = await page.locator(".var input[name=prix_barre]").evaluateAll((l) => l.some((i) => i.value.trim() !== ""));
+    verifie((await page.locator(".var").first().locator("input[name=prix_barre]").inputValue()) === ""
+      && await page.locator("#barres-masques").count() === (encore ? 1 : 0),
+      `le prix barré retiré ; l'avertissement ${encore ? "reste pour l'autre déclinaison qui en a un" : "aussi"}`);
+  });
+
   await etape("ajouter une couleur", async () => {
     await clic(page, page.locator("summary:has(#t-ajouter)"));
     const axes = page.locator("details:has(#t-ajouter) input[name^='axe.']");
