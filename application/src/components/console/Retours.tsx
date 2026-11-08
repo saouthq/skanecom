@@ -197,7 +197,7 @@ export function EnvoiFormulaires() {
     const envoieEnPlace = async (form: HTMLFormElement, submitter: HTMLElement | null, bouton: HTMLElement | null, suivi: { ecrit: boolean }) => {
       annonce(false);
       if (form.nextElementSibling?.classList.contains("geste-coupure")) form.nextElementSibling.remove();
-      document.querySelectorAll(".geste-refus").forEach((n) => n.remove());
+      document.querySelectorAll(".geste-refus, .geste-reussite").forEach((n) => n.remove());
       // Le bouton pressé porte souvent le geste (name="resultat" value="confirmee") :
       // FormData(form) ne le lit pas, il s'ajoute à la main.
       const donnees = new FormData(form);
@@ -322,6 +322,24 @@ export function EnvoiFormulaires() {
         return;
       }
 
+      // Réussi, de même dans les réglages : si le message de la section
+      // s'affiche hors de l'écran (en tête de section, le geste fait dans une
+      // liste plus bas — une zone de livraison enregistrée), il est redit
+      // sous le formulaire, sans rôle. Un formulaire dont le pied porte son
+      // propre message n'en a pas besoin.
+      if (!retourUrl.searchParams.has("erreur") && form.isConnected && !form.querySelector(".carte-pied[data-retour]")) {
+        const reussite = document.querySelector<HTMLElement>("#principal .rg-retour.message-succes[role=status]");
+        const r = reussite?.getBoundingClientRect();
+        if (reussite && r && !reussite.contains(form) && (r.bottom < 0 || r.top > window.innerHeight)) {
+          const rappel = document.createElement("p");
+          rappel.className = "message message-succes geste-reussite";
+          rappel.textContent = reussite.textContent;
+          const pied = form.querySelector(":scope > .carte-pied");
+          if (pied) pied.before(rappel);
+          else form.after(rappel);
+        }
+      }
+
       // Sinon, le focus reste où il était s'il existe encore, ou passe au
       // message (réussite ou refus) que la page vient d'afficher — l'écran
       // défile jusqu'à lui s'il n'est pas en vue.
@@ -331,6 +349,16 @@ export function EnvoiFormulaires() {
         if (focus && !focus.hasAttribute("tabindex")) focus.setAttribute("tabindex", "-1");
       }
       focus?.focus();
+
+      // Modifié, le formulaire gardait son pied collé en bas de l'écran
+      // (form[data-modifie]) ; enregistré, le pied reprend sa place, parfois
+      // loin plus bas — avec son message (« Réglages enregistrés ») et le
+      // bouton qui garde le focus. L'écran le suit : le résultat reste en vue.
+      const pied = form.isConnected ? form.querySelector<HTMLElement>(".carte-pied[data-retour]") : null;
+      const rp = pied?.getBoundingClientRect();
+      if (pied && rp && (rp.top < 0 || rp.bottom > window.innerHeight)) {
+        pied.scrollIntoView({ block: "nearest", behavior: reduit.matches ? "auto" : "smooth" });
+      }
     };
 
     const envoi = (e: SubmitEvent) => {

@@ -153,6 +153,8 @@ export type CadreBrut = {
   theme: Record<string, unknown> | null;
   categories: Categorie[];
   zones: Zone[];
+  /** Un gouvernorat n'est dans aucune zone active : il paie le tarif fixe (migration …_frais_par_zone_fiche). */
+  hors_zone?: boolean;
   tranches_poids: TranchePoids[] | null;
   pages?: PageDeBoutique[];
 };
@@ -172,6 +174,16 @@ function reglage<T>(reglages: Record<string, unknown>, cle: string, defaut: T): 
 
 /** Le délai annoncé : l'enveloppe RÉELLE des zones, jamais un « 48 à 72 h »
  *  écrit à la main. Sans zone lisible, on n'annonce rien. */
+/** Au tarif par zone, ce que la livraison peut coûter : du moins cher au plus
+ *  cher des zones actives — et le tarif fixe, si un gouvernorat n'est dans
+ *  aucune. */
+function fourchette(zones: Zone[], horsZone: boolean, fixe: number): { min: number; max: number } | null {
+  const frais = zones.map((z) => z.frais_millimes);
+  if (horsZone || frais.length === 0) frais.push(fixe);
+  const max = Math.max(...frais);
+  return max > 0 ? { min: Math.min(...frais), max } : null;
+}
+
 function delai(zones: Zone[]): { min: number; max: number } | null {
   const mins = zones.map((z) => z.delai_jours_min).filter((d): d is number => d !== null);
   const maxs = zones.map((z) => z.delai_jours_max).filter((d): d is number => d !== null);
@@ -224,11 +236,12 @@ export const chargeCadre = cache(async (segment: string): Promise<Cadre | null> 
 /** Le cadre, composé de ce que la base a rendu. */
 export function cadreDe(brut: CadreBrut): Cadre {
   const reglages = brut.configuration?.reglages ?? {};
-  const modeFrais = reglage(reglages, "livraison.mode_frais", "fixe");
+  const modeFrais = reglage<string>(reglages, "livraison.mode_frais", "fixe");
   const fraisMillimes = Number(reglage(reglages, "livraison.frais_fixes_millimes", 0));
   const seuil = Number(reglage(reglages, "livraison.seuil_gratuite_millimes", 0));
   const seuilTexte = seuil > 0 ? formatePrix(seuil) : undefined;
   const bornes = delai(brut.zones);
+  const zone = modeFrais === "zone" ? fourchette(brut.zones, brut.hors_zone === true, fraisMillimes) : null;
   const whatsapp = String(reglage(reglages, "contact.whatsapp", "")).replace(/\D/g, "");
   const texteDe = (cle: string) => String(reglage(reglages, cle, "")).trim();
   const modules = brut.configuration?.modules ?? [];
@@ -255,7 +268,11 @@ export function cadreDe(brut: CadreBrut): Cadre {
       frais:
         (modeFrais === "fixe" && fraisMillimes > 0
           ? t.livraison.fraisFixes(formatePrix(fraisMillimes), seuilTexte)
-          : t.livraison.fraisParZone(seuilTexte)) + (auPoids ? ` ${t.livraison.supplementPoids}` : ""),
+          : zone && zone.min === zone.max
+            ? t.livraison.fraisFixes(formatePrix(zone.max), seuilTexte)
+            : zone
+              ? t.livraison.fraisSelonRegion(zone.min > 0 ? formatePrix(zone.min) : null, formatePrix(zone.max), seuilTexte)
+              : t.livraison.fraisParZone(seuilTexte)) + (auPoids ? ` ${t.livraison.supplementPoids}` : ""),
       delai: bornes ? t.livraison.delai(bornes.min, bornes.max) : null,
       delaiJours: bornes,
       cod: reglage(reglages, "paiement.cod_actif", true),

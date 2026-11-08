@@ -707,10 +707,19 @@ form[data-modifie] .carte-pied .rg-pied-repos { display: none; }
 form[data-modifie] .carte-pied .rg-pied-attente {
   display: inline-flex; align-items: center; gap: .375rem; font-size: .875rem; font-weight: 500; color: var(--ui-ambre);
 }
+/* Enregistré, l'écran suit le pied jusqu'à son message (Retours.tsx) : il
+   s'arrête un peu au-dessus du bas — au téléphone, de la barre d'onglets. */
+.carte-pied { scroll-margin-block-end: 1rem; }
 @media screen and (max-width: 1023px) {
   /* Au téléphone, au-dessus de la barre d'onglets. */
   .app-avec-onglets form[data-modifie] .carte-pied { inset-block-end: calc(4.0625rem + env(safe-area-inset-bottom)); }
+  .app-avec-onglets .carte-pied { scroll-margin-block-end: calc(4.0625rem + env(safe-area-inset-bottom) + 1rem); }
 }
+/* Une aide qui suit le choix fait au-dessus, avant même l'enregistrement
+   (le tarif fixe : « partout », ou « hors zone » au tarif par zone). */
+.rg-si-zone { display: none; }
+form:has(input[name="livraison.mode_frais"][value="zone"]:checked) .rg-si-zone { display: inline; }
+form:has(input[name="livraison.mode_frais"][value="zone"]:checked) .rg-si-fixe { display: none; }
 .rg-journal-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .lien-discret { display: inline-flex; align-items: center; gap: .25rem; font-size: .8125rem; color: var(--ui-texte-2); text-decoration: none; }
 .lien-discret:hover { color: var(--ui-texte); text-decoration: underline; text-underline-offset: .2em; }

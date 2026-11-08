@@ -1076,12 +1076,21 @@ if (section("2")) {
     verifie(await page.locator(".rg-pli:not([open]) #g-tunis").count() === 1, "tarif unique : les 24 gouvernorats restent repliés");
     verifie(await fraisPour("sfax") === 7000, `avant : Sfax paie le tarif fixe (${await fraisPour("sfax")})`);
     await clic(page, section("livraison").getByText("Tarif par zone"));
+    verifie((await section("livraison").locator("#frais_fixes").locator("..").locator(".aide").innerText()).includes("dans aucune zone"),
+      "choisi, pas encore enregistré : le tarif fixe se dit déjà « pour un gouvernorat qui n'est dans aucune zone »");
     await section("livraison").locator("#seuil").fill("300");
     await envoie(section("livraison").getByRole("button", { name: "Enregistrer" }));
     verifie((await ok()).includes("Réglages enregistrés"), `« ${await ok()} »`);
     verifie((await section("zones").innerText()).includes("Appliquées"), "les zones s'appliquent");
     verifie(await fraisPour("sfax") === 10000, `Sfax paie le tarif de la zone « Centre et Sud » (${await fraisPour("sfax")})`);
     verifie(await fraisPour("tunis", 320000) === 0, "la livraison est offerte dès 300 TND");
+    // La fiche produit annonce la fourchette réelle (zones, et tarif fixe hors zone), plus « calculés au moment de la commande ».
+    const vitrine = await page.context().newPage();
+    await vitrine.goto(`${t.adresse("maymar.localhost")}/produit/valise-rigide-abs-4-roues`, { waitUntil: "networkidle" });
+    const fiche = await vitrine.locator("body").innerText();
+    await vitrine.close();
+    verifie(fiche.includes("Toute la Tunisie — frais de 6,000 TND à 10,000 TND selon votre région, offerts dès 300,000 TND d'achat."),
+      `la fiche annonce les frais de 6 à 10 TND selon la région (${(fiche.match(/Toute la Tunisie[^\n]*|Les frais dépendent[^\n]*/) ?? ["rien"])[0]})`);
 
     await clic(page, page.locator("#zn-neuve"));
     await tape(page, "Grand Sud");
@@ -1098,6 +1107,21 @@ if (section("2")) {
     verifie(await fraisPour("tataouine") === 12500, `Tataouine paie 12,500 (${await fraisPour("tataouine")})`);
     await pause(800); // (la page défile en douceur jusqu'à la section)
     await capture(page, "gestion-reglages-zones");
+    // Une zone changée plus bas dans la liste : le message de la section, en tête, sort de l'écran — il est redit sous elle.
+    const sud = page.locator("li.rg-zone").filter({ has: page.locator("input[name=nom][value='Grand Sud']") });
+    await sud.getByLabel(/au plus tard/).fill("7");
+    await sud.getByRole("button", { name: "Enregistrer" }).scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollBy(0, 200));
+    await envoie(sud.getByRole("button", { name: "Enregistrer" }));
+    verifie((await ok()).includes("Zone « Grand Sud » enregistrée"), `« ${await ok()} »`);
+    const rappel = sud.locator(".geste-reussite");
+    const horsEcran = await page.locator(".rg-retour.message-succes").first()
+      .evaluate((m) => { const r = m.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight; });
+    verifie(horsEcran
+      ? await rappel.count() === 1 && await rappel.isVisible() && (await rappel.innerText()).includes("Zone « Grand Sud » enregistrée")
+      : await rappel.count() === 0,
+    horsEcran ? "le message, hors de l'écran en tête de section, est redit sous la zone enregistrée"
+      : "le message de la section est en vue : rien n'est redit");
   });
 
   await etape("supprimer une zone : retour au tarif fixe", async () => {

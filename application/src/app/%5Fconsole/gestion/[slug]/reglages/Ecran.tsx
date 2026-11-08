@@ -510,7 +510,10 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                       <div className="champ">
                         <label htmlFor="frais_fixes">Tarif de livraison <span className="discret">TND</span></label>
                         <input id="frais_fixes" name="livraison.frais_fixes_millimes" inputMode="decimal" defaultValue={montantChamp(v("livraison.frais_fixes_millimes"))} placeholder="7,000" />
-                        <span className="aide">{parZone ? "Pour un gouvernorat qui n'est dans aucune zone." : "Partout en Tunisie."}</span>
+                        <span className="aide">
+                          <span className="rg-si-fixe">Partout en Tunisie.</span>
+                          <span className="rg-si-zone">Pour un gouvernorat qui n&apos;est dans aucune zone.</span>
+                        </span>
                       </div>
                       <div className="champ">
                         <label htmlFor="seuil">Livraison offerte dès <span className="discret">TND</span></label>

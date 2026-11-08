@@ -318,6 +318,9 @@ export const fr = {
     /** frais formaté (déjà en TND) */
     fraisFixes: (frais: string, seuil?: string) =>
       `Toute la Tunisie — frais fixes de ${frais}${seuil ? `, offerts dès ${seuil} d'achat` : ""}.`,
+    /** Au tarif par zone, la fourchette réelle (min null : offerte dans une zone). */
+    fraisSelonRegion: (min: string | null, max: string, seuil?: string) =>
+      `Toute la Tunisie — ${min ? `frais de ${min} à ${max} selon votre région` : `offerte dans certaines régions, jusqu'à ${max} ailleurs`}${seuil ? `, ${min ? "offerts" : "et partout"} dès ${seuil} d'achat` : ""}.`,
     fraisParZone: (seuil?: string) =>
       `Les frais dépendent de votre région, calculés au moment de la commande${seuil ? ` ; livraison offerte dès ${seuil} d'achat` : ""}.`,
     delai: (min: number, max: number) =>
