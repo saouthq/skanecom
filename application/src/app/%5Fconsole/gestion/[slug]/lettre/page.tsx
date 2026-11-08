@@ -28,6 +28,10 @@ const SEMAINE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short
 /** Une page de la liste (la base en rend cinquante : …_listes_paginees.sql). */
 const PAR_PAGE = 50;
 
+/** « Semaine du 2 nov. : 1 inscription, 2 départs » — la bulle et les lecteurs d'écran disent la même chose. */
+const semaine = (s: { semaine: string; inscrits: number; desinscrits: number }) =>
+  `Semaine du ${SEMAINE.format(new Date(s.semaine))} : ${s.inscrits} inscription${s.inscrits > 1 ? "s" : ""}${s.desinscrits ? `, ${s.desinscrits} départ${s.desinscrits > 1 ? "s" : ""}` : ""}`;
+
 export default async function PageLettre({
   params,
   searchParams,
@@ -116,12 +120,9 @@ export default async function PageLettre({
           </div>
           <ol className="tb-barres lt-barres" aria-label="Inscriptions par semaine">
             {l.semaines.map((s, i) => (
-              <li key={s.semaine} style={{ "--i": i } as React.CSSProperties}
-                title={`Semaine du ${SEMAINE.format(new Date(s.semaine))} : ${s.inscrits} inscription${s.inscrits > 1 ? "s" : ""}${s.desinscrits ? `, ${s.desinscrits} départ${s.desinscrits > 1 ? "s" : ""}` : ""}`}>
+              <li key={s.semaine} style={{ "--i": i } as React.CSSProperties} title={semaine(s)}>
                 <span className="tb-barre lt-barre" style={{ blockSize: `${(s.inscrits / max) * 100}%` }} />
-                <span className="sr-only">
-                  Semaine du {SEMAINE.format(new Date(s.semaine))} : {s.inscrits} inscriptions{s.desinscrits ? `, ${s.desinscrits} départs` : ""}
-                </span>
+                <span className="sr-only">{semaine(s)}</span>
               </li>
             ))}
           </ol>
@@ -141,6 +142,8 @@ export default async function PageLettre({
                   ? `${l.trouves} adresse${l.trouves > 1 ? "s" : ""} pour « ${q} ».`
                   : "Les plus récents d'abord, avec la page où ils se sont inscrits."}
                 {pages > 1 ? " Toutes les adresses sont dans l'export." : ""}
+                {/* Collées en « À », chaque inscrit verrait l'adresse de tous les autres. */}
+                {l.abonnes.length > 1 ? " Pour leur écrire, collez les adresses en « Cci » : chacun ne voit que la sienne." : ""}
               </p>
             </div>
             {l.abonnes.length ? (

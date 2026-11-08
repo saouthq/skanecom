@@ -2206,6 +2206,11 @@ if (section("4bis")) {
     const libelles = (await page.locator(".tb-chiffre .tb-libelle").allInnerTexts()).join(" · ");
     verifie(libelles === "Inscrits · Nouveaux · À confirmer · Désinscrits", `les quatre chiffres (${libelles})`);
     verifie((await page.locator(".lt-barres li").count()) === 12, "douze semaines, semaine par semaine");
+    const semaines = (await page.locator(".lt-barres .sr-only").allTextContents()).join(" | ");
+    verifie(!/\b1 (inscriptions|départs)\b/.test(semaines) && /\b\d+ inscriptions?\b/.test(semaines),
+      "chaque semaine se lit au bon nombre (« 1 inscription », « 1 départ »)");
+    verifie((await page.locator("section[aria-labelledby=lt-liste] .carte-tete").innerText()).includes("collez les adresses en « Cci »"),
+      "« Copier les adresses » : à coller en copie cachée, que personne ne voie celle des autres");
     const lignes = await page.locator(".lt-ligne").count();
     verifie(lignes >= 38, `les inscrits, les plus récents d'abord (${lignes})`);
     verifie((await page.getByRole("link", { name: "Exporter (CSV)" }).count()) === 1, "l'export, pour la propriétaire");

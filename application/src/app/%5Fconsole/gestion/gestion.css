@@ -2016,6 +2016,12 @@ a.pg-titre:hover { color: var(--ui-accent); }
 }
 
 /* --- La lettre d'information (…/lettre) ------------------------------------- */
+/* Au téléphone, les quatre chiffres deux par deux (des nombres courts) :
+   « Copier les adresses » arrive un écran plus tôt. */
+@media (max-width: 40rem) {
+  .lt-chiffres { grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .lt-chiffres .tb-chiffre { padding: 1rem; }
+}
 .lt-barres { block-size: 8rem; gap: 6px; }
 .lt-barre { background: color-mix(in srgb, var(--ui-accent) 70%, var(--ui-bord)); }
 .lt-outils { display: flex; flex-wrap: wrap; gap: .5rem; }
