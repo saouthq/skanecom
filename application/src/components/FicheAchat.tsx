@@ -11,6 +11,7 @@ import { LivraisonEstimee } from "./LivraisonEstimee";
 import { formatePrix } from "@/lib/prix";
 import { ajouteAuPanier, annonceAjout } from "@/lib/panier";
 import { photoVisible } from "@/lib/envol";
+import { cheminDeDeclinaison } from "@/lib/photos";
 import { evenementPub } from "@/lib/pixels";
 import { usePrixPro } from "@/lib/prix-pro";
 import { champ, t } from "@/lib/i18n";
@@ -171,10 +172,7 @@ export function FicheAchat({
 
   const auPanier = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!variante || !achetable) return;
-    const image =
-      variante.image_chemin ??
-      produit.images.find((i) => i.variante_id === variante.id)?.chemin ??
-      produit.images.find((i) => i.variante_id === null)?.chemin;
+    const image = cheminDeDeclinaison(produit, variante) ?? produit.images.find((i) => i.variante_id === null)?.chemin;
     ajouteAuPanier(
       {
         varianteId: variante.id,

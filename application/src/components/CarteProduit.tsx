@@ -9,7 +9,7 @@ import { PrixCarte } from "./PrixCarte";
 import { NoteCarte } from "./NoteCarte";
 import { couleurDeColoris } from "@/lib/coloris";
 import { champ, t } from "@/lib/i18n";
-import { photoSurvol, urlPhoto } from "@/lib/photos";
+import { cheminDeDeclinaison, photoSurvol, urlPhoto } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { valeurAvecUnite } from "@/lib/caracteristiques";
 import { paliersDe } from "@/lib/paliers";
@@ -97,7 +97,7 @@ function choixCarte(produit: Produit): { axe: string | null; choix: ChoixCarte[]
   return {
     axe: axes.length ? axes.map((o) => champ(o, "label")).join(" · ") : null,
     choix: produit.variantes.map((v) => {
-      const image = v.image_chemin ?? produit.images.find((i) => i.variante_id === v.id)?.chemin ?? commune;
+      const image = cheminDeDeclinaison(produit, v) ?? commune;
       return {
         varianteId: v.id,
         sku: v.sku,

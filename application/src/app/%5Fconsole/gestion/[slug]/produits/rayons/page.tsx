@@ -289,7 +289,7 @@ export default async function Rayons({
                 <input type="hidden" name="action" value="creer" />
                 <div className="champ">
                   <label htmlFor="nouveau-nom">Nom</label>
-                  <input id="nouveau-nom" name="nom" required maxLength={80} placeholder="Valises, Sacs de voyage…" autoFocus={Boolean(parentPropose)} />
+                  <input id="nouveau-nom" name="nom" required maxLength={80} placeholder="Ex. Nouveautés, Accessoires…" autoFocus={Boolean(parentPropose)} />
                 </div>
                 <div className="champ">
                   <label htmlFor="nouveau-parent">Dans le rayon</label>

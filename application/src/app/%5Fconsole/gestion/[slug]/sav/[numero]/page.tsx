@@ -211,7 +211,7 @@ export default async function FicheSav({
                       <input type="hidden" name="statut" value={f.statut} />
                       <div className="champ">
                         <label htmlFor="note-prise" className="sr-only">Note (facultatif)</label>
-                        <input id="note-prise" name="note" maxLength={1000} placeholder="Note (facultatif) : dépose la valise samedi au magasin" />
+                        <input id="note-prise" name="note" maxLength={1000} placeholder="Note (facultatif) : dépose l'article samedi au magasin" />
                       </div>
                       <div className="bo-boutons">
                         <button type="submit" className="btn btn-primaire"><Icone nom="coche" /> Prendre en charge</button>

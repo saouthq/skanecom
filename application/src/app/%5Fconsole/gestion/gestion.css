@@ -537,7 +537,11 @@ button.ph-image:hover .ph-crayon, button.ph-image:focus-visible .ph-crayon { opa
 }
 
 /* Le dépôt : une vignette de plus (ou toute la largeur, sans photo). */
-.depot { display: grid; gap: .5rem; block-size: 100%; }
+/* Une seule colonne, à la largeur de la tuile : sinon la colonne prenait la
+   largeur de la zone carrée, elle-même tirée de la hauteur de la rangée
+   (photo et flèches) — la zone sortait de sa carte et de l'écran, troisième
+   photo ajoutée au téléphone (recette du 08/11). */
+.depot { display: grid; grid-template-columns: minmax(0, 1fr); gap: .5rem; block-size: 100%; }
 .depot-zone {
   position: relative; display: grid; place-content: center; justify-items: center; gap: .375rem; text-align: center;
   aspect-ratio: 1; padding: .75rem; border-radius: var(--ui-r-l); cursor: pointer;

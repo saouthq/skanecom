@@ -769,6 +769,12 @@ if (section("2")) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator("#t-photos").scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollBy(0, -72));
+    const depot = await page.evaluate(() => {
+      const z = document.querySelector("label.depot-zone")?.getBoundingClientRect();
+      const c = document.querySelector("label.depot-zone")?.closest(".carte")?.getBoundingClientRect();
+      return z && c ? { dedans: z.right <= c.right + 0.5, page: document.documentElement.scrollWidth } : null;
+    });
+    verifie(depot !== null && depot.dedans && depot.page <= 390, `la zone « Ajouter » reste dans sa carte, la page dans l'écran (${JSON.stringify(depot)})`);
     await capture(page, "gestion-photos-telephone");
     await clic(page, vignettes().first().locator(".ph-image"));
     const feuille = page.locator(".ph-feuille:popover-open");

@@ -9,7 +9,7 @@ import { DepotPhotos } from "@/components/console/DepotPhotos";
 import { RedigerDescription } from "@/components/console/RedigerDescription";
 import { Icone } from "@/components/console/Icone";
 import { clientSession, exigeMembre } from "@/lib/console/session";
-import { urlFichier } from "@/lib/photos";
+import { urlFichier, AXES_SANS_ALLURE } from "@/lib/photos";
 import { formateMontant } from "@/lib/prix";
 import { paliersDe } from "@/lib/paliers";
 import { quand } from "@/lib/gestion/libelles";
@@ -88,6 +88,23 @@ export default async function FicheProduitBackoffice({
   const action = `/gestion/${slug}/produits/${f.id}/action`;
   const actionPhotos = `/gestion/${slug}/produits/${f.id}/photos`;
   const libelleDe = new Map(f.variantes.map((v) => [v.id, v.libelle ?? v.sku]));
+  // « Montrée pour » : une photo vaut pour une allure — la couleur, toutes
+  // tailles confondues (la vitrine l'applique ainsi, lib/photos.ts). Une
+  // couleur et une taille : un choix par couleur ; sinon, par déclinaison.
+  const axesTaille = f.axes.filter((a) => AXES_SANS_ALLURE.test(a.cle));
+  const parAllure = new Map<string, { id: string; libelle: string }>();
+  const representant = new Map<string, string>();
+  for (const v of f.variantes) {
+    const traits = Object.entries(v.options ?? {}).filter(([k]) => !AXES_SANS_ALLURE.test(k)).map(([, val]) => val);
+    const groupe = axesTaille.length && traits.length ? traits.join(" · ") : null;
+    const cle = groupe ?? v.id;
+    if (!parAllure.has(cle)) {
+      const toutes = axesTaille.map((a) => a.label.toLowerCase().replace(/([^sx])$/, "$1s")).join(" et ");
+      parAllure.set(cle, { id: v.id, libelle: groupe ? `${groupe} (toutes les ${toutes})` : (v.libelle ?? v.sku) });
+    }
+    representant.set(v.id, parAllure.get(cle)!.id);
+  }
+  const allures = [...parAllure.values()];
   const actives = f.variantes.filter((v) => v.actif);
   // La réception de l'arrivage, sur ce seul produit : toutes ses déclinaisons d'un coup (Entrée passe à la suivante).
   const reception = `/gestion/${slug}/produits/reception?${new URLSearchParams({ q: f.nom, produit: id })}`;
@@ -225,16 +242,16 @@ export default async function FicheProduitBackoffice({
                                   <input type="hidden" name="image_id" value={img.id} />
                                   <label className="champ">
                                     <span>Ce qu&apos;on voit <span className="discret">(facultatif)</span></span>
-                                    <input className="entree" name="alt" defaultValue={img.alt ?? ""} maxLength={200} placeholder="Ex. Valise noire, vue de face" />
+                                    <input className="entree" name="alt" defaultValue={img.alt ?? ""} maxLength={200} placeholder={`Ex. ${f.nom}, vue de face`} />
                                     <span className="aide">Lu à voix haute aux personnes aveugles, et lu par Google.</span>
                                   </label>
                                   {f.variantes.length > 1 ? (
                                     <label className="champ">
                                       <span>Montrée pour</span>
-                                      <select className="entree" name="variante_id" defaultValue={img.variante_id ?? ""}>
+                                      <select className="entree" name="variante_id" defaultValue={img.variante_id ? (representant.get(img.variante_id) ?? img.variante_id) : ""}>
                                         <option value="">Tout le produit</option>
-                                        {f.variantes.map((v) => (
-                                          <option key={v.id} value={v.id}>{v.libelle ?? v.sku}</option>
+                                        {allures.map((g) => (
+                                          <option key={g.id} value={g.id}>{g.libelle}</option>
                                         ))}
                                       </select>
                                       <span className="aide">Attitrée à une déclinaison, elle s&apos;affiche quand le client la choisit.</span>

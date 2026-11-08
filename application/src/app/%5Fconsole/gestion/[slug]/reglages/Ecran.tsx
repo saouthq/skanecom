@@ -893,7 +893,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                   </div>
                   <div className="champ">
                     <label htmlFor="revendeur">Revendeur officiel <span className="discret">(facultatif)</span></label>
-                    <input id="revendeur" name="catalogue.revendeur_officiel" defaultValue={texteDe("catalogue.revendeur_officiel")} maxLength={80} placeholder="Ex. Revendeur officiel DeWalt" />
+                    <input id="revendeur" name="catalogue.revendeur_officiel" defaultValue={texteDe("catalogue.revendeur_officiel")} maxLength={80} placeholder="Ex. Revendeur officiel Atelier Pro" />
                     <span className="aide">En tête de la vitrine et sur les fiches produit, si la marque vous a agréé.</span>
                   </div>
                 </fieldset>
@@ -1067,7 +1067,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                   <div className="grille-champs">
                     <div className="champ">
                       <label htmlFor="raison_sociale">Raison sociale</label>
-                      <input id="raison_sociale" name="legal.raison_sociale" defaultValue={texteDe("legal.raison_sociale")} maxLength={300} placeholder="Ex. Maymar SARL" />
+                      <input id="raison_sociale" name="legal.raison_sociale" defaultValue={texteDe("legal.raison_sociale")} maxLength={300} placeholder={`Ex. ${boutique.nom} SARL`} />
                     </div>
                     <div className="champ">
                       <label htmlFor="forme_juridique">Forme juridique <span className="discret">(facultatif)</span></label>
