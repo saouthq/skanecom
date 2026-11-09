@@ -158,6 +158,11 @@ Remarqué, laissé tel quel :
   un envoi). Piste : une requête coupée côté navigateur, que
   `onRequestError` note comme une erreur de l'application. En attendant, la
   console se lance sur base neuve.
+- **À vérifier sur un vrai téléphone** : l'aperçu d'un lien partagé sur
+  WhatsApp. Les images d'aperçu (`og:image`) sont en WebP, le seul format
+  que produit la chaîne des photos ; Facebook le lit, WhatsApp pas
+  toujours selon les versions. Coller le lien d'une fiche de Selma dans une
+  conversation : sans photo, prévoir une variante JPEG pour `og:image`.
 - Les parcours partagent la base : depuis le lot 50, l'annulation par la
   cliente porte sur sa propre commande de Selma (passée plus haut dans le
   parcours), plus sur une commande du jeu de démo de Maymar que le parcours

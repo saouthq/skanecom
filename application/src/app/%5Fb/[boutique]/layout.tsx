@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import "../../globals.css";
 import { chargeCadre } from "@/lib/boutique";
-import { attributsDuStyle, feuilleDuTheme, texte } from "@/lib/theme";
+import { attributsDuStyle, cheminDePartage, feuilleDuTheme, texte } from "@/lib/theme";
 import { urlFichier } from "@/lib/photos";
 import { directionDe, localeOgDe, t } from "@/lib/i18n";
 import { Entete } from "@/components/Entete";
@@ -61,7 +61,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     applicationName: b.nom,
     icons: theme.favicon ? { icon: urlFichier(theme.favicon) } : undefined,
-    openGraph: { type: "website", siteName: b.nom, locale: localeOgDe(b.langue_defaut), title: titre, description },
+    openGraph: {
+      type: "website", siteName: b.nom, locale: localeOgDe(b.langue_defaut), title: titre, description,
+      // Un lien de la boutique partagé sur WhatsApp montre sa photo d'ouverture.
+      ...(cheminDePartage(theme) ? { images: [{ url: urlFichier(cheminDePartage(theme)!) }] } : {}),
+    },
     robots: cadre.apercu ? { index: false, follow: false } : { index: true, follow: true },
   };
 }

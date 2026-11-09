@@ -19,12 +19,12 @@ import { contactVente } from "@/components/ContactProduit";
 import { cadre as chargeCadre, marqueAffichee, paiementsDe, type Cadre } from "@/lib/boutique";
 import { achetesEnsemble, chargeProduit, listeProduits, lotsDesProduits, prixDepuis, type Produit } from "@/lib/catalogue";
 import type { Lot } from "@/lib/lots";
-import { photosProduit } from "@/lib/photos";
+import { photosProduit, urlFichier } from "@/lib/photos";
 import { chargeAvis, type AvisProduit as Avis } from "@/lib/avis";
 import { formatePrix, prixDecimal } from "@/lib/prix";
 import { lienConseil } from "@/lib/faits";
-import { texte } from "@/lib/theme";
-import { champ, t } from "@/lib/i18n";
+import { cheminDePartage, texte } from "@/lib/theme";
+import { champ, localeOgDe, t } from "@/lib/i18n";
 import { TexteDescription } from "@/components/TexteDescription";
 
 /* ============================================================================
@@ -51,6 +51,15 @@ export async function generateStaticParams() {
 
 type Params = { params: Promise<{ boutique: string; slug: string }> };
 
+/** La description d'une fiche, pour un lien partagé et les moteurs : son
+ *  premier paragraphe, sur une ligne, coupé au mot vers 160 caractères. */
+function resumeDe(texte: string, max = 160): string {
+  const un = (texte.split(/\n\s*\n/)[0] ?? "").replace(/\s+/g, " ").trim();
+  if (un.length <= max) return un;
+  const coupe = un.slice(0, max - 1);
+  return `${coupe.slice(0, Math.max(coupe.lastIndexOf(" "), max - 30)).replace(/[\s,;:.—–-]+$/, "")}…`;
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { boutique, slug } = await params;
   const cadre = await chargeCadre(boutique);
@@ -61,16 +70,23 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const prix = prixDepuis(produit);
   const description =
     produit.meta_description_fr ??
-    (prix !== null && !cadre.prixMasques ? t.seo.produitDescription(nom, formatePrix(prix)) : champ(produit, "description"));
+    (prix !== null && !cadre.prixMasques ? t.seo.produitDescription(nom, formatePrix(prix)) : resumeDe(champ(produit, "description") ?? ""));
   const image = photosProduit(produit)[0];
+  // Sans photo encore, la photo d'ouverture de la boutique ; sans description, celle de la boutique.
+  const partage = image ?? (cheminDePartage(cadre.theme) ? { src: urlFichier(cheminDePartage(cadre.theme)!), alt: cadre.boutique.nom } : null);
+  const resume = description || texte(cadre.theme.textes, "seo_description") || texte(cadre.theme.textes, "resume") || t.seo.descriptionSite(cadre.boutique.nom);
 
   return {
     // Un titre SEO saisi au backoffice est gardé tel quel, sans le gabarit du
     // site (qui ajouterait une deuxième fois le nom de la boutique).
     title: produit.meta_titre_fr ? { absolute: produit.meta_titre_fr } : nom,
-    description,
+    description: resume,
     alternates: { canonical: `/produit/${slug}` },
-    openGraph: { type: "website", title: nom, description, ...(image ? { images: [{ url: image.src, alt: image.alt }] } : {}) },
+    // Next remplace l'openGraph du layout en entier : le nom de la boutique et la langue sont redits ici.
+    openGraph: {
+      type: "website", siteName: cadre.boutique.nom, locale: localeOgDe(cadre.boutique.langue_defaut), url: `/produit/${slug}`,
+      title: nom, description: resume, ...(partage ? { images: [{ url: partage.src, alt: partage.alt }] } : {}),
+    },
   };
 }
 

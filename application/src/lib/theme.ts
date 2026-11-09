@@ -595,3 +595,12 @@ export function texte(textes: Record<string, string>, cle: string, defaut = "", 
   // En français, les signes doubles ne passent plus seuls à la ligne.
   return langue === "fr" ? typographie(v) : v;
 }
+
+/** La photo d'un lien partagé (WhatsApp, Facebook) quand la page n'en a pas
+ *  à elle : la première photo de l'accueil (l'ouverture, d'ordinaire). Le chemin, ou null. */
+export function cheminDePartage(theme: Theme): string | null {
+  for (const s of theme.sections) {
+    if ("image" in s && s.image?.chemin) return s.image.chemin;
+  }
+  return null;
+}
