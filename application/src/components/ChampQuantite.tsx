@@ -1,5 +1,6 @@
 "use client";
 
+import { chiffresLatins } from "@/lib/chiffres";
 import { useState, type KeyboardEvent } from "react";
 
 /* ============================================================================
@@ -66,7 +67,7 @@ export function ChampQuantite({
       aria-label={libelle}
       disabled={disabled}
       value={texte ?? String(valeur)}
-      onChange={(e) => setTexte(e.target.value.replace(/\D/g, "").slice(0, 6))}
+      onChange={(e) => setTexte(chiffresLatins(e.target.value).replace(/\D/g, "").slice(0, 6))}
       onFocus={(e) => e.target.select()}
       onBlur={valide}
       onKeyDown={touche}

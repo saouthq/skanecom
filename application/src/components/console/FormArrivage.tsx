@@ -1,5 +1,6 @@
 "use client";
 
+import { chiffresLatins } from "@/lib/chiffres";
 import { useMemo, useState, type KeyboardEvent } from "react";
 import Image from "next/image";
 import { Icone } from "./Icone";
@@ -138,7 +139,7 @@ export function FormArrivage({ action, produits, arrivage, aujourdhui, suffixe }
                       autoComplete="off"
                       placeholder="0"
                       value={q}
-                      onChange={(e) => setQuantites((avant) => ({ ...avant, [v.id]: e.target.value.replace(/\s/g, "") }))}
+                      onChange={(e) => setQuantites((avant) => ({ ...avant, [v.id]: chiffresLatins(e.target.value).replace(/\s/g, "") }))}
                       onKeyDown={suivante}
                       aria-label={`Quantité attendue : ${p.nom}${v.libelle ? `, ${v.libelle}` : ""}`}
                     />

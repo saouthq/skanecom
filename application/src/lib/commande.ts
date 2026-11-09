@@ -9,6 +9,7 @@
      l'erreur SQL), que la page traduit en phrase ;
    · `commande_suivie` rend la commande à qui a son numéro et son jeton.
    ========================================================================== */
+import { chiffresLatins } from "@/lib/chiffres";
 
 export type LigneDevis = {
   variante_id: string;
@@ -184,10 +185,8 @@ export const NUMERO_DEVIS = /^DEV-\d{5,}$/;
 /** Les 8 chiffres d'un numéro tunisien saisi, ou null. Accepte « 20 123 456 »,
  *  « +216 20 123 456 », « 0021620123456 ». La base revérifie. */
 export function chiffresTelephone(saisie: string): string | null {
-  // Un clavier arabe du téléphone peut écrire ٢٠ au lieu de 20 : ramenés aux chiffres latins.
-  const brut = saisie
-    .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
-    .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06f0))
+  // Un clavier arabe du téléphone peut écrire ٢٠ au lieu de 20.
+  const brut = chiffresLatins(saisie)
     .replace(/[^\d+]/g, "").replace(/^(\+|00)?216(?=\d{8}$)/, "");
   return /^[2-579]\d{7}$/.test(brut) ? brut : null;
 }

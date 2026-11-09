@@ -1,3 +1,4 @@
+import { chiffresLatins } from "@/lib/chiffres";
 import type { Lignes } from "./tableur";
 
 /* ============================================================================
@@ -91,11 +92,9 @@ function cleAxe(texte: string): string {
 
 /** « 1 234,500 TND » → 1234500 millimes. `null` si vide, NaN si illisible. */
 export function millimes(texte: string): number | null {
-  let t = texte.toLowerCase().replace(/tnd|dt|d\.t\.?|د\.ت|dinars?/g, "").replace(/[\s  ]/g, "")
-    // Un clavier arabe écrit ٢٥ ; « 25, » laissé en route se lit 25.
-    .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
-    .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06f0))
-    .replace(/٫/g, ",").replace(/[.,]$/, "");
+  let t = chiffresLatins(texte).toLowerCase().replace(/tnd|dt|d\.t\.?|د\.ت|dinars?/g, "").replace(/[\s  ]/g, "")
+    // « 25, » laissé en route se lit 25.
+    .replace(/[.,]$/, "");
   if (t === "") return null;
   const virgule = t.lastIndexOf(",");
   const point = t.lastIndexOf(".");
@@ -110,7 +109,7 @@ export function millimes(texte: string): number | null {
 }
 
 function entier(texte: string): number | null {
-  const t = texte.replace(/[\s  ]/g, "").replace(",", ".");
+  const t = chiffresLatins(texte).replace(/[\s  ]/g, "").replace(",", ".");
   if (t === "") return null;
   if (!/^\d+(\.0+)?$/.test(t)) return NaN;
   return Number.parseInt(t, 10);
