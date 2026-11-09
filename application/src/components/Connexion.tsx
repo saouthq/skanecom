@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Enveloppe, Telephone } from "./Icones";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
-import { chiffresTelephone, telephoneLisible } from "@/lib/commande";
+import { chiffresTelephone, estFixe, telephoneLisible } from "@/lib/commande";
 import { canauxDe, emailValide, type Canal, type Verification } from "@/lib/connexion";
 import { t } from "@/lib/i18n";
 import { useControleRobot } from "@/lib/turnstile-navigateur";
@@ -85,8 +85,8 @@ export function Identification({
     let cible: Envoye;
     if (parSms) {
       const huit = chiffresTelephone(telephone);
-      if (!huit) {
-        setErreur(t.commande.telephoneInvalide);
+      if (!huit || estFixe(huit)) {
+        setErreur(huit ? t.commande.telephoneFixe : t.commande.telephoneInvalide);
         refChamp.current?.focus();
         return;
       }

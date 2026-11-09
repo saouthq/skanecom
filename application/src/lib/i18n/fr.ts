@@ -654,6 +654,7 @@ export const fr = {
     codeIncorrect: "Code incorrect ou expiré. Vérifiez le SMS, ou demandez un nouveau code.",
     codeAttendu: "Saisissez les 6 chiffres du code.",
     telephoneInvalide: "Numéro tunisien à 8 chiffres attendu, par exemple 20 123 456.",
+    telephoneFixe: "Un numéro fixe ne reçoit pas de SMS : donnez votre numéro de portable.",
     smsTropTot: "Un code vient de partir. Patientez un peu avant d'en demander un autre.",
     smsEchec: "Le SMS n'a pas pu partir. Réessayez dans un instant.",
 

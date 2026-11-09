@@ -184,8 +184,17 @@ export const NUMERO_DEVIS = /^DEV-\d{5,}$/;
 /** Les 8 chiffres d'un numéro tunisien saisi, ou null. Accepte « 20 123 456 »,
  *  « +216 20 123 456 », « 0021620123456 ». La base revérifie. */
 export function chiffresTelephone(saisie: string): string | null {
-  const brut = saisie.replace(/[^\d+]/g, "").replace(/^(\+|00)?216(?=\d{8}$)/, "");
+  // Un clavier arabe du téléphone peut écrire ٢٠ au lieu de 20 : ramenés aux chiffres latins.
+  const brut = saisie
+    .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06f0))
+    .replace(/[^\d+]/g, "").replace(/^(\+|00)?216(?=\d{8}$)/, "");
   return /^[2-579]\d{7}$/.test(brut) ? brut : null;
+}
+
+/** Un fixe (71 à 79) ne reçoit pas de SMS : le code ne lui part pas. */
+export function estFixe(huit: string): boolean {
+  return /^7\d{7}$/.test(huit);
 }
 
 /** « 21620123456 », « +21620123456 » ou « 20123456 » → « +216 20 123 456 ». */
