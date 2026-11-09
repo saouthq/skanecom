@@ -4,7 +4,8 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Enveloppe, Telephone } from "./Icones";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import { chiffresTelephone, estFixe, telephoneLisible } from "@/lib/commande";
-import { canauxDe, emailValide, type Canal, type Verification } from "@/lib/connexion";
+import { canauxDe, emailValide, suggestionEmail, type Canal, type Verification } from "@/lib/connexion";
+import { SuggestionEmail } from "./SuggestionEmail";
 import { t } from "@/lib/i18n";
 import { useControleRobot } from "@/lib/turnstile-navigateur";
 
@@ -51,6 +52,10 @@ export function Identification({
   const [etape, setEtape] = useState<"saisie" | "code">("saisie");
   const [telephone, setTelephone] = useState("");
   const [email, setEmail] = useState("");
+  // La faute de domaine proposée (« gmial.com ») : le champ quitté, ou au premier envoi.
+  const [suggestionMontree, setSuggestionMontree] = useState(false);
+  // Averti à l'envoi : toucher le bouton fait d'abord quitter le champ, la suggestion n'était pas encore lue.
+  const [averti, setAverti] = useState(false);
   const [envoye, setEnvoye] = useState<Envoye | null>(null);
   const [code, setCode] = useState("");
   const [envoi, setEnvoi] = useState(false);
@@ -94,6 +99,13 @@ export function Identification({
     } else {
       if (!emailValide(email)) {
         setErreur(t.connexion.emailInvalide);
+        refChamp.current?.focus();
+        return;
+      }
+      // Une faute probable : la correction proposée d'abord, une fois ; renvoyer, c'est garder l'adresse.
+      if (suggestionEmail(email) && !averti) {
+        setAverti(true);
+        setSuggestionMontree(true);
         refChamp.current?.focus();
         return;
       }
@@ -292,6 +304,7 @@ export function Identification({
               aria-invalid={erreurMontree ? true : undefined}
               aria-describedby={decrit}
               onChange={(e) => setEmail(e.target.value.slice(0, 254))}
+              onBlur={() => setSuggestionMontree(true)}
               onKeyDown={surEntree}
             />
           )}
@@ -302,6 +315,9 @@ export function Identification({
         {aide ? (
           <p id={`${id}-aide`} className="legende">{parSms ? t.commande.telephoneAideCompte : t.connexion.aideEmail}</p>
         ) : null}
+        {parSms ? null : (
+          <SuggestionEmail valeur={email} montre={suggestionMontree} onChoisir={(c) => { setEmail(c); refChamp.current?.focus(); }} />
+        )}
         <p id={`${id}-erreur`} className="champ-erreur" role={erreur ? "alert" : undefined}>{erreurMontree}</p>
         <div ref={zoneRobot} className="controle-robot" />
       </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Coche } from "./Icones";
+import { SuggestionEmail } from "./SuggestionEmail";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -20,6 +21,7 @@ export function LettreInscription({ boutique, accroche, classe }: { boutique: st
   const id = useId();
   const chemin = usePathname();
   const [email, setEmail] = useState("");
+  const [quitte, setQuitte] = useState(false);
   const [accepte, setAccepte] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [envoyee, setEnvoyee] = useState<string | null>(null);
@@ -102,8 +104,10 @@ export function LettreInscription({ boutique, accroche, classe }: { boutique: st
             onChange={(e) => { setEmail(e.target.value.slice(0, 200)); if (erreur?.champ === "email") setErreur(null); }}
             aria-invalid={erreur?.champ === "email" || undefined}
             aria-describedby={erreur?.champ === "email" ? `${id}-erreur` : undefined}
+            onBlur={() => setQuitte(true)}
             required
           />
+          <SuggestionEmail valeur={email} montre={quitte} onChoisir={(c) => { setEmail(c); champEmail.current?.focus(); }} />
           <label className="lettre-accord">
             <input
               ref={caseAccord}

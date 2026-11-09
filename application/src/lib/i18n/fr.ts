@@ -587,6 +587,7 @@ export const fr = {
     parEmail: "E-mail",
     email: "Adresse e-mail",
     emailExemple: "vous@exemple.tn",
+    vouliezVous: "Vouliez-vous dire",
     emailInvalide: "Adresse e-mail illisible, par exemple leila@exemple.tn.",
     aideEmail: "Un code vous est envoyé à cette adresse. Elle vous sert ensuite de compte dans cette boutique, sans mot de passe.",
     codeEnvoyeEmail: (email: string) => `Code envoyé à ${email}. Il n'arrive pas ? Regardez dans les courriers indésirables.`,

@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { Cloche, Coche } from "./Icones";
+import { SuggestionEmail } from "./SuggestionEmail";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -21,6 +22,7 @@ export function AlerteRetour({ varianteId }: { varianteId: string }) {
   const [ouvert, setOuvert] = useState(false);
   const [canal, setCanal] = useState<"telephone" | "email">("telephone");
   const [valeur, setValeur] = useState("");
+  const [quitte, setQuitte] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [notee, setNotee] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -127,10 +129,14 @@ export function AlerteRetour({ varianteId }: { varianteId: string }) {
             placeholder="vous@exemple.tn"
             value={valeur}
             onChange={(e) => setValeur(e.target.value.slice(0, 200))}
+            onBlur={() => setQuitte(true)}
             aria-invalid={erreur ? true : undefined}
             aria-describedby={`alerte-${varianteId}-aide`}
           />
         )}
+        {canal === "email" ? (
+          <SuggestionEmail valeur={valeur} montre={quitte} onChoisir={(c) => { setValeur(c); champ.current?.focus(); }} />
+        ) : null}
         <p id={`alerte-${varianteId}-aide`} className="legende">{t.alerte.discret}</p>
       </div>
       {erreur ? <p className="tunnel-alerte" role="alert">{erreur}</p> : null}

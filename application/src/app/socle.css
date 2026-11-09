@@ -1305,3 +1305,7 @@ html[data-gabarit=technique] .lot-piece-photo { aspect-ratio: 1; background: var
 .controle-robot iframe { display: block; max-inline-size: 100%; }
 /* Dans le pied d'un formulaire (une colonne flexible), la zone ne creuse pas d'écart quand le widget reste invisible. */
 .fc-pied > .controle-robot { margin-block-end: -.875rem; }
+
+/* « Vouliez-vous dire amel@gmail.com ? » (SuggestionEmail.tsx) : vide, il ne prend pas de place. */
+.suggestion-email:empty { display: none; }
+.suggestion-email .btn-lien { font-weight: 600; color: var(--theme-encre); overflow-wrap: anywhere; }
