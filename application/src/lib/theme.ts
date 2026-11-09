@@ -571,8 +571,10 @@ export function feuilleDuTheme(theme: Theme, urlFichier: (chemin: string) => str
   v.push(`--theme-sur-bouton:${surBouton}`);
   v.push(`--theme-bouton-trait:${contraste(bouton, c.fond) >= 4.5 ? bouton : c.encre}`);
   v.push(`--theme-sur-accent:${plusLisible(c.accent, [c.surface, c.encre, "#FFFFFF", "#000000"])}`);
-  // Les champs, les barres de défilement et les cases suivent le mode.
-  v.push(`color-scheme:${theme.style.mode === "sombre" ? "dark" : "light"}`);
+  // Les champs, les barres de défilement et les cases suivent le mode ; « only » :
+  // l'assombrissement automatique de Chrome (Android, mode sombre du téléphone)
+  // inversait la palette choisie — le logo disparaissait sur la photo d'ouverture.
+  v.push(`color-scheme:${theme.style.mode === "sombre" ? "only dark" : "only light"}`);
   if (theme.logo) {
     v.push(`--theme-logo:url("${urlFichier(theme.logo.chemin)}")`);
     v.push(`--theme-logo-ratio:${theme.logo.ratio}`);
