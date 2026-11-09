@@ -17,6 +17,7 @@ import {
   cleDeCommande,
   codeGarde,
   commandePasseeRecente,
+  gouvernoratDeVille,
   gardeCode,
   gardeSaisie,
   saisieGardee,
@@ -437,6 +438,8 @@ export function Tunnel({
   const etapeDeuxFaite = !erreurs.nom && !erreurs.ligne1 && !erreurs.ville && !erreurs.gouvernorat && !erreurs.codePostal;
 
   const change = (cle: keyof Champs) => (valeur: string) => setChamps((c) => ({ ...c, [cle]: valeur }));
+  // Le gouvernorat présélectionné d'après la ville (null : aucun, ou choisi à la main).
+  const gouvernoratDevine = useRef<string | null>(null);
 
   async function changerCompte() {
     await supabaseNavigateur().auth.signOut();
@@ -852,7 +855,14 @@ export function Tunnel({
                 refs.current.ville = el;
               }}
               valeur={champs.ville}
-              onChange={change("ville")}
+              onChange={(v) => setChamps((c) => {
+                // La ville dit son gouvernorat (« Djerba », « Sfax ») : présélectionné s'il n'est pas encore
+                // choisi, ou s'il l'avait été par une ville d'avant — jamais par-dessus un choix à la main.
+                const libre = !c.gouvernorat || c.gouvernorat === gouvernoratDevine.current;
+                const g = libre ? gouvernoratDeVille(v, gouvernorats) : null;
+                if (g) gouvernoratDevine.current = g;
+                return { ...c, ville: v, ...(g ? { gouvernorat: g } : {}) };
+              })}
               autoComplete="address-level2"
               longueur={80}
             />
@@ -866,7 +876,7 @@ export function Tunnel({
                 value={champs.gouvernorat}
                 aria-invalid={montre("gouvernorat") ? true : undefined}
                 aria-describedby={`${id}-gouvernorat-erreur`}
-                onChange={(e) => change("gouvernorat")(e.target.value)}
+                onChange={(e) => { gouvernoratDevine.current = null; change("gouvernorat")(e.target.value); }}
                 autoComplete="address-level1"
               >
                 <option value="">{t.commande.choisirGouvernorat}</option>

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import Image from "next/image";
 import { Icone } from "./Icone";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { millimes } from "@/lib/console/import";
-import { telephoneLisible } from "@/lib/commande";
+import { gouvernoratDeVille, telephoneLisible } from "@/lib/commande";
 import { jourArrivageCourt } from "@/lib/gestion/arrivages";
 import { quand } from "@/lib/gestion/libelles";
 import {
@@ -72,6 +72,8 @@ export function FormSaisie({
   const [active, setActive] = useState(0);
   const [mode, setMode] = useState<"domicile" | "retrait" | "comptoir">("domicile");
   const [adresse, setAdresse] = useState({ ligne1: "", ligne2: "", ville: "", gouvernorat: "", code_postal: "" });
+  // Le gouvernorat présélectionné d'après la ville (« Djerba » → Médenine), jamais par-dessus un choix.
+  const gouvDevine = useRef<string | null>(null);
   const [remise, setRemise] = useState("");
   const [offerte, setOfferte] = useState(false);
   const [confirmee, setConfirmee] = useState(true);
@@ -480,12 +482,19 @@ export function FormSaisie({
               <div className="champ">
                 <label htmlFor={`${id}-ville`}>Ville ou délégation</label>
                 <input id={`${id}-ville`} name="ville" autoComplete="off" maxLength={80}
-                       value={adresse.ville} onChange={(e) => setAdresse((a) => ({ ...a, ville: e.target.value }))} />
+                       value={adresse.ville} onChange={(e) => {
+                         const v = e.target.value;
+                         setAdresse((a) => {
+                           const g = !a.gouvernorat || a.gouvernorat === gouvDevine.current ? gouvernoratDeVille(v, gouvernorats) : null;
+                           if (g) gouvDevine.current = g;
+                           return { ...a, ville: v, ...(g ? { gouvernorat: g } : {}) };
+                         });
+                       }} />
               </div>
               <div className="champ">
                 <label htmlFor={`${id}-gouv`}>Gouvernorat</label>
                 <select id={`${id}-gouv`} name="gouvernorat" value={adresse.gouvernorat}
-                        onChange={(e) => setAdresse((a) => ({ ...a, gouvernorat: e.target.value }))}>
+                        onChange={(e) => { gouvDevine.current = null; setAdresse((a) => ({ ...a, gouvernorat: e.target.value })); }}>
                   <option value="">Choisir…</option>
                   {gouvernorats.map((g) => <option key={g.code} value={g.code}>{g.nom}</option>)}
                 </select>

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Icone } from "@/components/console/Icone";
 import { formatePrix } from "@/lib/prix";
+import { gouvernoratDeVille } from "@/lib/commande";
 
 /* ============================================================================
    CHANGER L'ADRESSE D'UNE COMMANDE PAS ENCORE PARTIE — à l'appel : « livrez
@@ -38,7 +39,15 @@ export function ModifierAdresse({ slug, numero, actuelle, gouvernorats }: {
   const [chiffrage, setChiffrage] = useState<Chiffrage | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const change = (k: keyof Adresse, v: string) => { setA((x) => ({ ...x, [k]: v })); setChiffrage(null); setMessage(null); };
+  // Le gouvernorat suit la nouvelle ville (« chez ma sœur, à Sfax ») tant qu'on ne l'a pas choisi soi-même.
+  const [gouvChoisi, setGouvChoisi] = useState(false);
+  const change = (k: keyof Adresse, v: string) => {
+    if (k === "gouvernorat") setGouvChoisi(true);
+    const g = k === "ville" && !gouvChoisi ? gouvernoratDeVille(v, gouvernorats) : null;
+    setA((x) => ({ ...x, [k]: v, ...(g ? { gouvernorat: g } : {}) }));
+    setChiffrage(null);
+    setMessage(null);
+  };
   const inchangee = (Object.keys(actuelle) as (keyof Adresse)[]).every((k) => a[k].trim() === actuelle[k].trim());
 
   async function envoyer(simuler: boolean) {

@@ -311,3 +311,40 @@ export function gardeSaisie(boutique: string, saisie: Record<string, string>): v
     else window.sessionStorage.removeItem(cleSaisie(boutique));
   } catch {}
 }
+
+/* La ville tapée au tunnel dit souvent son gouvernorat : « Sfax », « Djerba »,
+   « La Marsa ». Quand c'est sans ambiguïté, il se présélectionne (jamais par-
+   dessus un choix) — les frais paraissent aussitôt. Les villes courantes qui
+   ne portent pas le nom de leur gouvernorat ; une ville partagée entre deux
+   (El Menzah) n'y est pas. */
+const VILLES: Record<string, string[]> = {
+  tunis: ["la marsa", "marsa", "carthage", "le bardo", "bardo", "le kram", "kram", "la goulette", "goulette", "sidi bou said", "sidi bousaid"],
+  ariana: ["la soukra", "soukra", "raoued", "ennasr", "cite ennasr", "kalaat el andalous", "sidi thabet"],
+  "ben-arous": ["rades", "ezzahra", "megrine", "hammam lif", "hammam chott", "mornag", "fouchana", "el mourouj", "mourouj", "boumhel"],
+  manouba: ["la manouba", "den den", "douar hicher", "oued ellil", "tebourba"],
+  nabeul: ["hammamet", "kelibia", "korba", "menzel temime", "dar chaabane", "beni khiar", "grombalia", "soliman", "menzel bouzelfa"],
+  sousse: ["hammam sousse", "akouda", "msaken", "kalaa kebira", "port el kantaoui", "sahloul"],
+  monastir: ["ksar hellal", "moknine", "jemmal", "sahline", "skanes", "bembla"],
+  mahdia: ["el jem", "ksour essef", "chebba"],
+  sfax: ["sakiet ezzit", "sakiet eddaier", "thyna", "agareb"],
+  medenine: ["djerba", "houmt souk", "houmt essouk", "midoun", "zarzis", "ben gardane", "ajim"],
+  gabes: ["mareth", "el hamma"],
+  bizerte: ["menzel bourguiba", "mateur", "ras jebel"],
+  tozeur: ["nefta"],
+  kebili: ["douz"],
+  gafsa: ["metlaoui", "redeyef"],
+  kef: ["le kef", "el kef", "kef"],
+};
+
+const plie = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[-'’.]/g, " ").replace(/\s+/g, " ").trim();
+
+/** Le code du gouvernorat que dit la ville (« Djerba » → « medenine »), ou null. */
+export function gouvernoratDeVille(ville: string, gouvernorats: { code: string; nom: string }[]): string | null {
+  const v = plie(ville);
+  if (v.length < 3) return null;
+  for (const g of gouvernorats) if (plie(g.nom) === v || plie(g.code) === v) return g.code;
+  for (const [code, villes] of Object.entries(VILLES)) {
+    if (villes.includes(v) && gouvernorats.some((g) => g.code === code)) return code;
+  }
+  return null;
+}
