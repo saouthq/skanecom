@@ -109,6 +109,14 @@ html[data-gabarit="technique"] .legal-num { color: var(--theme-encre-doux); }
 .pub-consentement-actuel { font-size: .8125rem !important; }
 @keyframes pub-consentement-arrive { from { opacity: 0; transform: translateY(1rem); } }
 @media (prefers-reduced-motion: reduce) { .pub-consentement { animation: none; } }
+/* Au téléphone, il couvrait un tiers de l'écran — et « Ajouter au panier »
+   pendant qu'on fait défiler la fiche : plus serré, le texte entier. */
+@media (max-width: 699px) {
+  .pub-consentement { gap: .5rem; padding: .875rem 1rem 1rem; inset-inline: .5rem; }
+  .pub-consentement h2 { font-size: .9375rem; }
+  .pub-consentement p { font-size: .8125rem; line-height: 1.45; }
+  .pub-consentement-gestes { margin-block-start: .125rem; }
+}
 
 /* « Cookies publicitaires », au pied : un bouton qui a l'air des liens voisins. */
 .pied-legal-bouton {
