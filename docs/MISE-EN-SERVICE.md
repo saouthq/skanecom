@@ -15,6 +15,8 @@ le catalogue et les photos étant prêts.
 | Les SMS : `SMS_ENVOI` = `twilio:<compte>:<jeton>:<expéditeur>` | secret du Worker | le code de l'acheteur à la commande ; sans lui, Réglages → Commandes → vérification par e-mail |
 | Les e-mails : `COURRIELS_ENVOI` = `resend:<clé>:<adresse>` ou `brevo:<clé>:<adresse>` | secret du Worker, domaine vérifié chez le fournisseur | invitations, suivi des commandes, codes par e-mail |
 | L'anti-robots : `TURNSTILE_CLE_SITE` et `TURNSTILE_SECRET` (Cloudflare → Turnstile, un widget « Managed ») | secrets du Worker ; le domaine de la boutique ajouté au widget | le formulaire de contact et les codes par SMS ; sans elles, rien ne change |
+| **Cloudflare Workers Paid** (5 $/mois : Workers & Pages → Plans) | compte Cloudflare | l'offre gratuite limite chaque requête à 50 appels sortants et 10 ms de calcul : au-delà, l'écran casse (« Too many subrequests », vu sur l'aperçu le 08/11). Les écrans en font 10 à 27 aujourd'hui, la CI refuse au-delà de 40 — la marge ne suffit pas pour du vrai trafic |
+| Les journaux du Worker `skanecom-application` allumés (Settings → Observability : logs, traces, issues) | tableau de bord Cloudflare, à revérifier après chaque déploiement | lire une erreur de production : la configuration `cf` ne sait pas les déclarer |
 
 Le reste du déploiement : `docs/DEPLOIEMENT.md` (premier `vinext-cloudflare deploy`, puis le
 déploiement en deux temps).
