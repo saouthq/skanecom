@@ -985,6 +985,23 @@ export const fr = {
     connecte: (telephone: string) => `Connecté avec le ${telephone}`,
     connecteEmail: (email: string) => `Connecté avec ${email}`,
     deconnexion: "Se déconnecter",
+    supprimer: {
+      ouvrir: "Supprimer mon compte",
+      texte: (boutique: string) =>
+        `${boutique} oublie votre compte : vos adresses enregistrées, vos favoris, votre panier, votre inscription à la lettre et vos alertes « Prévenez-moi » sont effacés. Vos commandes passées restent à la boutique, pour sa comptabilité : un compte recréé au même numéro les retrouvera.`,
+      confirmer: "Oui, supprimer mon compte",
+      annuler: "Garder mon compte",
+      enCours: "Suppression…",
+      refus: {
+        commande: "Une commande est encore en cours : la boutique en a besoin pour la mener jusqu'à vous. Vous pourrez supprimer votre compte une fois livrée, ou annulée.",
+        sav: "Une demande de service après-vente est encore ouverte : vous pourrez supprimer votre compte une fois qu'elle sera réglée.",
+        devis: "Un devis attend encore votre réponse ou celle de la boutique : vous pourrez supprimer votre compte une fois qu'il sera accepté, refusé ou annulé.",
+        anonyme: "Votre session a expiré : reconnectez-vous pour supprimer votre compte.",
+        erreur: "La suppression n'a pas abouti. Réessayez dans un instant.",
+      } as Record<string, string>,
+      fait: "Votre compte est supprimé.",
+      faitTexte: (boutique: string) => `${boutique} ne garde que l'historique de vos commandes passées. À bientôt, peut-être.`,
+    },
     chargement: "Chargement de vos commandes",
     erreur: "Vos commandes n'ont pas pu être chargées. Réessayez dans un instant.",
     aucune: "Aucune commande pour le moment.",

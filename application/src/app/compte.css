@@ -120,3 +120,14 @@
 
 html[data-gabarit="technique"] .compte-tete h1 { text-transform: uppercase; }
 html[data-gabarit="technique"] .compte-carte { border-width: 2px; }
+
+/* « Supprimer mon compte », au pied de la page : un lien discret, puis la
+   confirmation dans un cadre (components/Compte.tsx → SupprimerCompte). */
+.compte-supprimer { margin-block-start: 1.5rem; padding-block-start: 1rem; border-block-start: 1px solid var(--theme-filet); }
+.compte-supprimer .btn-lien { color: var(--theme-encre-doux); }
+.compte-supprimer-ouvert { display: grid; gap: .75rem; padding: 1rem; border: 1px solid color-mix(in srgb, var(--theme-erreur) 35%, var(--theme-filet)); border-radius: var(--theme-radius-doux); background: var(--theme-surface); }
+.compte-supprimer-ouvert h2 { margin: 0; font-size: 1.0625rem; }
+.compte-supprimer-ouvert p { margin: 0; font-size: .9375rem; line-height: 1.55; }
+.compte-supprimer-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.compte-supprimer-oui { color: var(--theme-erreur); border-color: color-mix(in srgb, var(--theme-erreur) 45%, var(--theme-filet)); }
+@media (max-width: 30rem) { .compte-supprimer-actions > .btn { flex: 1 1 100%; } }

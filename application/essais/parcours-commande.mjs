@@ -955,5 +955,49 @@ console.log("\n== 3. Quincaillerie du Sud (gabarit technique), grand écran ==")
   await ctx.close();
 }
 
+console.log("\n== Supprimer mon compte, au téléphone (Maymar) ==");
+{
+  const M = t.adresse("maymar.localhost");
+  const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: "fr-FR" });
+  const p = await tel.newPage();
+  const connecte = async (lisible, numero) => {
+    await p.goto(M + "/compte", { waitUntil: "networkidle" });
+    await clic(p, p.getByLabel("Téléphone"));
+    await tape(p, lisible);
+    await clic(p, p.getByRole("button", { name: "Recevoir le code" }));
+    await p.getByLabel("Code reçu par SMS").waitFor();
+    await tape(p, await codeRecu(numero));
+    await p.locator(".compte-liste, .compte-vide").first().waitFor({ timeout: 10000 });
+  };
+  const demande = async () => {
+    await clic(p, p.getByRole("button", { name: "Supprimer mon compte" }));
+    await p.locator(".compte-supprimer-ouvert").waitFor();
+    await clic(p, p.getByRole("button", { name: "Oui, supprimer mon compte" }));
+    await p.waitForFunction(() => document.querySelector(".compte-supprimer-ouvert [role=alert]") || document.querySelector(".compte-vide[role=status]"), null, { timeout: 10000 });
+  };
+  await etape("une commande encore en cours : la suppression est refusée, et dite", async () => {
+    await connecte("22 487 190", "22487190"); // sa commande est « reçue » (jeu de démo)
+    verifie((await p.locator(".compte-supprimer").innerText()).includes("Supprimer mon compte"), "« Supprimer mon compte » au pied de « Mes commandes », discret");
+    await demande();
+    verifie((await p.locator(".compte-supprimer-ouvert [role=alert]").innerText()).includes("Une commande est encore en cours"), "refusée : la commande en cours est la raison dite");
+    await capture(p, "compte-supprimer-refus");
+    await clic(p, p.getByRole("button", { name: "Garder mon compte" }));
+    await clic(p, p.getByRole("button", { name: "Se déconnecter" }));
+    await p.getByLabel("Téléphone").waitFor();
+  });
+  await etape("plus rien en cours : supprimé, le message sous les yeux", async () => {
+    await connecte("23 119 065", "23119065"); // sa seule commande est annulée
+    await demande();
+    const h = p.locator(".compte-vide[role=status] h2");
+    verifie((await h.innerText()) === "Votre compte est supprimé.", "« Votre compte est supprimé. »");
+    verifie(await h.evaluate((e) => { const r = e.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), "le message est à l'écran, pas resté sous le pli");
+    verifie(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "rien ne déborde en largeur");
+    await capture(p, "compte-supprimer-fait");
+    await p.reload({ waitUntil: "networkidle" });
+    verifie(await p.getByLabel("Téléphone").count() === 1, "rechargée : plus de session, la connexion par code");
+  });
+  await tel.close();
+}
+
 await navigateur.close();
 process.exit(t.bilan());

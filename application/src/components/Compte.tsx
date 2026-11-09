@@ -95,6 +95,7 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
   const [relecture, setRelecture] = useState(0);
   const [mesAvis, setMesAvis] = useState<MonAvis[]>([]);
   const [relectureAvis, setRelectureAvis] = useState(0);
+  const [supprime, setSupprime] = useState(false);
 
   useEffect(() => {
     const { data } = supabaseNavigateur().auth.onAuthStateChange((_evenement, s) => setSession(sessionAcheteur(s?.user)));
@@ -173,6 +174,17 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
     setCommandes(null);
   }
 
+  if (supprime) {
+    return (
+      <div className="listing-vide compte-vide" role="status">
+        {/* La page était en bas (le bouton au pied) : le message vient sous les yeux. */}
+        <h2 tabIndex={-1} ref={(h) => { if (h) { h.scrollIntoView({ block: "center" }); h.focus({ preventScroll: true }); } }}>{t.compte.supprimer.fait}</h2>
+        <p>{t.compte.supprimer.faitTexte(joindre?.boutique ?? "La boutique")}</p>
+        <a className="btn btn-primaire" href="/">{t.compte.commander}</a>
+      </div>
+    );
+  }
+
   if (session === undefined) {
     return <div className="compte-attente" aria-busy="true">{t.commun.chargement}</div>;
   }
@@ -244,7 +256,51 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
           </ul>
         </>
       )}
+      <SupprimerCompte boutiqueId={boutiqueId} boutique={joindre?.boutique ?? "La boutique"} surSuppression={() => setSupprime(true)} />
     </div>
+  );
+}
+
+/** « Supprimer mon compte », au pied de la page : replié, puis une
+ *  confirmation ; la base refuse tant qu'une commande, une demande de SAV
+ *  ou un devis est en cours, et le dit (public.supprimer_mon_compte). */
+function SupprimerCompte({ boutiqueId, boutique, surSuppression }: { boutiqueId: string; boutique: string; surSuppression: () => void }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [envoi, setEnvoi] = useState(false);
+  const [refus, setRefus] = useState<string | null>(null);
+  async function supprimer() {
+    setEnvoi(true);
+    setRefus(null);
+    const { data, error } = await supabaseNavigateur().rpc("supprimer_mon_compte", { p_boutique_id: boutiqueId });
+    const r = data as { ok?: boolean; raison?: string } | null;
+    if (error || !r?.ok) {
+      setEnvoi(false);
+      setRefus(t.compte.supprimer.refus[r?.raison ?? "erreur"] ?? t.compte.supprimer.refus.erreur);
+      return;
+    }
+    // La session ne vaut plus rien : on l'oublie ici aussi.
+    await supabaseNavigateur().auth.signOut({ scope: "local" }).catch(() => {});
+    surSuppression();
+  }
+  if (!ouvert) {
+    return (
+      <div className="compte-supprimer">
+        <button type="button" className="btn-lien legende" onClick={() => setOuvert(true)}>{t.compte.supprimer.ouvrir}</button>
+      </div>
+    );
+  }
+  return (
+    <section className="compte-supprimer compte-supprimer-ouvert" aria-labelledby="compte-supprimer-titre">
+      <h2 id="compte-supprimer-titre">{t.compte.supprimer.ouvrir}</h2>
+      <p>{t.compte.supprimer.texte(boutique)}</p>
+      {refus ? <p className="tunnel-alerte" role="alert">{refus}</p> : null}
+      <div className="compte-supprimer-actions">
+        <button type="button" className="btn btn-second compte-supprimer-oui" disabled={envoi} aria-busy={envoi || undefined} onClick={() => void supprimer()}>
+          {envoi ? t.compte.supprimer.enCours : t.compte.supprimer.confirmer}
+        </button>
+        <button type="button" className="btn btn-second" disabled={envoi} onClick={() => { setOuvert(false); setRefus(null); }}>{t.compte.supprimer.annuler}</button>
+      </div>
+    </section>
   );
 }
 
