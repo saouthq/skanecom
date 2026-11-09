@@ -1617,7 +1617,9 @@ if (section("3")) {
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   const page = await ctx.newPage();
-  t.espion(page, "appels-telephone", attendue);
+  // La connexion coupée exprès (plus bas) : ses erreurs de réseau sont attendues.
+  let horsLigne = false;
+  t.espion(page, "appels-telephone", (u, x) => horsLigne || attendue(u, x));
 
   await etape("la liste au doigt, l'appel en un geste", async () => {
     await connexion(page, "appels@maymar.test", true);
@@ -1639,6 +1641,23 @@ if (section("3")) {
     await page.waitForURL(/fait=appel-rappeler/);
     verifie((await message(page)).includes("à rappeler"), "noté : à rappeler");
     await capture(page, "gestion-telephone-rappeler");
+  });
+
+  await etape("la connexion coupe au moment de confirmer : c'est dit, et la page se recharge d'un toucher", async () => {
+    horsLigne = true;
+    await ctx.setOffline(true);
+    const bouton = page.getByRole("button", { name: "Confirmée" });
+    await bouton.scrollIntoViewIfNeeded();
+    await bouton.tap();
+    const avis = page.locator(".geste-coupure");
+    await avis.waitFor({ timeout: 15000 });
+    verifie((await avis.innerText()).includes("c'est peut-être enregistré"), `« ${(await avis.innerText()).replace(/\s+/g, " ")} »`);
+    await capture(page, "gestion-telephone-hors-ligne");
+    await ctx.setOffline(false);
+    await avis.getByRole("button", { name: "Recharger la page" }).tap();
+    await page.waitForLoadState("networkidle");
+    horsLigne = false;
+    verifie((await page.locator("h1").innerText()).includes("À confirmer"), "rechargée : la commande dit où elle en est (rien n'était parti)");
   });
 
   await etape("au rappel, la cliente change d'avis : une autre couleur, deux au lieu d'une", async () => {

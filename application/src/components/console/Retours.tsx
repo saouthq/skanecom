@@ -190,7 +190,18 @@ export function EnvoiFormulaires() {
       const avis = document.createElement("p");
       avis.className = "message message-erreur geste-coupure";
       avis.setAttribute("role", "alert");
-      avis.textContent = "La connexion a coupé pendant l'envoi. Rechargez la page pour voir s'il est passé avant de recommencer.";
+      // Au téléphone, « rechargez la page » renvoie chercher un bouton du navigateur : il est là.
+      const texte = document.createElement("span");
+      texte.textContent = "La connexion a coupé pendant l'envoi : c'est peut-être enregistré. Rechargez la page pour le voir, avant de recommencer. ";
+      const recharger = document.createElement("button");
+      recharger.type = "button";
+      recharger.className = "btn-lien";
+      recharger.textContent = "Recharger la page";
+      recharger.addEventListener("click", () => window.location.reload());
+      // Un seul bloc : la boîte du message range ses enfants côte à côte, le bouton suit la phrase.
+      const bloc = document.createElement("span");
+      bloc.append(texte, recharger);
+      avis.append(bloc);
       form.after(avis);
     };
 
