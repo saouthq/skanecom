@@ -38,6 +38,10 @@ html:has(.tunnel-page, .merci-page) .te-entete-rang { display: flex; justify-con
 .tunnel-indisponible-liste { display: grid; gap: .375rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .tunnel-indisponible-liste a { text-decoration: underline; text-underline-offset: .2em; }
 .tunnel-vide-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; margin-block-start: 1.5rem; }
+/* « Retour » après la commande : elle est enregistrée, la coche le montre ;
+   le numéro ne se coupe pas au tiret. */
+.tunnel-deja-numero { white-space: nowrap; }
+.tunnel-deja-coche { display: block; margin: 0 auto .75rem; padding: .625rem; box-sizing: content-box; border-radius: 999px; color: var(--theme-succes); background: color-mix(in srgb, var(--theme-succes) 12%, transparent); }
 
 .tunnel { display: grid; gap: 1.5rem; align-items: start; }
 /* Au téléphone, le récapitulatif (après le formulaire dans la page) se montre en tête. */

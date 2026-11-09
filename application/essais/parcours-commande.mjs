@@ -181,9 +181,25 @@ console.log("\n== 1. Maison Selma (gabarit éditorial), grand écran ==");
     await capture(page, "selma-merci-pleine", true);
   });
 
-  await etape("revenir sur /commande : panier vide", async () => {
-    await page.goto(S + "/commande", { waitUntil: "networkidle" });
-    verifie((await page.locator(".tunnel-vide").innerText()).includes("Votre panier est vide"), "le tunnel dit que le panier est vide");
+  await etape("« Retour » après la commande : elle est enregistrée, rien ne repart", async () => {
+    const numero = (await page.locator(".merci").innerText()).match(/SEL-\d{4}-\d{5}/)?.[0];
+    let envois = 0;
+    const compte = (r) => { if (r.method() === "POST" && /\/commande\/passer/.test(r.url())) envois++; };
+    page.on("request", compte);
+    await page.goBack({ waitUntil: "networkidle" });
+    await page.waitForURL(/\/commande$/);
+    const vide = page.locator(".tunnel-vide");
+    await vide.waitFor();
+    const texte = (await vide.innerText()).replace(/\s+/g, " ");
+    verifie(!!numero && texte.includes(`Votre commande ${numero} est enregistrée`) && !texte.includes("panier est vide"),
+      `le tunnel ne dit pas « panier vide » : « ${texte.slice(0, 80)} »`);
+    verifie(await vide.locator(".tunnel-deja-numero").evaluate((e) => e.getClientRects().length === 1), "le numéro se lit d'un seul tenant");
+    await capture(page, "selma-retour-apres-commande");
+    await clic(page, vide.getByRole("link", { name: "Revoir ma commande" }));
+    await page.waitForURL(/\/commande\/merci$/);
+    verifie((await page.locator(".merci").innerText()).includes(numero), "« Revoir ma commande » : la page de fin, la même commande");
+    page.off("request", compte);
+    verifie(envois === 0, "rien n'a été renvoyé");
   });
 
   await etape("les pages légales, depuis le pied de page", async () => {
@@ -997,24 +1013,37 @@ console.log("\n== Supprimer mon compte, au téléphone (Maymar) ==");
     verifie(await p.getByLabel("Téléphone").count() === 1, "rechargée : plus de session, la connexion par code");
   });
   await etape("la boutique permet l'annulation : la cliente annule elle-même sa commande pas encore confirmée", async () => {
+    // « Je me suis trompée » : Amel annule la commande qu'elle a passée chez
+    // Maison Selma au début de ce parcours (reçue, pas encore confirmée) — pas
+    // une commande du jeu de démo de Maymar, que le parcours de gestion compte.
     // Le réglage, comme la gérante l'allume (Réglages → Commandes) : ici par l'API, la scène est celle de la cliente.
-    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL ?? RELAIS}/rest/v1/reglages?on_conflict=boutique_id,cle`, {
+    const reglage = (valeur) => fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL ?? RELAIS}/rest/v1/reglages?on_conflict=boutique_id,cle`, {
       method: "POST",
       headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
                  "content-type": "application/json", prefer: "resolution=merge-duplicates" },
-      body: JSON.stringify({ boutique_id: "00000000-0000-4000-8000-000000000001", cle: "commande.annulation_client", valeur: true }),
+      body: JSON.stringify({ boutique_id: "00000000-0000-4000-8000-000000000003", cle: "commande.annulation_client", valeur }),
     });
-    await connecte("55 666 777", "55666777"); // sa commande MAY-…-00011 est « reçue » (jeu de démo)
-    const carte = p.locator(".compte-carte", { hasText: "00011" });
+    await reglage(true);
+    // (le compte de l'étape d'avant est supprimé : plus de session à fermer)
+    await p.goto(S + "/compte", { waitUntil: "networkidle" });
+    await clic(p, p.getByLabel("Téléphone"));
+    await tape(p, "20 555 123");
+    await clic(p, p.getByRole("button", { name: "Recevoir le code" }));
+    await p.getByLabel("Code reçu par SMS").waitFor();
+    await tape(p, await codeRecu("20555123"));
+    await p.locator(".compte-liste").waitFor({ timeout: 10000 });
+    const num = `SEL-${annee}-00001`;
+    const carte = p.locator(".compte-carte", { hasText: num });
     await clic(p, carte.getByRole("button", { name: "Annuler ma commande" }));
     verifie((await carte.locator(".compte-annuler-ouvert").innerText()).includes("pas encore confirmée"), "une confirmation d'abord, qui dit pourquoi c'est possible");
     await capture(p, "compte-annuler-confirmer");
     await clic(p, carte.getByRole("button", { name: "Oui, l'annuler" }));
     await p.waitForFunction(() => !document.querySelector(".compte-annuler-ouvert"), null, { timeout: 10000 });
     await pause(400);
-    verifie((await p.locator(".compte-carte", { hasText: "00011" }).innerText()).includes("Annulée"), "la commande se lit « Annulée », sans recharger");
-    verifie(await p.locator(".compte-carte", { hasText: "00011" }).getByRole("button", { name: "Annuler ma commande" }).count() === 0, "et le bouton n'y est plus");
+    verifie((await p.locator(".compte-carte", { hasText: num }).innerText()).includes("Annulée"), "la commande se lit « Annulée », sans recharger");
+    verifie(await p.locator(".compte-carte", { hasText: num }).getByRole("button", { name: "Annuler ma commande" }).count() === 0, "et le bouton n'y est plus");
     await capture(p, "compte-annulee");
+    await reglage(false);
   });
   await etape("livrée il y a peu : le droit de se rétracter est dit, avec de quoi l'exercer", async () => {
     await clic(p, p.getByRole("button", { name: "Se déconnecter" }));

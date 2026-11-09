@@ -16,6 +16,7 @@ import {
   chiffresTelephone,
   cleDeCommande,
   codeGarde,
+  commandePasseeRecente,
   gardeCode,
   gardeSaisie,
   saisieGardee,
@@ -192,6 +193,8 @@ export function Tunnel({
   // celui du navigateur tant que l'acheteur n'y touche pas (lu après
   // l'hydratation, la page servie est la même pour tous).
   const avecCodes = codesPromo && !devisNumero;
+  // « Retour » depuis la page de fin : la commande qui vient de partir de cet onglet.
+  const commandePassee = useSyncExternalStore(rienAEcouter, () => commandePasseeRecente(boutique), () => null);
   const codeDuNavigateur = useSyncExternalStore(rienAEcouter, () => (avecCodes ? codeGarde(boutique) : null), () => null);
   const [codeTouche, setCodeTouche] = useState<string | null | undefined>(undefined);
   const code = codeTouche === undefined ? codeDuNavigateur : codeTouche;
@@ -614,6 +617,19 @@ export function Tunnel({
   }
   if (panierLu === null && !fige) {
     return <div className="tunnel-attente" aria-busy="true">{t.commun.chargement}</div>;
+  }
+  if (lignesPanier.length === 0 && commandePassee && !express) {
+    return (
+      <div className="listing-vide tunnel-vide tunnel-deja">
+        <Coche taille={28} className="tunnel-deja-coche" />
+        <h2>{t.commande.dejaPasseeAvant} <bdi className="tunnel-deja-numero">{commandePassee}</bdi> {t.commande.dejaPasseeApres}</h2>
+        <p>{t.commande.dejaPasseeTexte}</p>
+        <div className="tunnel-vide-actions">
+          <a className="btn btn-primaire" href="/commande/merci">{t.commande.dejaPasseeRevoir}</a>
+          <a className="btn btn-second" href="/catalogue">{t.commande.continuer}</a>
+        </div>
+      </div>
+    );
   }
   if (lignesPanier.length === 0) {
     return (

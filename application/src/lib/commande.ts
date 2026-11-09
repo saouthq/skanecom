@@ -250,6 +250,29 @@ export function gardeCode(boutique: string, code: string | null): void {
   } catch {}
 }
 
+/* La commande qui vient de partir de cet onglet (la page de fin la note) :
+   « Retour » ramène au tunnel, panier vidé — il dit que la commande est
+   enregistrée, au lieu d'un « panier vide » qui fait croire qu'elle s'est
+   perdue. Une demi-heure, le temps de l'onglet. */
+const clePassee = (boutique: string) => `skanecom.commande-passee.${boutique}`;
+const DEMI_HEURE = 30 * 60 * 1000;
+
+export function noteCommandePassee(boutique: string, numero: string): void {
+  try {
+    window.sessionStorage.setItem(clePassee(boutique), JSON.stringify({ numero, le: Date.now() }));
+  } catch {}
+}
+
+export function commandePasseeRecente(boutique: string): string | null {
+  try {
+    const lu = JSON.parse(window.sessionStorage.getItem(clePassee(boutique)) ?? "null") as { numero?: unknown; le?: unknown } | null;
+    if (typeof lu?.numero !== "string" || typeof lu.le !== "number" || Date.now() - lu.le > DEMI_HEURE) return null;
+    return lu.numero;
+  } catch {
+    return null;
+  }
+}
+
 export function oublieCleDeCommande(boutique: string): void {
   try {
     window.sessionStorage.removeItem(cleStockage(boutique));
