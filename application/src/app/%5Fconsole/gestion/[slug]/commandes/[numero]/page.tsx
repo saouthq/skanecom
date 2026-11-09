@@ -1,4 +1,5 @@
 import { ModifierCommande, type LigneModifiable } from "./ModifierCommande";
+import { ModifierAdresse } from "./ModifierAdresse";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -134,6 +135,7 @@ const FAIT: Record<string, string> = {
   refuser: "Refus enregistré. Le stock est rendu.",
   note: "Note interne enregistrée.",
   modifiee: "Articles modifiés : le stock et le total suivent. Dites le nouveau total au client.",
+  adresse: "Adresse changée : les frais de livraison suivent. Dites le nouveau total au client.",
   "a-la-livraison": "Noté : le client paiera à la livraison.",
   facturation: "Facture enregistrée : au nom de la société.",
   "facturation-retirer": "Facture au nom de la personne qui commande.",
@@ -372,6 +374,12 @@ export default async function FicheCommande({
   const { data: dm } = CONFIRMER.includes(boutique.role) && ["a_arbitrer", "recue", "confirmee"].includes(f.statut)
     ? await sb.rpc("gestion_commande_modifiable", { p_boutique_id: boutique.boutique_id, p_numero: f.numero })
     : { data: null };
+  // L'adresse aussi, livrée à domicile et payée à la livraison.
+  const adresseModifiable = CONFIRMER.includes(boutique.role) && ["a_arbitrer", "recue", "confirmee"].includes(f.statut)
+    && !f.sur_place && f.mode_livraison === "domicile" && f.mode_paiement === "cod";
+  const { data: gv } = adresseModifiable ? await sb.from("gouvernorats").select("code, nom_fr").eq("actif", true).order("position") : { data: null };
+  const gouvernoratsListe = ((gv ?? []) as { code: string; nom_fr: string }[]).map((g) => ({ code: g.code, nom: g.nom_fr }));
+  const codeGouvernorat = gouvernoratsListe.find((g) => g.nom === f.livraison.gouvernorat || g.code === f.livraison.gouvernorat)?.code ?? "";
   const modifiable = (dm as { ok: boolean; lignes?: LigneModifiable[] } | null)?.ok ? (dm as { lignes: LigneModifiable[] }).lignes : null;
   const prenom = f.contact.nom.trim().split(/\s+/)[0] ?? f.contact.nom;
   const annulable = aConfirmer || f.statut === "confirmee";
@@ -1003,6 +1011,13 @@ export default async function FicheCommande({
                     {f.livraison.code_postal ? `${f.livraison.code_postal} ` : ""}
                     {lieu(f.livraison.ville, f.livraison.gouvernorat)}
                   </address>
+                  {adresseModifiable && gv ? (
+                    <ModifierAdresse slug={slug} numero={f.numero}
+                      key={`${f.livraison.ligne1}|${f.livraison.ligne2}|${f.livraison.ville}|${codeGouvernorat}|${f.livraison.code_postal}`}
+                      actuelle={{ ligne1: f.livraison.ligne1 ?? "", ligne2: f.livraison.ligne2 ?? "", ville: f.livraison.ville ?? "",
+                                  gouvernorat: codeGouvernorat, code_postal: f.livraison.code_postal ?? "" }}
+                      gouvernorats={gouvernoratsListe} />
+                  ) : null}
                 </>
               )}
               {f.note_client ? (

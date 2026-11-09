@@ -2604,3 +2604,11 @@ div.rg-verrou { border: 1px solid var(--ui-bord-leger); border-radius: var(--ui-
   .dm-tete { grid-template-columns: auto minmax(0, 1fr); }
   .dm-tete .bo-statut { grid-column: 2; justify-self: start; }
 }
+
+/* Changer l'adresse (ModifierAdresse.tsx) : sous l'adresse, le même panneau
+   que « Modifier les articles ». Ville et code postal côte à côte. */
+.bo-adresse-modifier { margin-block-start: .75rem; }
+.bo-adresse-champs { display: grid; gap: .75rem; }
+.bo-adresse-rang { display: grid; grid-template-columns: minmax(0, 1fr) 8rem; gap: .75rem; align-items: end; }
+.bo-adresse-champs input, .bo-adresse-champs select { inline-size: 100%; }
+@media (max-width: 40rem) { .bo-adresse-rang { grid-template-columns: minmax(0, 1fr) 7rem; } }

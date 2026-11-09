@@ -1668,6 +1668,28 @@ if (section("3")) {
     verifie((await page.locator(".bo-journal").innerText()).includes("Modifiée : 1 × Valise cabine business"), "le journal garde avant → après");
     verifie(await page.locator(".bo-modif").count() === 0, "l'éditeur s'est refermé");
   });
+
+  await etape("et une autre adresse : chez sa sœur, à Sfax", async () => {
+    const bouton = page.getByRole("button", { name: "Changer l'adresse" });
+    await bouton.scrollIntoViewIfNeeded();
+    await bouton.tap();
+    const champ = async (libelle, v) => { const c = page.getByLabel(libelle, { exact: true }); await c.tap(); await c.fill(""); await tape(page, v); };
+    await champ("Adresse", "12 rue Habib Thameur");
+    await champ("Ville", "Sfax");
+    await champ("Code postal", "3000");
+    await page.getByLabel("Gouvernorat").selectOption("sfax");
+    await page.getByRole("button", { name: "Voir les frais" }).tap();
+    const frais = page.locator(".bo-modif-total");
+    await frais.waitFor();
+    verifie(/Livraison/.test(await frais.innerText()), `les frais du nouveau gouvernorat, avant d'enregistrer : ${(await frais.innerText()).replace(/\s+/g, " ")}`);
+    verifie(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "rien ne déborde au téléphone");
+    await capture(page, "gestion-telephone-adresse");
+    await page.getByRole("button", { name: "Enregistrer l'adresse" }).tap();
+    await page.waitForURL(/fait=adresse/);
+    verifie((await message(page)).includes("Adresse changée"), `« ${await message(page)} »`);
+    verifie((await page.locator(".bo-adresse").innerText()).includes("12 rue Habib Thameur"), "la fiche montre la nouvelle adresse");
+    verifie((await page.locator(".bo-journal").innerText()).includes("Adresse changée"), "le journal garde l'ancienne et la nouvelle");
+  });
   await ctx.close();
 }
 
