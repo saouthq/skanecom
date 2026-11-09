@@ -4,6 +4,7 @@ import { Gabarit } from "@/components/Gabarit";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { verificationVitrine } from "@/lib/connexion-serveur";
 import { contactDe } from "@/lib/contact";
+import { identiteLegale } from "@/lib/legal";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -28,7 +29,7 @@ export default async function PageCompte({ params }: { params: Promise<{ boutiqu
         <h1>{t.compte.titre}</h1>
         <p className="legende">{t.compte.chapo(verification)}</p>
       </header>
-      <Compte boutiqueId={cadre.boutique.id} verification={verification} sav={Boolean(cadre.sav)} pro={cadre.comptesPro} devis={cadre.devis} avis={cadre.avis} avisPhotos={cadre.avisPhotos} annulation={cadre.annulationClient}
+      <Compte boutiqueId={cadre.boutique.id} verification={verification} sav={Boolean(cadre.sav)} pro={cadre.comptesPro} devis={cadre.devis} avis={cadre.avis} avisPhotos={cadre.avisPhotos} annulation={cadre.annulationClient} retractationJours={identiteLegale(cadre).retractationJours}
         joindre={{ boutique: cadre.boutique.nom, whatsapp: cadre.whatsapp, telephone: contactDe(cadre).telephone?.href ?? null }} />
     </Gabarit>
   );

@@ -1027,6 +1027,12 @@ export const fr = {
     ecrireBoutique: "Écrire à la boutique",
     appelerBoutique: "Appeler la boutique",
     messageCommande: (numero: string) => `Bonjour, à propos de ma commande ${numero} : `,
+    retractation: (jours: number, recue: string) =>
+      `Vous avez changé d'avis ? Reçue le ${recue} : vous avez ${jours} jours ouvrables après la réception pour vous rétracter, sans avoir à vous justifier.`,
+    messageRetractation: (numero: string) => `Bonjour, je souhaite me rétracter pour ma commande ${numero} : `,
+    ecrireRetractation: "Écrire à la boutique",
+    appelerRetractation: "Appeler la boutique",
+    voirRetractation: "Comment faire",
     /** Un colis revenu sans que le client l'ait refusé (absent, livreur), une commande pas retirée : la reprendre. */
     laVeutToujours: "Vous la voulez toujours ?",
     messageRenvoi: (numero: string) => `Bonjour, ma commande ${numero} n'a pas pu m'être livrée : pouvez-vous me la renvoyer ?`,
@@ -1451,6 +1457,14 @@ export const fr = {
         apercu: (qui: string) => `${qui} vient de commander sur la vitrine.`,
         titre: "Une nouvelle commande",
         texte: (qui: string) => `${qui} vient de commander sur la vitrine. Elle attend dans le backoffice.`,
+        bouton: "L'ouvrir dans le backoffice",
+        raison: "Vous recevez cet e-mail parce que votre boutique prévient son équipe à chaque commande (réglage « Prévenir l'équipe par e-mail »).",
+      },
+      equipeAnnulee: {
+        sujet: (numero: string) => `Commande ${numero} annulée par le client`,
+        apercu: (qui: string) => `${qui} a annulé sa commande avant votre appel.`,
+        titre: "Une commande annulée par le client",
+        texte: (qui: string) => `${qui} a annulé sa commande depuis son compte, avant que vous la confirmiez. Ne la préparez pas : le stock est revenu.`,
         bouton: "L'ouvrir dans le backoffice",
         raison: "Vous recevez cet e-mail parce que votre boutique prévient son équipe à chaque commande (réglage « Prévenir l'équipe par e-mail »).",
       },

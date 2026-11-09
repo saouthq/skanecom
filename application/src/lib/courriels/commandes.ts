@@ -17,7 +17,7 @@ import { rendre, type Contenu, type Courriel, type Marque } from "./modele";
    boutique ; un envoi manqué est retenté.
    ========================================================================== */
 
-export type EvenementCommande = "recue" | "confirmee" | "expediee" | "livree" | "annulee" | "equipe";
+export type EvenementCommande = "recue" | "confirmee" | "expediee" | "livree" | "annulee" | "equipe" | "equipe_annulee";
 
 /** Ce que la file rend pour un e-mail (courriels_commandes_file). */
 export type CourrielDu = {
@@ -84,7 +84,7 @@ function encarts(e: CourrielDu): NonNullable<Contenu["encarts"]> {
   } else {
     sortie.push({ titre: tc().encartRetrait, lignes: [c.contact_nom, numeroLisible(c.contact_telephone)] });
   }
-  if (e.evenement !== "annulee" && e.evenement !== "livree") {
+  if (e.evenement !== "annulee" && e.evenement !== "livree" && e.evenement !== "equipe_annulee") {
     sortie.push({ titre: tc().encartPaiement, lignes: [c.mode_paiement === "cod" ? (retrait ? tc().paiementCodRetrait(total) : tc().paiementCod(total)) : tc().paiementEnLigne] });
   }
   if (e.evenement === "expediee" && !retrait && (c.transporteur || c.numero_suivi)) {
@@ -101,18 +101,20 @@ export function courrielCommande(m: Marque, e: CourrielDu, liens: { site: string
   const retrait = c.mode_livraison === "retrait";
   const total = formatePrix(c.total_millimes);
 
-  if (e.evenement === "equipe") {
-    const qui = [c.contact_nom, c.livraison.ville].filter(Boolean).join(", ");
+  if (e.evenement === "equipe" || e.evenement === "equipe_annulee") {
+    // « Hela Mansour (Sousse) a annulé… » : la ville entre parenthèses, la phrase se lit.
+    const qui = c.livraison.ville ? `${c.contact_nom} (${c.livraison.ville})` : c.contact_nom;
+    const x = e.evenement === "equipe" ? tc().equipe : tc().equipeAnnulee;
     return rendre(m, {
-      sujet: tc().equipe.sujet(n, total),
-      apercu: tc().equipe.apercu(qui),
-      titre: tc().equipe.titre,
-      paragraphes: [tc().equipe.texte(qui)],
+      sujet: e.evenement === "equipe" ? tc().equipe.sujet(n, total) : tc().equipeAnnulee.sujet(n),
+      apercu: x.apercu(qui),
+      titre: x.titre,
+      paragraphes: [x.texte(qui)],
       recapitulatif: recapitulatif(e),
       encarts: encarts(e),
-      bouton: liens.console ? { libelle: tc().equipe.bouton, url: `${liens.console}/gestion/${e.boutique.slug}/commandes/${encodeURIComponent(n)}` } : undefined,
+      bouton: liens.console ? { libelle: x.bouton, url: `${liens.console}/gestion/${e.boutique.slug}/commandes/${encodeURIComponent(n)}` } : undefined,
       notes: [],
-      raison: tc().equipe.raison,
+      raison: x.raison,
     });
   }
 

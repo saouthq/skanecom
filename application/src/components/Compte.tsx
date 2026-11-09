@@ -63,6 +63,9 @@ export type CommandeMienne = {
   total_millimes: number;
   transporteur: string | null;
   numero_suivi: string | null;
+  /** Livrée (ou retirée) le ; vendue au comptoir (pas une vente à distance). */
+  livree_le?: string | null;
+  sur_place?: boolean;
   /** Refusée : d'où vient le refus (client, livreur, injoignable, autre — migration …_refus_acheteur). */
   refus_origine?: string | null;
   /** Elle attend un arrivage (précommande, migration 88) : sa date prévue. */
@@ -74,7 +77,7 @@ export type CommandeMienne = {
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
-export function Compte({ boutiqueId, verification, sav = false, pro = false, devis = false, avis = false, avisPhotos = false, joindre = null, annulation = false }: {
+export function Compte({ boutiqueId, verification, sav = false, pro = false, devis = false, avis = false, avisPhotos = false, joindre = null, annulation = false, retractationJours = 10 }: {
   boutiqueId: string;
   verification: Verification;
   /** Joindre la boutique (son WhatsApp, son téléphone) : sous une commande pas encore partie, pour la changer ou l'annuler. */
@@ -88,6 +91,8 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
   avisPhotos?: boolean;
   /** Réglage commande.annulation_client : « Annuler ma commande » tant qu'elle n'est pas confirmée. */
   annulation?: boolean;
+  /** Les jours ouvrables de rétractation de la boutique (au moins 10, loi 2000-83). */
+  retractationJours?: number;
 }) {
   // undefined : la session n'est pas encore lue.
   const [session, setSession] = useState<SessionAcheteur | null | undefined>(undefined);
@@ -255,6 +260,7 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
                 surAvis={() => setRelectureAvis((n) => n + 1)}
                 joindre={joindre}
                 annulation={annulation}
+                retractationJours={retractationJours}
                 surAnnulation={() => setRelectureCommandes((n) => n + 1)}
               />
             ))}
@@ -346,6 +352,50 @@ function AnnulerMaCommande({ boutiqueId, numero, surAnnulation }: { boutiqueId: 
         <button type="button" className="btn btn-second" disabled={envoi} onClick={() => { setOuvert(false); setRefus(null); }}>{t.compte.annuler.garder}</button>
       </div>
     </div>
+  );
+}
+
+/** Les jours fériés fixes de Tunisie (mois-jour) : les fêtes religieuses,
+ *  mobiles, n'y sont pas — d'où la marge plus bas. */
+const FERIES_FIXES = new Set(["01-01", "03-20", "04-09", "05-01", "07-25", "08-13", "10-15", "12-17"]);
+
+/** Le dernier jour pour se rétracter, au plus tôt : `jours` jours ouvrables
+ *  après la réception (ni dimanche ni jour férié fixe). */
+function finRetractation(livree: Date, jours: number): Date {
+  const d = new Date(livree);
+  let n = 0;
+  while (n < jours) {
+    d.setDate(d.getDate() + 1);
+    const md = `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    if (d.getDay() !== 0 && !FERIES_FIXES.has(md)) n += 1;
+  }
+  return d;
+}
+
+/** Sous une commande livrée ou retirée (une vente à distance, pas au
+ *  comptoir), tant que le délai court : le droit de se rétracter, dit, et de
+ *  quoi l'exercer. Pas de date exacte : les fêtes religieuses, mobiles, la
+ *  décaleraient ; le délai se dit en jours ouvrables, et se montre trois
+ *  jours de plus, pour la marge. */
+function Retractation({ c, joindre, jours }: { c: CommandeMienne; joindre: Joindre | null; jours: number }) {
+  // L'heure, lue une fois (le rendu reste pur).
+  const [maintenant] = useState(() => Date.now());
+  if (c.statut !== "livree" || !c.livree_le || c.sur_place) return null;
+  const livree = new Date(c.livree_le);
+  const fin = finRetractation(livree, jours);
+  fin.setDate(fin.getDate() + 3);
+  if (maintenant > fin.getTime()) return null;
+  const recue = livree.toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Africa/Tunis" });
+  return (
+    <p className="compte-joindre legende compte-retractation">
+      {t.compte.retractation(jours, recue)}{" "}
+      {joindre?.whatsapp ? (
+        <a href={`https://wa.me/${joindre.whatsapp}?text=${encodeURIComponent(t.compte.messageRetractation(c.numero))}`} target="_blank" rel="noopener noreferrer">
+          {t.compte.ecrireRetractation}
+        </a>
+      ) : joindre?.telephone ? <a href={joindre.telephone}>{t.compte.appelerRetractation}</a>
+        : <a href="/conditions-de-vente#retractation">{t.compte.voirRetractation}</a>}
+    </p>
   );
 }
 
@@ -459,7 +509,7 @@ export function JoindreBoutique({ c, joindre }: { c: Pick<CommandeMienne, "numer
   );
 }
 
-function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mesAvis, surAvis, joindre, annulation, surAnnulation }: {
+function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mesAvis, surAvis, joindre, annulation, retractationJours, surAnnulation }: {
   c: CommandeMienne;
   boutiqueId: string;
   sav: boolean;
@@ -471,6 +521,7 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
   surAvis: () => void;
   joindre: { boutique: string; whatsapp: string | null; telephone: string | null } | null;
   annulation: boolean;
+  retractationJours: number;
   surAnnulation: () => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
@@ -489,6 +540,7 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
         ? <AnnulerMaCommande boutiqueId={boutiqueId} numero={c.numero} surAnnulation={surAnnulation} />
         : null}
       <JoindreBoutique c={c} joindre={joindre} />
+      <Retractation c={c} joindre={joindre} jours={retractationJours} />
       {sav && c.statut === "livree" ? (
         <div className="sav-carte">
           {envoyee ? <p className="sav-envoyee" role="status" tabIndex={-1} ref={(m) => { if (m && rendreFocus.current) { rendreFocus.current = false; m.focus({ preventScroll: true }); } }}><Coche taille={16} /> {t.sav.envoyee(envoyee)}</p> : null}

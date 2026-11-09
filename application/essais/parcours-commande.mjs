@@ -1016,6 +1016,15 @@ console.log("\n== Supprimer mon compte, au téléphone (Maymar) ==");
     verifie(await p.locator(".compte-carte", { hasText: "00011" }).getByRole("button", { name: "Annuler ma commande" }).count() === 0, "et le bouton n'y est plus");
     await capture(p, "compte-annulee");
   });
+  await etape("livrée il y a peu : le droit de se rétracter est dit, avec de quoi l'exercer", async () => {
+    await clic(p, p.getByRole("button", { name: "Se déconnecter" }));
+    await p.getByLabel("Téléphone").waitFor();
+    await connecte("21 778 804", "21778804"); // MAY-…-00005, livrée aujourd'hui (jeu de démo)
+    const r = p.locator(".compte-carte", { hasText: "00005" }).locator(".compte-retractation");
+    verifie(/10 jours ouvrables/.test(await r.innerText()), `sous la commande livrée : « ${(await r.innerText()).replace(/\s+/g, " ").slice(0, 110)}… »`);
+    verifie(await r.locator("a").count() === 1, "avec un lien pour l'exercer");
+    await capture(p, "compte-retractation");
+  });
   await tel.close();
 }
 
