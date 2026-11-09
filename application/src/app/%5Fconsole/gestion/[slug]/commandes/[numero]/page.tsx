@@ -1,3 +1,4 @@
+import { ModifierCommande, type LigneModifiable } from "./ModifierCommande";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -132,6 +133,7 @@ const FAIT: Record<string, string> = {
   skanfact: "C'est fait dans SkanFact.",
   refuser: "Refus enregistré. Le stock est rendu.",
   note: "Note interne enregistrée.",
+  modifiee: "Articles modifiés : le stock et le total suivent. Dites le nouveau total au client.",
   "a-la-livraison": "Noté : le client paiera à la livraison.",
   facturation: "Facture enregistrée : au nom de la société.",
   "facturation-retirer": "Facture au nom de la personne qui commande.",
@@ -366,6 +368,11 @@ export default async function FicheCommande({
   // Une précommande qui attend son arrivage (annulée ou refusée, elle n'attend plus rien).
   const attendArrivage = f.en_attente_arrivage && ["a_arbitrer", "recue", "confirmee"].includes(f.statut);
   const articles = f.lignes.reduce((n, l) => n + l.quantite, 0);
+  // Les articles se changent tant que la commande n'est pas partie (à l'appel de confirmation).
+  const { data: dm } = CONFIRMER.includes(boutique.role) && ["a_arbitrer", "recue", "confirmee"].includes(f.statut)
+    ? await sb.rpc("gestion_commande_modifiable", { p_boutique_id: boutique.boutique_id, p_numero: f.numero })
+    : { data: null };
+  const modifiable = (dm as { ok: boolean; lignes?: LigneModifiable[] } | null)?.ok ? (dm as { lignes: LigneModifiable[] }).lignes : null;
   const prenom = f.contact.nom.trim().split(/\s+/)[0] ?? f.contact.nom;
   const annulable = aConfirmer || f.statut === "confirmee";
   const retrait = f.mode_livraison === "retrait";
@@ -817,6 +824,7 @@ export default async function FicheCommande({
                 <div>
                   <h2 id="articles-titre" className="carte-titre-icone"><Icone nom="colis" /> Articles</h2>
                 </div>
+                {modifiable?.length ? <ModifierCommande key={modifiable.map((l) => `${l.variante_id}:${l.quantite}`).join(",")} slug={slug} numero={f.numero} lignes={modifiable} /> : null}
               </div>
               <ul className="bo-articles" role="list">
                 {f.lignes.map((l, i) => (

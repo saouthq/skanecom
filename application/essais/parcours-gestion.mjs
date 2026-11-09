@@ -1640,6 +1640,34 @@ if (section("3")) {
     verifie((await message(page)).includes("à rappeler"), "noté : à rappeler");
     await capture(page, "gestion-telephone-rappeler");
   });
+
+  await etape("au rappel, la cliente change d'avis : une autre couleur, deux au lieu d'une", async () => {
+    const bouton = page.getByRole("button", { name: "Modifier les articles" });
+    await bouton.scrollIntoViewIfNeeded();
+    await bouton.tap();
+    const sel = page.locator(".bo-modif-ligne select").first();
+    const options = await sel.locator("option").allInnerTexts();
+    verifie(options.every((o) => /en stock|épuisé/.test(o)), `chaque déclinaison dit son stock (${options.length})`);
+    await sel.selectOption({ label: options.find((o) => o.includes("Gris")) });
+    const q = page.locator(".bo-modif-qte input").first();
+    await q.tap();
+    await q.fill("2");
+    const avant = (await page.locator(".bo-totaux .bo-total dd").innerText()).replace(/\s+/g, " ");
+    await page.getByRole("button", { name: "Voir le nouveau total" }).tap();
+    const total = page.locator(".bo-modif-total .bo-total dd");
+    await total.waitFor();
+    verifie(/→/.test(await total.innerText()), `le nouveau total, avant d'enregistrer : ${(await total.innerText()).replace(/\s+/g, " ")}`);
+    verifie((await page.locator(".bo-totaux .bo-total dd").innerText()).replace(/\s+/g, " ") === avant, "rien n'est encore enregistré");
+    verifie(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "rien ne déborde au téléphone");
+    await capture(page, "gestion-telephone-modifier");
+    await page.getByRole("button", { name: "Enregistrer la modification" }).tap();
+    await page.waitForURL(/fait=modifiee/);
+    verifie((await message(page)).includes("Articles modifiés"), `« ${await message(page)} »`);
+    const ligne = (await page.locator(".bo-article").first().innerText()).replace(/\s+/g, " ");
+    verifie(/Gris/.test(ligne) && /^2 /.test(ligne), `la fiche suit : ${ligne.slice(0, 80)}`);
+    verifie((await page.locator(".bo-journal").innerText()).includes("Modifiée : 1 × Valise cabine business"), "le journal garde avant → après");
+    verifie(await page.locator(".bo-modif").count() === 0, "l'éditeur s'est refermé");
+  });
   await ctx.close();
 }
 

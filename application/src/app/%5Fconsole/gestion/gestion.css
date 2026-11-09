@@ -296,6 +296,29 @@
 .bo-total { padding-block-start: .75rem; border-block-start: 1px solid var(--ui-bord-leger); }
 .bo-total dt { color: var(--ui-texte); font-weight: 500; }
 
+/* Modifier les articles (ModifierCommande.tsx) : sous l'en-tête de la carte,
+   une ligne par article — déclinaison, quantité, retirer —, puis le
+   nouveau total avant d'enregistrer. Au téléphone, chaque ligne s'empile. */
+.carte-tete:has(> .bo-modif) { flex-wrap: wrap; }
+.bo-modif { display: grid; gap: .875rem; flex: 1 1 100%; inline-size: 100%; margin-block: .25rem 1rem; padding: 1rem; border-radius: 10px;
+  background: var(--ui-doux); box-shadow: inset 0 0 0 1px var(--ui-bord-leger); }
+.bo-modif-titre { margin: 0; }
+.bo-modif-lignes { display: grid; gap: .625rem; margin: 0; padding: 0; list-style: none; }
+.bo-modif-ligne { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 19rem) 5rem auto; gap: .5rem .75rem; align-items: center; }
+.bo-modif-ligne[data-retiree] .bo-modif-nom { text-decoration: line-through; color: var(--ui-texte-3); }
+.bo-modif-nom { font-weight: 500; min-inline-size: 0; }
+.bo-modif-champ select, .bo-modif-champ input { inline-size: 100%; min-block-size: 2.5rem; }
+.bo-modif-qte input { text-align: center; font-variant-numeric: tabular-nums; }
+.bo-modif-refus { margin: 0; color: var(--ui-rouge); }
+.bo-modif-total { margin: 0; }
+.bo-modif-total s { margin-inline-end: .25rem; }
+.bo-modif-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 40rem) {
+  .bo-modif-ligne { grid-template-columns: 5rem auto; justify-content: space-between; padding-block-end: .625rem; border-block-end: 1px solid var(--ui-bord-leger); }
+  .bo-modif-ligne .bo-modif-nom, .bo-modif-ligne .bo-modif-champ:not(.bo-modif-qte) { grid-column: 1 / -1; }
+  .bo-modif-actions > .btn { flex: 1 1 100%; }
+}
+
 /* Historique */
 .bo-journal { display: grid; }
 .bo-journal > li {
