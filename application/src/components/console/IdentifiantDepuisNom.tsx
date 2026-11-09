@@ -7,6 +7,7 @@ import { useEffect } from "react";
 export function identifiantDe(nom: string): string {
   return nom
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/œ/g, "oe").replace(/Œ/g, "Oe").replace(/æ/g, "ae").replace(/Æ/g, "Ae")
     .toLowerCase().replace(/&/g, " et ").replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "").slice(0, 48).replace(/-+$/g, "");
 }

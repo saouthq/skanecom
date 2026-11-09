@@ -70,7 +70,9 @@ const SYNONYMES: Record<Champ, string[]> = {
 };
 
 export function sansAccents(texte: string): string {
-  return texte.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  // Les ligatures ne se décomposent pas : « Œuf » donnait « uf ».
+  return texte.normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/œ/g, "oe").replace(/Œ/g, "Oe").replace(/æ/g, "ae").replace(/Æ/g, "Ae").replace(/ß/g, "ss");
 }
 
 function entete(texte: string): string {

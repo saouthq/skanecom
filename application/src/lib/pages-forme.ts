@@ -21,6 +21,7 @@ export const LIMITES = { titre: { min: 2, max: 80 }, slug: { min: 2, max: 60 }, 
 export function slugDe(titre: string): string {
   return titre
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/œ/g, "oe").replace(/Œ/g, "Oe").replace(/æ/g, "ae").replace(/Æ/g, "Ae").replace(/ß/g, "ss")
     .toLowerCase().replace(/['’]/g, "-").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
     .slice(0, LIMITES.slug.max).replace(/-+$/g, "");
 }
