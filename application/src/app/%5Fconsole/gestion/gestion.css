@@ -213,6 +213,12 @@
   .bo-progression-texte { padding: 0; background: none; }
   .bo-progression-texte .discret { display: none; }
 }
+/* 320 px : « Confirmée » et « Expédiée » se touchaient. */
+@media (max-width: 359px) {
+  .bo-progression { padding-inline: .375rem; }
+  .bo-progression li { padding-inline: 2px; }
+  .bo-progression-texte > span:first-child { font-size: .6875rem; letter-spacing: -.01em; }
+}
 
 /* Le geste du moment : la carte qui compte, cerclée d'un liseré dégradé. */
 .console .carte.bo-action {
@@ -790,6 +796,9 @@ form:has(input[name="livraison.mode_frais"][value="zone"]:checked) .rg-si-fixe {
   .rg-tranche { grid-template-columns: auto auto; justify-content: start; gap: .625rem 1rem; }
   .rg-tranche-plage, .rg-tranche-gestes { grid-column: 1 / -1; }
   .rg-tranche-gestes { justify-content: flex-start; }
+}
+@media (max-width: 399px) {
+  .rg-tranche { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ---- Bordereaux de livraison (deux par A4) ---- */

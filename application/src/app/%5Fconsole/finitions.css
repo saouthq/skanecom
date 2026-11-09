@@ -212,6 +212,8 @@
     border-radius: 12px; font-size: .6875rem; font-weight: 500; color: var(--ui-texte-3);
     -webkit-tap-highlight-color: transparent; transition: color .15s;
   }
+  .app-onglets a { min-inline-size: 0; }
+  .app-onglets a > span { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .app-onglets a .icone { transition: transform .25s cubic-bezier(.34, 1.4, .64, 1); }
   .app-onglets a:active .icone { transform: scale(.9); }
   .app-onglets a[aria-current="page"] { color: var(--ui-texte); font-weight: 600; }
@@ -221,6 +223,12 @@
   }
   .app-onglets a[aria-current="page"] .icone { color: var(--ui-accent); }
   @keyframes onglet-bas { from { transform: scale(.5); opacity: 0; } }
+  /* Un petit téléphone (320 px) : « Commandes » et « Catalogue » se
+     touchaient ; la barre se resserre d'un cran. */
+  @media (max-width: 359px) {
+    .app-onglets { gap: 0; padding-inline: .25rem; }
+    .app-onglets a { font-size: .625rem; letter-spacing: -.01em; }
+  }
   .console .app-onglets .app-nav-compte { position: absolute; inset-block-start: 3px; inset-inline-start: calc(50% + 6px); margin: 0; }
   .app-avec-onglets .app-contenu { padding-block-end: calc(6rem + env(safe-area-inset-bottom)); }
   /* Le focus et les ancres s'arrêtent sous l'en-tête et au-dessus de la

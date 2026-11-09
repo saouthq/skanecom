@@ -378,7 +378,7 @@ html[data-gabarit="editorial"] .listing-outils .compte { font-size: .8125rem; }
 html[data-gabarit="editorial"] .listing-outils select { border-color: transparent; background-color: transparent; padding-inline-end: .5rem; font-size: var(--ed-texte-ui); }
 
 /* --- Fiche produit ---------------------------------------------------------- */
-.ed-fiche { display: grid; }
+.ed-fiche { display: grid; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 900px) {
   .ed-fiche { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; }
 }
@@ -491,7 +491,7 @@ main:has(> .ed-engagements:last-child, > :last-child > .ed-engagements:last-chil
     position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
   .ed-listing .listing-outils form label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .ed-listing .listing-outils select { max-inline-size: 11rem; text-overflow: ellipsis; }
+  .ed-listing .listing-outils select { max-inline-size: min(11rem, 100%); text-overflow: ellipsis; }
 }
 
 /* --- La tuile de fin d'une sélection (components/TuileFin.tsx) -------------

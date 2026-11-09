@@ -303,7 +303,10 @@ picture > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 /* --- Listes : outils, puces, pagination, vide ----------------------------- */
 .listing-outils { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding-block: .75rem; }
 .listing-outils .compte { margin: 0; font-size: .8125rem; color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; }
-.listing-outils form { margin-inline-start: auto; }
+/* Le texte agrandi du téléphone (130 %) : le tri se rétrécit (le libellé
+   choisi s'abrège) plutôt que d'élargir la page. */
+.listing-outils form { margin-inline-start: auto; min-inline-size: 0; }
+.listing-outils form select { min-inline-size: 0; max-inline-size: 100%; text-overflow: ellipsis; }
 .listing-outils label { font-size: .8125rem; color: var(--theme-encre-doux); }
 .listing-outils select {
   min-block-size: 40px; padding: .375rem 2rem .375rem .75rem; border: 1px solid var(--theme-filet-fort);
@@ -793,8 +796,11 @@ html[data-gabarit=technique] .panier-ensemble-ajout:not([aria-disabled]) {
 .valeur-couleur[data-epuise] { background: transparent; position: relative; }
 .valeur-couleur[data-epuise]::after { content: ""; position: absolute; inset: 50% 4px auto; block-size: 1px; background: var(--theme-encre); transform: rotate(-45deg); }
 .valeur-couleur[data-epuise] i { opacity: .35; }
-.achat { display: flex; gap: .75rem; }
-.btn-ajout { flex: 1; min-inline-size: 0; }
+/* Un petit téléphone (320 px) ou le texte agrandi : quand la quantité et le
+   bouton ne tiennent plus côte à côte, le bouton passe dessous, pleine largeur,
+   plutôt que d'élargir la page. */
+.achat { display: flex; flex-wrap: wrap; gap: .75rem; }
+.btn-ajout { flex: 1 1 auto; min-inline-size: 0; }
 /* Ajouté : la coche arrive d'un bond, le bouton garde sa place. */
 .btn[data-ajoute] svg { animation: panier-coche .45s cubic-bezier(.34, 1.5, .64, 1); }
 .fiche-note { margin-block-start: -.5rem; }

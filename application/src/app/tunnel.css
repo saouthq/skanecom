@@ -93,7 +93,7 @@ html:has(.tunnel-page, .compte-page, .pv-commande) { scroll-padding-block: calc(
 .tunnel-rangee > .btn { flex: 1 0 auto; }
 @media (min-width: 520px) { .tunnel-rangee > .btn { flex: 0 0 auto; } }
 .tunnel-tel {
-  flex: 1 1 14rem; display: flex; align-items: stretch; min-block-size: 48px;
+  flex: 1 1 14rem; display: flex; align-items: stretch; min-block-size: 48px; min-inline-size: 0;
   background: var(--theme-surface); border: 1px solid var(--theme-contour-champ); border-radius: var(--theme-radius-doux);
 }
 .tunnel-tel { transition: border-color .18s var(--theme-courbe), box-shadow .25s var(--theme-courbe); }
@@ -108,7 +108,10 @@ html:has(.tunnel-page, .compte-page, .pv-commande) { scroll-padding-block: calc(
   display: grid; place-items: center; padding-inline: .875rem; border-inline-end: 1px solid var(--theme-filet);
   color: var(--theme-encre-doux); font-variant-numeric: tabular-nums; direction: ltr;
 }
-.champ .tunnel-tel input { flex: 1; min-inline-size: 0; border: 0 !important; background: transparent; outline: none; direction: ltr; }
+/* inline-size 100 % : un champ en pourcentage ne pèse rien dans la largeur
+   minimale — sans lui, le champ réclamait ses 20 caractères et la carte
+   débordait sur un téléphone de 320 px. */
+.champ .tunnel-tel input { flex: 1; inline-size: 100%; min-inline-size: 0; border: 0 !important; background: transparent; outline: none; direction: ltr; }
 .champ .tunnel-tel input:focus-visible { box-shadow: none !important; }  /* le halo est celui du champ entier */
 .champ input.tunnel-code {
   flex: 1 1 10rem; max-inline-size: 14rem; text-align: center; letter-spacing: .5em; font-variant-numeric: tabular-nums;
@@ -121,7 +124,7 @@ html:has(.tunnel-page, .compte-page, .pv-commande) { scroll-padding-block: calc(
 /* La connexion (Connexion.tsx) : le code par SMS ou par e-mail, au choix
    quand la boutique propose les deux — un sélecteur à deux segments, le
    choisi en relief. */
-.identification { display: grid; gap: 1rem; min-inline-size: 0; }
+.identification { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-inline-size: 0; }
 .identification-canaux { display: grid; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
 .identification-canaux > legend { padding: 0; margin-block-end: .5rem; font-size: .8125rem; font-weight: 500; color: var(--theme-encre); }
 .identification-choix {

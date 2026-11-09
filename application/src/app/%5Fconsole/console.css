@@ -282,6 +282,11 @@ html:has(.app-menu[open]) { overflow: hidden; }
   transition: background-color .15s, border-color .15s, box-shadow .15s, color .15s, transform .06s;
 }
 .console .btn:active:not(:disabled) { transform: translateY(.5px); }
+/* Un petit téléphone : un long libellé (« Activer la double authentification »)
+   passe à la ligne dans le bouton plutôt que de sortir de la carte. */
+@media (max-width: 479px) {
+  .console .btn { max-inline-size: 100%; white-space: normal; line-height: 1.25; text-align: center; padding-block: .5rem; }
+}
 .console .btn .icone { margin-inline: -.125rem; }
 .console .btn-primaire {
   background: var(--ui-action); color: #fff; border-color: var(--ui-action);

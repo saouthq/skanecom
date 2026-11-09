@@ -220,7 +220,7 @@ html.js-apparitions .im-recit[data-vu] .im-recit-texte > a { --im-delai: 1s; }
 
 /* ==== LA PIÈCE DE LA SAISON (toutes les structures) ======================== */
 .ps { margin-block: calc(clamp(3.5rem, 8vw, 7rem) * var(--echelle-espace, 1)); }
-.ps-grille { display: grid; gap: 2rem; }
+.ps-grille { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
 .ps-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .ps-photos > :first-child { grid-column: 1 / -1; }
 .ps-photos .cadre-image { border-radius: var(--theme-radius-carte); }
