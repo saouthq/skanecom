@@ -985,6 +985,21 @@ export const fr = {
     connecte: (telephone: string) => `Connecté avec le ${telephone}`,
     connecteEmail: (email: string) => `Connecté avec ${email}`,
     deconnexion: "Se déconnecter",
+    annuler: {
+      ouvrir: "Annuler ma commande",
+      texte: "Elle n'est pas encore confirmée : vous pouvez l'annuler vous-même. La boutique la verra annulée, et rien ne vous sera livré.",
+      confirmer: "Oui, l'annuler",
+      garder: "La garder",
+      enCours: "Annulation…",
+      refus: {
+        confirmee: "La boutique vient de la confirmer : pour l'annuler maintenant, écrivez-lui ou appelez-la.",
+        reglage: "Pour l'annuler, écrivez à la boutique ou appelez-la.",
+        payee: "Payée en ligne : écrivez à la boutique pour l'annuler et être remboursé.",
+        anonyme: "Votre session a expiré : reconnectez-vous pour l'annuler.",
+        introuvable: "Cette commande n'est pas trouvée sur votre compte.",
+        erreur: "L'annulation n'a pas abouti. Réessayez dans un instant.",
+      } as Record<string, string>,
+    },
     supprimer: {
       ouvrir: "Supprimer mon compte",
       texte: (boutique: string) =>

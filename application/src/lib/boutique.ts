@@ -98,6 +98,8 @@ export type Cadre = {
   /** Réglage `commande.achat_express` : « Commander maintenant » sur la fiche,
    *  droit au tunnel avec cet article seul, sans toucher au panier. */
   achatExpress: boolean;
+  /** Réglage `commande.annulation_client` : le client annule lui-même une commande pas encore confirmée. */
+  annulationClient: boolean;
   /** Réglage `catalogue.prevenir_retour` : « Prévenez-moi de son retour ». */
   prevenirRetour: boolean;
   /** Réglage `commande.relance_paniers`, avec un compte obligatoire : le panier d'un client
@@ -303,6 +305,7 @@ export function cadreDe(brut: CadreBrut): Cadre {
     comptesPro: modules.includes("comptes_pro"),
     devis: modules.includes("devis"),
     achatExpress: reglage<boolean>(reglages, "commande.achat_express", false) === true,
+    annulationClient: reglage<boolean>(reglages, "commande.annulation_client", false) === true,
     prevenirRetour: reglage<boolean>(reglages, "catalogue.prevenir_retour", false) === true,
     relancePaniers: reglage<boolean>(reglages, "commande.relance_paniers", false) === true
       && reglage<boolean>(reglages, "compte.obligatoire", true) !== false,

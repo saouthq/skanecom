@@ -74,7 +74,7 @@ export type CommandeMienne = {
 
 const JOUR = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Tunis" });
 
-export function Compte({ boutiqueId, verification, sav = false, pro = false, devis = false, avis = false, avisPhotos = false, joindre = null }: {
+export function Compte({ boutiqueId, verification, sav = false, pro = false, devis = false, avis = false, avisPhotos = false, joindre = null, annulation = false }: {
   boutiqueId: string;
   verification: Verification;
   /** Joindre la boutique (son WhatsApp, son téléphone) : sous une commande pas encore partie, pour la changer ou l'annuler. */
@@ -86,6 +86,8 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
   avis?: boolean;
   /** Réglage avis.photos : des photos jointes à l'avis. */
   avisPhotos?: boolean;
+  /** Réglage commande.annulation_client : « Annuler ma commande » tant qu'elle n'est pas confirmée. */
+  annulation?: boolean;
 }) {
   // undefined : la session n'est pas encore lue.
   const [session, setSession] = useState<SessionAcheteur | null | undefined>(undefined);
@@ -96,6 +98,7 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
   const [mesAvis, setMesAvis] = useState<MonAvis[]>([]);
   const [relectureAvis, setRelectureAvis] = useState(0);
   const [supprime, setSupprime] = useState(false);
+  const [relectureCommandes, setRelectureCommandes] = useState(0);
 
   useEffect(() => {
     const { data } = supabaseNavigateur().auth.onAuthStateChange((_evenement, s) => setSession(sessionAcheteur(s?.user)));
@@ -138,7 +141,7 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
     return () => {
       actif = false;
     };
-  }, [pret, boutiqueId]);
+  }, [pret, boutiqueId, relectureCommandes]);
 
   // Les demandes de SAV, avec le module ; relues après chaque demande.
   useEffect(() => {
@@ -251,6 +254,8 @@ export function Compte({ boutiqueId, verification, sav = false, pro = false, dev
                 mesAvis={mesAvis}
                 surAvis={() => setRelectureAvis((n) => n + 1)}
                 joindre={joindre}
+                annulation={annulation}
+                surAnnulation={() => setRelectureCommandes((n) => n + 1)}
               />
             ))}
           </ul>
@@ -301,6 +306,46 @@ function SupprimerCompte({ boutiqueId, boutique, surSuppression }: { boutiqueId:
         <button type="button" className="btn btn-second" disabled={envoi} onClick={() => { setOuvert(false); setRefus(null); }}>{t.compte.supprimer.annuler}</button>
       </div>
     </section>
+  );
+}
+
+/** « Annuler ma commande » (réglage commande.annulation_client) : tant qu'elle
+ *  n'est pas confirmée ; une confirmation d'abord, puis la liste se relit
+ *  (public.annuler_ma_commande : le stock revient, le journal le trace). */
+function AnnulerMaCommande({ boutiqueId, numero, surAnnulation }: { boutiqueId: string; numero: string; surAnnulation: () => void }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [envoi, setEnvoi] = useState(false);
+  const [refus, setRefus] = useState<string | null>(null);
+  async function annuler() {
+    setEnvoi(true);
+    setRefus(null);
+    const { data, error } = await supabaseNavigateur().rpc("annuler_ma_commande", { p_boutique_id: boutiqueId, p_numero: numero });
+    const r = data as { ok?: boolean; raison?: string } | null;
+    setEnvoi(false);
+    if (error || !r?.ok) {
+      setRefus(t.compte.annuler.refus[r?.raison ?? "erreur"] ?? t.compte.annuler.refus.erreur);
+      return;
+    }
+    surAnnulation();
+  }
+  if (!ouvert) {
+    return (
+      <p className="compte-annuler legende">
+        <button type="button" className="btn-lien" onClick={() => setOuvert(true)}>{t.compte.annuler.ouvrir}</button>
+      </p>
+    );
+  }
+  return (
+    <div className="compte-annuler compte-annuler-ouvert" role="group" aria-label={t.compte.annuler.ouvrir}>
+      <p>{t.compte.annuler.texte}</p>
+      {refus ? <p className="tunnel-alerte" role="alert">{refus}</p> : null}
+      <div className="compte-supprimer-actions">
+        <button type="button" className="btn btn-second compte-supprimer-oui" disabled={envoi} aria-busy={envoi || undefined} onClick={() => void annuler()}>
+          {envoi ? t.compte.annuler.enCours : t.compte.annuler.confirmer}
+        </button>
+        <button type="button" className="btn btn-second" disabled={envoi} onClick={() => { setOuvert(false); setRefus(null); }}>{t.compte.annuler.garder}</button>
+      </div>
+    </div>
   );
 }
 
@@ -414,7 +459,7 @@ export function JoindreBoutique({ c, joindre }: { c: Pick<CommandeMienne, "numer
   );
 }
 
-function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mesAvis, surAvis, joindre }: {
+function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mesAvis, surAvis, joindre, annulation, surAnnulation }: {
   c: CommandeMienne;
   boutiqueId: string;
   sav: boolean;
@@ -425,6 +470,8 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
   mesAvis: MonAvis[];
   surAvis: () => void;
   joindre: { boutique: string; whatsapp: string | null; telephone: string | null } | null;
+  annulation: boolean;
+  surAnnulation: () => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [envoyee, setEnvoyee] = useState<string | null>(null);
@@ -438,6 +485,9 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
   return (
     <li className="compte-carte" data-statut={c.statut} data-cloturee={cloturee ? "" : undefined}>
       <ResumeCommande c={c} />
+      {annulation && (c.statut === "recue" || c.statut === "a_arbitrer")
+        ? <AnnulerMaCommande boutiqueId={boutiqueId} numero={c.numero} surAnnulation={surAnnulation} />
+        : null}
       <JoindreBoutique c={c} joindre={joindre} />
       {sav && c.statut === "livree" ? (
         <div className="sav-carte">

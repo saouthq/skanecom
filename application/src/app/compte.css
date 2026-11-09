@@ -131,3 +131,11 @@ html[data-gabarit="technique"] .compte-carte { border-width: 2px; }
 .compte-supprimer-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .compte-supprimer-oui { color: var(--theme-erreur); border-color: color-mix(in srgb, var(--theme-erreur) 45%, var(--theme-filet)); }
 @media (max-width: 30rem) { .compte-supprimer-actions > .btn { flex: 1 1 100%; } }
+
+/* « Annuler ma commande » (réglage commande.annulation_client), sous une
+   commande pas encore confirmée : un lien, puis la confirmation. */
+.compte-annuler { margin: 0; }
+.compte-annuler .btn-lien { color: var(--theme-erreur); }
+.compte-annuler-ouvert { display: grid; gap: .625rem; padding: .875rem 1rem; border-radius: var(--theme-radius-doux);
+  border: 1px solid color-mix(in srgb, var(--theme-erreur) 30%, var(--theme-filet)); background: color-mix(in srgb, var(--theme-erreur) 4%, var(--theme-surface)); }
+.compte-annuler-ouvert p { margin: 0; font-size: .9375rem; line-height: 1.5; }

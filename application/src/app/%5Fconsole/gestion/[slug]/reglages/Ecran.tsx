@@ -257,6 +257,7 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
         v("commande.mode_confirmation") === "automatique" ? "confirmées d'office" : "confirmées par téléphone",
         v("commande.achat_express") ? "achat express" : null,
         v("commande.facture_societe") ? "facture société" : null,
+        v("commande.annulation_client") ? "annulation par le client" : null,
         v("commande.courriels_client") ? "e-mails au client" : null].filter(Boolean).join(" · "),
     livraison: [
       parZone ? `${e.zones.filter((z) => z.actif).length} zone${e.zones.length > 1 ? "s" : ""} de tarif` : `${formateMontant(Number(v("livraison.frais_fixes_millimes") ?? 0))} TND partout`,
@@ -447,6 +448,13 @@ export async function EcranReglages({ slug, groupe, messages }: { slug: string; 
                       { valeur: "1", titre: "Au nom d'une société, sur demande", aide: "En commandant, l'acheteur peut demander une facture au nom de sa société : raison sociale, matricule fiscal, adresse de facturation. SkanFact la reçoit telle quelle." },
                     ]}
                   />}
+                  <Alternative
+                    nom="commande.annulation_client" legende="Une commande pas encore confirmée" valeur={v("commande.annulation_client") ? "1" : "0"}
+                    options={[
+                      { valeur: "0", titre: "Le client appelle pour l'annuler", aide: "« Mes commandes » l'invite à vous écrire ou à vous appeler : vous pouvez essayer de garder la vente." },
+                      { valeur: "1", titre: "Le client l'annule lui-même", aide: "Tant que vous ne l'avez pas confirmée, « Mes commandes » propose « Annuler ma commande » : le stock revient, la liste le montre. Confirmée, il faut vous appeler." },
+                    ]}
+                  />
                   {ferme("commande.relance_paniers") !== undefined ? (
                     <Verrou element="div" titre="Relance des paniers abandonnés" formule={ferme("commande.relance_paniers")!}
                       aide="Le panier d'un acheteur connecté, relancé une fois par l'équipe, message prêt." />

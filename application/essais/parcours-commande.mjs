@@ -996,6 +996,26 @@ console.log("\n== Supprimer mon compte, au téléphone (Maymar) ==");
     await p.reload({ waitUntil: "networkidle" });
     verifie(await p.getByLabel("Téléphone").count() === 1, "rechargée : plus de session, la connexion par code");
   });
+  await etape("la boutique permet l'annulation : la cliente annule elle-même sa commande pas encore confirmée", async () => {
+    // Le réglage, comme la gérante l'allume (Réglages → Commandes) : ici par l'API, la scène est celle de la cliente.
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL ?? RELAIS}/rest/v1/reglages?on_conflict=boutique_id,cle`, {
+      method: "POST",
+      headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+                 "content-type": "application/json", prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify({ boutique_id: "00000000-0000-4000-8000-000000000001", cle: "commande.annulation_client", valeur: true }),
+    });
+    await connecte("55 666 777", "55666777"); // sa commande MAY-…-00011 est « reçue » (jeu de démo)
+    const carte = p.locator(".compte-carte", { hasText: "00011" });
+    await clic(p, carte.getByRole("button", { name: "Annuler ma commande" }));
+    verifie((await carte.locator(".compte-annuler-ouvert").innerText()).includes("pas encore confirmée"), "une confirmation d'abord, qui dit pourquoi c'est possible");
+    await capture(p, "compte-annuler-confirmer");
+    await clic(p, carte.getByRole("button", { name: "Oui, l'annuler" }));
+    await p.waitForFunction(() => !document.querySelector(".compte-annuler-ouvert"), null, { timeout: 10000 });
+    await pause(400);
+    verifie((await p.locator(".compte-carte", { hasText: "00011" }).innerText()).includes("Annulée"), "la commande se lit « Annulée », sans recharger");
+    verifie(await p.locator(".compte-carte", { hasText: "00011" }).getByRole("button", { name: "Annuler ma commande" }).count() === 0, "et le bouton n'y est plus");
+    await capture(p, "compte-annulee");
+  });
   await tel.close();
 }
 

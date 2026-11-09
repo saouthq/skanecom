@@ -28,7 +28,7 @@ export default async function PageCompte({ params }: { params: Promise<{ boutiqu
         <h1>{t.compte.titre}</h1>
         <p className="legende">{t.compte.chapo(verification)}</p>
       </header>
-      <Compte boutiqueId={cadre.boutique.id} verification={verification} sav={Boolean(cadre.sav)} pro={cadre.comptesPro} devis={cadre.devis} avis={cadre.avis} avisPhotos={cadre.avisPhotos}
+      <Compte boutiqueId={cadre.boutique.id} verification={verification} sav={Boolean(cadre.sav)} pro={cadre.comptesPro} devis={cadre.devis} avis={cadre.avis} avisPhotos={cadre.avisPhotos} annulation={cadre.annulationClient}
         joindre={{ boutique: cadre.boutique.nom, whatsapp: cadre.whatsapp, telephone: contactDe(cadre).telephone?.href ?? null }} />
     </Gabarit>
   );
