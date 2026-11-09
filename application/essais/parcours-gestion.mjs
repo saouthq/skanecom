@@ -1532,9 +1532,11 @@ if (section("2")) {
       `l'e-mail part au nom de la boutique (« ${rendu.nom} », « ${rendu.sujet} »), avec le lien`);
   });
 
+  // Le téléphone de l'employé reste ouvert, connecté : son accès retiré plus bas doit s'y voir aussitôt.
+  let telVendeur = null, pageVendeur = null;
   await etape("l'employé ouvre son lien et arrive dans le backoffice", async () => {
-    const tel = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
-    const p = await tel.newPage();
+    const tel = telVendeur = await navigateur.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: "fr-FR" });
+    const p = pageVendeur = await tel.newPage();
     t.espion(p, "vendeur", attendue);
     await p.goto(lienVendeur, { waitUntil: "networkidle" });
     await p.locator("#mot_de_passe").fill("le colis part demain");
@@ -1544,7 +1546,6 @@ if (section("2")) {
     verifie(true, "son mot de passe choisi, il entre dans le backoffice de Maymar");
     await p.goto(`${C}/gestion/maymar/equipe`, { waitUntil: "networkidle" });
     verifie(/\/gestion\/maymar$/.test(p.url()), "la page de l'équipe n'est pas pour la préparation");
-    await tel.close();
     await page.reload({ waitUntil: "networkidle" });
     verifie((await page.locator(".membre", { hasText: vendeur }).innerText()).includes("Actif"), "chez le propriétaire, l'invitation est acceptée");
     verifie(await page.locator("#lien-acces").count() === 0, "le lien qui a servi n'est plus affiché");
@@ -1556,6 +1557,15 @@ if (section("2")) {
     verifie((await ok()).includes("passe en « Confirmation »"), `« ${await ok()} »`);
     await envoie(page.locator(".membre", { hasText: vendeur }).getByRole("button", { name: "Retirer l'accès" }));
     verifie((await ok()).includes("n'a plus accès"), `« ${await ok()} »`);
+    // Sur son téléphone, toujours connecté : la page suivante ne s'ouvre plus.
+    if (pageVendeur) {
+      await pageVendeur.goto(`${C}/gestion/maymar`, { waitUntil: "networkidle" });
+      const ecran = (await pageVendeur.locator("main, body").first().innerText()).replace(/\s+/g, " ");
+      verifie(ecran.includes("L'équipe de Maymar a retiré l'accès"), "et la porte dit qui le lui a retiré, et comment le retrouver");
+      verifie(!/\/gestion\/maymar$/.test(new URL(pageVendeur.url()).pathname), `l'employé, encore connecté, perd l'accès aussitôt : ${new URL(pageVendeur.url()).pathname} — « ${ecran.slice(0, 120)} »`);
+      await capture(pageVendeur, "equipe-acces-retire-telephone");
+      await telVendeur.close();
+    }
     await page.locator(".membre", { hasText: "gerant@maymar.test" }).locator("select[name=role]").selectOption("admin");
     await envoie(page.locator(".membre", { hasText: "gerant@maymar.test" }).getByRole("button", { name: "Changer" }));
     verifie((await page.getByRole("alert").innerText()).includes("au moins un propriétaire actif"), "le seul propriétaire ne se rétrograde pas");
