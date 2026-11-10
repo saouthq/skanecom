@@ -1,4 +1,4 @@
-import { urlFichier } from "@/lib/photos";
+import { LARGEUR_MIN_DOUBLEE, cheminDemi, nomsDePhoto, urlFichier } from "@/lib/photos";
 
 /* ============================================================================
    LE DÉPÔT DES FICHIERS — photos des produits, côté serveur.
@@ -201,4 +201,50 @@ export async function retirerFichier(chemin: string): Promise<void> {
     return;
   }
   await (await bucket()).delete(chemin);
+}
+
+/* Une photo de produit et sa sœur à mi-largeur. Le navigateur envoie les deux
+   (lib/reduire-photo.ts) ; on vérifie la sœur dans son en-tête — même type,
+   la moitié de la largeur à un pixel près — avant de nommer la photo par sa
+   largeur (lib/photos.ts) : la vitrine sert alors la petite aux téléphones.
+   Sans sœur valable (navigateur sans JavaScript, vieille page), la photo
+   garde un nom sans largeur, comme avant, et rien ne casse. */
+
+/** Le nom au hasard d'un fichier : 12 caractères hexadécimaux, sans tiret. */
+export function nomAuHasard(): string {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+}
+
+/** Dépose une photo (sans ses métadonnées) et sa sœur si elle tient ; rend le chemin à inscrire. */
+export async function deposerPhoto(dossier: string, corps: ArrayBuffer, demi: File | null): Promise<string> {
+  const octets = sansMetadonnees(new Uint8Array(corps));
+  const genre = typeImage(octets);
+  if (!genre) throw new Error("deposerPhoto : ce n'est pas une image");
+  const base = `${dossier}/${nomAuHasard()}`;
+  let soeur: { chemin: string; octets: Uint8Array } | null = null;
+  const dims = dimensionsImage(octets);
+  if (demi && demi.size > 0 && demi.size <= POIDS_MAX && dims && dims.largeur >= LARGEUR_MIN_DOUBLEE && dims.largeur <= 9999) {
+    const petits = sansMetadonnees(new Uint8Array(await demi.arrayBuffer()));
+    const sienne = dimensionsImage(petits);
+    const noms = nomsDePhoto(base, dims.largeur, genre.extension);
+    if (typeImage(petits)?.extension === genre.extension && sienne && Math.abs(sienne.largeur - Math.floor(dims.largeur / 2)) <= 1) {
+      soeur = { chemin: noms.demi, octets: petits };
+    }
+  }
+  const chemin = soeur && dims ? nomsDePhoto(base, dims.largeur, genre.extension).photo : `${base}.${genre.extension}`;
+  const tampon = (o: Uint8Array) => o.buffer.slice(o.byteOffset, o.byteOffset + o.byteLength) as ArrayBuffer;
+  if (soeur) await deposerFichier(soeur.chemin, tampon(soeur.octets), genre.type);
+  try {
+    await deposerFichier(chemin, tampon(octets), genre.type);
+  } catch (e) {
+    if (soeur) await retirerFichier(soeur.chemin).catch(() => {});
+    throw e;
+  }
+  return chemin;
+}
+
+/** Retire une photo et sa sœur à mi-largeur s'il y en a une. */
+export async function retirerPhoto(chemin: string): Promise<void> {
+  const demi = cheminDemi(chemin);
+  await Promise.all([retirerFichier(chemin), demi ? retirerFichier(demi) : Promise.resolve()]);
 }

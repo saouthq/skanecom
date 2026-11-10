@@ -1,7 +1,7 @@
 import { clientService } from "@/lib/console/service";
 import { boutiqueDe } from "@/lib/console/equipe-serveur";
 import { ecriture, messageBase, vers, versAvecErreur } from "@/lib/console/http";
-import { retirerFichier } from "@/lib/gestion/fichiers";
+import { retirerPhoto } from "@/lib/gestion/fichiers";
 
 /* C5 · Retirer un envoi de photos entier (public.console_retirer_lot_photos,
    tracé) : ses photos quittent les produits, puis les fichiers que plus rien
@@ -19,7 +19,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     });
     if (error) return versAvecErreur(retour, error.hint === "lot" ? (error.message ?? "") : messageBase(error));
     const r = data as { retirees: number; produits: number; orphelins: string[] };
-    await Promise.all(r.orphelins.map((c) => retirerFichier(c).catch((e) => console.error(`photos à l'import : ${c} reste sur R2`, e))));
+    await Promise.all(r.orphelins.map((c) => retirerPhoto(c).catch((e) => console.error(`photos à l'import : ${c} reste sur R2`, e))));
     const ok = `${r.retirees} photo${r.retirees > 1 ? "s" : ""} retirée${r.retirees > 1 ? "s" : ""} de ${r.produits} produit${r.produits > 1 ? "s" : ""}.`;
     return vers(`${retour}?${new URLSearchParams({ ok })}`);
   });

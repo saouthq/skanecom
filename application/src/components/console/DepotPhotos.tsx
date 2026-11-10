@@ -2,7 +2,7 @@
 
 import { useRef, useState, useSyncExternalStore } from "react";
 import { Icone } from "./Icone";
-import { nomPour, reduire } from "@/lib/reduire-photo";
+import { nomPour, reduireEnDeux } from "@/lib/reduire-photo";
 
 /* ============================================================================
    LE DÉPÔT DE PHOTOS — une zone où l'on glisse ses photos, ou qu'on touche
@@ -11,7 +11,8 @@ import { nomPour, reduire } from "@/lib/reduire-photo";
    Sans JavaScript : un formulaire multipart ordinaire et son bouton « Envoyer ».
    Avec : dès le choix, chaque photo est RÉDUITE dans le navigateur (2 000 px
    au plus grand côté, WebP — JPEG si le navigateur ne sait pas écrire le
-   WebP), ce qui fait d'une photo de téléphone de 5 Mo un fichier de 300 Ko :
+   WebP), ce qui fait d'une photo de téléphone de 5 Mo un fichier de 300 Ko
+   (et une copie à mi-largeur part avec elle, pour les téléphones des clients) :
    l'envoi passe même sur un réseau mobile moyen, et les informations cachées
    de la photo (lieu de la prise de vue) disparaissent. L'envoi montre sa
    progression ; la page se recharge sur le message de la boutique.
@@ -47,8 +48,10 @@ export function DepotPhotos({ action, restantes, large }: { action: string; rest
     setNote(photos.length > restantes ? `Douze photos au plus : ${photos.length - restantes} laissée(s) de côté.` : null);
     for (let i = 0; i < total; i += 1) {
       setEtat({ phase: "preparation", fait: i, total });
-      const blob = await reduire(choisies[i]);
-      donnees.append("photos", blob, nomPour(choisies[i], blob));
+      const { photo, demi } = await reduireEnDeux(choisies[i]);
+      donnees.append("photos", photo, nomPour(choisies[i], photo));
+      // Sa sœur à mi-largeur, que la vitrine sert aux téléphones (lib/gestion/fichiers.ts, deposerPhoto).
+      if (demi) donnees.append(`demi-${i}`, demi, `demi-${nomPour(choisies[i], photo)}`);
     }
     setEtat({ phase: "envoi", pourcent: 0, total });
 

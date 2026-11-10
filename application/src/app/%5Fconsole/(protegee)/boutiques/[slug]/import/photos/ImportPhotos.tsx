@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { unzip } from "fflate";
 import { Icone } from "@/components/console/Icone";
-import { nomPour, reduire } from "@/lib/reduire-photo";
+import { nomPour, reduireEnDeux } from "@/lib/reduire-photo";
 import { aIgnorer, rapprocher, type ProduitReference } from "@/lib/console/photos-import";
 
 /* ============================================================================
@@ -118,13 +118,14 @@ export function ImportPhotos({ slug, produits }: { slug: string; produits: Produ
       const { g, e } = liste[i];
       const lu = fichiers[e.index];
       const fichier = lu.blob instanceof File ? lu.blob : new File([lu.blob], nomSimple(lu.chemin), { type: lu.blob.type });
-      const reduit = await reduire(fichier);
+      const { photo: reduit, demi } = await reduireEnDeux(fichier);
       const donnees = new FormData();
       donnees.set("lot", lot);
       donnees.set("produit_id", g.produit.id);
       if (e.varianteId) donnees.set("variante_id", e.varianteId);
       donnees.set("alt", e.libelle ? `${g.produit.nom} — ${e.libelle}` : g.produit.nom);
       donnees.set("photo", reduit, nomPour(fichier, reduit));
+      if (demi) donnees.set("demi", demi, `demi-${nomPour(fichier, reduit)}`);
       try {
         const r = await fetch(`/boutiques/${slug}/import/photos/envoyer`, { method: "POST", body: donnees, headers: { accept: "application/json" } });
         const reponse = r.redirected ? null : ((await r.json().catch(() => null)) as { ok: boolean; message?: string } | null);

@@ -2,7 +2,7 @@ import { clientService } from "@/lib/console/service";
 import { boutiqueDe } from "@/lib/console/equipe-serveur";
 import { acces } from "@/lib/console/session";
 import { ipDe, memeOrigine } from "@/lib/console/http";
-import { POIDS_MAX, deposerFichier, retirerFichier, typeImage } from "@/lib/gestion/fichiers";
+import { POIDS_MAX, deposerPhoto, retirerPhoto, typeImage } from "@/lib/gestion/fichiers";
 
 /* ============================================================================
    C5 · UNE PHOTO À L'IMPORT — appelée par la page des photos (fetch), une
@@ -38,7 +38,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const boutique = await boutiqueDe(slug);
   if (!boutique) return reponse({ ok: false, message: "boutique introuvable" }, 404);
-  if (Number(req.headers.get("content-length") ?? 0) > POIDS_MAX + 64 * 1024) return reponse({ ok: false, message: "plus de 10 Mo" }, 413);
+  if (Number(req.headers.get("content-length") ?? 0) > POIDS_MAX * 1.5 + 64 * 1024) return reponse({ ok: false, message: "plus de 10 Mo" }, 413);
 
   let f: FormData;
   try {
@@ -57,9 +57,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const genre = typeImage(new Uint8Array(corps, 0, Math.min(16, corps.byteLength)));
   if (!genre) return reponse({ ok: false, message: "ce n'est pas une photo JPEG, PNG ou WebP" });
 
-  const chemin = `${slug}/produits/${produit}/${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}.${genre.extension}`;
+  const demi = f.get("demi");
+  let chemin: string;
   try {
-    await deposerFichier(chemin, corps, genre.type);
+    chemin = await deposerPhoto(`${slug}/produits/${produit}`, corps, demi instanceof File ? demi : null);
   } catch (e) {
     console.error("photos à l'import : dépôt en échec", e);
     return reponse({ ok: false, message: "le dépôt a échoué, réessayez" }, 502);
@@ -74,7 +75,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     p_alt: String(f.get("alt") ?? "").slice(0, 200),
   });
   if (error) {
-    await retirerFichier(chemin).catch(() => {});
+    await retirerPhoto(chemin).catch(() => {});
     return reponse({ ok: false, message: MESSAGES[error.hint ?? ""] ?? error.message ?? "refusée" });
   }
   return reponse({ ok: true });

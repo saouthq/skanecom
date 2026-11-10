@@ -738,12 +738,19 @@ if (section("2")) {
     verifie(await vignettes().count() === 2, "deux vignettes");
     verifie((await vignettes().first().innerText()).includes("Principale"), "la première est la photo principale");
     const chemin = await cheminDe(vignettes().first());
-    verifie(/^maymar\/produits\/[0-9a-f-]{36}\/[0-9a-f]{12}\.webp$/.test(chemin), `rangée dans le dossier de la boutique : ${chemin}`);
+    verifie(/^maymar\/produits\/[0-9a-f-]{36}\/[0-9a-f]{12}-2000\.webp$/.test(chemin), `rangée dans le dossier de la boutique, nommée par sa largeur : ${chemin}`);
     const f = await fichierLocal(chemin);
     const [l, h] = f.status === 200 ? tailleWebp(f.octets) : [0, 0];
     verifie(f.status === 200 && f.type === "image/webp", `déposée, en WebP (${f.status}, ${f.type})`);
     verifie(l === 2000 && h === 1500 && f.octets.length < face.length / 3,
       `réduite dans le navigateur : ${l} × ${h}, ${Math.round(f.octets.length / 1024)} Ko au lieu de ${Math.round(face.length / 1024)}`);
+    // Sa sœur à mi-largeur, que la vitrine sert aux téléphones (srcset).
+    const demi = await fichierLocal(chemin.replace(/-2000\.webp$/, "-1000.webp"));
+    const [ld, hd] = demi.status === 200 ? tailleWebp(demi.octets) : [0, 0];
+    verifie(demi.status === 200 && ld === 1000 && hd === 750 && demi.octets.length < f.octets.length,
+      `et sa copie à mi-largeur, à côté : ${ld} × ${hd}, ${Math.round(demi.octets.length / 1024)} Ko`);
+    const jeu = await page.locator(".ph-image img, img").evaluateAll((imgs, c) => imgs.map((i) => i.getAttribute("srcset") ?? "").find((s) => s.includes(c.split("/").pop())) ?? "", chemin);
+    verifie(jeu.includes("-1000.webp 1000w") && jeu.includes("-2000.webp 2000w"), `les vignettes du backoffice prennent la petite (srcset « ${jeu.replace(/https?:\/\/[^ ]+\//g, "")} »)`);
     await page.evaluate(() => window.scrollBy(0, -96));
     await capture(page, "gestion-photos");
   });
@@ -825,6 +832,7 @@ if (section("2")) {
     verifie((await ok()).includes("Photo retirée"), `« ${await ok()} »`);
     verifie(await vignettes().count() === 1, "il en reste une");
     verifie((await fichierLocal(chemin)).status === 404, "le fichier a quitté le dépôt");
+    verifie((await fichierLocal(chemin.replace(/-2000\.webp$/, "-1000.webp"))).status === 404, "sa copie à mi-largeur aussi");
     cheminsRetires.push(chemin);
   });
 

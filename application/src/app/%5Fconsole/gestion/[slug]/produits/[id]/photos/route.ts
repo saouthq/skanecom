@@ -1,7 +1,7 @@
 import { accesEquipe, clientSession, versConnexion } from "@/lib/console/session";
 import { memeOrigine, vers, versAvecErreur } from "@/lib/console/http";
 import { messageCatalogue } from "@/lib/gestion/catalogue";
-import { POIDS_MAX, deposerFichier, retirerFichier, typeImage } from "@/lib/gestion/fichiers";
+import { POIDS_MAX, deposerFichier, deposerPhoto, nomAuHasard, retirerFichier, retirerPhoto, typeImage } from "@/lib/gestion/fichiers";
 import { cadreDeGestion } from "@/lib/gestion/pages";
 import { poserEnStudio } from "@/lib/gestion/studio";
 
@@ -17,11 +17,6 @@ import { poserEnStudio } from "@/lib/gestion/studio";
 export const dynamic = "force-dynamic";
 
 const ENVOI_MAX = 40 * 1024 * 1024;
-
-/** Un nom de fichier que personne n'a déjà : 12 caractères au hasard. */
-function nomAuHasard(): string {
-  return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-}
 
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string; id: string }> }) {
   if (!memeOrigine(req)) return new Response("Origine refusée", { status: 403 });
@@ -54,25 +49,28 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
 
   switch (texte("action")) {
     case "ajouter": {
-      const fichiers = f.getAll("photos").filter((x): x is File => typeof x !== "string" && x.size > 0);
+      // Chaque photo peut venir avec sa sœur à mi-largeur (`demi-<rang>`, DepotPhotos).
+      const fichiers = f.getAll("photos")
+        .map((x, rang) => ({ x, demi: f.get(`demi-${rang}`) }))
+        .filter((e): e is { x: File; demi: File | string | null } => typeof e.x !== "string" && e.x.size > 0);
       if (fichiers.length === 0) return retour("Choisissez au moins une photo.");
       let ajoutees = 0;
-      for (const fichier of fichiers) {
+      for (const { x: fichier, demi } of fichiers) {
         if (fichier.size > POIDS_MAX) return retour(`« ${fichier.name} » pèse plus de 10 Mo.${ajoutees ? ` ${ajoutees} photo(s) ajoutée(s) avant elle.` : ""}`);
         const corps = await fichier.arrayBuffer();
         const genre = typeImage(new Uint8Array(corps, 0, Math.min(16, corps.byteLength)));
         if (!genre) return retour(`« ${fichier.name} » n'est pas une photo JPEG, PNG ou WebP.${ajoutees ? ` ${ajoutees} photo(s) ajoutée(s) avant elle.` : ""}`);
 
-        const chemin = `${slug}/produits/${id}/${nomAuHasard()}.${genre.extension}`;
+        let chemin: string;
         try {
-          await deposerFichier(chemin, corps, genre.type);
+          chemin = await deposerPhoto(`${slug}/produits/${id}`, corps, demi instanceof File ? demi : null);
         } catch (e) {
           console.error("photos : dépôt en échec", e);
           return retour("Le dépôt de la photo a échoué : recommencez dans un instant.");
         }
         const { error } = await sb.rpc("gestion_ajouter_photo", { p_boutique_id: b, p_produit_id: id, p_chemin: chemin, p_alt: null });
         if (error) {
-          await retirerFichier(chemin).catch(() => {});
+          await retirerPhoto(chemin).catch(() => {});
           const deja = ajoutees ? ` ${ajoutees} photo(s) ajoutée(s) avant.` : "";
           return retour(messageCatalogue(error.hint, error.message) + deja);
         }
@@ -135,7 +133,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       if (error) return retour(messageCatalogue(error.hint, error.message));
       const r = data as { chemin: string; orphelin: boolean };
       if (r.orphelin && r.chemin.startsWith(`${slug}/produits/`)) {
-        await retirerFichier(r.chemin).catch((e) => console.error("photos : retrait du fichier en échec", r.chemin, e));
+        await retirerPhoto(r.chemin).catch((e) => console.error("photos : retrait du fichier en échec", r.chemin, e));
       }
       return retour("Photo retirée.", true);
     }

@@ -183,10 +183,13 @@ Remarqué, laissé tel quel :
 - Les photos à la taille de l'écran (10/11) : une photo dont le nom dit sa
   largeur (`kilim-1200.webp`) a sa sœur à la moitié à côté (`kilim-600.webp`)
   — c'est le cas de toutes les photos de démonstration ; `ImageFichier`
-  donne les deux au navigateur. Les photos DÉPOSÉES par un commerçant (nom
-  au hasard) n'ont qu'une taille (2 000 px max) : les déposer aussi en
-  demi-taille, sous un nom `<hasard>-<largeur>.webp`, les ferait profiter
-  de la même règle. Quatre photos de démo trop lourdes (kilim, chantier,
+  donne les deux au navigateur. Les photos de produit déposées (backoffice,
+  import de la console) suivent la même règle depuis le lot 68 : le
+  navigateur envoie aussi la mi-largeur, le serveur la vérifie dans son
+  en-tête (`deposerPhoto`) et nomme la paire `<hasard>-<largeur>.webp` ;
+  `retirerPhoto` retire les deux. Les photos déposées AVANT (nom sans
+  largeur) n'ont qu'une taille : à reprendre un jour, si leur poids gêne.
+  Quatre photos de démo trop lourdes (kilim, chantier,
   palmiers, maison d'hôtes) ont été réencodées (`-gaussian-blur 0x0.8
   -quality 74`) ; `outils/photos-demo/photos.mjs` les referait lourdes.
 - F1 à F6 (témoignages, avant/après, accusé de réception, rendez-vous, pièces
