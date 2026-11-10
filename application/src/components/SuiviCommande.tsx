@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { JoindreBoutique, ResumeCommande, type CommandeMienne, type Joindre } from "./Compte";
 import { t } from "@/lib/i18n";
+import { chiffresLatins } from "@/lib/chiffres";
 
 /* ============================================================================
    LE SUIVI SANS COMPTE — deux champs, une réponse : la commande telle que
@@ -87,7 +88,7 @@ export function SuiviCommande({ exemple, joindre = null }: { exemple: string; jo
           spellCheck={false}
           placeholder={exemple}
           value={numero}
-          onChange={(e) => setNumero(e.target.value.slice(0, 40))}
+          onChange={(e) => setNumero(chiffresLatins(e.target.value).slice(0, 40))}
           aria-describedby="suivi-numero-aide"
           required
         />
@@ -105,7 +106,7 @@ export function SuiviCommande({ exemple, joindre = null }: { exemple: string; jo
             autoComplete="tel-national"
             placeholder="20 123 456"
             value={telephone}
-            onChange={(e) => setTelephone(e.target.value.slice(0, 20))}
+            onChange={(e) => setTelephone(chiffresLatins(e.target.value).slice(0, 20))}
             required
           />
         </div>

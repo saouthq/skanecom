@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { Cloche, Coche } from "./Icones";
 import { SuggestionEmail } from "./SuggestionEmail";
+import { chiffresLatins } from "@/lib/chiffres";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================
@@ -114,7 +115,7 @@ export function AlerteRetour({ varianteId }: { varianteId: string }) {
               autoComplete="tel-national"
               placeholder="20 123 456"
               value={valeur}
-              onChange={(e) => setValeur(e.target.value.slice(0, 20))}
+              onChange={(e) => setValeur(chiffresLatins(e.target.value).slice(0, 20))}
               aria-invalid={erreur ? true : undefined}
               aria-describedby={`alerte-${varianteId}-aide`}
             />

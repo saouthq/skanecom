@@ -6,6 +6,7 @@ import { Icone } from "./Icone";
 import { urlFichier } from "@/lib/photos";
 import { formatePrix } from "@/lib/prix";
 import { millimes } from "@/lib/console/import";
+import { chiffresLatins } from "@/lib/chiffres";
 import { gouvernoratDeVille, telephoneLisible } from "@/lib/commande";
 import { jourArrivageCourt } from "@/lib/gestion/arrivages";
 import { quand } from "@/lib/gestion/libelles";
@@ -269,7 +270,7 @@ export function FormSaisie({
             <div className="champ">
               <label htmlFor={`${id}-tel`}>Numéro du client</label>
               <input id={`${id}-tel`} name="telephone" type="tel" inputMode="tel" autoComplete="off" required
-                     placeholder="20 123 456" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
+                     placeholder="20 123 456" value={telephone} onChange={(e) => setTelephone(chiffresLatins(e.target.value))} />
             </div>
             <div className="champ">
               <label htmlFor={`${id}-nom`}>Nom</label>
