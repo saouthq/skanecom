@@ -275,6 +275,9 @@ export function Tunnel({
         if (rep.ok) {
           setDevis(rep.devis);
           setDevisEnPanne(false);
+          // Le stock a baissé depuis l'ajout (« Il n'en reste que 1 ») : au téléphone, le
+          // récapitulatif replié le cachait jusqu'à l'envoi — il s'ouvre de lui-même.
+          if (rep.devis.lignes.some((l) => l.quantite_disponible < l.quantite)) setRecapOuvert(true);
           // Les pixels publicitaires, s'ils sont chargés : la commande ouverte, une fois, au premier chiffrage.
           if (!debutSignale.current && !integre) {
             debutSignale.current = true;
