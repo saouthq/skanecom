@@ -14,6 +14,7 @@ import { sessionAcheteur, type SessionAcheteur, type Verification } from "@/lib/
 import { urlFichier } from "@/lib/photos";
 import { jourPrevu } from "@/lib/catalogue";
 import { t } from "@/lib/i18n";
+import { ajouteAuPanier, ouvrePanier } from "@/lib/panier";
 import type { MonAvis } from "@/lib/avis";
 
 /* ============================================================================
@@ -541,6 +542,7 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
         : null}
       <JoindreBoutique c={c} joindre={joindre} />
       <Retractation c={c} joindre={joindre} jours={retractationJours} />
+      {c.statut === "livree" ? <Recommander boutiqueId={boutiqueId} numero={c.numero} /> : null}
       {sav && c.statut === "livree" ? (
         <div className="sav-carte">
           {envoyee ? <p className="sav-envoyee" role="status" tabIndex={-1} ref={(m) => { if (m && rendreFocus.current) { rendreFocus.current = false; m.focus({ preventScroll: true }); } }}><Coche taille={16} /> {t.sav.envoyee(envoyee)}</p> : null}
@@ -585,6 +587,56 @@ function Carte({ c, boutiqueId, sav, demandes, surDemande, avis, avisPhotos, mes
         />
       ) : null}
     </li>
+  );
+}
+
+type LigneRecommandee = {
+  variante_id: string; produit_slug: string; sku: string; libelle: string; quantite: number; quantite_min: number | null;
+  prix_millimes: number; stock: number; image: string | null; disponible: boolean;
+};
+
+/** « Commander à nouveau » : les articles d'une commande livrée, remis au
+ *  panier tels qu'ils sont vendus aujourd'hui (public.recommander — prix et
+ *  stock du jour ; le panier et le tunnel revérifient), et le tiroir du
+ *  panier s'ouvre. Une pièce manque : on le dit, ici, sous la commande. */
+function Recommander({ boutiqueId, numero }: { boutiqueId: string; numero: string }) {
+  const [etat, setEtat] = useState<"repos" | "envoi" | "erreur" | { ajoutes: number; absents: string[] }>("repos");
+  async function remettre() {
+    setEtat("envoi");
+    const { data, error } = await supabaseNavigateur().rpc("recommander", { p_boutique_id: boutiqueId, p_numero: numero });
+    if (error || !Array.isArray(data) || data.length === 0) { setEtat("erreur"); return; }
+    const lignes = data as LigneRecommandee[];
+    const absents = lignes.filter((l) => !l.disponible).map((l) => l.libelle);
+    let ajoutes = 0;
+    for (const l of lignes.filter((x) => x.disponible)) {
+      const min = Math.max(1, l.quantite_min ?? 1);
+      ajouteAuPanier({
+        varianteId: l.variante_id, produitSlug: l.produit_slug, sku: l.sku, libelle: l.libelle,
+        quantite: Math.min(Math.max(l.quantite, min), l.stock), prixMillimesAjout: l.prix_millimes,
+        ...(l.image ? { image: l.image } : {}), ...(min > 1 ? { quantiteMin: min } : {}),
+      }, l.stock);
+      ajoutes += 1;
+    }
+    setEtat(absents.length === 0 ? "repos" : { ajoutes, absents });
+    // Le panier s'ouvre sur le côté, ici même : on y vérifie, puis « Commander ».
+    if (ajoutes > 0) ouvrePanier();
+  }
+  return (
+    <div className="compte-recommander">
+      {typeof etat === "object" ? (
+        <p className="legende" role="status">
+          {t.compte.recommanderPartiel(etat.ajoutes, etat.absents)}{" "}
+          {etat.ajoutes > 0 ? <button type="button" className="btn-lien" onClick={ouvrePanier}>{t.compte.recommanderVoirPanier}</button> : null}
+        </p>
+      ) : etat === "erreur" ? (
+        <p className="legende" role="alert">{t.compte.recommanderErreur}</p>
+      ) : null}
+      {typeof etat === "object" ? null : (
+        <button type="button" className="btn btn-second" onClick={remettre} disabled={etat === "envoi"} aria-busy={etat === "envoi" || undefined}>
+          {etat === "envoi" ? t.compte.recommanderEnCours : t.compte.recommander}
+        </button>
+      )}
+    </div>
   );
 }
 

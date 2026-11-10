@@ -1054,6 +1054,19 @@ console.log("\n== Supprimer mon compte, au téléphone (Maymar) ==");
     verifie(await r.locator("a").count() === 1, "avec un lien pour l'exercer");
     await capture(p, "compte-retractation");
   });
+  await etape("« Commander à nouveau » : la commande livrée revient au panier, au prix du jour", async () => {
+    const carte = p.locator(".compte-carte", { hasText: "00005" });
+    const bouton = carte.getByRole("button", { name: "Commander à nouveau" });
+    verifie(await bouton.count() === 1, "la commande livrée propose « Commander à nouveau »");
+    verifie(await p.locator(".compte-carte:not([data-statut='livree'])").getByRole("button", { name: "Commander à nouveau" }).count() === 0,
+      "pas sur une commande en cours");
+    await bouton.tap();
+    const tiroir = p.locator("dialog[open], [role=dialog]").filter({ hasText: /Panier \(\d+\)/ }).first();
+    await tiroir.waitFor({ timeout: 8000 });
+    const contenu = (await tiroir.innerText()).replace(/\s+/g, " ");
+    verifie(/Panier \(\d+\)/.test(contenu) && /TND/.test(contenu), `le tiroir du panier s'ouvre, l'article dedans (« ${contenu.slice(0, 90)}… »)`);
+    await capture(p, "compte-commander-a-nouveau");
+  });
   await tel.close();
 }
 

@@ -980,6 +980,13 @@ export const fr = {
   },
   compte: {
     payeeEnLigne: "payée en ligne",
+    recommander: "Commander à nouveau",
+    recommanderEnCours: "Préparation du panier…",
+    /** Une partie seulement est revenue au panier : ce qui manque est nommé. */
+    recommanderPartiel: (ajoutes: number, absents: string[]) =>
+      `${ajoutes > 0 ? `${ajoutes > 1 ? `${ajoutes} articles remis` : "1 article remis"} au panier. ` : ""}${absents.length > 1 ? "Ne sont plus disponibles" : "N'est plus disponible"} : ${absents.join(", ")}.`,
+    recommanderVoirPanier: "Voir le panier",
+    recommanderErreur: "Le panier n'a pas pu être préparé : réessayez dans un instant.",
     titre: "Mes commandes",
     lien: "Mes commandes",
     meta: "Mes commandes",
