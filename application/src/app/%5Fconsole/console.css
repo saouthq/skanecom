@@ -232,6 +232,9 @@ html:has(.app-menu[open]) { overflow: hidden; }
 .page-tete { display: grid; gap: .75rem; margin-block-end: 1.5rem; }
 .page-avant { display: flex; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--ui-texte-3); }
 .page-avant a { display: inline-flex; align-items: center; gap: .375rem; color: var(--ui-texte-2); font-weight: 500; }
+/* « ← Commandes » : 20 px de haut, le geste le plus fréquent au téléphone. La
+   zone sensible s'agrandit (44 px) sans rien déplacer à l'écran. */
+.page-avant a { padding: .75rem .5rem; margin: -.75rem -.5rem; }
 .page-avant a:hover { color: var(--ui-texte); }
 .page-tete-rang { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .page-tete-texte { display: grid; gap: .25rem; min-inline-size: 0; flex: 1 1 20rem; }

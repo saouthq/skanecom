@@ -78,8 +78,10 @@
 .console .message { animation: ui-glisse var(--ui-d3) var(--ui-courbe) backwards; }
 
 /* ---- Menus, plis ---- */
-.console details.bo-pli > summary .bo-pli-chevron { transition: transform var(--ui-d2) var(--ui-courbe); }
-.console details.bo-pli[open] > summary .bo-pli-chevron { transform: rotate(180deg); }
+/* La même propriété que gestion.css (rotate) : en transform, les deux s'ajoutaient
+   (180° + 180°) et le chevron d'un pli ouvert pointait encore vers le bas. */
+.console details.bo-pli > summary .bo-pli-chevron { transition: rotate var(--ui-d2) var(--ui-courbe); }
+.console details.bo-pli[open] > summary .bo-pli-chevron { rotate: 180deg; }
 .console details.bo-pli[open] > :not(summary) { animation: ui-monte var(--ui-d3) var(--ui-courbe) backwards; }
 
 /* ---- Un geste en place (Retours.tsx) : ce qui a changé bouge ----

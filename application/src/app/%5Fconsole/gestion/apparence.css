@@ -217,7 +217,7 @@
 .ap-contrastes li span { color: var(--ui-texte-2); }
 .ap-contrastes li b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ui-texte); }
 
-.ap-details > summary { cursor: pointer; font-size: .8125rem; font-weight: 500; color: var(--ui-texte-2); }
+.ap-details > summary { cursor: pointer; font-size: .8125rem; font-weight: 500; color: var(--ui-texte-2); padding-block: .625rem; margin-block: -.625rem; }
 .ap-details > summary:hover { color: var(--ui-texte); }
 .ap-jetons { display: grid; gap: .375rem; margin-block-start: .75rem; }
 .ap-jeton { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .625rem; font-size: .8125rem; }

@@ -272,6 +272,11 @@
 .bo-pli-chevron { margin-inline-start: auto; transition: rotate .2s; }
 .bo-pli[open] > .bo-formulaire { margin-block-start: 1rem; }
 .bo-pli[open] .bo-pli-chevron { rotate: 180deg; }
+/* Un pli posé comme une carte (« Annuler la commande ») : toute la carte s'ouvre
+   au toucher, pas seulement la ligne de texte de 20 px au milieu. */
+.bo-pli.carte > summary { margin: -1.25rem; padding: 1.25rem; border-radius: inherit; }
+@media (min-width: 700px) { .bo-pli.carte > summary { margin-inline: -1.5rem; padding-inline: 1.5rem; } }
+.bo-pli.carte[open] > .bo-formulaire { margin-block-start: 1.25rem; }
 .bo-action .bo-pli { margin-block-start: 1rem; padding-block-start: 1rem; border-block-start: 1px solid var(--ui-bord-leger); }
 .bo-annuler { padding-block: .875rem; }
 .bo-annuler > summary { color: var(--ui-rouge); }
@@ -1188,7 +1193,8 @@ form:has(input[name="livraison.mode_frais"][value="zone"]:checked) .rg-si-fixe {
 .ec-groupe-total { margin: 0; font-size: 1.375rem; font-weight: 650; letter-spacing: -.01em; white-space: nowrap; }
 .ec-form { display: grid; }
 .ec-colis-tete { padding: .5rem var(--ec-marge); border-block: 1px solid var(--ui-bord); background: var(--ui-survol); font-size: .8125rem; color: var(--ui-texte-2); }
-.ec-tout { display: inline-flex; align-items: center; gap: .625rem; cursor: pointer; }
+/* « Tout cocher » : toute la bande répond, pas seulement la case et ses mots. */
+.ec-tout { display: flex; align-items: center; gap: .625rem; cursor: pointer; margin: -.5rem calc(-1 * var(--ec-marge)); padding: .75rem var(--ec-marge); }
 .ec-colis { display: grid; margin: 0; padding: 0; list-style: none; }
 .ec-colis > li + li { border-block-start: 1px solid var(--ui-bord-leger, var(--ui-bord)); }
 .ec-colis-ligne {
