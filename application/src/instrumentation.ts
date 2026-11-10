@@ -1,4 +1,4 @@
-import { estControle, lieuDe, noterErreur, pileCourte, referenceDe } from "@/lib/erreurs";
+import { estControle, estDepart, lieuDe, noterErreur, pileCourte, referenceDe } from "@/lib/erreurs";
 
 /* Chaque erreur qu'une requête laisse échapper (une page, une route, une
    action) se note dans la base, pour la console : État technique → Erreurs
@@ -10,6 +10,11 @@ type Contexte = { routerKind?: string; routePath?: string; routeType?: string };
 
 export async function onRequestError(erreur: unknown, requete: Requete, contexte: Contexte) {
   if (estControle(erreur)) return;
+  // Le visiteur est parti pendant que la page s'écrivait encore (l'onglet fermé,
+  // une autre page demandée) : le moteur le dit ainsi, sans rien d'autre. Rien
+  // n'a échoué chez nous — pas une erreur à regarder. Une vraie coupure d'un
+  // service appelé arrive enveloppée par notre code (« Commandes illisibles : … »).
+  if (estDepart(erreur)) return;
   const e = erreur as { message?: unknown; stack?: unknown; digest?: unknown } | null;
   // (un objet simple, comme Next.js le passe ; ou des Headers)
   const h = requete.headers;

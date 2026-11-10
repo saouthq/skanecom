@@ -18,6 +18,8 @@ import { PEUT_RELANCER } from "@/lib/gestion/paniers";
 import { PEUT_TRAITER_SAV } from "@/lib/gestion/sav";
 import type { ElementPalette } from "@/lib/gestion/palette";
 import { OuvrirPalette, Palette } from "@/components/console/Palette";
+import { Brouillons } from "@/components/console/Brouillons";
+import { Suspense } from "react";
 import { BandeauAnnonces } from "@/components/console/BandeauAnnonces";
 import { BandeauPreparation } from "@/components/console/BandeauPreparation";
 import { BandeauSuspension } from "@/components/console/BandeauSuspension";
@@ -274,7 +276,7 @@ export default async function BackofficeBoutique({
         : (LIBELLES_ROLE[boutique.role] ?? boutique.role)}
       recherche={<OuvrirPalette />}
       rechercheCompacte={<OuvrirPalette compact />}
-      palette={<Palette source={`/gestion/${slug}/palette`} pages={pages} />}
+      palette={<><Palette source={`/gestion/${slug}/palette`} pages={pages} /><Suspense fallback={null}><Brouillons /></Suspense></>}
       bandeau={boutique.support_jusqu_a || annonces.length || suspension || enPreparation || conditionsAAccepter || pause ? (
         <>
           {pause ? <BandeauMaintenance plateforme={pause.plateforme} message={pause.message} depuis={pause.depuis} /> : null}

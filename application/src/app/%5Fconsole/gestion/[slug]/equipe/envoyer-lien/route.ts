@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { accesEquipe } from "@/lib/console/session";
+import { accesEquipe, versConnexion } from "@/lib/console/session";
 import { memeOrigine, vers, versAvecErreur } from "@/lib/console/http";
 import { COOKIE_LIEN } from "@/lib/console/equipe";
 import { envoyerLienParCourriel } from "@/lib/console/equipe-serveur";
@@ -15,7 +15,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (!memeOrigine(req)) return new Response("Origine refusée", { status: 403 });
   const { slug } = await params;
   const a = await accesEquipe();
-  if (a.etat === "anonyme") return vers("/connexion");
+  if (a.etat === "anonyme") return vers(await versConnexion());
   if (a.etat === "aucune") return vers("/refuse");
   if (a.etat === "aal1") return vers("/double-authentification");
   const boutique = a.boutiques.find((b) => b.slug === slug);

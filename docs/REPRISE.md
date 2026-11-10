@@ -148,16 +148,12 @@ Remarqué, laissé tel quel :
   client pro (son prix pro paraît dès l'article ajouté, chiffré par la base).
 - Le bandeau d'une boutique suspendue dit « appelez-nous » (le message de la
   console), sans moyen de joindre SkanEcom : il faudra le numéro du support.
-- **À creuser (09/11)** : en local, le parcours gestion laisse parfois (deux
-  passages sur quatre) une erreur serveur « Network connection lost. » dans
-  `plateforme.erreurs` — une fois sur la fiche MAY-…-00001 (section 7,
-  SkanFact en panne), une fois sur les réglages Publicité de Selma (fin de la
-  section 4 : Entrée, puis l'onglet fermé aussitôt). La console, lancée
-  ensuite sur la même base, échoue alors sur « aucune erreur au départ ».
-  Non reproduite à la main (onglet fermé en plein chargement, ou juste après
-  un envoi). Piste : une requête coupée côté navigateur, que
-  `onRequestError` note comme une erreur de l'application. En attendant, la
-  console se lance sur base neuve.
+- **Résolu (10/11)** : « Network connection lost. » noté par le parcours gestion
+  (Publicité de Selma, fiche MAY-…-00001) n'était pas une panne : le visiteur
+  (ici le parcours, qui ferme l'onglet) part pendant que la page s'écrit
+  encore, et le moteur le dit ainsi. `onRequestError` ne le note plus
+  (`estDepart`, lib/erreurs.ts) ; une vraie coupure d'un service appelé arrive
+  enveloppée par notre code et reste notée. Le relais local n'y était pour rien.
 - **À vérifier sur un vrai téléphone** : l'aperçu d'un lien partagé sur
   WhatsApp. Les images d'aperçu (`og:image`) sont en WebP, le seul format
   que produit la chaîne des photos ; Facebook le lit, WhatsApp pas

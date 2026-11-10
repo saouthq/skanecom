@@ -567,7 +567,7 @@ export default async function FicheCommande({
                         </fieldset>
                         <div className="champ flex-1">
                           <label htmlFor="note-appel" className="sr-only">Note (facultatif)</label>
-                          <input id="note-appel" name="note" maxLength={500} placeholder="Note (facultatif) : préfère être livré après 17 h" />
+                          <input id="note-appel" name="note" maxLength={500} data-brouillon="" placeholder="Note (facultatif) : préfère être livré après 17 h" />
                         </div>
                       </div>
                       <p className="ui-etiquette">Résultat de l&apos;appel</p>

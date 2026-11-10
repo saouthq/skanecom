@@ -17,6 +17,11 @@ export type Surface = "vitrine" | "backoffice" | "console" | "serveur";
 /** Ce que Next.js lance pour se diriger lui-même (une redirection, une page
  *  introuvable, un rendu à refaire au navigateur) : pas des erreurs. */
 const CONTROLE = /^(NEXT_REDIRECT|NEXT_NOT_FOUND|NEXT_HTTP_ERROR_FALLBACK|DYNAMIC_SERVER_USAGE|BAILOUT_TO_CLIENT_SIDE_RENDERING)/;
+/** Le visiteur parti en cours de réponse (message exact du moteur, workerd). */
+export function estDepart(e: unknown): boolean {
+  return (e as { message?: unknown } | null)?.message === "Network connection lost.";
+}
+
 export function estControle(e: unknown): boolean {
   const o = e as { digest?: unknown; message?: unknown } | null;
   return (typeof o?.digest === "string" && CONTROLE.test(o.digest)) || (typeof o?.message === "string" && CONTROLE.test(o.message));

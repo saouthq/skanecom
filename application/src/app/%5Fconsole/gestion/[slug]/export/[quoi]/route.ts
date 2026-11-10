@@ -1,4 +1,4 @@
-import { accesEquipe, clientSession } from "@/lib/console/session";
+import { accesEquipe, clientSession, versConnexion } from "@/lib/console/session";
 import { vers } from "@/lib/console/http";
 import { EXPORTS, versCsv } from "@/lib/gestion/export";
 
@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const { slug, quoi } = await params;
   if (!EXPORTS[quoi]) return new Response("Export inconnu", { status: 404 });
   const a = await accesEquipe();
-  if (a.etat === "anonyme") return vers("/connexion");
+  if (a.etat === "anonyme") return vers(await versConnexion());
   if (a.etat === "aucune") return vers("/refuse");
   if (a.etat === "aal1") return vers("/double-authentification");
   const boutique = a.boutiques.find((b) => b.slug === slug);

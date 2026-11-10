@@ -1,4 +1,4 @@
-import { accesEquipe, clientSession } from "@/lib/console/session";
+import { accesEquipe, clientSession, versConnexion } from "@/lib/console/session";
 import { memeOrigine, vers } from "@/lib/console/http";
 import { rafraichirVitrine } from "@/lib/console/vitrine-cache";
 import { millimes } from "@/lib/console/import";
@@ -26,7 +26,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   if (!memeOrigine(req)) return new Response("Origine refusée", { status: 403 });
   const { slug } = await params;
   const a = await accesEquipe();
-  if (a.etat === "anonyme") return vers("/connexion");
+  if (a.etat === "anonyme") return vers(await versConnexion());
   if (a.etat === "aucune") return vers("/refuse");
   if (a.etat === "aal1") return vers("/double-authentification");
   const boutique = a.boutiques.find((b) => b.slug === slug);

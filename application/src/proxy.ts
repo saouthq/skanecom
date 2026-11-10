@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { EN_TETE_CHEMIN, EN_TETE_GESTE } from "@/lib/console/suite";
 import { createServerClient } from "@supabase/ssr";
 import { hoteDe, resoudre } from "@/lib/annuaire";
 import { apercuValide, etatMaintenance, pageMaintenance } from "@/lib/maintenance";
@@ -91,7 +92,20 @@ function pageNonServie(statut: string | undefined, nom: string | null | undefine
    le proxy le fait pour elle. */
 async function versConsole(request: NextRequest, pathname: string, search: string): Promise<NextResponse> {
   const cible = new URL(`/_console${pathname === "/" ? "" : pathname}${search}`, request.url);
-  let reponse = NextResponse.rewrite(cible);
+  // Où l'on était, pour y revenir après une reconnexion (lib/console/session.ts,
+  // versConnexion) : la page demandée ; pour un geste envoyé, la page d'où il part.
+  request.headers.delete(EN_TETE_CHEMIN);
+  request.headers.delete(EN_TETE_GESTE);
+  if (request.method === "GET") request.headers.set(EN_TETE_CHEMIN, `${pathname}${search}`);
+  else {
+    const depuis = request.headers.get("referer");
+    const u = depuis ? new URL(depuis) : null;
+    if (u && u.host === request.nextUrl.host) {
+      request.headers.set(EN_TETE_CHEMIN, `${u.pathname}${u.search}`);
+      request.headers.set(EN_TETE_GESTE, "1");
+    }
+  }
+  let reponse = NextResponse.rewrite(cible, { request });
   const sb = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll: () => request.cookies.getAll(),

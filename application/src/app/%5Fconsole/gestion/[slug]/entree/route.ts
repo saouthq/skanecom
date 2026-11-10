@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { accesEquipe, clientSession } from "@/lib/console/session";
+import { accesEquipe, clientSession, versConnexion } from "@/lib/console/session";
+import { COOKIE_SUITE, suiteSure } from "@/lib/console/suite";
 
 /* ============================================================================
    L'ENTRÉE DANS UN BACKOFFICE — après la connexion ou le choix de la
@@ -13,11 +14,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const { slug } = await params;
   const vers = (chemin: string) => NextResponse.redirect(new URL(chemin, req.url), 303);
   const a = await accesEquipe();
-  if (a.etat === "anonyme") return vers("/connexion");
+  if (a.etat === "anonyme") return vers(await versConnexion());
   if (a.etat === "aal1") return vers("/double-authentification");
   if (a.etat !== "ok") return vers("/gestion");
   const boutique = a.boutiques.find((b) => b.slug === slug);
   if (!boutique) return vers("/gestion");
+  // Reconnecté après une session qui avait pris fin : retour à la page où l'on était.
+  const suite = suiteSure(decodeURIComponent(req.cookies.get(COOKIE_SUITE)?.value ?? ""));
+  if (suite && (suite === `/gestion/${slug}` || suite.startsWith(`/gestion/${slug}/`) || suite.startsWith(`/gestion/${slug}?`))) {
+    const r = vers(suite);
+    r.cookies.set(COOKIE_SUITE, "", { path: "/", maxAge: 0 });
+    return r;
+  }
   const sb = await clientSession();
   const { data } = await sb.rpc("gestion_demandes_etat", { p_boutique_id: boutique.boutique_id });
   const d = data as { actif: boolean; site_vitrine: boolean; total: number } | null;

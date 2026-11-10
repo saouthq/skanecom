@@ -1,9 +1,10 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { parRequete } from "@/lib/par-requete";
 import { createServerClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { clientService } from "./service";
+import { EN_TETE_CHEMIN, EN_TETE_GESTE, suiteSure } from "./suite";
 
 /* ============================================================================
    LA SESSION — console de la plateforme ET backoffice des boutiques, sur le
@@ -152,9 +153,19 @@ export const accesEquipe = parRequete("console.accesEquipe", async function acce
 /** Pour les pages et les gestionnaires du backoffice d'UNE boutique : le
  *  membre et son rôle, ou la bonne porte. Une boutique dont on n'est pas
  *  membre n'existe pas (404), comme pour un visiteur. */
+/** La connexion, avec de quoi revenir à la page du backoffice d'où l'on vient
+ *  (lib/console/suite.ts) — et, pour un geste envoyé, de quoi dire qu'il n'a
+ *  pas été enregistré. */
+export async function versConnexion(): Promise<string> {
+  const h = await headers();
+  const suite = suiteSure(h.get(EN_TETE_CHEMIN));
+  if (!suite) return "/connexion";
+  return `/connexion?${new URLSearchParams({ suite, ...(h.get(EN_TETE_GESTE) ? { geste: "1" } : {}) })}`;
+}
+
 export async function exigeMembre(slug: string): Promise<{ user: User; boutique: Membre; boutiques: Membre[] }> {
   const a = await accesEquipe();
-  if (a.etat === "anonyme") redirect("/connexion");
+  if (a.etat === "anonyme") redirect(await versConnexion());
   if (a.etat === "aal1") redirect("/double-authentification");
   const boutique = a.etat === "ok" ? a.boutiques.find((b) => b.slug === slug) : undefined;
   if (!boutique) {

@@ -6,13 +6,14 @@ import { acces, accesEquipe } from "@/lib/console/session";
 import { Porte } from "@/components/console/Porte";
 import { ChampMotDePasse } from "@/components/console/ChampMotDePasse";
 import { LienOublie } from "@/components/console/LienOublie";
+import { suiteSure } from "@/lib/console/suite";
 
 export const metadata: Metadata = { title: "Connexion" };
 
 /* La porte commune de la console et du backoffice des boutiques. Un
    formulaire HTML ordinaire : il marche sans JavaScript, et le mot de passe ne
    transite que par un POST vers /session. */
-export default async function Connexion({ searchParams }: { searchParams: Promise<{ erreur?: string; email?: string; info?: string }> }) {
+export default async function Connexion({ searchParams }: { searchParams: Promise<{ erreur?: string; email?: string; info?: string; suite?: string; geste?: string }> }) {
   const a = await acces();
   if (a.etat === "ok") redirect("/");
   if (a.etat === "aal1") redirect("/double-authentification");
@@ -21,7 +22,9 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
     if (e.etat === "ok") redirect("/gestion");
     if (e.etat === "aal1") redirect("/double-authentification");
   }
-  const { erreur, email, info } = await searchParams;
+  const { erreur, email, info, suite: suiteBrute, geste } = await searchParams;
+  // Une session qui a pris fin : on le dit, et l'on reviendra où l'on était.
+  const suite = suiteSure(suiteBrute);
 
   return (
     <Porte
@@ -32,6 +35,14 @@ export default async function Connexion({ searchParams }: { searchParams: Promis
       <form action="/session/ouvrir" method="post" className="carte porte-carte formulaire">
         {erreur ? <p className="message message-erreur" role="alert">{erreur}</p> : null}
         {info && !erreur ? <p className="message message-succes" role="status">{info}</p> : null}
+        {suite && !erreur ? (
+          <p className="message message-attention" role="status">
+            {geste
+              ? "Votre session a pris fin : votre dernier geste n'a pas été enregistré. Reconnectez-vous, vous reviendrez sur la même page pour le refaire."
+              : "Votre session a pris fin. Reconnectez-vous : vous reviendrez sur la même page."}
+          </p>
+        ) : null}
+        {suite ? <input type="hidden" name="suite" value={suite} /> : null}
         <div className="champ">
           <label htmlFor="email">Adresse e-mail</label>
           <input id="email" name="email" type="email" autoComplete="username" required defaultValue={email ?? ""} autoFocus={!email} placeholder="prenom@exemple.tn" />
