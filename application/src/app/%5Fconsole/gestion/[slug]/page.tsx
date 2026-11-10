@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Prix } from "@/components/Prix";
 import { EnTetePage, initiales, styleAvatar } from "@/components/console/Coquille";
 import { Pagination } from "@/components/console/Pagination";
@@ -89,7 +90,7 @@ export default async function Commandes({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ etape?: string; q?: string; page?: string; fait?: string; n?: string; ignorees?: string; erreur?: string }>;
+  searchParams: Promise<{ etape?: string; q?: string; page?: string; fait?: string; n?: string; ignorees?: string; erreur?: string; depuis?: string }>;
 }) {
   const [{ slug }, recherche] = await Promise.all([params, searchParams]);
   const { boutique } = await exigeMembre(slug);
@@ -110,6 +111,12 @@ export default async function Commandes({
   });
   if (error) throw new Error(`Commandes illisibles : ${error.message}`);
   const liste = data as Liste;
+  // Un client appelle pour une commande déjà partie : rien dans l'onglet ouvert,
+  // la recherche passe à toutes les commandes (et le dit).
+  if (q && liste.total === 0 && etape.cle !== "toutes") {
+    redirect(`/gestion/${slug}?etape=toutes&q=${encodeURIComponent(q)}&depuis=${etape.cle}`);
+  }
+  const depuis = q && etape.cle === "toutes" ? ETAPES.find((e) => e.cle === recherche.depuis && e.cle !== "toutes") : undefined;
   // Un compte e-mail n'a pas prouvé son numéro : seul un compte SMS confirmé est « vérifié ».
   const { data: verifiees } = liste.commandes.some((c) => c.client?.compte)
     ? await sb.rpc("gestion_numeros_verifies", {
@@ -190,7 +197,11 @@ export default async function Commandes({
 
       {q ? (
         <p className="bo-resultat" role="status">
-          {liste.total} commande{liste.total > 1 ? "s" : ""} pour « {q} »
+          {liste.total === 0
+            ? `Aucune commande pour « ${q} »${depuis ? ", toutes étapes confondues" : ""}`
+            : depuis
+              ? `Rien dans « ${depuis.libelle} » : ${liste.total} commande${liste.total > 1 ? "s" : ""} pour « ${q} », toutes étapes confondues`
+              : `${liste.total} commande${liste.total > 1 ? "s" : ""} pour « ${q} »`}
           <Link href={lien(etape.cle).replace(/&q=[^&]*/, "")} className="btn btn-fantome btn-petit"><Icone nom="croix" taille={14} /> Effacer</Link>
         </p>
       ) : null}
@@ -199,7 +210,7 @@ export default async function Commandes({
         <div className="vide bo-vide">
           <span className="vide-icone"><Icone nom={q ? "recherche" : "commandes"} taille={20} /></span>
           <strong>{q ? "Aucun résultat" : "Rien ici"}</strong>
-          <p>{q ? `Aucune commande « ${etape.libelle.toLowerCase()} » ne correspond à « ${q} ».` : etape.vide}</p>
+          <p>{q ? (etape.cle === "toutes" ? `Aucune commande ne correspond à « ${q} » : ni ce nom, ni ce numéro.` : `Aucune commande « ${etape.libelle.toLowerCase()} » ne correspond à « ${q} ».`) : etape.vide}</p>
         </div>
       ) : (
         <ul className="bo-liste" role="list">
