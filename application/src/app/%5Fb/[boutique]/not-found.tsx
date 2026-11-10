@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChampRecherche } from "@/components/ChampRecherche";
 import { Loupe } from "@/components/Icones";
 import { VusRecemment } from "@/components/VusRecemment";
+import { RechercheDepuisAdresse } from "@/components/RechercheDepuisAdresse";
 import { t } from "@/lib/i18n";
 
 /* Page introuvable d'une boutique. Next.js ne lui donne pas les paramètres de
@@ -17,6 +18,9 @@ export default function Introuvable() {
       </p>
       <h1 className="text-t2 md:text-t1 mt-3 max-w-[20ch]">{t.introuvable.titre}</h1>
       <p className="chapo mt-4">{t.introuvable.texte}</p>
+      <div className="mt-6">
+        <RechercheDepuisAdresse />
+      </div>
       <form action="/recherche" method="get" role="search" className="recherche-page mt-8">
         <label htmlFor="q-introuvable" className="sr-only">
           {t.recherche.champAria}

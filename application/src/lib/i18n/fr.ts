@@ -348,6 +348,9 @@ export const fr = {
         : n === 1
           ? `Une pièce trouvée pour « ${q} »`
           : `Aucune pièce trouvée pour « ${q} »`,
+    /** Rien pour tous les mots : ce qui est montré, avec moins de mots. */
+    resultatsElargis: (n: number, q: string, e: string) =>
+      `Rien pour « ${q} » : ${n > 1 ? `${n} pièces` : "une pièce"} pour « ${e} »`,
     videTexte:
       "Essayez un mot plus court, ou parcourez un rayon.",
     rayonsAria: "Les rayons de la boutique",
@@ -377,6 +380,7 @@ export const fr = {
     titre: "Cette page n'existe pas.",
     texte:
       "Le lien est peut-être ancien, ou la pièce n'est plus au catalogue. Le catalogue complet et la recherche sont là.",
+    chercherMots: (mots: string) => `Chercher « ${mots} »`,
   },
 
   avis: {

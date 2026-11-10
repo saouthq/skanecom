@@ -66,7 +66,20 @@ export default async function Recherche({
   const cadre = await chargeCadre(boutique);
   const requete = (q ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
   const comprise = requete.length >= 2 && cadre.recherchePhrase && mot !== "1" ? await chercheComprise(cadre, requete) : null;
-  const liste = comprise?.liste ?? (requete.length >= 2 ? await listeProduits(cadre.boutique.id, { q: requete }, "pertinence", 1, 48) : null);
+  let liste = comprise?.liste ?? (requete.length >= 2 ? await listeProduits(cadre.boutique.id, { q: requete }, "pertinence", 1, 48) : null);
+  // Plusieurs mots, rien trouvé (« robe bretelles terracotta », une pièce retirée
+  // depuis le partage du lien) : moins de mots — les derniers d'abord, puis
+  // chacun seul —, quatre essais au plus. Le bilan dit ce qui est montré.
+  let elargie: string | null = null;
+  if (!comprise && liste && liste.total === 0) {
+    const mots = requete.split(" ").filter((m) => m.length > 1);
+    const essais = [...mots.slice(0, -1).map((_, i) => mots.slice(0, mots.length - 1 - i).join(" ")), ...mots.slice(1)]
+      .filter((e, i, tous) => e.length >= 2 && e !== requete && tous.indexOf(e) === i).slice(0, 4);
+    for (const e of essais) {
+      const l = await listeProduits(cadre.boutique.id, { q: e }, "pertinence", 1, 48);
+      if (l.total > 0) { liste = l; elargie = e; break; }
+    }
+  }
   const n = liste?.total ?? 0;
   const gabarit = cadre.theme.code;
 
@@ -86,7 +99,7 @@ export default async function Recherche({
           </button>
         </form>
         <p className="recherche-bilan" aria-live="polite">
-          {liste ? t.recherche.resultats(n, requete) : requete ? t.recherche.tropCourt : t.recherche.invite}
+          {elargie ? t.recherche.resultatsElargis(n, requete, elargie) : liste ? t.recherche.resultats(n, requete) : requete ? t.recherche.tropCourt : t.recherche.invite}
         </p>
         {comprise ? (
           <div className="recherche-comprise">
