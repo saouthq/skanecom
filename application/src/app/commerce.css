@@ -261,3 +261,29 @@ html:has(.barre-comparaison) .whatsapp-flottant { inset-block-end: calc(5.5rem +
 .cp-tableau tbody tr:not([data-pareil]):not(.cp-actions) td { font-weight: 600; }
 .cp[data-differences] tr[data-pareil] { display: none; }
 .cp-vide { padding-block: 3rem; }
+
+/* Au téléphone, la colonne des libellés mangeait le tiers de l'écran : une
+   pièce et demie se voyait, la seconde coupée au milieu d'un mot. Le libellé
+   passe AU-DESSUS de sa rangée (sa colonne tombe à zéro, il déborde sur la
+   première pièce et reste épinglé à gauche quand le tableau glisse) ; chaque
+   pièce prend la moitié de l'écran — deux entières, la troisième dépasse
+   pour dire qu'il y en a d'autres — et le glissement s'arrête sur une pièce.
+   Le tableau reste un tableau : chaque valeur garde son en-tête de rangée. */
+@media (max-width: 699px) {
+  .cp-defile { scroll-snap-type: x proximity; }
+  .cp-tableau { min-inline-size: calc(var(--cp-n, 2) * 46%); }
+  .cp-tableau thead td:first-child { inline-size: 0; padding: 0; }
+  .cp-tableau thead th { scroll-snap-align: start; }
+  .cp-tableau tbody th {
+    inline-size: 0; padding: .625rem 0 0; overflow: visible; white-space: nowrap;
+    text-indent: .75rem; background: none; z-index: 2;
+  }
+  .cp-tableau tbody td { padding-block-start: 1.875rem; }
+  .cp-tableau .cp-actions td { padding-block-start: .625rem; }
+  .cp-tableau .cp-actions td:first-child { padding: 0; }
+  /* Un prix plus large que sa colonne (320 px) mordait sur la voisine : la devise passe dessous. */
+  .cp-prix .prix-carte { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .3rem; }
+  .cp-prix .prix-fort { font-size: 1.0625rem; }
+  .cp-prix .ttc, .cp-prix .dès { margin-inline: 0; }
+  .cp-tableau td:not(.cp-prix) { overflow-wrap: anywhere; }
+}
