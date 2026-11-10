@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { Calendrier, Coche } from "./Icones";
 import { EspacePro } from "./EspacePro";
 import { MesDevis } from "./MesDevis";

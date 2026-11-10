@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { t } from "@/lib/i18n";
 
 /* ============================================================================

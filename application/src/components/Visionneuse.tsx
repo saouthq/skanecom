@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { Chevron, Croix } from "./Icones";
 import { t } from "@/lib/i18n";
 import type { PhotoAffichable } from "./Photo";

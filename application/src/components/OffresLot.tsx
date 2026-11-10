@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import Link from "next/link";
 import { useState, type MouseEvent } from "react";
 import { Coche, Plus } from "./Icones";

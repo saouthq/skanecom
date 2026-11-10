@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Coche, Fleche, Plus } from "./Icones";

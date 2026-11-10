@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import Link from "next/link";
 import { PrixCarte } from "./PrixCarte";
 import { noteVu, oublieVus, useVus } from "@/lib/vus";

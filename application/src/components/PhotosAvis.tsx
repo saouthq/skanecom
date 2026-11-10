@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { useState } from "react";
 import { Visionneuse } from "./Visionneuse";
 import { urlFichier } from "@/lib/photos";

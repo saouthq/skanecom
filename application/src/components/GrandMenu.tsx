@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Chevron, Fleche, Menu } from "./Icones";

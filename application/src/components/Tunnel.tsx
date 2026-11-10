@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type
 import { evenementPub, lignesPub } from "@/lib/pixels";
 import { signaleEtape } from "@/lib/etapes-visite";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { Billets, Calendrier, Camion, CarteBancaire, Coche, Etiquette, Magasin as IconeMagasin } from "./Icones";
 import { jourPrevu } from "@/lib/catalogue";
 import { Prix } from "./Prix";

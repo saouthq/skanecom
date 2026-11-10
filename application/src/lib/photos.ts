@@ -18,6 +18,43 @@ export function urlFichier(chemin: string): string {
   return `${BASE}/${chemin.replace(/^\/+/, "")}`;
 }
 
+/* Une photo dont le nom porte sa largeur (`kilim-1200.webp`) a une sœur à la
+   moitié de cette largeur, à côté (`kilim-600.webp`) : c'est la règle du
+   dépôt. Le navigateur choisit alors celle de l'écran — un téléphone ne
+   charge plus une photo de 1 200 px pour une vignette de 180. Les noms tirés
+   au hasard (12 caractères hexadécimaux, sans tiret) n'y ressemblent jamais. */
+const LARGEUR_AU_NOM = /-(\d{3,4})\.(webp|jpe?g|png|avif)$/i;
+
+/** La plus petite largeur qu'on double d'une sœur : en dessous, inutile. */
+export const LARGEUR_MIN_DOUBLEE = 480;
+
+/** Le nom à donner à une photo de `largeur` px, et celui de sa sœur à mi-largeur. */
+export function nomsDePhoto(base: string, largeur: number, extension: string): { photo: string; demi: string } {
+  return { photo: `${base}-${largeur}.${extension}`, demi: `${base}-${Math.floor(largeur / 2)}.${extension}` };
+}
+
+/** La sœur à mi-largeur d'un chemin (ou d'une adresse) qui dit sa largeur, avec les deux largeurs. */
+function soeur(chemin: string): { demi: string; largeur: number; moitie: number } | null {
+  const m = LARGEUR_AU_NOM.exec(chemin);
+  if (!m) return null;
+  const largeur = Number(m[1]);
+  if (largeur < LARGEUR_MIN_DOUBLEE) return null;
+  const moitie = Math.floor(largeur / 2);
+  return { demi: `${chemin.slice(0, m.index)}-${moitie}.${m[2]}`, largeur, moitie };
+}
+
+/** Le chemin de la sœur à mi-largeur (à retirer avec la photo), ou rien. */
+export function cheminDemi(chemin: string): string | null {
+  return soeur(chemin)?.demi ?? null;
+}
+
+/** Le `srcset` d'une photo de nos fichiers, ou rien si son nom ne dit pas sa largeur. */
+export function jeuDePhoto(src: string): string | undefined {
+  if (!BASE || !src.startsWith(`${BASE}/`)) return undefined;
+  const s = soeur(src);
+  return s ? `${s.demi} ${s.moitie}w, ${src} ${s.largeur}w` : undefined;
+}
+
 type PhotoAffichable = { src: string; alt: string; detoure?: boolean } | null;
 
 /** Les axes qui ne changent pas l'allure d'une pièce : une photo du polo bleu

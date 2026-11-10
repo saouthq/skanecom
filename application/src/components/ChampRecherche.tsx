@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { usePathname, useRouter } from "next/navigation";
 import { Fleche } from "./Icones";
 import { Prix } from "./Prix";

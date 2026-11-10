@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import Link from "next/link";
 import { Prix } from "@/components/Prix";
 import { EnTetePage } from "@/components/console/Coquille";

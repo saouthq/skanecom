@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import Link from "next/link";
 import { Icone } from "./Icone";
 import { urlFichier } from "@/lib/photos";

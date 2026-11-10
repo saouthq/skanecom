@@ -1,7 +1,7 @@
 import { ModifierCommande, type LigneModifiable } from "./ModifierCommande";
 import { ModifierAdresse } from "./ModifierAdresse";
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Prix } from "@/components/Prix";

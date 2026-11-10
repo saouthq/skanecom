@@ -2,7 +2,7 @@
 
 import { chiffresLatins } from "@/lib/chiffres";
 import { useMemo, useState, type KeyboardEvent } from "react";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { Icone } from "./Icone";
 import { urlFichier } from "@/lib/photos";
 import type { ProduitReception } from "@/lib/gestion/reception";

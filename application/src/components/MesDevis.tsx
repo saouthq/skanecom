@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { Prix } from "./Prix";
 import { supabaseNavigateur } from "@/lib/supabase-navigateur";
 import { urlFichier } from "@/lib/photos";

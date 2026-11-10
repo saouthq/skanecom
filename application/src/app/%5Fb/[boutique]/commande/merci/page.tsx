@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { cookies } from "next/headers";
 import { Gabarit } from "@/components/Gabarit";
 import { FinDeCommande } from "@/components/FinDeCommande";

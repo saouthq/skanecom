@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/ImageFichier";
 import { Etoiles } from "./Etoiles";
 import { ListeAvis } from "./ListeAvis";
 import { t } from "@/lib/i18n";
