@@ -68,6 +68,11 @@
   background: none; border: 0; padding: 0; cursor: pointer; color: inherit;
   text-decoration: underline; text-underline-offset: .25em; text-decoration-thickness: 1px;
 }
+/* Un lien qui fait office de bouton (« Ou l'ajouter au panier », « Tout voir »,
+   « Voir la pièce ») : 22 px de haut, trop peu pour un doigt. Une zone
+   sensible invisible l'entoure (44 px), sans rien déplacer à l'écran. */
+:is(.btn-lien, .bn-lien, .lk-carte-lien, .st-pied-logo) { position: relative; }
+:is(.btn-lien, .bn-lien, .lk-carte-lien, .st-pied-logo)::after { content: ""; position: absolute; inset: -11px -6px; }
 .icone-btn {
   display: inline-grid; place-items: center; position: relative;
   inline-size: 44px; block-size: 44px; background: none; border: 0; cursor: pointer; color: inherit;
