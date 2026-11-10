@@ -198,3 +198,8 @@ Remarqué, laissé tel quel :
 - `workers.dev` est refusé par le proxy de la session : l'aperçu ne s'ouvre
   pas d'ici, on essaie en local (`studio.localhost:4200`,
   `console.localhost:4200`).
+- Redéfinir une fonction SQL : partir de sa **dernière** définition. Plusieurs
+  migrations les écrivent en majuscules (`CREATE OR REPLACE FUNCTION`, repris
+  de `pg_dump`) : chercher sans tenir compte de la casse
+  (`grep -iln "function public.<nom>(" supabase/migrations/*.sql | sort | tail -1`),
+  puis lancer toute la suite pgTAP sur base neuve.
