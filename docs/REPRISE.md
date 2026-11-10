@@ -175,6 +175,11 @@ Remarqué, laissé tel quel :
 
 ## Plus loin (déjà notées)
 
+- Le poids d'une page de vitrine (mesuré le 10/11, compressé) : CSS ~57 Ko,
+  JavaScript ~250 Ko, dont le client Supabase (~53 Ko : connexion, temps
+  réel) chargé sur chaque page, même pour un visiteur anonyme. Le charger à
+  la demande (panier, favoris, session) allégerait la 3G ; une dizaine de
+  composants à reprendre.
 - F1 à F6 (témoignages, avant/après, accusé de réception, rendez-vous, pièces
   jointes, vidéo d'ouverture).
 - La refonte premium des vitrines (#67).
