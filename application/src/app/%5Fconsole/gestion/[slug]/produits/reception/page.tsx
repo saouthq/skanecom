@@ -48,7 +48,7 @@ export default async function Reception({
           <p className="message message-succes" role="status">
             Réception enregistrée : {n} pièce{n > 1 ? "s" : ""} sur {messages.declinaisons} déclinaison{Number(messages.declinaisons) > 1 ? "s" : ""}, au journal du stock.
             {origine ? (
-              <>{" "}<Link href={`${catalogue}/${origine.id}#t-fiche`} autoFocus>{origine.publie ? `Retour à la fiche « ${origine.nom} »` : `« ${origine.nom} » : le mettre en vitrine`}</Link></>
+              <>{" "}<Link href={`${catalogue}/${origine.id}${origine.publie ? "#t-fiche" : ""}`} autoFocus>{origine.publie ? `Retour à la fiche « ${origine.nom} »` : `« ${origine.nom} » : le mettre en vitrine`}</Link></>
             ) : null}
           </p>
         ) : null}

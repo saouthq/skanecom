@@ -686,6 +686,12 @@ if (section("2")) {
     verifie((await ok()).includes("3 déclinaisons"), "créé en brouillon, avec ses trois tailles");
     verifie((await page.locator(".var-sku").allInnerTexts()).join(" ") === "HOUSSE-DE-PROTECTION-S HOUSSE-DE-PROTECTION-M HOUSSE-DE-PROTECTION-L",
       `références proposées : ${(await page.locator(".var-sku").allInnerTexts()).join(", ")}`);
+    // Un brouillon n'a rien « en vente » ni rien d'« épuisé » : ses tailles attendent leur réception.
+    const resume = (await page.locator(".page-description").first().innerText()).replace(/\s+/g, " ");
+    verifie(/3 déclinaisons(?! en vente)/.test(resume), `le brouillon : « 3 déclinaisons », pas « en vente » (${resume})`);
+    const pastilles = await page.locator(".var .ui-etat").allInnerTexts();
+    verifie(pastilles.length === 3 && pastilles.every((x) => x.includes("À recevoir")), `chaque taille « À recevoir », pas « Épuisée » (${pastilles.join(", ")})`);
+    verifie(await page.getByRole("button", { name: "Mettre en vitrine" }).count() === 0, "sans stock, pas de « Mettre en vitrine » en tête");
     // Son premier stock se reçoit d'un coup : le message mène à la réception, sur lui seul, le curseur dans sa première quantité.
     const recevoir = page.locator(".message-succes").getByRole("link", { name: "Recevoir leur stock" });
     verifie(await recevoir.count() === 1, "le message propose de recevoir leur stock");

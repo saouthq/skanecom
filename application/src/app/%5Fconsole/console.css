@@ -238,6 +238,12 @@ html:has(.app-menu[open]) { overflow: hidden; }
 .page-tete h1 { display: flex; flex-wrap: wrap; align-items: center; gap: .625rem; }
 .page-description { color: var(--ui-texte-2); max-inline-size: 42rem; }
 .page-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+/* Au téléphone, l'action principale (« Nouveau produit ») tombait en dernier,
+   sous quatre boutons secondaires : elle remonte juste après la recherche. */
+@media (max-width: 699px) {
+  .page-actions > form:first-child { order: -2; }
+  .page-actions > .btn-primaire { order: -1; }
+}
 
 .pile { display: grid; gap: 1.25rem; align-content: start; min-inline-size: 0; }
 .carte {
@@ -445,6 +451,13 @@ html:has(.app-menu[open]) { overflow: hidden; }
 .console .message-attention { background: var(--ui-ambre-fond); border-color: var(--ui-ambre-bord); color: #78350F; }
 .console .message-attention::before { color: var(--ui-ambre); --message-icone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E"); }
 .console .message a { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+/* Un message en une phrase (<p>) se lit d'un trait : en flex, la phrase et son
+   lien (« Recevoir leur stock », « le mettre en vitrine ») devenaient deux
+   colonnes, et au téléphone le lien s'écrasait d'un mot par ligne. L'icône
+   est posée à part ; le lien suit la phrase. Les messages en <div> (listes,
+   formulaires) gardent leur colonne. */
+.console p.message { display: block; position: relative; padding-inline-start: calc(.875rem + 16px + .625rem); }
+.console p.message::before { position: absolute; inset-inline-start: .875rem; inset-block-start: calc(.75rem + 2px); margin: 0; }
 /* Posés par le geste en place sous le formulaire (components/console/Retours.tsx). */
 .console .geste-coupure, .console .geste-refus, .console .geste-reussite { margin-block-start: .75rem; }
 .console form > .geste-refus, .console form > .geste-reussite { margin-block-start: 0; }

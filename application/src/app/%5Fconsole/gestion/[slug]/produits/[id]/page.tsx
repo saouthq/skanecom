@@ -132,7 +132,7 @@ export default async function FicheProduitBackoffice({
         description={
           <>
             <span className="tabular-nums">{stockTotal}</span> pièce{stockTotal > 1 ? "s" : ""} en stock ·{" "}
-            {actives.length} déclinaison{actives.length > 1 ? "s" : ""} en vente
+            {actives.length} déclinaison{actives.length > 1 ? "s" : ""}{f.publie ? " en vente" : ""}
             {prixMin !== null ? <> · dès <Prix millimes={prixMin} /></> : null}
             {f.variantes.length > actives.length ? <> · {f.variantes.length - actives.length} hors vente</> : null}
             {" · "}créé {quand(f.cree_le, maintenant)}
@@ -142,6 +142,21 @@ export default async function FicheProduitBackoffice({
           <a className="btn btn-second" href={surVitrine} target="_blank" rel="noopener">
             Voir sur la vitrine <Icone nom="externe" taille={14} />
           </a>
+        ) : modifie && stockTotal > 0 ? (
+          /* Un brouillon prêt (son stock reçu) : le mettre en vitrine d'un geste, sans chercher
+             la case au bas de la fiche puis « Enregistrer ». La fiche part telle qu'elle est,
+             avec sa version (deux personnes sur la même fiche : la base refuse la seconde). */
+          <form action={action} method="post" id="publier">
+            <input type="hidden" name="action" value="fiche" />
+            <input type="hidden" name="version" value={f.version} />
+            <input type="hidden" name="nom" value={f.nom} />
+            <input type="hidden" name="description" value={f.description ?? ""} />
+            <input type="hidden" name="marque" value={f.marque ?? ""} />
+            <input type="hidden" name="categorie_id" value={f.categorie_id ?? ""} />
+            {f.mis_en_avant ? <input type="hidden" name="mis_en_avant" value="1" /> : null}
+            <input type="hidden" name="publie" value="1" />
+            <button type="submit" className="btn btn-primaire">Mettre en vitrine</button>
+          </form>
         ) : undefined}
       />
 
@@ -364,7 +379,7 @@ export default async function FicheProduitBackoffice({
               ) : null}
               <ul className="var-liste" role="list">
                 {f.variantes.map((v) => {
-                  const etat = etatStock(v.stock, v.seuil);
+                  const etat = etatStock(v.stock, v.seuil, !f.publie);
                   return (
                     <li key={v.id} id={`var-${v.id}`} className="var" data-inactive={v.actif ? undefined : ""}>
                       <div className="var-tete">

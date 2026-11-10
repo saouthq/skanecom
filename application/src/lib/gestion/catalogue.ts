@@ -106,7 +106,9 @@ export const PEUT_MODIFIER: Role[] = ["proprietaire", "admin"];
 export const PEUT_STOCKER: Role[] = ["proprietaire", "admin", "preparateur"];
 
 /** L'état du stock d'une déclinaison, pour sa pastille. */
-export function etatStock(stock: number, seuil: number): { texte: string; classe: string } {
+export function etatStock(stock: number, seuil: number, brouillon = false): { texte: string; classe: string } {
+  // Un brouillon sans stock n'a rien vendu : il attend sa réception, ce n'est pas une alerte.
+  if (stock <= 0 && brouillon) return { texte: "À recevoir", classe: "ui-etat ui-etat-point" };
   if (stock <= 0) return { texte: "Épuisée", classe: "ui-etat ui-etat-point ui-etat-rouge" };
   if (stock <= seuil) return { texte: `Stock bas · ${stock}`, classe: "ui-etat ui-etat-point ui-etat-ambre" };
   return { texte: `${stock} en stock`, classe: "ui-etat ui-etat-point ui-etat-vert" };
