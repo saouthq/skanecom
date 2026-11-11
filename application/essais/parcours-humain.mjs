@@ -885,6 +885,19 @@ if (section("4")) {
     verifie((await tableau.locator("thead th").count()) === 2, "la page met les deux pièces côte à côte");
     verifie(/710[\s\u00a0\u202f]W/.test(await tableau.locator("tbody").innerText()), "avec leurs caractéristiques (la puissance de la perceuse)");
     await capture(page, "quinca-comparer", true);
+    // En descendant la fiche, les noms des pièces restent épinglés sous l'en-tête, sur leurs colonnes.
+    verifie(!(await page.locator(".cp-epingle").evaluate((e) => e.hasAttribute("data-visible"))), "en haut du tableau : pas de bandeau des noms");
+    await page.evaluate(() => { const r = [...document.querySelectorAll(".cp-tableau tbody tr")]; r[Math.floor(r.length * 0.7)]?.scrollIntoView({ block: "center" }); });
+    const epingle = await attend(async () => page.locator(".cp-epingle").evaluate((e) => e.hasAttribute("data-visible")), 3000);
+    const alignes = await page.evaluate(() => {
+      const col = [...document.querySelectorAll(".cp-tableau thead th")].map((t) => Math.round(t.getBoundingClientRect().left));
+      const noms = [...document.querySelectorAll(".cp-epingle-rang > span")].slice(1).map((n) => Math.round(n.getBoundingClientRect().left));
+      return col.length > 0 && col.every((x, i) => Math.abs(x - noms[i]) <= 1);
+    });
+    verifie(epingle && alignes && (await page.locator(".cp-epingle").innerText()).includes("710"),
+      "plus bas, les noms des pièces restent épinglés sous l'en-tête, chacun sur sa colonne");
+    await capture(page, "quinca-comparer-noms-epingles");
+    await page.evaluate(() => scrollTo(0, 0));
     const avant = await tableau.locator("tbody tr:visible").count();
     await clic(page, page.getByLabel("Seulement les différences"));
     note("INFO  ", `lignes : ${avant} → ${await tableau.locator("tbody tr:visible").count()} avec « Seulement les différences »`);

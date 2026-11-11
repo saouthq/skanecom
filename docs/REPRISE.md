@@ -192,11 +192,6 @@ Remarqué, laissé tel quel :
   Quatre photos de démo trop lourdes (kilim, chantier,
   palmiers, maison d'hôtes) ont été réencodées (`-gaussian-blur 0x0.8
   -quality 74`) ; `outils/photos-demo/photos.mjs` les referait lourdes.
-- Comparer au téléphone (lot 69) : deux pièces entières, le libellé au-dessus
-  de chaque rangée ; mais en descendant une longue fiche technique, les noms
-  des pièces (en tête du tableau) sortent de l'écran. Un en-tête collant
-  demanderait que le tableau défile en lui-même (deux défilements) ou un
-  bandeau des noms synchronisé en JS : pas fait, à décider.
 - F1 à F6 (témoignages, avant/après, accusé de réception, rendez-vous, pièces
   jointes, vidéo d'ouverture).
 - La refonte premium des vitrines (#67).

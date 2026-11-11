@@ -7,7 +7,7 @@ import { Etoiles } from "@/components/Etoiles";
 import { Gabarit } from "@/components/Gabarit";
 import { Photo } from "@/components/Photo";
 import { PrixCarte } from "@/components/PrixCarte";
-import { DifferencesSeules, SuiviComparaison } from "@/components/ComparaisonPage";
+import { DifferencesSeules, NomsEpingles, SuiviComparaison } from "@/components/ComparaisonPage";
 import { cadre as chargeCadre } from "@/lib/boutique";
 import { etatProduit, minimumVariante, stockTotal, type Produit } from "@/lib/catalogue";
 import { valeurAvecUnite } from "@/lib/caracteristiques";
@@ -178,6 +178,7 @@ export default async function Comparer({
               </tbody>
             </table>
           </div>
+          <NomsEpingles noms={produits.map((x) => champ(x, "nom"))} />
         </DifferencesSeules>
       )}
     </Gabarit>

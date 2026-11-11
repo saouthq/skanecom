@@ -261,6 +261,22 @@ html:has(.barre-comparaison) .whatsapp-flottant { inset-block-end: calc(5.5rem +
 .cp-tableau tbody tr:not([data-pareil]):not(.cp-actions) td { font-weight: 600; }
 .cp[data-differences] tr[data-pareil] { display: none; }
 .cp-vide { padding-block: 3rem; }
+/* Le bandeau des noms, épinglé sous l'en-tête quand ceux du tableau sont sortis
+   de l'écran (components/ComparaisonPage.tsx, NomsEpingles : position, largeur
+   et glissement posés par le script). */
+.cp-epingle {
+  display: none; position: fixed; z-index: 20; overflow: hidden;
+  background: var(--theme-surface);
+  border-block-end: 1px solid var(--theme-filet); box-shadow: 0 6px 12px -10px rgb(0 0 0 / .35);
+}
+.cp-epingle[data-visible] { display: block; }
+.cp-epingle-rang { display: flex; will-change: transform; }
+.cp-epingle-rang > span {
+  flex: none; box-sizing: border-box; padding: .5rem .75rem; font-size: .8125rem; font-weight: 700; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cp-epingle-rang > span:empty { padding: 0; }
+@media (min-width: 900px) { .cp-epingle-rang > span { padding-inline: 1rem; font-size: .875rem; } }
 
 /* Au téléphone, la colonne des libellés mangeait le tiers de l'écran : une
    pièce et demie se voyait, la seconde coupée au milieu d'un mot. Le libellé
